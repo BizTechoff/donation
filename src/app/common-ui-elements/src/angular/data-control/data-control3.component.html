@@ -1,0 +1,69 @@
+<div class="data-control3" #myDiv>
+  @if(showTextBox()) {
+  <div style="display: flex; width: 100%">
+    <input
+      #theId
+      matInput
+      [(ngModel)]="_getColumn()!.inputValue"
+      type="{{ settings._getColDataType(map) }}"
+      (ngModelChange)="settings._colValueChanged(map, record)"
+      [errorStateMatcher]="ngErrorStateMatches"
+      [ngStyle]="getStyle()"
+      [ngModelOptions]="{
+        updateOn: settings._getColDataType(map) == 'number' ? 'blur' : 'change'
+      }"
+    />
+    @if(showDescription()){
+    <div
+      style="
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        padding-left: 10px;
+        width: 100%;
+      "
+      (click)="click()"
+    >
+      {{ settings._getColDisplayValue(map, record) }}&nbsp;
+    </div>
+    } @if(showClick()){
+    <button mat-icon-button (click)="click()" class="row-button">
+      <mat-icon>{{ getClickIcon() }} </mat-icon>
+    </button>
+    }
+  </div>
+  } @if(showReadonlyText() && !showCheckbox()){
+  <div style="overflow: hidden; padding-left: 10px; width: 100%">
+    {{ settings._getColDisplayValue(map, record) }}&nbsp;
+  </div>
+  } @if(isSelect()) {
+  <div class="my-select" [class.rtl-select]="rightToLeft">
+    <select
+      matNativeControl
+      [(ngModel)]="_getColumn()!.inputValue"
+      (ngModelChange)="settings._colValueChanged(map, record)"
+    >
+      <option *ngFor="let v of getDropDown()" [ngValue]="v.id">
+        {{ v.caption }}
+      </option>
+    </select>
+  </div>
+  } @if(showCheckbox()){
+
+  <div>
+    @if(!showReadonlyText()){
+    <mat-checkbox
+      #theId1
+      [(ngModel)]="_getColumn()!.inputValue"
+      (ngModelChange)="settings._colValueChanged(map, record)"
+      class="fix-label"
+    ></mat-checkbox>
+    } @if(showReadonlyText() && _getColumn()!.inputValue){
+    <mat-icon style="font-size: 18px; height: 20px">check </mat-icon>
+    }
+  </div>
+  }
+</div>
+@if(getError()){
+<mat-error [id]="theId" style="font-size: 75%">{{ getError() }}</mat-error>
+}

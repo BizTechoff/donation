@@ -1,0 +1,227 @@
+<div class="home-container">
+  <!-- מסך טעינה -->
+  <div *ngIf="loading" class="loading-overlay">
+    <div class="loading-spinner">
+      <div class="spinner-icon">💝</div>
+      <h3>טוען נתונים...</h3>
+    </div>
+  </div>
+
+  <!-- עמוד בית למשתמשים לא מחוברים -->
+  <div *ngIf="!loading && !isLoggedIn" class="welcome-section">
+    <!-- כותרת ראשית עם אנימציה -->
+    <div class="hero-section" [class.animated]="showWelcomeAnimation">
+      <div class="hero-content">
+        <h1 class="hero-title">
+          <span class="highlight">🌟</span>
+          מערכת ניהול תרומות
+          <span class="highlight">🌟</span>
+        </h1>
+        <p class="hero-subtitle">
+          מערכת מתקדמת לניהול תרומות, קמפיינים ותורמים
+        </p>
+        <div class="hero-stats" *ngIf="showWelcomeAnimation">
+          <div class="stat-item" style="--delay: 0.2s">
+            <div class="stat-number">{{welcomeStats.totalRaised | number}}</div>
+            <div class="stat-label">₪ נאספו עד היום</div>
+          </div>
+          <div class="stat-item" style="--delay: 0.4s">
+            <div class="stat-number">{{welcomeStats.donorsCount | number}}</div>
+            <div class="stat-label">תורמים פעילים</div>
+          </div>
+          <div class="stat-item" style="--delay: 0.6s">
+            <div class="stat-number">{{welcomeStats.campaignsCount}}</div>
+            <div class="stat-label">קמפיינים הושלמו</div>
+          </div>
+          <div class="stat-item" style="--delay: 0.8s">
+            <div class="stat-number">{{welcomeStats.yearsActive}}</div>
+            <div class="stat-label">שנות פעילות</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- רקע אנימציה -->
+      <div class="hero-background">
+        <div class="floating-icon" style="--delay: 1s; --position: 10%">💝</div>
+        <div class="floating-icon" style="--delay: 1.5s; --position: 20%">🎯</div>
+        <div class="floating-icon" style="--delay: 2s; --position: 30%">💰</div>
+        <div class="floating-icon" style="--delay: 2.5s; --position: 40%">🤝</div>
+        <div class="floating-icon" style="--delay: 3s; --position: 50%">❤️</div>
+        <div class="floating-icon" style="--delay: 3.5s; --position: 60%">⭐</div>
+        <div class="floating-icon" style="--delay: 4s; --position: 70%">🌟</div>
+        <div class="floating-icon" style="--delay: 4.5s; --position: 80%">🎉</div>
+      </div>
+    </div>
+
+    <!-- תכונות המערכת -->
+    <div class="features-section" [class.animated]="showWelcomeAnimation">
+      <h2>תכונות המערכת</h2>
+      <div class="features-grid">
+        <div class="feature-card" style="--delay: 1s">
+          <div class="feature-icon">👥</div>
+          <h3>ניהול תורמים</h3>
+          <p>מעקב מפורט אחר תורמים, היסטוריית תרומות ונתונים אישיים</p>
+        </div>
+        <div class="feature-card" style="--delay: 1.2s">
+          <div class="feature-icon">💰</div>
+          <h3>ניהול תרומות</h3>
+          <p>רישום תרומות, הפקת קבלות ומעקב אחר יעדים כספיים</p>
+        </div>
+        <div class="feature-card" style="--delay: 1.4s">
+          <div class="feature-icon">🎯</div>
+          <h3>ניהול קמפיינים</h3>
+          <p>יצירת קמפיינים, מעקב התקדמות וניתוח ביצועים</p>
+        </div>
+        <div class="feature-card" style="--delay: 1.6s">
+          <div class="feature-icon">🔄</div>
+          <h3>הוראות קבע</h3>
+          <p>ניהול תרומות חוזרות ואוטומציה של גבייה</p>
+        </div>
+        <div class="feature-card" style="--delay: 1.8s">
+          <div class="feature-icon">🗺️</div>
+          <h3>מפת תורמים</h3>
+          <p>הצגה גיאוגרפית של תורמים עם ניתוח אזורי</p>
+        </div>
+        <div class="feature-card" style="--delay: 2s">
+          <div class="feature-icon">📊</div>
+          <h3>דוחות ואנליטיקה</h3>
+          <p>דוחות מפורטים, גרפים וניתוחים סטטיסטיים</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- קריאה לפעולה -->
+    <div class="cta-section" [class.animated]="showWelcomeAnimation">
+      <div class="cta-content">
+        <h2>מוכנים להתחיל?</h2>
+        <p>הצטרפו למערכת וקבלו גישה לכל התכונות המתקדמות</p>
+        <div class="cta-buttons">
+          <button class="btn btn-primary" routerLink="/sign-in">
+            <span class="btn-icon">🚀</span>
+            התחברות למערכת
+          </button>
+          <button *ngIf="false" class="btn btn-secondary" routerLink="/sign-up">
+            <span class="btn-icon">📝</span>
+            הרשמה חדשה
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- לוח מחוונים למשתמשים מחוברים -->
+  <div *ngIf="!loading && isLoggedIn" class="dashboard-section">
+    <!-- כותרת עם ברכה -->
+    <div class="dashboard-header">
+      <h1>שלום {{currentUser?.name}}, 👋</h1>
+      <p>הנה סיכום פעילות המערכת שלך</p>
+    </div>
+
+    <!-- כרטיסי סטטיסטיקה -->
+    <div class="stats-grid">
+      <div class="stat-card donations">
+        <div class="stat-icon">💰</div>
+        <div class="stat-content">
+          <h3>סה"כ תרומות</h3>
+          <div class="stat-number">{{formatCurrency(totalAmount)}}</div>
+          <div class="stat-subtitle">{{totalDonations}} תרומות</div>
+        </div>
+      </div>
+      
+      <div class="stat-card donors">
+        <div class="stat-icon">👥</div>
+        <div class="stat-content">
+          <h3>תורמים פעילים</h3>
+          <div class="stat-number">{{totalDonors}}</div>
+          <div class="stat-subtitle">רשומים במערכת</div>
+        </div>
+      </div>
+      
+      <div class="stat-card campaigns">
+        <div class="stat-icon">🎯</div>
+        <div class="stat-content">
+          <h3>קמפיינים פעילים</h3>
+          <div class="stat-number">{{activeCampaigns}}</div>
+          <div class="stat-subtitle">רצים כעת</div>
+        </div>
+      </div>
+      
+      <div class="stat-card recurring">
+        <div class="stat-icon">🔄</div>
+        <div class="stat-content">
+          <h3>הכנסה חוזרת</h3>
+          <div class="stat-number">{{formatCurrency(monthlyRecurring)}}</div>
+          <div class="stat-subtitle">חודשית</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- תרומות אחרונות -->
+    <div class="recent-section">
+      <h2>תרומות אחרונות</h2>
+      <div class="recent-donations">
+        <div *ngFor="let donation of recentDonations" class="donation-item">
+          <div class="donation-info">
+            <strong>{{donation.donor?.displayName}}</strong>
+            <small>{{formatDate(donation.donationDate)}}</small>
+          </div>
+          <div class="donation-amount">{{formatCurrency(donation.amount)}}</div>
+          <div class="donation-campaign" *ngIf="donation.campaign">
+            <span class="campaign-tag">{{donation.campaign.name}}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- קמפיינים מובילים -->
+    <div class="campaigns-section" *ngIf="topCampaigns.length > 0">
+      <h2>קמפיינים מובילים</h2>
+      <div class="campaigns-grid">
+        <div *ngFor="let campaign of topCampaigns" class="campaign-card">
+          <h3>{{campaign.name}}</h3>
+          <div class="campaign-progress">
+            <div class="progress-bar">
+              <div class="progress-fill" [style.width.%]="getProgressPercentage(campaign)"></div>
+            </div>
+            <div class="progress-info">
+              <span>{{formatCurrency(campaign.raisedAmount)}} מתוך {{formatCurrency(campaign.targetAmount)}}</span>
+              <span class="progress-percentage">{{getProgressPercentage(campaign)}}%</span>
+            </div>
+          </div>
+          <p *ngIf="campaign.description" class="campaign-description">{{campaign.description}}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- פעולות מהירות -->
+    <div class="quick-actions">
+      <h2>פעולות מהירות</h2>
+      <div class="actions-grid">
+        <button class="action-btn" routerLink="/רשימת תרומות">
+          <div class="action-icon">💰</div>
+          <span>תרומות</span>
+        </button>
+        <button class="action-btn" routerLink="/רשימת תורמים">
+          <div class="action-icon">👥</div>
+          <span>תורמים</span>
+        </button>
+        <button class="action-btn" routerLink="/קמפיינים">
+          <div class="action-icon">🎯</div>
+          <span>קמפיינים</span>
+        </button>
+        <button class="action-btn" routerLink="/הוראות קבע">
+          <div class="action-icon">🔄</div>
+          <span>הוראות קבע</span>
+        </button>
+        <button class="action-btn" routerLink="/מפת תורמים">
+          <div class="action-icon">🗺️</div>
+          <span>מפת תורמים</span>
+        </button>
+        <button class="action-btn" routerLink="/דוחות ואנליטיקה">
+          <div class="action-icon">📊</div>
+          <span>דוחות</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

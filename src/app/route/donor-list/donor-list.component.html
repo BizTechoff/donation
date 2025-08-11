@@ -1,0 +1,92 @@
+<div class="donor-list-container">
+  <div class="page-header">
+    <h1>רשימת תורמים</h1>
+    <button class="btn btn-primary add-donor-btn" (click)="createDonor()">הוסף תורם חדש</button>
+  </div>
+
+  <div class="filters-section">
+    <div class="filter-row">
+      <div class="filter-group">
+        <label>חיפוש כללי</label>
+        <input type="text" class="form-control" placeholder="שם, כתובת, טלפון...">
+      </div>
+      
+      <div class="filter-group">
+        <label>רמה</label>
+        <select class="form-control">
+          <option value="">הכל</option>
+          <option value="platinum">פלטינום</option>
+          <option value="gold">זהב</option>
+          <option value="silver">כסף</option>
+          <option value="regular">רגיל</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>איזור</label>
+        <select class="form-control">
+          <option value="">הכל</option>
+          <option value="center">מרכז</option>
+          <option value="north">צפון</option>
+          <option value="south">דרום</option>
+          <option value="jerusalem">ירושלים</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>שיוך קהילתי</label>
+        <select class="form-control">
+          <option value="">הכל</option>
+          <option value="ashkenazi">אשכנזי</option>
+          <option value="sephardi">ספרדי</option>
+          <option value="hasidi">חסידי</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="donors-grid">
+    <div class="grid-header">
+      <div class="grid-col">שם</div>
+      <div class="grid-col">כתובת</div>
+      <div class="grid-col">טלפון</div>
+      <div class="grid-col">אימייל</div>
+      <div class="grid-col">רמה</div>
+      <div class="grid-col">סה"כ תרומות</div>
+      <div class="grid-col">תרומה אחרונה</div>
+      <div class="grid-col">פעולות</div>
+    </div>
+
+    <div class="grid-row" *ngFor="let donor of donors">
+      <div class="grid-col">
+        <div class="donor-name">
+          <strong>{{donor.fullName}}</strong>
+          <small *ngIf="donor.idNumber">(ת.ז: {{donor.idNumber}})</small>
+        </div>
+      </div>
+      <div class="grid-col">{{donor.address}}</div>
+      <div class="grid-col">{{donor.phone}}</div>
+      <div class="grid-col">{{donor.email}}</div>
+      <div class="grid-col">
+        <span class="level-badge" [class]="donor.isActive ? 'level-active' : 'level-inactive'">
+          {{donor.isActive ? 'פעיל' : 'לא פעיל'}}
+        </span>
+      </div>
+      <div class="grid-col">-</div>
+      <div class="grid-col">{{donor.createdDate | date:'dd/MM/yyyy'}}</div>
+      <div class="grid-col actions">
+        <button class="btn-icon btn-view" (click)="viewDonor(donor)" title="הצג פרטים">👁</button>
+        <button class="btn-icon btn-edit" (click)="editDonor(donor)" title="עריכה">✏</button>
+        <button class="btn-icon btn-save" (click)="saveDonor(donor)" *ngIf="donor._.isNew()" title="שמור">💾</button>
+        <button class="btn-icon btn-delete" (click)="deleteDonor(donor)" title="מחק">🗑</button>
+        <button class="btn-icon btn-toggle" (click)="deactivateDonor(donor)" *ngIf="donor.isActive" title="השבת">⏸</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="pagination">
+    <button class="btn-page">הקודם</button>
+    <span class="page-info">עמוד 1 מתוך 10</span>
+    <button class="btn-page">הבא</button>
+  </div>
+</div>

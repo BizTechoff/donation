@@ -1,0 +1,77 @@
+<div class="donors-map-container">
+  <div class="page-header">
+    <h1>מפת תורמים</h1>
+    <div class="map-controls">
+      <button class="btn btn-primary" (click)="refreshMap()">רענן מפה</button>
+      <button class="btn btn-secondary" (click)="toggleSummary()">{{ showSummary ? 'הסתר סיכום' : 'הצג סיכום' }}</button>
+      <button class="btn btn-info" (click)="geocodeMissingAddresses()" [disabled]="loading">המר כתובות</button>
+    </div>
+  </div>
+
+  <!-- חלונית סיכום -->
+  <div class="summary-panel" [class.visible]="showSummary">
+    <h3>סיכום נתונים</h3>
+    <div class="summary-stats">
+      <div class="stat-card">
+        <div class="stat-icon">👥</div>
+        <div class="stat-content">
+          <h4>סה"כ תורמים</h4>
+          <span class="stat-number">{{ totalDonors }}</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🎯</div>
+        <div class="stat-content">
+          <h4>תורמים פעילים</h4>
+          <span class="stat-number">{{ activeDonors }}</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">💰</div>
+        <div class="stat-content">
+          <h4>ממוצע תרומה</h4>
+          <span class="stat-number">₪{{ averageDonation | number }}</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">📍</div>
+        <div class="stat-content">
+          <h4>תורמים במפה</h4>
+          <span class="stat-number">{{ donorsOnMap }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- מפת תורמים -->
+  <div class="map-container">
+    <div id="donors-map" class="leaflet-map" #mapElement></div>
+  </div>
+
+  <!-- מקרא צבעים -->
+  <div class="map-legend">
+    <h4>מקרא</h4>
+    <div class="legend-items">
+      <div class="legend-item">
+        <div class="legend-color active"></div>
+        <span>תורם פעיל</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color inactive"></div>
+        <span>תורם לא פעיל</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color high-donor"></div>
+        <span>תורם גדול</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color recent-donor"></div>
+        <span>תרם לאחרונה</span>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="loading-overlay">
+    <div class="loading-spinner">טוען מפה...</div>
+  </div>
+</div>

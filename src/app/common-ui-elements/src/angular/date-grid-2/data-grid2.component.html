@@ -1,0 +1,289 @@
+<div
+  style="height: 100%; display: flex; flex-direction: column"
+  class="grid-root"
+>
+  <Data-Filter [settings]="settings" #dataFilter style="flex-shrink: 0">
+  </Data-Filter>
+  @if(settings && settings.columns){
+  <div class="dataGrid" #dataGridDiv [style.height]="_getHeight()">
+    <div class="inner-wrapper">
+      <div class="dataGridHeaderArea">
+        <div class="dataGridRow">
+          <div class="data-grid-row-more-buttons dataGridDataCell">
+            @if(hasVisibleGridButtons()){
+            <button mat-icon-button [matMenuTriggerFor]="updatedRowOptions">
+              <mat-icon>more_vert</mat-icon>
+            </button>
+            }
+          </div>
+          @if(settings.settings.allowSelection){
+          <div class="data-grid-row-selection dataGridDataCell">
+            <mat-checkbox
+              [indeterminate]="settings.selectAllIntermitent()"
+              [checked]="settings.selectAllChecked()"
+              [matTooltip]="
+                !settings.selectAllChecked()
+                  ? settings.selectedRows.length.toString()
+                  : settings.totalRows
+                  ? settings.totalRows.toString()
+                  : rightToLeft
+                  ? 'רבים'
+                  : 'many'
+              "
+              (change)="settings.selectAllChanged($event)"
+            >
+            </mat-checkbox>
+          </div>
+          }
+          <mat-menu #updatedRowOptions="matMenu">
+            @for(b of gridButtons;track b){ @if(b.visible?.()){
+            <button mat-menu-item (click)="b.click!()">
+              @if (b.icon){
+              <mat-icon>{{ b.icon }}</mat-icon>
+              } {{ b.textInMenu ? b.textInMenu() : b.name }}</button
+            >} }
+          </mat-menu>
+          @for(map of
+          settings.columns.getGridColumns(this.plugin.dataControlAugmenter);track
+          map){
+          <div
+            class="dataGridHeaderCell headerWithFilter"
+            [style.flex]="getColFlex(map)"
+            [style.width]="getColWidth(map)"
+            draggable="true"
+            (dragstart)="dragStart(map)"
+            (dragover)="dragOver(map, $event)"
+            (drop)="onDrop(map)"
+          >
+            <span (click)="settings.sort(map.field)">{{ map.caption }}</span>
+
+            @if(map.field){
+            <span
+              class="filterButton"
+              [class.filteredFilterButton]="isFiltered(map.field)"
+              (click)="showFilterColumnDialog(map)"
+            >
+              <mat-icon>filter_alt</mat-icon>
+            </span>
+            } @if(settings.sortedAscending(map.field)){
+            <mat-icon>arrow_downward</mat-icon>
+            } @if(settings.sortedDescending(map.field)){
+            <mat-icon class="glyphicon glyphicon-chevron-down pull-right">
+              arrow_upward</mat-icon
+            >}
+          </div>
+          } @if (rowButtons && rowButtons.length > 0 && displayButtons){
+          <div
+            class="dataGridButtonHeaderCell"
+            [class.col-xs-1]="rowButtons && rowButtons.length < 3"
+          >
+            @if(showSaveAllButton()){
+            <button
+              mat-icon-button
+              (click)="saveAllClick()"
+              style="line-height: 36px; max-height: 28px"
+            >
+              <mat-icon
+                [matTooltip]="saveAllText()"
+                class="row-button"
+                style="font-size: 24px"
+                >done_all</mat-icon
+              >
+            </button>
+            }
+          </div>
+          }
+        </div>
+      </div>
+      <div class="dataGridBodyArea">
+        @for(record of settings.restList;track record){
+        <div
+          class="dataGridRow"
+          [className]="_getRowClass(record)"
+          (click)="rowClicked(record)"
+        >
+          <div class="data-grid-row-more-buttons dataGridDataCell">
+            @if(hasVisibleButton(record)){
+            <button mat-icon-button [matMenuTriggerFor]="updatedRowOptions">
+              <mat-icon>expand_more</mat-icon>
+            </button>
+            }
+          </div>
+          @if(settings.settings.allowSelection){
+          <div class="data-grid-row-selection dataGridDataCell">
+            <mat-checkbox
+              [checked]="settings.isSelected(record)"
+              (change)="settings.selectedChanged(record)"
+              (click)="clickOnselectCheckboxFor(record, $event)"
+            >
+            </mat-checkbox>
+          </div>
+          }
+          <mat-menu #updatedRowOptions="matMenu">
+            @for(b of rowButtons;track b){ @if(b.visible!(record)){
+            <button mat-menu-item (click)="b.click!(record)">
+              @if(b.icon){
+              <mat-icon>{{ b.icon }}</mat-icon
+              >}{{ getButtonText(b, record) }}
+            </button>
+            } }
+          </mat-menu>
+          @for(map of
+          settings.columns.getGridColumns(this.plugin.dataControlAugmenter);track
+          map){
+          <div
+            class="dataGridDataCell"
+            [className]="_getRowColumnClass(map, record)"
+            [style.flex]="getColFlex(map)"
+            [style.width]="getColWidth(map)"
+          >
+            <data-control3
+              [settings]="settings.columns"
+              [map]="map"
+              [record]="record"
+              [rightToLeft]="rightToLeft"
+            >
+            </data-control3>
+          </div>
+          } @if(rowButtons.length > 0 && displayButtons){
+          <div class="dataGridButtonCell" style="white-space: nowrap">
+            @for(b of rowButtons; track b){ @if(b.visible!(record) && b.icon &&
+            b.showInLine){
+            <button
+              mat-icon-button
+              (click)="b.click!(record)"
+              matTooltip="{{ getButtonText(b, record) }}"
+              class="row-button"
+            >
+              @if(b.icon){
+              <mat-icon>{{ b.icon }} </mat-icon>}
+              {{ b.name }}
+            </button>
+            <button
+              mat-raised-button
+              (click)="b.click!(record)"
+              class="row-button"
+            >
+              {{ b.name }}
+            </button>
+            } }
+          </div>
+          }
+        </div>
+        }
+      </div>
+    </div>
+  </div>
+  } @if(settings.restList && settings.settings.showPagination){
+  <div class="dataGridFooterArea">
+    <div class="dataGridFooterButtonGroup">
+      <div class="dataGridFooterButtonGroup">
+        <button mat-icon-button (click)="settings.userChooseColumns()">
+          <mat-icon>settings</mat-icon>
+        </button>
+
+        <span class="hide-on-narrow"
+          >{{ rightToLeft ? 'שורות בדף' : 'lines per page' }}
+          <select
+            class="form-control"
+            style="width: 80px; display: inline-block"
+            [(ngModel)]="settings.rowsPerPage"
+            (change)="settings.reloadData()"
+          >
+            @for( r of settings.rowsPerPageOptions;track r){
+            <option value="{{ r }}">
+              {{ r }}
+            </option>
+            }
+          </select>
+        </span>
+      </div>
+      <div class="dataGridFooterButtonGroup">
+        <button mat-icon-button (click)="settings.firstPage()">
+          <mat-icon>{{ rightToLeft ? 'last_page' : 'first_page' }} </mat-icon>
+        </button>
+        <button
+          mat-icon-button
+          [disabled]="settings.page == 1"
+          (click)="settings.previousPage()"
+        >
+          <mat-icon>{{
+            rightToLeft ? 'chevron_right' : 'chevron_left'
+          }}</mat-icon>
+        </button>
+        {{ getBottomLine() }}
+
+        <button
+          mat-icon-button
+          [disabled]="
+            !(settings.restList.items && settings.restList.items.length > 0)
+          "
+          (click)="settings.nextPage()"
+        >
+          <mat-icon>{{
+            !rightToLeft ? 'chevron_right' : 'chevron_left'
+          }}</mat-icon>
+        </button>
+        @if (settings.allowUpdate && settings.allowInsert){
+        <button mat-icon-button (click)="settings.addNewRow()">
+          <mat-icon>add</mat-icon>
+        </button>
+        } @if(showSaveAllButton()){
+        <button mat-icon-button (click)="saveAllClick()">
+          <mat-icon [matTooltip]="saveAllText()">done_all</mat-icon>
+        </button>
+        }
+      </div>
+    </div>
+    @if (settings.showSelectColumn){
+    <div class="selectColumnsArea">
+      Select Columns
+      <ol>
+        @for(c of settings.currList;track c; let i = $index){ @if(i <
+        settings.columns.numOfColumnsInGrid){
+        <li>
+          <select
+            [(ngModel)]="settings.currList[i]"
+            class="form-control selectColumnCombo"
+            style="max-width: 100px"
+            (change)="settings.columns.colListChanged()"
+          >
+            @for(o of settings.origList;track o){
+            <option [ngValue]="o">
+              {{ o.caption }}
+            </option>
+            }
+          </select>
+          <input [(ngModel)]="c.width" style="width: 50px; display: inline" />
+          @if(settings.currList.length > 1){
+          <button mat-icon-button (click)="settings.deleteCol(c)">
+            <mat-icon>cancel</mat-icon>
+          </button>
+          }
+          <button mat-icon-button (click)="addCol(c)">
+            <mat-icon>add</mat-icon>
+          </button>
+          @if(i < settings.currList.length - 1){
+
+          <button mat-icon-button (click)="settings.columns.moveCol(c, 1)">
+            <mat-icon>keyboard_arrow_down</mat-icon>
+          </button>
+          } @if(i > 0){
+          <button mat-icon-button (click)="settings.columns.moveCol(c, -1)">
+            <mat-icon>keyboard_arrow_up</mat-icon>
+          </button>
+          }
+        </li>
+        } }
+      </ol>
+      <button
+        (click)="settings.resetColumns()"
+        class="btn glyphicon glyphicon-repeat"
+      ></button>
+    </div>
+    }
+  </div>
+  } @if(settings.showDataArea){
+  <data-area [settings]="getAreaSettings()" [columns]="2"></data-area>
+  }
+</div>

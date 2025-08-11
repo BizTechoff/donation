@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__ide__getDiagnostics",
+      "Bash(npm run build:*)",
+      "Bash(npm run seed:*)",
+      "Bash(npm start)",
+      "Bash(taskkill:*)",
+      "Bash(npm install:*)",
+      "Bash(ng generate component:*)",
+      "Bash(mkdir:*)",
+      "Bash(cp:*)",
+      "Bash(ng generate service:*)",
+      "Bash(rm:*)"
+    ],
+    "deny": []
+  }
+}

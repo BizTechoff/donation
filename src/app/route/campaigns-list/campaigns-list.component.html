@@ -1,0 +1,281 @@
+<div class="campaigns-container">
+  <div class="page-header">
+    <h1>ניהול קמפיינים</h1>
+    <button class="btn btn-primary add-campaign-btn" (click)="createCampaign()">קמפיין חדש</button>
+  </div>
+
+  <!-- כרטיסי סיכום -->
+  <div class="summary-cards">
+    <div class="summary-card active-campaigns">
+      <div class="card-icon">🎯</div>
+      <div class="card-content">
+        <h3>קמפיינים פעילים</h3>
+        <span class="count">{{activeCampaigns}}</span>
+      </div>
+    </div>
+    <div class="summary-card target-amount">
+      <div class="card-icon">💰</div>
+      <div class="card-content">
+        <h3>יעד כספי כולל</h3>
+        <span class="amount">{{formatCurrency(totalTargetAmount)}}</span>
+      </div>
+    </div>
+    <div class="summary-card raised-amount">
+      <div class="card-icon">📊</div>
+      <div class="card-content">
+        <h3>נאסף עד כה</h3>
+        <span class="amount">{{formatCurrency(totalRaisedAmount)}}</span>
+      </div>
+    </div>
+    <div class="summary-card success-rate">
+      <div class="card-icon">📈</div>
+      <div class="card-content">
+        <h3>אחוז הצלחה</h3>
+        <span class="percentage">{{totalTargetAmount > 0 ? ((totalRaisedAmount / totalTargetAmount) * 100).toFixed(1) : 0}}%</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- מפיינים -->
+  <div class="filters-section">
+    <div class="filter-row">
+      <div class="filter-group">
+        <label>שם קמפיין</label>
+        <input type="text" class="form-control" 
+               [(ngModel)]="filterName" 
+               (ngModelChange)="applyFilters()"
+               placeholder="חפש לפי שם...">
+      </div>
+      
+      <div class="filter-group">
+        <label>סטטוס</label>
+        <select class="form-control" 
+                [(ngModel)]="filterStatus" 
+                (ngModelChange)="applyFilters()">
+          <option value="">הכל</option>
+          <option value="draft">טיוטה</option>
+          <option value="active">פעיל</option>
+          <option value="completed">הושלם</option>
+          <option value="cancelled">בוטל</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>קטגוריה</label>
+        <input type="text" class="form-control" 
+               [(ngModel)]="filterCategory" 
+               (ngModelChange)="applyFilters()"
+               placeholder="קטגוריה...">
+      </div>
+
+      <div class="filter-group">
+        <label>פעיל/לא פעיל</label>
+        <select class="form-control" 
+                [(ngModel)]="filterActive" 
+                (ngModelChange)="applyFilters()">
+          <option value="">הכל</option>
+          <option value="true">פעיל</option>
+          <option value="false">לא פעיל</option>
+        </select>
+      </div>
+
+      <div class="filter-actions">
+        <button class="btn btn-secondary" (click)="clearFilters()">נקה מפיינים</button>
+        <button class="btn btn-info" (click)="loadData()" [disabled]="loading">רענן</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- טבלת קמפיינים -->
+  <div class="campaigns-table-container">
+    <div *ngIf="loading" class="loading-overlay">
+      <div class="loading-spinner">טוען קמפיינים...</div>
+    </div>
+    
+    <table class="campaigns-table">
+      <thead>
+        <tr>
+          <th>שם הקמפיין</th>
+          <th>קטגוריה</th>
+          <th>יעד כספי</th>
+          <th>נאסף</th>
+          <th>אחוז התקדמות</th>
+          <th>תאריך התחלה</th>
+          <th>תאריך סיום</th>
+          <th>סטטוס</th>
+          <th>אחראי</th>
+          <th>פעולות</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let campaign of campaigns" [class.inactive]="!campaign.isActive">
+          <td class="campaign-name-col">
+            <div class="campaign-info">
+              <strong>{{campaign.name}}</strong>
+              <small *ngIf="campaign.description">{{campaign.description}}</small>
+            </div>
+          </td>
+          <td>{{campaign.category || 'לא צוין'}}</td>
+          <td class="amount-col">
+            <span class="amount">{{formatCurrency(campaign.targetAmount)}}</span>
+          </td>
+          <td class="amount-col">
+            <span class="amount raised">{{formatCurrency(campaign.raisedAmount)}}</span>
+          </td>
+          <td class="progress-col">
+            <div class="progress-container">
+              <div class="progress-bar">
+                <div class="progress-fill" [style.width.%]="campaign.progressPercentage"></div>
+              </div>
+              <span class="progress-text">{{campaign.progressPercentage}}%</span>
+            </div>
+          </td>
+          <td>{{formatDate(campaign.startDate)}}</td>
+          <td>{{formatDate(campaign.endDate)}}</td>
+          <td>
+            <span class="status-badge" [class]="getStatusBadgeClass(campaign.status)">
+              {{getStatusText(campaign.status)}}
+            </span>
+          </td>
+          <td>{{campaign.manager?.name || 'לא צוין'}}</td>
+          <td class="actions">
+            <button class="btn-icon btn-view" title="הצג פרטים" (click)="editCampaign(campaign)">👁</button>
+            <button class="btn-icon btn-edit" title="ערוך" (click)="editCampaign(campaign)">✏</button>
+            <button class="btn-icon btn-activate" title="הפעל" (click)="activateCampaign(campaign)" 
+                    *ngIf="campaign.status === 'draft'">▶</button>
+            <button class="btn-icon btn-complete" title="סמן כהושלם" (click)="completeCampaign(campaign)" 
+                    *ngIf="campaign.status === 'active'">✅</button>
+            <button class="btn-icon btn-cancel" title="בטל" (click)="cancelCampaign(campaign)" 
+                    *ngIf="campaign.status === 'active' || campaign.status === 'draft'">❌</button>
+            <button class="btn-icon btn-delete" title="מחק" (click)="deleteCampaign(campaign)">🗑</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- אין קמפיינים -->
+  <div *ngIf="!loading && campaigns.length === 0" class="no-campaigns">
+    <div class="no-campaigns-icon">🎯</div>
+    <h3>אין קמפיינים</h3>
+    <p>לא נמצאו קמפיינים העונים על הקריטריונים</p>
+    <button class="btn btn-primary" (click)="createCampaign()">צור קמפיין ראשון</button>
+  </div>
+</div>
+
+<!-- מודל הוספת/עריכת קמפיין -->
+<div class="modal-overlay" *ngIf="showAddCampaignModal">
+  <div class="modal-content campaign-modal">
+    <div class="modal-header">
+      <h2>{{editingCampaign?._?.isNew() ? 'קמפיין חדש' : 'עריכת קמפיין'}}</h2>
+      <button class="modal-close" (click)="closeModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>שם הקמפיין *</label>
+          <input type="text" class="form-control" 
+                 [(ngModel)]="editingCampaign!.name" 
+                 placeholder="הכנס שם קמפיין">
+        </div>
+        
+        <div class="form-group">
+          <label>קטגוריה</label>
+          <input type="text" class="form-control" 
+                 [(ngModel)]="editingCampaign!.category" 
+                 placeholder="קטגוריית הקמפיין">
+        </div>
+        
+        <div class="form-group">
+          <label>יעד כספי *</label>
+          <input type="number" class="form-control" 
+                 [(ngModel)]="editingCampaign!.targetAmount" 
+                 placeholder="0">
+        </div>
+        
+        <div class="form-group">
+          <label>מטבע</label>
+          <select class="form-control" [(ngModel)]="editingCampaign!.currency">
+            <option value="ILS">שקל (₪)</option>
+            <option value="USD">דולר ($)</option>
+            <option value="EUR">יורו (€)</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label>תאריך התחלה *</label>
+          <input type="date" class="form-control" 
+                 [(ngModel)]="editingCampaign!.startDate">
+        </div>
+        
+        <div class="form-group">
+          <label>תאריך סיום</label>
+          <input type="date" class="form-control" 
+                 [(ngModel)]="editingCampaign!.endDate">
+        </div>
+        
+        <div class="form-group">
+          <label>סטטוס</label>
+          <select class="form-control" [(ngModel)]="editingCampaign!.status">
+            <option value="draft">טיוטה</option>
+            <option value="active">פעיל</option>
+            <option value="completed">הושלם</option>
+            <option value="cancelled">בוטל</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label>אחראי קמפיין</label>
+          <select class="form-control" [(ngModel)]="editingCampaign!.managerId">
+            <option value="">בחר אחראי...</option>
+            <option *ngFor="let user of users" [value]="user.id">{{user.name}}</option>
+          </select>
+        </div>
+        
+        <div class="form-group checkbox-group">
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="editingCampaign!.isActive"> קמפיין פעיל
+          </label>
+        </div>
+        
+        <div class="form-group checkbox-group">
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="editingCampaign!.isPublic"> מוצג באתר
+          </label>
+        </div>
+        
+        <div class="form-group">
+          <label>קישור לתמונה</label>
+          <input type="url" class="form-control" 
+                 [(ngModel)]="editingCampaign!.imageUrl" 
+                 placeholder="https://example.com/image.jpg">
+        </div>
+        
+        <div class="form-group">
+          <label>קישור לעמוד</label>
+          <input type="url" class="form-control" 
+                 [(ngModel)]="editingCampaign!.websiteUrl" 
+                 placeholder="https://example.com">
+        </div>
+        
+        <div class="form-group full-width">
+          <label>תיאור הקמפיין</label>
+          <textarea class="form-control" rows="3" 
+                    [(ngModel)]="editingCampaign!.description" 
+                    placeholder="תאר את מטרות הקמפיין..."></textarea>
+        </div>
+        
+        <div class="form-group full-width">
+          <label>הערות פנימיות</label>
+          <textarea class="form-control" rows="2" 
+                    [(ngModel)]="editingCampaign!.internalNotes" 
+                    placeholder="הערות לצוות..."></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeModal()">ביטול</button>
+      <button class="btn btn-primary" (click)="saveCampaign()">שמור קמפיין</button>
+    </div>
+  </div>
+</div>

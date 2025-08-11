@@ -1,0 +1,55 @@
+<div style="height: 100%; display: flex; flex-direction: column">
+  <mat-toolbar color="primary" style="flex-shrink: 0">
+    <button mat-button class="sidenav-toggle" (click)="sidenav.toggle()">
+      <mat-icon>menu</mat-icon>
+    </button>
+    <span class="toolbar-title">{{ currentTitle() }}</span>
+
+    <div class="toolbar-actions">
+      <!-- Language Switcher -->
+      <app-language-switcher></app-language-switcher>
+
+      <ng-container *ngIf="!remult.authenticated()">
+        <button mat-stroked-button class="toolbar-button" (click)="signIn()">
+          {{ i18n.currentTerms.signIn }}
+        </button>
+      </ng-container>
+      <ng-container *ngIf="remult.authenticated()">
+        <button mat-stroked-button class="toolbar-button" [matMenuTriggerFor]="menu">
+          {{ remult.user!.name }}
+        </button>
+        <mat-menu #menu="matMenu">
+          <button mat-menu-item (click)="updateInfo()">
+            {{ i18n.currentTerms.updateInfo }}
+          </button>
+          <button mat-menu-item (click)="changePassword()">
+            {{ i18n.currentTerms.changePassword }}
+          </button>
+          <button mat-menu-item (click)="signOut()">{{ i18n.currentTerms.signOut }}</button>
+        </mat-menu>
+      </ng-container>
+    </div>
+  </mat-toolbar>
+  <mat-sidenav-container class="app-sidenav-container">
+    <mat-sidenav #sidenav class="app-sidenav mat-elevation-z10 no-print" [opened]="!uiService.isScreenSmall()"
+      [mode]="uiService.isScreenSmall() ? 'over' : 'side'">
+      <div style="width: 100%; text-align: center"></div>
+      <h3 *ngIf="remult.authenticated()">
+        {{ i18n.currentTerms.hello }} {{ remult.user!.name }}
+      </h3>
+      <mat-nav-list role="list">
+        <ng-container *ngFor="let m of router.config">
+          <a mat-list-item *ngIf="shouldDisplayRoute(m)" routerLinkActive="active-route" [routerLink]="m.path"
+            (click)="routeClicked()">
+            {{ routeName(m) }}
+          </a>
+        </ng-container>
+      </mat-nav-list>
+    </mat-sidenav>
+    <div class="app-sidenav-content">
+      <div class="wrapper" style="height: 100%">
+        <router-outlet></router-outlet>
+      </div>
+    </div>
+  </mat-sidenav-container>
+</div>

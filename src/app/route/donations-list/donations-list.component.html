@@ -1,0 +1,251 @@
+<div class="donations-container">
+  <div class="page-header">
+    <h1>רישום תרומות</h1>
+    <button class="btn btn-primary add-donation-btn" (click)="createDonation()">רישום תרומה חדשה</button>
+  </div>
+
+  <div class="filters-section">
+    <div class="filter-row">
+      <div class="filter-group">
+        <label>חיפוש תורם</label>
+        <input type="text" class="form-control" placeholder="שם תורם...">
+      </div>
+      
+      <div class="filter-group">
+        <label>תאריך מ-</label>
+        <input type="date" class="form-control">
+      </div>
+
+      <div class="filter-group">
+        <label>תאריך עד</label>
+        <input type="date" class="form-control">
+      </div>
+
+      <div class="filter-group">
+        <label>אופן תרומה</label>
+        <select class="form-control">
+          <option value="">הכל</option>
+          <option value="cash">מזומן</option>
+          <option value="check">צ'ק</option>
+          <option value="credit">כרטיס אשראי</option>
+          <option value="transfer">העברה בנקאית</option>
+          <option value="standing">הוראת קבע</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>סכום מ-</label>
+        <input type="number" class="form-control" placeholder="0">
+      </div>
+
+      <div class="filter-group">
+        <label>מוצר</label>
+        <select class="form-control">
+          <option value="">הכל</option>
+          <option value="general">כללי</option>
+          <option value="torah">לימוד תורה</option>
+          <option value="charity">צדקה</option>
+          <option value="building">בניין</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="summary-cards">
+    <div class="summary-card total">
+      <div class="card-icon">💰</div>
+      <div class="card-content">
+        <h3>סה"כ תרומות</h3>
+        <span class="amount">₪{{ totalAmount | number }}</span>
+      </div>
+    </div>
+    <div class="summary-card monthly">
+      <div class="card-icon">📅</div>
+      <div class="card-content">
+        <h3>ממתין לאישור</h3>
+        <span class="amount">₪{{ pendingAmount | number }}</span>
+      </div>
+    </div>
+    <div class="summary-card donors">
+      <div class="card-icon">👥</div>
+      <div class="card-content">
+        <h3>מס' תרומות</h3>
+        <span class="count">{{ donations.length }}</span>
+      </div>
+    </div>
+    <div class="summary-card avg">
+      <div class="card-icon">📊</div>
+      <div class="card-content">
+        <h3>תרומות שהושלמו</h3>
+        <span class="count">{{ completedDonationsCount }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="donations-grid">
+    <div class="grid-header">
+      <div class="grid-col">תאריך</div>
+      <div class="grid-col">תורם</div>
+      <div class="grid-col">סכום</div>
+      <div class="grid-col">מטבע</div>
+      <div class="grid-col">אופן תרומה</div>
+      <div class="grid-col">מוצר</div>
+      <div class="grid-col">מתרים</div>
+      <div class="grid-col">מכתב תודה</div>
+      <div class="grid-col">הוכחה</div>
+      <div class="grid-col">פעולות</div>
+    </div>
+
+    <div class="grid-row" *ngFor="let donation of donations">
+      <div class="grid-col date-col">
+        <div class="date-display">
+          <span class="hebrew-date">{{ donation.donationDate | date:'dd/MM/yyyy' }}</span>
+          <span class="secular-date">{{ donation.donationDate | date:'dd/MM/yyyy' }}</span>
+        </div>
+      </div>
+      <div class="grid-col donor-col">
+        <strong>{{ getDonorName(donation) }}</strong>
+      </div>
+      <div class="grid-col amount-col">
+        <span class="amount">₪{{donation.amount | number}}</span>
+      </div>
+      <div class="grid-col">{{donation.currency}}</div>
+      <div class="grid-col">
+        <span class="method-badge method-{{donation.donationMethod?.type}}">{{ getMethodName(donation) }}</span>
+      </div>
+      <div class="grid-col">{{ getCampaignName(donation) }}</div>
+      <div class="grid-col">{{ donation.createdBy?.name || 'לא ידוע' }}</div>
+      <div class="grid-col">
+        <span class="status-badge" [class]="'status-' + donation.status">
+          {{ getStatusText(donation.status) }}
+        </span>
+      </div>
+      <div class="grid-col">
+        <span class="proof-indicator" [class]="donation.receiptIssued ? 'has-proof' : 'no-proof'">
+          {{donation.receiptIssued ? '✓' : '✗'}}
+        </span>
+      </div>
+      <div class="grid-col actions">
+        <button class="btn-icon btn-view" (click)="editDonation(donation)" title="הצג פרטים">👁</button>
+        <button class="btn-icon btn-edit" (click)="editDonation(donation)" title="עריכה">✏</button>
+        <button class="btn-icon btn-receipt" (click)="issueReceipt(donation)" [disabled]="donation.receiptIssued" title="הדפס קבלה">🧾</button>
+        <button class="btn-icon btn-delete" (click)="deleteDonation(donation)" title="מחק">🗑</button>
+        <button class="btn-icon btn-cancel" (click)="cancelDonation(donation)" [disabled]="donation.status === 'cancelled'" title="ביטול">❌</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="pagination">
+    <button class="btn-page">הקודם</button>
+    <span class="page-info">עמוד 1 מתוך 15</span>
+    <button class="btn-page">הבא</button>
+  </div>
+</div>
+
+<!-- מודל רישום תרומה חדשה -->
+<div class="modal-overlay" *ngIf="showAddDonationModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>רישום תרומה חדשה</h2>
+      <button class="modal-close" (click)="closeModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group" *ngIf="editingDonation">
+          <label>תורם</label>
+          <select class="form-control" [(ngModel)]="editingDonation!.donorId">
+            <option value="">בחר תורם...</option>
+            <option *ngFor="let donor of donors" [value]="donor.id">{{ donor.displayName }}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>תאריך לועזי</label>
+          <input type="date" class="form-control" [(ngModel)]="donationDateForInput">
+        </div>
+        <div class="form-group">
+          <label>תאריך עברי</label>
+          <input type="text" class="form-control" placeholder="אוטומטי" [(ngModel)]="hebrewDate">
+        </div>
+        <div class="form-group" *ngIf="editingDonation">
+          <label>סכום</label>
+          <input type="number" class="form-control" placeholder="0" [(ngModel)]="editingDonation!.amount">
+        </div>
+        <div class="form-group" *ngIf="editingDonation">
+          <label>מטבע</label>
+          <select class="form-control" [(ngModel)]="editingDonation!.currency">
+            <option value="ILS">שקל</option>
+            <option value="USD">דולר</option>
+            <option value="EUR">יורו</option>
+          </select>
+        </div>
+        <div class="form-group" *ngIf="editingDonation">
+          <label>אופן תרומה</label>
+          <select class="form-control" [(ngModel)]="editingDonation!.donationMethodId">
+            <option value="">בחר אופן תרומה...</option>
+            <option *ngFor="let method of donationMethods" [value]="method.id">{{ method.name }}</option>
+          </select>
+        </div>
+        <div class="form-group" *ngIf="editingDonation">
+          <label>מוצר</label>
+          <select class="form-control" [(ngModel)]="editingDonation!.campaignId">
+            <option value="">בחר מוצר...</option>
+            <option *ngFor="let campaign of campaigns" [value]="campaign.id">{{ campaign.name }}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>מתרים</label>
+          <input type="text" class="form-control" placeholder="שם המתרים" [(ngModel)]="fundraiserName">
+        </div>
+        <div class="form-group full-width" *ngIf="editingDonation">
+          <label>סיבה / הערות</label>
+          <textarea class="form-control" rows="3" placeholder="הכנס הערות..." [(ngModel)]="editingDonation!.notes"></textarea>
+        </div>
+      </div>
+
+      <!-- תצוגה מקדימה -->
+      <div class="preview-section" *ngIf="showPreview">
+        <h3>תצוגה מקדימה</h3>
+        <div class="preview-card">
+          <div class="preview-row">
+            <strong>תורם:</strong>
+            <span>{{ getSelectedDonorName() || 'לא נבחר' }}</span>
+          </div>
+          <div class="preview-row">
+            <strong>תאריך לועזי:</strong>
+            <span>{{ editingDonation?.donationDate ? (editingDonation!.donationDate | date:'dd/MM/yyyy') : 'לא נבחר' }}</span>
+          </div>
+          <div class="preview-row">
+            <strong>תאריך עברי:</strong>
+            <span>{{ hebrewDate || 'אוטומטי' }}</span>
+          </div>
+          <div class="preview-row">
+            <strong>סכום:</strong>
+            <span>{{ getCurrencySymbol() }}{{ editingDonation?.amount || '0' | number }}</span>
+          </div>
+          <div class="preview-row">
+            <strong>אופן תרומה:</strong>
+            <span>{{ getSelectedMethodName() }}</span>
+          </div>
+          <div class="preview-row">
+            <strong>מוצר:</strong>
+            <span>{{ getSelectedCampaignName() }}</span>
+          </div>
+          <div class="preview-row">
+            <strong>מתרים:</strong>
+            <span>{{ fundraiserName || 'לא צוין' }}</span>
+          </div>
+          <div class="preview-row" *ngIf="editingDonation?.notes">
+            <strong>הערות:</strong>
+            <span>{{ editingDonation!.notes }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeModal()">ביטול</button>
+      <button class="btn btn-info" (click)="togglePreview()">{{ showPreview ? 'הסתר תצוגה מקדימה' : 'תצוגה מקדימה' }}</button>
+      <button class="btn btn-success" (click)="saveDonationAndExit()">שמור ויצא</button>
+      <button class="btn btn-primary" (click)="saveDonation()">שמור תרומה</button>
+    </div>
+  </div>
+</div>

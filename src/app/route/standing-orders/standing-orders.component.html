@@ -1,0 +1,214 @@
+<div class="standing-orders-container">
+  <div class="page-header">
+    <h1>הוראות קבע</h1>
+    <button class="btn btn-primary add-order-btn" (click)="createOrder()">הוספת הוראת קבע</button>
+  </div>
+
+  <div class="filters-section">
+    <div class="filter-row">
+      <div class="filter-group">
+        <label>חיפוש תורם</label>
+        <input type="text" class="form-control" placeholder="שם תורם...">
+      </div>
+      
+      <div class="filter-group">
+        <label>סטטוס</label>
+        <select class="form-control">
+          <option value="">הכל</option>
+          <option value="active">פעיל</option>
+          <option value="paused">מושהה</option>
+          <option value="cancelled">מבוטל</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>תדירות</label>
+        <select class="form-control">
+          <option value="">הכל</option>
+          <option value="monthly">חודשי</option>
+          <option value="quarterly">רבעוני</option>
+          <option value="yearly">שנתי</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>בנק</label>
+        <select class="form-control">
+          <option value="">הכל</option>
+          <option value="hapoalim">בנק הפועלים</option>
+          <option value="leumi">בנק לאומי</option>
+          <option value="discount">בנק דיסקונט</option>
+          <option value="mizrahi">מזרחי טפחות</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="summary-cards">
+    <div class="summary-card active-orders">
+      <div class="card-icon">✅</div>
+      <div class="card-content">
+        <h3>הוראות פעילות</h3>
+        <span class="count">{{activeOrdersCount}}</span>
+      </div>
+    </div>
+    <div class="summary-card monthly-total">
+      <div class="card-icon">💰</div>
+      <div class="card-content">
+        <h3>צפוי חודשי</h3>
+        <span class="amount">₪{{totalMonthlyAmount | number}}</span>
+      </div>
+    </div>
+    <div class="summary-card yearly-total">
+      <div class="card-icon">📊</div>
+      <div class="card-content">
+        <h3>צפוי שנתי</h3>
+        <span class="amount">₪{{totalMonthlyAmount * 12 | number}}</span>
+      </div>
+    </div>
+    <div class="summary-card next-collection">
+      <div class="card-icon">⏰</div>
+      <div class="card-content">
+        <h3>גביה הבאה</h3>
+        <span class="date">{{nextCollectionDate | date:'dd/MM/yyyy'}}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="orders-table-container">
+    <table class="orders-table">
+      <thead>
+        <tr>
+          <th>תורם</th>
+          <th>סכום</th>
+          <th>תדירות</th>
+          <th>תאריך הבא</th>
+          <th>שיטת תשלום</th>
+          <th>סטטוס</th>
+          <th>תאריך התחלה</th>
+          <th>גביה אחרונה</th>
+          <th>פעולות</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let order of standingOrders">
+          <td class="donor-col">
+            <div class="donor-info">
+              <strong>{{getDonorName(order)}}</strong>
+              <small>{{order.donor?.phone}}</small>
+            </div>
+          </td>
+          <td class="amount-col">
+            <span class="amount">₪{{order.amount | number}}</span>
+          </td>
+          <td>
+            <span class="frequency-badge frequency-{{order.frequency}}">{{order.frequencyText}}</span>
+          </td>
+          <td class="next-date-col">
+            <span class="next-date" [class.overdue]="order.isOverdue">{{order.nextExecutionDate | date:'dd/MM/yyyy'}}</span>
+          </td>
+          <td>{{getMethodName(order)}}</td>
+          <td>
+            <span class="status-badge" [class]="getStatusBadgeClass(order.status)">{{order.statusText}}</span>
+          </td>
+          <td>{{order.startDate | date:'dd/MM/yyyy'}}</td>
+          <td>
+            <span>
+              {{order.lastExecutionDate | date:'dd/MM/yyyy'}}
+            </span>
+          </td>
+          <td class="actions">
+            <button class="btn-icon btn-view" title="הצג פרטים" (click)="editOrder(order)">👁</button>
+            <button class="btn-icon btn-edit" title="עריכה" (click)="editOrder(order)">✏</button>
+            <button class="btn-icon btn-collect" title="בצע עכשיו" (click)="executeOrder(order)" *ngIf="order.status === 'active'">💳</button>
+            <button class="btn-icon btn-pause" title="השהה" (click)="pauseOrder(order)" *ngIf="order.status === 'active'">⏸</button>
+            <button class="btn-icon btn-activate" title="הפעל" (click)="activateOrder(order)" *ngIf="order.status === 'paused'">▶</button>
+            <button class="btn-icon btn-cancel" title="בטל" (click)="cancelOrder(order)">❌</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Collection schedule temporarily disabled
+  <div class="collection-schedule">
+    <h2>לוח גביות הבא</h2>
+    <div class="schedule-grid">
+      <p>לוח גביות יתווסף בגרסה עתידית</p>
+    </div>
+  </div>
+  -->
+
+  <div class="pagination">
+    <button class="btn-page">הקודם</button>
+    <span class="page-info">עמוד 1 מתוך 8</span>
+    <button class="btn-page">הבא</button>
+  </div>
+</div>
+
+<!-- מודל הוספת הוראת קבע -->
+<div class="modal-overlay" *ngIf="showAddOrderModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>הוספת הוראת קבע</h2>
+      <button class="modal-close" (click)="closeModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>תורם</label>
+          <select class="form-control" [(ngModel)]="editingOrder!.donorId">
+            <option value="">בחר תורם...</option>
+            <option *ngFor="let donor of donors" [value]="donor.id">{{donor.displayName}}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>סכום</label>
+          <input type="number" class="form-control" placeholder="0" [(ngModel)]="editingOrder!.amount">
+        </div>
+        <div class="form-group">
+          <label>תדירות</label>
+          <select class="form-control" [(ngModel)]="editingOrder!.frequency">
+            <option value="monthly">חודשי</option>
+            <option value="quarterly">רבעוני</option>
+            <option value="yearly">שנתי</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>תאריך התחלה</label>
+          <input type="date" class="form-control" [(ngModel)]="editingOrder!.startDate">
+        </div>
+        <div class="form-group">
+          <label>יום גביה</label>
+          <select class="form-control" [(ngModel)]="editingOrder!.dayOfMonth">
+            <option value="1">1 בחודש</option>
+            <option value="15">15 בחודש</option>
+            <option value="30">אחרון בחודש</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>שיטת תשלום</label>
+          <select class="form-control" [(ngModel)]="editingOrder!.donationMethodId">
+            <option value="">בחר שיטת תשלום...</option>
+            <option *ngFor="let method of donationMethods" [value]="method.id">{{method.name}}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>קמפיין</label>
+          <select class="form-control" [(ngModel)]="editingOrder!.campaignId">
+            <option value="">בחר קמפיין...</option>
+            <option *ngFor="let campaign of campaigns" [value]="campaign.id">{{campaign.name}}</option>
+          </select>
+        </div>
+        <div class="form-group full-width">
+          <label>הערות</label>
+          <textarea class="form-control" rows="3" placeholder="הכנס הערות..." [(ngModel)]="editingOrder!.notes"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeModal()">ביטול</button>
+      <button class="btn btn-primary" (click)="saveOrder()">שמור הוראת קבע</button>
+    </div>
+  </div>
+</div>

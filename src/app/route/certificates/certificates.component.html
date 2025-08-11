@@ -1,0 +1,347 @@
+<div class="certificates-container">
+  <div class="page-header">
+    <h1>תעודות ונציבי יום</h1>
+    <button class="btn btn-primary create-certificate-btn" (click)="openCreateModal()">יצירת תעודה חדשה</button>
+  </div>
+
+  <div class="filters-section">
+    <div class="filter-row">
+      <div class="filter-group">
+        <label>סוג תעודה</label>
+        <select class="form-control">
+          <option value="">הכל</option>
+          <option value="donation">תעודת תרומה</option>
+          <option value="memorial">נציב זיכרון</option>
+          <option value="dedication">הקדשה</option>
+          <option value="appreciation">הוקרה</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label>תאריך מ-</label>
+        <input type="date" class="form-control">
+      </div>
+
+      <div class="filter-group">
+        <label>תאריך עד</label>
+        <input type="date" class="form-control">
+      </div>
+
+      <div class="filter-group">
+        <label>חיפוש תורם</label>
+        <input type="text" class="form-control" placeholder="שם תורם...">
+      </div>
+
+      <div class="filter-group">
+        <label>סטטוס</label>
+        <select class="form-control">
+          <option value="">הכל</option>
+          <option value="draft">טיוטה</option>
+          <option value="ready">מוכן להדפסה</option>
+          <option value="printed">הודפס</option>
+          <option value="delivered">נמסר</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="certificate-types">
+    <div class="type-card donation-cert">
+      <div class="card-icon">📜</div>
+      <h3>תעודות תרומה</h3>
+      <p>תעודות מעוצבות לתרומות כללות</p>
+      <div class="stats">
+        <span class="count">45</span>
+        <span class="label">תעודות השנה</span>
+      </div>
+    </div>
+    
+    <div class="type-card memorial-cert">
+      <div class="card-icon">🕯️</div>
+      <h3>נציבי זיכרון</h3>
+      <p>נציבים לזכר נפטרים ויארצייתות</p>
+      <div class="stats">
+        <span class="count">28</span>
+        <span class="label">נציבים פעילים</span>
+      </div>
+    </div>
+    
+    <div class="type-card dedication-cert">
+      <div class="card-icon">🏛️</div>
+      <h3>הקדשות</h3>
+      <p>הקדשות לבניינים וציוד</p>
+      <div class="stats">
+        <span class="count">12</span>
+        <span class="label">הקדשות השנה</span>
+      </div>
+    </div>
+    
+    <div class="type-card appreciation-cert">
+      <div class="card-icon">🏆</div>
+      <h3>תעודות הוקרה</h3>
+      <p>תעודות הוקרה למתנדבים ותורמים</p>
+      <div class="stats">
+        <span class="count">18</span>
+        <span class="label">תעודות השנה</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="certificates-grid">
+    <div class="grid-header">
+      <div class="grid-col">תאריך יצירה</div>
+      <div class="grid-col">סוג תעודה</div>
+      <div class="grid-col">תורם/נהנה</div>
+      <div class="grid-col">סכום/אירוע</div>
+      <div class="grid-col">תאריך אירוע</div>
+      <div class="grid-col">טקסט מיוחד</div>
+      <div class="grid-col">סטטוס</div>
+      <div class="grid-col">פעולות</div>
+    </div>
+
+    <div class="grid-row" *ngFor="let certificate of certificates">
+      <div class="grid-col date-col">
+        <span class="creation-date">{{certificate.createdDate | date:'dd/MM/yyyy'}}</span>
+      </div>
+      <div class="grid-col type-col">
+        <span class="cert-type-badge type-{{certificate.type}}">{{certificate.typeText}}</span>
+      </div>
+      <div class="grid-col recipient-col">
+        <strong>{{certificate.recipientName}}</strong>
+        <small *ngIf="certificate.donor">תורם: {{getDonorName(certificate)}}</small>
+      </div>
+      <div class="grid-col amount-col">
+        <span class="amount" *ngIf="certificate.amount">₪{{certificate.amount | number}}</span>
+        <span class="event" *ngIf="certificate.eventName">{{certificate.eventName}}</span>
+      </div>
+      <div class="grid-col">
+        <span class="event-date">{{certificate.eventDate | date:'dd/MM/yyyy'}}</span>
+      </div>
+      <div class="grid-col text-col">
+        <span class="special-text">{{certificate.specialText | slice:0:30}}<span *ngIf="certificate && certificate.specialText&& certificate.specialText.length > 30">...</span></span>
+      </div>
+      <div class="grid-col status-col">
+        <span class="status-badge status-{{certificate.status}}">{{certificate.statusText}}</span>
+      </div>
+      <div class="grid-col actions">
+        <button class="btn-icon btn-view" title="תצוגה מקדימה">👁</button>
+        <button class="btn-icon btn-edit" title="עריכה">✏</button>
+        <button class="btn-icon btn-print" title="הדפסה" (click)="updateCertificateStatus(certificate, 'printed')">🖨</button>
+        <button class="btn-icon btn-download" title="הורדה">⬇</button>
+        <button class="btn-icon btn-delivered" title="סמן כנמסר" (click)="updateCertificateStatus(certificate, 'delivered')">✅</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="pagination">
+    <button class="btn-page">הקודם</button>
+    <span class="page-info">עמוד 1 מתוך 6</span>
+    <button class="btn-page">הבא</button>
+  </div>
+</div>
+
+<!-- מודל יצירת תעודה -->
+<div class="modal-overlay" *ngIf="showCreateCertificateModal">
+  <div class="modal-content large-modal">
+    <div class="modal-header">
+      <h2>יצירת תעודה חדשה</h2>
+      <button class="modal-close" (click)="closeCreateModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-sections">
+        <div class="section basic-info">
+          <h3>פרטים בסיסיים</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>סוג תעודה</label>
+              <select class="form-control certificate-type-select" [(ngModel)]="newCertificate.type" (change)="onCertificateTypeChange($event)">
+                <option value="donation">תעודת תרומה</option>
+                <option value="memorial">נציב זיכרון</option>
+                <option value="dedication">הקדשה</option>
+                <option value="appreciation">הוקרה</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>תורם</label>
+              <select class="form-control" [(ngModel)]="selectedDonorId" (change)="onDonorSelect($event)">
+                <option value="">בחר תורם...</option>
+                <option *ngFor="let donor of donors" [value]="donor.id">{{donor.fullName}}</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>שם המקבל/נהנה</label>
+              <input type="text" class="form-control" placeholder="שם המקבל" [(ngModel)]="newCertificate.recipientName">
+            </div>
+            <div class="form-group">
+              <label>תאריך האירוע</label>
+              <input type="date" class="form-control" [(ngModel)]="eventDateForInput">
+            </div>
+            <div class="form-group">
+              <label>סכום התרומה</label>
+              <input type="number" class="form-control" placeholder="0" [(ngModel)]="newCertificate.amount">
+            </div>
+            <div class="form-group">
+              <label>אירוע/סיבה</label>
+              <input type="text" class="form-control" placeholder="למה התרומה..." [(ngModel)]="newCertificate.eventName">
+            </div>
+          </div>
+        </div>
+
+        <div class="section text-content">
+          <h3>תוכן התעודה</h3>
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <label>כותרת ראשית</label>
+              <input type="text" class="form-control" placeholder="תעודת הוקרה" [(ngModel)]="newCertificate.mainTitle">
+            </div>
+            <div class="form-group full-width">
+              <label>טקסט מרכזי</label>
+              <textarea class="form-control" rows="4" placeholder="בזה אנו מעידים כי..." [(ngModel)]="newCertificate.mainText"></textarea>
+            </div>
+            <div class="form-group full-width">
+              <label>הקדשה מיוחדת</label>
+              <textarea class="form-control" rows="3" placeholder="לזכר, לכבוד, לרפואה..." [(ngModel)]="newCertificate.specialText"></textarea>
+            </div>
+            <div class="form-group">
+              <label>תאריך עברי</label>
+              <input type="text" class="form-control" placeholder="תאריך עברי" [(ngModel)]="newCertificate.hebrewDate">
+            </div>
+            <div class="form-group">
+              <label>חתימה</label>
+              <input type="text" class="form-control" placeholder="שם החותם" [(ngModel)]="newCertificate.signature">
+            </div>
+          </div>
+        </div>
+
+        <div class="section design-options">
+          <h3>עיצוב ופריסה</h3>
+          <div class="design-grid">
+            <div class="template-option" [class.selected]="newCertificate.template === 'classic'" (click)="newCertificate.template = 'classic'">
+              <div class="template-preview classic">
+                <div class="preview-content">
+                  <div class="preview-header">תעודת הוקרה</div>
+                  <div class="preview-body">טקסט התעודה...</div>
+                  <div class="preview-footer">חתימה</div>
+                </div>
+              </div>
+              <span class="template-name">קלאסי</span>
+            </div>
+            
+            <div class="template-option" [class.selected]="newCertificate.template === 'modern'" (click)="newCertificate.template = 'modern'">
+              <div class="template-preview modern">
+                <div class="preview-content">
+                  <div class="preview-header">תעודת הוקרה</div>
+                  <div class="preview-body">טקסט התעודה...</div>
+                  <div class="preview-footer">חתימה</div>
+                </div>
+              </div>
+              <span class="template-name">מודרני</span>
+            </div>
+            
+            <div class="template-option" [class.selected]="newCertificate.template === 'elegant'" (click)="newCertificate.template = 'elegant'">
+              <div class="template-preview elegant">
+                <div class="preview-content">
+                  <div class="preview-header">תעודת הוקרה</div>
+                  <div class="preview-body">טקסט התעודה...</div>
+                  <div class="preview-footer">חתימה</div>
+                </div>
+              </div>
+              <span class="template-name">אלגנטי</span>
+            </div>
+          </div>
+          
+          <div class="form-grid">
+            <div class="form-group">
+              <label>גודל נייר</label>
+              <select class="form-control" [(ngModel)]="newCertificate.paperSize">
+                <option value="a4">A4</option>
+                <option value="a3">A3</option>
+                <option value="letter">Letter</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>כיוון</label>
+              <select class="form-control" [(ngModel)]="newCertificate.orientation">
+                <option value="portrait">לאורך</option>
+                <option value="landscape">לרוחב</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeCreateModal()">ביטול</button>
+      <button class="btn btn-info" (click)="openPreview()">תצוגה מקדימה</button>
+      <button class="btn btn-primary" (click)="saveCertificate()">שמור תעודה</button>
+    </div>
+  </div>
+</div>
+
+<!-- מודל תצוגה מקדימה -->
+<div class="modal-overlay preview-overlay" *ngIf="showPreviewModal">
+  <div class="modal-content preview-modal">
+    <div class="modal-header">
+      <h2>תצוגה מקדימה</h2>
+      <button class="modal-close" (click)="closePreview()">&times;</button>
+    </div>
+    <div class="modal-body preview-body">
+      <div class="certificate-preview" [class]="'template-' + newCertificate.template">
+        <div class="certificate-paper" [class.landscape]="newCertificate.orientation === 'landscape'">
+          <div class="certificate-border">
+            <div class="certificate-header">
+              <div class="main-title">{{newCertificate.mainTitle || 'תעודת הוקרה'}}</div>
+            </div>
+            
+            <div class="certificate-body">
+              <div class="main-text">
+                {{newCertificate.mainText || 'בזה אנו מעידים כי קיבלנו בהכרת טוב תרומה נדיבה'}}
+              </div>
+              
+              <div class="recipient-section">
+                <div class="recipient-name" *ngIf="newCertificate.recipientName">
+                  {{newCertificate.recipientName}}
+                </div>
+                <div class="donor-info" *ngIf="newCertificate.donor">
+                  מאת: {{newCertificate.donor.fullName}}
+                </div>
+              </div>
+              
+              <div class="details-section">
+                <div class="amount" *ngIf="newCertificate.amount">
+                  בסך: ₪{{newCertificate.amount | number}}
+                </div>
+                <div class="event-name" *ngIf="newCertificate.eventName">
+                  לכבוד: {{newCertificate.eventName}}
+                </div>
+                <div class="event-date" *ngIf="newCertificate.eventDate">
+                  תאריך: {{newCertificate.eventDate | date:'dd/MM/yyyy'}}
+                </div>
+                <div class="hebrew-date" *ngIf="newCertificate.hebrewDate">
+                  {{newCertificate.hebrewDate}}
+                </div>
+              </div>
+              
+              <div class="special-text" *ngIf="newCertificate.specialText">
+                {{newCertificate.specialText}}
+              </div>
+            </div>
+            
+            <div class="certificate-footer">
+              <div class="signature" *ngIf="newCertificate.signature">
+                {{newCertificate.signature}}
+              </div>
+              <div class="creation-date">
+                {{ currentDate | date:'dd/MM/yyyy' }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closePreview()">סגור</button>
+      <button class="btn btn-primary" (click)="closePreview(); saveCertificate()">שמור ויצא</button>
+    </div>
+  </div>
+</div>

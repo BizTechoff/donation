@@ -1,0 +1,211 @@
+<div class="donor-details-container">
+  <div class="page-header">
+    <h1>פרטי תורם</h1>
+    <div class="header-actions">
+      <button class="btn btn-secondary">חזור לרשימה</button>
+      <button class="btn btn-primary">שמור שינויים</button>
+    </div>
+  </div>
+
+  <div class="details-grid">
+    <!-- פרטים אישיים -->
+    <div class="section personal-details">
+      <h2>פרטים אישיים</h2>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>שם משפחה</label>
+          <input type="text" class="form-control" value="כהן">
+        </div>
+        <div class="form-group">
+          <label>שם פרטי</label>
+          <input type="text" class="form-control" value="אברהם">
+        </div>
+        <div class="form-group">
+          <label>שם בעל/אשה</label>
+          <input type="text" class="form-control" value="שרה">
+        </div>
+        <div class="form-group">
+          <label>מצב משפחתי</label>
+          <select class="form-control">
+            <option>נשוי</option>
+            <option>רווק</option>
+            <option>אלמן</option>
+            <option>גרוש</option>
+          </select>
+        </div>
+        <div class="form-group full-width">
+          <label>כתובת</label>
+          <input type="text" class="form-control" value="רחוב הרב קוק 15, תל אביב">
+        </div>
+        <div class="form-group">
+          <label>טלפון בית</label>
+          <input type="tel" class="form-control" value="03-1234567">
+        </div>
+        <div class="form-group">
+          <label>טלפון נייד</label>
+          <input type="tel" class="form-control" value="050-1234567">
+        </div>
+        <div class="form-group">
+          <label>אימייל</label>
+          <input type="email" class="form-control" value="avraham.cohen@gmail.com">
+        </div>
+        <div class="form-group">
+          <label>שיוך קהילתי</label>
+          <select class="form-control">
+            <option>אשכנזי</option>
+            <option>ספרדי</option>
+            <option>חסידי</option>
+            <option>חרדי</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- תאריכים אישיים -->
+    <div class="section personal-dates">
+      <h2>תאריכים אישיים</h2>
+      <div class="dates-list">
+        <div class="date-item">
+          <label>יום הולדת</label>
+          <input type="date" class="form-control">
+          <input type="text" class="form-control hebrew-date" placeholder="תאריך עברי">
+        </div>
+        <div class="date-item">
+          <label>יום נישואין</label>
+          <input type="date" class="form-control">
+          <input type="text" class="form-control hebrew-date" placeholder="תאריך עברי">
+        </div>
+        <div class="date-item">
+          <label>יארצייט אב</label>
+          <input type="date" class="form-control">
+          <input type="text" class="form-control hebrew-date" placeholder="תאריך עברי">
+        </div>
+        <div class="date-item">
+          <label>יארצייט אם</label>
+          <input type="date" class="form-control">
+          <input type="text" class="form-control hebrew-date" placeholder="תאריך עברי">
+        </div>
+        <button class="btn btn-small add-date-btn">הוסף תאריך</button>
+      </div>
+    </div>
+
+    <!-- חברות ועמותות -->
+    <div class="section companies">
+      <h2>חברות ועמותות</h2>
+      <div class="companies-list">
+        <div class="company-item">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>שם החברה</label>
+              <input type="text" class="form-control" value="כהן ושותפים">
+            </div>
+            <div class="form-group">
+              <label>כתובת</label>
+              <input type="text" class="form-control" value="רחוב הרצל 25, תל אביב">
+            </div>
+            <div class="form-group">
+              <label>טלפון</label>
+              <input type="tel" class="form-control" value="03-9876543">
+            </div>
+            <div class="form-group">
+              <label>איש קשר</label>
+              <input type="text" class="form-control" value="רחל לוי">
+            </div>
+            <div class="form-group">
+              <label>אימייל</label>
+              <input type="email" class="form-control" value="info@cohen-partners.co.il">
+            </div>
+            <div class="form-group">
+              <label>הערות</label>
+              <textarea class="form-control" rows="2">לשליחת קבלות</textarea>
+            </div>
+          </div>
+          <button class="btn-remove">הסר</button>
+        </div>
+        <button class="btn btn-small add-company-btn">הוסף חברה</button>
+      </div>
+    </div>
+
+    <!-- קטגוריות ורמות -->
+    <div class="section categories">
+      <h2>קטגוריות ורמות</h2>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>רמה</label>
+          <select class="form-control level-select">
+            <option value="platinum">פלטינום</option>
+            <option value="gold" selected>זהב</option>
+            <option value="silver">כסף</option>
+            <option value="regular">רגיל</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>איזור</label>
+          <select class="form-control">
+            <option>מרכז</option>
+            <option>צפון</option>
+            <option>דרום</option>
+            <option>ירושלים</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>חוג</label>
+          <input type="text" class="form-control" value="עסקים">
+        </div>
+        <div class="form-group">
+          <label>גילאים</label>
+          <select class="form-control">
+            <option>18-30</option>
+            <option>31-45</option>
+            <option selected>46-60</option>
+            <option>60+</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- יצירת קשר -->
+    <div class="section contact-preferences">
+      <h2>העדפות יצירת קשר</h2>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>שעות קבלה</label>
+          <input type="text" class="form-control" value="09:00-17:00">
+        </div>
+        <div class="form-group">
+          <label>ימים מועדפים</label>
+          <div class="checkbox-group">
+            <label><input type="checkbox" checked> ראשון</label>
+            <label><input type="checkbox" checked> שני</label>
+            <label><input type="checkbox" checked> שלישי</label>
+            <label><input type="checkbox" checked> רביעי</label>
+            <label><input type="checkbox"> חמישי</label>
+            <label><input type="checkbox"> שישי</label>
+            <label><input type="checkbox"> שבת</label>
+          </div>
+        </div>
+        <div class="form-group full-width">
+          <label>דרכי יצירת קשר מועדפות</label>
+          <div class="checkbox-group">
+            <label><input type="checkbox" checked> טלפון</label>
+            <label><input type="checkbox" checked> אימייל</label>
+            <label><input type="checkbox"> SMS</label>
+            <label><input type="checkbox"> ביקור בבית</label>
+            <label><input type="checkbox"> פגישה במשרד</label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- הערות כלליות -->
+    <div class="section notes">
+      <h2>הערות כלליות</h2>
+      <textarea class="form-control notes-textarea" rows="4" placeholder="הכנס הערות...">תורם חשוב מאזור המרכז. יש לו עסק משגשג ויכול לתרום סכומים גדולים בזמני חירום.</textarea>
+    </div>
+  </div>
+
+  <div class="form-actions">
+    <button class="btn btn-secondary">ביטול</button>
+    <button class="btn btn-primary">שמור שינויים</button>
+  </div>
+</div>

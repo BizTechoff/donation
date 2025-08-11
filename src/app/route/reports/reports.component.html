@@ -1,0 +1,248 @@
+<div class="reports-container">
+  <!-- כותרת -->>
+  <div class="page-header">
+    <div class="header-content">
+      <h1>דוחות ואנליטיקה</h1>
+      <p>מידע מפורט על פעילות המערכת וביצועיהן</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-secondary" (click)="refreshData()" [disabled]="loading">
+        <span class="btn-icon">🔄</span>
+        רענן נתונים
+      </button>
+      <div class="export-buttons">
+        <button class="btn btn-outline" (click)="exportReport('excel')">
+          <span class="btn-icon">📊</span>
+          Excel
+        </button>
+        <button class="btn btn-outline" (click)="exportReport('pdf')">
+          <span class="btn-icon">📄</span>
+          PDF
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- מסנן תאריכים -->
+  <div class="date-filter">
+    <div class="filter-group">
+      <label>מתאריך:</label>
+      <input type="date" class="form-control" 
+             [(ngModel)]="dateRange.from" 
+             (change)="onDateRangeChange()">
+    </div>
+    <div class="filter-group">
+      <label>עד תאריך:</label>
+      <input type="date" class="form-control" 
+             [(ngModel)]="dateRange.to" 
+             (change)="onDateRangeChange()">
+    </div>
+  </div>
+
+  <!-- מסך טעינה -->
+  <div *ngIf="loading" class="loading-overlay">
+    <div class="loading-spinner">
+      <div class="spinner-icon">📊</div>
+      <h3>טוען נתוני דוחות...</h3>
+    </div>
+  </div>
+
+  <div *ngIf="!loading" class="reports-content">
+    
+    <!-- סטטיסטיקות כלליות -->
+    <div class="stats-section">
+      <h2>סטטיסטיקות כלליות</h2>
+      <div class="stats-grid">
+        <div class="stat-card total-donations">
+          <div class="stat-icon">💰</div>
+          <div class="stat-content">
+            <h3>סה"כ תרומות</h3>
+            <div class="stat-number">{{formatCurrency(totalStats.amount)}}</div>
+            <div class="stat-subtitle">{{totalStats.donations}} תרומות</div>
+          </div>
+        </div>
+        
+        <div class="stat-card active-donors">
+          <div class="stat-icon">👥</div>
+          <div class="stat-content">
+            <h3>תורמים פעילים</h3>
+            <div class="stat-number">{{totalStats.donors}}</div>
+            <div class="stat-subtitle">רשומים במערכת</div>
+          </div>
+        </div>
+        
+        <div class="stat-card avg-donation">
+          <div class="stat-icon">📈</div>
+          <div class="stat-content">
+            <h3>תרומה ממוצעת</h3>
+            <div class="stat-number">{{formatCurrency(totalStats.avgDonation)}}</div>
+            <div class="stat-subtitle">לתרומה</div>
+          </div>
+        </div>
+        
+        <div class="stat-card recurring-amount">
+          <div class="stat-icon">🔄</div>
+          <div class="stat-content">
+            <h3>הכנסה קבועה</h3>
+            <div class="stat-number">{{formatCurrency(totalStats.recurringAmount)}}</div>
+            <div class="stat-subtitle">חודשית</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- מגמות חודשיות -->
+    <div class="trends-section">
+      <h2>מגמות חודשיות</h2>
+      <div class="chart-container">
+        <div class="monthly-chart">
+          <div class="chart-bars">
+            <div *ngFor="let month of monthlyData" class="bar-group">
+              <div class="bar donations-bar" 
+                   [style.height.%]="(month.donations / getMaxDonations()) * 100"
+                   [title]="month.donations + ' תרומות'">
+              </div>
+              <div class="bar amount-bar" 
+                   [style.height.%]="(month.amount / getMaxAmount()) * 100"
+                   [title]="formatCurrency(month.amount)">
+              </div>
+              <div class="bar-label">{{month.month}}</div>
+            </div>
+          </div>
+          <div class="chart-legend">
+            <div class="legend-item">
+              <span class="legend-color donations"></span>
+              <span>כמות תרומות</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-color amount"></span>
+              <span>סכום תרומות</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ניתוח קמפיינים -->
+    <div class="campaigns-analysis">
+      <h2>ביצועי קמפיינים</h2>
+      <div class="analysis-grid">
+        <div class="chart-section">
+          <h3>התפלגות תרומות לפי קמפיין</h3>
+          <div class="pie-chart-container">
+            <div class="pie-chart">
+              <div *ngFor="let campaign of campaignData.slice(0, 6); let i = index" 
+                   class="pie-slice" 
+                   [style.--percentage]="campaign.percentage"
+                   [style.--color]="getPieColor(i)"
+                   [title]="campaign.label + ': ' + formatCurrency(campaign.value)">
+              </div>
+            </div>
+            <div class="pie-legend">
+              <div *ngFor="let campaign of campaignData.slice(0, 6); let i = index" class="legend-item">
+                <span class="legend-color" [style.background-color]="getPieColor(i)"></span>
+                <span class="legend-text">{{campaign.label}}</span>
+                <span class="legend-value">{{formatPercentage(campaign.percentage!)}}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="top-campaigns">
+          <h3>קמפיינים מובילים</h3>
+          <div class="campaigns-list">
+            <div *ngFor="let campaign of topCampaigns" class="campaign-item">
+              <div class="campaign-info">
+                <strong>{{campaign.name}}</strong>
+                <div class="campaign-progress">
+                  <div class="progress-bar">
+                    <div class="progress-fill" 
+                         [style.width.%]="getProgressPercentage(campaign)">
+                    </div>
+                  </div>
+                  <span class="progress-text">
+                    {{formatCurrency(campaign.raisedAmount)}} / {{formatCurrency(campaign.targetAmount)}}
+                  </span>
+                </div>
+              </div>
+              <div class="campaign-percentage">
+                {{getProgressPercentage(campaign)}}%
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ניתוח תורמים -->
+    <div class="donors-analysis">
+      <h2>ניתוח תורמים</h2>
+      <div class="analysis-grid">
+        <div class="donor-types">
+          <h3>התפלגות לפי סוג תורם</h3>
+          <div class="bar-chart">
+            <div *ngFor="let type of donorTypeData" class="bar-item">
+              <div class="bar-info">
+                <span class="bar-label">{{type.label}}</span>
+                <span class="bar-value">{{formatCurrency(type.value)}}</span>
+              </div>
+              <div class="bar-container">
+                <div class="bar-fill" [style.width.%]="type.percentage"></div>
+              </div>
+              <div class="bar-percentage">{{formatPercentage(type.percentage!)}}</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="top-donors">
+          <h3>תורמים מובילים</h3>
+          <div class="donors-list">
+            <div *ngFor="let donorData of topDonors.slice(0, 8)" class="donor-item">
+              <div class="donor-info">
+                <strong>{{donorData.donor.displayName}}</strong>
+                <small>{{donorData.count}} תרומות</small>
+              </div>
+              <div class="donor-amount">{{formatCurrency(donorData.total)}}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ניתוח גיאוגרפי -->
+    <div class="geographic-analysis" *ngIf="regionData.length > 0">
+      <h2>התפלגות גיאוגרפית</h2>
+      <div class="regions-chart">
+        <div *ngFor="let region of regionData" class="region-item">
+          <div class="region-info">
+            <span class="region-name">{{region.label}}</span>
+            <span class="region-amount">{{formatCurrency(region.value)}}</span>
+          </div>
+          <div class="region-bar">
+            <div class="bar-fill" [style.width.%]="region.percentage"></div>
+          </div>
+          <span class="region-percentage">{{formatPercentage(region.percentage!)}}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- פעילות אחרונה -->
+    <div class="recent-activity">
+      <h2>פעילות אחרונה</h2>
+      <div class="activity-list">
+        <div *ngFor="let activity of recentActivity.slice(0, 10)" class="activity-item">
+          <div class="activity-icon">💰</div>
+          <div class="activity-content">
+            <div class="activity-description">{{activity.description}}</div>
+            <div class="activity-details">
+              <span class="activity-date">{{formatDate(activity.date)}}</span>
+              <span class="activity-campaign" *ngIf="activity.campaign">• {{activity.campaign}}</span>
+            </div>
+          </div>
+          <div class="activity-amount">{{formatCurrency(activity.amount)}}</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

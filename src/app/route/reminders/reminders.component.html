@@ -1,0 +1,298 @@
+<div class="reminders-container">
+  <div class="page-header">
+    <h1>תזכורות ומעקבים</h1>
+    <button class="btn btn-primary add-reminder-btn" (click)="createReminder()">הוספת תזכורת</button>
+  </div>
+
+  <div class="summary-cards">
+    <div class="summary-card today">
+      <div class="card-icon">🔔</div>
+      <div class="card-content">
+        <h3>תזכורות היום</h3>
+        <span class="count urgent">{{todayReminders.length}}</span>
+      </div>
+    </div>
+    <div class="summary-card this-week">
+      <div class="card-icon">📅</div>
+      <div class="card-content">
+        <h3>השבוע</h3>
+        <span class="count">{{pendingReminders.length}}</span>
+      </div>
+    </div>
+    <div class="summary-card overdue">
+      <div class="card-icon">⚠️</div>
+      <div class="card-content">
+        <h3>באיחור</h3>
+        <span class="count urgent">{{overdueReminders.length}}</span>
+      </div>
+    </div>
+    <div class="summary-card completed">
+      <div class="card-icon">✅</div>
+      <div class="card-content">
+        <h3>הושלמו החודש</h3>
+        <span class="count">{{completedRemindersCount}}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="filters-section">
+    <div class="filter-row">
+      <div class="filter-group">
+        <label>סוג תזכורת</label>
+        <select class="form-control">
+          <option value="">הכל</option>
+          <option value="donation">תרומה</option>
+          <option value="contact">יצירת קשר</option>
+          <option value="birthday">יום הולדת</option>
+          <option value="memorial">יארצייט</option>
+          <option value="meeting">פגישה</option>
+          <option value="follow-up">מעקב</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label>סטטוס</label>
+        <select class="form-control">
+          <option value="">הכל</option>
+          <option value="pending">ממתין</option>
+          <option value="completed">הושלם</option>
+          <option value="overdue">באיחור</option>
+          <option value="cancelled">מבוטל</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>תאריך מ-</label>
+        <input type="date" class="form-control">
+      </div>
+
+      <div class="filter-group">
+        <label>תאריך עד</label>
+        <input type="date" class="form-control">
+      </div>
+
+      <div class="filter-group">
+        <label>חיפוש תורם</label>
+        <input type="text" class="form-control" placeholder="שם תורם...">
+      </div>
+
+      <div class="filter-group">
+        <label>איזור</label>
+        <select class="form-control">
+          <option value="">הכל</option>
+          <option value="center">מרכז</option>
+          <option value="north">צפון</option>
+          <option value="south">דרום</option>
+          <option value="jerusalem">ירושלים</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="reminders-tabs">
+    <button class="tab-btn" data-tab="today">היום (8)</button>
+    <button class="tab-btn active" data-tab="week">השבוע (23)</button>
+    <button class="tab-btn" data-tab="overdue">באיחור (5)</button>
+    <button class="tab-btn" data-tab="all">הכל</button>
+  </div>
+
+  <div class="reminders-table-container">
+    <table class="reminders-table">
+      <thead>
+        <tr>
+          <th>תאריך תזכורת</th>
+          <th>סוג</th>
+          <th>תורם</th>
+          <th>נושא</th>
+          <th>עדיפות</th>
+          <th>סטטוס</th>
+          <th>פעולות</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let reminder of reminders" 
+           [class.overdue]="reminder.isOverdue" 
+           [class.today]="reminder.isDueToday"
+           [class.completed]="reminder.isCompleted">
+          
+          <td class="date-col">
+            <div class="date-display">
+              <span class="reminder-date">{{reminder.dueDate | date:'dd/MM/yyyy'}}</span>
+            </div>
+          </td>
+          
+          <td class="type-col">
+            <span class="type-badge type-{{reminder.type}}">{{getTypeText(reminder.type)}}</span>
+          </td>
+          
+          <td class="donor-col">
+            <div class="donor-info">
+              <strong>{{getDonorName(reminder)}}</strong>
+              <small *ngIf="reminder.relatedDonor?.phone">{{reminder.relatedDonor?.phone}}</small>
+            </div>
+          </td>
+          
+          <td class="subject-col">
+            <div class="subject-info">
+              <span class="subject">{{reminder.title}}</span>
+              <small class="notes" *ngIf="reminder.description">{{reminder.description | slice:0:50}}<span *ngIf="reminder.description && reminder.description.length > 50">...</span></small>
+            </div>
+          </td>
+          
+          <td class="priority-col">
+            <span class="priority-badge" [class]="getPriorityBadgeClass(reminder.priority)">{{getPriorityText(reminder.priority)}}</span>
+          </td>
+          
+          <td class="status-col">
+            <span class="status-badge" [class]="getStatusBadgeClass(reminder.status)">{{reminder.statusText}}</span>
+          </td>
+          
+          <td class="actions">
+            <button class="btn-icon btn-complete" title="סמן כהושלם" *ngIf="!reminder.isCompleted" (click)="completeReminder(reminder)">✅</button>
+            <button class="btn-icon btn-edit" title="עריכה" (click)="editReminder(reminder)">✏</button>
+            <button class="btn-icon btn-postpone" title="דחה תזכורת" *ngIf="!reminder.isCompleted" (click)="snoozeReminder(reminder, 1)">⏰</button>
+            <button class="btn-icon btn-delete" title="מחק" (click)="deleteReminder(reminder)">🗑</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="quick-reminders">
+    <h2>תזכורות מהירות</h2>
+    <div class="quick-reminder-cards">
+      <div class="quick-card birthdays">
+        <div class="card-header">
+          <span class="icon">🎂</span>
+          <h3>ימי הולדת השבוע</h3>
+        </div>
+        <div class="card-body">
+          <div class="birthday-item" *ngFor="let birthday of upcomingBirthdays">
+            <span class="name">{{birthday.displayName}}</span>
+            <span class="date">{{birthday.birthDate | date:'dd/MM'}}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="quick-card memorials">
+        <div class="card-header">
+          <span class="icon">🕯️</span>
+          <h3>יארצייתות השבוע</h3>
+        </div>
+        <div class="card-body">
+          <div class="memorial-item">
+            <p>אין יארצייתות השבוע</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="quick-card donations">
+        <div class="card-header">
+          <span class="icon">💰</span>
+          <h3>מועמדים לתרומה</h3>
+        </div>
+        <div class="card-body">
+          <div class="donation-candidate" *ngFor="let candidate of donationCandidates">
+            <span class="name">{{candidate.displayName}}</span>
+            <span class="last-donation">מועמד לתרומה</span>
+          </div>
+          <p *ngIf="donationCandidates.length === 0">אין מועמדים זמינים</p>
+        </div>
+      </div>
+
+      <div class="quick-card meetings">
+        <div class="card-header">
+          <span class="icon">🤝</span>
+          <h3>פגישות השבוע</h3>
+        </div>
+        <div class="card-body">
+          <div class="meeting-item" *ngFor="let meeting of upcomingMeetings">
+            <span class="name">{{getDonorName(meeting)}}</span>
+            <span class="purpose">{{meeting.title}}</span>
+            <span class="datetime">{{meeting.dueDate | date:'dd/MM'}}</span>
+          </div>
+          <p *ngIf="upcomingMeetings.length === 0">אין פגישות השבוע</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pagination">
+    <button class="btn-page">הקודם</button>
+    <span class="page-info">עמוד 1 מתוך 12</span>
+    <button class="btn-page">הבא</button>
+  </div>
+</div>
+
+<!-- מודל הוספת תזכורת -->
+<div class="modal-overlay" *ngIf="showAddReminderModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>הוספת תזכורת חדשה</h2>
+      <button class="modal-close" (click)="closeModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>סוג תזכורת</label>
+          <select class="form-control" [(ngModel)]="editingReminder!.type">
+            <option value="donation_followup">מעקב תרומה</option>
+            <option value="thank_you">תודה</option>
+            <option value="birthday">יום הולדת</option>
+            <option value="memorial">יום זיכרון</option>
+            <option value="meeting">פגישה</option>
+            <option value="phone_call">שיחת טלפון</option>
+            <option value="email">אימייל</option>
+            <option value="general">כללי</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>תורם</label>
+          <select class="form-control" [(ngModel)]="editingReminder!.relatedDonor">
+            <option value="">בחר תורם...</option>
+            <option *ngFor="let donor of donors" [value]="donor.id">{{donor.displayName}}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>תאריך תזכורת</label>
+          <input type="date" class="form-control" [(ngModel)]="editingReminder!.dueDate">
+        </div>
+        <div class="form-group">
+          <label>שעה</label>
+          <input type="time" class="form-control" [(ngModel)]="editingReminder!.dueTime">
+        </div>
+        <div class="form-group">
+          <label>עדיפות</label>
+          <select class="form-control" [(ngModel)]="editingReminder!.priority">
+            <option value="low">נמוכה</option>
+            <option value="normal">רגילה</option>
+            <option value="high">גבוהה</option>
+            <option value="urgent">דחופה</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>חזרה</label>
+          <select class="form-control" [(ngModel)]="editingReminder!.frequency">
+            <option value="">ללא</option>
+            <option value="daily">יומית</option>
+            <option value="weekly">שבועית</option>
+            <option value="monthly">חודשית</option>
+            <option value="yearly">שנתית</option>
+          </select>
+        </div>
+        <div class="form-group full-width">
+          <label>נושא התזכורת</label>
+          <input type="text" class="form-control" [(ngModel)]="editingReminder!.title" placeholder="נושא קצר...">
+        </div>
+        <div class="form-group full-width">
+          <label>הערות</label>
+          <textarea class="form-control" rows="4" [(ngModel)]="editingReminder!.description" placeholder="פרטים נוספים..."></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeModal()">ביטול</button>
+      <button class="btn btn-primary" (click)="saveReminder()">שמור תזכורת</button>
+    </div>
+  </div>
+</div>
