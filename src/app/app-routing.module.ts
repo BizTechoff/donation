@@ -20,19 +20,19 @@ import { SilentRedirectComponent } from './users/silent-redirect.component'
 
 const defaultRoute = terms.home
 const routes: Routes = [
-  { path: defaultRoute, component: HomeComponent, canActivate: [NotAuthenticatedGuard] },
+  { path: defaultRoute, component: HomeComponent, canActivate: [NotAuthenticatedGuard], data: { name: 'home' } },
   // { path: 'demo', component: DemoDataControlAndDataAreaComponent },
   // Donation system routes
-  { path: terms.donorDetails, component: DonorDetailsComponent, canActivate: [AuthenticatedGuard] },
-  { path: terms.donorList, component: DonorListComponent, canActivate: [AuthenticatedGuard] },
-  { path: terms.donationsList, component: DonationsListComponent, canActivate: [AuthenticatedGuard] },
-  { path: terms.campaigns, component: CampaignsListComponent, canActivate: [AuthenticatedGuard] },
-  { path: terms.standingOrders, component: StandingOrdersComponent, canActivate: [AuthenticatedGuard] },
-  { path: terms.certificates, component: CertificatesComponent, canActivate: [AuthenticatedGuard] },
-  { path: terms.reminders, component: RemindersComponent, canActivate: [AuthenticatedGuard] },
-  { path: terms.donorsMap, component: DonorsMapComponent, canActivate: [AuthenticatedGuard] },
-  { path: terms.reports, component: ReportsComponent, canActivate: [AdminGuard] },
-  { path: terms.userAccounts, component: UsersComponent, canActivate: [AdminGuard] },
+  { path: terms.donorDetails, component: DonorDetailsComponent, canActivate: [AuthenticatedGuard], data: { name: 'donorDetails' } },
+  { path: terms.donorList, component: DonorListComponent, canActivate: [AuthenticatedGuard], data: { name: 'donorList' } },
+  { path: terms.donationsList, component: DonationsListComponent, canActivate: [AuthenticatedGuard], data: { name: 'donationsList' } },
+  { path: terms.campaigns, component: CampaignsListComponent, canActivate: [AuthenticatedGuard], data: { name: 'campaigns' } },
+  { path: terms.standingOrders, component: StandingOrdersComponent, canActivate: [AuthenticatedGuard], data: { name: 'standingOrders' } },
+  { path: terms.certificates, component: CertificatesComponent, canActivate: [AuthenticatedGuard], data: { name: 'certificates' } },
+  { path: terms.reminders, component: RemindersComponent, canActivate: [AuthenticatedGuard], data: { name: 'reminders' } },
+  { path: terms.donorsMap, component: DonorsMapComponent, canActivate: [AuthenticatedGuard], data: { name: 'donorsMap' } },
+  { path: terms.reports, component: ReportsComponent, canActivate: [AdminGuard], data: { name: 'reports' } },
+  { path: terms.userAccounts, component: UsersComponent, canActivate: [AdminGuard], data: { name: 'userAccounts' } },
   { path: '', component: SilentRedirectComponent, pathMatch: 'full' },
   { path: '**', component: SilentRedirectComponent } // תופס כל נתיב 
 ]

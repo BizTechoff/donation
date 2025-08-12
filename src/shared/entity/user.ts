@@ -13,6 +13,7 @@ import { Roles } from '../enum/roles'
 
 @Entity<User>('users', {
   allowApiCrud: true,
+  defaultOrderBy: { admin: 'desc', manager: 'desc', donator: 'desc', name: 'asc' },
   // allowApiRead: Allow.authenticated,
   // allowApiUpdate: Allow.authenticated,
   // allowApiDelete: false,

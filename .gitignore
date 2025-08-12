@@ -11,6 +11,9 @@
 # dependencies
 /node_modules
 
+# ai
+/.claude
+
 # profiling files
 chrome-profiler-events*.json
 

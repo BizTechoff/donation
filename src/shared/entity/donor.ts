@@ -117,6 +117,132 @@ export class Donor extends IdEntity {
   })
   donorType: 'אחר' | 'קבוע' | 'זמני' = 'אחר'
 
+  // Additional personal fields
+  @Fields.string({
+    caption: 'שם בעל/אשה',
+  })
+  spouseName = ''
+
+  @Fields.string({
+    caption: 'מצב משפחתי',
+  })
+  maritalStatus: 'married' | 'single' | 'widowed' | 'divorced' | '' = ''
+
+  @Fields.string({
+    caption: 'טלפון בית',
+  })
+  homePhone = ''
+
+  @Fields.string({
+    caption: 'טלפון נייד',
+  })
+  mobilePhone = ''
+
+  // Personal dates
+  @Fields.date({
+    caption: 'יום נישואין',
+  })
+  anniversaryDate?: Date
+
+  @Fields.date({
+    caption: 'יארצייט אב',
+  })
+  fatherYahrzeit?: Date
+
+  @Fields.date({
+    caption: 'יארצייט אם',
+  })
+  motherYahrzeit?: Date
+
+  // Categories and levels
+  @Fields.string({
+    caption: 'רמה',
+  })
+  level: 'platinum' | 'gold' | 'silver' | 'regular' | '' = ''
+
+  @Fields.string({
+    caption: 'איזור',
+  })
+  region: 'center' | 'north' | 'south' | 'jerusalem' | '' = ''
+
+  @Fields.string({
+    caption: 'חוג',
+  })
+  circle = ''
+
+  @Fields.string({
+    caption: 'קבוצת גיל',
+  })
+  ageGroup: '18-30' | '31-45' | '46-60' | '60+' | '' = ''
+
+  // Contact preferences
+  @Fields.string({
+    caption: 'שעות קבלה',
+  })
+  receptionHours = ''
+
+  // Availability days
+  @Fields.boolean({
+    caption: 'זמין ביום ראשון',
+  })
+  sundayAvailable = false
+
+  @Fields.boolean({
+    caption: 'זמין ביום שני',
+  })
+  mondayAvailable = false
+
+  @Fields.boolean({
+    caption: 'זמין ביום שלישי',
+  })
+  tuesdayAvailable = false
+
+  @Fields.boolean({
+    caption: 'זמין ביום רביעי',
+  })
+  wednesdayAvailable = false
+
+  @Fields.boolean({
+    caption: 'זמין ביום חמישי',
+  })
+  thursdayAvailable = false
+
+  @Fields.boolean({
+    caption: 'זמין ביום שישי',
+  })
+  fridayAvailable = false
+
+  @Fields.boolean({
+    caption: 'זמין בשבת',
+  })
+  saturdayAvailable = false
+
+  // Contact method preferences
+  @Fields.boolean({
+    caption: 'מעדיף טלפון',
+  })
+  preferPhone = false
+
+  @Fields.boolean({
+    caption: 'מעדיף אימייל',
+  })
+  preferEmail = false
+
+  @Fields.boolean({
+    caption: 'מעדיף SMS',
+  })
+  preferSMS = false
+
+  @Fields.boolean({
+    caption: 'מעדיף ביקור בבית',
+  })
+  preferHomeVisit = false
+
+  @Fields.boolean({
+    caption: 'מעדיף פגישה במשרד',
+  })
+  preferOfficeVisit = false
+
   @Fields.boolean({
     caption: 'תורם פעיל',
   })

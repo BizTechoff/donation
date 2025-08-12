@@ -27,7 +27,7 @@ export class UsersComponent implements OnInit {
     allowUpdate: true,
     columnOrderStateKey: 'users',
 
-    orderBy: { name: 'asc' },
+    // orderBy: { name: 'asc' },
     rowsInPage: 100,
 
     columnSettings: (user) => [user.name, user.admin, user.manager, user.donator, user.disabled],

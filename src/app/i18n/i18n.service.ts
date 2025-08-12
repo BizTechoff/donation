@@ -35,6 +35,14 @@ export class I18nService {
     return this.termsSubject.value
   }
 
+  get terms(): Terms {
+    return this.termsSubject.value
+  }
+
+  get lang(): Terms {
+    return this.termsSubject.value
+  }
+
   get isRTL(): boolean {
     return this.currentTerms.RTL as boolean
   }

@@ -1,60 +1,60 @@
 <div class="donor-details-container">
   <div class="page-header">
-    <h1>פרטי תורם</h1>
+    <h1>{{ (i18n.terms$ | async)?.donorDetailsTitle }}</h1>
     <div class="header-actions">
-      <button class="btn btn-secondary">חזור לרשימה</button>
-      <button class="btn btn-primary">שמור שינויים</button>
+      <button class="btn btn-secondary">{{ (i18n.terms$ | async)?.backToList }}</button>
+      <button class="btn btn-primary">{{ (i18n.terms$ | async)?.saveChanges }}</button>
     </div>
   </div>
 
   <div class="details-grid">
     <!-- פרטים אישיים -->
     <div class="section personal-details">
-      <h2>פרטים אישיים</h2>
+      <h2>{{ (i18n.terms$ | async)?.personalDetails }}</h2>
       <div class="form-grid">
         <div class="form-group">
-          <label>שם משפחה</label>
+          <label>{{ (i18n.terms$ | async)?.lastName }}</label>
           <input type="text" class="form-control" value="כהן">
         </div>
         <div class="form-group">
-          <label>שם פרטי</label>
+          <label>{{ (i18n.terms$ | async)?.firstName }}</label>
           <input type="text" class="form-control" value="אברהם">
         </div>
         <div class="form-group">
-          <label>שם בעל/אשה</label>
+          <label>{{ (i18n.terms$ | async)?.spouseName }}</label>
           <input type="text" class="form-control" value="שרה">
         </div>
         <div class="form-group">
-          <label>מצב משפחתי</label>
+          <label>{{ (i18n.terms$ | async)?.maritalStatus }}</label>
           <select class="form-control">
-            <option>נשוי</option>
-            <option>רווק</option>
-            <option>אלמן</option>
-            <option>גרוש</option>
+            <option>{{ (i18n.terms$ | async)?.married }}</option>
+            <option>{{ (i18n.terms$ | async)?.single }}</option>
+            <option>{{ (i18n.terms$ | async)?.widowed }}</option>
+            <option>{{ (i18n.terms$ | async)?.divorced }}</option>
           </select>
         </div>
         <div class="form-group full-width">
-          <label>כתובת</label>
+          <label>{{ (i18n.terms$ | async)?.address }}</label>
           <input type="text" class="form-control" value="רחוב הרב קוק 15, תל אביב">
         </div>
         <div class="form-group">
-          <label>טלפון בית</label>
+          <label>{{ (i18n.terms$ | async)?.homePhone }}</label>
           <input type="tel" class="form-control" value="03-1234567">
         </div>
         <div class="form-group">
-          <label>טלפון נייד</label>
+          <label>{{ (i18n.terms$ | async)?.mobilePhone }}</label>
           <input type="tel" class="form-control" value="050-1234567">
         </div>
         <div class="form-group">
-          <label>אימייל</label>
+          <label>{{ (i18n.terms$ | async)?.email }}</label>
           <input type="email" class="form-control" value="avraham.cohen@gmail.com">
         </div>
         <div class="form-group">
-          <label>שיוך קהילתי</label>
+          <label>{{ (i18n.terms$ | async)?.communityAffiliation }}</label>
           <select class="form-control">
-            <option>אשכנזי</option>
-            <option>ספרדי</option>
-            <option>חסידי</option>
+            <option>{{ (i18n.terms$ | async)?.ashkenazi }}</option>
+            <option>{{ (i18n.terms$ | async)?.sephardi }}</option>
+            <option>{{ (i18n.terms$ | async)?.hasidi }}</option>
             <option>חרדי</option>
           </select>
         </div>
@@ -63,97 +63,97 @@
 
     <!-- תאריכים אישיים -->
     <div class="section personal-dates">
-      <h2>תאריכים אישיים</h2>
+      <h2>{{ (i18n.terms$ | async)?.personalDates }}</h2>
       <div class="dates-list">
         <div class="date-item">
-          <label>יום הולדת</label>
+          <label>{{ (i18n.terms$ | async)?.birthday }}</label>
           <input type="date" class="form-control">
-          <input type="text" class="form-control hebrew-date" placeholder="תאריך עברי">
+          <input type="text" class="form-control hebrew-date" placeholder="{{ (i18n.terms$ | async)?.hebrewDatePlaceholder }}">
         </div>
         <div class="date-item">
-          <label>יום נישואין</label>
+          <label>{{ (i18n.terms$ | async)?.anniversaryDate }}</label>
           <input type="date" class="form-control">
-          <input type="text" class="form-control hebrew-date" placeholder="תאריך עברי">
+          <input type="text" class="form-control hebrew-date" placeholder="{{ (i18n.terms$ | async)?.hebrewDatePlaceholder }}">
         </div>
         <div class="date-item">
-          <label>יארצייט אב</label>
+          <label>{{ (i18n.terms$ | async)?.fatherYahrzeit }}</label>
           <input type="date" class="form-control">
-          <input type="text" class="form-control hebrew-date" placeholder="תאריך עברי">
+          <input type="text" class="form-control hebrew-date" placeholder="{{ (i18n.terms$ | async)?.hebrewDatePlaceholder }}">
         </div>
         <div class="date-item">
-          <label>יארצייט אם</label>
+          <label>{{ (i18n.terms$ | async)?.motherYahrzeit }}</label>
           <input type="date" class="form-control">
-          <input type="text" class="form-control hebrew-date" placeholder="תאריך עברי">
+          <input type="text" class="form-control hebrew-date" placeholder="{{ (i18n.terms$ | async)?.hebrewDatePlaceholder }}">
         </div>
-        <button class="btn btn-small add-date-btn">הוסף תאריך</button>
+        <button class="btn btn-small add-date-btn">{{ (i18n.terms$ | async)?.addDate }}</button>
       </div>
     </div>
 
     <!-- חברות ועמותות -->
     <div class="section companies">
-      <h2>חברות ועמותות</h2>
+      <h2>{{ (i18n.terms$ | async)?.companiesAssociations }}</h2>
       <div class="companies-list">
         <div class="company-item">
           <div class="form-grid">
             <div class="form-group">
-              <label>שם החברה</label>
+              <label>{{ (i18n.terms$ | async)?.companyName }}</label>
               <input type="text" class="form-control" value="כהן ושותפים">
             </div>
             <div class="form-group">
-              <label>כתובת</label>
+              <label>{{ (i18n.terms$ | async)?.address }}</label>
               <input type="text" class="form-control" value="רחוב הרצל 25, תל אביב">
             </div>
             <div class="form-group">
-              <label>טלפון</label>
+              <label>{{ (i18n.terms$ | async)?.phone }}</label>
               <input type="tel" class="form-control" value="03-9876543">
             </div>
             <div class="form-group">
-              <label>איש קשר</label>
+              <label>{{ (i18n.terms$ | async)?.contactPerson }}</label>
               <input type="text" class="form-control" value="רחל לוי">
             </div>
             <div class="form-group">
-              <label>אימייל</label>
+              <label>{{ (i18n.terms$ | async)?.email }}</label>
               <input type="email" class="form-control" value="info@cohen-partners.co.il">
             </div>
             <div class="form-group">
-              <label>הערות</label>
+              <label>{{ (i18n.terms$ | async)?.notes }}</label>
               <textarea class="form-control" rows="2">לשליחת קבלות</textarea>
             </div>
           </div>
-          <button class="btn-remove">הסר</button>
+          <button class="btn-remove">{{ (i18n.terms$ | async)?.remove }}</button>
         </div>
-        <button class="btn btn-small add-company-btn">הוסף חברה</button>
+        <button class="btn btn-small add-company-btn">{{ (i18n.terms$ | async)?.addCompany }}</button>
       </div>
     </div>
 
     <!-- קטגוריות ורמות -->
     <div class="section categories">
-      <h2>קטגוריות ורמות</h2>
+      <h2>{{ (i18n.terms$ | async)?.categoriesLevels }}</h2>
       <div class="form-grid">
         <div class="form-group">
-          <label>רמה</label>
+          <label>{{ (i18n.terms$ | async)?.level }}</label>
           <select class="form-control level-select">
-            <option value="platinum">פלטינום</option>
-            <option value="gold" selected>זהב</option>
-            <option value="silver">כסף</option>
-            <option value="regular">רגיל</option>
+            <option value="platinum">{{ (i18n.terms$ | async)?.platinum }}</option>
+            <option value="gold" selected>{{ (i18n.terms$ | async)?.gold }}</option>
+            <option value="silver">{{ (i18n.terms$ | async)?.silver }}</option>
+            <option value="regular">{{ (i18n.terms$ | async)?.regular }}</option>
           </select>
         </div>
         <div class="form-group">
-          <label>איזור</label>
+          <label>{{ (i18n.terms$ | async)?.region }}</label>
           <select class="form-control">
-            <option>מרכז</option>
-            <option>צפון</option>
-            <option>דרום</option>
-            <option>ירושלים</option>
+            <option>{{ (i18n.terms$ | async)?.center }}</option>
+            <option>{{ (i18n.terms$ | async)?.north }}</option>
+            <option>{{ (i18n.terms$ | async)?.south }}</option>
+            <option>{{ (i18n.terms$ | async)?.jerusalem }}</option>
           </select>
         </div>
         <div class="form-group">
-          <label>חוג</label>
+          <label>{{ (i18n.terms$ | async)?.circle }}</label>
           <input type="text" class="form-control" value="עסקים">
         </div>
         <div class="form-group">
-          <label>גילאים</label>
+          <label>{{ (i18n.terms$ | async)?.ageGroup }}</label>
           <select class="form-control">
             <option>18-30</option>
             <option>31-45</option>
@@ -166,32 +166,32 @@
 
     <!-- יצירת קשר -->
     <div class="section contact-preferences">
-      <h2>העדפות יצירת קשר</h2>
+      <h2>{{ (i18n.terms$ | async)?.contactPreferences }}</h2>
       <div class="form-grid">
         <div class="form-group">
-          <label>שעות קבלה</label>
+          <label>{{ (i18n.terms$ | async)?.receptionHours }}</label>
           <input type="text" class="form-control" value="09:00-17:00">
         </div>
         <div class="form-group">
-          <label>ימים מועדפים</label>
+          <label>{{ (i18n.terms$ | async)?.preferredDays }}</label>
           <div class="checkbox-group">
-            <label><input type="checkbox" checked> ראשון</label>
-            <label><input type="checkbox" checked> שני</label>
-            <label><input type="checkbox" checked> שלישי</label>
-            <label><input type="checkbox" checked> רביעי</label>
-            <label><input type="checkbox"> חמישי</label>
-            <label><input type="checkbox"> שישי</label>
-            <label><input type="checkbox"> שבת</label>
+            <label><input type="checkbox" checked> {{ (i18n.terms$ | async)?.sunday }}</label>
+            <label><input type="checkbox" checked> {{ (i18n.terms$ | async)?.monday }}</label>
+            <label><input type="checkbox" checked> {{ (i18n.terms$ | async)?.tuesday }}</label>
+            <label><input type="checkbox" checked> {{ (i18n.terms$ | async)?.wednesday }}</label>
+            <label><input type="checkbox"> {{ (i18n.terms$ | async)?.thursday }}</label>
+            <label><input type="checkbox"> {{ (i18n.terms$ | async)?.friday }}</label>
+            <label><input type="checkbox"> {{ (i18n.terms$ | async)?.saturday }}</label>
           </div>
         </div>
         <div class="form-group full-width">
-          <label>דרכי יצירת קשר מועדפות</label>
+          <label>{{ (i18n.terms$ | async)?.preferredContactMethods }}</label>
           <div class="checkbox-group">
-            <label><input type="checkbox" checked> טלפון</label>
-            <label><input type="checkbox" checked> אימייל</label>
-            <label><input type="checkbox"> SMS</label>
-            <label><input type="checkbox"> ביקור בבית</label>
-            <label><input type="checkbox"> פגישה במשרד</label>
+            <label><input type="checkbox" checked> {{ (i18n.terms$ | async)?.phoneContact }}</label>
+            <label><input type="checkbox" checked> {{ (i18n.terms$ | async)?.emailContact }}</label>
+            <label><input type="checkbox"> {{ (i18n.terms$ | async)?.smsContact }}</label>
+            <label><input type="checkbox"> {{ (i18n.terms$ | async)?.homeVisit }}</label>
+            <label><input type="checkbox"> {{ (i18n.terms$ | async)?.officeVisit }}</label>
           </div>
         </div>
       </div>
@@ -199,13 +199,13 @@
 
     <!-- הערות כלליות -->
     <div class="section notes">
-      <h2>הערות כלליות</h2>
-      <textarea class="form-control notes-textarea" rows="4" placeholder="הכנס הערות...">תורם חשוב מאזור המרכז. יש לו עסק משגשג ויכול לתרום סכומים גדולים בזמני חירום.</textarea>
+      <h2>{{ (i18n.terms$ | async)?.generalNotes }}</h2>
+      <textarea class="form-control notes-textarea" rows="4" placeholder="{{ (i18n.terms$ | async)?.enterNotesPlaceholder }}">תורם חשוב מאזור המרכז. יש לו עסק משגשג ויכול לתרום סכומים גדולים בזמני חירום.</textarea>
     </div>
   </div>
 
   <div class="form-actions">
-    <button class="btn btn-secondary">ביטול</button>
-    <button class="btn btn-primary">שמור שינויים</button>
+    <button class="btn btn-secondary">{{ (i18n.terms$ | async)?.cancel }}</button>
+    <button class="btn btn-primary">{{ (i18n.terms$ | async)?.saveChanges }}</button>
   </div>
 </div>

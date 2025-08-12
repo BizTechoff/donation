@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { remult } from 'remult';
 import { Donor, Donation } from '../../../shared/entity';
+import { I18nService } from '../../i18n/i18n.service';
 
 @Component({
   selector: 'app-donor-details',
@@ -19,7 +20,8 @@ export class DonorDetailsComponent implements OnInit {
 
   constructor(
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    public i18n: I18nService
   ) { }
 
   async ngOnInit() {
@@ -76,7 +78,8 @@ export class DonorDetailsComponent implements OnInit {
   async deleteDonor() {
     if (!this.donor) return;
 
-    if (confirm(`האם אתה בטוח שברצונך למחוק את ${this.donor.fullName}?`)) {
+    const confirmMessage = this.i18n.currentTerms.confirmDeleteDonorDetails?.replace('{name}', this.donor.fullName || '') || '';
+    if (confirm(confirmMessage)) {
       try {
         await this.donor.delete();
         this.router.navigate(['/donor-list']);

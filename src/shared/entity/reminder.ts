@@ -74,12 +74,11 @@ export class Reminder extends IdEntity {
   })
   dueDate = new Date()
 
-  @Fields.date({
+  @Fields.string({
     caption: 'שעת יעד',
-    validate: Validators.required,
-    inputType: 'time'
+    allowNull: true
   })
-  dueTime = ''
+  dueTime?: string
 
   @Fields.date({
     caption: 'תאריך התראה',

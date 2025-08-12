@@ -4,6 +4,7 @@ import { Donation } from '../../../shared/entity/donation'
 import { Donor } from '../../../shared/entity/donor'
 import { Campaign } from '../../../shared/entity/campaign'
 import { StandingOrder } from '../../../shared/entity/standing-order'
+import { I18nService } from '../../i18n/i18n.service'
 
 @Component({
   selector: 'app-home',
@@ -40,7 +41,7 @@ export class HomeComponent implements OnInit {
   campaignRepo = remult.repo(Campaign);
   standingOrderRepo = remult.repo(StandingOrder);
 
-  constructor() {}
+  constructor(public i18n: I18nService) {}
 
   async ngOnInit() {
     try {

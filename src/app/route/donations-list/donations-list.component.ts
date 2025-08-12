@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { remult } from 'remult';
 import { Donation, Donor, Campaign, DonationMethod } from '../../../shared/entity';
+import { I18nService } from '../../i18n/i18n.service';
 
 @Component({
   selector: 'app-donations-list',
@@ -30,6 +31,8 @@ export class DonationsListComponent implements OnInit {
   showPreview = false;
   hebrewDate = '';
   fundraiserName = '';
+
+  constructor(public i18n: I18nService) {}
 
   async ngOnInit() {
     await this.loadData();
@@ -124,7 +127,8 @@ export class DonationsListComponent implements OnInit {
   }
 
   async deleteDonation(donation: Donation) {
-    if (confirm(`האם אתה בטוח שברצונך למחוק את התרומה של ${donation.donor?.displayName}?`)) {
+    const confirmMessage = this.i18n.currentTerms.confirmDeleteDonation?.replace('{donor}', donation.donor?.displayName || '') || '';
+    if (confirm(confirmMessage)) {
       try {
         await donation.delete();
         await this.loadDonations(); // This will also update the cache
@@ -144,7 +148,8 @@ export class DonationsListComponent implements OnInit {
   }
 
   async cancelDonation(donation: Donation) {
-    if (confirm(`האם אתה בטוח שברצונך לבטל את התרומה של ${donation.donor?.displayName}?`)) {
+    const confirmMessage = this.i18n.currentTerms.confirmCancelDonation?.replace('{donor}', donation.donor?.displayName || '') || '';
+    if (confirm(confirmMessage)) {
       try {
         await donation.cancelDonation();
         await this.loadDonations(); // This will also update the cache
@@ -246,22 +251,22 @@ export class DonationsListComponent implements OnInit {
   }
 
   getDonorName(donation: Donation): string {
-    return donation.donor?.displayName || 'לא ידוע';
+    return donation.donor?.displayName || this.i18n.currentTerms.unknown || '';
   }
 
   getCampaignName(donation: Donation): string {
-    return donation.campaign?.name || 'ללא קמפיין';
+    return donation.campaign?.name || this.i18n.currentTerms.withoutCampaign || '';
   }
 
   getMethodName(donation: Donation): string {
-    return donation.donationMethod?.name || 'לא צוין';
+    return donation.donationMethod?.name || this.i18n.currentTerms.notSpecified || '';
   }
 
   getStatusText(status: string): string {
     switch (status) {
-      case 'pending': return 'ממתין';
-      case 'completed': return 'הושלם';
-      case 'cancelled': return 'בוטל';
+      case 'pending': return this.i18n.currentTerms.pending || '';
+      case 'completed': return this.i18n.currentTerms.completed || '';
+      case 'cancelled': return this.i18n.currentTerms.cancelled || '';
       default: return status;
     }
   }

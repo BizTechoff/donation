@@ -3,7 +3,7 @@
     <button mat-button class="sidenav-toggle" (click)="sidenav.toggle()">
       <mat-icon>menu</mat-icon>
     </button>
-    <span class="toolbar-title">{{ currentTitle() }}</span>
+    <span class="toolbar-title">{{ getCurrentTitleObservable() | async }}</span>
 
     <div class="toolbar-actions">
       <!-- Language Switcher -->
@@ -11,7 +11,7 @@
 
       <ng-container *ngIf="!remult.authenticated()">
         <button mat-stroked-button class="toolbar-button" (click)="signIn()">
-          {{ i18n.currentTerms.signIn }}
+          {{ (i18n.terms$ | async)?.signIn }}
         </button>
       </ng-container>
       <ng-container *ngIf="remult.authenticated()">
@@ -20,12 +20,12 @@
         </button>
         <mat-menu #menu="matMenu">
           <button mat-menu-item (click)="updateInfo()">
-            {{ i18n.currentTerms.updateInfo }}
+            {{ (i18n.terms$ | async)?.updateInfo }}
           </button>
           <button mat-menu-item (click)="changePassword()">
-            {{ i18n.currentTerms.changePassword }}
+            {{ (i18n.terms$ | async)?.changePassword }}
           </button>
-          <button mat-menu-item (click)="signOut()">{{ i18n.currentTerms.signOut }}</button>
+          <button mat-menu-item (click)="signOut()">{{ (i18n.terms$ | async)?.signOut }}</button>
         </mat-menu>
       </ng-container>
     </div>
@@ -35,13 +35,13 @@
       [mode]="uiService.isScreenSmall() ? 'over' : 'side'">
       <div style="width: 100%; text-align: center"></div>
       <h3 *ngIf="remult.authenticated()">
-        {{ i18n.currentTerms.hello }} {{ remult.user!.name }}
+        {{ (i18n.terms$ | async)?.hello }} {{ remult.user!.name }}
       </h3>
       <mat-nav-list role="list">
         <ng-container *ngFor="let m of router.config">
           <a mat-list-item *ngIf="shouldDisplayRoute(m)" routerLinkActive="active-route" [routerLink]="m.path"
             (click)="routeClicked()">
-            {{ routeName(m) }}
+            {{ getRouteNameObservable(m) | async }}
           </a>
         </ng-container>
       </mat-nav-list>

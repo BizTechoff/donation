@@ -4,6 +4,7 @@ import { Donation } from '../../../shared/entity/donation';
 import { Donor } from '../../../shared/entity/donor';
 import { Campaign } from '../../../shared/entity/campaign';
 import { StandingOrder } from '../../../shared/entity/standing-order';
+import { I18nService } from '../../i18n/i18n.service';
 
 interface ChartData {
   label: string;
@@ -57,7 +58,7 @@ export class ReportsComponent implements OnInit {
   private campaignRepo = remult.repo(Campaign);
   private standingOrderRepo = remult.repo(StandingOrder);
 
-  constructor() {}
+  constructor(public i18n: I18nService) {}
 
   async ngOnInit() {
     await this.loadReportsData();
@@ -263,8 +264,8 @@ export class ReportsComponent implements OnInit {
   }
 
   async exportReport(format: 'excel' | 'pdf' | 'csv') {
-    // TODO: הוסף לוגיקה לייצא דוח
-    alert(`ייצוא דוח בפורמט ${format} - בפיתוח`);
+    const message = this.i18n.currentTerms.exportReportInDevelopment?.replace('{format}', format) || `Export report in ${format} format - in development`;
+    alert(message);
   }
 
   async refreshData() {

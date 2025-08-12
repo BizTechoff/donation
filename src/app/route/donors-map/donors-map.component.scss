@@ -1,12 +1,20 @@
 .donors-map-container {
-  padding: 20px;
+  padding: 10px;
   max-width: 1400px;
   margin: 0 auto;
-  direction: rtl;
   font-family: 'Segoe UI', Arial, sans-serif;
-  height: calc(100vh - 120px);
+  min-height: calc(100vh - 120px);
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
+  
+  &[dir="rtl"] {
+    direction: rtl;
+  }
+  
+  &[dir="ltr"] {
+    direction: ltr;
+  }
 }
 
 .page-header {
@@ -136,12 +144,18 @@
   background: #f8f9fa;
   border-radius: 8px;
   overflow: hidden;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
+  min-height: 300px;
   
   .leaflet-map {
-    height: 500px;
+    height: 100%;
     width: 100%;
-    min-height: 400px;
+    min-height: 300px;
+    
+    @media (min-width: 768px) {
+      min-height: 400px;
+      height: 500px;
+    }
   }
 }
 
@@ -224,25 +238,126 @@
 
 @media (max-width: 768px) {
   .donors-map-container {
-    padding: 10px;
-    height: calc(100vh - 100px);
+    padding: 5px;
+    min-height: calc(100vh - 80px);
   }
   
   .page-header {
     flex-direction: column;
-    gap: 10px;
+    gap: 15px;
     align-items: stretch;
+    margin-bottom: 15px;
+    
+    h1 {
+      font-size: 1.5rem;
+      text-align: center;
+      margin-bottom: 10px;
+    }
     
     .map-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
       justify-content: center;
+      
+      .btn {
+        flex: 1;
+        min-width: 120px;
+        padding: 10px 8px;
+        font-size: 0.9rem;
+      }
     }
   }
   
-  .summary-stats {
-    grid-template-columns: 1fr;
+  .summary-panel {
+    margin-bottom: 15px;
+    padding: 15px;
+    
+    .summary-stats {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      
+      .stat-card {
+        padding: 12px;
+        
+        .stat-icon {
+          font-size: 1.5rem;
+          padding: 8px;
+        }
+        
+        .stat-content {
+          h4 {
+            font-size: 0.8rem;
+          }
+          
+          .stat-number {
+            font-size: 1.2rem;
+          }
+        }
+      }
+    }
   }
   
-  .legend-items {
-    justify-content: center;
+  .map-container {
+    margin-bottom: 15px;
+    min-height: 250px;
+    
+    .leaflet-map {
+      min-height: 250px;
+    }
+  }
+  
+  .map-legend {
+    padding: 10px;
+    
+    h4 {
+      font-size: 0.9rem;
+      margin-bottom: 8px;
+    }
+    
+    .legend-items {
+      justify-content: center;
+      gap: 10px;
+      
+      .legend-item {
+        font-size: 0.8rem;
+        
+        .legend-color {
+          width: 14px;
+          height: 14px;
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .donors-map-container {
+    padding: 2px;
+  }
+  
+  .page-header {
+    .map-controls {
+      flex-direction: column;
+      
+      .btn {
+        flex: none;
+        width: 100%;
+      }
+    }
+  }
+  
+  .summary-panel {
+    .summary-stats {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  .map-legend {
+    .legend-items {
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
   }
 }

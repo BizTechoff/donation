@@ -4,6 +4,7 @@ import * as L from 'leaflet';
 import { Donor } from '../../../shared/entity/donor';
 import { Donation } from '../../../shared/entity/donation';
 import { GeocodingService } from '../../services/geocoding.service';
+import { I18nService } from '../../i18n/i18n.service';
 
 // Fix for default markers in Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -41,7 +42,10 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
   donorRepo = remult.repo(Donor);
   donationRepo = remult.repo(Donation);
 
-  constructor(private geocodingService: GeocodingService) {}
+  constructor(
+    private geocodingService: GeocodingService,
+    public i18n: I18nService
+  ) {}
 
   // סטטיסטיקות
   get totalDonors(): number {
@@ -103,7 +107,7 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     }) as DonorWithStats[];
     
     // Add demo coordinates for testing - more extensive data
-    if (this.donors.length > 0 && !this.donors[0].latitude) {
+    if (this.donors.length > 0) {
       const demoCoords = [
         { lat: 40.7128, lng: -74.0060 }, // New York
         { lat: 34.0522, lng: -118.2437 }, // Los Angeles
@@ -171,10 +175,42 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
         { lat: 46.8772, lng: -96.7898 }, // Fargo
         { lat: 41.2524, lng: -95.9980 }, // Omaha
         { lat: 39.7391, lng: -104.9847 }, // Denver
-        { lat: 40.7608, lng: -111.8910 } // Salt Lake City
+        { lat: 40.7608, lng: -111.8910 }, // Salt Lake City
+        // Additional 30 locations for comprehensive coverage
+        { lat: 35.0928, lng: -106.6504 }, // Albuquerque
+        { lat: 33.5207, lng: -86.8025 }, // Birmingham
+        { lat: 43.6150, lng: -116.2023 }, // Boise
+        { lat: 42.3601, lng: -71.0589 }, // Boston
+        { lat: 41.2033, lng: -77.1945 }, // State College
+        { lat: 38.0293, lng: -78.4767 }, // Charlottesville
+        { lat: 39.1612, lng: -75.5264 }, // Wilmington
+        { lat: 41.7658, lng: -72.6734 }, // Hartford
+        { lat: 43.2081, lng: -71.5376 }, // Manchester
+        { lat: 44.3106, lng: -69.7795 }, // Augusta
+        { lat: 42.2406, lng: -71.0275 }, // Quincy
+        { lat: 41.6032, lng: -71.4774 }, // Providence
+        { lat: 44.2619, lng: -72.5806 }, // Montpelier
+        { lat: 43.8041, lng: -120.5542 }, // Bend
+        { lat: 45.3311, lng: -121.7113 }, // Hood River
+        { lat: 46.7296, lng: -117.0002 }, // Pullman
+        { lat: 47.2529, lng: -122.4443 }, // Tacoma
+        { lat: 48.7519, lng: -122.4787 }, // Bellingham
+        { lat: 47.9779, lng: -122.2021 }, // Everett
+        { lat: 46.5197, lng: -122.8746 }, // Chehalis
+        { lat: 46.9804, lng: -123.8552 }, // Aberdeen
+        { lat: 45.6387, lng: -121.1309 }, // The Dalles
+        { lat: 44.0521, lng: -123.0868 }, // Eugene
+        { lat: 42.3265, lng: -122.8756 }, // Medford
+        { lat: 43.8142, lng: -103.4648 }, // Rapid City
+        { lat: 46.8083, lng: -100.7837 }, // Bismarck
+        { lat: 45.7833, lng: -108.5007 }, // Billings
+        { lat: 47.0527, lng: -122.8652 }, // Olympia
+        { lat: 46.7982, lng: -92.1077 }, // Duluth
+        { lat: 44.0154, lng: -92.4699 }, // Rochester
+        { lat: 43.5460, lng: -96.7313 } // Sioux Falls
       ];
       
-      // Assign coordinates to more donors
+      // Assign coordinates to all donors (overwrite existing for demo)
       this.donors.slice(0, Math.min(this.donors.length, demoCoords.length)).forEach((donor, index) => {
         if (demoCoords[index]) {
           donor.latitude = demoCoords[index].lat;
@@ -243,26 +279,56 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
     // Force map to redraw after a short delay
     setTimeout(() => {
-      this.map.invalidateSize();
+      if (this.map && this.map.getContainer()) {
+        try {
+          this.map.invalidateSize();
+        } catch (error) {
+          console.warn('Map initialization invalidateSize error:', error);
+        }
+      }
     }, 200);
   }
 
   addMarkersToMap() {
-    if (!this.map || !this.markersLayer) return;
+    if (!this.map || !this.markersLayer) {
+      console.log('Map or markers layer not ready');
+      return;
+    }
     
     this.markersLayer.clearLayers();
     
     console.log('Adding markers for donors:', this.donors.length);
+    console.log('Donors with coordinates:', this.donors.filter(d => d.latitude && d.longitude).length);
     
-    this.donors.forEach(donor => {
+    let addedCount = 0;
+    this.donors.forEach((donor, index) => {
       if (donor.latitude && donor.longitude) {
-        console.log('Adding marker for:', donor.displayName, donor.latitude, donor.longitude);
-        const marker = this.createMarkerForDonor(donor);
-        this.markersLayer.addLayer(marker);
+        console.log(`Adding marker ${index + 1}:`, donor.displayName, donor.latitude, donor.longitude);
+        try {
+          const marker = this.createMarkerForDonor(donor);
+          this.markersLayer.addLayer(marker);
+          addedCount++;
+        } catch (error) {
+          console.error('Error creating marker for donor:', donor.displayName, error);
+        }
+      } else {
+        console.log(`No coordinates for donor ${index + 1}:`, donor.displayName);
       }
     });
     
-    console.log('Total markers added:', this.markersLayer.getLayers().length);
+    console.log('Total markers added:', addedCount);
+    console.log('Markers layer count:', this.markersLayer.getLayers().length);
+    
+    // Force map refresh
+    setTimeout(() => {
+      if (this.map && this.map.getContainer()) {
+        try {
+          this.map.invalidateSize();
+        } catch (error) {
+          console.warn('Map invalidateSize error:', error);
+        }
+      }
+    }, 100);
   }
 
   createMarkerForDonor(donor: DonorWithStats): L.Marker {
@@ -306,40 +372,43 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   createPopupContent(donor: DonorWithStats): string {
     const lastDonationText = donor.lastDonationDate 
-      ? new Date(donor.lastDonationDate).toLocaleDateString('he-IL')
-      : 'אין מידע';
+      ? new Date(donor.lastDonationDate).toLocaleDateString(this.i18n.lang.RTL ? 'he-IL' : 'en-US')
+      : this.i18n.terms.noDataAvailable;
+    
+    const direction = this.i18n.lang.RTL ? 'rtl' : 'ltr';
+    const textAlign = this.i18n.lang.RTL ? 'right' : 'left';
     
     return `
-      <div style="direction: rtl; font-family: Arial, sans-serif; min-width: 200px;">
+      <div style="direction: ${direction}; font-family: Arial, sans-serif; min-width: 200px; text-align: ${textAlign};">
         <h4 style="margin: 0 0 10px 0; color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 5px;">
           ${donor.displayName}
         </h4>
         <div style="margin-bottom: 8px;">
-          <strong>📍 כתובת:</strong><br>
-          ${donor.address || 'לא צוינה'}<br>
+          <strong>📍 ${this.i18n.terms.addressLabel}:</strong><br>
+          ${donor.address || this.i18n.terms.notSpecifiedAddress}<br>
           ${donor.city || ''} ${donor.zipCode || ''}
         </div>
         <div style="margin-bottom: 8px;">
-          <strong>📧 אימייל:</strong> ${donor.email || 'לא צוין'}
+          <strong>📧 ${this.i18n.terms.emailLabel}:</strong> ${donor.email || this.i18n.terms.mapNotSpecified}
         </div>
         <div style="margin-bottom: 8px;">
-          <strong>📞 טלפון:</strong> ${donor.phone || 'לא צוין'}
+          <strong>📞 ${this.i18n.terms.phoneLabel}:</strong> ${donor.phone || this.i18n.terms.mapNotSpecified}
         </div>
         <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin-top: 10px;">
           <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-            <span><strong>💰 סה"כ תרומות:</strong></span>
+            <span><strong>💰 ${this.i18n.terms.totalDonationsLabel}:</strong></span>
             <span>₪${donor.totalDonations.toLocaleString()}</span>
           </div>
           <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-            <span><strong>📊 מספר תרומות:</strong></span>
+            <span><strong>📊 ${this.i18n.terms.donationCountLabel}:</strong></span>
             <span>${donor.donationCount}</span>
           </div>
           <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-            <span><strong>📈 ממוצע תרומה:</strong></span>
+            <span><strong>📈 ${this.i18n.terms.averageDonationLabel}:</strong></span>
             <span>₪${donor.averageDonation.toLocaleString()}</span>
           </div>
           <div style="display: flex; justify-content: space-between;">
-            <span><strong>📅 תרומה אחרונה:</strong></span>
+            <span><strong>📅 ${this.i18n.terms.lastDonationLabel}:</strong></span>
             <span>${lastDonationText}</span>
           </div>
         </div>
@@ -363,7 +432,7 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     );
 
     if (donorsWithoutCoords.length === 0) {
-      alert('כל התורמים כבר מכילים קואורדינטות או שאין להם כתובת');
+      alert(this.i18n.terms.allDonorsHaveCoordinates);
       return;
     }
 
@@ -393,7 +462,10 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     this.loading = false;
-    alert(`הומרו ${updatedCount} כתובות בהצלחה מתוך ${donorsWithoutCoords.length}`);
+    const message = this.i18n.terms.convertedAddresses
+      .replace('{count}', updatedCount.toString())
+      .replace('{total}', donorsWithoutCoords.length.toString());
+    alert(message);
     
     if (updatedCount > 0) {
       this.addMarkersToMap();

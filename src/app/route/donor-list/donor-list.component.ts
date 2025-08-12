@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { remult } from 'remult';
 import { Donor } from '../../../shared/entity';
+import { I18nService } from '../../i18n/i18n.service';
 
 @Component({
   selector: 'app-donor-list',
@@ -12,6 +13,8 @@ export class DonorListComponent implements OnInit {
   donors: Donor[] = [];
   donorRepo = remult.repo(Donor);
   loading = false;
+
+  constructor(public i18n: I18nService) {}
 
   async ngOnInit() {
     await this.loadDonors();
@@ -46,7 +49,8 @@ export class DonorListComponent implements OnInit {
   }
 
   async deleteDonor(donor: Donor) {
-    if (confirm(`האם אתה בטוח שברצונך למחוק את ${donor.fullName}?`)) {
+    const confirmMessage = this.i18n.currentTerms.confirmDeleteDonor?.replace('{name}', donor.fullName || '') || '';
+    if (confirm(confirmMessage)) {
       try {
         await donor.delete();
         this.donors = this.donors.filter(d => d.id !== donor.id);

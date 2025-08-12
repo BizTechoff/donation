@@ -1,77 +1,77 @@
-<div class="donors-map-container">
+<div class="donors-map-container" [attr.dir]="i18n.lang.RTL ? 'rtl' : 'ltr'">
   <div class="page-header">
-    <h1>מפת תורמים</h1>
+    <h1>{{ i18n.terms.mapTitle }}</h1>
     <div class="map-controls">
-      <button class="btn btn-primary" (click)="refreshMap()">רענן מפה</button>
-      <button class="btn btn-secondary" (click)="toggleSummary()">{{ showSummary ? 'הסתר סיכום' : 'הצג סיכום' }}</button>
-      <button class="btn btn-info" (click)="geocodeMissingAddresses()" [disabled]="loading">המר כתובות</button>
+      <button class="btn btn-primary" (click)="refreshMap()">{{ i18n.terms.refreshMap }}</button>
+      <button class="btn btn-secondary" (click)="toggleSummary()">{{ showSummary ? i18n.terms.hideSummary : i18n.terms.showSummary }}</button>
+      <button class="btn btn-info" (click)="geocodeMissingAddresses()" [disabled]="loading">{{ i18n.terms.convertAddresses }}</button>
     </div>
   </div>
 
-  <!-- חלונית סיכום -->
+  <!-- Summary panel -->
   <div class="summary-panel" [class.visible]="showSummary">
-    <h3>סיכום נתונים</h3>
+    <h3>{{ i18n.terms.dataSummary }}</h3>
     <div class="summary-stats">
       <div class="stat-card">
         <div class="stat-icon">👥</div>
         <div class="stat-content">
-          <h4>סה"כ תורמים</h4>
+          <h4>{{ i18n.terms.totalDonors }}</h4>
           <span class="stat-number">{{ totalDonors }}</span>
         </div>
       </div>
       <div class="stat-card">
         <div class="stat-icon">🎯</div>
         <div class="stat-content">
-          <h4>תורמים פעילים</h4>
+          <h4>{{ i18n.terms.activeDonors }}</h4>
           <span class="stat-number">{{ activeDonors }}</span>
         </div>
       </div>
       <div class="stat-card">
         <div class="stat-icon">💰</div>
         <div class="stat-content">
-          <h4>ממוצע תרומה</h4>
+          <h4>{{ i18n.terms.mapAverageDonation }}</h4>
           <span class="stat-number">₪{{ averageDonation | number }}</span>
         </div>
       </div>
       <div class="stat-card">
         <div class="stat-icon">📍</div>
         <div class="stat-content">
-          <h4>תורמים במפה</h4>
+          <h4>{{ i18n.terms.donorsOnMap }}</h4>
           <span class="stat-number">{{ donorsOnMap }}</span>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- מפת תורמים -->
+  <!-- Donors map -->
   <div class="map-container">
     <div id="donors-map" class="leaflet-map" #mapElement></div>
   </div>
 
-  <!-- מקרא צבעים -->
+  <!-- Color legend -->
   <div class="map-legend">
-    <h4>מקרא</h4>
+    <h4>{{ i18n.terms.legend }}</h4>
     <div class="legend-items">
       <div class="legend-item">
         <div class="legend-color active"></div>
-        <span>תורם פעיל</span>
+        <span>{{ i18n.terms.activeDonor }}</span>
       </div>
       <div class="legend-item">
         <div class="legend-color inactive"></div>
-        <span>תורם לא פעיל</span>
+        <span>{{ i18n.terms.inactiveDonor }}</span>
       </div>
       <div class="legend-item">
         <div class="legend-color high-donor"></div>
-        <span>תורם גדול</span>
+        <span>{{ i18n.terms.highDonor }}</span>
       </div>
       <div class="legend-item">
         <div class="legend-color recent-donor"></div>
-        <span>תרם לאחרונה</span>
+        <span>{{ i18n.terms.recentDonor }}</span>
       </div>
     </div>
   </div>
 
   <div *ngIf="loading" class="loading-overlay">
-    <div class="loading-spinner">טוען מפה...</div>
+    <div class="loading-spinner">{{ i18n.terms.loadingMap }}</div>
   </div>
 </div>

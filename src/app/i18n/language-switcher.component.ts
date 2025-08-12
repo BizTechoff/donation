@@ -4,90 +4,46 @@ import { I18nService, Language } from './i18n.service'
 @Component({
   selector: 'app-language-switcher',
   template: `
-    <div class="language-switcher">
-      <button 
-        class="language-button"
-        (click)="toggleLanguage()"
-        [title]="getToggleTooltip()">
-        <span class="language-flag">{{ getCurrentLanguageFlag() }}</span>
-        <span class="language-text">{{ getCurrentLanguageName() }}</span>
-        <span class="switch-icon">⇄</span>
-      </button>
-      
-      <!-- Alternative dropdown style -->
-      <select 
-        *ngIf="showDropdown"
-        class="language-select"
-        [value]="i18n.currentLanguage"
-        (change)="onLanguageChange($event)">
-        <option 
-          *ngFor="let lang of availableLanguages" 
-          [value]="lang.code">
-          {{ lang.name }}
-        </option>
-      </select>
-    </div>
+    <button 
+      mat-icon-button
+      class="language-switcher-button"
+      (click)="toggleLanguage()"
+      [title]="getToggleTooltip()"
+      [attr.aria-label]="getToggleTooltip()">
+      <mat-icon class="language-icon">{{ getCurrentLanguageIcon() }}</mat-icon>
+    </button>
   `,
   styles: [`
-    .language-switcher {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .language-button {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 12px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      background: white;
-      cursor: pointer;
-      font-size: 14px;
+    .language-switcher-button {
+      color: rgba(255, 255, 255, 0.8);
       transition: all 0.2s ease;
     }
 
-    .language-button:hover {
-      background: #f5f5f5;
-      border-color: #999;
+    .language-switcher-button:hover {
+      color: rgba(255, 255, 255, 1);
+      background-color: rgba(255, 255, 255, 0.1);
     }
 
-    .language-flag {
-      font-size: 16px;
+    .language-icon {
+      font-size: 20px !important;
+      width: 20px !important;
+      height: 20px !important;
     }
-
-    .language-text {
-      font-weight: 500;
-    }
-
-    .switch-icon {
-      opacity: 0.6;
-      font-size: 12px;
-    }
-
-    .language-select {
-      padding: 4px 8px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      background: white;
-      cursor: pointer;
-      font-size: 14px;
-    }
-
-    /* RTL Support */
-    :host[dir="rtl"] .language-button {
-      flex-direction: row-reverse;
-    }
-
-    :host[dir="rtl"] .language-switcher {
-      flex-direction: row-reverse;
+    
+    @media (max-width: 768px) {
+      .language-switcher-button {
+        padding: 8px;
+      }
+      
+      .language-icon {
+        font-size: 18px !important;
+        width: 18px !important;
+        height: 18px !important;
+      }
     }
   `]
 })
 export class LanguageSwitcherComponent {
-  showDropdown = false
-  
   constructor(public i18n: I18nService) {}
 
   get availableLanguages() {
@@ -98,29 +54,13 @@ export class LanguageSwitcherComponent {
     this.i18n.switchLanguage()
   }
 
-  onLanguageChange(event: Event): void {
-    const target = event.target as HTMLSelectElement
-    const language = target.value as Language
-    this.i18n.setLanguage(language)
-  }
-
-  getCurrentLanguageFlag(): string {
-    return this.i18n.currentLanguage === 'he' ? '🇮🇱' : '🇺🇸'
-  }
-
-  getCurrentLanguageName(): string {
-    const currentLang = this.availableLanguages.find(
-      lang => lang.code === this.i18n.currentLanguage
-    )
-    return currentLang?.name || ''
+  getCurrentLanguageIcon(): string {
+    return this.i18n.currentLanguage === 'he' ? 'language' : 'translate'
   }
 
   getToggleTooltip(): string {
-    const otherLang = this.availableLanguages.find(
-      lang => lang.code !== this.i18n.currentLanguage
-    )
     return this.i18n.currentLanguage === 'he' 
-      ? `עבור ל${otherLang?.name}`
-      : `Switch to ${otherLang?.name}`
+      ? 'Switch to English'
+      : 'עבור לעברית'
   }
 }

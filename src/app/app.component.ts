@@ -1,6 +1,7 @@
 import { Component, OnInit, ViewChild } from '@angular/core'
 import { Router, Route, ActivatedRoute } from '@angular/router'
 import { MatSidenav } from '@angular/material/sidenav'
+import { Observable, map, combineLatest } from 'rxjs'
 
 import { UIToolsService } from './common/UIToolsService'
 import { openDialog, RouteHelperService } from 'common-ui-elements'
@@ -96,19 +97,71 @@ export class AppComponent implements OnInit {
   routeName(route: Route) {
     let name = route.path
     if (route.data && route.data['name']) name = route.data['name']
-    return name
-    return ''
+    
+    // Translate route names using i18n
+    if (name && this.i18n.currentTerms[name as keyof typeof this.i18n.currentTerms]) {
+      return this.i18n.currentTerms[name as keyof typeof this.i18n.currentTerms]
+    }
+    
+    return name || ''
+  }
+
+  getRouteNameObservable(route: Route): Observable<string> {
+    let name = route.path
+    if (route.data && route.data['name']) name = route.data['name']
+    
+    return this.i18n.terms$.pipe(
+      map(terms => {
+        if (name && terms[name as keyof typeof terms]) {
+          return terms[name as keyof typeof terms] as string
+        }
+        return name || ''
+      })
+    )
   }
 
   currentTitle() {
-    if (this.activeRoute!.snapshot && this.activeRoute!.firstChild)
+    let title = 'donation'
+    
+    if (this.activeRoute!.snapshot && this.activeRoute!.firstChild) {
       if (this.activeRoute.snapshot.firstChild!.data!['name']) {
-        return this.activeRoute.snapshot.firstChild!.data['name']
+        title = this.activeRoute.snapshot.firstChild!.data['name']
       } else {
-        if (this.activeRoute.firstChild.routeConfig)
-          return this.activeRoute.firstChild.routeConfig.path
+        if (this.activeRoute.firstChild.routeConfig) {
+          title = this.activeRoute.firstChild.routeConfig.path || 'donation'
+        }
       }
-    return 'donation'
+    }
+    
+    // Translate title using i18n
+    if (title && this.i18n.currentTerms[title as keyof typeof this.i18n.currentTerms]) {
+      return this.i18n.currentTerms[title as keyof typeof this.i18n.currentTerms]
+    }
+    
+    return title
+  }
+
+  getCurrentTitleObservable(): Observable<string> {
+    let title = 'donation'
+    
+    if (this.activeRoute!.snapshot && this.activeRoute!.firstChild) {
+      if (this.activeRoute.snapshot.firstChild!.data!['name']) {
+        title = this.activeRoute.snapshot.firstChild!.data['name']
+      } else {
+        if (this.activeRoute.firstChild.routeConfig) {
+          title = this.activeRoute.firstChild.routeConfig.path || 'donation'
+        }
+      }
+    }
+    
+    return this.i18n.terms$.pipe(
+      map(terms => {
+        if (title && terms[title as keyof typeof terms]) {
+          return terms[title as keyof typeof terms] as string
+        }
+        return title
+      })
+    )
   }
   doesNotRequireLogin() {
     return this.activeRoute?.snapshot?.firstChild?.data?.['noLogin']

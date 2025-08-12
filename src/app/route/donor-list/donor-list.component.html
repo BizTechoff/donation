@@ -1,45 +1,45 @@
 <div class="donor-list-container">
   <div class="page-header">
-    <h1>רשימת תורמים</h1>
-    <button class="btn btn-primary add-donor-btn" (click)="createDonor()">הוסף תורם חדש</button>
+    <h1>{{ (i18n.terms$ | async)?.donorListTitle }}</h1>
+    <button class="btn btn-primary add-donor-btn" (click)="createDonor()">{{ (i18n.terms$ | async)?.addNewDonor }}</button>
   </div>
 
   <div class="filters-section">
     <div class="filter-row">
       <div class="filter-group">
-        <label>חיפוש כללי</label>
-        <input type="text" class="form-control" placeholder="שם, כתובת, טלפון...">
+        <label>{{ (i18n.terms$ | async)?.generalSearch }}</label>
+        <input type="text" class="form-control" [placeholder]="(i18n.terms$ | async)?.searchNameAddressPhone">
       </div>
       
       <div class="filter-group">
-        <label>רמה</label>
+        <label>{{ (i18n.terms$ | async)?.level }}</label>
         <select class="form-control">
-          <option value="">הכל</option>
-          <option value="platinum">פלטינום</option>
-          <option value="gold">זהב</option>
-          <option value="silver">כסף</option>
-          <option value="regular">רגיל</option>
+          <option value="">{{ (i18n.terms$ | async)?.all }}</option>
+          <option value="platinum">{{ (i18n.terms$ | async)?.platinum }}</option>
+          <option value="gold">{{ (i18n.terms$ | async)?.gold }}</option>
+          <option value="silver">{{ (i18n.terms$ | async)?.silver }}</option>
+          <option value="regular">{{ (i18n.terms$ | async)?.regular }}</option>
         </select>
       </div>
 
       <div class="filter-group">
-        <label>איזור</label>
+        <label>{{ (i18n.terms$ | async)?.region }}</label>
         <select class="form-control">
-          <option value="">הכל</option>
-          <option value="center">מרכז</option>
-          <option value="north">צפון</option>
-          <option value="south">דרום</option>
-          <option value="jerusalem">ירושלים</option>
+          <option value="">{{ (i18n.terms$ | async)?.all }}</option>
+          <option value="center">{{ (i18n.terms$ | async)?.center }}</option>
+          <option value="north">{{ (i18n.terms$ | async)?.north }}</option>
+          <option value="south">{{ (i18n.terms$ | async)?.south }}</option>
+          <option value="jerusalem">{{ (i18n.terms$ | async)?.jerusalem }}</option>
         </select>
       </div>
 
       <div class="filter-group">
-        <label>שיוך קהילתי</label>
+        <label>{{ (i18n.terms$ | async)?.communityAffiliation }}</label>
         <select class="form-control">
-          <option value="">הכל</option>
-          <option value="ashkenazi">אשכנזי</option>
-          <option value="sephardi">ספרדי</option>
-          <option value="hasidi">חסידי</option>
+          <option value="">{{ (i18n.terms$ | async)?.all }}</option>
+          <option value="ashkenazi">{{ (i18n.terms$ | async)?.ashkenazi }}</option>
+          <option value="sephardi">{{ (i18n.terms$ | async)?.sephardi }}</option>
+          <option value="hasidi">{{ (i18n.terms$ | async)?.hasidi }}</option>
         </select>
       </div>
     </div>
@@ -47,21 +47,21 @@
 
   <div class="donors-grid">
     <div class="grid-header">
-      <div class="grid-col">שם</div>
-      <div class="grid-col">כתובת</div>
-      <div class="grid-col">טלפון</div>
-      <div class="grid-col">אימייל</div>
-      <div class="grid-col">רמה</div>
-      <div class="grid-col">סה"כ תרומות</div>
-      <div class="grid-col">תרומה אחרונה</div>
-      <div class="grid-col">פעולות</div>
+      <div class="grid-col">{{ (i18n.terms$ | async)?.name }}</div>
+      <div class="grid-col">{{ (i18n.terms$ | async)?.address }}</div>
+      <div class="grid-col">{{ (i18n.terms$ | async)?.phone }}</div>
+      <div class="grid-col">{{ (i18n.terms$ | async)?.email }}</div>
+      <div class="grid-col">{{ (i18n.terms$ | async)?.level }}</div>
+      <div class="grid-col">{{ (i18n.terms$ | async)?.totalDonationsHeader }}</div>
+      <div class="grid-col">{{ (i18n.terms$ | async)?.lastDonation }}</div>
+      <div class="grid-col">{{ (i18n.terms$ | async)?.actions }}</div>
     </div>
 
     <div class="grid-row" *ngFor="let donor of donors">
       <div class="grid-col">
         <div class="donor-name">
           <strong>{{donor.fullName}}</strong>
-          <small *ngIf="donor.idNumber">(ת.ז: {{donor.idNumber}})</small>
+          <small *ngIf="donor.idNumber">({{ (i18n.terms$ | async)?.idNumber }}: {{donor.idNumber}})</small>
         </div>
       </div>
       <div class="grid-col">{{donor.address}}</div>
@@ -69,24 +69,24 @@
       <div class="grid-col">{{donor.email}}</div>
       <div class="grid-col">
         <span class="level-badge" [class]="donor.isActive ? 'level-active' : 'level-inactive'">
-          {{donor.isActive ? 'פעיל' : 'לא פעיל'}}
+          {{donor.isActive ? ((i18n.terms$ | async)?.active) : ((i18n.terms$ | async)?.inactive)}}
         </span>
       </div>
       <div class="grid-col">-</div>
       <div class="grid-col">{{donor.createdDate | date:'dd/MM/yyyy'}}</div>
       <div class="grid-col actions">
-        <button class="btn-icon btn-view" (click)="viewDonor(donor)" title="הצג פרטים">👁</button>
-        <button class="btn-icon btn-edit" (click)="editDonor(donor)" title="עריכה">✏</button>
-        <button class="btn-icon btn-save" (click)="saveDonor(donor)" *ngIf="donor._.isNew()" title="שמור">💾</button>
-        <button class="btn-icon btn-delete" (click)="deleteDonor(donor)" title="מחק">🗑</button>
-        <button class="btn-icon btn-toggle" (click)="deactivateDonor(donor)" *ngIf="donor.isActive" title="השבת">⏸</button>
+        <button class="btn-icon btn-view" (click)="viewDonor(donor)" [title]="(i18n.terms$ | async)?.viewDetails">👁</button>
+        <button class="btn-icon btn-edit" (click)="editDonor(donor)" [title]="(i18n.terms$ | async)?.edit">✏</button>
+        <button class="btn-icon btn-save" (click)="saveDonor(donor)" *ngIf="donor._.isNew()" [title]="(i18n.terms$ | async)?.save">💾</button>
+        <button class="btn-icon btn-delete" (click)="deleteDonor(donor)" [title]="(i18n.terms$ | async)?.delete">🗑</button>
+        <button class="btn-icon btn-toggle" (click)="deactivateDonor(donor)" *ngIf="donor.isActive" [title]="(i18n.terms$ | async)?.deactivate">⏸</button>
       </div>
     </div>
   </div>
 
   <div class="pagination">
-    <button class="btn-page">הקודם</button>
-    <span class="page-info">עמוד 1 מתוך 10</span>
-    <button class="btn-page">הבא</button>
+    <button class="btn-page">{{ (i18n.terms$ | async)?.previous }}</button>
+    <span class="page-info">{{ (i18n.terms$ | async)?.pageOf?.replace('{current}', '1')?.replace('{total}', '10') }}</span>
+    <button class="btn-page">{{ (i18n.terms$ | async)?.next }}</button>
   </div>
 </div>

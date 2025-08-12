@@ -3,7 +3,7 @@
   <div *ngIf="loading" class="loading-overlay">
     <div class="loading-spinner">
       <div class="spinner-icon">💝</div>
-      <h3>טוען נתונים...</h3>
+      <h3>{{ (i18n.terms$ | async)?.loadingData }}</h3>
     </div>
   </div>
 
@@ -14,28 +14,28 @@
       <div class="hero-content">
         <h1 class="hero-title">
           <span class="highlight">🌟</span>
-          מערכת ניהול תרומות
+          {{ (i18n.terms$ | async)?.donationManagementSystem }}
           <span class="highlight">🌟</span>
         </h1>
         <p class="hero-subtitle">
-          מערכת מתקדמת לניהול תרומות, קמפיינים ותורמים
+          {{ (i18n.terms$ | async)?.advancedSystemDescription }}
         </p>
         <div class="hero-stats" *ngIf="showWelcomeAnimation">
           <div class="stat-item" style="--delay: 0.2s">
             <div class="stat-number">{{welcomeStats.totalRaised | number}}</div>
-            <div class="stat-label">₪ נאספו עד היום</div>
+            <div class="stat-label">{{ (i18n.terms$ | async)?.raisedToDate }}</div>
           </div>
           <div class="stat-item" style="--delay: 0.4s">
             <div class="stat-number">{{welcomeStats.donorsCount | number}}</div>
-            <div class="stat-label">תורמים פעילים</div>
+            <div class="stat-label">{{ (i18n.terms$ | async)?.activeDonorsLabel }}</div>
           </div>
           <div class="stat-item" style="--delay: 0.6s">
             <div class="stat-number">{{welcomeStats.campaignsCount}}</div>
-            <div class="stat-label">קמפיינים הושלמו</div>
+            <div class="stat-label">{{ (i18n.terms$ | async)?.campaignsCompleted }}</div>
           </div>
           <div class="stat-item" style="--delay: 0.8s">
             <div class="stat-number">{{welcomeStats.yearsActive}}</div>
-            <div class="stat-label">שנות פעילות</div>
+            <div class="stat-label">{{ (i18n.terms$ | async)?.yearsActive }}</div>
           </div>
         </div>
       </div>
@@ -55,37 +55,37 @@
 
     <!-- תכונות המערכת -->
     <div class="features-section" [class.animated]="showWelcomeAnimation">
-      <h2>תכונות המערכת</h2>
+      <h2>{{ (i18n.terms$ | async)?.systemFeatures }}</h2>
       <div class="features-grid">
         <div class="feature-card" style="--delay: 1s">
           <div class="feature-icon">👥</div>
-          <h3>ניהול תורמים</h3>
-          <p>מעקב מפורט אחר תורמים, היסטוריית תרומות ונתונים אישיים</p>
+          <h3>{{ (i18n.terms$ | async)?.donorManagementFeature }}</h3>
+          <p>{{ (i18n.terms$ | async)?.donorManagementDescription }}</p>
         </div>
         <div class="feature-card" style="--delay: 1.2s">
           <div class="feature-icon">💰</div>
-          <h3>ניהול תרומות</h3>
-          <p>רישום תרומות, הפקת קבלות ומעקב אחר יעדים כספיים</p>
+          <h3>{{ (i18n.terms$ | async)?.donationManagementFeature }}</h3>
+          <p>{{ (i18n.terms$ | async)?.donationManagementDescription }}</p>
         </div>
         <div class="feature-card" style="--delay: 1.4s">
           <div class="feature-icon">🎯</div>
-          <h3>ניהול קמפיינים</h3>
-          <p>יצירת קמפיינים, מעקב התקדמות וניתוח ביצועים</p>
+          <h3>{{ (i18n.terms$ | async)?.campaignManagementFeature }}</h3>
+          <p>{{ (i18n.terms$ | async)?.campaignManagementDescription }}</p>
         </div>
         <div class="feature-card" style="--delay: 1.6s">
           <div class="feature-icon">🔄</div>
-          <h3>הוראות קבע</h3>
-          <p>ניהול תרומות חוזרות ואוטומציה של גבייה</p>
+          <h3>{{ (i18n.terms$ | async)?.standingOrdersFeature }}</h3>
+          <p>{{ (i18n.terms$ | async)?.standingOrdersDescription }}</p>
         </div>
         <div class="feature-card" style="--delay: 1.8s">
           <div class="feature-icon">🗺️</div>
-          <h3>מפת תורמים</h3>
-          <p>הצגה גיאוגרפית של תורמים עם ניתוח אזורי</p>
+          <h3>{{ (i18n.terms$ | async)?.donorsMapFeature }}</h3>
+          <p>{{ (i18n.terms$ | async)?.donorsMapDescription }}</p>
         </div>
         <div class="feature-card" style="--delay: 2s">
           <div class="feature-icon">📊</div>
-          <h3>דוחות ואנליטיקה</h3>
-          <p>דוחות מפורטים, גרפים וניתוחים סטטיסטיים</p>
+          <h3>{{ (i18n.terms$ | async)?.reportsAnalyticsFeature }}</h3>
+          <p>{{ (i18n.terms$ | async)?.reportsAnalyticsDescription }}</p>
         </div>
       </div>
     </div>
@@ -93,16 +93,16 @@
     <!-- קריאה לפעולה -->
     <div class="cta-section" [class.animated]="showWelcomeAnimation">
       <div class="cta-content">
-        <h2>מוכנים להתחיל?</h2>
-        <p>הצטרפו למערכת וקבלו גישה לכל התכונות המתקדמות</p>
+        <h2>{{ (i18n.terms$ | async)?.readyToStart }}</h2>
+        <p>{{ (i18n.terms$ | async)?.joinSystemDescription }}</p>
         <div class="cta-buttons">
           <button class="btn btn-primary" routerLink="/sign-in">
             <span class="btn-icon">🚀</span>
-            התחברות למערכת
+            {{ (i18n.terms$ | async)?.systemLogin }}
           </button>
           <button *ngIf="false" class="btn btn-secondary" routerLink="/sign-up">
             <span class="btn-icon">📝</span>
-            הרשמה חדשה
+            {{ (i18n.terms$ | async)?.newRegistration }}
           </button>
         </div>
       </div>
@@ -113,8 +113,8 @@
   <div *ngIf="!loading && isLoggedIn" class="dashboard-section">
     <!-- כותרת עם ברכה -->
     <div class="dashboard-header">
-      <h1>שלום {{currentUser?.name}}, 👋</h1>
-      <p>הנה סיכום פעילות המערכת שלך</p>
+      <h1>{{ (i18n.terms$ | async)?.helloUser?.replace('{name}', currentUser?.name || '') }}</h1>
+      <p>{{ (i18n.terms$ | async)?.activitySummary }}</p>
     </div>
 
     <!-- כרטיסי סטטיסטיקה -->
@@ -122,43 +122,43 @@
       <div class="stat-card donations">
         <div class="stat-icon">💰</div>
         <div class="stat-content">
-          <h3>סה"כ תרומות</h3>
+          <h3>{{ (i18n.terms$ | async)?.totalDonationsTitle }}</h3>
           <div class="stat-number">{{formatCurrency(totalAmount)}}</div>
-          <div class="stat-subtitle">{{totalDonations}} תרומות</div>
+          <div class="stat-subtitle">{{ (i18n.terms$ | async)?.donationsCountDynamic?.replace('{count}', totalDonations.toString()) }}</div>
         </div>
       </div>
       
       <div class="stat-card donors">
         <div class="stat-icon">👥</div>
         <div class="stat-content">
-          <h3>תורמים פעילים</h3>
+          <h3>{{ (i18n.terms$ | async)?.activeDonorsTitle }}</h3>
           <div class="stat-number">{{totalDonors}}</div>
-          <div class="stat-subtitle">רשומים במערכת</div>
+          <div class="stat-subtitle">{{ (i18n.terms$ | async)?.registeredInSystem }}</div>
         </div>
       </div>
       
       <div class="stat-card campaigns">
         <div class="stat-icon">🎯</div>
         <div class="stat-content">
-          <h3>קמפיינים פעילים</h3>
+          <h3>{{ (i18n.terms$ | async)?.activeCampaignsTitle }}</h3>
           <div class="stat-number">{{activeCampaigns}}</div>
-          <div class="stat-subtitle">רצים כעת</div>
+          <div class="stat-subtitle">{{ (i18n.terms$ | async)?.runningNow }}</div>
         </div>
       </div>
       
       <div class="stat-card recurring">
         <div class="stat-icon">🔄</div>
         <div class="stat-content">
-          <h3>הכנסה חוזרת</h3>
+          <h3>{{ (i18n.terms$ | async)?.recurringIncome }}</h3>
           <div class="stat-number">{{formatCurrency(monthlyRecurring)}}</div>
-          <div class="stat-subtitle">חודשית</div>
+          <div class="stat-subtitle">{{ (i18n.terms$ | async)?.monthly }}</div>
         </div>
       </div>
     </div>
 
     <!-- תרומות אחרונות -->
     <div class="recent-section">
-      <h2>תרומות אחרונות</h2>
+      <h2>{{ (i18n.terms$ | async)?.recentDonations }}</h2>
       <div class="recent-donations">
         <div *ngFor="let donation of recentDonations" class="donation-item">
           <div class="donation-info">
@@ -175,7 +175,7 @@
 
     <!-- קמפיינים מובילים -->
     <div class="campaigns-section" *ngIf="topCampaigns.length > 0">
-      <h2>קמפיינים מובילים</h2>
+      <h2>{{ (i18n.terms$ | async)?.topCampaigns }}</h2>
       <div class="campaigns-grid">
         <div *ngFor="let campaign of topCampaigns" class="campaign-card">
           <h3>{{campaign.name}}</h3>
@@ -184,7 +184,7 @@
               <div class="progress-fill" [style.width.%]="getProgressPercentage(campaign)"></div>
             </div>
             <div class="progress-info">
-              <span>{{formatCurrency(campaign.raisedAmount)}} מתוך {{formatCurrency(campaign.targetAmount)}}</span>
+              <span>{{formatCurrency(campaign.raisedAmount)}} {{ (i18n.terms$ | async)?.outOf }} {{formatCurrency(campaign.targetAmount)}}</span>
               <span class="progress-percentage">{{getProgressPercentage(campaign)}}%</span>
             </div>
           </div>
@@ -195,31 +195,31 @@
 
     <!-- פעולות מהירות -->
     <div class="quick-actions">
-      <h2>פעולות מהירות</h2>
+      <h2>{{ (i18n.terms$ | async)?.quickActions }}</h2>
       <div class="actions-grid">
         <button class="action-btn" routerLink="/רשימת תרומות">
           <div class="action-icon">💰</div>
-          <span>תרומות</span>
+          <span>{{ (i18n.terms$ | async)?.donations }}</span>
         </button>
         <button class="action-btn" routerLink="/רשימת תורמים">
           <div class="action-icon">👥</div>
-          <span>תורמים</span>
+          <span>{{ (i18n.terms$ | async)?.donors }}</span>
         </button>
         <button class="action-btn" routerLink="/קמפיינים">
           <div class="action-icon">🎯</div>
-          <span>קמפיינים</span>
+          <span>{{ (i18n.terms$ | async)?.campaigns }}</span>
         </button>
         <button class="action-btn" routerLink="/הוראות קבע">
           <div class="action-icon">🔄</div>
-          <span>הוראות קבע</span>
+          <span>{{ (i18n.terms$ | async)?.standingOrders }}</span>
         </button>
         <button class="action-btn" routerLink="/מפת תורמים">
           <div class="action-icon">🗺️</div>
-          <span>מפת תורמים</span>
+          <span>{{ (i18n.terms$ | async)?.donorsMap }}</span>
         </button>
         <button class="action-btn" routerLink="/דוחות ואנליטיקה">
           <div class="action-icon">📊</div>
-          <span>דוחות</span>
+          <span>{{ (i18n.terms$ | async)?.reports }}</span>
         </button>
       </div>
     </div>
