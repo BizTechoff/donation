@@ -3,21 +3,22 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { remult } from 'remult';
+import { I18nService } from '../i18n';
 
 @Component({
   template: '' // אין צורך בתצוגה
 })
 export class SilentRedirectComponent implements OnInit {
-  constructor(private router: Router, private route: ActivatedRoute) {}
+  constructor(private router: Router, private route: ActivatedRoute, public i18n: I18nService) { }
 
   ngOnInit(): void {
     // בדוק אם המשתמש מחובר
     if (remult.user) {
       // משתמש מחובר - הפנה לרשימת תורמים
-      this.router.navigate(['/רשימת תורמים']);
+      this.router.navigate([`/${this.i18n.currentTerms.donorDetails}}}`]);
     } else {
       // משתמש לא מחובר - הפנה לדף הבית
-      this.router.navigate(['/דף הבית']);
+      this.router.navigate([`/${'דף%20הבית%7D%7D'}}}`]);
     }
   }
 }

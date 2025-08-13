@@ -289,7 +289,7 @@ export const termsHe = {
   profile: 'פרופיל',
 
   // Home Page - Welcome Section
-  donationManagementSystem: 'מערכת ניהול תרומות',
+  donationManagementSystem: 'מערכת לניהול גיוס תרומות',
   advancedSystemDescription: 'מערכת מתקדמת לניהול תרומות, קמפיינים ותורמים',
   raisedToDate: '₪ נאספו עד היום',
   activeDonorsLabel: 'תורמים פעילים',

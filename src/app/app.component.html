@@ -31,7 +31,7 @@
     </div>
   </mat-toolbar>
   <mat-sidenav-container class="app-sidenav-container">
-    <mat-sidenav #sidenav class="app-sidenav mat-elevation-z10 no-print" [opened]="!uiService.isScreenSmall()"
+    <mat-sidenav #sidenav class="app-sidenav mat-elevation-z10 no-print" [opened]="!uiService.isScreenSmall() && remult.authenticated()"
       [mode]="uiService.isScreenSmall() ? 'over' : 'side'">
       <div style="width: 100%; text-align: center"></div>
       <h3 *ngIf="remult.authenticated()">
