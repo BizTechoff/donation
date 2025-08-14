@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { remult } from 'remult';
 import { Donation, Donor, Campaign, DonationMethod } from '../../../shared/entity';
 import { I18nService } from '../../i18n/i18n.service';
-import { openDialog } from '../../common-ui-elements';
+import { UIToolsService } from '../../common/UIToolsService';
 
 @Component({
   selector: 'app-donations-list',
@@ -33,7 +33,7 @@ export class DonationsListComponent implements OnInit {
   hebrewDate = '';
   fundraiserName = '';
 
-  constructor(public i18n: I18nService) {}
+  constructor(public i18n: I18nService, private ui: UIToolsService) {}
 
   async ngOnInit() {
     await this.loadData();
@@ -92,18 +92,17 @@ export class DonationsListComponent implements OnInit {
   }
 
   async createDonation() {
-    this.editingDonation = this.donationRepo.create();
-    this.editingDonation.donationDate = new Date();
-    this.editingDonation.currency = 'ILS';
-    this.hebrewDate = '';
-    this.fundraiserName = '';
-    this.showPreview = false;
-    this.showAddDonationModal = true;
+    const changed = await this.ui.donationDetailsDialog('new');
+    if (changed) {
+      await this.loadDonations();
+    }
   }
 
   async editDonation(donation: Donation) {
-    this.editingDonation = donation;
-    this.showAddDonationModal = true;
+    const changed = await this.ui.donationDetailsDialog(donation.id);
+    if (changed) {
+      await this.loadDonations();
+    }
   }
 
   async saveDonation() {

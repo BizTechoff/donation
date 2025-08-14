@@ -1,0 +1,105 @@
+<!-- Donation Details Modal -->
+<div class="modal-overlay">
+  <div class="modal-content donation-details-modal">
+    <div class="modal-header">
+      <h2>{{isNewDonation ? 'רישום תרומה חדשה' : 'פרטי תרומה'}}</h2>
+      <button class="modal-close">&times;</button>
+    </div>
+    
+    <!-- Loading State -->
+    <div class="loading-overlay" *ngIf="loading">
+      <div class="loading-spinner">טוען נתונים...</div>
+    </div>
+    
+    <div class="modal-body">
+      <div class="details-grid" *ngIf="donation && !loading">
+        <!-- פרטי תרומה בסיסיים -->
+        <div class="section basic-details">
+          <h3>פרטי תרומה בסיסיים</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>תורם *</label>
+              <select class="form-control" [(ngModel)]="donation.donorId">
+                <option value="">בחר תורם</option>
+                <option *ngFor="let donor of donors" [value]="donor.id">
+                  {{ getDonorDisplayName(donor) }}
+                </option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label>סכום *</label>
+              <input type="number" class="form-control" [(ngModel)]="donation.amount" 
+                     placeholder="הכנס סכום" min="0" step="0.01">
+            </div>
+            
+            <div class="form-group">
+              <label>מטבע</label>
+              <select class="form-control" [(ngModel)]="donation.currency">
+                <option value="ILS">שקל</option>
+                <option value="USD">דולר</option>
+                <option value="EUR">יורו</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label>תאריך תרומה *</label>
+              <input type="date" class="form-control" [(ngModel)]="donation.donationDate">
+            </div>
+            
+            <div class="form-group">
+              <label>אמצעי תשלום *</label>
+              <select class="form-control" [(ngModel)]="donation.donationMethodId">
+                <option value="">בחר אמצעי תשלום</option>
+                <option *ngFor="let method of donationMethods" [value]="method.id">
+                  {{ method.name }}
+                </option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label>קמפיין</label>
+              <select class="form-control" [(ngModel)]="donation.campaignId">
+                <option value="">ללא קמפיין</option>
+                <option *ngFor="let campaign of campaigns" [value]="campaign.id">
+                  {{ campaign.name }}
+                </option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- הערות -->
+        <div class="section notes-section">
+          <h3>הערות</h3>
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <label>הערות</label>
+              <textarea class="form-control" rows="4" [(ngModel)]="donation.notes" 
+                        placeholder="הכנס הערות..."></textarea>
+            </div>
+            
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input type="checkbox" [(ngModel)]="donation.isAnonymous">
+                תרומה אנונימית
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="modal-footer">
+      <button class="btn btn-secondary">ביטול</button>
+      
+      <button class="btn btn-danger" *ngIf="!isNewDonation" (click)="deleteDonation()">
+        מחק
+      </button>
+      
+      <button class="btn btn-primary" (click)="saveDonation()">
+        שמור תרומה
+      </button>
+    </div>
+  </div>
+</div>
