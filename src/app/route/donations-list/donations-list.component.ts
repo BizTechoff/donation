@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { remult } from 'remult';
 import { Donation, Donor, Campaign, DonationMethod } from '../../../shared/entity';
 import { I18nService } from '../../i18n/i18n.service';
+import { openDialog } from '../../common-ui-elements';
 
 @Component({
   selector: 'app-donations-list',
@@ -173,33 +174,33 @@ export class DonationsListComponent implements OnInit {
 
   async saveDonationAndExit() {
     await this.saveDonation();
-    // הפונקציה saveDonation כבר סוגרת את המודל אם הצליחה
+    // The saveDonation function already closes the modal if successful
   }
 
   getMethodDisplayName(method: string): string {
-    if (!method) return 'לא צוין';
+    if (!method) return this.i18n.currentTerms.notSpecified || '';
     switch (method) {
-      case 'cash': return 'מזומן';
-      case 'check': return 'צ\'ק';
-      case 'credit': return 'כרטיס אשראי';
-      case 'transfer': return 'העברה בנקאית';
-      case 'standing': return 'הוראת קבע';
-      default: return 'לא צוין';
+      case 'cash': return this.i18n.currentTerms.cash || '';
+      case 'check': return this.i18n.currentTerms.check || '';
+      case 'credit': return this.i18n.currentTerms.creditCard || '';
+      case 'transfer': return this.i18n.currentTerms.bankTransfer || '';
+      case 'standing': return this.i18n.currentTerms.standingOrder || '';
+      default: return this.i18n.currentTerms.notSpecified || '';
     }
   }
 
   getCampaignDisplayName(campaign: string): string {
-    if (!campaign) return 'לא צוין';
+    if (!campaign) return this.i18n.currentTerms.notSpecified || '';
     switch (campaign) {
-      case 'general': return 'כללי';
-      case 'torah': return 'לימוד תורה';
-      case 'charity': return 'צדקה';
-      case 'building': return 'בניין';
-      default: return 'לא צוין';
+      case 'general': return this.i18n.currentTerms.general || '';
+      case 'torah': return this.i18n.currentTerms.torah || '';
+      case 'charity': return this.i18n.currentTerms.charity || '';
+      case 'building': return this.i18n.currentTerms.building || '';
+      default: return this.i18n.currentTerms.notSpecified || '';
     }
   }
 
-  // פונקציות עזר לתצוגה מקדימה
+  // Helper functions for preview
   getSelectedDonorName(): string {
     if (!this.editingDonation?.donorId) return '';
     const donor = this.donors.find(d => d.id === this.editingDonation!.donorId);
@@ -207,15 +208,15 @@ export class DonationsListComponent implements OnInit {
   }
 
   getSelectedMethodName(): string {
-    if (!this.editingDonation?.donationMethodId) return 'לא צוין';
+    if (!this.editingDonation?.donationMethodId) return this.i18n.currentTerms.notSpecified || '';
     const method = this.donationMethods.find(m => m.id === this.editingDonation!.donationMethodId);
-    return method?.name || 'לא צוין';
+    return method?.name || this.i18n.currentTerms.notSpecified || '';
   }
 
   getSelectedCampaignName(): string {
-    if (!this.editingDonation?.campaignId) return 'לא צוין';
+    if (!this.editingDonation?.campaignId) return this.i18n.currentTerms.notSpecified || '';
     const campaign = this.campaigns.find(c => c.id === this.editingDonation!.campaignId);
-    return campaign?.name || 'לא צוין';
+    return campaign?.name || this.i18n.currentTerms.notSpecified || '';
   }
 
   getCurrencySymbol(): string {

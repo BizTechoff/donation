@@ -110,18 +110,18 @@ export class CampaignsListComponent implements OnInit {
       this.closeModal();
     } catch (error) {
       console.error('Error saving campaign:', error);
-      alert(this.i18n.terms.campaignManagementError);
+      alert(this.i18n.currentTerms.campaignManagementError || 'Error saving campaign');
     }
   }
 
   async deleteCampaign(campaign: Campaign) {
-    if (confirm(`${this.i18n.terms.deleteCampaignConfirm} ${campaign.name}?`)) {
+    if (confirm(`${this.i18n.currentTerms.deleteCampaignConfirm || 'Are you sure you want to delete campaign'} ${campaign.name}?`)) {
       try {
         await campaign.delete();
         await this.loadCampaigns();
       } catch (error) {
         console.error('Error deleting campaign:', error);
-        alert(this.i18n.terms.campaignDeletionError);
+        alert(this.i18n.currentTerms.campaignDeletionError || 'Error deleting campaign');
       }
     }
   }
@@ -145,7 +145,7 @@ export class CampaignsListComponent implements OnInit {
   }
 
   async cancelCampaign(campaign: Campaign) {
-    if (confirm(`${this.i18n.terms.cancelCampaignConfirm} ${campaign.name}?`)) {
+    if (confirm(`${this.i18n.currentTerms.cancelCampaignConfirm || 'Are you sure you want to cancel campaign'} ${campaign.name}?`)) {
       try {
         await campaign.cancel();
         await this.loadCampaigns();
@@ -184,16 +184,16 @@ export class CampaignsListComponent implements OnInit {
 
   getStatusText(status: string): string {
     switch (status) {
-      case 'active': return this.i18n.terms.activeStatusText;
-      case 'completed': return this.i18n.terms.completedStatusText;
-      case 'cancelled': return this.i18n.terms.cancelledStatusText;
-      case 'draft': return this.i18n.terms.draftStatusText;
+      case 'active': return this.i18n.currentTerms.activeStatus || 'Active';
+      case 'completed': return this.i18n.currentTerms.completedStatus || 'Completed';
+      case 'cancelled': return this.i18n.currentTerms.cancelledStatus || 'Cancelled';
+      case 'draft': return this.i18n.currentTerms.draft || 'Draft';
       default: return status;
     }
   }
 
   formatDate(date?: Date): string {
-    if (!date) return this.i18n.terms.notSpecifiedText;
+    if (!date) return this.i18n.currentTerms.notSpecified || 'Not specified';
     return new Date(date).toLocaleDateString('he-IL');
   }
 

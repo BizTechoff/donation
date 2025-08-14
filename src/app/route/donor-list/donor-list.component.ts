@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { remult } from 'remult';
 import { Donor } from '../../../shared/entity';
 import { I18nService } from '../../i18n/i18n.service';
+import { UIToolsService } from '../../common/UIToolsService';
 
 @Component({
   selector: 'app-donor-list',
@@ -14,11 +15,7 @@ export class DonorListComponent implements OnInit {
   donorRepo = remult.repo(Donor);
   loading = false;
   
-  // Modal state
-  showAddDonorModal = false;
-  editingDonor: Donor | null = null;
-
-  constructor(public i18n: I18nService) {}
+  constructor(public i18n: I18nService, private ui: UIToolsService) {}
 
   async ngOnInit() {
     await this.loadDonors();
@@ -39,42 +36,25 @@ export class DonorListComponent implements OnInit {
   }
 
   async createDonor() {
-    this.editingDonor = this.donorRepo.create();
-    this.editingDonor.isActive = true; // Default to active
-    this.editingDonor.wantsUpdates = true; // Default preferences
-    this.editingDonor.wantsTaxReceipts = true;
-    this.editingDonor.preferredLanguage = 'he'; // Default to Hebrew
-    this.editingDonor.country = 'ישראל'; // Default country
-    this.showAddDonorModal = true;
-  }
-
-  closeModal() {
-    this.showAddDonorModal = false;
-    this.editingDonor = null;
-  }
-
-  async saveDonorModal() {
-    if (!this.editingDonor || !this.isValidDonor()) {
-      return;
-    }
-
-    try {
-      await this.editingDonor.save();
-      await this.loadDonors(); // Refresh the list
-      this.closeModal();
-    } catch (error) {
-      console.error('Error saving donor:', error);
-      // TODO: Show error message to user
+    const changed = await this.ui.donorDetailsDialog('new');
+    if (changed) {
+      await this.loadDonors();
     }
   }
 
-  isValidDonor(): boolean {
-    if (!this.editingDonor) return false;
-    
-    // Check required fields
-    return !!(this.editingDonor.firstName?.trim() && this.editingDonor.lastName?.trim());
+  async viewDonor(donor: Donor) {
+    const changed = await this.ui.donorDetailsDialog(donor.id);
+    if (changed) {
+      await this.loadDonors();
+    }
   }
 
+  async editDonor(donor: Donor) {
+    const changed = await this.ui.donorDetailsDialog(donor.id);
+    if (changed) {
+      await this.loadDonors();
+    }
+  }
 
   async deleteDonor(donor: Donor) {
     const confirmMessage = this.i18n.currentTerms.confirmDeleteDonor?.replace('{name}', donor.fullName || '') || '';
@@ -95,15 +75,5 @@ export class DonorListComponent implements OnInit {
     } catch (error) {
       console.error('Error deactivating donor:', error);
     }
-  }
-
-  viewDonor(donor: Donor) {
-    // Navigate to donor details - will be implemented with routing
-    console.log('Viewing donor:', donor.displayName);
-  }
-
-  editDonor(donor: Donor) {
-    // Enable inline editing or navigate to edit form
-    console.log('Editing donor:', donor.displayName);
   }
 }

@@ -41,6 +41,7 @@ import { RemindersComponent } from './route/reminders/reminders.component'
 import { ReportsComponent } from './route/reports/reports.component'
 import { LanguageSwitcherComponent } from './i18n/language-switcher.component'
 import { DonorsMapComponent } from './route/donors-map/donors-map.component'
+import { DonorDetailsModalComponent } from './routes/modals/donor-details-modal/donor-details-modal.component'
 
 @NgModule({
   declarations: [
@@ -64,7 +65,8 @@ import { DonorsMapComponent } from './route/donors-map/donors-map.component'
     RemindersComponent,
     ReportsComponent,
     LanguageSwitcherComponent,
-    DonorsMapComponent
+    DonorsMapComponent,
+    DonorDetailsModalComponent
   ],
   imports: [
     BrowserModule,

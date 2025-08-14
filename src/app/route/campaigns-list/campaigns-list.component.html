@@ -61,27 +61,27 @@
       </div>
 
       <div class="filter-group">
-        <label>קטגוריה</label>
+        <label>{{ (i18n.terms$ | async)?.category }}</label>
         <input type="text" class="form-control" 
                [(ngModel)]="filterCategory" 
                (ngModelChange)="applyFilters()"
-               placeholder="קטגוריה...">
+               [placeholder]="(i18n.terms$ | async)?.categoryPlaceholder">
       </div>
 
       <div class="filter-group">
-        <label>פעיל/לא פעיל</label>
+        <label>{{ (i18n.terms$ | async)?.activeInactive }}</label>
         <select class="form-control" 
                 [(ngModel)]="filterActive" 
                 (ngModelChange)="applyFilters()">
-          <option value="">הכל</option>
-          <option value="true">פעיל</option>
-          <option value="false">לא פעיל</option>
+          <option value="">{{ (i18n.terms$ | async)?.everything }}</option>
+          <option value="true">{{ (i18n.terms$ | async)?.activeStatus }}</option>
+          <option value="false">{{ (i18n.terms$ | async)?.inactiveStatus }}</option>
         </select>
       </div>
 
       <div class="filter-actions">
-        <button class="btn btn-secondary" (click)="clearFilters()">נקה מפיינים</button>
-        <button class="btn btn-info" (click)="loadData()" [disabled]="loading">רענן</button>
+        <button class="btn btn-secondary" (click)="clearFilters()">{{ (i18n.terms$ | async)?.clearFilters }}</button>
+        <button class="btn btn-info" (click)="loadData()" [disabled]="loading">{{ (i18n.terms$ | async)?.refresh }}</button>
       </div>
     </div>
   </div>
@@ -89,22 +89,22 @@
   <!-- טבלת קמפיינים -->
   <div class="campaigns-table-container">
     <div *ngIf="loading" class="loading-overlay">
-      <div class="loading-spinner">טוען קמפיינים...</div>
+      <div class="loading-spinner">{{ (i18n.terms$ | async)?.loadingCampaigns }}</div>
     </div>
     
     <table class="campaigns-table">
       <thead>
         <tr>
-          <th>שם הקמפיין</th>
-          <th>קטגוריה</th>
-          <th>יעד כספי</th>
-          <th>נאסף</th>
-          <th>אחוז התקדמות</th>
-          <th>תאריך התחלה</th>
-          <th>תאריך סיום</th>
-          <th>סטטוס</th>
-          <th>אחראי</th>
-          <th>פעולות</th>
+          <th>{{ (i18n.terms$ | async)?.campaignName }}</th>
+          <th>{{ (i18n.terms$ | async)?.category }}</th>
+          <th>{{ (i18n.terms$ | async)?.financialTarget }}</th>
+          <th>{{ (i18n.terms$ | async)?.collected }}</th>
+          <th>{{ (i18n.terms$ | async)?.progressPercentage }}</th>
+          <th>{{ (i18n.terms$ | async)?.startDate }}</th>
+          <th>{{ (i18n.terms$ | async)?.endDate }}</th>
+          <th>{{ (i18n.terms$ | async)?.status }}</th>
+          <th>{{ (i18n.terms$ | async)?.responsible }}</th>
+          <th>{{ (i18n.terms$ | async)?.actions }}</th>
         </tr>
       </thead>
       <tbody>
@@ -115,7 +115,7 @@
               <small *ngIf="campaign.description">{{campaign.description}}</small>
             </div>
           </td>
-          <td>{{campaign.category || 'לא צוין'}}</td>
+          <td>{{campaign.category || ((i18n.terms$ | async)?.notSpecified)}}</td>
           <td class="amount-col">
             <span class="amount">{{formatCurrency(campaign.targetAmount)}}</span>
           </td>
@@ -137,145 +137,143 @@
               {{getStatusText(campaign.status)}}
             </span>
           </td>
-          <td>{{campaign.manager?.name || 'לא צוין'}}</td>
+          <td>{{campaign.manager?.name || ((i18n.terms$ | async)?.notSpecified)}}</td>
           <td class="actions">
-            <button class="btn-icon btn-view" title="הצג פרטים" (click)="editCampaign(campaign)">👁</button>
-            <button class="btn-icon btn-edit" title="ערוך" (click)="editCampaign(campaign)">✏</button>
-            <button class="btn-icon btn-activate" title="הפעל" (click)="activateCampaign(campaign)" 
+            <button class="btn-icon btn-view" [title]="(i18n.terms$ | async)?.viewDetails" (click)="editCampaign(campaign)">👁</button>
+            <button class="btn-icon btn-edit" [title]="(i18n.terms$ | async)?.edit" (click)="editCampaign(campaign)">✏</button>
+            <button class="btn-icon btn-activate" [title]="(i18n.terms$ | async)?.activate" (click)="activateCampaign(campaign)" 
                     *ngIf="campaign.status === 'draft'">▶</button>
-            <button class="btn-icon btn-complete" title="סמן כהושלם" (click)="completeCampaign(campaign)" 
+            <button class="btn-icon btn-complete" [title]="(i18n.terms$ | async)?.markAsCompleted" (click)="completeCampaign(campaign)" 
                     *ngIf="campaign.status === 'active'">✅</button>
-            <button class="btn-icon btn-cancel" title="בטל" (click)="cancelCampaign(campaign)" 
+            <button class="btn-icon btn-cancel" [title]="(i18n.terms$ | async)?.cancel" (click)="cancelCampaign(campaign)" 
                     *ngIf="campaign.status === 'active' || campaign.status === 'draft'">❌</button>
-            <button class="btn-icon btn-delete" title="מחק" (click)="deleteCampaign(campaign)">🗑</button>
+            <button class="btn-icon btn-delete" [title]="(i18n.terms$ | async)?.delete" (click)="deleteCampaign(campaign)">🗑</button>
           </td>
         </tr>
       </tbody>
     </table>
   </div>
 
-  <!-- אין קמפיינים -->
   <div *ngIf="!loading && campaigns.length === 0" class="no-campaigns">
     <div class="no-campaigns-icon">🎯</div>
-    <h3>אין קמפיינים</h3>
-    <p>לא נמצאו קמפיינים העונים על הקריטריונים</p>
-    <button class="btn btn-primary" (click)="createCampaign()">צור קמפיין ראשון</button>
+    <h3>{{ (i18n.terms$ | async)?.noCampaigns }}</h3>
+    <p>{{ (i18n.terms$ | async)?.noCampaignsMatchingCriteria }}</p>
+    <button class="btn btn-primary" (click)="createCampaign()">{{ (i18n.terms$ | async)?.createFirstCampaign }}</button>
   </div>
 </div>
 
-<!-- מודל הוספת/עריכת קמפיין -->
 <div class="modal-overlay" *ngIf="showAddCampaignModal">
   <div class="modal-content campaign-modal">
     <div class="modal-header">
-      <h2>{{editingCampaign?._?.isNew() ? 'קמפיין חדש' : 'עריכת קמפיין'}}</h2>
+      <h2>{{editingCampaign?._?.isNew() ? ((i18n.terms$ | async)?.newCampaign) : ((i18n.terms$ | async)?.editCampaign)}}</h2>
       <button class="modal-close" (click)="closeModal()">&times;</button>
     </div>
     <div class="modal-body">
       <div class="form-grid">
         <div class="form-group">
-          <label>שם הקמפיין *</label>
+          <label>{{ (i18n.terms$ | async)?.campaignName }} *</label>
           <input type="text" class="form-control" 
                  [(ngModel)]="editingCampaign!.name" 
-                 placeholder="הכנס שם קמפיין">
+                 [placeholder]="(i18n.terms$ | async)?.enterCampaignName">
         </div>
         
         <div class="form-group">
-          <label>קטגוריה</label>
+          <label>{{ (i18n.terms$ | async)?.category }}</label>
           <input type="text" class="form-control" 
                  [(ngModel)]="editingCampaign!.category" 
-                 placeholder="קטגוריית הקמפיין">
+                 [placeholder]="(i18n.terms$ | async)?.campaignCategory">
         </div>
         
         <div class="form-group">
-          <label>יעד כספי *</label>
+          <label>{{ (i18n.terms$ | async)?.financialTarget }} *</label>
           <input type="number" class="form-control" 
                  [(ngModel)]="editingCampaign!.targetAmount" 
                  placeholder="0">
         </div>
         
         <div class="form-group">
-          <label>מטבע</label>
+          <label>{{ (i18n.terms$ | async)?.currency }}</label>
           <select class="form-control" [(ngModel)]="editingCampaign!.currency">
-            <option value="ILS">שקל (₪)</option>
-            <option value="USD">דולר ($)</option>
-            <option value="EUR">יורו (€)</option>
+            <option value="ILS">{{ (i18n.terms$ | async)?.shekelOption }}</option>
+            <option value="USD">{{ (i18n.terms$ | async)?.dollarOption }}</option>
+            <option value="EUR">{{ (i18n.terms$ | async)?.euroOption }}</option>
           </select>
         </div>
         
         <div class="form-group">
-          <label>תאריך התחלה *</label>
+          <label>{{ (i18n.terms$ | async)?.startDate }} *</label>
           <input type="date" class="form-control" 
                  [(ngModel)]="editingCampaign!.startDate">
         </div>
         
         <div class="form-group">
-          <label>תאריך סיום</label>
+          <label>{{ (i18n.terms$ | async)?.endDate }}</label>
           <input type="date" class="form-control" 
                  [(ngModel)]="editingCampaign!.endDate">
         </div>
         
         <div class="form-group">
-          <label>סטטוס</label>
+          <label>{{ (i18n.terms$ | async)?.status }}</label>
           <select class="form-control" [(ngModel)]="editingCampaign!.status">
-            <option value="draft">טיוטה</option>
-            <option value="active">פעיל</option>
-            <option value="completed">הושלם</option>
-            <option value="cancelled">בוטל</option>
+            <option value="draft">{{ (i18n.terms$ | async)?.draft }}</option>
+            <option value="active">{{ (i18n.terms$ | async)?.activeStatus }}</option>
+            <option value="completed">{{ (i18n.terms$ | async)?.completedStatus }}</option>
+            <option value="cancelled">{{ (i18n.terms$ | async)?.cancelledStatus }}</option>
           </select>
         </div>
         
         <div class="form-group">
-          <label>אחראי קמפיין</label>
+          <label>{{ (i18n.terms$ | async)?.campaignManager }}</label>
           <select class="form-control" [(ngModel)]="editingCampaign!.managerId">
-            <option value="">בחר אחראי...</option>
+            <option value="">{{ (i18n.terms$ | async)?.selectManager }}</option>
             <option *ngFor="let user of users" [value]="user.id">{{user.name}}</option>
           </select>
         </div>
         
         <div class="form-group checkbox-group">
           <label class="checkbox-label">
-            <input type="checkbox" [(ngModel)]="editingCampaign!.isActive"> קמפיין פעיל
+            <input type="checkbox" [(ngModel)]="editingCampaign!.isActive"> {{ (i18n.terms$ | async)?.activeCampaign }}
           </label>
         </div>
         
         <div class="form-group checkbox-group">
           <label class="checkbox-label">
-            <input type="checkbox" [(ngModel)]="editingCampaign!.isPublic"> מוצג באתר
+            <input type="checkbox" [(ngModel)]="editingCampaign!.isPublic"> {{ (i18n.terms$ | async)?.displayedOnWebsite }}
           </label>
         </div>
         
         <div class="form-group">
-          <label>קישור לתמונה</label>
+          <label>{{ (i18n.terms$ | async)?.imageLink }}</label>
           <input type="url" class="form-control" 
                  [(ngModel)]="editingCampaign!.imageUrl" 
-                 placeholder="https://example.com/image.jpg">
+                 [placeholder]="(i18n.terms$ | async)?.imageLinkPlaceholder">
         </div>
         
         <div class="form-group">
-          <label>קישור לעמוד</label>
+          <label>{{ (i18n.terms$ | async)?.pageLink }}</label>
           <input type="url" class="form-control" 
                  [(ngModel)]="editingCampaign!.websiteUrl" 
-                 placeholder="https://example.com">
+                 [placeholder]="(i18n.terms$ | async)?.pageLinkPlaceholder">
         </div>
         
         <div class="form-group full-width">
-          <label>תיאור הקמפיין</label>
+          <label>{{ (i18n.terms$ | async)?.campaignDescription }}</label>
           <textarea class="form-control" rows="3" 
                     [(ngModel)]="editingCampaign!.description" 
-                    placeholder="תאר את מטרות הקמפיין..."></textarea>
+                    [placeholder]="(i18n.terms$ | async)?.describeCampaignGoals"></textarea>
         </div>
         
         <div class="form-group full-width">
-          <label>הערות פנימיות</label>
+          <label>{{ (i18n.terms$ | async)?.internalNotes }}</label>
           <textarea class="form-control" rows="2" 
                     [(ngModel)]="editingCampaign!.internalNotes" 
-                    placeholder="הערות לצוות..."></textarea>
+                    [placeholder]="(i18n.terms$ | async)?.notesForTeam"></textarea>
         </div>
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-secondary" (click)="closeModal()">ביטול</button>
-      <button class="btn btn-primary" (click)="saveCampaign()">שמור קמפיין</button>
+      <button class="btn btn-secondary" (click)="closeModal()">{{ (i18n.terms$ | async)?.cancel }}</button>
+      <button class="btn btn-primary" (click)="saveCampaign()">{{ (i18n.terms$ | async)?.saveCampaign }}</button>
     </div>
   </div>
 </div>

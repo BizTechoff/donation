@@ -886,6 +886,25 @@ export const termsHe = {
   nextCollectionSchedule: 'לוח גביות הבא',
   collectionScheduleComingSoon: 'לוח גביות יתווסף בגרסה עתידית',
 
+  // Additional campaigns terms
+  activeInactive: 'פעיל/לא פעיל',
+  inactiveStatus: 'לא פעיל', 
+  financialTarget: 'יעד כספי',
+  collected: 'נאסף',
+  responsible: 'אחראי',
+  editCampaign: 'עריכת קמפיין',
+  campaignCategory: 'קטגוריית הקמפיין',
+  campaignManager: 'אחראי קמפיין',
+  activeCampaign: 'קמפיין פעיל',
+  displayedOnWebsite: 'מוצג באתר',
+  imageLink: 'קישור לתמונה',
+  imageLinkPlaceholder: 'https://example.com/image.jpg',
+  pageLink: 'קישור לעמוד',
+  pageLinkPlaceholder: 'https://example.com',
+  campaignDescription: 'תיאור הקמפיין',
+  describeCampaignGoals: 'תאר את מטרות הקמפיין...',
+  notesForTeam: 'הערות לצוות...',
+
   // Donor modal terms
   addNewDonorModal: 'הוספת תורם חדש',
   familyInformation: 'מידע משפחתי',

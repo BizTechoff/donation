@@ -96,6 +96,14 @@ export class UIToolsService implements UITools {
   }): Promise<void> {
     await openDialog(SelectValueDialogComponent, (x) => x.args(args))
   }
+
+  async donorDetailsDialog(donorId: string): Promise<boolean> {
+    return await openDialog(
+      (await import('../routes/modals/donor-details-modal/donor-details-modal.component')).DonorDetailsModalComponent,
+      (dlg) => dlg.args = { donorId },
+      (dlg) => dlg.changed
+    )
+  }
   private enhanceFieldOptionsAndDataControlOptions(
     commonUIPlugin: CommonUIElementsPluginsService
   ) {

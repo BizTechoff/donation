@@ -29,13 +29,16 @@ import { Roles } from '../enum/roles'
   },
 })
 export class User extends IdEntity {
+
   @Fields.string({
     validate: [Validators.required, Validators.uniqueOnBackend],
     caption: terms.username,
   })
   name = ''
+
   @Fields.string({ includeInApi: false })
   password = ''
+
   @Fields.date({
     allowApiUpdate: false,
   })
@@ -83,6 +86,17 @@ export class User extends IdEntity {
     caption: terms.donator,
   })
   donator = false
+
+  @Fields.object({
+    caption: "הגדרות",
+    allowNull: true
+  })
+  settings?: {
+    notificationsEnabled?: boolean;
+    language?: string;
+    theme?: string;
+    openModal:string; // 'route' | 'dialog'
+  };
 
   @Fields.boolean({
     allowApiUpdate: Roles.admin,

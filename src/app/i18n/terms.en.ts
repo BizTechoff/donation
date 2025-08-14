@@ -888,6 +888,25 @@ export const termsEn = {
   nextCollectionSchedule: 'Next Collection Schedule',
   collectionScheduleComingSoon: 'Collection schedule will be added in a future version',
 
+  // Additional campaigns terms
+  activeInactive: 'Active/Inactive',
+  inactiveStatus: 'Inactive',
+  financialTarget: 'Financial Target',
+  collected: 'Collected',
+  responsible: 'Responsible',
+  editCampaign: 'Edit Campaign',
+  campaignCategory: 'Campaign Category',
+  campaignManager: 'Campaign Manager',
+  activeCampaign: 'Active Campaign',
+  displayedOnWebsite: 'Displayed on Website',
+  imageLink: 'Image Link',
+  imageLinkPlaceholder: 'https://example.com/image.jpg',
+  pageLink: 'Page Link',
+  pageLinkPlaceholder: 'https://example.com',
+  campaignDescription: 'Campaign Description',
+  describeCampaignGoals: 'Describe campaign goals...',
+  notesForTeam: 'Notes for team...',
+
   // Donor modal terms
   addNewDonorModal: 'Add New Donor',
   familyInformation: 'Family Information',

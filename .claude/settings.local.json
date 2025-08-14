@@ -11,7 +11,9 @@
       "Bash(mkdir:*)",
       "Bash(cp:*)",
       "Bash(ng generate service:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(move \"src\\app\\shared\\donor-details-modal\" \"src\\app\\routes\\modals\\donor-details-modal\")",
+      "Bash(mv:*)"
     ],
     "deny": []
   }
