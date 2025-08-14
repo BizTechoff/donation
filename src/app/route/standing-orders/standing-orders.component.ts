@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { remult } from 'remult';
 import { StandingOrder, Donor, Campaign, DonationMethod } from '../../../shared/entity';
+import { I18nService } from '../../i18n/i18n.service';
 
 @Component({
   selector: 'app-standing-orders',
@@ -22,6 +23,8 @@ export class StandingOrdersComponent implements OnInit {
   loading = false;
   showAddOrderModal = false;
   editingOrder?: StandingOrder;
+
+  constructor(public i18n: I18nService) {}
 
   async ngOnInit() {
     await this.loadData();
@@ -102,7 +105,7 @@ export class StandingOrdersComponent implements OnInit {
   }
 
   async deleteOrder(order: StandingOrder) {
-    if (confirm(`האם אתה בטוח שברצונך למחוק את הוראת הקבע של ${order.donor?.displayName}?`)) {
+    if (confirm(`${this.i18n.terms.confirmDeleteDonor?.replace('{name}', order.donor?.displayName || '')}`)) {
       try {
         await order.delete();
         await this.loadStandingOrders();
@@ -131,7 +134,7 @@ export class StandingOrdersComponent implements OnInit {
   }
 
   async cancelOrder(order: StandingOrder) {
-    if (confirm(`האם אתה בטוח שברצונך לבטל את הוראת הקבע של ${order.donor?.displayName}?`)) {
+    if (confirm(`${this.i18n.terms.confirmDeleteDonor?.replace('{name}', order.donor?.displayName || '')}`)) {
       try {
         await order.cancel();
         await this.loadStandingOrders();
@@ -156,15 +159,15 @@ export class StandingOrdersComponent implements OnInit {
   }
 
   getDonorName(order: StandingOrder): string {
-    return order.donor?.displayName || 'לא ידוע';
+    return order.donor?.displayName || this.i18n.terms.unknown;
   }
 
   getCampaignName(order: StandingOrder): string {
-    return order.campaign?.name || 'ללא קמפיין';
+    return order.campaign?.name || this.i18n.terms.withoutCampaign;
   }
 
   getMethodName(order: StandingOrder): string {
-    return order.donationMethod?.name || 'לא צוין';
+    return order.donationMethod?.name || this.i18n.terms.notSpecified;
   }
 
   getStatusBadgeClass(status: string): string {

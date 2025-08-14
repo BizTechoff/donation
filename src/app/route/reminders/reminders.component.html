@@ -1,35 +1,35 @@
 <div class="reminders-container">
   <div class="page-header">
-    <h1>תזכורות ומעקבים</h1>
-    <button class="btn btn-primary add-reminder-btn" (click)="createReminder()">הוספת תזכורת</button>
+    <h1>{{ (i18n.terms$ | async)?.remindersAndTracking }}</h1>
+    <button class="btn btn-primary add-reminder-btn" (click)="createReminder()">{{ (i18n.terms$ | async)?.addReminder }}</button>
   </div>
 
   <div class="summary-cards">
     <div class="summary-card today">
       <div class="card-icon">🔔</div>
       <div class="card-content">
-        <h3>תזכורות היום</h3>
+        <h3>{{ (i18n.terms$ | async)?.todayReminders }}</h3>
         <span class="count urgent">{{todayReminders.length}}</span>
       </div>
     </div>
     <div class="summary-card this-week">
       <div class="card-icon">📅</div>
       <div class="card-content">
-        <h3>השבוע</h3>
+        <h3>{{ (i18n.terms$ | async)?.thisWeekReminders }}</h3>
         <span class="count">{{pendingReminders.length}}</span>
       </div>
     </div>
     <div class="summary-card overdue">
       <div class="card-icon">⚠️</div>
       <div class="card-content">
-        <h3>באיחור</h3>
+        <h3>{{ (i18n.terms$ | async)?.overdueReminders }}</h3>
         <span class="count urgent">{{overdueReminders.length}}</span>
       </div>
     </div>
     <div class="summary-card completed">
       <div class="card-icon">✅</div>
       <div class="card-content">
-        <h3>הושלמו החודש</h3>
+        <h3>{{ (i18n.terms$ | async)?.completedThisMonth }}</h3>
         <span class="count">{{completedRemindersCount}}</span>
       </div>
     </div>
@@ -38,75 +38,75 @@
   <div class="filters-section">
     <div class="filter-row">
       <div class="filter-group">
-        <label>סוג תזכורת</label>
+        <label>{{ (i18n.terms$ | async)?.reminderTypeFilter }}</label>
         <select class="form-control">
-          <option value="">הכל</option>
-          <option value="donation">תרומה</option>
-          <option value="contact">יצירת קשר</option>
-          <option value="birthday">יום הולדת</option>
-          <option value="memorial">יארצייט</option>
-          <option value="meeting">פגישה</option>
-          <option value="follow-up">מעקב</option>
+          <option value="">{{ (i18n.terms$ | async)?.everything }}</option>
+          <option value="donation">{{ (i18n.terms$ | async)?.donationReminder }}</option>
+          <option value="contact">{{ (i18n.terms$ | async)?.contactReminder }}</option>
+          <option value="birthday">{{ (i18n.terms$ | async)?.birthdayReminder }}</option>
+          <option value="memorial">{{ (i18n.terms$ | async)?.memorialReminder }}</option>
+          <option value="meeting">{{ (i18n.terms$ | async)?.meetingReminder }}</option>
+          <option value="follow-up">{{ (i18n.terms$ | async)?.followUpReminder }}</option>
         </select>
       </div>
       
       <div class="filter-group">
-        <label>סטטוס</label>
+        <label>{{ (i18n.terms$ | async)?.reminderStatusFilter }}</label>
         <select class="form-control">
-          <option value="">הכל</option>
-          <option value="pending">ממתין</option>
-          <option value="completed">הושלם</option>
-          <option value="overdue">באיחור</option>
-          <option value="cancelled">מבוטל</option>
+          <option value="">{{ (i18n.terms$ | async)?.everything }}</option>
+          <option value="pending">{{ (i18n.terms$ | async)?.pendingStatus }}</option>
+          <option value="completed">{{ (i18n.terms$ | async)?.completedStatusReminder }}</option>
+          <option value="overdue">{{ (i18n.terms$ | async)?.overdueStatus }}</option>
+          <option value="cancelled">{{ (i18n.terms$ | async)?.cancelledStatusReminder }}</option>
         </select>
       </div>
 
       <div class="filter-group">
-        <label>תאריך מ-</label>
+        <label>{{ (i18n.terms$ | async)?.dateFromReminder }}</label>
         <input type="date" class="form-control">
       </div>
 
       <div class="filter-group">
-        <label>תאריך עד</label>
+        <label>{{ (i18n.terms$ | async)?.dateToReminder }}</label>
         <input type="date" class="form-control">
       </div>
 
       <div class="filter-group">
-        <label>חיפוש תורם</label>
-        <input type="text" class="form-control" placeholder="שם תורם...">
+        <label>{{ (i18n.terms$ | async)?.donorSearchReminder }}</label>
+        <input type="text" class="form-control" [placeholder]="(i18n.terms$ | async)?.donorNamePlaceholder">
       </div>
 
       <div class="filter-group">
-        <label>איזור</label>
+        <label>{{ (i18n.terms$ | async)?.regionFilter }}</label>
         <select class="form-control">
-          <option value="">הכל</option>
-          <option value="center">מרכז</option>
-          <option value="north">צפון</option>
-          <option value="south">דרום</option>
-          <option value="jerusalem">ירושלים</option>
+          <option value="">{{ (i18n.terms$ | async)?.everything }}</option>
+          <option value="center">{{ (i18n.terms$ | async)?.centerRegion }}</option>
+          <option value="north">{{ (i18n.terms$ | async)?.northRegion }}</option>
+          <option value="south">{{ (i18n.terms$ | async)?.southRegion }}</option>
+          <option value="jerusalem">{{ (i18n.terms$ | async)?.jerusalemRegion }}</option>
         </select>
       </div>
     </div>
   </div>
 
   <div class="reminders-tabs">
-    <button class="tab-btn" data-tab="today">היום (8)</button>
-    <button class="tab-btn active" data-tab="week">השבוע (23)</button>
-    <button class="tab-btn" data-tab="overdue">באיחור (5)</button>
-    <button class="tab-btn" data-tab="all">הכל</button>
+    <button class="tab-btn" data-tab="today">{{ (i18n.terms$ | async)?.todayTab }} (8)</button>
+    <button class="tab-btn active" data-tab="week">{{ (i18n.terms$ | async)?.weekTab }} (23)</button>
+    <button class="tab-btn" data-tab="overdue">{{ (i18n.terms$ | async)?.overdueTab }} (5)</button>
+    <button class="tab-btn" data-tab="all">{{ (i18n.terms$ | async)?.allTab }}</button>
   </div>
 
   <div class="reminders-table-container">
     <table class="reminders-table">
       <thead>
         <tr>
-          <th>תאריך תזכורת</th>
-          <th>סוג</th>
-          <th>תורם</th>
-          <th>נושא</th>
-          <th>עדיפות</th>
-          <th>סטטוס</th>
-          <th>פעולות</th>
+          <th>{{ (i18n.terms$ | async)?.reminderDateHeader }}</th>
+          <th>{{ (i18n.terms$ | async)?.typeHeader }}</th>
+          <th>{{ (i18n.terms$ | async)?.donorHeader }}</th>
+          <th>{{ (i18n.terms$ | async)?.subjectHeader }}</th>
+          <th>{{ (i18n.terms$ | async)?.priorityHeader }}</th>
+          <th>{{ (i18n.terms$ | async)?.statusHeaderReminder }}</th>
+          <th>{{ (i18n.terms$ | async)?.actionsHeaderReminder }}</th>
         </tr>
       </thead>
       <tbody>
@@ -148,10 +148,10 @@
           </td>
           
           <td class="actions">
-            <button class="btn-icon btn-complete" title="סמן כהושלם" *ngIf="!reminder.isCompleted" (click)="completeReminder(reminder)">✅</button>
-            <button class="btn-icon btn-edit" title="עריכה" (click)="editReminder(reminder)">✏</button>
-            <button class="btn-icon btn-postpone" title="דחה תזכורת" *ngIf="!reminder.isCompleted" (click)="snoozeReminder(reminder, 1)">⏰</button>
-            <button class="btn-icon btn-delete" title="מחק" (click)="deleteReminder(reminder)">🗑</button>
+            <button class="btn-icon btn-complete" [title]="(i18n.terms$ | async)?.markAsCompleted" *ngIf="!reminder.isCompleted" (click)="completeReminder(reminder)">✅</button>
+            <button class="btn-icon btn-edit" [title]="(i18n.terms$ | async)?.editReminder" (click)="editReminder(reminder)">✏</button>
+            <button class="btn-icon btn-postpone" [title]="(i18n.terms$ | async)?.snoozeReminder" *ngIf="!reminder.isCompleted" (click)="snoozeReminder(reminder, 1)">⏰</button>
+            <button class="btn-icon btn-delete" [title]="(i18n.terms$ | async)?.deleteReminder" (click)="deleteReminder(reminder)">🗑</button>
           </td>
         </tr>
       </tbody>
@@ -159,12 +159,12 @@
   </div>
 
   <div class="quick-reminders">
-    <h2>תזכורות מהירות</h2>
+    <h2>{{ (i18n.terms$ | async)?.quickReminders }}</h2>
     <div class="quick-reminder-cards">
       <div class="quick-card birthdays">
         <div class="card-header">
           <span class="icon">🎂</span>
-          <h3>ימי הולדת השבוע</h3>
+          <h3>{{ (i18n.terms$ | async)?.birthdaysThisWeek }}</h3>
         </div>
         <div class="card-body">
           <div class="birthday-item" *ngFor="let birthday of upcomingBirthdays">
@@ -177,11 +177,11 @@
       <div class="quick-card memorials">
         <div class="card-header">
           <span class="icon">🕯️</span>
-          <h3>יארצייתות השבוע</h3>
+          <h3>{{ (i18n.terms$ | async)?.yahrzeitThisWeek }}</h3>
         </div>
         <div class="card-body">
           <div class="memorial-item">
-            <p>אין יארצייתות השבוע</p>
+            <p>{{ (i18n.terms$ | async)?.noYahrzeitThisWeek }}</p>
           </div>
         </div>
       </div>
@@ -189,21 +189,21 @@
       <div class="quick-card donations">
         <div class="card-header">
           <span class="icon">💰</span>
-          <h3>מועמדים לתרומה</h3>
+          <h3>{{ (i18n.terms$ | async)?.donationCandidates }}</h3>
         </div>
         <div class="card-body">
           <div class="donation-candidate" *ngFor="let candidate of donationCandidates">
             <span class="name">{{candidate.displayName}}</span>
-            <span class="last-donation">מועמד לתרומה</span>
+            <span class="last-donation">{{ (i18n.terms$ | async)?.donationCandidate }}</span>
           </div>
-          <p *ngIf="donationCandidates.length === 0">אין מועמדים זמינים</p>
+          <p *ngIf="donationCandidates.length === 0">{{ (i18n.terms$ | async)?.noCandidatesAvailable }}</p>
         </div>
       </div>
 
       <div class="quick-card meetings">
         <div class="card-header">
           <span class="icon">🤝</span>
-          <h3>פגישות השבוע</h3>
+          <h3>{{ (i18n.terms$ | async)?.meetingsThisWeek }}</h3>
         </div>
         <div class="card-body">
           <div class="meeting-item" *ngFor="let meeting of upcomingMeetings">
@@ -211,16 +211,16 @@
             <span class="purpose">{{meeting.title}}</span>
             <span class="datetime">{{meeting.dueDate | date:'dd/MM'}}</span>
           </div>
-          <p *ngIf="upcomingMeetings.length === 0">אין פגישות השבוע</p>
+          <p *ngIf="upcomingMeetings.length === 0">{{ (i18n.terms$ | async)?.noMeetingsThisWeek }}</p>
         </div>
       </div>
     </div>
   </div>
 
   <div class="pagination">
-    <button class="btn-page">הקודם</button>
-    <span class="page-info">עמוד 1 מתוך 12</span>
-    <button class="btn-page">הבא</button>
+    <button class="btn-page">{{ (i18n.terms$ | async)?.previousPage }}</button>
+    <span class="page-info">{{ (i18n.terms$ | async)?.pageOf?.replace('{current}', '1')?.replace('{total}', '12') }}</span>
+    <button class="btn-page">{{ (i18n.terms$ | async)?.nextPage }}</button>
   </div>
 </div>
 
@@ -228,71 +228,71 @@
 <div class="modal-overlay" *ngIf="showAddReminderModal">
   <div class="modal-content">
     <div class="modal-header">
-      <h2>הוספת תזכורת חדשה</h2>
+      <h2>{{ (i18n.terms$ | async)?.addNewReminder }}</h2>
       <button class="modal-close" (click)="closeModal()">&times;</button>
     </div>
     <div class="modal-body">
       <div class="form-grid">
         <div class="form-group">
-          <label>סוג תזכורת</label>
+          <label>{{ (i18n.terms$ | async)?.reminderTypeSelect }}</label>
           <select class="form-control" [(ngModel)]="editingReminder!.type">
-            <option value="donation_followup">מעקב תרומה</option>
-            <option value="thank_you">תודה</option>
-            <option value="birthday">יום הולדת</option>
-            <option value="memorial">יום זיכרון</option>
-            <option value="meeting">פגישה</option>
-            <option value="phone_call">שיחת טלפון</option>
-            <option value="email">אימייל</option>
-            <option value="general">כללי</option>
+            <option value="donation_followup">{{ (i18n.terms$ | async)?.donationFollowUp }}</option>
+            <option value="thank_you">{{ (i18n.terms$ | async)?.thankYouReminder }}</option>
+            <option value="birthday">{{ (i18n.terms$ | async)?.birthdayType }}</option>
+            <option value="memorial">{{ (i18n.terms$ | async)?.memorialType }}</option>
+            <option value="meeting">{{ (i18n.terms$ | async)?.meetingType }}</option>
+            <option value="phone_call">{{ (i18n.terms$ | async)?.phoneCallType }}</option>
+            <option value="email">{{ (i18n.terms$ | async)?.emailType }}</option>
+            <option value="general">{{ (i18n.terms$ | async)?.generalType }}</option>
           </select>
         </div>
         <div class="form-group">
-          <label>תורם</label>
+          <label>{{ (i18n.terms$ | async)?.donorSelectReminder }}</label>
           <select class="form-control" [(ngModel)]="editingReminder!.relatedDonor">
-            <option value="">בחר תורם...</option>
+            <option value="">{{ (i18n.terms$ | async)?.selectDonorReminder }}</option>
             <option *ngFor="let donor of donors" [value]="donor.id">{{donor.displayName}}</option>
           </select>
         </div>
         <div class="form-group">
-          <label>תאריך תזכורת</label>
+          <label>{{ (i18n.terms$ | async)?.reminderDateField }}</label>
           <input type="date" class="form-control" [(ngModel)]="editingReminder!.dueDate">
         </div>
         <div class="form-group">
-          <label>שעה</label>
+          <label>{{ (i18n.terms$ | async)?.timeField }}</label>
           <input type="time" class="form-control" [(ngModel)]="editingReminder!.dueTime">
         </div>
         <div class="form-group">
-          <label>עדיפות</label>
+          <label>{{ (i18n.terms$ | async)?.priorityField }}</label>
           <select class="form-control" [(ngModel)]="editingReminder!.priority">
-            <option value="low">נמוכה</option>
-            <option value="normal">רגילה</option>
-            <option value="high">גבוהה</option>
-            <option value="urgent">דחופה</option>
+            <option value="low">{{ (i18n.terms$ | async)?.lowPriority }}</option>
+            <option value="normal">{{ (i18n.terms$ | async)?.normalPriority }}</option>
+            <option value="high">{{ (i18n.terms$ | async)?.highPriority }}</option>
+            <option value="urgent">{{ (i18n.terms$ | async)?.urgentPriority }}</option>
           </select>
         </div>
         <div class="form-group">
-          <label>חזרה</label>
+          <label>{{ (i18n.terms$ | async)?.repeatField }}</label>
           <select class="form-control" [(ngModel)]="editingReminder!.frequency">
-            <option value="">ללא</option>
-            <option value="daily">יומית</option>
-            <option value="weekly">שבועית</option>
-            <option value="monthly">חודשית</option>
-            <option value="yearly">שנתית</option>
+            <option value="">{{ (i18n.terms$ | async)?.noRepeat }}</option>
+            <option value="daily">{{ (i18n.terms$ | async)?.dailyRepeat }}</option>
+            <option value="weekly">{{ (i18n.terms$ | async)?.weeklyRepeat }}</option>
+            <option value="monthly">{{ (i18n.terms$ | async)?.monthlyRepeat }}</option>
+            <option value="yearly">{{ (i18n.terms$ | async)?.yearlyRepeat }}</option>
           </select>
         </div>
         <div class="form-group full-width">
-          <label>נושא התזכורת</label>
-          <input type="text" class="form-control" [(ngModel)]="editingReminder!.title" placeholder="נושא קצר...">
+          <label>{{ (i18n.terms$ | async)?.reminderSubject }}</label>
+          <input type="text" class="form-control" [(ngModel)]="editingReminder!.title" [placeholder]="(i18n.terms$ | async)?.shortSubjectPlaceholder">
         </div>
         <div class="form-group full-width">
-          <label>הערות</label>
-          <textarea class="form-control" rows="4" [(ngModel)]="editingReminder!.description" placeholder="פרטים נוספים..."></textarea>
+          <label>{{ (i18n.terms$ | async)?.reminderNotes }}</label>
+          <textarea class="form-control" rows="4" [(ngModel)]="editingReminder!.description" [placeholder]="(i18n.terms$ | async)?.additionalDetailsPlaceholder"></textarea>
         </div>
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-secondary" (click)="closeModal()">ביטול</button>
-      <button class="btn btn-primary" (click)="saveReminder()">שמור תזכורת</button>
+      <button class="btn btn-secondary" (click)="closeModal()">{{ (i18n.terms$ | async)?.cancel }}</button>
+      <button class="btn btn-primary" (click)="saveReminder()">{{ (i18n.terms$ | async)?.saveReminder }}</button>
     </div>
   </div>
 </div>

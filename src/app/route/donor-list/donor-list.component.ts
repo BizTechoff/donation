@@ -13,6 +13,10 @@ export class DonorListComponent implements OnInit {
   donors: Donor[] = [];
   donorRepo = remult.repo(Donor);
   loading = false;
+  
+  // Modal state
+  showAddDonorModal = false;
+  editingDonor: Donor | null = null;
 
   constructor(public i18n: I18nService) {}
 
@@ -35,18 +39,42 @@ export class DonorListComponent implements OnInit {
   }
 
   async createDonor() {
-    const newDonor = this.donorRepo.create();
-    this.donors.unshift(newDonor);
+    this.editingDonor = this.donorRepo.create();
+    this.editingDonor.isActive = true; // Default to active
+    this.editingDonor.wantsUpdates = true; // Default preferences
+    this.editingDonor.wantsTaxReceipts = true;
+    this.editingDonor.preferredLanguage = 'he'; // Default to Hebrew
+    this.editingDonor.country = 'ישראל'; // Default country
+    this.showAddDonorModal = true;
   }
 
-  async saveDonor(donor: Donor) {
+  closeModal() {
+    this.showAddDonorModal = false;
+    this.editingDonor = null;
+  }
+
+  async saveDonorModal() {
+    if (!this.editingDonor || !this.isValidDonor()) {
+      return;
+    }
+
     try {
-      await donor.save();
-      await this.loadDonors();
+      await this.editingDonor.save();
+      await this.loadDonors(); // Refresh the list
+      this.closeModal();
     } catch (error) {
       console.error('Error saving donor:', error);
+      // TODO: Show error message to user
     }
   }
+
+  isValidDonor(): boolean {
+    if (!this.editingDonor) return false;
+    
+    // Check required fields
+    return !!(this.editingDonor.firstName?.trim() && this.editingDonor.lastName?.trim());
+  }
+
 
   async deleteDonor(donor: Donor) {
     const confirmMessage = this.i18n.currentTerms.confirmDeleteDonor?.replace('{name}', donor.fullName || '') || '';

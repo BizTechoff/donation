@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { remult } from 'remult';
 import { Reminder, Donor } from '../../../shared/entity';
+import { I18nService } from '../../i18n/i18n.service';
 
 @Component({
   selector: 'app-reminders',
@@ -18,6 +19,8 @@ export class RemindersComponent implements OnInit {
   loading = false;
   showAddReminderModal = false;
   editingReminder?: Reminder;
+
+  constructor(public i18n: I18nService) { }
 
   async ngOnInit() {
     await this.loadData();
@@ -76,8 +79,8 @@ export class RemindersComponent implements OnInit {
   }
 
   async deleteReminder(reminder: Reminder) {
-    const donorName = reminder.relatedDonor?.displayName || 'לא ידוע';
-    if (confirm(`האם אתה בטוח שברצונך למחוק את התזכורת "${reminder.title}"?`)) {
+    const donorName = reminder.relatedDonor?.displayName || this.i18n.terms.unknown;
+    if (confirm(`${this.i18n.terms.confirmDeleteDonor?.replace('{name}', reminder.title || '')}`)) {
       try {
         await reminder.delete();
         await this.loadReminders();
@@ -111,38 +114,38 @@ export class RemindersComponent implements OnInit {
   }
 
   getDonorName(reminder: Reminder): string {
-    return reminder.relatedDonor?.displayName || 'כללי';
+    return reminder.relatedDonor?.displayName || this.i18n.terms.generalType;
   }
 
   getTypeText(type: string): string {
     const typeMap: Record<string, string> = {
-      'donation_followup': 'מעקב תרומה',
-      'thank_you': 'תודה',
-      'birthday': 'יום הולדת',
-      'memorial': 'יום זיכרון',
-      'meeting': 'פגישה',
-      'phone_call': 'שיחת טלפון',
-      'email': 'אימייל',
-      'general': 'כללי'
+      'donation_followup': this.i18n.terms.donationFollowUp,
+      'thank_you': this.i18n.terms.thankYouReminder,
+      'birthday': this.i18n.terms.birthdayType,
+      'memorial': this.i18n.terms.memorialType,
+      'meeting': this.i18n.terms.meetingType,
+      'phone_call': this.i18n.terms.phoneCallType,
+      'email': this.i18n.terms.emailType,
+      'general': this.i18n.terms.generalType
     };
     return typeMap[type] || type;
   }
 
   getPriorityText(priority: string): string {
     const priorityMap: Record<string, string> = {
-      'low': 'נמוכה',
-      'normal': 'רגילה',
-      'high': 'גבוהה',
-      'urgent': 'דחופה'
+      'low': this.i18n.terms.lowPriority,
+      'normal': this.i18n.terms.normalPriority,
+      'high': this.i18n.terms.highPriority,
+      'urgent': this.i18n.terms.urgentPriority
     };
     return priorityMap[priority] || priority;
   }
 
   getStatusText(status: string): string {
     const statusMap: Record<string, string> = {
-      'pending': 'ממתין',
-      'completed': 'הושלם',
-      'snoozed': 'נדחה'
+      'pending': this.i18n.terms.pendingStatus,
+      'completed': this.i18n.terms.completedStatusReminder,
+      'snoozed': this.i18n.terms.overdueStatus
     };
     return statusMap[status] || status;
   }
@@ -206,6 +209,5 @@ export class RemindersComponent implements OnInit {
     return this.reminders.filter(r => r.isCompleted).length;
   }
 
-  constructor() { }
 
 }

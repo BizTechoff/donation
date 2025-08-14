@@ -1,44 +1,44 @@
 <div class="standing-orders-container">
   <div class="page-header">
-    <h1>הוראות קבע</h1>
-    <button class="btn btn-primary add-order-btn" (click)="createOrder()">הוספת הוראת קבע</button>
+    <h1>{{ (i18n.terms$ | async)?.standingOrdersTitle }}</h1>
+    <button class="btn btn-primary add-order-btn" (click)="createOrder()">{{ (i18n.terms$ | async)?.addStandingOrder }}</button>
   </div>
 
   <div class="filters-section">
     <div class="filter-row">
       <div class="filter-group">
-        <label>חיפוש תורם</label>
-        <input type="text" class="form-control" placeholder="שם תורם...">
+        <label>{{ (i18n.terms$ | async)?.donorSearchStanding }}</label>
+        <input type="text" class="form-control" [placeholder]="(i18n.terms$ | async)?.donorNamePlaceholder">
       </div>
       
       <div class="filter-group">
-        <label>סטטוס</label>
+        <label>{{ (i18n.terms$ | async)?.statusFilterStanding }}</label>
         <select class="form-control">
-          <option value="">הכל</option>
-          <option value="active">פעיל</option>
-          <option value="paused">מושהה</option>
-          <option value="cancelled">מבוטל</option>
+          <option value="">{{ (i18n.terms$ | async)?.everything }}</option>
+          <option value="active">{{ (i18n.terms$ | async)?.activeStatusStanding }}</option>
+          <option value="paused">{{ (i18n.terms$ | async)?.pausedStatus }}</option>
+          <option value="cancelled">{{ (i18n.terms$ | async)?.cancelledStatusStanding }}</option>
         </select>
       </div>
 
       <div class="filter-group">
-        <label>תדירות</label>
+        <label>{{ (i18n.terms$ | async)?.frequencyFilter }}</label>
         <select class="form-control">
-          <option value="">הכל</option>
-          <option value="monthly">חודשי</option>
-          <option value="quarterly">רבעוני</option>
-          <option value="yearly">שנתי</option>
+          <option value="">{{ (i18n.terms$ | async)?.everything }}</option>
+          <option value="monthly">{{ (i18n.terms$ | async)?.monthlyFrequency }}</option>
+          <option value="quarterly">{{ (i18n.terms$ | async)?.quarterlyFrequency }}</option>
+          <option value="yearly">{{ (i18n.terms$ | async)?.yearlyFrequency }}</option>
         </select>
       </div>
 
       <div class="filter-group">
-        <label>בנק</label>
+        <label>{{ (i18n.terms$ | async)?.bankFilter }}</label>
         <select class="form-control">
-          <option value="">הכל</option>
-          <option value="hapoalim">בנק הפועלים</option>
-          <option value="leumi">בנק לאומי</option>
-          <option value="discount">בנק דיסקונט</option>
-          <option value="mizrahi">מזרחי טפחות</option>
+          <option value="">{{ (i18n.terms$ | async)?.everything }}</option>
+          <option value="hapoalim">{{ (i18n.terms$ | async)?.hapoalimBank }}</option>
+          <option value="leumi">{{ (i18n.terms$ | async)?.leumiBank }}</option>
+          <option value="discount">{{ (i18n.terms$ | async)?.discountBank }}</option>
+          <option value="mizrahi">{{ (i18n.terms$ | async)?.mizrahiBank }}</option>
         </select>
       </div>
     </div>
@@ -48,28 +48,28 @@
     <div class="summary-card active-orders">
       <div class="card-icon">✅</div>
       <div class="card-content">
-        <h3>הוראות פעילות</h3>
+        <h3>{{ (i18n.terms$ | async)?.activeOrdersCard }}</h3>
         <span class="count">{{activeOrdersCount}}</span>
       </div>
     </div>
     <div class="summary-card monthly-total">
       <div class="card-icon">💰</div>
       <div class="card-content">
-        <h3>צפוי חודשי</h3>
+        <h3>{{ (i18n.terms$ | async)?.monthlyExpectedCard }}</h3>
         <span class="amount">₪{{totalMonthlyAmount | number}}</span>
       </div>
     </div>
     <div class="summary-card yearly-total">
       <div class="card-icon">📊</div>
       <div class="card-content">
-        <h3>צפוי שנתי</h3>
+        <h3>{{ (i18n.terms$ | async)?.yearlyExpectedCard }}</h3>
         <span class="amount">₪{{totalMonthlyAmount * 12 | number}}</span>
       </div>
     </div>
     <div class="summary-card next-collection">
       <div class="card-icon">⏰</div>
       <div class="card-content">
-        <h3>גביה הבאה</h3>
+        <h3>{{ (i18n.terms$ | async)?.nextCollectionCard }}</h3>
         <span class="date">{{nextCollectionDate | date:'dd/MM/yyyy'}}</span>
       </div>
     </div>
@@ -79,15 +79,15 @@
     <table class="orders-table">
       <thead>
         <tr>
-          <th>תורם</th>
-          <th>סכום</th>
-          <th>תדירות</th>
-          <th>תאריך הבא</th>
-          <th>שיטת תשלום</th>
-          <th>סטטוס</th>
-          <th>תאריך התחלה</th>
-          <th>גביה אחרונה</th>
-          <th>פעולות</th>
+          <th>{{ (i18n.terms$ | async)?.donorColumnStanding }}</th>
+          <th>{{ (i18n.terms$ | async)?.amountColumnStanding }}</th>
+          <th>{{ (i18n.terms$ | async)?.frequencyColumn }}</th>
+          <th>{{ (i18n.terms$ | async)?.nextDateColumn }}</th>
+          <th>{{ (i18n.terms$ | async)?.paymentMethodColumn }}</th>
+          <th>{{ (i18n.terms$ | async)?.statusColumnStanding }}</th>
+          <th>{{ (i18n.terms$ | async)?.startDateColumn }}</th>
+          <th>{{ (i18n.terms$ | async)?.lastCollectionColumn }}</th>
+          <th>{{ (i18n.terms$ | async)?.actionsColumnStanding }}</th>
         </tr>
       </thead>
       <tbody>
@@ -118,12 +118,12 @@
             </span>
           </td>
           <td class="actions">
-            <button class="btn-icon btn-view" title="הצג פרטים" (click)="editOrder(order)">👁</button>
-            <button class="btn-icon btn-edit" title="עריכה" (click)="editOrder(order)">✏</button>
-            <button class="btn-icon btn-collect" title="בצע עכשיו" (click)="executeOrder(order)" *ngIf="order.status === 'active'">💳</button>
-            <button class="btn-icon btn-pause" title="השהה" (click)="pauseOrder(order)" *ngIf="order.status === 'active'">⏸</button>
-            <button class="btn-icon btn-activate" title="הפעל" (click)="activateOrder(order)" *ngIf="order.status === 'paused'">▶</button>
-            <button class="btn-icon btn-cancel" title="בטל" (click)="cancelOrder(order)">❌</button>
+            <button class="btn-icon btn-view" [title]="(i18n.terms$ | async)?.showDetailsAction" (click)="editOrder(order)">👁</button>
+            <button class="btn-icon btn-edit" [title]="(i18n.terms$ | async)?.editStandingOrder" (click)="editOrder(order)">✏</button>
+            <button class="btn-icon btn-collect" [title]="(i18n.terms$ | async)?.executeNow" (click)="executeOrder(order)" *ngIf="order.status === 'active'">💳</button>
+            <button class="btn-icon btn-pause" [title]="(i18n.terms$ | async)?.pauseOrder" (click)="pauseOrder(order)" *ngIf="order.status === 'active'">⏸</button>
+            <button class="btn-icon btn-activate" [title]="(i18n.terms$ | async)?.activateOrder" (click)="activateOrder(order)" *ngIf="order.status === 'paused'">▶</button>
+            <button class="btn-icon btn-cancel" [title]="(i18n.terms$ | async)?.cancelOrder" (click)="cancelOrder(order)">❌</button>
           </td>
         </tr>
       </tbody>
@@ -132,17 +132,17 @@
 
   <!-- Collection schedule temporarily disabled
   <div class="collection-schedule">
-    <h2>לוח גביות הבא</h2>
+    <h2>{{ (i18n.terms$ | async)?.nextCollectionSchedule }}</h2>
     <div class="schedule-grid">
-      <p>לוח גביות יתווסף בגרסה עתידית</p>
+      <p>{{ (i18n.terms$ | async)?.collectionScheduleComingSoon }}</p>
     </div>
   </div>
   -->
 
   <div class="pagination">
-    <button class="btn-page">הקודם</button>
-    <span class="page-info">עמוד 1 מתוך 8</span>
-    <button class="btn-page">הבא</button>
+    <button class="btn-page">{{ (i18n.terms$ | async)?.previousPage }}</button>
+    <span class="page-info">{{ (i18n.terms$ | async)?.pageOf?.replace('{current}', '1')?.replace('{total}', '8') }}</span>
+    <button class="btn-page">{{ (i18n.terms$ | async)?.nextPage }}</button>
   </div>
 </div>
 
@@ -150,65 +150,65 @@
 <div class="modal-overlay" *ngIf="showAddOrderModal">
   <div class="modal-content">
     <div class="modal-header">
-      <h2>הוספת הוראת קבע</h2>
+      <h2>{{ (i18n.terms$ | async)?.addStandingOrderModal }}</h2>
       <button class="modal-close" (click)="closeModal()">&times;</button>
     </div>
     <div class="modal-body">
       <div class="form-grid">
         <div class="form-group">
-          <label>תורם</label>
+          <label>{{ (i18n.terms$ | async)?.donorSelectStanding }}</label>
           <select class="form-control" [(ngModel)]="editingOrder!.donorId">
-            <option value="">בחר תורם...</option>
+            <option value="">{{ (i18n.terms$ | async)?.selectDonorStanding }}</option>
             <option *ngFor="let donor of donors" [value]="donor.id">{{donor.displayName}}</option>
           </select>
         </div>
         <div class="form-group">
-          <label>סכום</label>
+          <label>{{ (i18n.terms$ | async)?.amountFieldStanding }}</label>
           <input type="number" class="form-control" placeholder="0" [(ngModel)]="editingOrder!.amount">
         </div>
         <div class="form-group">
-          <label>תדירות</label>
+          <label>{{ (i18n.terms$ | async)?.frequencySelect }}</label>
           <select class="form-control" [(ngModel)]="editingOrder!.frequency">
-            <option value="monthly">חודשי</option>
-            <option value="quarterly">רבעוני</option>
-            <option value="yearly">שנתי</option>
+            <option value="monthly">{{ (i18n.terms$ | async)?.monthlyOption }}</option>
+            <option value="quarterly">{{ (i18n.terms$ | async)?.quarterlyOption }}</option>
+            <option value="yearly">{{ (i18n.terms$ | async)?.yearlyOption }}</option>
           </select>
         </div>
         <div class="form-group">
-          <label>תאריך התחלה</label>
+          <label>{{ (i18n.terms$ | async)?.startDateField }}</label>
           <input type="date" class="form-control" [(ngModel)]="editingOrder!.startDate">
         </div>
         <div class="form-group">
-          <label>יום גביה</label>
+          <label>{{ (i18n.terms$ | async)?.collectionDay }}</label>
           <select class="form-control" [(ngModel)]="editingOrder!.dayOfMonth">
-            <option value="1">1 בחודש</option>
-            <option value="15">15 בחודש</option>
-            <option value="30">אחרון בחודש</option>
+            <option value="1">{{ (i18n.terms$ | async)?.firstOfMonth }}</option>
+            <option value="15">{{ (i18n.terms$ | async)?.fifteenthOfMonth }}</option>
+            <option value="30">{{ (i18n.terms$ | async)?.lastOfMonth }}</option>
           </select>
         </div>
         <div class="form-group">
-          <label>שיטת תשלום</label>
+          <label>{{ (i18n.terms$ | async)?.paymentMethodSelect }}</label>
           <select class="form-control" [(ngModel)]="editingOrder!.donationMethodId">
-            <option value="">בחר שיטת תשלום...</option>
+            <option value="">{{ (i18n.terms$ | async)?.selectPaymentMethod }}</option>
             <option *ngFor="let method of donationMethods" [value]="method.id">{{method.name}}</option>
           </select>
         </div>
         <div class="form-group">
-          <label>קמפיין</label>
+          <label>{{ (i18n.terms$ | async)?.campaignSelectStanding }}</label>
           <select class="form-control" [(ngModel)]="editingOrder!.campaignId">
-            <option value="">בחר קמפיין...</option>
+            <option value="">{{ (i18n.terms$ | async)?.selectCampaignStanding }}</option>
             <option *ngFor="let campaign of campaigns" [value]="campaign.id">{{campaign.name}}</option>
           </select>
         </div>
         <div class="form-group full-width">
-          <label>הערות</label>
-          <textarea class="form-control" rows="3" placeholder="הכנס הערות..." [(ngModel)]="editingOrder!.notes"></textarea>
+          <label>{{ (i18n.terms$ | async)?.standingOrderNotes }}</label>
+          <textarea class="form-control" rows="3" [placeholder]="(i18n.terms$ | async)?.enterNotesStanding" [(ngModel)]="editingOrder!.notes"></textarea>
         </div>
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-secondary" (click)="closeModal()">ביטול</button>
-      <button class="btn btn-primary" (click)="saveOrder()">שמור הוראת קבע</button>
+      <button class="btn btn-secondary" (click)="closeModal()">{{ (i18n.terms$ | async)?.cancel }}</button>
+      <button class="btn btn-primary" (click)="saveOrder()">{{ (i18n.terms$ | async)?.saveStandingOrder }}</button>
     </div>
   </div>
 </div>

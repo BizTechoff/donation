@@ -77,7 +77,6 @@
       <div class="grid-col actions">
         <button class="btn-icon btn-view" (click)="viewDonor(donor)" [title]="(i18n.terms$ | async)?.viewDetails">👁</button>
         <button class="btn-icon btn-edit" (click)="editDonor(donor)" [title]="(i18n.terms$ | async)?.edit">✏</button>
-        <button class="btn-icon btn-save" (click)="saveDonor(donor)" *ngIf="donor._.isNew()" [title]="(i18n.terms$ | async)?.save">💾</button>
         <button class="btn-icon btn-delete" (click)="deleteDonor(donor)" [title]="(i18n.terms$ | async)?.delete">🗑</button>
         <button class="btn-icon btn-toggle" (click)="deactivateDonor(donor)" *ngIf="donor.isActive" [title]="(i18n.terms$ | async)?.deactivate">⏸</button>
       </div>
@@ -88,5 +87,252 @@
     <button class="btn-page">{{ (i18n.terms$ | async)?.previous }}</button>
     <span class="page-info">{{ (i18n.terms$ | async)?.pageOf?.replace('{current}', '1')?.replace('{total}', '10') }}</span>
     <button class="btn-page">{{ (i18n.terms$ | async)?.next }}</button>
+  </div>
+</div>
+
+<!-- Add New Donor Modal -->
+<div class="modal-overlay" *ngIf="showAddDonorModal">
+  <div class="modal-content large-modal">
+    <div class="modal-header">
+      <h2>{{ (i18n.terms$ | async)?.addNewDonorModal }}</h2>
+      <button class="modal-close" (click)="closeModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-sections">
+        <div class="section basic-info">
+          <h3>{{ (i18n.terms$ | async)?.personalDetails }}</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>{{ (i18n.terms$ | async)?.firstName }} *</label>
+              <input type="text" class="form-control" [(ngModel)]="editingDonor!.firstName" [placeholder]="(i18n.terms$ | async)?.firstName">
+            </div>
+            <div class="form-group">
+              <label>{{ (i18n.terms$ | async)?.lastName }} *</label>
+              <input type="text" class="form-control" [(ngModel)]="editingDonor!.lastName" [placeholder]="(i18n.terms$ | async)?.lastName">
+            </div>
+            <div class="form-group">
+              <label>{{ (i18n.terms$ | async)?.idNumber }}</label>
+              <input type="text" class="form-control" [(ngModel)]="editingDonor!.idNumber" [placeholder]="(i18n.terms$ | async)?.idNumber">
+            </div>
+            <div class="form-group">
+              <label>{{ (i18n.terms$ | async)?.email }}</label>
+              <input type="email" class="form-control" [(ngModel)]="editingDonor!.email" [placeholder]="(i18n.terms$ | async)?.email">
+            </div>
+            <div class="form-group">
+              <label>{{ (i18n.terms$ | async)?.phone }}</label>
+              <input type="tel" class="form-control" [(ngModel)]="editingDonor!.phone" [placeholder]="(i18n.terms$ | async)?.phone">
+            </div>
+            <div class="form-group">
+              <label>{{ (i18n.terms$ | async)?.address }}</label>
+              <input type="text" class="form-control" [(ngModel)]="editingDonor!.address" [placeholder]="(i18n.terms$ | async)?.address">
+            </div>
+            <div class="form-group">
+              <label>{{ (i18n.terms$ | async)?.city }}</label>
+              <input type="text" class="form-control" [(ngModel)]="editingDonor!.city" [placeholder]="(i18n.terms$ | async)?.city">
+            </div>
+            <div class="form-group">
+              <label>{{ (i18n.terms$ | async)?.zipCode }}</label>
+              <input type="text" class="form-control" [(ngModel)]="editingDonor!.zipCode" [placeholder]="(i18n.terms$ | async)?.zipCode">
+            </div>
+            <div class="form-group">
+              <label>{{ (i18n.terms$ | async)?.country }}</label>
+              <input type="text" class="form-control" [(ngModel)]="editingDonor!.country" [placeholder]="(i18n.terms$ | async)?.country">
+            </div>
+            <div class="form-group">
+              <label>{{ (i18n.terms$ | async)?.birthDate }}</label>
+              <input type="date" class="form-control" [(ngModel)]="editingDonor!.birthDate">
+            </div>
+          </div>
+        </div>
+
+        <div class="section family-info">
+          <h3>{{ (i18n.terms$ | async)?.familyInformation }}</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>{{ (i18n.terms$ | async)?.spouseName }}</label>
+              <input type="text" class="form-control" [(ngModel)]="editingDonor!.spouseName" [placeholder]="(i18n.terms$ | async)?.spouseName">
+            </div>
+            <div class="form-group">
+              <label>{{ (i18n.terms$ | async)?.maritalStatus }}</label>
+              <select class="form-control" [(ngModel)]="editingDonor!.maritalStatus">
+                <option value="">{{ (i18n.terms$ | async)?.selectOption }}</option>
+                <option value="married">{{ (i18n.terms$ | async)?.married }}</option>
+                <option value="single">{{ (i18n.terms$ | async)?.single }}</option>
+                <option value="widowed">{{ (i18n.terms$ | async)?.widowed }}</option>
+                <option value="divorced">{{ (i18n.terms$ | async)?.divorced }}</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>{{ (i18n.terms$ | async)?.homePhone }}</label>
+              <input type="tel" class="form-control" [(ngModel)]="editingDonor!.homePhone" [placeholder]="(i18n.terms$ | async)?.homePhone">
+            </div>
+            <div class="form-group">
+              <label>{{ (i18n.terms$ | async)?.mobilePhone }}</label>
+              <input type="tel" class="form-control" [(ngModel)]="editingDonor!.mobilePhone" [placeholder]="(i18n.terms$ | async)?.mobilePhone">
+            </div>
+            <div class="form-group">
+              <label>{{ (i18n.terms$ | async)?.anniversaryDate }}</label>
+              <input type="date" class="form-control" [(ngModel)]="editingDonor!.anniversaryDate">
+            </div>
+            <div class="form-group">
+              <label>{{ (i18n.terms$ | async)?.fatherYahrzeit }}</label>
+              <input type="date" class="form-control" [(ngModel)]="editingDonor!.fatherYahrzeit">
+            </div>
+            <div class="form-group">
+              <label>{{ (i18n.terms$ | async)?.motherYahrzeit }}</label>
+              <input type="date" class="form-control" [(ngModel)]="editingDonor!.motherYahrzeit">
+            </div>
+          </div>
+        </div>
+
+        <div class="section categories-levels">
+          <h3>{{ (i18n.terms$ | async)?.categoriesLevels }}</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>{{ (i18n.terms$ | async)?.level }}</label>
+              <select class="form-control" [(ngModel)]="editingDonor!.level">
+                <option value="">{{ (i18n.terms$ | async)?.selectOption }}</option>
+                <option value="platinum">{{ (i18n.terms$ | async)?.platinum }}</option>
+                <option value="gold">{{ (i18n.terms$ | async)?.gold }}</option>
+                <option value="silver">{{ (i18n.terms$ | async)?.silver }}</option>
+                <option value="regular">{{ (i18n.terms$ | async)?.regular }}</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>{{ (i18n.terms$ | async)?.region }}</label>
+              <select class="form-control" [(ngModel)]="editingDonor!.region">
+                <option value="">{{ (i18n.terms$ | async)?.selectOption }}</option>
+                <option value="center">{{ (i18n.terms$ | async)?.center }}</option>
+                <option value="north">{{ (i18n.terms$ | async)?.north }}</option>
+                <option value="south">{{ (i18n.terms$ | async)?.south }}</option>
+                <option value="jerusalem">{{ (i18n.terms$ | async)?.jerusalem }}</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>{{ (i18n.terms$ | async)?.circle }}</label>
+              <input type="text" class="form-control" [(ngModel)]="editingDonor!.circle" [placeholder]="(i18n.terms$ | async)?.circle">
+            </div>
+            <div class="form-group">
+              <label>{{ (i18n.terms$ | async)?.ageGroup }}</label>
+              <select class="form-control" [(ngModel)]="editingDonor!.ageGroup">
+                <option value="">{{ (i18n.terms$ | async)?.selectOption }}</option>
+                <option value="18-30">18-30</option>
+                <option value="31-45">31-45</option>
+                <option value="46-60">46-60</option>
+                <option value="60+">60+</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>{{ (i18n.terms$ | async)?.preferredLanguage }}</label>
+              <select class="form-control" [(ngModel)]="editingDonor!.preferredLanguage">
+                <option value="he">{{ (i18n.terms$ | async)?.hebrew }}</option>
+                <option value="en">{{ (i18n.terms$ | async)?.english }}</option>
+                <option value="ar">{{ (i18n.terms$ | async)?.arabic }}</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="section contact-preferences">
+          <h3>{{ (i18n.terms$ | async)?.contactPreferences }}</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>{{ (i18n.terms$ | async)?.receptionHours }}</label>
+              <input type="text" class="form-control" [(ngModel)]="editingDonor!.receptionHours" [placeholder]="(i18n.terms$ | async)?.receptionHours">
+            </div>
+            <div class="form-group full-width">
+              <label>{{ (i18n.terms$ | async)?.preferredDays }}</label>
+              <div class="checkbox-group">
+                <label class="checkbox-label">
+                  <input type="checkbox" [(ngModel)]="editingDonor!.sundayAvailable">
+                  {{ (i18n.terms$ | async)?.sunday }}
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" [(ngModel)]="editingDonor!.mondayAvailable">
+                  {{ (i18n.terms$ | async)?.monday }}
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" [(ngModel)]="editingDonor!.tuesdayAvailable">
+                  {{ (i18n.terms$ | async)?.tuesday }}
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" [(ngModel)]="editingDonor!.wednesdayAvailable">
+                  {{ (i18n.terms$ | async)?.wednesday }}
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" [(ngModel)]="editingDonor!.thursdayAvailable">
+                  {{ (i18n.terms$ | async)?.thursday }}
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" [(ngModel)]="editingDonor!.fridayAvailable">
+                  {{ (i18n.terms$ | async)?.friday }}
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" [(ngModel)]="editingDonor!.saturdayAvailable">
+                  {{ (i18n.terms$ | async)?.saturday }}
+                </label>
+              </div>
+            </div>
+            <div class="form-group full-width">
+              <label>{{ (i18n.terms$ | async)?.preferredContactMethods }}</label>
+              <div class="checkbox-group">
+                <label class="checkbox-label">
+                  <input type="checkbox" [(ngModel)]="editingDonor!.preferPhone">
+                  {{ (i18n.terms$ | async)?.phoneContact }}
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" [(ngModel)]="editingDonor!.preferEmail">
+                  {{ (i18n.terms$ | async)?.emailContact }}
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" [(ngModel)]="editingDonor!.preferSMS">
+                  {{ (i18n.terms$ | async)?.smsContact }}
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" [(ngModel)]="editingDonor!.preferHomeVisit">
+                  {{ (i18n.terms$ | async)?.homeVisit }}
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" [(ngModel)]="editingDonor!.preferOfficeVisit">
+                  {{ (i18n.terms$ | async)?.officeVisit }}
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section preferences">
+          <h3>{{ (i18n.terms$ | async)?.generalPreferences }}</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input type="checkbox" [(ngModel)]="editingDonor!.wantsUpdates">
+                {{ (i18n.terms$ | async)?.wantsUpdates }}
+              </label>
+            </div>
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input type="checkbox" [(ngModel)]="editingDonor!.wantsTaxReceipts">
+                {{ (i18n.terms$ | async)?.wantsTaxReceipts }}
+              </label>
+            </div>
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input type="checkbox" [(ngModel)]="editingDonor!.isActive">
+                {{ (i18n.terms$ | async)?.active }}
+              </label>
+            </div>
+            <div class="form-group full-width">
+              <label>{{ (i18n.terms$ | async)?.generalNotes }}</label>
+              <textarea class="form-control" rows="4" [(ngModel)]="editingDonor!.notes" [placeholder]="(i18n.terms$ | async)?.enterNotesPlaceholder"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeModal()">{{ (i18n.terms$ | async)?.cancel }}</button>
+      <button class="btn btn-primary" (click)="saveDonorModal()" [disabled]="!isValidDonor()">{{ (i18n.terms$ | async)?.saveDonor }}</button>
+    </div>
   </div>
 </div>

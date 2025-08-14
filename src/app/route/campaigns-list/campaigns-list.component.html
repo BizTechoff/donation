@@ -1,7 +1,7 @@
 <div class="campaigns-container">
   <div class="page-header">
-    <h1>ניהול קמפיינים</h1>
-    <button class="btn btn-primary add-campaign-btn" (click)="createCampaign()">קמפיין חדש</button>
+    <h1>{{ (i18n.terms$ | async)?.campaignsManagement }}</h1>
+    <button class="btn btn-primary add-campaign-btn" (click)="createCampaign()">{{ (i18n.terms$ | async)?.newCampaign }}</button>
   </div>
 
   <!-- כרטיסי סיכום -->
@@ -9,28 +9,28 @@
     <div class="summary-card active-campaigns">
       <div class="card-icon">🎯</div>
       <div class="card-content">
-        <h3>קמפיינים פעילים</h3>
+        <h3>{{ (i18n.terms$ | async)?.activeCampaignsCard }}</h3>
         <span class="count">{{activeCampaigns}}</span>
       </div>
     </div>
     <div class="summary-card target-amount">
       <div class="card-icon">💰</div>
       <div class="card-content">
-        <h3>יעד כספי כולל</h3>
+        <h3>{{ (i18n.terms$ | async)?.totalTargetAmountCard }}</h3>
         <span class="amount">{{formatCurrency(totalTargetAmount)}}</span>
       </div>
     </div>
     <div class="summary-card raised-amount">
       <div class="card-icon">📊</div>
       <div class="card-content">
-        <h3>נאסף עד כה</h3>
+        <h3>{{ (i18n.terms$ | async)?.collectedSoFar }}</h3>
         <span class="amount">{{formatCurrency(totalRaisedAmount)}}</span>
       </div>
     </div>
     <div class="summary-card success-rate">
       <div class="card-icon">📈</div>
       <div class="card-content">
-        <h3>אחוז הצלחה</h3>
+        <h3>{{ (i18n.terms$ | async)?.successRate }}</h3>
         <span class="percentage">{{totalTargetAmount > 0 ? ((totalRaisedAmount / totalTargetAmount) * 100).toFixed(1) : 0}}%</span>
       </div>
     </div>
@@ -40,23 +40,23 @@
   <div class="filters-section">
     <div class="filter-row">
       <div class="filter-group">
-        <label>שם קמפיין</label>
+        <label>{{ (i18n.terms$ | async)?.campaignName }}</label>
         <input type="text" class="form-control" 
                [(ngModel)]="filterName" 
                (ngModelChange)="applyFilters()"
-               placeholder="חפש לפי שם...">
+               [placeholder]="(i18n.terms$ | async)?.searchByName">
       </div>
       
       <div class="filter-group">
-        <label>סטטוס</label>
+        <label>{{ (i18n.terms$ | async)?.statusFilter }}</label>
         <select class="form-control" 
                 [(ngModel)]="filterStatus" 
                 (ngModelChange)="applyFilters()">
-          <option value="">הכל</option>
-          <option value="draft">טיוטה</option>
-          <option value="active">פעיל</option>
-          <option value="completed">הושלם</option>
-          <option value="cancelled">בוטל</option>
+          <option value="">{{ (i18n.terms$ | async)?.everything }}</option>
+          <option value="draft">{{ (i18n.terms$ | async)?.draft }}</option>
+          <option value="active">{{ (i18n.terms$ | async)?.activeStatus }}</option>
+          <option value="completed">{{ (i18n.terms$ | async)?.completedStatus }}</option>
+          <option value="cancelled">{{ (i18n.terms$ | async)?.cancelledStatus }}</option>
         </select>
       </div>
 

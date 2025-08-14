@@ -1,45 +1,45 @@
 <div class="certificates-container">
   <div class="page-header">
-    <h1>תעודות ונציבי יום</h1>
-    <button class="btn btn-primary create-certificate-btn" (click)="openCreateModal()">יצירת תעודה חדשה</button>
+    <h1>{{ (i18n.terms$ | async)?.certificatesAndMemorials }}</h1>
+    <button class="btn btn-primary create-certificate-btn" (click)="openCreateModal()">{{ (i18n.terms$ | async)?.createNewCertificate }}</button>
   </div>
 
   <div class="filters-section">
     <div class="filter-row">
       <div class="filter-group">
-        <label>סוג תעודה</label>
+        <label>{{ (i18n.terms$ | async)?.certificateType }}</label>
         <select class="form-control">
-          <option value="">הכל</option>
-          <option value="donation">תעודת תרומה</option>
-          <option value="memorial">נציב זיכרון</option>
-          <option value="dedication">הקדשה</option>
-          <option value="appreciation">הוקרה</option>
+          <option value="">{{ (i18n.terms$ | async)?.everything }}</option>
+          <option value="donation">{{ (i18n.terms$ | async)?.donationCertificate }}</option>
+          <option value="memorial">{{ (i18n.terms$ | async)?.memorialCertificate }}</option>
+          <option value="dedication">{{ (i18n.terms$ | async)?.dedication }}</option>
+          <option value="appreciation">{{ (i18n.terms$ | async)?.appreciation }}</option>
         </select>
       </div>
       
       <div class="filter-group">
-        <label>תאריך מ-</label>
+        <label>{{ (i18n.terms$ | async)?.dateFromFilter }}</label>
         <input type="date" class="form-control">
       </div>
 
       <div class="filter-group">
-        <label>תאריך עד</label>
+        <label>{{ (i18n.terms$ | async)?.dateToFilter }}</label>
         <input type="date" class="form-control">
       </div>
 
       <div class="filter-group">
-        <label>חיפוש תורם</label>
-        <input type="text" class="form-control" placeholder="שם תורם...">
+        <label>{{ (i18n.terms$ | async)?.donorSearch }}</label>
+        <input type="text" class="form-control" [placeholder]="(i18n.terms$ | async)?.donorNamePlaceholder">
       </div>
 
       <div class="filter-group">
-        <label>סטטוס</label>
+        <label>{{ (i18n.terms$ | async)?.statusFilterCert }}</label>
         <select class="form-control">
-          <option value="">הכל</option>
-          <option value="draft">טיוטה</option>
-          <option value="ready">מוכן להדפסה</option>
-          <option value="printed">הודפס</option>
-          <option value="delivered">נמסר</option>
+          <option value="">{{ (i18n.terms$ | async)?.everything }}</option>
+          <option value="draft">{{ (i18n.terms$ | async)?.draftStatusCert }}</option>
+          <option value="ready">{{ (i18n.terms$ | async)?.readyForPrint }}</option>
+          <option value="printed">{{ (i18n.terms$ | async)?.printedStatus }}</option>
+          <option value="delivered">{{ (i18n.terms$ | async)?.deliveredStatus }}</option>
         </select>
       </div>
     </div>
@@ -48,55 +48,55 @@
   <div class="certificate-types">
     <div class="type-card donation-cert">
       <div class="card-icon">📜</div>
-      <h3>תעודות תרומה</h3>
-      <p>תעודות מעוצבות לתרומות כללות</p>
+      <h3>{{ (i18n.terms$ | async)?.donationCertificatesCard }}</h3>
+      <p>{{ (i18n.terms$ | async)?.donationCertDescription }}</p>
       <div class="stats">
         <span class="count">45</span>
-        <span class="label">תעודות השנה</span>
+        <span class="label">{{ (i18n.terms$ | async)?.certificatesThisYear }}</span>
       </div>
     </div>
     
     <div class="type-card memorial-cert">
       <div class="card-icon">🕯️</div>
-      <h3>נציבי זיכרון</h3>
-      <p>נציבים לזכר נפטרים ויארצייתות</p>
+      <h3>{{ (i18n.terms$ | async)?.memorialCertificatesCard }}</h3>
+      <p>{{ (i18n.terms$ | async)?.memorialCertDescription }}</p>
       <div class="stats">
         <span class="count">28</span>
-        <span class="label">נציבים פעילים</span>
+        <span class="label">{{ (i18n.terms$ | async)?.activeMemorials }}</span>
       </div>
     </div>
     
     <div class="type-card dedication-cert">
       <div class="card-icon">🏛️</div>
-      <h3>הקדשות</h3>
-      <p>הקדשות לבניינים וציוד</p>
+      <h3>{{ (i18n.terms$ | async)?.dedicationsCard }}</h3>
+      <p>{{ (i18n.terms$ | async)?.dedicationsDescription }}</p>
       <div class="stats">
         <span class="count">12</span>
-        <span class="label">הקדשות השנה</span>
+        <span class="label">{{ (i18n.terms$ | async)?.dedicationsThisYear }}</span>
       </div>
     </div>
     
     <div class="type-card appreciation-cert">
       <div class="card-icon">🏆</div>
-      <h3>תעודות הוקרה</h3>
-      <p>תעודות הוקרה למתנדבים ותורמים</p>
+      <h3>{{ (i18n.terms$ | async)?.appreciationCertificatesCard }}</h3>
+      <p>{{ (i18n.terms$ | async)?.appreciationDescription }}</p>
       <div class="stats">
         <span class="count">18</span>
-        <span class="label">תעודות השנה</span>
+        <span class="label">{{ (i18n.terms$ | async)?.appreciationThisYear }}</span>
       </div>
     </div>
   </div>
 
   <div class="certificates-grid">
     <div class="grid-header">
-      <div class="grid-col">תאריך יצירה</div>
-      <div class="grid-col">סוג תעודה</div>
-      <div class="grid-col">תורם/נהנה</div>
-      <div class="grid-col">סכום/אירוע</div>
-      <div class="grid-col">תאריך אירוע</div>
-      <div class="grid-col">טקסט מיוחד</div>
-      <div class="grid-col">סטטוס</div>
-      <div class="grid-col">פעולות</div>
+      <div class="grid-col">{{ (i18n.terms$ | async)?.creationDate }}</div>
+      <div class="grid-col">{{ (i18n.terms$ | async)?.certificateTypeHeader }}</div>
+      <div class="grid-col">{{ (i18n.terms$ | async)?.donorRecipient }}</div>
+      <div class="grid-col">{{ (i18n.terms$ | async)?.amountEvent }}</div>
+      <div class="grid-col">{{ (i18n.terms$ | async)?.eventDate }}</div>
+      <div class="grid-col">{{ (i18n.terms$ | async)?.specialText }}</div>
+      <div class="grid-col">{{ (i18n.terms$ | async)?.statusHeaderCert }}</div>
+      <div class="grid-col">{{ (i18n.terms$ | async)?.actionsHeaderCert }}</div>
     </div>
 
     <div class="grid-row" *ngFor="let certificate of certificates">
@@ -108,11 +108,11 @@
       </div>
       <div class="grid-col recipient-col">
         <strong>{{certificate.recipientName}}</strong>
-        <small *ngIf="certificate.donor">תורם: {{getDonorName(certificate)}}</small>
+        <small *ngIf="certificate.donor">{{ (i18n.terms$ | async)?.donorLabel }}: {{getDonorName(certificate)}}</small>
       </div>
       <div class="grid-col amount-col">
         <span class="amount" *ngIf="certificate.amount">₪{{certificate.amount | number}}</span>
-        <span class="event" *ngIf="certificate.eventName">{{certificate.eventName}}</span>
+        <span class="event" *ngIf="certificate.eventName">{{ (i18n.terms$ | async)?.eventNameDisplay }}: {{certificate.eventName}}</span>
       </div>
       <div class="grid-col">
         <span class="event-date">{{certificate.eventDate | date:'dd/MM/yyyy'}}</span>
@@ -124,19 +124,19 @@
         <span class="status-badge status-{{certificate.status}}">{{certificate.statusText}}</span>
       </div>
       <div class="grid-col actions">
-        <button class="btn-icon btn-view" title="תצוגה מקדימה">👁</button>
-        <button class="btn-icon btn-edit" title="עריכה">✏</button>
-        <button class="btn-icon btn-print" title="הדפסה" (click)="updateCertificateStatus(certificate, 'printed')">🖨</button>
-        <button class="btn-icon btn-download" title="הורדה">⬇</button>
-        <button class="btn-icon btn-delivered" title="סמן כנמסר" (click)="updateCertificateStatus(certificate, 'delivered')">✅</button>
+        <button class="btn-icon btn-view" [title]="(i18n.terms$ | async)?.previewAction">👁</button>
+        <button class="btn-icon btn-edit" [title]="(i18n.terms$ | async)?.editAction">✏</button>
+        <button class="btn-icon btn-print" [title]="(i18n.terms$ | async)?.printAction" (click)="updateCertificateStatus(certificate, 'printed')">🖨</button>
+        <button class="btn-icon btn-download" [title]="(i18n.terms$ | async)?.downloadAction">⬇</button>
+        <button class="btn-icon btn-delivered" [title]="(i18n.terms$ | async)?.markAsDelivered" (click)="updateCertificateStatus(certificate, 'delivered')">✅</button>
       </div>
     </div>
   </div>
 
   <div class="pagination">
-    <button class="btn-page">הקודם</button>
-    <span class="page-info">עמוד 1 מתוך 6</span>
-    <button class="btn-page">הבא</button>
+    <button class="btn-page">{{ (i18n.terms$ | async)?.previousPage }}</button>
+    <span class="page-info">{{ (i18n.terms$ | async)?.pageOf?.replace('{current}', '1')?.replace('{total}', '6') }}</span>
+    <button class="btn-page">{{ (i18n.terms$ | async)?.nextPage }}</button>
   </div>
 </div>
 
@@ -144,126 +144,126 @@
 <div class="modal-overlay" *ngIf="showCreateCertificateModal">
   <div class="modal-content large-modal">
     <div class="modal-header">
-      <h2>יצירת תעודה חדשה</h2>
+      <h2>{{ (i18n.terms$ | async)?.createNewCertificateModal }}</h2>
       <button class="modal-close" (click)="closeCreateModal()">&times;</button>
     </div>
     <div class="modal-body">
       <div class="form-sections">
         <div class="section basic-info">
-          <h3>פרטים בסיסיים</h3>
+          <h3>{{ (i18n.terms$ | async)?.basicInfo }}</h3>
           <div class="form-grid">
             <div class="form-group">
-              <label>סוג תעודה</label>
+              <label>{{ (i18n.terms$ | async)?.certificateTypeSelect }}</label>
               <select class="form-control certificate-type-select" [(ngModel)]="newCertificate.type" (change)="onCertificateTypeChange($event)">
-                <option value="donation">תעודת תרומה</option>
-                <option value="memorial">נציב זיכרון</option>
-                <option value="dedication">הקדשה</option>
-                <option value="appreciation">הוקרה</option>
+                <option value="donation">{{ (i18n.terms$ | async)?.donationCertificate }}</option>
+                <option value="memorial">{{ (i18n.terms$ | async)?.memorialCertificate }}</option>
+                <option value="dedication">{{ (i18n.terms$ | async)?.dedication }}</option>
+                <option value="appreciation">{{ (i18n.terms$ | async)?.appreciation }}</option>
               </select>
             </div>
             <div class="form-group">
-              <label>תורם</label>
+              <label>{{ (i18n.terms$ | async)?.donorSelect }}</label>
               <select class="form-control" [(ngModel)]="selectedDonorId" (change)="onDonorSelect($event)">
-                <option value="">בחר תורם...</option>
+                <option value="">{{ (i18n.terms$ | async)?.selectDonorOption }}</option>
                 <option *ngFor="let donor of donors" [value]="donor.id">{{donor.fullName}}</option>
               </select>
             </div>
             <div class="form-group">
-              <label>שם המקבל/נהנה</label>
-              <input type="text" class="form-control" placeholder="שם המקבל" [(ngModel)]="newCertificate.recipientName">
+              <label>{{ (i18n.terms$ | async)?.recipientName }}</label>
+              <input type="text" class="form-control" [placeholder]="(i18n.terms$ | async)?.recipientNamePlaceholder" [(ngModel)]="newCertificate.recipientName">
             </div>
             <div class="form-group">
-              <label>תאריך האירוע</label>
+              <label>{{ (i18n.terms$ | async)?.eventDateField }}</label>
               <input type="date" class="form-control" [(ngModel)]="eventDateForInput">
             </div>
             <div class="form-group">
-              <label>סכום התרומה</label>
+              <label>{{ (i18n.terms$ | async)?.donationAmount }}</label>
               <input type="number" class="form-control" placeholder="0" [(ngModel)]="newCertificate.amount">
             </div>
             <div class="form-group">
-              <label>אירוע/סיבה</label>
-              <input type="text" class="form-control" placeholder="למה התרומה..." [(ngModel)]="newCertificate.eventName">
+              <label>{{ (i18n.terms$ | async)?.eventReason }}</label>
+              <input type="text" class="form-control" [placeholder]="(i18n.terms$ | async)?.eventReasonPlaceholder" [(ngModel)]="newCertificate.eventName">
             </div>
           </div>
         </div>
 
         <div class="section text-content">
-          <h3>תוכן התעודה</h3>
+          <h3>{{ (i18n.terms$ | async)?.certificateContent }}</h3>
           <div class="form-grid">
             <div class="form-group full-width">
-              <label>כותרת ראשית</label>
-              <input type="text" class="form-control" placeholder="תעודת הוקרה" [(ngModel)]="newCertificate.mainTitle">
+              <label>{{ (i18n.terms$ | async)?.mainTitle }}</label>
+              <input type="text" class="form-control" [placeholder]="(i18n.terms$ | async)?.mainTitlePlaceholder" [(ngModel)]="newCertificate.mainTitle">
             </div>
             <div class="form-group full-width">
-              <label>טקסט מרכזי</label>
-              <textarea class="form-control" rows="4" placeholder="בזה אנו מעידים כי..." [(ngModel)]="newCertificate.mainText"></textarea>
+              <label>{{ (i18n.terms$ | async)?.mainText }}</label>
+              <textarea class="form-control" rows="4" [placeholder]="(i18n.terms$ | async)?.mainTextPlaceholder" [(ngModel)]="newCertificate.mainText"></textarea>
             </div>
             <div class="form-group full-width">
-              <label>הקדשה מיוחדת</label>
-              <textarea class="form-control" rows="3" placeholder="לזכר, לכבוד, לרפואה..." [(ngModel)]="newCertificate.specialText"></textarea>
+              <label>{{ (i18n.terms$ | async)?.specialDedication }}</label>
+              <textarea class="form-control" rows="3" [placeholder]="(i18n.terms$ | async)?.specialDedicationPlaceholder" [(ngModel)]="newCertificate.specialText"></textarea>
             </div>
             <div class="form-group">
-              <label>תאריך עברי</label>
-              <input type="text" class="form-control" placeholder="תאריך עברי" [(ngModel)]="newCertificate.hebrewDate">
+              <label>{{ (i18n.terms$ | async)?.hebrewDateField }}</label>
+              <input type="text" class="form-control" [placeholder]="(i18n.terms$ | async)?.hebrewDatePlaceholder" [(ngModel)]="newCertificate.hebrewDate">
             </div>
             <div class="form-group">
-              <label>חתימה</label>
-              <input type="text" class="form-control" placeholder="שם החותם" [(ngModel)]="newCertificate.signature">
+              <label>{{ (i18n.terms$ | async)?.signature }}</label>
+              <input type="text" class="form-control" [placeholder]="(i18n.terms$ | async)?.signaturePlaceholder" [(ngModel)]="newCertificate.signature">
             </div>
           </div>
         </div>
 
         <div class="section design-options">
-          <h3>עיצוב ופריסה</h3>
+          <h3>{{ (i18n.terms$ | async)?.designAndLayout }}</h3>
           <div class="design-grid">
             <div class="template-option" [class.selected]="newCertificate.template === 'classic'" (click)="newCertificate.template = 'classic'">
               <div class="template-preview classic">
                 <div class="preview-content">
-                  <div class="preview-header">תעודת הוקרה</div>
-                  <div class="preview-body">טקסט התעודה...</div>
-                  <div class="preview-footer">חתימה</div>
+                  <div class="preview-header">{{ (i18n.terms$ | async)?.mainTitlePlaceholder }}</div>
+                  <div class="preview-body">{{ (i18n.terms$ | async)?.mainTextPlaceholder }}</div>
+                  <div class="preview-footer">{{ (i18n.terms$ | async)?.signature }}</div>
                 </div>
               </div>
-              <span class="template-name">קלאסי</span>
+              <span class="template-name">{{ (i18n.terms$ | async)?.classicTemplate }}</span>
             </div>
             
             <div class="template-option" [class.selected]="newCertificate.template === 'modern'" (click)="newCertificate.template = 'modern'">
               <div class="template-preview modern">
                 <div class="preview-content">
-                  <div class="preview-header">תעודת הוקרה</div>
-                  <div class="preview-body">טקסט התעודה...</div>
-                  <div class="preview-footer">חתימה</div>
+                  <div class="preview-header">{{ (i18n.terms$ | async)?.mainTitlePlaceholder }}</div>
+                  <div class="preview-body">{{ (i18n.terms$ | async)?.mainTextPlaceholder }}</div>
+                  <div class="preview-footer">{{ (i18n.terms$ | async)?.signature }}</div>
                 </div>
               </div>
-              <span class="template-name">מודרני</span>
+              <span class="template-name">{{ (i18n.terms$ | async)?.modernTemplate }}</span>
             </div>
             
             <div class="template-option" [class.selected]="newCertificate.template === 'elegant'" (click)="newCertificate.template = 'elegant'">
               <div class="template-preview elegant">
                 <div class="preview-content">
-                  <div class="preview-header">תעודת הוקרה</div>
-                  <div class="preview-body">טקסט התעודה...</div>
-                  <div class="preview-footer">חתימה</div>
+                  <div class="preview-header">{{ (i18n.terms$ | async)?.mainTitlePlaceholder }}</div>
+                  <div class="preview-body">{{ (i18n.terms$ | async)?.mainTextPlaceholder }}</div>
+                  <div class="preview-footer">{{ (i18n.terms$ | async)?.signature }}</div>
                 </div>
               </div>
-              <span class="template-name">אלגנטי</span>
+              <span class="template-name">{{ (i18n.terms$ | async)?.elegantTemplate }}</span>
             </div>
           </div>
           
           <div class="form-grid">
             <div class="form-group">
-              <label>גודל נייר</label>
+              <label>{{ (i18n.terms$ | async)?.paperSize }}</label>
               <select class="form-control" [(ngModel)]="newCertificate.paperSize">
-                <option value="a4">A4</option>
-                <option value="a3">A3</option>
-                <option value="letter">Letter</option>
+                <option value="a4">{{ (i18n.terms$ | async)?.paperSizeA4 }}</option>
+                <option value="a3">{{ (i18n.terms$ | async)?.paperSizeA3 }}</option>
+                <option value="letter">{{ (i18n.terms$ | async)?.paperSizeLetter }}</option>
               </select>
             </div>
             <div class="form-group">
-              <label>כיוון</label>
+              <label>{{ (i18n.terms$ | async)?.orientation }}</label>
               <select class="form-control" [(ngModel)]="newCertificate.orientation">
-                <option value="portrait">לאורך</option>
-                <option value="landscape">לרוחב</option>
+                <option value="portrait">{{ (i18n.terms$ | async)?.portrait }}</option>
+                <option value="landscape">{{ (i18n.terms$ | async)?.landscape }}</option>
               </select>
             </div>
           </div>
@@ -271,9 +271,9 @@
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-secondary" (click)="closeCreateModal()">ביטול</button>
-      <button class="btn btn-info" (click)="openPreview()">תצוגה מקדימה</button>
-      <button class="btn btn-primary" (click)="saveCertificate()">שמור תעודה</button>
+      <button class="btn btn-secondary" (click)="closeCreateModal()">{{ (i18n.terms$ | async)?.cancel }}</button>
+      <button class="btn btn-info" (click)="openPreview()">{{ (i18n.terms$ | async)?.previewModal }}</button>
+      <button class="btn btn-primary" (click)="saveCertificate()">{{ (i18n.terms$ | async)?.saveCampaign }}</button>
     </div>
   </div>
 </div>
@@ -282,7 +282,7 @@
 <div class="modal-overlay preview-overlay" *ngIf="showPreviewModal">
   <div class="modal-content preview-modal">
     <div class="modal-header">
-      <h2>תצוגה מקדימה</h2>
+      <h2>{{ (i18n.terms$ | async)?.certificatePreview }}</h2>
       <button class="modal-close" (click)="closePreview()">&times;</button>
     </div>
     <div class="modal-body preview-body">
@@ -290,12 +290,12 @@
         <div class="certificate-paper" [class.landscape]="newCertificate.orientation === 'landscape'">
           <div class="certificate-border">
             <div class="certificate-header">
-              <div class="main-title">{{newCertificate.mainTitle || 'תעודת הוקרה'}}</div>
+              <div class="main-title">{{newCertificate.mainTitle || (i18n.terms$ | async)?.mainTitlePlaceholder}}</div>
             </div>
             
             <div class="certificate-body">
               <div class="main-text">
-                {{newCertificate.mainText || 'בזה אנו מעידים כי קיבלנו בהכרת טוב תרומה נדיבה'}}
+                {{newCertificate.mainText || (i18n.terms$ | async)?.mainTextPlaceholder}}
               </div>
               
               <div class="recipient-section">
@@ -303,19 +303,19 @@
                   {{newCertificate.recipientName}}
                 </div>
                 <div class="donor-info" *ngIf="newCertificate.donor">
-                  מאת: {{newCertificate.donor.fullName}}
+                  {{ (i18n.terms$ | async)?.from }}: {{newCertificate.donor.fullName}}
                 </div>
               </div>
               
               <div class="details-section">
                 <div class="amount" *ngIf="newCertificate.amount">
-                  בסך: ₪{{newCertificate.amount | number}}
+                  {{ (i18n.terms$ | async)?.amount }}: ₪{{newCertificate.amount | number}}
                 </div>
                 <div class="event-name" *ngIf="newCertificate.eventName">
-                  לכבוד: {{newCertificate.eventName}}
+                  {{ (i18n.terms$ | async)?.eventReason }}: {{newCertificate.eventName}}
                 </div>
                 <div class="event-date" *ngIf="newCertificate.eventDate">
-                  תאריך: {{newCertificate.eventDate | date:'dd/MM/yyyy'}}
+                  {{ (i18n.terms$ | async)?.date }}: {{newCertificate.eventDate | date:'dd/MM/yyyy'}}
                 </div>
                 <div class="hebrew-date" *ngIf="newCertificate.hebrewDate">
                   {{newCertificate.hebrewDate}}
@@ -340,8 +340,8 @@
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-secondary" (click)="closePreview()">סגור</button>
-      <button class="btn btn-primary" (click)="closePreview(); saveCertificate()">שמור ויצא</button>
+      <button class="btn btn-secondary" (click)="closePreview()">{{ (i18n.terms$ | async)?.close }}</button>
+      <button class="btn btn-primary" (click)="closePreview(); saveCertificate()">{{ (i18n.terms$ | async)?.saveAndExitAction }}</button>
     </div>
   </div>
 </div>

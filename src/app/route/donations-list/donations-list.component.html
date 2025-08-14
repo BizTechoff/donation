@@ -1,51 +1,51 @@
 <div class="donations-container">
   <div class="page-header">
-    <h1>רישום תרומות</h1>
-    <button class="btn btn-primary add-donation-btn" (click)="createDonation()">רישום תרומה חדשה</button>
+    <h1>{{ (i18n.terms$ | async)?.donationRecording }}</h1>
+    <button class="btn btn-primary add-donation-btn" (click)="createDonation()">{{ (i18n.terms$ | async)?.recordNewDonation }}</button>
   </div>
 
   <div class="filters-section">
     <div class="filter-row">
       <div class="filter-group">
-        <label>חיפוש תורם</label>
-        <input type="text" class="form-control" placeholder="שם תורם...">
+        <label>{{ (i18n.terms$ | async)?.donorSearchFilter }}</label>
+        <input type="text" class="form-control" [placeholder]="(i18n.terms$ | async)?.donorNamePlaceholder">
       </div>
       
       <div class="filter-group">
-        <label>תאריך מ-</label>
+        <label>{{ (i18n.terms$ | async)?.dateFromFilter }}</label>
         <input type="date" class="form-control">
       </div>
 
       <div class="filter-group">
-        <label>תאריך עד</label>
+        <label>{{ (i18n.terms$ | async)?.dateToFilter }}</label>
         <input type="date" class="form-control">
       </div>
 
       <div class="filter-group">
-        <label>אופן תרומה</label>
+        <label>{{ (i18n.terms$ | async)?.donationMethodFilter }}</label>
         <select class="form-control">
-          <option value="">הכל</option>
-          <option value="cash">מזומן</option>
-          <option value="check">צ'ק</option>
-          <option value="credit">כרטיס אשראי</option>
-          <option value="transfer">העברה בנקאית</option>
-          <option value="standing">הוראת קבע</option>
+          <option value="">{{ (i18n.terms$ | async)?.everything }}</option>
+          <option value="cash">{{ (i18n.terms$ | async)?.cash }}</option>
+          <option value="check">{{ (i18n.terms$ | async)?.check }}</option>
+          <option value="credit">{{ (i18n.terms$ | async)?.creditCard }}</option>
+          <option value="transfer">{{ (i18n.terms$ | async)?.bankTransfer }}</option>
+          <option value="standing">{{ (i18n.terms$ | async)?.standingOrderMethod }}</option>
         </select>
       </div>
 
       <div class="filter-group">
-        <label>סכום מ-</label>
+        <label>{{ (i18n.terms$ | async)?.amountFromFilter }}</label>
         <input type="number" class="form-control" placeholder="0">
       </div>
 
       <div class="filter-group">
-        <label>מוצר</label>
+        <label>{{ (i18n.terms$ | async)?.productFilter }}</label>
         <select class="form-control">
-          <option value="">הכל</option>
-          <option value="general">כללי</option>
-          <option value="torah">לימוד תורה</option>
-          <option value="charity">צדקה</option>
-          <option value="building">בניין</option>
+          <option value="">{{ (i18n.terms$ | async)?.everything }}</option>
+          <option value="general">{{ (i18n.terms$ | async)?.generalProduct }}</option>
+          <option value="torah">{{ (i18n.terms$ | async)?.torahStudy }}</option>
+          <option value="charity">{{ (i18n.terms$ | async)?.charityProduct }}</option>
+          <option value="building">{{ (i18n.terms$ | async)?.buildingProduct }}</option>
         </select>
       </div>
     </div>
@@ -55,28 +55,28 @@
     <div class="summary-card total">
       <div class="card-icon">💰</div>
       <div class="card-content">
-        <h3>סה"כ תרומות</h3>
+        <h3>{{ (i18n.terms$ | async)?.totalDonationsSum }}</h3>
         <span class="amount">₪{{ totalAmount | number }}</span>
       </div>
     </div>
     <div class="summary-card monthly">
       <div class="card-icon">📅</div>
       <div class="card-content">
-        <h3>ממתין לאישור</h3>
+        <h3>{{ (i18n.terms$ | async)?.pendingApprovalAmount }}</h3>
         <span class="amount">₪{{ pendingAmount | number }}</span>
       </div>
     </div>
     <div class="summary-card donors">
       <div class="card-icon">👥</div>
       <div class="card-content">
-        <h3>מס' תרומות</h3>
+        <h3>{{ (i18n.terms$ | async)?.numberOfDonations }}</h3>
         <span class="count">{{ donations.length }}</span>
       </div>
     </div>
     <div class="summary-card avg">
       <div class="card-icon">📊</div>
       <div class="card-content">
-        <h3>תרומות שהושלמו</h3>
+        <h3>{{ (i18n.terms$ | async)?.completedDonationsCount }}</h3>
         <span class="count">{{ completedDonationsCount }}</span>
       </div>
     </div>
@@ -84,16 +84,16 @@
 
   <div class="donations-grid">
     <div class="grid-header">
-      <div class="grid-col">תאריך</div>
-      <div class="grid-col">תורם</div>
-      <div class="grid-col">סכום</div>
-      <div class="grid-col">מטבע</div>
-      <div class="grid-col">אופן תרומה</div>
-      <div class="grid-col">מוצר</div>
-      <div class="grid-col">מתרים</div>
-      <div class="grid-col">מכתב תודה</div>
-      <div class="grid-col">הוכחה</div>
-      <div class="grid-col">פעולות</div>
+      <div class="grid-col">{{ (i18n.terms$ | async)?.dateColumn }}</div>
+      <div class="grid-col">{{ (i18n.terms$ | async)?.donorColumn }}</div>
+      <div class="grid-col">{{ (i18n.terms$ | async)?.amountColumn }}</div>
+      <div class="grid-col">{{ (i18n.terms$ | async)?.currencyColumn }}</div>
+      <div class="grid-col">{{ (i18n.terms$ | async)?.methodColumn }}</div>
+      <div class="grid-col">{{ (i18n.terms$ | async)?.productColumn }}</div>
+      <div class="grid-col">{{ (i18n.terms$ | async)?.fundraiserColumn }}</div>
+      <div class="grid-col">{{ (i18n.terms$ | async)?.thankYouLetterColumn }}</div>
+      <div class="grid-col">{{ (i18n.terms$ | async)?.proofColumn }}</div>
+      <div class="grid-col">{{ (i18n.terms$ | async)?.actionsColumn }}</div>
     </div>
 
     <div class="grid-row" *ngFor="let donation of donations">
@@ -114,7 +114,7 @@
         <span class="method-badge method-{{donation.donationMethod?.type}}">{{ getMethodName(donation) }}</span>
       </div>
       <div class="grid-col">{{ getCampaignName(donation) }}</div>
-      <div class="grid-col">{{ donation.createdBy?.name || 'לא ידוע' }}</div>
+      <div class="grid-col">{{ donation.createdBy?.name || (i18n.terms$ | async)?.createdByUnknown }}</div>
       <div class="grid-col">
         <span class="status-badge" [class]="'status-' + donation.status">
           {{ getStatusText(donation.status) }}
@@ -126,19 +126,19 @@
         </span>
       </div>
       <div class="grid-col actions">
-        <button class="btn-icon btn-view" (click)="editDonation(donation)" title="הצג פרטים">👁</button>
-        <button class="btn-icon btn-edit" (click)="editDonation(donation)" title="עריכה">✏</button>
-        <button class="btn-icon btn-receipt" (click)="issueReceipt(donation)" [disabled]="donation.receiptIssued" title="הדפס קבלה">🧾</button>
-        <button class="btn-icon btn-delete" (click)="deleteDonation(donation)" title="מחק">🗑</button>
-        <button class="btn-icon btn-cancel" (click)="cancelDonation(donation)" [disabled]="donation.status === 'cancelled'" title="ביטול">❌</button>
+        <button class="btn-icon btn-view" (click)="editDonation(donation)" [title]="(i18n.terms$ | async)?.viewDetails">👁</button>
+        <button class="btn-icon btn-edit" (click)="editDonation(donation)" [title]="(i18n.terms$ | async)?.edit">✏</button>
+        <button class="btn-icon btn-receipt" (click)="issueReceipt(donation)" [disabled]="donation.receiptIssued" [title]="(i18n.terms$ | async)?.receiptAction">🧾</button>
+        <button class="btn-icon btn-delete" (click)="deleteDonation(donation)" [title]="(i18n.terms$ | async)?.delete">🗑</button>
+        <button class="btn-icon btn-cancel" (click)="cancelDonation(donation)" [disabled]="donation.status === 'cancelled'" [title]="(i18n.terms$ | async)?.cancelDonation">❌</button>
       </div>
     </div>
   </div>
 
   <div class="pagination">
-    <button class="btn-page">הקודם</button>
-    <span class="page-info">עמוד 1 מתוך 15</span>
-    <button class="btn-page">הבא</button>
+    <button class="btn-page">{{ (i18n.terms$ | async)?.previousPage }}</button>
+    <span class="page-info">{{ (i18n.terms$ | async)?.pageOf?.replace('{current}', '1')?.replace('{total}', '15') }}</span>
+    <button class="btn-page">{{ (i18n.terms$ | async)?.nextPage }}</button>
   </div>
 </div>
 
@@ -146,106 +146,106 @@
 <div class="modal-overlay" *ngIf="showAddDonationModal">
   <div class="modal-content">
     <div class="modal-header">
-      <h2>רישום תרומה חדשה</h2>
+      <h2>{{ (i18n.terms$ | async)?.donationRecordingModal }}</h2>
       <button class="modal-close" (click)="closeModal()">&times;</button>
     </div>
     <div class="modal-body">
       <div class="form-grid">
         <div class="form-group" *ngIf="editingDonation">
-          <label>תורם</label>
+          <label>{{ (i18n.terms$ | async)?.donor }}</label>
           <select class="form-control" [(ngModel)]="editingDonation!.donorId">
-            <option value="">בחר תורם...</option>
+            <option value="">{{ (i18n.terms$ | async)?.selectDonor }}</option>
             <option *ngFor="let donor of donors" [value]="donor.id">{{ donor.displayName }}</option>
           </select>
         </div>
         <div class="form-group">
-          <label>תאריך לועזי</label>
+          <label>{{ (i18n.terms$ | async)?.gregorianDateField }}</label>
           <input type="date" class="form-control" [(ngModel)]="donationDateForInput">
         </div>
         <div class="form-group">
-          <label>תאריך עברי</label>
-          <input type="text" class="form-control" placeholder="אוטומטי" [(ngModel)]="hebrewDate">
+          <label>{{ (i18n.terms$ | async)?.hebrewDate }}</label>
+          <input type="text" class="form-control" [placeholder]="(i18n.terms$ | async)?.automaticDate" [(ngModel)]="hebrewDate">
         </div>
         <div class="form-group" *ngIf="editingDonation">
-          <label>סכום</label>
+          <label>{{ (i18n.terms$ | async)?.amountField }}</label>
           <input type="number" class="form-control" placeholder="0" [(ngModel)]="editingDonation!.amount">
         </div>
         <div class="form-group" *ngIf="editingDonation">
-          <label>מטבע</label>
+          <label>{{ (i18n.terms$ | async)?.currencySelect }}</label>
           <select class="form-control" [(ngModel)]="editingDonation!.currency">
-            <option value="ILS">שקל</option>
-            <option value="USD">דולר</option>
-            <option value="EUR">יורו</option>
+            <option value="ILS">{{ (i18n.terms$ | async)?.shekelOption }}</option>
+            <option value="USD">{{ (i18n.terms$ | async)?.dollarOption }}</option>
+            <option value="EUR">{{ (i18n.terms$ | async)?.euroOption }}</option>
           </select>
         </div>
         <div class="form-group" *ngIf="editingDonation">
-          <label>אופן תרומה</label>
+          <label>{{ (i18n.terms$ | async)?.donationMethodSelect }}</label>
           <select class="form-control" [(ngModel)]="editingDonation!.donationMethodId">
-            <option value="">בחר אופן תרומה...</option>
+            <option value="">{{ (i18n.terms$ | async)?.selectDonationMethodOption }}</option>
             <option *ngFor="let method of donationMethods" [value]="method.id">{{ method.name }}</option>
           </select>
         </div>
         <div class="form-group" *ngIf="editingDonation">
-          <label>מוצר</label>
+          <label>{{ (i18n.terms$ | async)?.productSelect }}</label>
           <select class="form-control" [(ngModel)]="editingDonation!.campaignId">
-            <option value="">בחר מוצר...</option>
+            <option value="">{{ (i18n.terms$ | async)?.selectProductOption }}</option>
             <option *ngFor="let campaign of campaigns" [value]="campaign.id">{{ campaign.name }}</option>
           </select>
         </div>
         <div class="form-group">
-          <label>מתרים</label>
-          <input type="text" class="form-control" placeholder="שם המתרים" [(ngModel)]="fundraiserName">
+          <label>{{ (i18n.terms$ | async)?.fundraiserNameField }}</label>
+          <input type="text" class="form-control" [placeholder]="(i18n.terms$ | async)?.fundraiserNamePlaceholder" [(ngModel)]="fundraiserName">
         </div>
         <div class="form-group full-width" *ngIf="editingDonation">
-          <label>סיבה / הערות</label>
-          <textarea class="form-control" rows="3" placeholder="הכנס הערות..." [(ngModel)]="editingDonation!.notes"></textarea>
+          <label>{{ (i18n.terms$ | async)?.reasonNotesField }}</label>
+          <textarea class="form-control" rows="3" [placeholder]="(i18n.terms$ | async)?.notesPlaceholder" [(ngModel)]="editingDonation!.notes"></textarea>
         </div>
       </div>
 
       <!-- תצוגה מקדימה -->
       <div class="preview-section" *ngIf="showPreview">
-        <h3>תצוגה מקדימה</h3>
+        <h3>{{ (i18n.terms$ | async)?.previewSection }}</h3>
         <div class="preview-card">
           <div class="preview-row">
-            <strong>תורם:</strong>
-            <span>{{ getSelectedDonorName() || 'לא נבחר' }}</span>
+            <strong>{{ (i18n.terms$ | async)?.donor }}:</strong>
+            <span>{{ getSelectedDonorName() || (i18n.terms$ | async)?.notSelectedValue }}</span>
           </div>
           <div class="preview-row">
-            <strong>תאריך לועזי:</strong>
-            <span>{{ editingDonation?.donationDate ? (editingDonation!.donationDate | date:'dd/MM/yyyy') : 'לא נבחר' }}</span>
+            <strong>{{ (i18n.terms$ | async)?.gregorianDate }}:</strong>
+            <span>{{ editingDonation?.donationDate ? (editingDonation!.donationDate | date:'dd/MM/yyyy') : (i18n.terms$ | async)?.notSelectedValue }}</span>
           </div>
           <div class="preview-row">
-            <strong>תאריך עברי:</strong>
-            <span>{{ hebrewDate || 'אוטומטי' }}</span>
+            <strong>{{ (i18n.terms$ | async)?.hebrewDate }}:</strong>
+            <span>{{ hebrewDate || (i18n.terms$ | async)?.automatic }}</span>
           </div>
           <div class="preview-row">
-            <strong>סכום:</strong>
+            <strong>{{ (i18n.terms$ | async)?.amount }}:</strong>
             <span>{{ getCurrencySymbol() }}{{ editingDonation?.amount || '0' | number }}</span>
           </div>
           <div class="preview-row">
-            <strong>אופן תרומה:</strong>
+            <strong>{{ (i18n.terms$ | async)?.method }}:</strong>
             <span>{{ getSelectedMethodName() }}</span>
           </div>
           <div class="preview-row">
-            <strong>מוצר:</strong>
+            <strong>{{ (i18n.terms$ | async)?.product }}:</strong>
             <span>{{ getSelectedCampaignName() }}</span>
           </div>
           <div class="preview-row">
-            <strong>מתרים:</strong>
-            <span>{{ fundraiserName || 'לא צוין' }}</span>
+            <strong>{{ (i18n.terms$ | async)?.fundraiser }}:</strong>
+            <span>{{ fundraiserName || (i18n.terms$ | async)?.notSpecified }}</span>
           </div>
           <div class="preview-row" *ngIf="editingDonation?.notes">
-            <strong>הערות:</strong>
+            <strong>{{ (i18n.terms$ | async)?.notes }}:</strong>
             <span>{{ editingDonation!.notes }}</span>
           </div>
         </div>
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-secondary" (click)="closeModal()">ביטול</button>
-      <button class="btn btn-info" (click)="togglePreview()">{{ showPreview ? 'הסתר תצוגה מקדימה' : 'תצוגה מקדימה' }}</button>
-      <button class="btn btn-success" (click)="saveDonationAndExit()">שמור ויצא</button>
-      <button class="btn btn-primary" (click)="saveDonation()">שמור תרומה</button>
+      <button class="btn btn-secondary" (click)="closeModal()">{{ (i18n.terms$ | async)?.cancel }}</button>
+      <button class="btn btn-info" (click)="togglePreview()">{{ showPreview ? (i18n.terms$ | async)?.hidePreviewButton : (i18n.terms$ | async)?.showPreviewButton }}</button>
+      <button class="btn btn-success" (click)="saveDonationAndExit()">{{ (i18n.terms$ | async)?.saveAndExitButton }}</button>
+      <button class="btn btn-primary" (click)="saveDonation()">{{ (i18n.terms$ | async)?.saveDonationButton }}</button>
     </div>
   </div>
 </div>

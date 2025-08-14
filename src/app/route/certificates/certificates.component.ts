@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Certificate } from '../../../shared/entity/certificate';
 import { Donor } from '../../../shared/entity/donor';
 import { repo } from 'remult';
+import { I18nService } from '../../i18n/i18n.service';
 
 @Component({
   selector: 'app-certificates',
@@ -18,7 +19,7 @@ export class CertificatesComponent implements OnInit {
   newCertificate = new Certificate();
   selectedDonorId = '';
 
-  constructor() { }
+  constructor(public i18n: I18nService) { }
 
   async ngOnInit() {
     await this.loadCertificates();
@@ -66,20 +67,20 @@ export class CertificatesComponent implements OnInit {
     this.newCertificate.type = type as any;
     switch (type) {
       case 'donation':
-        this.newCertificate.typeText = 'תעודת תרומה';
-        this.newCertificate.mainTitle = 'תעודת הוקרה על תרומה';
+        this.newCertificate.typeText = this.i18n.terms.donationCertificate;
+        this.newCertificate.mainTitle = this.i18n.terms.mainTitlePlaceholder;
         break;
       case 'memorial':
-        this.newCertificate.typeText = 'נציב זיכרון';
-        this.newCertificate.mainTitle = 'נציב לזכר נפטר';
+        this.newCertificate.typeText = this.i18n.terms.memorialCertificate;
+        this.newCertificate.mainTitle = this.i18n.terms.memorialCertificate;
         break;
       case 'dedication':
-        this.newCertificate.typeText = 'הקדשה';
-        this.newCertificate.mainTitle = 'תעודת הקדשה';
+        this.newCertificate.typeText = this.i18n.terms.dedication;
+        this.newCertificate.mainTitle = this.i18n.terms.dedication;
         break;
       case 'appreciation':
-        this.newCertificate.typeText = 'הוקרה';
-        this.newCertificate.mainTitle = 'תעודת הוקרה';
+        this.newCertificate.typeText = this.i18n.terms.appreciation;
+        this.newCertificate.mainTitle = this.i18n.terms.mainTitlePlaceholder;
         break;
     }
   }
@@ -96,7 +97,7 @@ export class CertificatesComponent implements OnInit {
 
   async saveCertificate() {
     try {
-      this.newCertificate.statusText = 'טיוטה';
+      this.newCertificate.statusText = this.i18n.terms.draftStatusCert;
       await this.newCertificate.save();
       await this.loadCertificates();
       this.closeCreateModal();
@@ -128,7 +129,7 @@ export class CertificatesComponent implements OnInit {
   }
 
   getDonorName(certificate: Certificate): string {
-    return certificate.donor?.fullName || 'לא ידוע';
+    return certificate.donor?.fullName || this.i18n.terms.unknown;
   }
 
   openPreview() {
