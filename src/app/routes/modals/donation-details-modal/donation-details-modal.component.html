@@ -66,6 +66,40 @@
                 </option>
               </select>
             </div>
+            
+            <div class="form-group">
+              <label>מתרים</label>
+              <input type="text" class="form-control" [(ngModel)]="donation.fundraiserName" 
+                     placeholder="שם המתרים">
+            </div>
+            
+            <div class="form-group">
+              <label>סטטוס תרומה *</label>
+              <select class="form-control" [(ngModel)]="donation.status">
+                <option value="pending">ממתין</option>
+                <option value="completed">הושלם</option>
+                <option value="cancelled">בוטל</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- פרטי אישור -->
+        <div class="section receipt-details">
+          <h3>פרטי אישור</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input type="checkbox" [(ngModel)]="donation.receiptIssued">
+                התקבל אישור
+              </label>
+            </div>
+            
+            <div class="form-group">
+              <label>מספר אישור</label>
+              <input type="text" class="form-control" [(ngModel)]="donation.receiptNumber" 
+                     placeholder="הכנס מספר אישור">
+            </div>
           </div>
         </div>
 

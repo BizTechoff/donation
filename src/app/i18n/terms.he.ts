@@ -909,5 +909,6 @@ export const termsHe = {
   addNewDonorModal: 'הוספת תורם חדש',
   familyInformation: 'מידע משפחתי',
   generalPreferences: 'העדפות כלליות',
-  saveDonor: 'שמור תורם'
+  saveDonor: 'שמור תורם',
+  unauthorizedOperation: 'אינך מורשה לפעולה זו'
 }

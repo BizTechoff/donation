@@ -78,6 +78,11 @@ export class Donation extends IdEntity {
   })
   notes = ''
 
+  @Fields.string({
+    caption: 'מתרים',
+  })
+  fundraiserName = ''
+
   @Fields.boolean({
     caption: 'תרומה אנונימית',
   })

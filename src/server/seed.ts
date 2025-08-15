@@ -28,6 +28,19 @@ export async function seedDatabase() {
       await admin.save()
       console.log('Admin user created')
     }
+    
+    // Create admin user
+    let anonimi = await remult.repo(User).findFirst({ name: 'anonimi' })
+    if (!anonimi) {
+      admin = remult.repo(User).create({
+        name: 'anonimi',
+        donator: true,
+        disabled: false
+      })
+      await admin.hashAndSetPassword('123456')
+      await admin.save()
+      console.log('Anonimi user created')
+    }
 
     // Create donation methods
     const methods = [

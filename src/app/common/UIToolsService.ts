@@ -40,12 +40,12 @@ export class UIToolsService implements UITools {
   }
 
   info(info: string): any {
-    this.snackBar.open(info, 'סגור', { duration: 4000 })
+    this.snackBar.open(info, terms.close, { duration: 4000 })
   }
   async error(err: any, taskId?: string) {
     const message = extractError(err)
     if (message == 'Network Error') return
-    this.report('שגיאה', message, taskId)
+    this.report(terms.error, message, taskId)
     return await openDialog(
       YesNoQuestionComponent,
       (d) =>
@@ -187,7 +187,7 @@ export function extractError(err: any): string {
     }
   }
   if (err.rejection) return extractError(err.rejection) //for promise failed errors and http errors
-  if (err.httpStatusCode == 403) return 'אינך מורשה פעולה זו'
+  if (err.httpStatusCode == 403) return terms.unauthorizedOperation
   if (err.message) {
     let r = err.message
     if (err.error && err.error.message) r = err.error.message

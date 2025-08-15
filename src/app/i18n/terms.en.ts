@@ -911,5 +911,6 @@ export const termsEn = {
   addNewDonorModal: 'Add New Donor',
   familyInformation: 'Family Information',
   generalPreferences: 'General Preferences',
-  saveDonor: 'Save Donor'
+  saveDonor: 'Save Donor',
+  unauthorizedOperation: 'Unauthorized Operation'
 }
