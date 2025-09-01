@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>צילומי מסך - מערכת תרומות</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+        
+        .header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .screenshot-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .screenshot-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+        
+        .screenshot-card .title {
+            padding: 20px;
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            color: white;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        
+        .screenshot-card .image-container {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .screenshot-card img {
+            width: 100%;
+            height: auto;
+            display: block;
+            transition: transform 0.3s ease;
+        }
+        
+        .screenshot-card:hover img {
+            transform: scale(1.05);
+        }
+        
+        .screenshot-card .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            color: white;
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+        
+        .screenshot-card:hover .overlay {
+            opacity: 1;
+        }
+        
+        .missing-image {
+            background: #f8f9fa;
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+            font-style: italic;
+        }
+        
+        .footer {
+            text-align: center;
+            color: white;
+            opacity: 0.8;
+            margin-top: 40px;
+        }
+        
+        .download-all {
+            text-align: center;
+            margin: 30px 0;
+        }
+        
+        .download-btn {
+            background: #28a745;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1.1em;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: background 0.3s ease, transform 0.2s ease;
+        }
+        
+        .download-btn:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+        
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            body {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🖼️ מערכת ניהול תרומות</h1>
+            <p>צילומי מסך של כל הדפים במערכת</p>
+        </div>
+        
+        <div class="download-all">
+            <a href="#" class="download-btn" onclick="downloadAll()">💾 הורד את כל הקבצים</a>
+        </div>
+        
+        <div class="grid" id="screenshotsGrid">
+            <!-- Screenshots will be loaded here by JavaScript -->
+        </div>
+        
+        <div class="footer">
+            <p>נוצר אוטומטית עם Puppeteer • © 2025</p>
+        </div>
+    </div>
+    
+    <script>
+        // Define all screenshots with Hebrew names
+        const screenshots = [
+            { file: '00-home-with-sidebar.png', title: 'דף הבית עם תפריט צד' },
+            { file: '01-home.png', title: 'דף הבית' },
+            { file: '02-donor-details.png', title: 'פרטי תורם' },
+            { file: '03-donor-list.png', title: 'רשימת תורמים' },
+            { file: '04-donations-list.png', title: 'רשימת תרומות' },
+            { file: '05-campaigns.png', title: 'ניהול קמפיינים' },
+            { file: '06-standing-orders.png', title: 'הוראות קבע' },
+            { file: '07-certificates.png', title: 'תעודות הוקרה' },
+            { file: '08-reminders.png', title: 'מערכת תזכורות' },
+            { file: '09-donors-map.png', title: 'מפת תורמים' },
+            { file: '10-reports.png', title: 'דוחות ומחוונים' },
+            { file: '11-user-accounts.png', title: 'ניהול משתמשים' }
+        ];
+        
+        // Function to load screenshots
+        function loadScreenshots() {
+            const grid = document.getElementById('screenshotsGrid');
+            
+            screenshots.forEach(screenshot => {
+                const card = document.createElement('div');
+                card.className = 'screenshot-card';
+                
+                card.innerHTML = `
+                    <div class="title">${screenshot.title}</div>
+                    <div class="image-container">
+                        <img src="screenshots/${screenshot.file}" 
+                             alt="${screenshot.title}"
+                             onerror="this.parentElement.innerHTML='<div class=\\"missing-image\\">תמונה לא נמצאה<br>📸 ${screenshot.file}</div>'"
+                             onclick="openFullscreen(this)">
+                        <div class="overlay">לחץ להגדלה</div>
+                    </div>
+                `;
+                
+                grid.appendChild(card);
+            });
+        }
+        
+        // Function to open image in fullscreen
+        function openFullscreen(img) {
+            const overlay = document.createElement('div');
+            overlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.9);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 1000;
+                cursor: pointer;
+            `;
+            
+            const fullImg = document.createElement('img');
+            fullImg.src = img.src;
+            fullImg.style.cssText = `
+                max-width: 95%;
+                max-height: 95%;
+                object-fit: contain;
+                border-radius: 10px;
+            `;
+            
+            overlay.appendChild(fullImg);
+            document.body.appendChild(overlay);
+            
+            overlay.onclick = () => document.body.removeChild(overlay);
+        }
+        
+        // Function to download all screenshots (opens folder)
+        function downloadAll() {
+            alert('כל הקבצים נמצאים בתיקיית screenshots. פתח את התיקייה כדי לגשת לכל הקבצים.');
+        }
+        
+        // Load screenshots when page loads
+        window.onload = loadScreenshots;
+    </script>
+</body>
+</html>

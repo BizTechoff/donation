@@ -14,7 +14,11 @@
       "Bash(rm:*)",
       "Bash(move \"src\\app\\shared\\donor-details-modal\" \"src\\app\\routes\\modals\\donor-details-modal\")",
       "Bash(mv:*)",
-      "Bash(git log:*)"
+      "Bash(git log:*)",
+      "Bash(ng serve:*)",
+      "Bash(npm run dev:*)",
+      "Bash(start http://localhost:4200)",
+      "Bash(node:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

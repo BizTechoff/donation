@@ -13,6 +13,7 @@ import { Certificate } from '../shared/entity/certificate'
 
 export const entities = [User, Donor, Donation, Campaign, DonationMethod, StandingOrder, Reminder, Certificate]
 export const api = remultExpress({
+  admin: true,
   controllers: [SignInController, UpdatePasswordController],
   entities,
   getUser,
