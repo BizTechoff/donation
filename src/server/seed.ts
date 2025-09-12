@@ -537,18 +537,17 @@ export async function seedDatabase() {
       certificateIndex++
     }
 
-    // Create basic events
+    // Create basic events (excluding birth date which is a separate field in donor)
     const events = [
-      { description: 'תאריך לידה', type: 'personal', isRequired: true, sortOrder: 1, category: 'אישי' },
-      { description: 'יום נישואין', type: 'personal', isRequired: false, sortOrder: 2, category: 'אישי' },
-      { description: 'יארצייט אבא', type: 'personal', isRequired: false, sortOrder: 3, category: 'יארצייט' },
-      { description: 'יארצייט אמא', type: 'personal', isRequired: false, sortOrder: 4, category: 'יארצייט' },
-      { description: 'יארצייט בן/בת זוג', type: 'personal', isRequired: false, sortOrder: 5, category: 'יארצייט' },
-      { description: 'בר מצווה', type: 'personal', isRequired: false, sortOrder: 6, category: 'דתי' },
-      { description: 'בת מצווה', type: 'personal', isRequired: false, sortOrder: 7, category: 'דתי' },
-      { description: 'יום השנה', type: 'personal', isRequired: false, sortOrder: 8, category: 'אישי' },
-      { description: 'סיום לימודים', type: 'personal', isRequired: false, sortOrder: 9, category: 'אישי' },
-      { description: 'עלייה לתורה', type: 'personal', isRequired: false, sortOrder: 10, category: 'דתי' },
+      { description: 'יום נישואין', type: 'personal', isRequired: false, sortOrder: 1, category: 'אישי' },
+      { description: 'יארצייט אבא', type: 'personal', isRequired: false, sortOrder: 2, category: 'יארצייט' },
+      { description: 'יארצייט אמא', type: 'personal', isRequired: false, sortOrder: 3, category: 'יארצייט' },
+      { description: 'יארצייט בן/בת זוג', type: 'personal', isRequired: false, sortOrder: 4, category: 'יארצייט' },
+      { description: 'בר מצווה', type: 'personal', isRequired: false, sortOrder: 5, category: 'דתי' },
+      { description: 'בת מצווה', type: 'personal', isRequired: false, sortOrder: 6, category: 'דתי' },
+      { description: 'יום השנה', type: 'personal', isRequired: false, sortOrder: 7, category: 'אישי' },
+      { description: 'סיום לימודים', type: 'personal', isRequired: false, sortOrder: 8, category: 'אישי' },
+      { description: 'עלייה לתורה', type: 'personal', isRequired: false, sortOrder: 9, category: 'דתי' },
     ]
 
     const createdEvents = []
@@ -566,15 +565,15 @@ export async function seedDatabase() {
 
     // Create some sample donor events
     const sampleDonorEvents = [
-      // Birth dates for some donors
-      { donorIndex: 0, eventIndex: 0, hebrewDate: new Date('1975-05-15'), gregorianDate: new Date('1975-05-15'), notes: 'תאריך לידה' },
-      { donorIndex: 1, eventIndex: 0, hebrewDate: new Date('1980-08-22'), gregorianDate: new Date('1980-08-22'), notes: 'תאריך לידה' },
-      // Some marriage dates
-      { donorIndex: 0, eventIndex: 1, hebrewDate: new Date('2000-06-10'), gregorianDate: new Date('2000-06-10'), notes: 'יום נישואין' },
-      { donorIndex: 1, eventIndex: 1, hebrewDate: new Date('2005-03-15'), gregorianDate: new Date('2005-03-15'), notes: 'יום נישואין' },
+      // Some marriage dates (index 0 is now יום נישואין after removing birth date)
+      { donorIndex: 0, eventIndex: 0, hebrewDate: new Date('2000-06-10'), gregorianDate: new Date('2000-06-10'), notes: 'יום נישואין' },
+      { donorIndex: 1, eventIndex: 0, hebrewDate: new Date('2005-03-15'), gregorianDate: new Date('2005-03-15'), notes: 'יום נישואין' },
       // Some yahrzeit dates
-      { donorIndex: 2, eventIndex: 2, hebrewDate: new Date('2010-01-20'), gregorianDate: new Date('2010-01-20'), notes: 'יארצייט אבא' },
-      { donorIndex: 2, eventIndex: 3, hebrewDate: new Date('2015-11-05'), gregorianDate: new Date('2015-11-05'), notes: 'יארצייט אמא' },
+      { donorIndex: 2, eventIndex: 1, hebrewDate: new Date('2010-01-20'), gregorianDate: new Date('2010-01-20'), notes: 'יארצייט אבא' },
+      { donorIndex: 2, eventIndex: 2, hebrewDate: new Date('2015-11-05'), gregorianDate: new Date('2015-11-05'), notes: 'יארצייט אמא' },
+      // Bar/Bat Mitzvahs
+      { donorIndex: 3, eventIndex: 4, hebrewDate: new Date('2020-03-12'), gregorianDate: new Date('2020-03-12'), notes: 'בר מצווה' },
+      { donorIndex: 4, eventIndex: 5, hebrewDate: new Date('2021-06-18'), gregorianDate: new Date('2021-06-18'), notes: 'בת מצווה' },
     ]
 
     let donorEventIndex = 0

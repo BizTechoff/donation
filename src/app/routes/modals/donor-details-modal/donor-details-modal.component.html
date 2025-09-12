@@ -102,31 +102,9 @@
             </div>
             
             <div class="dates-container" [class.scrollable]="(customPersonalDates.length + 3) > 5">
-              <!-- Anniversary Date -->
-              <div class="form-group full-width">
-                <app-modern-dual-date-picker
-                  [(ngModel)]="donor.anniversaryDate"
-                  [label]="(i18n.terms$ | async)?.anniversaryDate || 'תאריך נישואין'"
-                  (dateChange)="onDateChange('anniversaryDate', $event)">
-                </app-modern-dual-date-picker>
-              </div>
-              
-              <!-- Father Yahrzeit -->
-              <div class="form-group full-width">
-                <app-modern-dual-date-picker
-                  [(ngModel)]="donor.fatherYahrzeit"
-                  [label]="(i18n.terms$ | async)?.fatherYahrzeit || 'יארצייט אב'"
-                  (dateChange)="onDateChange('fatherYahrzeit', $event)">
-                </app-modern-dual-date-picker>
-              </div>
-              
-              <!-- Mother Yahrzeit -->
-              <div class="form-group full-width">
-                <app-modern-dual-date-picker
-                  [(ngModel)]="donor.motherYahrzeit"
-                  [label]="(i18n.terms$ | async)?.motherYahrzeit || 'יארצייט אם'"
-                  (dateChange)="onDateChange('motherYahrzeit', $event)">
-                </app-modern-dual-date-picker>
+              <!-- Empty state message when no personal events exist -->
+              <div *ngIf="donorEvents.length === 0 && customPersonalDates.length === 0" class="empty-events-message">
+                <p>לא נמצאו אירועים אישיים לתורם זה, להוספת אירוע יש ללחוץ על +</p>
               </div>
               
               <!-- Donor Events displayed as date pickers -->
@@ -163,28 +141,74 @@
           <!-- Dialog for adding event or custom date -->
           <div class="custom-date-dialog" *ngIf="showAddDateDialog">
             <div class="dialog-backdrop" (click)="closeAddDateDialog()"></div>
-            <div class="dialog-content">
+            <div class="dialog-content events-table-dialog">
               <h4>הוסף אירוע או תאריך מותאם אישית</h4>
               
-              <!-- Available Events Section -->
-              <div class="available-events-section" *ngIf="getAvailableEvents().length > 0">
-                <h5>בחר אירוע קיים:</h5>
-                <div class="events-grid">
-                  <div class="events-by-category" *ngFor="let category of getEventCategories()">
-                    <h6 class="category-title">{{ category }}</h6>
-                    <button 
-                      class="event-option-btn" 
-                      *ngFor="let event of getEventsByCategory(category)"
-                      (click)="addEventFromDialog(event)">
-                      {{ event.description }}
-                    </button>
+              <!-- Search Section -->
+              <div class="search-section">
+                <div class="search-input-group">
+                  <input 
+                    type="text" 
+                    class="form-control search-input" 
+                    [(ngModel)]="eventSearchTerm"
+                    placeholder="חפש אירוע...">
+                  <button *ngIf="eventSearchTerm" class="clear-search-btn" (click)="clearSearch()">×</button>
+                </div>
+                <button class="btn btn-success add-new-btn" (click)="toggleCreateNewEvent()">
+                  {{ showCreateNewEvent ? 'ביטול' : '+ יצירת אירוע חדש' }}
+                </button>
+              </div>
+
+              <!-- Create New Event Section -->
+              <div class="create-event-section" *ngIf="showCreateNewEvent">
+                <h5>יצירת אירוע חדש:</h5>
+                <div class="new-event-form">
+                  <input 
+                    type="text" 
+                    class="form-control" 
+                    [(ngModel)]="newEventDescription"
+                    placeholder="תיאור האירוע החדש..."
+                    (keyup.enter)="createNewEvent()">
+                  <button class="btn btn-primary" (click)="createNewEvent()" [disabled]="!newEventDescription.trim()">
+                    יצור ושמור
+                  </button>
+                </div>
+              </div>
+
+              <!-- Events Table -->
+              <div class="events-table-section" *ngIf="!showCreateNewEvent">
+                <div class="events-table-container">
+                  <table class="events-table" *ngIf="getFilteredEvents().length > 0">
+                    <thead>
+                      <tr>
+                        <th>תיאור האירוע</th>
+                        <th>פעולות</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let event of getFilteredEvents()">
+                        <td>{{ event.description }}</td>
+                        <td>
+                          <button class="btn btn-small btn-primary" (click)="addEventFromDialog(event)">
+                            בחר
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  
+                  <!-- Empty state when no events found -->
+                  <div class="no-events-found" *ngIf="getFilteredEvents().length === 0">
+                    <p *ngIf="eventSearchTerm">לא נמצאו אירועים התואמים לחיפוש "{{ eventSearchTerm }}"</p>
+                    <p *ngIf="!eventSearchTerm">אין אירועים זמינים</p>
+                    <button class="btn btn-primary" (click)="toggleCreateNewEvent()">יצור אירוע חדש</button>
                   </div>
                 </div>
-                <div class="divider">או</div>
               </div>
-              
-              <!-- Custom Date Section -->
-              <div class="custom-date-section">
+
+              <!-- Legacy Custom Date Section -->
+              <div class="custom-date-section" *ngIf="!showCreateNewEvent">
+                <div class="divider">או</div>
                 <h5>הוסף תאריך מותאם אישית:</h5>
                 <input 
                   type="text" 
@@ -192,11 +216,13 @@
                   [(ngModel)]="newDateName" 
                   placeholder="שם האירוע (לדוגמה: יום הולדת בן)"
                   (keyup.enter)="addCustomDate()">
+                <button class="btn btn-secondary" (click)="addCustomDate()" [disabled]="!newDateName.trim()">
+                  הוסף תאריך מותאם
+                </button>
               </div>
               
               <div class="dialog-actions">
-                <button class="btn btn-secondary" (click)="closeAddDateDialog()">ביטול</button>
-                <button class="btn btn-primary" (click)="addCustomDate()" [disabled]="!newDateName.trim()">הוסף תאריך מותאם</button>
+                <button class="btn btn-secondary" (click)="closeAddDateDialog()">סגור</button>
               </div>
             </div>
           </div>

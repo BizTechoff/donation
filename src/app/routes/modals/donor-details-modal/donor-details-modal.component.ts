@@ -37,6 +37,10 @@ export class DonorDetailsModalComponent implements OnInit {
   showAddDateDialog = false;
   newDateName = '';
   newEventDescription = '';
+  
+  // Event search and creation
+  eventSearchTerm = '';
+  showCreateNewEvent = false;
 
   constructor(public i18n: I18nService) {}
 
@@ -329,5 +333,64 @@ export class DonorDetailsModalComponent implements OnInit {
     return this.getAvailableEvents().filter(event => 
       (event.category || 'אחר') === category
     );
+  }
+
+  // Filter events based on search term
+  getFilteredEvents(): Event[] {
+    if (!this.eventSearchTerm.trim()) {
+      return this.getAvailableEvents();
+    }
+    
+    return this.getAvailableEvents().filter(event =>
+      event.description.toLowerCase().includes(this.eventSearchTerm.toLowerCase())
+    );
+  }
+
+  // Create a new event and save to database
+  async createNewEvent() {
+    if (!this.newEventDescription.trim()) {
+      alert('יש להזין תיאור לאירוע החדש');
+      return;
+    }
+
+    try {
+      const newEvent = this.eventRepo.create({
+        description: this.newEventDescription.trim(),
+        type: 'personal',
+        isRequired: false,
+        isActive: true,
+        sortOrder: 999,
+        category: 'אישי'
+      });
+
+      await newEvent.save();
+      
+      // Add to available events list
+      this.availableEvents.push(newEvent);
+      
+      // Reset form
+      this.newEventDescription = '';
+      this.showCreateNewEvent = false;
+      
+      // Add the new event to the donor
+      await this.addEventFromDialog(newEvent);
+      
+    } catch (error) {
+      console.error('Error creating new event:', error);
+      alert('שגיאה ביצירת האירוע החדש');
+    }
+  }
+
+  // Toggle create new event form
+  toggleCreateNewEvent() {
+    this.showCreateNewEvent = !this.showCreateNewEvent;
+    if (this.showCreateNewEvent) {
+      this.newEventDescription = '';
+    }
+  }
+
+  // Clear search
+  clearSearch() {
+    this.eventSearchTerm = '';
   }
 }
