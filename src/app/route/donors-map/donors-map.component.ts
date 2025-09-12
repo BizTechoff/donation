@@ -385,8 +385,7 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
         </h4>
         <div style="margin-bottom: 8px;">
           <strong>📍 ${this.i18n.terms.addressLabel}:</strong><br>
-          ${donor.address || this.i18n.terms.notSpecifiedAddress}<br>
-          ${donor.city || ''} ${donor.zipCode || ''}
+          ${donor.fullAddress || this.i18n.terms.notSpecifiedAddress}
         </div>
         <div style="margin-bottom: 8px;">
           <strong>📧 ${this.i18n.terms.emailLabel}:</strong> ${donor.email || this.i18n.terms.mapNotSpecified}
@@ -428,7 +427,7 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
   // פונקציה להמרת כתובות תורמים שחסרים להם קואורדינטות
   async geocodeMissingAddresses() {
     const donorsWithoutCoords = this.donors.filter(d => 
-      !d.latitude && !d.longitude && d.address && d.address.trim() !== ''
+      !d.latitude && !d.longitude && d.fullAddress && d.fullAddress.trim() !== ''
     );
 
     if (donorsWithoutCoords.length === 0) {
@@ -442,7 +441,7 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     for (const donor of donorsWithoutCoords) {
       try {
         const coords = await this.geocodingService.geocodeAddress(
-          donor.address!,
+          donor.fullAddress!,
           donor.city,
           donor.country
         );

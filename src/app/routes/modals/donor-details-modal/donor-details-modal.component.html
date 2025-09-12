@@ -17,6 +17,11 @@
         <div class="section personal-details">
           <h3>{{ (i18n.terms$ | async)?.personalDetails }}</h3>
           <div class="form-grid">
+            <!-- שורה ראשונה: תואר, שם פרטי, שם משפחה, סיומת -->
+            <div class="form-group">
+              <label>תואר</label>
+              <input type="text" class="form-control" [(ngModel)]="donor.title" placeholder="תואר (כגון: רב, ד&quot;ר)">
+            </div>
             <div class="form-group">
               <label>{{ (i18n.terms$ | async)?.firstName }} *</label>
               <input type="text" class="form-control" [(ngModel)]="donor.firstName" [placeholder]="(i18n.terms$ | async)?.firstName">
@@ -26,20 +31,78 @@
               <input type="text" class="form-control" [(ngModel)]="donor.lastName" [placeholder]="(i18n.terms$ | async)?.lastName">
             </div>
             <div class="form-group">
+              <label>סיומת</label>
+              <input type="text" class="form-control" [(ngModel)]="donor.suffix" placeholder="סיומת (כגון: הי&quot;ו)">
+            </div>
+            
+            <!-- שורה שנייה: כינוי, שם באנגלית -->
+            <div class="form-group">
+              <label>כינוי</label>
+              <input type="text" class="form-control" [(ngModel)]="donor.nickname" placeholder="כינוי">
+            </div>
+            <div class="form-group">
+              <label>שם פרטי באנגלית</label>
+              <input type="text" class="form-control" [(ngModel)]="donor.firstNameEnglish" placeholder="First Name">
+            </div>
+            <div class="form-group">
+              <label>שם משפחה באנגלית</label>
+              <input type="text" class="form-control" [(ngModel)]="donor.lastNameEnglish" placeholder="Last Name">
+            </div>
+            <div class="form-group">
               <label>{{ (i18n.terms$ | async)?.idNumber }}</label>
               <input type="text" class="form-control" [(ngModel)]="donor.idNumber" [placeholder]="(i18n.terms$ | async)?.idNumber">
             </div>
+            
+            <!-- שורה שלישית: דוא&quot;ל, טלפונים -->
             <div class="form-group">
               <label>{{ (i18n.terms$ | async)?.email }}</label>
               <input type="email" class="form-control" [(ngModel)]="donor.email" [placeholder]="(i18n.terms$ | async)?.email">
+            </div>
+            <div class="form-group">
+              <label>קידומת בינלאומית</label>
+              <select class="form-control" [(ngModel)]="donor.internationalPrefix">
+                <option value="+972">+972 (ישראל)</option>
+                <option value="+1">+1 (ארה&quot;ב/קנדה)</option>
+                <option value="+44">+44 (בריטניה)</option>
+                <option value="+33">+33 (צרפת)</option>
+                <option value="+49">+49 (גרמניה)</option>
+              </select>
             </div>
             <div class="form-group">
               <label>{{ (i18n.terms$ | async)?.phone }}</label>
               <input type="tel" class="form-control" [(ngModel)]="donor.phone" [placeholder]="(i18n.terms$ | async)?.phone">
             </div>
             <div class="form-group">
-              <label>{{ (i18n.terms$ | async)?.address }}</label>
-              <input type="text" class="form-control" [(ngModel)]="donor.address" [placeholder]="(i18n.terms$ | async)?.address">
+              <label>טלפון נוסף</label>
+              <input type="tel" class="form-control" [(ngModel)]="donor.additionalPhone" placeholder="טלפון נוסף">
+            </div>
+            
+            <!-- Birth Date with Modern Hebrew-Gregorian picker -->
+            <div class="form-group full-width">
+              <app-modern-dual-date-picker
+                [(ngModel)]="donor.birthDate"
+                [label]="(i18n.terms$ | async)?.birthDate || 'תאריך לידה'"
+                (dateChange)="onDateChange('birthDate', $event)">
+              </app-modern-dual-date-picker>
+            </div>
+          </div>
+        </div>
+        
+        <!-- כתובת מגורים -->
+        <div class="section address-section">
+          <h3>כתובת מגורים</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>רחוב 1</label>
+              <input type="text" class="form-control" [(ngModel)]="donor.street1" placeholder="רחוב ומספר">
+            </div>
+            <div class="form-group">
+              <label>רחוב 2</label>
+              <input type="text" class="form-control" [(ngModel)]="donor.street2" placeholder="כניסה/דירה">
+            </div>
+            <div class="form-group">
+              <label>שכונה</label>
+              <input type="text" class="form-control" [(ngModel)]="donor.neighborhood" placeholder="שכונה">
             </div>
             <div class="form-group">
               <label>{{ (i18n.terms$ | async)?.city }}</label>
@@ -53,13 +116,28 @@
               <label>{{ (i18n.terms$ | async)?.country }}</label>
               <input type="text" class="form-control" [(ngModel)]="donor.country" [placeholder]="(i18n.terms$ | async)?.country">
             </div>
-            <!-- Birth Date with Modern Hebrew-Gregorian picker -->
+          </div>
+        </div>
+        
+        <!-- כתובת נופש -->
+        <div class="section vacation-address-section">
+          <h3>כתובת נופש</h3>
+          <div class="form-grid">
             <div class="form-group full-width">
-              <app-modern-dual-date-picker
-                [(ngModel)]="donor.birthDate"
-                [label]="(i18n.terms$ | async)?.birthDate || 'תאריך לידה'"
-                (dateChange)="onDateChange('birthDate', $event)">
-              </app-modern-dual-date-picker>
+              <label>כתובת נופש</label>
+              <input type="text" class="form-control" [(ngModel)]="donor.vacationAddress" placeholder="כתובת מלאה">
+            </div>
+            <div class="form-group">
+              <label>עיר נופש</label>
+              <input type="text" class="form-control" [(ngModel)]="donor.vacationCity" placeholder="עיר">
+            </div>
+            <div class="form-group">
+              <label>מיקוד נופש</label>
+              <input type="text" class="form-control" [(ngModel)]="donor.vacationZipCode" placeholder="מיקוד">
+            </div>
+            <div class="form-group">
+              <label>מדינה נופש</label>
+              <input type="text" class="form-control" [(ngModel)]="donor.vacationCountry" placeholder="מדינה">
             </div>
           </div>
         </div>
@@ -68,6 +146,14 @@
         <div class="section family-info">
           <h3>{{ (i18n.terms$ | async)?.familyInformation }}</h3>
           <div class="form-grid">
+            <div class="form-group">
+              <label>תואר האשה</label>
+              <input type="text" class="form-control" [(ngModel)]="donor.wifeTitle" placeholder="תואר האשה">
+            </div>
+            <div class="form-group">
+              <label>שם האשה</label>
+              <input type="text" class="form-control" [(ngModel)]="donor.wifeName" placeholder="שם האשה">
+            </div>
             <div class="form-group">
               <label>{{ (i18n.terms$ | async)?.spouseName }}</label>
               <input type="text" class="form-control" [(ngModel)]="donor.spouseName" [placeholder]="(i18n.terms$ | async)?.spouseName">

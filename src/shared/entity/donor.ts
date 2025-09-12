@@ -30,6 +30,11 @@ import { Roles } from '../enum/roles'
 })
 export class Donor extends IdEntity {
   @Fields.string({
+    caption: 'תואר',
+  })
+  title = ''
+
+  @Fields.string({
     validate: Validators.required,
     caption: 'שם פרטי',
   })
@@ -40,6 +45,36 @@ export class Donor extends IdEntity {
     caption: 'שם משפחה',
   })
   lastName = ''
+
+  @Fields.string({
+    caption: 'סיומת',
+  })
+  suffix = ''
+
+  @Fields.string({
+    caption: 'כינוי',
+  })
+  nickname = ''
+
+  @Fields.string({
+    caption: 'שם האשה',
+  })
+  wifeName = ''
+
+  @Fields.string({
+    caption: 'תואר האשה',
+  })
+  wifeTitle = ''
+
+  @Fields.string({
+    caption: 'שם פרטי באנגלית',
+  })
+  firstNameEnglish = ''
+
+  @Fields.string({
+    caption: 'שם משפחה באנגלית',
+  })
+  lastNameEnglish = ''
 
   @Fields.string({
     caption: 'תעודת זהות',
@@ -57,15 +92,35 @@ export class Donor extends IdEntity {
   })
   phone = ''
 
-  @Fields.string({
-    caption: 'כתובת',
+  @PhoneField({
+    caption: 'טלפון נוסף',
   })
-  address = ''
+  additionalPhone = ''
+
+  @Fields.string({
+    caption: 'קידומת בינלאומית',
+  })
+  internationalPrefix = '+972'
+
+  @Fields.string({
+    caption: 'רחוב 1',
+  })
+  street1 = ''
+
+  @Fields.string({
+    caption: 'רחוב 2',
+  })
+  street2 = ''
 
   @Fields.string({
     caption: 'עיר',
   })
   city = ''
+
+  @Fields.string({
+    caption: 'שכונה',
+  })
+  neighborhood = ''
 
   @Fields.string({
     caption: 'מיקוד',
@@ -76,6 +131,26 @@ export class Donor extends IdEntity {
     caption: 'מדינה',
   })
   country = 'ישראל'
+
+  @Fields.string({
+    caption: 'כתובת נופש',
+  })
+  vacationAddress = ''
+
+  @Fields.string({
+    caption: 'עיר נופש',
+  })
+  vacationCity = ''
+
+  @Fields.string({
+    caption: 'מיקוד נופש',
+  })
+  vacationZipCode = ''
+
+  @Fields.string({
+    caption: 'מדינה נופש',
+  })
+  vacationCountry = ''
 
   @Fields.number({
     caption: 'קו רוחב',
@@ -271,7 +346,36 @@ export class Donor extends IdEntity {
   createdById = ''
 
   get fullName() {
-    return `${this.firstName} ${this.lastName}`.trim()
+    const parts = []
+    if (this.title) parts.push(this.title)
+    if (this.firstName) parts.push(this.firstName)
+    if (this.lastName) parts.push(this.lastName)
+    if (this.suffix) parts.push(this.suffix)
+    return parts.join(' ').trim()
+  }
+
+  get fullNameEnglish() {
+    return `${this.firstNameEnglish} ${this.lastNameEnglish}`.trim()
+  }
+
+  get fullAddress() {
+    const parts = []
+    if (this.street1) parts.push(this.street1)
+    if (this.street2) parts.push(this.street2)
+    if (this.neighborhood) parts.push(this.neighborhood)
+    if (this.city) parts.push(this.city)
+    if (this.zipCode) parts.push(this.zipCode)
+    if (this.country && this.country !== 'ישראל') parts.push(this.country)
+    return parts.join(', ').trim()
+  }
+
+  get vacationFullAddress() {
+    const parts = []
+    if (this.vacationAddress) parts.push(this.vacationAddress)
+    if (this.vacationCity) parts.push(this.vacationCity)
+    if (this.vacationZipCode) parts.push(this.vacationZipCode)
+    if (this.vacationCountry) parts.push(this.vacationCountry)
+    return parts.join(', ').trim()
   }
 
   get displayName() {

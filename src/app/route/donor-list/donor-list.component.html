@@ -64,7 +64,7 @@
           <small *ngIf="donor.idNumber">({{ (i18n.terms$ | async)?.idNumber }}: {{donor.idNumber}})</small>
         </div>
       </div>
-      <div class="grid-col">{{donor.address}}</div>
+      <div class="grid-col">{{donor.fullAddress}}</div>
       <div class="grid-col">{{donor.phone}}</div>
       <div class="grid-col">{{donor.email}}</div>
       <div class="grid-col">
