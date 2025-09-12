@@ -1,11 +1,13 @@
 import { Component, OnInit } from '@angular/core';
-import { Donor, Donation } from '../../../../shared/entity';
+import { Donor, Donation, Event, DonorEvent } from '../../../../shared/entity';
 import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
 
 export interface DonorDetailsModalArgs {
   donorId: string; // Can be 'new' for new donor or donor ID
 }
+
+// PersonalEvent interface is no longer needed - using DonorEvent entity instead
 
 @Component({
   selector: 'app-donor-details-modal',
@@ -21,18 +23,37 @@ export class DonorDetailsModalComponent implements OnInit {
   donations: Donation[] = [];
   donorRepo = remult.repo(Donor);
   donationRepo = remult.repo(Donation);
+  eventRepo = remult.repo(Event);
+  donorEventRepo = remult.repo(DonorEvent);
   loading = false;
   isNewDonor = false;
   
-  // Custom personal dates
+  // Events system
+  availableEvents: Event[] = [];
+  donorEvents: DonorEvent[] = [];
+  
+  // Custom personal dates (legacy - keeping for backward compatibility)
   customPersonalDates: { name: string; date: Date | null }[] = [];
   showAddDateDialog = false;
   newDateName = '';
+  newEventDescription = '';
 
   constructor(public i18n: I18nService) {}
 
   async ngOnInit() {
+    await this.loadAvailableEvents();
     await this.initializeDonor();
+  }
+
+  private async loadAvailableEvents() {
+    try {
+      this.availableEvents = await this.eventRepo.find({
+        where: { isActive: true },
+        orderBy: { sortOrder: 'asc', description: 'asc' }
+      });
+    } catch (error) {
+      console.error('Error loading events:', error);
+    }
   }
 
   private async initializeDonor() {
@@ -55,12 +76,34 @@ export class DonorDetailsModalComponent implements OnInit {
         if (this.donor) {
           this.originalDonorData = JSON.stringify(this.donor);
           await this.loadDonations();
+          await this.loadDonorEvents();
         }
       }
+      
     } catch (error) {
       console.error('Error initializing donor:', error);
     } finally {
       this.loading = false;
+    }
+  }
+
+  private async loadDonorEvents() {
+    if (!this.donor?.id) return;
+    
+    try {
+      this.donorEvents = await this.donorEventRepo.find({
+        where: { donorId: this.donor.id, isActive: true }
+      });
+      
+      // Manually load the event details for each donor event
+      for (const donorEvent of this.donorEvents) {
+        if (donorEvent.eventId) {
+          const foundEvent = await this.eventRepo.findId(donorEvent.eventId);
+          donorEvent.event = foundEvent || undefined;
+        }
+      }
+    } catch (error) {
+      console.error('Error loading donor events:', error);
     }
   }
 
@@ -99,6 +142,8 @@ export class DonorDetailsModalComponent implements OnInit {
   onDateChange(field: string, value: Date | null) {
     if (this.donor && field in this.donor) {
       (this.donor as any)[field] = value;
+      
+      // Note: Birth date handling is now done through DonorEvent entities
     }
   }
 
@@ -184,5 +229,105 @@ export class DonorDetailsModalComponent implements OnInit {
   closeAddDateDialog() {
     this.showAddDateDialog = false;
     this.newDateName = '';
+  }
+
+  // Events Management
+  async addEventFromDialog(event: Event) {
+    if (!this.donor?.id) {
+      alert('אנא שמור את התורם קודם');
+      return;
+    }
+
+    // Check if event already exists for this donor
+    const existsAlready = this.donorEvents.find(de => de.eventId === event.id);
+    if (existsAlready) {
+      alert('האירוע כבר קיים עבור תורם זה');
+      return;
+    }
+
+    try {
+      const donorEvent = this.donorEventRepo.create({
+        donorId: this.donor.id,
+        eventId: event.id,
+        hebrewDate: undefined,
+        gregorianDate: undefined,
+        isActive: true
+      });
+
+      await donorEvent.save();
+      
+      // Set the event relation manually
+      donorEvent.event = event;
+      
+      // Add to the current list instead of reloading from DB
+      this.donorEvents.push(donorEvent);
+      
+      this.closeAddDateDialog();
+      this.changed = true;
+    } catch (error) {
+      console.error('Error adding event:', error);
+      alert('שגיאה בהוספת האירוע');
+    }
+  }
+
+  async removeDonorEvent(donorEvent: DonorEvent) {
+    // Don't allow removing required events
+    if (donorEvent.event?.isRequired) {
+      alert('לא ניתן להסיר אירוע חובה');
+      return;
+    }
+
+    if (confirm('האם אתה בטוח שברצונך להסיר את האירוע?')) {
+      try {
+        await donorEvent.delete();
+        
+        // Remove from local array instead of reloading
+        const index = this.donorEvents.findIndex(de => de.id === donorEvent.id);
+        if (index > -1) {
+          this.donorEvents.splice(index, 1);
+        }
+        
+        this.changed = true;
+      } catch (error) {
+        console.error('Error removing event:', error);
+        alert('שגיאה בהסרת האירוע');
+      }
+    }
+  }
+
+  async onDonorEventDateChange(donorEvent: DonorEvent, value: Date | null) {
+    try {
+      // Update both Hebrew and Gregorian dates with the same value
+      donorEvent.hebrewDate = value || undefined;
+      donorEvent.gregorianDate = value || undefined;
+      await donorEvent.save();
+      this.changed = true;
+    } catch (error) {
+      console.error('Error updating event date:', error);
+    }
+  }
+
+  getAvailableEvents() {
+    return this.availableEvents.filter(event => 
+      !this.donorEvents.find(donorEvent => donorEvent.eventId === event.id)
+    );
+  }
+
+  trackDonorEventById(index: number, donorEvent: DonorEvent): string {
+    return donorEvent.id;
+  }
+
+  getEventCategories(): string[] {
+    const categories = new Set<string>();
+    this.getAvailableEvents().forEach(event => {
+      categories.add(event.category || 'אחר');
+    });
+    return Array.from(categories).sort();
+  }
+
+  getEventsByCategory(category: string): Event[] {
+    return this.getAvailableEvents().filter(event => 
+      (event.category || 'אחר') === category
+    );
   }
 }

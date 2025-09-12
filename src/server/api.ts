@@ -10,8 +10,10 @@ import { Reminder } from '../shared/entity/reminder'
 import { StandingOrder } from '../shared/entity/standing-order'
 import { User } from '../shared/entity/user'
 import { Certificate } from '../shared/entity/certificate'
+import { Event } from '../shared/entity/event'
+import { DonorEvent } from '../shared/entity/donor-event'
 
-export const entities = [User, Donor, Donation, Campaign, DonationMethod, StandingOrder, Reminder, Certificate]
+export const entities = [User, Donor, Donation, Campaign, DonationMethod, StandingOrder, Reminder, Certificate, Event, DonorEvent]
 export const api = remultExpress({
   admin: true,
   controllers: [SignInController, UpdatePasswordController],

@@ -311,3 +311,129 @@
     }
   }
 }
+
+// Enhanced Custom Date Dialog with Events
+.custom-date-dialog {
+  .dialog-content {
+    max-width: 600px;
+    
+    h4 {
+      color: #2c3e50;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    
+    .available-events-section {
+      margin-bottom: 20px;
+      
+      h5 {
+        color: #2c3e50;
+        font-size: 16px;
+        margin-bottom: 15px;
+        border-bottom: 2px solid #3498db;
+        padding-bottom: 8px;
+      }
+      
+      .events-grid {
+        max-height: 300px;
+        overflow-y: auto;
+        padding-right: 10px;
+        
+        .events-by-category {
+          margin-bottom: 15px;
+          
+          &:last-child {
+            margin-bottom: 0;
+          }
+          
+          .category-title {
+            color: #2c3e50;
+            font-size: 14px;
+            font-weight: 600;
+            margin: 0 0 10px 0;
+            padding: 8px 12px;
+            background: #e8f4f8;
+            border-radius: 4px;
+            border-right: 3px solid #3498db;
+          }
+          
+          .event-option-btn {
+            display: block;
+            width: 100%;
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 12px 15px;
+            margin-bottom: 6px;
+            cursor: pointer;
+            text-align: right;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            
+            &:hover {
+              background: #e3f2fd;
+              border-color: #3498db;
+              color: #2980b9;
+              transform: translateX(-2px);
+            }
+            
+            &:last-child {
+              margin-bottom: 0;
+            }
+          }
+        }
+      }
+      
+      .divider {
+        text-align: center;
+        margin: 20px 0;
+        position: relative;
+        color: #666;
+        
+        &::before {
+          content: '';
+          position: absolute;
+          top: 50%;
+          left: 0;
+          right: 0;
+          height: 1px;
+          background: #ddd;
+          z-index: 1;
+        }
+        
+        &::after {
+          content: 'או';
+          background: white;
+          padding: 0 15px;
+          position: relative;
+          z-index: 2;
+        }
+      }
+    }
+    
+    .custom-date-section {
+      h5 {
+        color: #2c3e50;
+        font-size: 16px;
+        margin-bottom: 15px;
+        border-bottom: 2px solid #27ae60;
+        padding-bottom: 8px;
+      }
+      
+      .form-control {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        
+        &:focus {
+          outline: none;
+          border-color: #27ae60;
+          box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.1);
+        }
+      }
+    }
+  }
+}

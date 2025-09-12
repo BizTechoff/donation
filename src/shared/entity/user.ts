@@ -95,7 +95,9 @@ export class User extends IdEntity {
     notificationsEnabled?: boolean;
     language?: string;
     theme?: string;
-    openModal:string; // 'route' | 'dialog'
+    openModal: string; // 'route' | 'dialog'
+    calendar_heb_holidays_jews_enabled: boolean;
+    calendar_open_heb_and_eng_parallel: boolean;
   };
 
   @Fields.boolean({

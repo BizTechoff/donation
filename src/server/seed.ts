@@ -1,6 +1,6 @@
 import { remult } from 'remult'
 import { createPostgresConnection } from 'remult/postgres'
-import { User, Donor, Donation, Campaign, DonationMethod, StandingOrder, Reminder, Certificate } from '../shared/entity'
+import { User, Donor, Donation, Campaign, DonationMethod, StandingOrder, Reminder, Certificate, Event, DonorEvent } from '../shared/entity'
 
 // Initialize Remult with database connection
 async function initRemult() {
@@ -537,6 +537,69 @@ export async function seedDatabase() {
       certificateIndex++
     }
 
+    // Create basic events
+    const events = [
+      { description: 'תאריך לידה', type: 'personal', isRequired: true, sortOrder: 1, category: 'אישי' },
+      { description: 'יום נישואין', type: 'personal', isRequired: false, sortOrder: 2, category: 'אישי' },
+      { description: 'יארצייט אבא', type: 'personal', isRequired: false, sortOrder: 3, category: 'יארצייט' },
+      { description: 'יארצייט אמא', type: 'personal', isRequired: false, sortOrder: 4, category: 'יארצייט' },
+      { description: 'יארצייט בן/בת זוג', type: 'personal', isRequired: false, sortOrder: 5, category: 'יארצייט' },
+      { description: 'בר מצווה', type: 'personal', isRequired: false, sortOrder: 6, category: 'דתי' },
+      { description: 'בת מצווה', type: 'personal', isRequired: false, sortOrder: 7, category: 'דתי' },
+      { description: 'יום השנה', type: 'personal', isRequired: false, sortOrder: 8, category: 'אישי' },
+      { description: 'סיום לימודים', type: 'personal', isRequired: false, sortOrder: 9, category: 'אישי' },
+      { description: 'עלייה לתורה', type: 'personal', isRequired: false, sortOrder: 10, category: 'דתי' },
+    ]
+
+    const createdEvents = []
+    for (const eventData of events) {
+      const existing = await remult.repo(Event).findFirst({ description: eventData.description })
+      if (!existing) {
+        const event = remult.repo(Event).create(eventData)
+        await event.save()
+        createdEvents.push(event)
+        console.log(`Event '${eventData.description}' created`)
+      } else {
+        createdEvents.push(existing)
+      }
+    }
+
+    // Create some sample donor events
+    const sampleDonorEvents = [
+      // Birth dates for some donors
+      { donorIndex: 0, eventIndex: 0, hebrewDate: new Date('1975-05-15'), gregorianDate: new Date('1975-05-15'), notes: 'תאריך לידה' },
+      { donorIndex: 1, eventIndex: 0, hebrewDate: new Date('1980-08-22'), gregorianDate: new Date('1980-08-22'), notes: 'תאריך לידה' },
+      // Some marriage dates
+      { donorIndex: 0, eventIndex: 1, hebrewDate: new Date('2000-06-10'), gregorianDate: new Date('2000-06-10'), notes: 'יום נישואין' },
+      { donorIndex: 1, eventIndex: 1, hebrewDate: new Date('2005-03-15'), gregorianDate: new Date('2005-03-15'), notes: 'יום נישואין' },
+      // Some yahrzeit dates
+      { donorIndex: 2, eventIndex: 2, hebrewDate: new Date('2010-01-20'), gregorianDate: new Date('2010-01-20'), notes: 'יארצייט אבא' },
+      { donorIndex: 2, eventIndex: 3, hebrewDate: new Date('2015-11-05'), gregorianDate: new Date('2015-11-05'), notes: 'יארצייט אמא' },
+    ]
+
+    let donorEventIndex = 0
+    for (const donorEventData of sampleDonorEvents) {
+      if (donorEventData.donorIndex < createdDonors.length && donorEventData.eventIndex < createdEvents.length) {
+        const donor = createdDonors[donorEventData.donorIndex]
+        const event = createdEvents[donorEventData.eventIndex]
+
+        const donorEvent = remult.repo(DonorEvent).create({
+          donor: donor,
+          donorId: donor.id,
+          event: event,
+          eventId: event.id,
+          hebrewDate: donorEventData.hebrewDate,
+          gregorianDate: donorEventData.gregorianDate,
+          notes: donorEventData.notes
+        })
+
+        await donorEvent.save()
+        console.log(`DonorEvent #${donorEventIndex + 1} created: "${event.description}" for ${donor.firstName} ${donor.lastName}`)
+      }
+      
+      donorEventIndex++
+    }
+
     console.log('Database seeding completed successfully!')
     console.log(`Created:`)
     console.log(`- ${createdMethods.length} donation methods`)
@@ -546,6 +609,8 @@ export async function seedDatabase() {
     console.log(`- ${standingOrders.length} standing orders`)
     console.log(`- ${reminders.length} reminders`)
     console.log(`- ${createdCertificates.length} certificates`)
+    console.log(`- ${createdEvents.length} events`)
+    console.log(`- ${sampleDonorEvents.length} donor events`)
 
   } catch (error) {
     console.error('Error seeding database:', error)

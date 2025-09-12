@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, forwardRef, ViewChild, ElementRef } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, forwardRef, ViewChild, ElementRef } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { HebrewDateService } from '../../services/hebrew-date.service';
 import { months } from '@hebcal/core';
@@ -15,11 +15,15 @@ import { months } from '@hebcal/core';
     }
   ]
 })
-export class ModernDualDatePickerComponent implements OnInit, ControlValueAccessor {
+export class ModernDualDatePickerComponent implements OnInit, OnDestroy, ControlValueAccessor {
   @Input() label: string = '';
   @Input() disabled: boolean = false;
   @Input() isCalendarJewEnabled: boolean = true; // Toggle for showing Jewish holidays
   @Input() isDiaspora: boolean = false; // For diaspora holidays
+  @Input() calendar_open_heb_and_eng_parallel: boolean = true; // Open both calendars in parallel
+  @Input() showOnlyHebrew: boolean = false; // Show only Hebrew date picker
+  @Input() showOnlyGregorian: boolean = false; // Show only Gregorian date picker  
+  @Input() compact: boolean = false; // Compact mode for table cells
   @Output() dateChange = new EventEmitter<Date | null>();
   
   @ViewChild('hebrewPopup', { static: false }) hebrewPopup!: ElementRef;
@@ -39,6 +43,7 @@ export class ModernDualDatePickerComponent implements OnInit, ControlValueAccess
   hebrewSelectedMonth: number = months.TISHREI;
   hebrewSelectedYear: number = 5785;
   hebrewMonths: { value: number; name: string }[] = [];
+  hebrewYearsList: number[] = [];
   hebrewDaysInMonth: number[][] = [];
   
   // Gregorian calendar state
@@ -55,8 +60,14 @@ export class ModernDualDatePickerComponent implements OnInit, ControlValueAccess
   
   private onChange: (value: any) => void = () => {};
   private onTouched: () => void = () => {};
+  
+  // Static property to track all instances for global popup management
+  private static allInstances: Set<ModernDualDatePickerComponent> = new Set();
 
-  constructor(private hebrewDateService: HebrewDateService) {}
+  constructor(private hebrewDateService: HebrewDateService) {
+    // Add this instance to the global set
+    ModernDualDatePickerComponent.allInstances.add(this);
+  }
 
   ngOnInit() {
     this.initializeCalendars();
@@ -66,6 +77,7 @@ export class ModernDualDatePickerComponent implements OnInit, ControlValueAccess
   initializeCalendars() {
     const today = new Date();
     this.hebrewSelectedYear = this.hebrewDateService.getCurrentHebrewYear();
+    this.generateHebrewYearsList();
     this.updateHebrewMonths();
     this.generateHebrewCalendar();
     this.generateGregorianCalendar();
@@ -75,16 +87,32 @@ export class ModernDualDatePickerComponent implements OnInit, ControlValueAccess
     document.addEventListener('click', (event: MouseEvent) => {
       const target = event.target as HTMLElement;
       
-      if (this.showHebrewPopup && this.hebrewPopup && 
-          !this.hebrewPopup.nativeElement.contains(target) &&
-          !target.closest('.hebrew-trigger')) {
-        this.showHebrewPopup = false;
+      // In parallel mode, check if click is outside the entire parallel container
+      if (this.calendar_open_heb_and_eng_parallel && this.showHebrewPopup && this.showGregorianPopup) {
+        const isInsideParallelContainer = target.closest('.parallel-popups-container') || 
+                                         target.closest('.hebrew-trigger') || 
+                                         target.closest('.gregorian-trigger');
+        if (!isInsideParallelContainer) {
+          this.showHebrewPopup = false;
+          this.showGregorianPopup = false;
+        }
+        return; // Don't run the individual checks in parallel mode
       }
       
-      if (this.showGregorianPopup && this.gregorianPopup && 
-          !this.gregorianPopup.nativeElement.contains(target) &&
-          !target.closest('.gregorian-trigger')) {
-        this.showGregorianPopup = false;
+      // Check if click is outside Hebrew popup (single mode only)
+      if (this.showHebrewPopup) {
+        const isInsideHebrewPopup = target.closest('.hebrew-popup') || target.closest('.hebrew-trigger');
+        if (!isInsideHebrewPopup) {
+          this.showHebrewPopup = false;
+        }
+      }
+      
+      // Check if click is outside Gregorian popup (single mode only)
+      if (this.showGregorianPopup) {
+        const isInsideGregorianPopup = target.closest('.gregorian-popup') || target.closest('.gregorian-trigger');
+        if (!isInsideGregorianPopup) {
+          this.showGregorianPopup = false;
+        }
       }
     });
   }
@@ -92,8 +120,22 @@ export class ModernDualDatePickerComponent implements OnInit, ControlValueAccess
   // Hebrew calendar methods
   toggleHebrewPopup(event: Event) {
     event.stopPropagation();
+    
+    // Close popups on other instances first
+    if (!this.showHebrewPopup) {
+      this.closeOtherInstancesPopups();
+    }
+    
     this.showHebrewPopup = !this.showHebrewPopup;
-    this.showGregorianPopup = false;
+    
+    if (this.calendar_open_heb_and_eng_parallel) {
+      // Open both calendars in parallel mode
+      this.showGregorianPopup = this.showHebrewPopup;
+    } else {
+      // Traditional mode - close the other calendar
+      this.showGregorianPopup = false;
+    }
+    
     if (this.showHebrewPopup && this.currentDate) {
       const hebrew = this.hebrewDateService.convertGregorianToHebrew(this.currentDate);
       this.hebrewSelectedDay = hebrew.day;
@@ -101,6 +143,23 @@ export class ModernDualDatePickerComponent implements OnInit, ControlValueAccess
       this.hebrewSelectedYear = hebrew.year;
       this.updateHebrewMonths();
       this.generateHebrewCalendar();
+    }
+    
+    if (this.showGregorianPopup && this.currentDate) {
+      this.gregorianSelectedDate = new Date(this.currentDate);
+      this.gregorianMonth = this.gregorianSelectedDate.getMonth();
+      this.gregorianYear = this.gregorianSelectedDate.getFullYear();
+      this.generateGregorianCalendar();
+    }
+  }
+
+  generateHebrewYearsList() {
+    const currentYear = this.hebrewDateService.getCurrentHebrewYear();
+    this.hebrewYearsList = [];
+    
+    // Generate years from 50 years ago to 50 years forward
+    for (let year = currentYear - 50; year <= currentYear + 50; year++) {
+      this.hebrewYearsList.push(year);
     }
   }
 
@@ -151,7 +210,7 @@ export class ModernDualDatePickerComponent implements OnInit, ControlValueAccess
       this.hebrewSelectedYear
     );
     this.setDate(date);
-    this.showHebrewPopup = false;
+    this.closeAllPopups();
   }
 
   changeHebrewMonth(direction: number) {
@@ -171,18 +230,69 @@ export class ModernDualDatePickerComponent implements OnInit, ControlValueAccess
     }
     
     this.generateHebrewCalendar();
+    
+    // Sync Gregorian calendar if parallel mode is enabled and both popups are open
+    if (this.calendar_open_heb_and_eng_parallel && this.showGregorianPopup && this.showHebrewPopup) {
+      this.syncGregorianWithHebrew();
+    }
+  }
+
+  onHebrewMonthChange(event: Event) {
+    const target = event.target as HTMLSelectElement;
+    this.hebrewSelectedMonth = parseInt(target.value);
+    this.generateHebrewCalendar();
+    
+    // Sync Gregorian calendar if parallel mode is enabled and both popups are open
+    if (this.calendar_open_heb_and_eng_parallel && this.showGregorianPopup && this.showHebrewPopup) {
+      this.syncGregorianWithHebrew();
+    }
+  }
+
+  onHebrewYearChange(event: Event) {
+    const target = event.target as HTMLSelectElement;
+    this.hebrewSelectedYear = parseInt(target.value);
+    this.updateHebrewMonths();
+    this.generateHebrewCalendar();
+    
+    // Sync Gregorian calendar if parallel mode is enabled and both popups are open
+    if (this.calendar_open_heb_and_eng_parallel && this.showGregorianPopup && this.showHebrewPopup) {
+      this.syncGregorianWithHebrew();
+    }
   }
 
   // Gregorian calendar methods
   toggleGregorianPopup(event: Event) {
     event.stopPropagation();
+    
+    // Close popups on other instances first
+    if (!this.showGregorianPopup) {
+      this.closeOtherInstancesPopups();
+    }
+    
     this.showGregorianPopup = !this.showGregorianPopup;
-    this.showHebrewPopup = false;
+    
+    if (this.calendar_open_heb_and_eng_parallel) {
+      // Open both calendars in parallel mode
+      this.showHebrewPopup = this.showGregorianPopup;
+    } else {
+      // Traditional mode - close the other calendar
+      this.showHebrewPopup = false;
+    }
+    
     if (this.showGregorianPopup && this.currentDate) {
       this.gregorianSelectedDate = new Date(this.currentDate);
       this.gregorianMonth = this.gregorianSelectedDate.getMonth();
       this.gregorianYear = this.gregorianSelectedDate.getFullYear();
       this.generateGregorianCalendar();
+    }
+    
+    if (this.showHebrewPopup && this.currentDate) {
+      const hebrew = this.hebrewDateService.convertGregorianToHebrew(this.currentDate);
+      this.hebrewSelectedDay = hebrew.day;
+      this.hebrewSelectedMonth = hebrew.month;
+      this.hebrewSelectedYear = hebrew.year;
+      this.updateHebrewMonths();
+      this.generateHebrewCalendar();
     }
   }
 
@@ -224,7 +334,7 @@ export class ModernDualDatePickerComponent implements OnInit, ControlValueAccess
     if (day === null) return;
     const date = new Date(this.gregorianYear, this.gregorianMonth, day);
     this.setDate(date);
-    this.showGregorianPopup = false;
+    this.closeAllPopups();
   }
 
   changeGregorianMonth(direction: number) {
@@ -237,6 +347,11 @@ export class ModernDualDatePickerComponent implements OnInit, ControlValueAccess
       this.gregorianYear++;
     }
     this.generateGregorianCalendar();
+    
+    // Sync Hebrew calendar if parallel mode is enabled and both popups are open
+    if (this.calendar_open_heb_and_eng_parallel && this.showGregorianPopup && this.showHebrewPopup) {
+      this.syncHebrewWithGregorian();
+    }
   }
 
   // Common methods
@@ -266,6 +381,25 @@ export class ModernDualDatePickerComponent implements OnInit, ControlValueAccess
 
   clearDate() {
     this.setDate(null);
+  }
+
+  ngOnDestroy() {
+    // Remove this instance from the global set
+    ModernDualDatePickerComponent.allInstances.delete(this);
+  }
+
+  closeAllPopups() {
+    this.showHebrewPopup = false;
+    this.showGregorianPopup = false;
+  }
+
+  // Close popups on all other instances when opening this one
+  closeOtherInstancesPopups() {
+    ModernDualDatePickerComponent.allInstances.forEach(instance => {
+      if (instance !== this) {
+        instance.closeAllPopups();
+      }
+    });
   }
 
   // ControlValueAccessor implementation
@@ -301,6 +435,10 @@ export class ModernDualDatePickerComponent implements OnInit, ControlValueAccess
     return this.hebrewDateService.getHebrewYearString(this.hebrewSelectedYear);
   }
 
+  getHebrewYearString(year: number): string {
+    return this.hebrewDateService.getHebrewYearString(year);
+  }
+
   getHebrewDayString(day: number): string {
     return this.hebrewDateService.getHebrewDayString(day);
   }
@@ -326,6 +464,13 @@ export class ModernDualDatePickerComponent implements OnInit, ControlValueAccess
       this.hebrewSelectedMonth = hebrewToday.month;
       this.updateHebrewMonths();
       this.generateHebrewCalendar();
+      
+      // Sync Gregorian calendar if parallel mode is enabled and both popups are open
+      if (this.calendar_open_heb_and_eng_parallel && this.showGregorianPopup && this.showHebrewPopup) {
+        this.gregorianMonth = today.getMonth();
+        this.gregorianYear = today.getFullYear();
+        this.generateGregorianCalendar();
+      }
     }
   }
 
@@ -366,5 +511,28 @@ export class ModernDualDatePickerComponent implements OnInit, ControlValueAccess
     return day === today.getDate() && 
            this.gregorianMonth === today.getMonth() && 
            this.gregorianYear === today.getFullYear();
+  }
+
+  // Synchronization methods for parallel calendar mode
+  syncGregorianWithHebrew() {
+    // Convert middle of Hebrew month to Gregorian to get the most representative month
+    const daysInHebrewMonth = this.hebrewDateService.getDaysInMonth(this.hebrewSelectedMonth, this.hebrewSelectedYear);
+    const middleDay = Math.ceil(daysInHebrewMonth / 2);
+    const hebrewDate = this.hebrewDateService.convertHebrewToGregorian(middleDay, this.hebrewSelectedMonth, this.hebrewSelectedYear);
+    this.gregorianMonth = hebrewDate.getMonth();
+    this.gregorianYear = hebrewDate.getFullYear();
+    this.generateGregorianCalendar();
+  }
+
+  syncHebrewWithGregorian() {
+    // Convert middle of Gregorian month to Hebrew to get the most representative month
+    const daysInGregorianMonth = new Date(this.gregorianYear, this.gregorianMonth + 1, 0).getDate();
+    const middleDay = Math.ceil(daysInGregorianMonth / 2);
+    const gregorianDate = new Date(this.gregorianYear, this.gregorianMonth, middleDay);
+    const hebrew = this.hebrewDateService.convertGregorianToHebrew(gregorianDate);
+    this.hebrewSelectedMonth = hebrew.month;
+    this.hebrewSelectedYear = hebrew.year;
+    this.updateHebrewMonths();
+    this.generateHebrewCalendar();
   }
 }

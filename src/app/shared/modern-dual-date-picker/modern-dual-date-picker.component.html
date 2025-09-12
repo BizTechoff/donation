@@ -1,12 +1,12 @@
-<div class="modern-dual-date-picker">
-  <label class="field-label" *ngIf="label">{{ label }}</label>
+<div class="modern-dual-date-picker" [class.compact]="compact">
+  <label class="field-label" *ngIf="label && !compact">{{ label }}</label>
   
   <div class="date-inputs-container">
     <!-- Hebrew Date Input -->
-    <div class="date-input-group">
+    <div class="date-input-group" *ngIf="!showOnlyGregorian">
       <div class="date-input hebrew-trigger" (click)="toggleHebrewPopup($event)" [class.disabled]="disabled">
         <span class="date-value" [class.placeholder]="!hebrewDateDisplay">
-          {{ hebrewDateDisplay || 'בחר תאריך עברי' }}
+          {{ hebrewDateDisplay || (compact ? 'עברי' : 'בחר תאריך עברי') }}
         </span>
         <svg class="calendar-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
@@ -16,16 +16,33 @@
         </svg>
       </div>
       
-      <!-- Hebrew Calendar Popup -->
-      <div class="calendar-popup hebrew-popup" *ngIf="showHebrewPopup" #hebrewPopup>
+      <!-- Hebrew Calendar Popup (Single Mode Only) -->
+      <div class="calendar-popup hebrew-popup" 
+           *ngIf="showHebrewPopup && !(calendar_open_heb_and_eng_parallel && showGregorianPopup && showHebrewPopup)" #hebrewPopup>
         <div class="calendar-header">
           <button class="nav-button" (click)="changeHebrewMonth(-1)">‹</button>
-          <div class="month-year" 
+          
+          <div class="dropdowns-container">
+            <select class="month-dropdown" [(ngModel)]="hebrewSelectedMonth" (change)="onHebrewMonthChange($event)">
+              <option *ngFor="let month of hebrewMonths" [value]="month.value">
+                {{ month.name }}
+              </option>
+            </select>
+            
+            <select class="year-dropdown" [(ngModel)]="hebrewSelectedYear" (change)="onHebrewYearChange($event)">
+              <option *ngFor="let year of hebrewYearsList" [value]="year">
+                {{ getHebrewYearString(year) }}
+              </option>
+            </select>
+          </div>
+          
+          <div class="today-button" 
                (click)="goToToday()" 
                [class.clickable]="!isCurrentMonth()"
                [title]="isCurrentMonth() ? 'החודש הנוכחי' : 'לחץ למעבר לחודש הנוכחי'">
-            {{ getCurrentHebrewMonthName() }} {{ getCurrentHebrewYearString() }}
+            📅
           </div>
+          
           <button class="nav-button" (click)="changeHebrewMonth(1)">›</button>
         </div>
         
@@ -62,10 +79,10 @@
     </div>
 
     <!-- Gregorian Date Input -->
-    <div class="date-input-group">
+    <div class="date-input-group" *ngIf="!showOnlyHebrew">
       <div class="date-input gregorian-trigger" (click)="toggleGregorianPopup($event)" [class.disabled]="disabled">
         <span class="date-value" [class.placeholder]="!gregorianDateDisplay">
-          {{ gregorianDateDisplay || 'בחר תאריך לועזי' }}
+          {{ gregorianDateDisplay || (compact ? 'לועזי' : 'בחר תאריך לועזי') }}
         </span>
         <svg class="calendar-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
@@ -75,8 +92,102 @@
         </svg>
       </div>
       
-      <!-- Gregorian Calendar Popup -->
-      <div class="calendar-popup gregorian-popup" *ngIf="showGregorianPopup" #gregorianPopup>
+      <!-- Gregorian Calendar Popup (Single Mode Only) -->
+      <div class="calendar-popup gregorian-popup" 
+           *ngIf="showGregorianPopup && !(calendar_open_heb_and_eng_parallel && showGregorianPopup && showHebrewPopup)" #gregorianPopup>
+        <div class="calendar-header">
+          <button class="nav-button" (click)="changeGregorianMonth(-1)">‹</button>
+          <div class="month-year">
+            {{ gregorianMonths[gregorianMonth] }} {{ gregorianYear }}
+          </div>
+          <button class="nav-button" (click)="changeGregorianMonth(1)">›</button>
+        </div>
+        
+        <div class="calendar-body">
+          <div class="weekdays">
+            <div class="weekday" *ngFor="let day of gregorianDaysOfWeek">{{ day }}</div>
+          </div>
+          <div class="days-grid">
+            <div class="week" *ngFor="let week of gregorianDaysInMonth">
+              <div class="day" 
+                   *ngFor="let day of week"
+                   [class.empty]="day === null"
+                   [class.selected]="isSelectedGregorianDay(day)"
+                   [class.today]="isToday(day)"
+                   (click)="selectGregorianDay(day)">
+                {{ day !== null ? day : '' }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Parallel Popups Container -->
+    <div class="parallel-popups-container" 
+         *ngIf="calendar_open_heb_and_eng_parallel && showGregorianPopup && showHebrewPopup">
+      
+      <!-- Hebrew Calendar in Parallel Mode (Right Side) -->
+      <div class="calendar-popup hebrew-popup" #hebrewPopupParallel>
+        <div class="calendar-header">
+          <button class="nav-button" (click)="changeHebrewMonth(-1)">‹</button>
+          
+          <div class="dropdowns-container">
+            <select class="month-dropdown" [(ngModel)]="hebrewSelectedMonth" (change)="onHebrewMonthChange($event)">
+              <option *ngFor="let month of hebrewMonths" [value]="month.value">
+                {{ month.name }}
+              </option>
+            </select>
+            
+            <select class="year-dropdown" [(ngModel)]="hebrewSelectedYear" (change)="onHebrewYearChange($event)">
+              <option *ngFor="let year of hebrewYearsList" [value]="year">
+                {{ getHebrewYearString(year) }}
+              </option>
+            </select>
+          </div>
+          
+          <div class="today-button" 
+               (click)="goToToday()" 
+               [class.clickable]="!isCurrentMonth()"
+               [title]="isCurrentMonth() ? 'החודש הנוכחי' : 'לחץ למעבר לחודש הנוכחי'">
+            📅
+          </div>
+          
+          <button class="nav-button" (click)="changeHebrewMonth(1)">›</button>
+        </div>
+        
+        <div *ngIf="false" class="holidays-toggle">
+          <label class="toggle-label">
+            <input type="checkbox" [(ngModel)]="isCalendarJewEnabled" class="toggle-checkbox">
+            <span class="toggle-text">הצג חגים</span>
+          </label>
+        </div>
+        
+        <div class="calendar-body">
+          <div class="weekdays">
+            <div class="weekday" *ngFor="let day of hebrewDaysOfWeek">{{ day }}</div>
+          </div>
+          <div class="days-grid">
+            <div class="week" *ngFor="let week of hebrewDaysInMonth">
+              <div class="day" 
+                   *ngFor="let day of week"
+                   [class.empty]="day === 0"
+                   [class.selected]="isSelectedHebrewDay(day)"
+                   [class.today]="isTodayHebrew(day)"
+                   [class.has-holiday]="getHolidayForDay(day) !== null"
+                   (click)="selectHebrewDay(day)">
+                <span class="day-number">{{ day !== 0 ? getHebrewDayString(day) : '' }}</span>
+                <span class="holiday-name" *ngIf="isCalendarJewEnabled && getHolidayForDay(day)">
+                  {{ getHolidayForDay(day) }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gregorian Calendar in Parallel Mode (Left Side) -->
+      <div class="calendar-popup gregorian-popup" #gregorianPopupParallel>
         <div class="calendar-header">
           <button class="nav-button" (click)="changeGregorianMonth(-1)">‹</button>
           <div class="month-year">

@@ -3,6 +3,40 @@
   flex-direction: column;
   gap: 8px;
   position: relative;
+  
+  &.compact {
+    gap: 4px;
+    
+    .date-inputs-container {
+      gap: 6px;
+    }
+    
+    .date-input-group {
+      min-width: 120px;
+      flex: 1;
+    }
+    
+    .date-input {
+      min-height: 32px;
+      padding: 6px 8px;
+      font-size: 12px;
+      
+      .date-value {
+        font-size: 12px;
+      }
+      
+      .calendar-icon {
+        width: 14px;
+        height: 14px;
+        margin-left: 4px;
+      }
+    }
+    
+    .hebrew-trigger .calendar-icon {
+      margin-left: 0;
+      margin-right: 4px;
+    }
+  }
 
   .field-label {
     font-size: 14px;
@@ -22,6 +56,25 @@
     position: relative;
     flex: 1;
     min-width: 180px;
+  }
+
+  // Container for parallel popups
+  .parallel-popups-container {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    pointer-events: none; // Allow clicks to pass through
+    
+    .calendar-popup {
+      pointer-events: auto; // Re-enable clicks on popups
+      position: static; // Override absolute positioning
+      margin: 0; // Reset margins
+    }
   }
 
   .date-input {
@@ -98,6 +151,23 @@
       right: 0;
       left: auto;
       width: 320px; // Fixed width for Hebrew calendar
+      
+      // When both popups are open (parallel mode), position Hebrew popup to the left of the trigger
+      &.parallel-mode {
+        right: 100%; // Position to the left of the parent container
+        margin-right: 10px; // Add some spacing
+      }
+    }
+    
+    &.gregorian-popup {
+      // Default position
+      left: 0;
+      right: auto;
+      
+      &.parallel-mode {
+        left: 100%; // Position to the right of the parent container  
+        margin-left: 10px; // Add some spacing
+      }
     }
 
     .holidays-toggle {
@@ -147,6 +217,85 @@
 
         &:hover {
           background: #f0f0f0;
+        }
+      }
+
+      .dropdowns-container {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex: 1;
+        justify-content: center;
+        
+        .month-dropdown,
+        .year-dropdown {
+          padding: 4px 20px 4px 8px; // Always reserve space for arrow
+          border: 1px solid transparent; // Hidden border by default
+          border-radius: 4px;
+          background: transparent; // Transparent background by default
+          font-size: 13px;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          appearance: none; // Remove default dropdown styling
+          -webkit-appearance: none;
+          -moz-appearance: none;
+          
+          // Always position the arrow but make it transparent initially
+          background-image: url("data:image/svg+xml;charset=US-ASCII,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'><path fill='transparent' d='M2 0L0 2h4zm0 5L0 3h4z'/></svg>");
+          background-repeat: no-repeat;
+          background-position: right 6px center;
+          background-size: 8px;
+          
+          &:hover {
+            border-color: #007bff;
+            background-color: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            
+            // Make arrow visible with gray color
+            background-image: url("data:image/svg+xml;charset=US-ASCII,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'><path fill='%23666' d='M2 0L0 2h4zm0 5L0 3h4z'/></svg>");
+          }
+          
+          &:focus {
+            outline: none;
+            border-color: #007bff;
+            background-color: white;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+            
+            // Make arrow visible with blue color
+            background-image: url("data:image/svg+xml;charset=US-ASCII,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'><path fill='%23007bff' d='M2 0L0 2h4zm0 5L0 3h4z'/></svg>");
+          }
+        }
+        
+        .month-dropdown {
+          min-width: 80px;
+        }
+        
+        .year-dropdown {
+          min-width: 60px;
+        }
+      }
+
+      .today-button {
+        font-size: 16px;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 4px;
+        transition: all 0.2s;
+        user-select: none;
+        
+        &.clickable {
+          &:hover {
+            background: #e3f2fd;
+          }
+          
+          &:active {
+            background: #bbdefb;
+          }
+        }
+        
+        &:not(.clickable) {
+          cursor: default;
+          opacity: 0.5;
         }
       }
 
@@ -336,6 +485,18 @@
       right: 0 !important;
       width: calc(100vw - 40px);
       max-width: 320px;
+      
+      // In mobile, disable parallel mode positioning
+      &.parallel-mode {
+        position: relative !important;
+        left: 0 !important;
+        right: 0 !important;
+        margin-top: 10px;
+      }
+      
+      &.hebrew-popup.parallel-mode {
+        right: 0 !important;
+      }
     }
   }
 }
