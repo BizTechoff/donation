@@ -18,6 +18,8 @@ import { months } from '@hebcal/core';
 export class ModernDualDatePickerComponent implements OnInit, ControlValueAccessor {
   @Input() label: string = '';
   @Input() disabled: boolean = false;
+  @Input() isCalendarJewEnabled: boolean = true; // Toggle for showing Jewish holidays
+  @Input() isDiaspora: boolean = false; // For diaspora holidays
   @Output() dateChange = new EventEmitter<Date | null>();
   
   @ViewChild('hebrewPopup', { static: false }) hebrewPopup!: ElementRef;
@@ -303,12 +305,52 @@ export class ModernDualDatePickerComponent implements OnInit, ControlValueAccess
     return this.hebrewDateService.getHebrewDayString(day);
   }
 
+  getHolidayForDay(day: number): string | null {
+    if (!this.isCalendarJewEnabled || day === 0) return null;
+    return this.hebrewDateService.getHolidayForDate(day, this.hebrewSelectedMonth, this.hebrewSelectedYear, this.isDiaspora);
+  }
+
+  toggleHolidays() {
+    this.isCalendarJewEnabled = !this.isCalendarJewEnabled;
+  }
+
+  goToToday() {
+    const today = new Date();
+    const hebrewToday = this.hebrewDateService.convertGregorianToHebrew(today);
+    
+    // Check if we're already showing today's month
+    if (this.hebrewSelectedMonth !== hebrewToday.month || 
+        this.hebrewSelectedYear !== hebrewToday.year) {
+      // Update to today's month and year
+      this.hebrewSelectedYear = hebrewToday.year;
+      this.hebrewSelectedMonth = hebrewToday.month;
+      this.updateHebrewMonths();
+      this.generateHebrewCalendar();
+    }
+  }
+
+  isCurrentMonth(): boolean {
+    const today = new Date();
+    const hebrewToday = this.hebrewDateService.convertGregorianToHebrew(today);
+    return this.hebrewSelectedMonth === hebrewToday.month && 
+           this.hebrewSelectedYear === hebrewToday.year;
+  }
+
   isSelectedHebrewDay(day: number): boolean {
     if (!this.currentDate || day === 0) return false;
     const hebrew = this.hebrewDateService.convertGregorianToHebrew(this.currentDate);
     return hebrew.day === day && 
            hebrew.month === this.hebrewSelectedMonth && 
            hebrew.year === this.hebrewSelectedYear;
+  }
+
+  isTodayHebrew(day: number): boolean {
+    if (day === 0) return false;
+    const today = new Date();
+    const hebrewToday = this.hebrewDateService.convertGregorianToHebrew(today);
+    return hebrewToday.day === day && 
+           hebrewToday.month === this.hebrewSelectedMonth && 
+           hebrewToday.year === this.hebrewSelectedYear;
   }
 
   isSelectedGregorianDay(day: number | null): boolean {

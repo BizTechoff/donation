@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HDate, months } from '@hebcal/core';
+import { HDate, months, HebrewCalendar, Event } from '@hebcal/core';
 
 @Injectable({
   providedIn: 'root'
@@ -158,5 +158,109 @@ export class HebrewDateService {
   getCurrentHebrewYear(): number {
     const hDate = new HDate(new Date());
     return hDate.getFullYear();
+  }
+
+  getJewishHolidays(month: number, year: number, isDiaspora: boolean = false): Map<number, string[]> {
+    const holidays = new Map<number, string[]>();
+    
+    // מילון חגים - התאמה לפי חודש ויום
+    const holidaysList: { [key: string]: { day: number; name: string; diasporaOnly?: boolean } } = {
+      // תשרי
+      'ROSH_HASHANA_1': { day: 1, name: 'ראש השנה' },
+      'ROSH_HASHANA_2': { day: 2, name: 'ראש השנה ב\'' },
+      'TZOM_GEDALIAH': { day: 3, name: 'צום גדליה' },
+      'YOM_KIPPUR': { day: 10, name: 'יום כיפור' },
+      'SUKKOT_1': { day: 15, name: 'סוכות' },
+      'SUKKOT_2': { day: 16, name: 'סוכות ב\'' },
+      'HOL_HAMOED_SUKKOT': { day: 17, name: 'חול המועד' },
+      'HOSHANA_RABBAH': { day: 21, name: 'הושענא רבה' },
+      'SHEMINI_ATZERET': { day: 22, name: 'שמיני עצרת' },
+      'SIMCHAT_TORAH_IL': { day: 22, name: 'שמחת תורה' },
+      'SIMCHAT_TORAH_DIASPORA': { day: 23, name: 'שמחת תורה', diasporaOnly: true }
+    };
+
+    // חגים לפי חודש
+    if (month === months.TISHREI) {
+      holidays.set(1, ['ראש השנה']);
+      holidays.set(2, ['ראש השנה ב\'']);
+      holidays.set(3, ['צום גדליה']);
+      holidays.set(10, ['יום כיפור']);
+      holidays.set(15, ['סוכות']);
+      holidays.set(16, ['חוה"מ']);
+      holidays.set(17, ['חוה"מ']);
+      holidays.set(18, ['חוה"מ']);
+      holidays.set(19, ['חוה"מ']);
+      holidays.set(20, ['חוה"מ']);
+      holidays.set(21, ['הוש"ר']);
+      if (isDiaspora) {
+        holidays.set(22, ['שמיני עצרת']);
+        holidays.set(23, ['שמחת תורה']);
+      } else {
+        holidays.set(22, ['שמ"ע/שמח"ת']);
+      }
+    } else if (month === months.KISLEV) {
+      holidays.set(25, ['חנוכה']);
+      holidays.set(26, ['חנוכה']);
+      holidays.set(27, ['חנוכה']);
+      holidays.set(28, ['חנוכה']);
+      holidays.set(29, ['חנוכה']);
+      holidays.set(30, ['חנוכה']);
+    } else if (month === months.TEVET) {
+      const daysInKislev = this.getDaysInMonth(months.KISLEV, year);
+      if (daysInKislev === 29) {
+        holidays.set(1, ['חנוכה']);
+        holidays.set(2, ['חנוכה']);
+        holidays.set(3, ['חנוכה']);
+      } else {
+        holidays.set(1, ['חנוכה']);
+        holidays.set(2, ['חנוכה']);
+      }
+      holidays.set(10, ['צום עשרה בטבת']);
+    } else if (month === months.SHVAT) {
+      holidays.set(15, ['ט"ו בשבט']);
+    } else if (month === months.ADAR_I || month === months.ADAR_II) {
+      const isLeapYear = new HDate(1, month, year).isLeapYear();
+      const purimMonth = isLeapYear ? months.ADAR_II : months.ADAR_I;
+      
+      if (month === purimMonth) {
+        holidays.set(13, ['תענית אסתר']);
+        holidays.set(14, ['פורים']);
+        holidays.set(15, ['שושן פורים']);
+      }
+    } else if (month === months.NISAN) {
+      holidays.set(15, ['פסח']);
+      holidays.set(16, ['חוה"מ']);
+      holidays.set(17, ['חוה"מ']);
+      holidays.set(18, ['חוה"מ']);
+      holidays.set(19, ['חוה"מ']);
+      holidays.set(20, ['חוה"מ']);
+      holidays.set(21, ['שביעי פסח']);
+      if (isDiaspora) {
+        holidays.set(22, ['שמיני של פסח']);
+      }
+      holidays.set(27, ['יום השואה']);
+    } else if (month === months.IYYAR) {
+      holidays.set(4, ['יום הזיכרון']);
+      holidays.set(5, ['יום העצמאות']);
+      holidays.set(14, ['פסח שני']);
+      holidays.set(18, ['ל"ג בעומר']);
+      holidays.set(28, ['יום ירושלים']);
+    } else if (month === months.SIVAN) {
+      holidays.set(6, ['שבועות']);
+      if (isDiaspora) {
+        holidays.set(7, ['שבועות ב\'']);
+      }
+    } else if (month === months.AV) {
+      holidays.set(9, ['תשעה באב']);
+      holidays.set(15, ['ט"ו באב']);
+    }
+
+    return holidays;
+  }
+
+  getHolidayForDate(day: number, month: number, year: number, isDiaspora: boolean = false): string | null {
+    const holidays = this.getJewishHolidays(month, year, isDiaspora);
+    const holidayList = holidays.get(day);
+    return holidayList && holidayList.length > 0 ? holidayList[0] : null;
   }
 }

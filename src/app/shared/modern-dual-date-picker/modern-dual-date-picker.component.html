@@ -20,10 +20,21 @@
       <div class="calendar-popup hebrew-popup" *ngIf="showHebrewPopup" #hebrewPopup>
         <div class="calendar-header">
           <button class="nav-button" (click)="changeHebrewMonth(-1)">‹</button>
-          <div class="month-year">
+          <div class="month-year" 
+               (click)="goToToday()" 
+               [class.clickable]="!isCurrentMonth()"
+               [title]="isCurrentMonth() ? 'החודש הנוכחי' : 'לחץ למעבר לחודש הנוכחי'">
             {{ getCurrentHebrewMonthName() }} {{ getCurrentHebrewYearString() }}
           </div>
           <button class="nav-button" (click)="changeHebrewMonth(1)">›</button>
+        </div>
+        
+        <!-- Toggle for holidays -->
+        <div *ngIf="false" class="holidays-toggle">
+          <label class="toggle-label">
+            <input type="checkbox" [(ngModel)]="isCalendarJewEnabled" class="toggle-checkbox">
+            <span class="toggle-text">הצג חגים</span>
+          </label>
         </div>
         
         <div class="calendar-body">
@@ -36,8 +47,13 @@
                    *ngFor="let day of week"
                    [class.empty]="day === 0"
                    [class.selected]="isSelectedHebrewDay(day)"
+                   [class.today]="isTodayHebrew(day)"
+                   [class.has-holiday]="getHolidayForDay(day) !== null"
                    (click)="selectHebrewDay(day)">
-                {{ day !== 0 ? getHebrewDayString(day) : '' }}
+                <span class="day-number">{{ day !== 0 ? getHebrewDayString(day) : '' }}</span>
+                <span class="holiday-name" *ngIf="isCalendarJewEnabled && getHolidayForDay(day)">
+                  {{ getHolidayForDay(day) }}
+                </span>
               </div>
             </div>
           </div>
