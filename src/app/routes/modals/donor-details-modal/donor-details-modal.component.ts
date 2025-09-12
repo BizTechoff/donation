@@ -23,6 +23,11 @@ export class DonorDetailsModalComponent implements OnInit {
   donationRepo = remult.repo(Donation);
   loading = false;
   isNewDonor = false;
+  
+  // Custom personal dates
+  customPersonalDates: { name: string; date: Date | null }[] = [];
+  showAddDateDialog = false;
+  newDateName = '';
 
   constructor(public i18n: I18nService) {}
 
@@ -91,6 +96,12 @@ export class DonorDetailsModalComponent implements OnInit {
     }
   }
 
+  onDateChange(field: string, value: Date | null) {
+    if (this.donor && field in this.donor) {
+      (this.donor as any)[field] = value;
+    }
+  }
+
   async deleteDonor() {
     if (!this.donor) return;
 
@@ -138,5 +149,40 @@ export class DonorDetailsModalComponent implements OnInit {
 
   get lastDonationDate(): Date | undefined {
     return this.donations.length > 0 ? this.donations[0].donationDate : undefined;
+  }
+
+  // Custom personal dates methods
+  addCustomDate() {
+    if (this.newDateName.trim()) {
+      this.customPersonalDates.push({
+        name: this.newDateName.trim(),
+        date: null
+      });
+      this.newDateName = '';
+      this.showAddDateDialog = false;
+      this.changed = true;
+    }
+  }
+
+  removeCustomDate(index: number) {
+    this.customPersonalDates.splice(index, 1);
+    this.changed = true;
+  }
+
+  onCustomDateChange(index: number, value: Date | null) {
+    if (this.customPersonalDates[index]) {
+      this.customPersonalDates[index].date = value;
+      this.changed = true;
+    }
+  }
+
+  openAddDateDialog() {
+    this.showAddDateDialog = true;
+    this.newDateName = '';
+  }
+
+  closeAddDateDialog() {
+    this.showAddDateDialog = false;
+    this.newDateName = '';
   }
 }

@@ -75,6 +75,193 @@
   max-width: 100%;
 }
 
+/* Dual date picker specific styling */
+.form-group app-dual-date-picker {
+  width: 100%;
+}
+
+.form-group app-dual-date-picker ::ng-deep .dual-date-picker {
+  margin: 0;
+  border: 1px solid #ced4da;
+  background-color: white;
+}
+
+.form-group app-dual-date-picker ::ng-deep .dual-date-picker legend {
+  background: white;
+  font-size: 14px;
+  font-weight: 500;
+  color: #495057;
+}
+
+/* Modern dual date picker specific styling */
+.form-group app-modern-dual-date-picker {
+  width: 100%;
+}
+
+.form-group app-modern-dual-date-picker ::ng-deep .modern-dual-date-picker {
+  margin: 0;
+}
+
+.form-group app-modern-dual-date-picker ::ng-deep .field-label {
+  margin-bottom: 8px;
+}
+
+/* Personal dates section */
+.personal-dates-section {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #e9ecef;
+
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+
+    h4 {
+      margin: 0;
+      color: #495057;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .mat-fab-mini {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+      box-shadow: 0 2px 5px rgba(0, 123, 255, 0.3);
+
+      &:hover {
+        background: #0056b3;
+        transform: scale(1.1);
+        box-shadow: 0 3px 8px rgba(0, 123, 255, 0.4);
+      }
+
+      .fab-icon {
+        font-size: 20px;
+        font-weight: 300;
+        line-height: 1;
+      }
+    }
+  }
+
+  .dates-container {
+    max-height: none;
+    transition: max-height 0.3s ease;
+
+    &.scrollable {
+      max-height: 400px;
+      overflow-y: auto;
+      padding-right: 10px;
+      
+      &::-webkit-scrollbar {
+        width: 6px;
+      }
+      
+      &::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 3px;
+      }
+      
+      &::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 3px;
+        
+        &:hover {
+          background: #555;
+        }
+      }
+    }
+
+    .custom-date-item {
+      position: relative;
+      padding-right: 40px;
+
+      .remove-date-btn {
+        position: absolute;
+        right: 5px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        border: 1px solid #dc3545;
+        background: white;
+        color: #dc3545;
+        font-size: 20px;
+        line-height: 1;
+        cursor: pointer;
+        transition: all 0.2s;
+
+        &:hover {
+          background: #dc3545;
+          color: white;
+        }
+      }
+    }
+  }
+}
+
+/* Custom date dialog */
+.custom-date-dialog {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .dialog-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+  }
+
+  .dialog-content {
+    position: relative;
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    min-width: 400px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+
+    h4 {
+      margin: 0 0 15px 0;
+      color: #333;
+      font-size: 18px;
+    }
+
+    .form-control {
+      width: 100%;
+      margin-bottom: 20px;
+    }
+
+    .dialog-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+
+      .btn {
+        min-width: 80px;
+      }
+    }
+  }
+}
+
 .form-group label {
   margin-bottom: 5px;
   font-weight: 500;

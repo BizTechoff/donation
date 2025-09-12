@@ -42,6 +42,9 @@ import { ReportsComponent } from './route/reports/reports.component'
 import { LanguageSwitcherComponent } from './i18n/language-switcher.component'
 import { DonorsMapComponent } from './route/donors-map/donors-map.component'
 import { DonorDetailsModalComponent } from './routes/modals/donor-details-modal/donor-details-modal.component'
+import { DualDatePickerComponent } from './shared/dual-date-picker/dual-date-picker.component'
+import { ModernDualDatePickerComponent } from './shared/modern-dual-date-picker/modern-dual-date-picker.component'
+import { HebrewDateService } from './services/hebrew-date.service'
 
 @NgModule({
   declarations: [
@@ -66,7 +69,9 @@ import { DonorDetailsModalComponent } from './routes/modals/donor-details-modal/
     ReportsComponent,
     LanguageSwitcherComponent,
     DonorsMapComponent,
-    DonorDetailsModalComponent
+    DonorDetailsModalComponent,
+    DualDatePickerComponent,
+    ModernDualDatePickerComponent
   ],
   imports: [
     BrowserModule,
@@ -90,6 +95,7 @@ import { DonorDetailsModalComponent } from './routes/modals/donor-details-modal/
   providers: [
     UIToolsService,
     AdminGuard,
+    HebrewDateService,
     { provide: APP_INITIALIZER, useFactory: initApp, multi: true },
   ],
   bootstrap: [AppComponent],

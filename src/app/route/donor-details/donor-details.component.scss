@@ -122,26 +122,19 @@
 }
 
 .dates-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  
   .date-item {
-    display: grid;
-    grid-template-columns: 120px 1fr 1fr;
-    gap: 10px;
-    align-items: end;
-    margin-bottom: 15px;
-    padding: 15px;
-    background: #f8f9fa;
-    border-radius: 8px;
+    width: 100%;
     
-    label {
-      font-weight: 600;
-      color: #2c3e50;
-      font-size: 14px;
-      align-self: center;
+    &.full-width {
+      width: 100%;
     }
     
-    .hebrew-date {
-      background: #fff3cd;
-      border-color: #ffeaa7;
+    app-modern-dual-date-picker {
+      width: 100%;
     }
   }
   

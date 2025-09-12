@@ -1,0 +1,48 @@
+<fieldset class="dual-date-picker">
+  <legend *ngIf="label">{{ label }}</legend>
+  
+  <div class="date-picker-container">
+    <!-- Hebrew Date Picker -->
+    <div class="date-section hebrew-date">
+      <label class="date-label">{{ hebrewLabel }}</label>
+      <div class="date-selects">
+        <select 
+          class="form-control date-select day-select" 
+          [(ngModel)]="hebrewDay" 
+          (change)="onHebrewDayChange()"
+          [disabled]="disabled">
+          <option *ngFor="let day of hebrewDays" [value]="day">{{ day }}</option>
+        </select>
+        
+        <select 
+          class="form-control date-select month-select" 
+          [(ngModel)]="hebrewMonth" 
+          (change)="onHebrewMonthChange()"
+          [disabled]="disabled">
+          <option *ngFor="let month of hebrewMonths" [value]="month.value">{{ month.name }}</option>
+        </select>
+        
+        <select 
+          class="form-control date-select year-select" 
+          [(ngModel)]="hebrewYear" 
+          (change)="onHebrewYearChange()"
+          [disabled]="disabled">
+          <option *ngFor="let year of hebrewYears" [value]="year">{{ year }}</option>
+        </select>
+      </div>
+      <div class="formatted-date hebrew-formatted">{{ getFormattedHebrewDate() }}</div>
+    </div>
+
+    <!-- Gregorian Date Picker -->
+    <div class="date-section gregorian-date">
+      <label class="date-label">{{ gregorianLabel }}</label>
+      <input 
+        type="date" 
+        class="form-control gregorian-input" 
+        [(ngModel)]="gregorianDate" 
+        (change)="onGregorianChange()"
+        [disabled]="disabled">
+      <div class="formatted-date gregorian-formatted">{{ getFormattedGregorianDate() }}</div>
+    </div>
+  </div>
+</fieldset>

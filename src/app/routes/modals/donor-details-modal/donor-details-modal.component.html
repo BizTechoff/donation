@@ -53,9 +53,13 @@
               <label>{{ (i18n.terms$ | async)?.country }}</label>
               <input type="text" class="form-control" [(ngModel)]="donor.country" [placeholder]="(i18n.terms$ | async)?.country">
             </div>
-            <div class="form-group">
-              <label>{{ (i18n.terms$ | async)?.birthDate }}</label>
-              <input type="date" class="form-control" [(ngModel)]="donor.birthDate">
+            <!-- Birth Date with Modern Hebrew-Gregorian picker -->
+            <div class="form-group full-width">
+              <app-modern-dual-date-picker
+                [(ngModel)]="donor.birthDate"
+                [label]="(i18n.terms$ | async)?.birthDate || 'תאריך לידה'"
+                (dateChange)="onDateChange('birthDate', $event)">
+              </app-modern-dual-date-picker>
             </div>
           </div>
         </div>
@@ -86,17 +90,74 @@
               <label>{{ (i18n.terms$ | async)?.mobilePhone }}</label>
               <input type="tel" class="form-control" [(ngModel)]="donor.mobilePhone" [placeholder]="(i18n.terms$ | async)?.mobilePhone">
             </div>
-            <div class="form-group">
-              <label>{{ (i18n.terms$ | async)?.anniversaryDate }}</label>
-              <input type="date" class="form-control" [(ngModel)]="donor.anniversaryDate">
+          </div>
+          
+          <!-- תאריכים אישיים -->
+          <div class="personal-dates-section">
+            <div class="section-header">
+              <h4>{{ (i18n.terms$ | async)?.personalDates || 'תאריכים אישיים' }}</h4>
+              <button class="mat-fab-mini" (click)="openAddDateDialog()" title="הוסף תאריך מותאם אישית">
+                <span class="fab-icon">+</span>
+              </button>
             </div>
-            <div class="form-group">
-              <label>{{ (i18n.terms$ | async)?.fatherYahrzeit }}</label>
-              <input type="date" class="form-control" [(ngModel)]="donor.fatherYahrzeit">
+            
+            <div class="dates-container" [class.scrollable]="(customPersonalDates.length + 3) > 5">
+              <!-- Anniversary Date -->
+              <div class="form-group full-width">
+                <app-modern-dual-date-picker
+                  [(ngModel)]="donor.anniversaryDate"
+                  [label]="(i18n.terms$ | async)?.anniversaryDate || 'תאריך נישואין'"
+                  (dateChange)="onDateChange('anniversaryDate', $event)">
+                </app-modern-dual-date-picker>
+              </div>
+              
+              <!-- Father Yahrzeit -->
+              <div class="form-group full-width">
+                <app-modern-dual-date-picker
+                  [(ngModel)]="donor.fatherYahrzeit"
+                  [label]="(i18n.terms$ | async)?.fatherYahrzeit || 'יארצייט אב'"
+                  (dateChange)="onDateChange('fatherYahrzeit', $event)">
+                </app-modern-dual-date-picker>
+              </div>
+              
+              <!-- Mother Yahrzeit -->
+              <div class="form-group full-width">
+                <app-modern-dual-date-picker
+                  [(ngModel)]="donor.motherYahrzeit"
+                  [label]="(i18n.terms$ | async)?.motherYahrzeit || 'יארצייט אם'"
+                  (dateChange)="onDateChange('motherYahrzeit', $event)">
+                </app-modern-dual-date-picker>
+              </div>
+              
+              <!-- Custom Dates -->
+              <div class="form-group full-width custom-date-item" *ngFor="let customDate of customPersonalDates; let i = index">
+                <app-modern-dual-date-picker
+                  [(ngModel)]="customDate.date"
+                  [label]="customDate.name"
+                  (dateChange)="onCustomDateChange(i, $event)">
+                </app-modern-dual-date-picker>
+                <button class="remove-date-btn" (click)="removeCustomDate(i)" title="הסר תאריך">
+                  ×
+                </button>
+              </div>
             </div>
-            <div class="form-group">
-              <label>{{ (i18n.terms$ | async)?.motherYahrzeit }}</label>
-              <input type="date" class="form-control" [(ngModel)]="donor.motherYahrzeit">
+          </div>
+          
+          <!-- Dialog for adding custom date -->
+          <div class="custom-date-dialog" *ngIf="showAddDateDialog">
+            <div class="dialog-backdrop" (click)="closeAddDateDialog()"></div>
+            <div class="dialog-content">
+              <h4>הוסף תאריך מותאם אישית</h4>
+              <input 
+                type="text" 
+                class="form-control" 
+                [(ngModel)]="newDateName" 
+                placeholder="שם האירוע (לדוגמה: יום הולדת בן)"
+                (keyup.enter)="addCustomDate()">
+              <div class="dialog-actions">
+                <button class="btn btn-secondary" (click)="closeAddDateDialog()">ביטול</button>
+                <button class="btn btn-primary" (click)="addCustomDate()" [disabled]="!newDateName.trim()">הוסף</button>
+              </div>
             </div>
           </div>
         </div>

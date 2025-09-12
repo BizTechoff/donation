@@ -29,6 +29,12 @@ export class DonorDetailsComponent implements OnInit {
     if (id === 'new') {
       this.isNewDonor = true;
       this.donor = this.donorRepo.create();
+      // Initialize default values for new donor
+      this.donor.isActive = true;
+      this.donor.wantsUpdates = true;
+      this.donor.wantsTaxReceipts = true;
+      this.donor.preferredLanguage = 'he';
+      this.donor.country = 'ישראל';
     } else if (id) {
       await this.loadDonor(id);
     }
@@ -125,5 +131,11 @@ export class DonorDetailsComponent implements OnInit {
 
   goBack() {
     this.router.navigate(['/donor-list']);
+  }
+
+  onDateChange(field: string, value: Date | null) {
+    if (this.donor && field in this.donor) {
+      (this.donor as any)[field] = value;
+    }
   }
 }

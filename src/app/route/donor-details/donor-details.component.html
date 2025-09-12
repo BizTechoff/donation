@@ -12,13 +12,13 @@
     <div class="section personal-details">
       <h2>{{ (i18n.terms$ | async)?.personalDetails }}</h2>
       <div class="form-grid">
-        <div class="form-group">
+        <div class="form-group" *ngIf="donor">
           <label>{{ (i18n.terms$ | async)?.lastName }}</label>
-          <input type="text" class="form-control" value="כהן">
+          <input type="text" class="form-control" [(ngModel)]="donor.lastName" [placeholder]="(i18n.terms$ | async)?.lastName">
         </div>
-        <div class="form-group">
+        <div class="form-group" *ngIf="donor">
           <label>{{ (i18n.terms$ | async)?.firstName }}</label>
-          <input type="text" class="form-control" value="אברהם">
+          <input type="text" class="form-control" [(ngModel)]="donor.firstName" [placeholder]="(i18n.terms$ | async)?.firstName">
         </div>
         <div class="form-group">
           <label>{{ (i18n.terms$ | async)?.spouseName }}</label>
@@ -64,28 +64,35 @@
     <!-- תאריכים אישיים -->
     <div class="section personal-dates">
       <h2>{{ (i18n.terms$ | async)?.personalDates }}</h2>
-      <div class="dates-list">
-        <div class="date-item">
-          <label>{{ (i18n.terms$ | async)?.birthday }}</label>
-          <input type="date" class="form-control">
-          <input type="text" class="form-control hebrew-date" placeholder="{{ (i18n.terms$ | async)?.hebrewDatePlaceholder }}">
+      <div class="dates-list" *ngIf="donor">
+        <div class="date-item full-width">
+          <app-modern-dual-date-picker
+            [(ngModel)]="donor.birthDate"
+            [label]="(i18n.terms$ | async)?.birthday || 'תאריך לידה'"
+            (dateChange)="onDateChange('birthDate', $event)">
+          </app-modern-dual-date-picker>
         </div>
-        <div class="date-item">
-          <label>{{ (i18n.terms$ | async)?.anniversaryDate }}</label>
-          <input type="date" class="form-control">
-          <input type="text" class="form-control hebrew-date" placeholder="{{ (i18n.terms$ | async)?.hebrewDatePlaceholder }}">
+        <div class="date-item full-width">
+          <app-modern-dual-date-picker
+            [(ngModel)]="donor.anniversaryDate"
+            [label]="(i18n.terms$ | async)?.anniversaryDate || 'תאריך נישואין'"
+            (dateChange)="onDateChange('anniversaryDate', $event)">
+          </app-modern-dual-date-picker>
         </div>
-        <div class="date-item">
-          <label>{{ (i18n.terms$ | async)?.fatherYahrzeit }}</label>
-          <input type="date" class="form-control">
-          <input type="text" class="form-control hebrew-date" placeholder="{{ (i18n.terms$ | async)?.hebrewDatePlaceholder }}">
+        <div class="date-item full-width">
+          <app-modern-dual-date-picker
+            [(ngModel)]="donor.fatherYahrzeit"
+            [label]="(i18n.terms$ | async)?.fatherYahrzeit || 'יארצייט אב'"
+            (dateChange)="onDateChange('fatherYahrzeit', $event)">
+          </app-modern-dual-date-picker>
         </div>
-        <div class="date-item">
-          <label>{{ (i18n.terms$ | async)?.motherYahrzeit }}</label>
-          <input type="date" class="form-control">
-          <input type="text" class="form-control hebrew-date" placeholder="{{ (i18n.terms$ | async)?.hebrewDatePlaceholder }}">
+        <div class="date-item full-width">
+          <app-modern-dual-date-picker
+            [(ngModel)]="donor.motherYahrzeit"
+            [label]="(i18n.terms$ | async)?.motherYahrzeit || 'יארצייט אם'"
+            (dateChange)="onDateChange('motherYahrzeit', $event)">
+          </app-modern-dual-date-picker>
         </div>
-        <button class="btn btn-small add-date-btn">{{ (i18n.terms$ | async)?.addDate }}</button>
       </div>
     </div>
 
