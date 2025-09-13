@@ -76,7 +76,19 @@ export class ModernDualDatePickerComponent implements OnInit, OnDestroy, Control
 
   initializeCalendars() {
     const today = new Date();
-    this.hebrewSelectedYear = this.hebrewDateService.getCurrentHebrewYear();
+    
+    // Initialize Hebrew calendar with today's Hebrew date
+    const hebrewToday = this.hebrewDateService.convertGregorianToHebrew(today);
+    this.hebrewSelectedYear = hebrewToday.year;
+    this.hebrewSelectedMonth = hebrewToday.month;
+    this.hebrewSelectedDay = hebrewToday.day;
+    
+    // Initialize Gregorian calendar with today's date
+    this.gregorianSelectedDate = today;
+    this.gregorianMonth = today.getMonth();
+    this.gregorianYear = today.getFullYear();
+    
+    // Generate calendars
     this.generateHebrewYearsList();
     this.updateHebrewMonths();
     this.generateHebrewCalendar();

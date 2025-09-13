@@ -169,8 +169,24 @@
               </select>
             </div>
             <div class="form-group">
+              <label>שם האב</label>
+              <input type="text" class="form-control" [(ngModel)]="donor.fatherName" placeholder="שם האב">
+            </div>
+            <div class="form-group">
+              <label>שם החותן</label>
+              <input type="text" class="form-control" [(ngModel)]="donor.fatherInLawName" placeholder="שם החותן">
+            </div>
+            <div class="form-group">
               <label>{{ (i18n.terms$ | async)?.homePhone }}</label>
               <input type="tel" class="form-control" [(ngModel)]="donor.homePhone" [placeholder]="(i18n.terms$ | async)?.homePhone">
+            </div>
+            <div class="form-group full-width">
+              <label>קישור משפחתי</label>
+              <input type="text" class="form-control" [(ngModel)]="donor.familyConnection" placeholder="קישור משפחתי (אח של, דוד של, תלמיד בישיבה וכו')">
+            </div>
+            <div class="form-group full-width">
+              <label>הערות קישור משפחתי</label>
+              <textarea class="form-control" [(ngModel)]="donor.familyConnectionNotes" placeholder="הערות נוספות על הקישור המשפחתי" rows="2"></textarea>
             </div>
             <div class="form-group">
               <label>{{ (i18n.terms$ | async)?.mobilePhone }}</label>
@@ -314,9 +330,89 @@
           </div>
         </div>
 
+        <!-- חברות ועמותות -->
+        <div class="section company-organization">
+          <div class="section-header">
+            <h3>חברות ועמותות</h3>
+            <button class="btn btn-success btn-sm" (click)="addCompany()" title="הוסף חברה/עמותה">
+              + הוסף חברה/עמותה
+            </button>
+          </div>
+          
+          <!-- Empty state message when no companies exist -->
+          <div *ngIf="!donor.companies || donor.companies.length === 0" class="empty-message">
+            <p>לא נמצאו חברות או עמותות לתורם זה. להוספת חברה/עמותה יש ללחוץ על הכפתור למעלה.</p>
+          </div>
+          
+          <!-- Companies list -->
+          <div *ngFor="let company of donor.companies; let i = index; trackBy: trackByCompanyId" class="company-item">
+            <div class="company-header">
+              <h4>חברה/עמותה {{i + 1}}</h4>
+              <button class="btn btn-danger btn-sm" (click)="removeCompany(i)" title="הסר חברה">
+                × הסר
+              </button>
+            </div>
+            
+            <div class="form-grid">
+              <div class="form-group">
+                <label>שם החברה/עמותה</label>
+                <input type="text" class="form-control" [(ngModel)]="company.name" placeholder="שם החברה או העמותה">
+              </div>
+              <div class="form-group">
+                <label>מספר חברה/עמותה</label>
+                <input type="text" class="form-control" [(ngModel)]="company.number" placeholder="מספר רישום">
+              </div>
+              <div class="form-group">
+                <label>תפקיד</label>
+                <input type="text" class="form-control" [(ngModel)]="company.role" placeholder="תפקיד בחברה/עמותה">
+              </div>
+              <div class="form-group">
+                <label>אתר אינטרנט</label>
+                <input type="text" class="form-control" [(ngModel)]="company.website" placeholder="כתובת אתר האינטרנט">
+              </div>
+            </div>
+            
+            <h5>כתובת החברה/עמותה</h5>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>רחוב 1</label>
+                <input type="text" class="form-control" [(ngModel)]="company.street1" placeholder="רחוב ומספר">
+              </div>
+              <div class="form-group">
+                <label>רחוב 2</label>
+                <input type="text" class="form-control" [(ngModel)]="company.street2" placeholder="כניסה/קומה/משרד">
+              </div>
+              <div class="form-group">
+                <label>שכונה</label>
+                <input type="text" class="form-control" [(ngModel)]="company.neighborhood" placeholder="שכונה">
+              </div>
+              <div class="form-group">
+                <label>עיר</label>
+                <input type="text" class="form-control" [(ngModel)]="company.city" placeholder="עיר">
+              </div>
+              <div class="form-group">
+                <label>מיקוד</label>
+                <input type="text" class="form-control" [(ngModel)]="company.zipCode" placeholder="מיקוד">
+              </div>
+              <div class="form-group">
+                <label>מדינה</label>
+                <input type="text" class="form-control" [(ngModel)]="company.country" placeholder="מדינה">
+              </div>
+              <div class="form-group">
+                <label>טלפון</label>
+                <input type="tel" class="form-control" [(ngModel)]="company.phone" placeholder="טלפון החברה/עמותה">
+              </div>
+              <div class="form-group">
+                <label>דוא"ל</label>
+                <input type="email" class="form-control" [(ngModel)]="company.email" placeholder="דוא״ל החברה/עמותה">
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- קטגוריות ורמות -->
         <div class="section categories-levels">
-          <h3>{{ (i18n.terms$ | async)?.categoriesLevels }}</h3>
+          <h3>קטגוריות ורמות</h3>
           <div class="form-grid">
             <div class="form-group">
               <label>{{ (i18n.terms$ | async)?.level }}</label>
@@ -329,28 +425,8 @@
               </select>
             </div>
             <div class="form-group">
-              <label>{{ (i18n.terms$ | async)?.region }}</label>
-              <select class="form-control" [(ngModel)]="donor.region">
-                <option value="">{{ (i18n.terms$ | async)?.selectOption }}</option>
-                <option value="center">{{ (i18n.terms$ | async)?.center }}</option>
-                <option value="north">{{ (i18n.terms$ | async)?.north }}</option>
-                <option value="south">{{ (i18n.terms$ | async)?.south }}</option>
-                <option value="jerusalem">{{ (i18n.terms$ | async)?.jerusalem }}</option>
-              </select>
-            </div>
-            <div class="form-group">
               <label>{{ (i18n.terms$ | async)?.circle }}</label>
               <input type="text" class="form-control" [(ngModel)]="donor.circle" [placeholder]="(i18n.terms$ | async)?.circle">
-            </div>
-            <div class="form-group">
-              <label>{{ (i18n.terms$ | async)?.ageGroup }}</label>
-              <select class="form-control" [(ngModel)]="donor.ageGroup">
-                <option value="">{{ (i18n.terms$ | async)?.selectOption }}</option>
-                <option value="18-30">18-30</option>
-                <option value="31-45">31-45</option>
-                <option value="46-60">46-60</option>
-                <option value="60+">60+</option>
-              </select>
             </div>
             <div class="form-group">
               <label>{{ (i18n.terms$ | async)?.preferredLanguage }}</label>
@@ -359,6 +435,52 @@
                 <option value="en">{{ (i18n.terms$ | async)?.english }}</option>
                 <option value="ar">{{ (i18n.terms$ | async)?.arabic }}</option>
               </select>
+            </div>
+          </div>
+          
+          <h4>אפיון תורם</h4>
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <label>סוג תורם</label>
+              <div class="checkbox-group">
+                <label class="checkbox-label">
+                  <input type="checkbox" [(ngModel)]="donor.isAnash">
+                  אנ"ש
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" [(ngModel)]="donor.isAlumni">
+                  בוגר
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" [(ngModel)]="donor.isOtherConnection" (change)="onOtherConnectionChange()">
+                  קשר אחר
+                </label>
+              </div>
+            </div>
+            
+            <!-- Show relationship fields only when "קשר אחר" is checked -->
+            <div class="form-group" *ngIf="donor.isOtherConnection">
+              <label>סוג קשר</label>
+              <input type="text" class="form-control" [(ngModel)]="donor.relationshipType" 
+                     placeholder="אבא / סבא / ידיד / אחר...">
+            </div>
+            
+            <div class="form-group" *ngIf="donor.isOtherConnection">
+              <label>קשר של</label>
+              <input type="text" class="form-control" [(ngModel)]="donor.relationshipOf" 
+                     placeholder="שם האדם שהתורם קשור אליו">
+            </div>
+            
+            <div class="form-group full-width">
+              <label>ריגושים</label>
+              <textarea class="form-control" [(ngModel)]="donor.interests" 
+                        placeholder="נושאים שמעניינים את התורם" rows="2"></textarea>
+            </div>
+            
+            <div class="form-group full-width">
+              <label>תחביבים</label>
+              <textarea class="form-control" [(ngModel)]="donor.hobbies" 
+                        placeholder="תחביבים ופעילויות פנאי" rows="2"></textarea>
             </div>
           </div>
         </div>
@@ -427,6 +549,53 @@
                   <input type="checkbox" [(ngModel)]="donor.preferOfficeVisit">
                   {{ (i18n.terms$ | async)?.officeVisit }}
                 </label>
+              </div>
+            </div>
+            <div class="form-group full-width">
+              <label>אופן יצירת הקשר</label>
+              <div class="checkbox-group">
+                <label class="checkbox-label">
+                  <input type="checkbox" [(ngModel)]="donor.requirePhoneCoordination">
+                  בתיאום טלפוני
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" [(ngModel)]="donor.preferSpecialTimes">
+                  בזמנים מיוחדים: פסח/סוכות
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" [(ngModel)]="donor.preferPublicReception">
+                  בקבלת קהל
+                </label>
+              </div>
+            </div>
+            
+            <div class="form-group full-width">
+              <label>העדפות נוספות</label>
+              <div class="checkbox-group">
+                <label class="checkbox-label">
+                  <input type="checkbox" [(ngModel)]="donor.emailOnlyCorrespondence">
+                  שליחת מכתבים באימייל בלבד
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" [(ngModel)]="donor.autoAddToLocationEvents">
+                  הוספה אוטומטית לאירועים (לפי מיקום)
+                </label>
+              </div>
+            </div>
+            
+            <!-- Action buttons section -->
+            <div class="form-group full-width">
+              <label>פעולות מהירות</label>
+              <div class="action-buttons">
+                <button class="btn btn-outline-primary" (click)="openGifts()" title="מתנות">
+                  🎁 מתנות
+                </button>
+                <button class="btn btn-outline-success" (click)="openDonations()" title="תרומות">
+                  💰 תרומות
+                </button>
+                <button class="btn btn-outline-info" (click)="openReceipts()" title="הוצאת קבלות">
+                  📄 הו"ק
+                </button>
               </div>
             </div>
           </div>

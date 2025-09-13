@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { Donor, Donation, Event, DonorEvent } from '../../../../shared/entity';
+import { Donor, Donation, Event, DonorEvent, CompanyInfo } from '../../../../shared/entity';
 import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
 
@@ -73,11 +73,16 @@ export class DonorDetailsModalComponent implements OnInit {
         this.donor.wantsTaxReceipts = true;
         this.donor.preferredLanguage = 'he';
         this.donor.country = 'ישראל';
+        this.donor.companies = [];
         this.originalDonorData = JSON.stringify(this.donor);
       } else {
         this.isNewDonor = false;
         this.donor = await this.donorRepo.findId(this.args.donorId) || undefined;
         if (this.donor) {
+          // Ensure companies array exists
+          if (!this.donor.companies) {
+            this.donor.companies = [];
+          }
           this.originalDonorData = JSON.stringify(this.donor);
           await this.loadDonations();
           await this.loadDonorEvents();
@@ -392,5 +397,75 @@ export class DonorDetailsModalComponent implements OnInit {
   // Clear search
   clearSearch() {
     this.eventSearchTerm = '';
+  }
+
+  // Company management methods
+  addCompany() {
+    if (!this.donor) return;
+    
+    if (!this.donor.companies) {
+      this.donor.companies = [];
+    }
+    
+    const newCompany: CompanyInfo = {
+      id: this.generateCompanyId(),
+      name: '',
+      number: '',
+      role: '',
+      street1: '',
+      street2: '',
+      neighborhood: '',
+      city: '',
+      zipCode: '',
+      country: 'ישראל',
+      phone: '',
+      email: '',
+      website: ''
+    };
+    
+    this.donor.companies.push(newCompany);
+  }
+
+  removeCompany(index: number) {
+    if (!this.donor || !this.donor.companies) return;
+    
+    if (confirm('האם אתה בטוח שברצונך להסיר חברה זו?')) {
+      this.donor.companies.splice(index, 1);
+    }
+  }
+
+  private generateCompanyId(): string {
+    return 'company_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+  }
+
+  trackByCompanyId(index: number, company: CompanyInfo): string {
+    return company.id;
+  }
+
+  onOtherConnectionChange() {
+    // Clear relationship fields if "קשר אחר" is unchecked
+    if (this.donor && !this.donor.isOtherConnection) {
+      this.donor.relationshipType = '';
+      this.donor.relationshipOf = '';
+    }
+  }
+
+  // Action button methods
+  openGifts() {
+    // TODO: Implement gifts functionality
+    console.log('Opening gifts for donor:', this.donor?.id);
+    alert('פונקציונליות מתנות תבוצע בהמשך');
+  }
+
+  openDonations() {
+    // TODO: Implement donations functionality
+    console.log('Opening donations for donor:', this.donor?.id);
+    alert('פונקציונליות תרומות תבוצע בהמשך');
+  }
+
+  openReceipts() {
+    // TODO: Implement receipts functionality
+    console.log('Opening receipts for donor:', this.donor?.id);
+    alert('פונקציונליות הוצאת קבלות תבוצע בהמשך');
   }
 }

@@ -106,6 +106,103 @@
   margin-bottom: 8px;
 }
 
+/* Companies section */
+.company-organization {
+  .empty-message {
+    text-align: center;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 5px;
+    color: #6c757d;
+    margin: 15px 0;
+  }
+
+  .company-item {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+
+    .company-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #dee2e6;
+
+      h4 {
+        margin: 0;
+        color: #495057;
+        font-size: 16px;
+        font-weight: 600;
+      }
+    }
+
+    h5 {
+      margin-top: 20px;
+      margin-bottom: 15px;
+      color: #495057;
+      font-size: 14px;
+      font-weight: 600;
+    }
+  }
+}
+
+/* Action buttons section */
+.action-buttons {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+
+  .btn {
+    flex: 1;
+    min-width: 120px;
+    padding: 8px 16px;
+    border-radius: 5px;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+    
+    &.btn-outline-primary {
+      border-color: #007bff;
+      color: #007bff;
+      
+      &:hover {
+        background-color: #007bff;
+        color: white;
+      }
+    }
+    
+    &.btn-outline-success {
+      border-color: #28a745;
+      color: #28a745;
+      
+      &:hover {
+        background-color: #28a745;
+        color: white;
+      }
+    }
+    
+    &.btn-outline-info {
+      border-color: #17a2b8;
+      color: #17a2b8;
+      
+      &:hover {
+        background-color: #17a2b8;
+        color: white;
+      }
+    }
+  }
+}
+
 /* Personal dates section */
 .personal-dates-section {
   margin-top: 20px;

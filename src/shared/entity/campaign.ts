@@ -134,6 +134,37 @@ export class Campaign extends IdEntity {
   })
   status: 'draft' | 'active' | 'completed' | 'cancelled' = 'draft'
 
+  // New fields for enhanced campaign functionality
+  @Fields.string({
+    caption: 'מיקום האירוע',
+  })
+  eventLocation = ''
+
+  @Fields.boolean({
+    caption: 'אנ"ש',
+  })
+  isAnash = false
+
+  @Fields.string({
+    caption: 'מעמד',
+  })
+  status2 = '' // Additional status field
+
+  @Fields.string({
+    caption: 'סוג קמפיין',
+  })
+  campaignType: 'רגיל' | 'דינעער' | '' = 'רגיל'
+
+  @Fields.date({
+    caption: 'תאריך התחלה עברי',
+  })
+  hebrewStartDate?: Date
+
+  @Fields.date({
+    caption: 'תאריך סיום עברי',
+  })
+  hebrewEndDate?: Date
+
   get progressPercentage() {
     if (this.targetAmount === 0) return 0
     return Math.min(100, Math.round((this.raisedAmount / this.targetAmount) * 100))

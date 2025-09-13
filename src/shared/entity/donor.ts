@@ -13,6 +13,22 @@ import { PhoneField } from '../../app/common/fields/PhoneField'
 import { User } from './user'
 import { Roles } from '../enum/roles'
 
+export interface CompanyInfo {
+  id: string
+  name: string
+  number: string
+  role: string
+  street1: string
+  street2: string
+  neighborhood: string
+  city: string
+  zipCode: string
+  country: string
+  phone: string
+  email: string
+  website: string
+}
+
 @Entity<Donor>('donors', {
   allowApiCrud: Allow.authenticated,
   allowApiRead: Allow.authenticated,
@@ -199,6 +215,26 @@ export class Donor extends IdEntity {
   spouseName = ''
 
   @Fields.string({
+    caption: 'שם האב',
+  })
+  fatherName = ''
+
+  @Fields.string({
+    caption: 'שם החותן',
+  })
+  fatherInLawName = ''
+
+  @Fields.string({
+    caption: 'קישור משפחתי',
+  })
+  familyConnection = ''
+
+  @Fields.string({
+    caption: 'הערות קישור משפחתי',
+  })
+  familyConnectionNotes = ''
+
+  @Fields.string({
     caption: 'מצב משפחתי',
   })
   maritalStatus: 'married' | 'single' | 'widowed' | 'divorced' | '' = ''
@@ -236,19 +272,45 @@ export class Donor extends IdEntity {
   level: 'platinum' | 'gold' | 'silver' | 'regular' | '' = ''
 
   @Fields.string({
-    caption: 'איזור',
-  })
-  region: 'center' | 'north' | 'south' | 'jerusalem' | '' = ''
-
-  @Fields.string({
     caption: 'חוג',
   })
   circle = ''
 
-  @Fields.string({
-    caption: 'קבוצת גיל',
+  // Donor characterization fields
+  @Fields.boolean({
+    caption: 'אנ"ש',
   })
-  ageGroup: '18-30' | '31-45' | '46-60' | '60+' | '' = ''
+  isAnash = false
+
+  @Fields.boolean({
+    caption: 'בוגר',
+  })
+  isAlumni = false
+
+  @Fields.boolean({
+    caption: 'קשר אחר',
+  })
+  isOtherConnection = false
+
+  @Fields.string({
+    caption: 'סוג קשר',
+  })
+  relationshipType = '' // אבא/סבא/ידיד
+
+  @Fields.string({
+    caption: 'קשר של',
+  })
+  relationshipOf = '' // שם האדם שהתורם קשור אליו
+
+  @Fields.string({
+    caption: 'ריגושים',
+  })
+  interests = ''
+
+  @Fields.string({
+    caption: 'תחביבים',
+  })
+  hobbies = ''
 
   // Contact preferences
   @Fields.string({
@@ -317,6 +379,37 @@ export class Donor extends IdEntity {
     caption: 'מעדיף פגישה במשרד',
   })
   preferOfficeVisit = false
+
+  @Fields.boolean({
+    caption: 'בתיאום טלפוני',
+  })
+  requirePhoneCoordination = false
+
+  @Fields.boolean({
+    caption: 'בזמנים מיוחדים: פסח/סוכות',
+  })
+  preferSpecialTimes = false
+
+  @Fields.boolean({
+    caption: 'בקבלת קהל',
+  })
+  preferPublicReception = false
+
+  @Fields.boolean({
+    caption: 'שליחת מכתבים באימייל בלבד',
+  })
+  emailOnlyCorrespondence = false
+
+  @Fields.boolean({
+    caption: 'הוספה אוטומטית לאירועים (לפי מיקום)',
+  })
+  autoAddToLocationEvents = false
+
+  // Companies and Organizations fields
+  @Fields.json({
+    caption: 'חברות ועמותות',
+  })
+  companies: CompanyInfo[] = []
 
   @Fields.boolean({
     caption: 'תורם פעיל',

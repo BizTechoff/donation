@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { remult } from 'remult';
 import { Campaign } from '../../../shared/entity/campaign';
 import { User } from '../../../shared/entity/user';
+import { Blessing } from '../../../shared/entity/blessing';
 import { I18nService } from '../../i18n/i18n.service';
 
 @Component({
@@ -215,6 +216,65 @@ export class CampaignsListComponent implements OnInit {
     return this.campaigns
       .filter(c => c.status === 'active')
       .reduce((sum, c) => sum + c.raisedAmount, 0);
+  }
+
+  // New methods for enhanced campaign functionality
+  onStartDateChange(date: Date | null) {
+    if (this.editingCampaign) {
+      this.editingCampaign.startDate = date || new Date();
+      this.editingCampaign.hebrewStartDate = date || undefined;
+    }
+  }
+
+  onEndDateChange(date: Date | null) {
+    if (this.editingCampaign) {
+      this.editingCampaign.endDate = date || undefined;
+      this.editingCampaign.hebrewEndDate = date || undefined;
+    }
+  }
+
+  onLocationChange() {
+    if (this.editingCampaign && this.editingCampaign.eventLocation) {
+      // Auto-set currency based on location (example logic)
+      const location = this.editingCampaign.eventLocation.toLowerCase();
+      if (location.includes('ארה"ב') || location.includes('america') || location.includes('usa')) {
+        this.editingCampaign.currency = 'USD';
+      } else if (location.includes('אירופה') || location.includes('europe')) {
+        this.editingCampaign.currency = 'EUR';
+      } else {
+        this.editingCampaign.currency = 'ILS';
+      }
+    }
+  }
+
+  onCampaignTypeChange() {
+    // Any specific logic when campaign type changes
+    console.log('Campaign type changed to:', this.editingCampaign?.campaignType);
+  }
+
+  // Action button methods
+  openBlessingsBook() {
+    if (!this.editingCampaign?.id) return;
+    
+    // TODO: Implement blessings book functionality
+    console.log('Opening blessings book for campaign:', this.editingCampaign.id);
+    alert(`ספר ברכות עבור קמפיין "${this.editingCampaign.name}" יפתח בקרוב`);
+  }
+
+  openDonors() {
+    if (!this.editingCampaign?.id) return;
+    
+    // TODO: Implement donors functionality
+    console.log('Opening donors for campaign:', this.editingCampaign.id);
+    alert(`רשימת תורמים עבור קמפיין "${this.editingCampaign.name}" תפתח בקרוב`);
+  }
+
+  openContacts() {
+    if (!this.editingCampaign?.id) return;
+    
+    // TODO: Implement contacts functionality
+    console.log('Opening contacts for campaign:', this.editingCampaign.id);
+    alert(`אנשי קשר ופעילים עבור קמפיין "${this.editingCampaign.name}" יפתח בקרוב`);
   }
 
 }

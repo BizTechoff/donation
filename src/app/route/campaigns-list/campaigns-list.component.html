@@ -193,23 +193,59 @@
         
         <div class="form-group">
           <label>{{ (i18n.terms$ | async)?.currency }}</label>
-          <select class="form-control" [(ngModel)]="editingCampaign!.currency">
+          <select class="form-control" [(ngModel)]="editingCampaign!.currency" (change)="onLocationChange()">
             <option value="ILS">{{ (i18n.terms$ | async)?.shekelOption }}</option>
             <option value="USD">{{ (i18n.terms$ | async)?.dollarOption }}</option>
             <option value="EUR">{{ (i18n.terms$ | async)?.euroOption }}</option>
           </select>
         </div>
         
+        <!-- New fields -->
         <div class="form-group">
-          <label>{{ (i18n.terms$ | async)?.startDate }} *</label>
-          <input type="date" class="form-control" 
-                 [(ngModel)]="editingCampaign!.startDate">
+          <label>מיקום האירוע</label>
+          <input type="text" class="form-control" 
+                 [(ngModel)]="editingCampaign!.eventLocation" 
+                 (ngModelChange)="onLocationChange()"
+                 placeholder="מיקום האירוע">
         </div>
         
         <div class="form-group">
-          <label>{{ (i18n.terms$ | async)?.endDate }}</label>
-          <input type="date" class="form-control" 
-                 [(ngModel)]="editingCampaign!.endDate">
+          <label>מעמד</label>
+          <input type="text" class="form-control" 
+                 [(ngModel)]="editingCampaign!.status2" 
+                 placeholder="מעמד האירוע">
+        </div>
+        
+        <div class="form-group">
+          <label>סוג קמפיין</label>
+          <select class="form-control" [(ngModel)]="editingCampaign!.campaignType" (change)="onCampaignTypeChange()">
+            <option value="רגיל">רגיל</option>
+            <option value="דינעער">דינעער</option>
+          </select>
+        </div>
+        
+        <div class="form-group checkbox-group">
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="editingCampaign!.isAnash"> אנ"ש
+          </label>
+        </div>
+        
+        <!-- Start Date with Hebrew-Gregorian picker -->
+        <div class="form-group full-width">
+          <app-modern-dual-date-picker
+            [(ngModel)]="editingCampaign!.startDate"
+            [label]="'תאריך התחלה'"
+            (dateChange)="onStartDateChange($event)">
+          </app-modern-dual-date-picker>
+        </div>
+        
+        <!-- End Date with Hebrew-Gregorian picker -->
+        <div class="form-group full-width">
+          <app-modern-dual-date-picker
+            [(ngModel)]="editingCampaign!.endDate"
+            [label]="'תאריך סיום'"
+            (dateChange)="onEndDateChange($event)">
+          </app-modern-dual-date-picker>
         </div>
         
         <div class="form-group">
@@ -272,8 +308,27 @@
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-secondary" (click)="closeModal()">{{ (i18n.terms$ | async)?.cancel }}</button>
-      <button class="btn btn-primary" (click)="saveCampaign()">{{ (i18n.terms$ | async)?.saveCampaign }}</button>
+      <!-- Action buttons for dinner campaigns -->
+      <div class="action-buttons" *ngIf="editingCampaign?.campaignType === 'דינעער' && editingCampaign && !editingCampaign._.isNew()">
+        <button class="btn btn-info" (click)="openBlessingsBook()" title="ספר ברכות">
+          📖 ספר ברכות
+        </button>
+      </div>
+      
+      <!-- Regular action buttons -->
+      <div class="action-buttons" *ngIf="editingCampaign && !editingCampaign._.isNew()">
+        <button class="btn btn-outline-primary" (click)="openDonors()" title="תורמים">
+          👥 תורמים
+        </button>
+        <button class="btn btn-outline-success" (click)="openContacts()" title="אנשי קשר ופעילים">
+          📞 אנשי קשר ופעילים
+        </button>
+      </div>
+      
+      <div class="main-buttons">
+        <button class="btn btn-secondary" (click)="closeModal()">{{ (i18n.terms$ | async)?.cancel }}</button>
+        <button class="btn btn-primary" (click)="saveCampaign()">{{ (i18n.terms$ | async)?.saveCampaign }}</button>
+      </div>
     </div>
   </div>
 </div>
