@@ -641,6 +641,291 @@
   }
 }
 
+// Reports tabs styling
+.reports-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 25px;
+  border-bottom: 2px solid #e1e8ed;
+  padding-bottom: 0;
+  overflow-x: auto;
+  
+  .tab-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px 8px 0 0;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #6c757d;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    border-bottom: 3px solid transparent;
+    
+    .tab-icon {
+      font-size: 1.1rem;
+    }
+    
+    &:hover {
+      color: #495057;
+      background: #f8f9fa;
+    }
+    
+    &.active {
+      color: #3498db;
+      background: white;
+      border-bottom-color: #3498db;
+      font-weight: 600;
+    }
+  }
+}
+
+// Specific filters styling
+.specific-filters {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 25px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  
+  .filter-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    align-items: end;
+    
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      
+      label {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #34495e;
+      }
+      
+      .form-control {
+        padding: 10px 12px;
+        border: 2px solid #e1e8ed;
+        border-radius: 6px;
+        font-size: 0.95rem;
+        transition: border-color 0.3s ease;
+        
+        &:focus {
+          outline: none;
+          border-color: #3498db;
+        }
+      }
+    }
+    
+    .print-settings {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      
+      .checkbox-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.9rem;
+        cursor: pointer;
+        
+        input[type="checkbox"] {
+          width: 16px;
+          height: 16px;
+          cursor: pointer;
+        }
+      }
+    }
+  }
+}
+
+// Report content styling
+.report-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+  
+  .summary-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e1e8ed;
+    transition: all 0.3s ease;
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+    }
+    
+    .summary-icon {
+      font-size: 2.5rem;
+      padding: 15px;
+      border-radius: 50%;
+      background: #f8f9fa;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .summary-content {
+      flex: 1;
+      
+      h3 {
+        margin: 0 0 8px 0;
+        font-size: 0.9rem;
+        color: #7f8c8d;
+        font-weight: 600;
+      }
+      
+      .summary-number {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #2c3e50;
+      }
+    }
+  }
+}
+
+.report-table {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    
+    thead {
+      background: #f8f9fa;
+      
+      th {
+        padding: 15px 12px;
+        text-align: right;
+        font-weight: 600;
+        color: #2c3e50;
+        border-bottom: 2px solid #dee2e6;
+        font-size: 0.9rem;
+      }
+    }
+    
+    tbody {
+      tr {
+        border-bottom: 1px solid #dee2e6;
+        transition: background-color 0.3s ease;
+        
+        &:hover {
+          background: #f8f9fa;
+        }
+        
+        &.status-fullyPaid {
+          background: rgba(40, 167, 69, 0.05);
+        }
+        
+        &.status-partiallyPaid {
+          background: rgba(255, 193, 7, 0.05);
+        }
+        
+        &.status-notPaid {
+          background: rgba(220, 53, 69, 0.05);
+        }
+        
+        td {
+          padding: 15px 12px;
+          vertical-align: middle;
+          font-size: 0.95rem;
+          
+          .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-align: center;
+            
+            &.status-fullyPaid {
+              background: #d4edda;
+              color: #155724;
+            }
+            
+            &.status-partiallyPaid {
+              background: #fff3cd;
+              color: #856404;
+            }
+            
+            &.status-notPaid {
+              background: #f8d7da;
+              color: #721c24;
+            }
+            
+            &.status-ממתין {
+              background: #fff3cd;
+              color: #856404;
+            }
+            
+            &.status-אישר {
+              background: #d4edda;
+              color: #155724;
+            }
+            
+            &.status-סירב {
+              background: #f8d7da;
+              color: #721c24;
+            }
+            
+            &.status-בתהליך {
+              background: #d1ecf1;
+              color: #0c5460;
+            }
+          }
+          
+          .blessing-type {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-align: center;
+            
+            &.blessing-ready {
+              background: #d4edda;
+              color: #155724;
+            }
+            
+            &.blessing-custom {
+              background: #d1ecf1;
+              color: #0c5460;
+            }
+            
+            &.blessing-none {
+              background: #f8d7da;
+              color: #721c24;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+.report-subtitle {
+  color: #6c757d;
+  font-style: italic;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
 @media (max-width: 768px) {
   .reports-container {
     padding: 1rem;
@@ -672,6 +957,30 @@
         text-orientation: unset;
         transform: rotate(-45deg);
       }
+    }
+  }
+  
+  .reports-tabs {
+    justify-content: flex-start;
+    
+    .tab-button {
+      flex-shrink: 0;
+    }
+  }
+  
+  .specific-filters .filter-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .report-summary {
+    grid-template-columns: 1fr;
+  }
+  
+  .report-table {
+    overflow-x: auto;
+    
+    .data-table {
+      min-width: 700px;
     }
   }
 }

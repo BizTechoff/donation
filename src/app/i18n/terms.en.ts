@@ -907,6 +907,58 @@ export const termsEn = {
   describeCampaignGoals: 'Describe campaign goals...',
   notesForTeam: 'Notes for team...',
 
+  // Reports menu terms
+  reportsMenu: 'Reports',
+  donationsReport: 'Donations Report',
+  paymentsReport: 'Payments Report',
+  yearlySummaryReport: 'Yearly Summary Report',
+  blessingsReport: 'Blessings Report',
+  generalReports: 'General Reports',
+  
+  // Donations Report
+  donationsReportTitle: 'Donations Report - Actual Amount Given',
+  filterByDonor: 'Filter by Donor',
+  filterByDonorType: 'Filter by Donor Type',
+  filterByYears: 'Filter by Years',
+  filterByCampaign: 'Filter by Campaign',
+  yearlyDetail: 'Yearly Detail',
+  printDonationRows: 'Print Donation Rows',
+  printAttachedFiles: 'Print Attached Files',
+  attachedPhotos: 'Donation Photos',
+  donorNameTag: 'Donor Name Tag',
+  addDonorNameTag: 'Add Donor Name Tag',
+  tagPosition: 'Tag Position on Page',
+  
+  // Payments Report
+  paymentsReportTitle: 'Payments Report - Commitment vs Actual',
+  commitmentVsActual: 'Commitment vs Actual',
+  promisedAmount: 'Promised Amount',
+  actualAmount: 'Actual Amount',
+  remainingDebt: 'Remaining Debt',
+  paymentStatus: 'Payment Status',
+  fullyPaid: 'Fully Paid',
+  partiallyPaid: 'Partially Paid',
+  notPaid: 'Not Paid',
+  
+  // Yearly Summary Report
+  yearlySummaryTitle: 'Yearly Summary Report by Currency',
+  summaryByCurrency: 'Summary by Currency',
+  totalByShekel: 'Total in Shekels',
+  currencyBreakdown: 'Currency Breakdown',
+  
+  // Blessings Report
+  blessingsReportTitle: 'Blessings Report',
+  blessingTypeSelection: 'Chosen Blessing Type',
+  totalBlessingsCount: 'Total Blessings Count',
+  trackingPurpose: 'For tracking the return of blessings book from printing',
+  preMadeBlessings: 'Pre-made Blessings',
+  customBlessings: 'Custom Blessings',
+  notChosenBlessings: 'Not Yet Chosen',
+
+  // Common terms
+  donorType: 'Donor Type',
+  year: 'Year',
+
   // Donor modal terms
   addNewDonorModal: 'Add New Donor',
   familyInformation: 'Family Information',

@@ -7,6 +7,7 @@ import { I18nService } from '../../../i18n/i18n.service';
 
 export interface DonationDetailsModalArgs {
   donationId: string; // Can be 'new' for new donation or donation ID
+  donorId?: string; // Optional donor ID for pre-selecting donor in new donations
 }
 
 @Component({
@@ -52,6 +53,12 @@ export class DonationDetailsModalComponent implements OnInit {
         this.donation.donationDate = new Date();
         this.donation.currency = 'ILS';
         this.donation.status = 'pending';
+        
+        // Pre-select donor if donorId is provided
+        if (this.args.donorId) {
+          this.donation.donorId = this.args.donorId;
+        }
+        
         this.originalDonationData = JSON.stringify(this.donation);
       } else {
         this.isNewDonation = false;

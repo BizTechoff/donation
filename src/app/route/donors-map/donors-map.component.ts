@@ -1,4 +1,5 @@
 import { Component, ElementRef, OnInit, ViewChild, AfterViewInit, OnDestroy } from '@angular/core';
+import { Router } from '@angular/router';
 import { remult } from 'remult';
 import * as L from 'leaflet';
 import { Donor } from '../../../shared/entity/donor';
@@ -44,7 +45,8 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   constructor(
     private geocodingService: GeocodingService,
-    public i18n: I18nService
+    public i18n: I18nService,
+    private router: Router
   ) {}
 
   // סטטיסטיקות
@@ -68,6 +70,15 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   async ngOnInit() {
+    // Register global functions for popup callbacks
+    (window as any).openDonorDetails = (donorId: string) => {
+      this.openDonorDetails(donorId);
+    };
+    
+    (window as any).addDonationForDonor = (donorId: string) => {
+      this.addDonationForDonor(donorId);
+    };
+
     await this.loadData();
   }
 
@@ -80,11 +91,7 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     }, 250);
   }
 
-  ngOnDestroy() {
-    if (this.map) {
-      this.map.remove();
-    }
-  }
+  // This ngOnDestroy method was moved to the end of the class
 
   async loadData() {
     this.loading = true;
@@ -379,10 +386,27 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     const textAlign = this.i18n.lang.RTL ? 'right' : 'left';
     
     return `
-      <div style="direction: ${direction}; font-family: Arial, sans-serif; min-width: 200px; text-align: ${textAlign};">
-        <h4 style="margin: 0 0 10px 0; color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 5px;">
-          ${donor.displayName}
-        </h4>
+      <div style="direction: ${direction}; font-family: Arial, sans-serif; min-width: 250px; text-align: ${textAlign};">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+          <h4 style="margin: 0; color: #2c3e50; cursor: pointer; text-decoration: underline;" onclick="window.openDonorDetails('${donor.id}')">
+            ${donor.displayName}
+          </h4>
+          <button style="
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+          " onclick="window.addDonationForDonor('${donor.id}')" onmouseover="this.style.backgroundColor='#229954'" onmouseout="this.style.backgroundColor='#27ae60'">
+            + הוסף תרומה
+          </button>
+        </div>
+        
+        <div style="border-bottom: 2px solid #3498db; margin-bottom: 10px;"></div>
+        
         <div style="margin-bottom: 8px;">
           <strong>📍 ${this.i18n.terms.addressLabel}:</strong><br>
           ${donor.fullAddress || this.i18n.terms.notSpecifiedAddress}
@@ -469,5 +493,31 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     if (updatedCount > 0) {
       this.addMarkersToMap();
     }
+  }
+
+  // Navigation and action methods for popup buttons
+  openDonorDetails(donorId: string) {
+    // Navigate to donor details page
+    this.router.navigate(['/donor-details'], { queryParams: { id: donorId } });
+  }
+
+  addDonationForDonor(donorId: string) {
+    // Navigate to donations list with the donor pre-selected for new donation
+    this.router.navigate(['/donations-list'], { 
+      queryParams: { 
+        action: 'add',
+        donorId: donorId
+      } 
+    });
+  }
+
+  ngOnDestroy() {
+    if (this.map) {
+      this.map.remove();
+    }
+    
+    // Clean up global functions
+    delete (window as any).openDonorDetails;
+    delete (window as any).addDonationForDonor;
   }
 }

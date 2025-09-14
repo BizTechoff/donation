@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { remult } from 'remult';
 import { Donation, Donor, Campaign, DonationMethod } from '../../../shared/entity';
 import { I18nService } from '../../i18n/i18n.service';
@@ -33,10 +34,17 @@ export class DonationsListComponent implements OnInit {
   hebrewDate = '';
   fundraiserName = '';
 
-  constructor(public i18n: I18nService, private ui: UIToolsService) {}
+  constructor(public i18n: I18nService, private ui: UIToolsService, private route: ActivatedRoute) {}
 
   async ngOnInit() {
     await this.loadData();
+    
+    // Check for query parameters to handle actions from map popup
+    this.route.queryParams.subscribe(params => {
+      if (params['action'] === 'add' && params['donorId']) {
+        this.createDonationForDonor(params['donorId']);
+      }
+    });
   }
 
   async loadData() {
@@ -93,6 +101,13 @@ export class DonationsListComponent implements OnInit {
 
   async createDonation() {
     const changed = await this.ui.donationDetailsDialog('new');
+    if (changed) {
+      await this.loadDonations();
+    }
+  }
+
+  async createDonationForDonor(donorId: string) {
+    const changed = await this.ui.donationDetailsDialog('new', { donorId });
     if (changed) {
       await this.loadDonations();
     }

@@ -10,12 +10,16 @@
         <span class="btn-icon">🔄</span>
         {{ (i18n.terms$ | async)?.refreshData }}
       </button>
-      <div class="export-buttons">
-        <button class="btn btn-outline" (click)="exportReport('excel')">
+      <div class="export-buttons" *ngIf="activeReport !== 'general'">
+        <button class="btn btn-outline" (click)="printReport()">
+          <span class="btn-icon">🖨️</span>
+          {{ (i18n.terms$ | async)?.print }}
+        </button>
+        <button class="btn btn-outline" (click)="exportSpecificReport('excel')">
           <span class="btn-icon">📊</span>
           Excel
         </button>
-        <button class="btn btn-outline" (click)="exportReport('pdf')">
+        <button class="btn btn-outline" (click)="exportSpecificReport('pdf')">
           <span class="btn-icon">📄</span>
           PDF
         </button>
@@ -23,8 +27,32 @@
     </div>
   </div>
 
-  <!-- מסנן תאריכים -->
-  <div class="date-filter">
+  <!-- תפריט טאבים -->
+  <div class="reports-tabs">
+    <button class="tab-button" [class.active]="activeReport === 'general'" (click)="switchReport('general')">
+      <span class="tab-icon">📊</span>
+      {{ (i18n.terms$ | async)?.generalReports }}
+    </button>
+    <button class="tab-button" [class.active]="activeReport === 'donations'" (click)="switchReport('donations')">
+      <span class="tab-icon">💰</span>
+      {{ (i18n.terms$ | async)?.donationsReport }}
+    </button>
+    <button class="tab-button" [class.active]="activeReport === 'payments'" (click)="switchReport('payments')">
+      <span class="tab-icon">💳</span>
+      {{ (i18n.terms$ | async)?.paymentsReport }}
+    </button>
+    <button class="tab-button" [class.active]="activeReport === 'yearly'" (click)="switchReport('yearly')">
+      <span class="tab-icon">📅</span>
+      {{ (i18n.terms$ | async)?.yearlySummaryReport }}
+    </button>
+    <button class="tab-button" [class.active]="activeReport === 'blessings'" (click)="switchReport('blessings')">
+      <span class="tab-icon">📖</span>
+      {{ (i18n.terms$ | async)?.blessingsReport }}
+    </button>
+  </div>
+
+  <!-- מסנן תאריכים - רק לדוח הכללי -->
+  <div class="date-filter" *ngIf="activeReport === 'general'">
     <div class="filter-group">
       <label>{{ (i18n.terms$ | async)?.dateFrom }}</label>
       <input type="date" class="form-control" 
@@ -39,6 +67,60 @@
     </div>
   </div>
 
+  <!-- מסננים ספציפיים לדוחות -->
+  <div class="specific-filters" *ngIf="activeReport !== 'general'">
+    <div class="filter-row">
+      <!-- מסנן תורם -->
+      <div class="filter-group" *ngIf="activeReport === 'donations' || activeReport === 'payments'">
+        <label>{{ (i18n.terms$ | async)?.filterByDonor }}</label>
+        <select class="form-control" [(ngModel)]="filters.selectedDonor" (ngModelChange)="applyFilters()">
+          <option value="">{{ (i18n.terms$ | async)?.all }}</option>
+          <option *ngFor="let donor of availableDonors" [value]="donor.id">{{donor.displayName}}</option>
+        </select>
+      </div>
+
+      <!-- מסנן סוג תורם -->
+      <div class="filter-group" *ngIf="activeReport === 'donations'">
+        <label>{{ (i18n.terms$ | async)?.filterByDonorType }}</label>
+        <select class="form-control" [(ngModel)]="filters.selectedDonorType" (ngModelChange)="applyFilters()">
+          <option value="">{{ (i18n.terms$ | async)?.all }}</option>
+          <option *ngFor="let type of donorTypes" [value]="type">{{type}}</option>
+        </select>
+      </div>
+
+      <!-- מסנן שנה -->
+      <div class="filter-group" *ngIf="activeReport === 'donations' || activeReport === 'yearly'">
+        <label>{{ (i18n.terms$ | async)?.filterByYears }}</label>
+        <select class="form-control" [(ngModel)]="filters.selectedYear" (ngModelChange)="applyFilters()">
+          <option *ngFor="let year of availableYears" [value]="year">{{year}}</option>
+        </select>
+      </div>
+
+      <!-- מסנן קמפיין -->
+      <div class="filter-group" *ngIf="activeReport === 'donations'">
+        <label>{{ (i18n.terms$ | async)?.filterByCampaign }}</label>
+        <select class="form-control" [(ngModel)]="filters.selectedCampaign" (ngModelChange)="applyFilters()">
+          <option value="">{{ (i18n.terms$ | async)?.all }}</option>
+          <option *ngFor="let campaign of availableCampaigns" [value]="campaign.id">{{campaign.name}}</option>
+        </select>
+      </div>
+
+      <!-- הגדרות הדפסה -->
+      <div class="print-settings" *ngIf="activeReport === 'donations'">
+        <label class="checkbox-label">
+          <input type="checkbox" [(ngModel)]="printSettings.includeDonorNameTag">
+          {{ (i18n.terms$ | async)?.addDonorNameTag }}
+        </label>
+        <select class="form-control" [(ngModel)]="printSettings.tagPosition" *ngIf="printSettings.includeDonorNameTag">
+          <option value="top-right">{{ (i18n.terms$ | async)?.tagPosition }} - ימין עליון</option>
+          <option value="top-left">{{ (i18n.terms$ | async)?.tagPosition }} - שמאל עליון</option>
+          <option value="bottom-right">{{ (i18n.terms$ | async)?.tagPosition }} - ימין תחתון</option>
+          <option value="bottom-left">{{ (i18n.terms$ | async)?.tagPosition }} - שמאל תחתון</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
   <!-- מסך טעינה -->
   <div *ngIf="loading" class="loading-overlay">
     <div class="loading-spinner">
@@ -47,200 +129,415 @@
     </div>
   </div>
 
+  <!-- תוכן הדוחות -->
   <div *ngIf="!loading" class="reports-content">
     
-    <!-- סטטיסטיקות כלליות -->
-    <div class="stats-section">
-      <h2>{{ (i18n.terms$ | async)?.generalStatistics }}</h2>
-      <div class="stats-grid">
-        <div class="stat-card total-donations">
-          <div class="stat-icon">💰</div>
-          <div class="stat-content">
-            <h3>{{ (i18n.terms$ | async)?.totalDonationsAmount }}</h3>
-            <div class="stat-number">{{formatCurrency(totalStats.amount)}}</div>
-            <div class="stat-subtitle">{{totalStats.donations}} {{ (i18n.terms$ | async)?.donationsUnit }}</div>
-          </div>
-        </div>
-        
-        <div class="stat-card active-donors">
-          <div class="stat-icon">👥</div>
-          <div class="stat-content">
-            <h3>{{ (i18n.terms$ | async)?.activeDonorsTitle }}</h3>
-            <div class="stat-number">{{totalStats.donors}}</div>
-            <div class="stat-subtitle">{{ (i18n.terms$ | async)?.registeredInSystemLabel }}</div>
-          </div>
-        </div>
-        
-        <div class="stat-card avg-donation">
-          <div class="stat-icon">📈</div>
-          <div class="stat-content">
-            <h3>{{ (i18n.terms$ | async)?.averageDonation }}</h3>
-            <div class="stat-number">{{formatCurrency(totalStats.avgDonation)}}</div>
-            <div class="stat-subtitle">{{ (i18n.terms$ | async)?.perDonation }}</div>
-          </div>
-        </div>
-        
-        <div class="stat-card recurring-amount">
-          <div class="stat-icon">🔄</div>
-          <div class="stat-content">
-            <h3>{{ (i18n.terms$ | async)?.fixedIncome }}</h3>
-            <div class="stat-number">{{formatCurrency(totalStats.recurringAmount)}}</div>
-            <div class="stat-subtitle">{{ (i18n.terms$ | async)?.monthly }}</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- מגמות חודשיות -->
-    <div class="trends-section">
-      <h2>{{ (i18n.terms$ | async)?.monthlyTrends }}</h2>
-      <div class="chart-container">
-        <div class="monthly-chart">
-          <div class="chart-bars">
-            <div *ngFor="let month of monthlyData" class="bar-group">
-              <div class="bar donations-bar" 
-                   [style.height.%]="(month.donations / getMaxDonations()) * 100"
-                   [title]="month.donations + ' ' + (i18n.terms$ | async)?.donationsUnit">
-              </div>
-              <div class="bar amount-bar" 
-                   [style.height.%]="(month.amount / getMaxAmount()) * 100"
-                   [title]="formatCurrency(month.amount)">
-              </div>
-              <div class="bar-label">{{month.month}}</div>
+    <!-- דוח כללי -->
+    <div *ngIf="activeReport === 'general'" class="general-report">
+      
+      <!-- סטטיסטיקות כלליות -->
+      <div class="stats-section">
+        <h2>{{ (i18n.terms$ | async)?.generalStatistics }}</h2>
+        <div class="stats-grid">
+          <div class="stat-card total-donations">
+            <div class="stat-icon">💰</div>
+            <div class="stat-content">
+              <h3>{{ (i18n.terms$ | async)?.totalDonationsAmount }}</h3>
+              <div class="stat-number">{{formatCurrency(totalStats.amount)}}</div>
+              <div class="stat-subtitle">{{totalStats.donations}} {{ (i18n.terms$ | async)?.donationsUnit }}</div>
             </div>
           </div>
-          <div class="chart-legend">
-            <div class="legend-item">
-              <span class="legend-color donations"></span>
-              <span>{{ (i18n.terms$ | async)?.donationsAmount }}</span>
+          
+          <div class="stat-card active-donors">
+            <div class="stat-icon">👥</div>
+            <div class="stat-content">
+              <h3>{{ (i18n.terms$ | async)?.activeDonorsTitle }}</h3>
+              <div class="stat-number">{{totalStats.donors}}</div>
+              <div class="stat-subtitle">{{ (i18n.terms$ | async)?.registeredInSystemLabel }}</div>
             </div>
-            <div class="legend-item">
-              <span class="legend-color amount"></span>
-              <span>{{ (i18n.terms$ | async)?.donationsSum }}</span>
+          </div>
+          
+          <div class="stat-card avg-donation">
+            <div class="stat-icon">📈</div>
+            <div class="stat-content">
+              <h3>{{ (i18n.terms$ | async)?.averageDonation }}</h3>
+              <div class="stat-number">{{formatCurrency(totalStats.avgDonation)}}</div>
+              <div class="stat-subtitle">{{ (i18n.terms$ | async)?.perDonation }}</div>
+            </div>
+          </div>
+          
+          <div class="stat-card recurring-amount">
+            <div class="stat-icon">🔄</div>
+            <div class="stat-content">
+              <h3>{{ (i18n.terms$ | async)?.fixedIncome }}</h3>
+              <div class="stat-number">{{formatCurrency(totalStats.recurringAmount)}}</div>
+              <div class="stat-subtitle">{{ (i18n.terms$ | async)?.monthly }}</div>
             </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- ניתוח קמפיינים -->
-    <div class="campaigns-analysis">
-      <h2>{{ (i18n.terms$ | async)?.campaignPerformance }}</h2>
-      <div class="analysis-grid">
-        <div class="chart-section">
-          <h3>{{ (i18n.terms$ | async)?.donationDistributionByCampaign }}</h3>
-          <div class="pie-chart-container">
-            <div class="pie-chart">
-              <div *ngFor="let campaign of campaignData.slice(0, 6); let i = index" 
-                   class="pie-slice" 
-                   [style.--percentage]="campaign.percentage"
-                   [style.--color]="getPieColor(i)"
-                   [title]="campaign.label + ': ' + formatCurrency(campaign.value)">
+      <!-- מגמות חודשיות -->
+      <div class="trends-section">
+        <h2>{{ (i18n.terms$ | async)?.monthlyTrends }}</h2>
+        <div class="chart-container">
+          <div class="monthly-chart">
+            <div class="chart-bars">
+              <div *ngFor="let month of monthlyData" class="bar-group">
+                <div class="bar donations-bar" 
+                     [style.height.%]="(month.donations / getMaxDonations()) * 100"
+                     [title]="month.donations + ' ' + (i18n.terms$ | async)?.donationsUnit">
+                </div>
+                <div class="bar amount-bar" 
+                     [style.height.%]="(month.amount / getMaxAmount()) * 100"
+                     [title]="formatCurrency(month.amount)">
+                </div>
+                <div class="bar-label">{{month.month}}</div>
               </div>
             </div>
-            <div class="pie-legend">
-              <div *ngFor="let campaign of campaignData.slice(0, 6); let i = index" class="legend-item">
-                <span class="legend-color" [style.background-color]="getPieColor(i)"></span>
-                <span class="legend-text">{{campaign.label}}</span>
-                <span class="legend-value">{{formatPercentage(campaign.percentage!)}}</span>
+            <div class="chart-legend">
+              <div class="legend-item">
+                <span class="legend-color donations"></span>
+                <span>{{ (i18n.terms$ | async)?.donationsAmount }}</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-color amount"></span>
+                <span>{{ (i18n.terms$ | async)?.donationsSum }}</span>
               </div>
             </div>
           </div>
         </div>
-        
-        <div class="top-campaigns">
-          <h3>{{ (i18n.terms$ | async)?.topCampaigns }}</h3>
-          <div class="campaigns-list">
-            <div *ngFor="let campaign of topCampaigns" class="campaign-item">
-              <div class="campaign-info">
-                <strong>{{campaign.name}}</strong>
-                <div class="campaign-progress">
-                  <div class="progress-bar">
-                    <div class="progress-fill" 
-                         [style.width.%]="getProgressPercentage(campaign)">
-                    </div>
-                  </div>
-                  <span class="progress-text">
-                    {{formatCurrency(campaign.raisedAmount)}} / {{formatCurrency(campaign.targetAmount)}}
-                  </span>
+      </div>
+
+      <!-- ניתוח קמפיינים -->
+      <div class="campaigns-analysis">
+        <h2>{{ (i18n.terms$ | async)?.campaignPerformance }}</h2>
+        <div class="analysis-grid">
+          <div class="chart-section">
+            <h3>{{ (i18n.terms$ | async)?.donationDistributionByCampaign }}</h3>
+            <div class="pie-chart-container">
+              <div class="pie-chart">
+                <div *ngFor="let campaign of campaignData.slice(0, 6); let i = index" 
+                     class="pie-slice" 
+                     [style.--percentage]="campaign.percentage"
+                     [style.--color]="getPieColor(i)"
+                     [title]="campaign.label + ': ' + formatCurrency(campaign.value)">
                 </div>
               </div>
-              <div class="campaign-percentage">
-                {{getProgressPercentage(campaign)}}%
+              <div class="pie-legend">
+                <div *ngFor="let campaign of campaignData.slice(0, 6); let i = index" class="legend-item">
+                  <span class="legend-color" [style.background-color]="getPieColor(i)"></span>
+                  <span class="legend-text">{{campaign.label}}</span>
+                  <span class="legend-value">{{formatPercentage(campaign.percentage!)}}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="top-campaigns">
+            <h3>{{ (i18n.terms$ | async)?.topCampaigns }}</h3>
+            <div class="campaigns-list">
+              <div *ngFor="let campaign of topCampaigns" class="campaign-item">
+                <div class="campaign-info">
+                  <strong>{{campaign.name}}</strong>
+                  <div class="campaign-progress">
+                    <div class="progress-bar">
+                      <div class="progress-fill" 
+                           [style.width.%]="getProgressPercentage(campaign)">
+                      </div>
+                    </div>
+                    <span class="progress-text">
+                      {{formatCurrency(campaign.raisedAmount)}} / {{formatCurrency(campaign.targetAmount)}}
+                    </span>
+                  </div>
+                </div>
+                <div class="campaign-percentage">
+                  {{getProgressPercentage(campaign)}}%
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- ניתוח תורמים -->
-    <div class="donors-analysis">
-      <h2>{{ (i18n.terms$ | async)?.donorAnalysis }}</h2>
-      <div class="analysis-grid">
-        <div class="donor-types">
-          <h3>{{ (i18n.terms$ | async)?.distributionByDonorType }}</h3>
-          <div class="bar-chart">
-            <div *ngFor="let type of donorTypeData" class="bar-item">
-              <div class="bar-info">
-                <span class="bar-label">{{type.label}}</span>
-                <span class="bar-value">{{formatCurrency(type.value)}}</span>
+      <!-- ניתוח תורמים -->
+      <div class="donors-analysis">
+        <h2>{{ (i18n.terms$ | async)?.donorAnalysis }}</h2>
+        <div class="analysis-grid">
+          <div class="donor-types">
+            <h3>{{ (i18n.terms$ | async)?.distributionByDonorType }}</h3>
+            <div class="bar-chart">
+              <div *ngFor="let type of donorTypeData" class="bar-item">
+                <div class="bar-info">
+                  <span class="bar-label">{{type.label}}</span>
+                  <span class="bar-value">{{formatCurrency(type.value)}}</span>
+                </div>
+                <div class="bar-container">
+                  <div class="bar-fill" [style.width.%]="type.percentage"></div>
+                </div>
+                <div class="bar-percentage">{{formatPercentage(type.percentage!)}}</div>
               </div>
-              <div class="bar-container">
-                <div class="bar-fill" [style.width.%]="type.percentage"></div>
+            </div>
+          </div>
+          
+          <div class="top-donors">
+            <h3>{{ (i18n.terms$ | async)?.topDonors }}</h3>
+            <div class="donors-list">
+              <div *ngFor="let donorData of topDonors.slice(0, 8)" class="donor-item">
+                <div class="donor-info">
+                  <strong>{{donorData.donor.displayName}}</strong>
+                  <small>{{donorData.count}} {{ (i18n.terms$ | async)?.donationsUnit }}</small>
+                </div>
+                <div class="donor-amount">{{formatCurrency(donorData.total)}}</div>
               </div>
-              <div class="bar-percentage">{{formatPercentage(type.percentage!)}}</div>
             </div>
           </div>
         </div>
-        
-        <div class="top-donors">
-          <h3>{{ (i18n.terms$ | async)?.topDonors }}</h3>
-          <div class="donors-list">
-            <div *ngFor="let donorData of topDonors.slice(0, 8)" class="donor-item">
-              <div class="donor-info">
-                <strong>{{donorData.donor.displayName}}</strong>
-                <small>{{donorData.count}} {{ (i18n.terms$ | async)?.donationsUnit }}</small>
-              </div>
-              <div class="donor-amount">{{formatCurrency(donorData.total)}}</div>
+      </div>
+
+      <!-- ניתוח גיאוגרפי -->
+      <div class="geographic-analysis" *ngIf="regionData.length > 0">
+        <h2>{{ (i18n.terms$ | async)?.geographicDistribution }}</h2>
+        <div class="regions-chart">
+          <div *ngFor="let region of regionData" class="region-item">
+            <div class="region-info">
+              <span class="region-name">{{region.label}}</span>
+              <span class="region-amount">{{formatCurrency(region.value)}}</span>
             </div>
+            <div class="region-bar">
+              <div class="bar-fill" [style.width.%]="region.percentage"></div>
+            </div>
+            <span class="region-percentage">{{formatPercentage(region.percentage!)}}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- פעילות אחרונה -->
+      <div class="recent-activity">
+        <h2>{{ (i18n.terms$ | async)?.recentActivity }}</h2>
+        <div class="activity-list">
+          <div *ngFor="let activity of recentActivity.slice(0, 10)" class="activity-item">
+            <div class="activity-icon">💰</div>
+            <div class="activity-content">
+              <div class="activity-description">{{activity.description}}</div>
+              <div class="activity-details">
+                <span class="activity-date">{{formatDate(activity.date)}}</span>
+                <span class="activity-campaign" *ngIf="activity.campaign">• {{activity.campaign}}</span>
+              </div>
+            </div>
+            <div class="activity-amount">{{formatCurrency(activity.amount)}}</div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- ניתוח גיאוגרפי -->
-    <div class="geographic-analysis" *ngIf="regionData.length > 0">
-      <h2>{{ (i18n.terms$ | async)?.geographicDistribution }}</h2>
-      <div class="regions-chart">
-        <div *ngFor="let region of regionData" class="region-item">
-          <div class="region-info">
-            <span class="region-name">{{region.label}}</span>
-            <span class="region-amount">{{formatCurrency(region.value)}}</span>
+    <!-- דוח תרומות -->
+    <div *ngIf="activeReport === 'donations'" class="donations-report">
+      <h2>{{ (i18n.terms$ | async)?.donationsReportTitle }}</h2>
+      
+      <div class="report-summary">
+        <div class="summary-card">
+          <div class="summary-icon">💰</div>
+          <div class="summary-content">
+            <h3>סה"כ תרומות</h3>
+            <div class="summary-number">{{donationReportData.length}}</div>
           </div>
-          <div class="region-bar">
-            <div class="bar-fill" [style.width.%]="region.percentage"></div>
-          </div>
-          <span class="region-percentage">{{formatPercentage(region.percentage!)}}</span>
         </div>
+        <div class="summary-card">
+          <div class="summary-icon">💵</div>
+          <div class="summary-content">
+            <h3>סה"כ סכום</h3>
+            <div class="summary-number">{{formatCurrency(getTotalDonationAmount())}}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="report-table">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>{{ (i18n.terms$ | async)?.date }}</th>
+              <th>{{ (i18n.terms$ | async)?.donor }}</th>
+              <th>{{ (i18n.terms$ | async)?.donorType }}</th>
+              <th>{{ (i18n.terms$ | async)?.amount }}</th>
+              <th>{{ (i18n.terms$ | async)?.currency }}</th>
+              <th>{{ (i18n.terms$ | async)?.campaign }}</th>
+              <th>{{ (i18n.terms$ | async)?.year }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let donation of donationReportData">
+              <td>{{formatDate(donation.date)}}</td>
+              <td>{{donation.donorName}}</td>
+              <td>{{donation.donorType}}</td>
+              <td>{{formatCurrency(donation.amount)}}</td>
+              <td>{{donation.currency}}</td>
+              <td>{{donation.campaign}}</td>
+              <td>{{donation.year}}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
-    <!-- פעילות אחרונה -->
-    <div class="recent-activity">
-      <h2>{{ (i18n.terms$ | async)?.recentActivity }}</h2>
-      <div class="activity-list">
-        <div *ngFor="let activity of recentActivity.slice(0, 10)" class="activity-item">
-          <div class="activity-icon">💰</div>
-          <div class="activity-content">
-            <div class="activity-description">{{activity.description}}</div>
-            <div class="activity-details">
-              <span class="activity-date">{{formatDate(activity.date)}}</span>
-              <span class="activity-campaign" *ngIf="activity.campaign">• {{activity.campaign}}</span>
-            </div>
+    <!-- דוח תשלומים -->
+    <div *ngIf="activeReport === 'payments'" class="payments-report">
+      <h2>{{ (i18n.terms$ | async)?.paymentsReportTitle }}</h2>
+      
+      <div class="report-summary">
+        <div class="summary-card">
+          <div class="summary-icon">✅</div>
+          <div class="summary-content">
+            <h3>{{ (i18n.terms$ | async)?.fullyPaid }}</h3>
+            <div class="summary-number">{{getPaymentStatusSummary().fullyPaid}}</div>
           </div>
-          <div class="activity-amount">{{formatCurrency(activity.amount)}}</div>
         </div>
+        <div class="summary-card">
+          <div class="summary-icon">⚠️</div>
+          <div class="summary-content">
+            <h3>{{ (i18n.terms$ | async)?.partiallyPaid }}</h3>
+            <div class="summary-number">{{getPaymentStatusSummary().partiallyPaid}}</div>
+          </div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-icon">❌</div>
+          <div class="summary-content">
+            <h3>{{ (i18n.terms$ | async)?.notPaid }}</h3>
+            <div class="summary-number">{{getPaymentStatusSummary().notPaid}}</div>
+          </div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-icon">💸</div>
+          <div class="summary-content">
+            <h3>סה"כ חוב</h3>
+            <div class="summary-number">{{formatCurrency(getPaymentStatusSummary().totalDebt)}}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="report-table">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>{{ (i18n.terms$ | async)?.donor }}</th>
+              <th>{{ (i18n.terms$ | async)?.promisedAmount }}</th>
+              <th>{{ (i18n.terms$ | async)?.actualAmount }}</th>
+              <th>{{ (i18n.terms$ | async)?.remainingDebt }}</th>
+              <th>{{ (i18n.terms$ | async)?.paymentStatus }}</th>
+              <th>{{ (i18n.terms$ | async)?.currency }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let payment of paymentReportData" [class]="'status-' + payment.status">
+              <td>{{payment.donorName}}</td>
+              <td>{{formatCurrency(payment.promisedAmount)}}</td>
+              <td>{{formatCurrency(payment.actualAmount)}}</td>
+              <td>{{formatCurrency(payment.remainingDebt)}}</td>
+              <td>
+                <span class="status-badge" [class]="'status-' + payment.status">
+                  {{ payment.status === 'fullyPaid' ? (i18n.terms$ | async)?.fullyPaid : 
+                     payment.status === 'partiallyPaid' ? (i18n.terms$ | async)?.partiallyPaid : 
+                     (i18n.terms$ | async)?.notPaid }}
+                </span>
+              </td>
+              <td>{{payment.currency}}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- דוח סיכום שנים -->
+    <div *ngIf="activeReport === 'yearly'" class="yearly-report">
+      <h2>{{ (i18n.terms$ | async)?.yearlySummaryTitle }}</h2>
+      
+      <div class="report-table">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>{{ (i18n.terms$ | async)?.year }}</th>
+              <th>{{ (i18n.terms$ | async)?.shekel }}</th>
+              <th>{{ (i18n.terms$ | async)?.dollar }}</th>
+              <th>{{ (i18n.terms$ | async)?.euro }}</th>
+              <th>{{ (i18n.terms$ | async)?.totalByShekel }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let yearData of yearlySummaryData">
+              <td><strong>{{yearData.year}}</strong></td>
+              <td>₪{{(yearData.currencies['ILS'] || 0).toLocaleString()}}</td>
+              <td>${{(yearData.currencies['USD'] || 0).toLocaleString()}}</td>
+              <td>€{{(yearData.currencies['EUR'] || 0).toLocaleString()}}</td>
+              <td><strong>₪{{yearData.totalInShekel.toLocaleString()}}</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- דוח ברכות -->
+    <div *ngIf="activeReport === 'blessings'" class="blessings-report">
+      <h2>{{ (i18n.terms$ | async)?.blessingsReportTitle }}</h2>
+      <p class="report-subtitle">{{ (i18n.terms$ | async)?.trackingPurpose }}</p>
+      
+      <div class="report-summary">
+        <div class="summary-card">
+          <div class="summary-icon">📝</div>
+          <div class="summary-content">
+            <h3>{{ (i18n.terms$ | async)?.preMadeBlessings }}</h3>
+            <div class="summary-number">{{getBlessingSummary().preMade}}</div>
+          </div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-icon">✍️</div>
+          <div class="summary-content">
+            <h3>{{ (i18n.terms$ | async)?.customBlessings }}</h3>
+            <div class="summary-number">{{getBlessingSummary().custom}}</div>
+          </div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-icon">❓</div>
+          <div class="summary-content">
+            <h3>{{ (i18n.terms$ | async)?.notChosenBlessings }}</h3>
+            <div class="summary-number">{{getBlessingSummary().notChosen}}</div>
+          </div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-icon">📊</div>
+          <div class="summary-content">
+            <h3>{{ (i18n.terms$ | async)?.totalBlessingsCount }}</h3>
+            <div class="summary-number">{{getBlessingSummary().total}}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="report-table">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>{{ (i18n.terms$ | async)?.donor }}</th>
+              <th>{{ (i18n.terms$ | async)?.blessingTypeSelection }}</th>
+              <th>{{ (i18n.terms$ | async)?.status }}</th>
+              <th>{{ (i18n.terms$ | async)?.campaign }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let blessing of blessingReportData">
+              <td>{{blessing.donorName}}</td>
+              <td>
+                <span class="blessing-type" [class]="'blessing-' + (blessing.blessingType === 'מוכנה' ? 'ready' : blessing.blessingType === 'מותאמת אישית' ? 'custom' : 'none')">
+                  {{blessing.blessingType}}
+                </span>
+              </td>
+              <td>
+                <span class="status-badge" [class]="'status-' + blessing.status">
+                  {{blessing.status}}
+                </span>
+              </td>
+              <td>{{blessing.campaignName}}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 

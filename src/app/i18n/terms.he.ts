@@ -905,6 +905,58 @@ export const termsHe = {
   describeCampaignGoals: 'תאר את מטרות הקמפיין...',
   notesForTeam: 'הערות לצוות...',
 
+  // Reports menu terms
+  reportsMenu: 'דוחות',
+  donationsReport: 'דוח תרומות',
+  paymentsReport: 'דוח תשלומים',
+  yearlySummaryReport: 'דוח סיכום שנים',
+  blessingsReport: 'דוח ברכות',
+  generalReports: 'דוחות כלליים',
+  
+  // Donations Report
+  donationsReportTitle: 'דוח תרומות - כמה בפועל ניתן',
+  filterByDonor: 'סינון לפי תורם',
+  filterByDonorType: 'סינון לפי סוג תורם',
+  filterByYears: 'סינון לפי שנים',
+  filterByCampaign: 'סינון לפי קמפיין',
+  yearlyDetail: 'פירוט לפי שנים',
+  printDonationRows: 'הדפסת שורות התרומות',
+  printAttachedFiles: 'הדפסת הקבצים המצורפים',
+  attachedPhotos: 'צילומי תרומות',
+  donorNameTag: 'תגית שם תורם',
+  addDonorNameTag: 'הוסף תגית שם תורם',
+  tagPosition: 'מיקום התגית בדף',
+  
+  // Payments Report
+  paymentsReportTitle: 'דוח תשלומים - התחייבות מול בפועל',
+  commitmentVsActual: 'התחייבות מול בפועל',
+  promisedAmount: 'סכום שהבטיח',
+  actualAmount: 'סכום בפועל',
+  remainingDebt: 'חוב נותר',
+  paymentStatus: 'סטטוס תשלום',
+  fullyPaid: 'שולם במלואו',
+  partiallyPaid: 'שולם חלקית',
+  notPaid: 'לא שולם',
+  
+  // Yearly Summary Report
+  yearlySummaryTitle: 'דוח סיכום שנים לפי מטבע',
+  summaryByCurrency: 'סיכום לפי מטבע',
+  totalByShekel: 'סה"כ בשקלים',
+  currencyBreakdown: 'פירוט מטבעות',
+  
+  // Blessings Report
+  blessingsReportTitle: 'דוח ברכות',
+  blessingTypeSelection: 'סוג הברכה שנבחר',
+  totalBlessingsCount: 'סה"כ מספר ברכות',
+  trackingPurpose: 'למטרת מעקב אחרי חזרת ספר הברכות מדפוס',
+  preMadeBlessings: 'ברכות מוכנות',
+  customBlessings: 'ברכות מותאמות אישית',
+  notChosenBlessings: 'עדיין לא נבחר',
+
+  // Common terms
+  donorType: 'סוג תורם',
+  year: 'שנה',
+
   // Donor modal terms
   addNewDonorModal: 'הוספת תורם חדש',
   familyInformation: 'מידע משפחתי',
