@@ -16,6 +16,11 @@ import { MatInputModule } from '@angular/material/input'
 import { MatButtonModule } from '@angular/material/button'
 import { MatIconModule } from '@angular/material/icon'
 import { MatMenuModule } from '@angular/material/menu'
+import { MatSelectModule } from '@angular/material/select'
+import { MatDatepickerModule } from '@angular/material/datepicker'
+import { MatNativeDateModule } from '@angular/material/core'
+import { MatChipsModule } from '@angular/material/chips'
+import { MatTooltipModule } from '@angular/material/tooltip'
 import { CommonUIElementsModule } from 'common-ui-elements'
 import { UsersComponent } from './users/users.component'
 import { YesNoQuestionComponent } from './common/yes-no-question/yes-no-question.component'
@@ -45,6 +50,7 @@ import { DonorDetailsModalComponent } from './routes/modals/donor-details-modal/
 import { DualDatePickerComponent } from './shared/dual-date-picker/dual-date-picker.component'
 import { ModernDualDatePickerComponent } from './shared/modern-dual-date-picker/modern-dual-date-picker.component'
 import { HebrewDateService } from './services/hebrew-date.service'
+import { GlobalFiltersComponent } from './components/global-filters/global-filters.component'
 
 @NgModule({
   declarations: [
@@ -90,7 +96,13 @@ import { HebrewDateService } from './services/hebrew-date.service'
     MatButtonModule,
     MatIconModule,
     MatMenuModule,
+    MatSelectModule,
+    MatDatepickerModule,
+    MatNativeDateModule,
+    MatChipsModule,
+    MatTooltipModule,
     CommonUIElementsModule,
+    GlobalFiltersComponent,
   ],
   providers: [
     UIToolsService,

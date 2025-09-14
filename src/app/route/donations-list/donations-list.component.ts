@@ -38,13 +38,6 @@ export class DonationsListComponent implements OnInit {
 
   async ngOnInit() {
     await this.loadData();
-    
-    // Check for query parameters to handle actions from map popup
-    this.route.queryParams.subscribe(params => {
-      if (params['action'] === 'add' && params['donorId']) {
-        this.createDonationForDonor(params['donorId']);
-      }
-    });
   }
 
   async loadData() {
@@ -101,13 +94,6 @@ export class DonationsListComponent implements OnInit {
 
   async createDonation() {
     const changed = await this.ui.donationDetailsDialog('new');
-    if (changed) {
-      await this.loadDonations();
-    }
-  }
-
-  async createDonationForDonor(donorId: string) {
-    const changed = await this.ui.donationDetailsDialog('new', { donorId });
     if (changed) {
       await this.loadDonations();
     }

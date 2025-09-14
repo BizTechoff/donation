@@ -98,6 +98,7 @@ export class User extends IdEntity {
     openModal: string; // 'route' | 'dialog'
     calendar_heb_holidays_jews_enabled: boolean;
     calendar_open_heb_and_eng_parallel: boolean;
+    globalFilters?: any; // Store global filter preferences
   };
 
   @Fields.boolean({

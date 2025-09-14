@@ -6,6 +6,7 @@ import { Donor } from '../../../shared/entity/donor';
 import { Donation } from '../../../shared/entity/donation';
 import { GeocodingService } from '../../services/geocoding.service';
 import { I18nService } from '../../i18n/i18n.service';
+import { UIToolsService } from '../../common/UIToolsService';
 
 // Fix for default markers in Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -46,7 +47,8 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
   constructor(
     private geocodingService: GeocodingService,
     public i18n: I18nService,
-    private router: Router
+    private router: Router,
+    private ui: UIToolsService
   ) {}
 
   // סטטיסטיקות
@@ -498,17 +500,18 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
   // Navigation and action methods for popup buttons
   openDonorDetails(donorId: string) {
     // Navigate to donor details page
-    this.router.navigate(['/donor-details'], { queryParams: { id: donorId } });
+    this.router.navigate(['/פרטי תורם'], { queryParams: { id: donorId } });
   }
 
-  addDonationForDonor(donorId: string) {
-    // Navigate to donations list with the donor pre-selected for new donation
-    this.router.navigate(['/donations-list'], { 
-      queryParams: { 
-        action: 'add',
-        donorId: donorId
-      } 
-    });
+  async addDonationForDonor(donorId: string) {
+    // Open donation modal directly with pre-selected donor
+    const changed = await this.ui.donationDetailsDialog('new', { donorId });
+    if (changed) {
+      // Reload donations if needed to refresh the map data
+      await this.loadDonations();
+      this.calculateDonorStats();
+      this.addMarkersToMap();
+    }
   }
 
   ngOnDestroy() {

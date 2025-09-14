@@ -958,6 +958,10 @@ export const termsEn = {
   // Common terms
   donorType: 'Donor Type',
   year: 'Year',
+  filters: 'Filters',
+  activeFilters: 'Active Filters',
+  fromDate: 'From Date',
+  toDate: 'To Date',
 
   // Donor modal terms
   addNewDonorModal: 'Add New Donor',

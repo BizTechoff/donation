@@ -956,6 +956,10 @@ export const termsHe = {
   // Common terms
   donorType: 'סוג תורם',
   year: 'שנה',
+  filters: 'סינונים',
+  activeFilters: 'סינונים פעילים',
+  fromDate: 'מתאריך',
+  toDate: 'עד תאריך',
 
   // Donor modal terms
   addNewDonorModal: 'הוספת תורם חדש',
