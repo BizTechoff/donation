@@ -1,0 +1,15 @@
+<div class="toggle-switch-container" [class.disabled]="disabled">
+  <label [for]="id" class="toggle-switch-label">
+    <input 
+      type="checkbox" 
+      [id]="id"
+      [checked]="value"
+      [disabled]="disabled"
+      (change)="toggle()"
+      class="toggle-input">
+    <span class="toggle-slider">
+      <span class="toggle-thumb"></span>
+    </span>
+    <span class="toggle-text">{{ label }}</span>
+  </label>
+</div>

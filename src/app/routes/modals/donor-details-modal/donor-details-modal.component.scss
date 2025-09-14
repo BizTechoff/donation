@@ -686,120 +686,200 @@
 
 /* Create Event Section */
 .create-event-section {
-  background: #f8f9fa;
-  padding: 20px;
-  border-radius: 8px;
-  margin: 16px 0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
   
-  h5 {
-    margin: 0 0 12px 0;
-    color: #2c3e50;
+  .create-event-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   
-  .new-event-form {
-    display: flex;
-    gap: 12px;
-    align-items: center;
+  .create-event-card {
+    background: white;
+    padding: 32px;
+    border-radius: 12px;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+    width: 500px;
+    max-width: 90vw;
+    position: relative;
+    z-index: 2001;
+    animation: slideInUp 0.3s ease-out;
     
-    input {
-      flex: 1;
-      padding: 10px 12px;
-      border: 2px solid #e1e8ed;
-      border-radius: 6px;
-      
-      &:focus {
-        outline: none;
-        border-color: #667eea;
-      }
+    h5 {
+      margin: 0 0 20px 0;
+      color: #2c3e50;
+      font-size: 18px;
+      text-align: center;
+      font-weight: 600;
     }
     
-    button {
-      padding: 10px 16px;
-      background: #667eea;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: 500;
-      white-space: nowrap;
+    .new-event-form {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
       
-      &:hover {
-        background: #5a67d8;
+      input {
+        padding: 12px 16px;
+        border: 2px solid #e1e8ed;
+        border-radius: 8px;
+        font-size: 14px;
+        
+        &:focus {
+          outline: none;
+          border-color: #667eea;
+          box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
       }
       
-      &:disabled {
-        background: #bdc3c7;
-        cursor: not-allowed;
+      .form-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        
+        button {
+          padding: 12px 24px;
+          border: none;
+          border-radius: 8px;
+          cursor: pointer;
+          font-weight: 500;
+          transition: all 0.3s ease;
+          
+          &.btn-primary {
+            background: #667eea;
+            color: white;
+            
+            &:hover:not(:disabled) {
+              background: #5a6fd8;
+              transform: translateY(-1px);
+            }
+            
+            &:disabled {
+              background: #bdc3c7;
+              cursor: not-allowed;
+              transform: none;
+            }
+          }
+          
+          &.btn-secondary {
+            background: #f8f9fa;
+            color: #6c757d;
+            border: 1px solid #dee2e6;
+            
+            &:hover {
+              background: #e9ecef;
+              transform: translateY(-1px);
+            }
+          }
+        }
       }
     }
   }
 }
 
-/* Custom Date Section */
-.custom-date-section {
-  margin-top: 20px;
-  
-  .divider {
-    text-align: center;
-    margin: 20px 0;
-    color: #7f8c8d;
+// Marital Status Selection Grid
+.marital-status-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.marital-status-option {
+  .marital-status-card {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
     position: relative;
+    overflow: hidden;
     
-    &::before {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: 0;
-      right: 0;
-      height: 1px;
-      background: #e1e8ed;
-      z-index: -1;
+    .marital-status-radio {
+      display: none;
+    }
+    
+    .marital-status-content {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+    }
+    
+    .marital-status-icon {
+      font-size: 18px;
+      min-width: 24px;
+      text-align: center;
+    }
+    
+    .marital-status-label {
+      font-weight: 500;
+      color: #333;
+      flex: 1;
+    }
+    
+    &:hover {
+      border-color: #c5e1a5;
+      background: #f1f8e9;
+    }
+  }
+  
+  &.active .marital-status-card {
+    border-color: #4caf50;
+    background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%);
+    
+    .marital-status-label {
+      color: #2e7d32;
+      font-weight: 600;
     }
     
     &::after {
-      content: 'או';
-      background: white;
-      padding: 0 12px;
-    }
-  }
-  
-  h5 {
-    margin: 0 0 12px 0;
-    color: #2c3e50;
-  }
-  
-  input {
-    width: 100%;
-    padding: 10px 12px;
-    border: 2px solid #e1e8ed;
-    border-radius: 6px;
-    margin-bottom: 12px;
-    
-    &:focus {
-      outline: none;
-      border-color: #667eea;
-    }
-  }
-  
-  button {
-    padding: 10px 16px;
-    background: #95a5a6;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 500;
-    
-    &:hover {
-      background: #7f8c8d;
-    }
-    
-    &:disabled {
-      background: #bdc3c7;
-      cursor: not-allowed;
+      content: '✓';
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: #4caf50;
+      color: white;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: bold;
     }
   }
 }
+
+@keyframes slideInUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
 
 /* Dialog Actions */
 .dialog-actions {
@@ -1268,6 +1348,285 @@
         color: #2196F3;
       }
     }
+  }
+}
+
+// Field title with icon styling
+.field-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+
+  .field-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    color: #667eea;
+  }
+
+  label {
+    margin: 0;
+    font-weight: 500;
+    color: #333;
+    font-size: 14px;
+  }
+}
+
+// Card-based button checkboxes (original style)
+.type-checkbox,
+.day-checkbox,
+.method-checkbox,
+.style-checkbox,
+.pref-checkbox,
+.level-radio,
+.language-radio {
+  display: none;
+}
+
+/* Donor Type Selection Cards */
+.donor-type-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.type-option {
+  .type-card {
+    display: block;
+    cursor: pointer;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 16px;
+    transition: all 0.3s ease;
+    background: white;
+
+    &:hover {
+      border-color: #667eea;
+      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+      transform: translateY(-2px);
+    }
+
+    .type-checkbox {
+      display: none;
+    }
+
+    .type-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      text-align: center;
+
+      .type-icon {
+        font-size: 24px;
+        width: 24px;
+        height: 24px;
+        color: #666;
+        transition: color 0.3s ease;
+      }
+
+      .type-label {
+        font-weight: 500;
+        color: #333;
+        transition: color 0.3s ease;
+      }
+
+      .type-desc {
+        font-size: 11px;
+        color: #666;
+        transition: color 0.3s ease;
+      }
+    }
+  }
+
+  &.active .type-card {
+    border-color: #4CAF50;
+    background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(76, 175, 80, 0.05));
+
+    .type-icon {
+      color: #4CAF50;
+    }
+
+    .type-label {
+      color: #4CAF50;
+      font-weight: 600;
+    }
+
+    .type-desc {
+      color: #4CAF50;
+    }
+  }
+}
+
+/* Level Selection Cards */
+.level-selection-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.level-option {
+  .level-card {
+    display: block;
+    cursor: pointer;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 12px 8px;
+    transition: all 0.3s ease;
+    background: white;
+
+    &:hover {
+      border-color: #667eea;
+      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+      transform: translateY(-2px);
+    }
+
+    .level-radio {
+      display: none;
+    }
+
+    .level-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      text-align: center;
+
+      .level-icon {
+        font-size: 18px;
+        transition: all 0.3s ease;
+      }
+
+      .level-label {
+        font-size: 11px;
+        font-weight: 500;
+        color: #333;
+        transition: color 0.3s ease;
+      }
+    }
+  }
+
+  &.active .level-card {
+    border-color: #4CAF50;
+    background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(76, 175, 80, 0.05));
+
+    .level-label {
+      color: #4CAF50;
+      font-weight: 600;
+    }
+  }
+}
+
+/* Language Selection Cards */
+.language-selection-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.language-option {
+  .language-card {
+    display: block;
+    cursor: pointer;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 16px;
+    transition: all 0.3s ease;
+    background: white;
+
+    &:hover {
+      border-color: #667eea;
+      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+      transform: translateY(-2px);
+    }
+
+    .language-radio {
+      display: none;
+    }
+
+    .language-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      text-align: center;
+
+      .language-icon {
+        font-size: 20px;
+        transition: all 0.3s ease;
+      }
+
+      .language-label {
+        font-size: 12px;
+        font-weight: 500;
+        color: #333;
+        transition: color 0.3s ease;
+      }
+    }
+  }
+
+  &.active .language-card {
+    border-color: #4CAF50;
+    background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(76, 175, 80, 0.05));
+
+    .language-label {
+      color: #4CAF50;
+      font-weight: 600;
+    }
+  }
+}
+
+/* Family Information Layout */
+.family-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-top: 16px;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+.family-basic-info,
+.family-extended-info {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.family-group {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 20px;
+  
+  .group-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 16px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    
+    mat-icon {
+      color: #667eea;
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+  }
+  
+  .spouse-info {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #f0f0f0;
   }
 }
 

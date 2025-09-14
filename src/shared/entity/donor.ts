@@ -201,7 +201,7 @@ export class Donor extends IdEntity {
   @Fields.string({
     caption: 'שפה מועדפת',
   })
-  preferredLanguage: 'he' | 'en' | 'ar' = 'he'
+  preferredLanguage: 'he' | 'en' | 'yi' | '' = 'he'
 
   @Fields.string({
     caption: 'שפה מועדפת',
@@ -269,7 +269,7 @@ export class Donor extends IdEntity {
   @Fields.string({
     caption: 'רמה',
   })
-  level: 'platinum' | 'gold' | 'silver' | 'regular' | '' = ''
+  level: 'quarter' | 'half' | 'full' | 'bronze_lords' | 'silver_stones' | 'gold_pillars' | 'sapphire_diamond' | 'platinum' | 'patron' | 'torah_holder' | 'supreme_level_1' | 'supreme_level_2' | '' = ''
 
   @Fields.string({
     caption: 'חוג',

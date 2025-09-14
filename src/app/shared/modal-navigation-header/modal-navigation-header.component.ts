@@ -169,6 +169,9 @@ export class ModalNavigationHeaderComponent implements OnInit, OnDestroy {
 
   onRecordSelect(record: NavigationRecord) {
     this.recordSelected.emit(record);
+    // Close the search dropdown by clearing the search term
+    this.searchTerm = '';
+    this.updateFilteredRecords();
   }
 
   onNavigateNext() {

@@ -268,7 +268,7 @@ export const termsHe = {
 
   // Languages
   hebrew: 'עברית',
-  english: 'English',
+  english: 'אנגלית',
   yiddish: 'יידיש',
 
   // Form Labels

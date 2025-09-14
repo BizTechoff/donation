@@ -99,6 +99,11 @@ export class Donation extends IdEntity {
   receiptNumber = ''
 
   @Fields.date({
+    caption: 'תאריך הוצאת אישור',
+  })
+  receiptDate?: Date
+
+  @Fields.date({
     caption: 'תאריך תרומה',
     validate: Validators.required,
   })
