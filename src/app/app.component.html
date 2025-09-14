@@ -6,6 +6,9 @@
     <span class="toolbar-title">{{ getCurrentTitleObservable() | async }}</span>
 
     <div class="toolbar-actions">
+      <!-- Quick Actions -->
+      <app-quick-actions *ngIf="remult.authenticated()"></app-quick-actions>
+      
       <!-- Global Filters -->
       <app-global-filters *ngIf="remult.authenticated()"></app-global-filters>
       

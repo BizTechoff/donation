@@ -269,7 +269,7 @@ export const termsEn = {
   // Languages
   hebrew: 'עברית',
   english: 'English',
-  arabic: 'العربية',
+  yiddish: 'Yiddish',
 
   // Form Labels
   selectDonor: 'Select donor',
@@ -962,6 +962,9 @@ export const termsEn = {
   activeFilters: 'Active Filters',
   fromDate: 'From Date',
   toDate: 'To Date',
+  newStandingOrder: 'New Standing Order',
+  newCertificate: 'New Certificate',
+  blessingsBook: 'Blessings Book',
 
   // Donor modal terms
   addNewDonorModal: 'Add New Donor',

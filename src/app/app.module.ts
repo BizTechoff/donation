@@ -51,6 +51,7 @@ import { DualDatePickerComponent } from './shared/dual-date-picker/dual-date-pic
 import { ModernDualDatePickerComponent } from './shared/modern-dual-date-picker/modern-dual-date-picker.component'
 import { HebrewDateService } from './services/hebrew-date.service'
 import { GlobalFiltersComponent } from './components/global-filters/global-filters.component'
+import { QuickActionsComponent } from './components/quick-actions/quick-actions.component'
 
 @NgModule({
   declarations: [
@@ -75,7 +76,6 @@ import { GlobalFiltersComponent } from './components/global-filters/global-filte
     ReportsComponent,
     LanguageSwitcherComponent,
     DonorsMapComponent,
-    DonorDetailsModalComponent,
     DualDatePickerComponent,
     ModernDualDatePickerComponent
   ],
@@ -103,6 +103,7 @@ import { GlobalFiltersComponent } from './components/global-filters/global-filte
     MatTooltipModule,
     CommonUIElementsModule,
     GlobalFiltersComponent,
+    QuickActionsComponent,
   ],
   providers: [
     UIToolsService,

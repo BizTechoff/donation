@@ -1,0 +1,142 @@
+.quick-actions-button {
+  color: #4caf50;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background-color: rgba(76, 175, 80, 0.1);
+    color: #2e7d32;
+  }
+}
+
+.quick-actions-menu {
+  min-width: 280px;
+  max-width: 350px;
+  
+  .quick-actions-content {
+    padding: 16px;
+    min-width: 250px;
+  }
+}
+
+.quick-actions-header {
+  text-align: center;
+  margin-bottom: 20px;
+  
+  h3 {
+    margin: 0;
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 18px;
+  }
+}
+
+.quick-actions-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.quick-action-item {
+  padding: 16px 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  background: white;
+  transition: all 0.3s ease;
+  min-height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  &:hover {
+    border-color: #4caf50;
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
+    transform: translateY(-2px);
+    background: rgba(76, 175, 80, 0.02);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+  
+  .action-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    text-align: center;
+  }
+  
+  .action-icon {
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+    transition: color 0.3s ease;
+    
+    &.donation-icon {
+      color: #ff6b35;
+    }
+    
+    &.donor-icon {
+      color: #3498db;
+    }
+    
+    &.campaign-icon {
+      color: #e74c3c;
+    }
+    
+    &.standing-order-icon {
+      color: #9b59b6;
+    }
+    
+    &.certificate-icon {
+      color: #f39c12;
+    }
+    
+    &.blessings-icon {
+      color: #27ae60;
+    }
+  }
+  
+  .action-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #2c3e50;
+    line-height: 1.2;
+    max-width: 100px;
+    word-wrap: break-word;
+    transition: color 0.3s ease;
+  }
+  
+  &:hover .action-label {
+    color: #1a252f;
+  }
+}
+
+// RTL Support
+[dir="rtl"] {
+  .quick-actions-grid {
+    // Grid automatically handles RTL
+  }
+  
+  .action-content {
+    // Content is already centered, no changes needed
+  }
+}
+
+// Animation for menu opening
+.quick-actions-menu {
+  .mat-mdc-menu-panel {
+    animation: slideIn 0.3s ease-out;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

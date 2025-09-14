@@ -1,0 +1,87 @@
+<button mat-icon-button 
+        [matMenuTriggerFor]="quickActionsMenu"
+        class="quick-actions-button"
+        matTooltip="{{ (i18n.terms$ | async)?.quickActions }}">
+  <mat-icon>add_box</mat-icon>
+</button>
+
+<mat-menu #quickActionsMenu="matMenu" class="quick-actions-menu" [dir]="i18n.lang.RTL ? 'rtl' : 'ltr'">
+  <div class="quick-actions-content">
+    
+    <!-- Menu Header -->
+    <div class="quick-actions-header">
+      <h3>{{ (i18n.terms$ | async)?.quickActions }}</h3>
+    </div>
+    
+    <!-- Quick Action Items -->
+    <div class="quick-actions-grid">
+      
+      <!-- New Donation -->
+      <button mat-stroked-button 
+              class="quick-action-item" 
+              (click)="createNewDonation()"
+              matTooltip="{{ (i18n.terms$ | async)?.newDonation }}">
+        <div class="action-content">
+          <mat-icon [class]="'action-icon donation-icon'">{{ getActionIcon('donation') }}</mat-icon>
+          <span class="action-label">{{ (i18n.terms$ | async)?.newDonation }}</span>
+        </div>
+      </button>
+      
+      <!-- New Donor -->
+      <button mat-stroked-button 
+              class="quick-action-item" 
+              (click)="createNewDonor()"
+              matTooltip="{{ (i18n.terms$ | async)?.newDonor }}">
+        <div class="action-content">
+          <mat-icon [class]="'action-icon donor-icon'">{{ getActionIcon('donor') }}</mat-icon>
+          <span class="action-label">{{ (i18n.terms$ | async)?.newDonor }}</span>
+        </div>
+      </button>
+      
+      <!-- New Campaign -->
+      <button mat-stroked-button 
+              class="quick-action-item" 
+              (click)="createNewCampaign()"
+              matTooltip="{{ (i18n.terms$ | async)?.newCampaign }}">
+        <div class="action-content">
+          <mat-icon [class]="'action-icon campaign-icon'">{{ getActionIcon('campaign') }}</mat-icon>
+          <span class="action-label">{{ (i18n.terms$ | async)?.newCampaign }}</span>
+        </div>
+      </button>
+      
+      <!-- New Standing Order -->
+      <button mat-stroked-button 
+              class="quick-action-item" 
+              (click)="createNewStandingOrder()"
+              matTooltip="{{ (i18n.terms$ | async)?.newStandingOrder }}">
+        <div class="action-content">
+          <mat-icon [class]="'action-icon standing-order-icon'">{{ getActionIcon('standing-order') }}</mat-icon>
+          <span class="action-label">{{ (i18n.terms$ | async)?.newStandingOrder }}</span>
+        </div>
+      </button>
+      
+      <!-- New Certificate -->
+      <button mat-stroked-button 
+              class="quick-action-item" 
+              (click)="createNewCertificate()"
+              matTooltip="{{ (i18n.terms$ | async)?.newCertificate }}">
+        <div class="action-content">
+          <mat-icon [class]="'action-icon certificate-icon'">{{ getActionIcon('certificate') }}</mat-icon>
+          <span class="action-label">{{ (i18n.terms$ | async)?.newCertificate }}</span>
+        </div>
+      </button>
+      
+      <!-- Blessings Book -->
+      <button mat-stroked-button 
+              class="quick-action-item" 
+              (click)="openBlessingsBook()"
+              matTooltip="{{ (i18n.terms$ | async)?.blessingsBook }}">
+        <div class="action-content">
+          <mat-icon [class]="'action-icon blessings-icon'">{{ getActionIcon('blessings') }}</mat-icon>
+          <span class="action-label">{{ (i18n.terms$ | async)?.blessingsBook }}</span>
+        </div>
+      </button>
+      
+    </div>
+  </div>
+</mat-menu>

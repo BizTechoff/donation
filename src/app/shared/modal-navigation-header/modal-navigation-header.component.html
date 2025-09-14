@@ -1,0 +1,186 @@
+<div class="modal-navigation-header">
+  <!-- Main Navigation Row -->
+  <div class="navigation-main">
+    <!-- Left Side: Search and Navigation -->
+    <div class="navigation-left">
+      <!-- Title -->
+      <h2 class="modal-title">{{ title }}</h2>
+      
+      <!-- Search Input -->
+      <div class="search-container">
+        <mat-form-field appearance="outline" class="search-field">
+          <mat-label>{{ placeholder }}</mat-label>
+          <input matInput 
+                 [(ngModel)]="searchTerm" 
+                 (ngModelChange)="onSearchChange($event)"
+                 placeholder="{{ placeholder }}">
+          <mat-icon matSuffix>search</mat-icon>
+        </mat-form-field>
+        
+        <!-- Search Results Dropdown -->
+        <div class="search-results" *ngIf="searchTerm && filteredRecords.length > 0">
+          <div class="search-result-item" 
+               *ngFor="let record of filteredRecords.slice(0, 8)" 
+               (click)="onRecordSelect(record)"
+               [class.active]="record.id === currentRecordId">
+            <mat-icon class="result-icon">person</mat-icon>
+            <span class="result-name">{{ record.displayName }}</span>
+          </div>
+          <div class="search-result-more" *ngIf="filteredRecords.length > 8">
+            ועוד {{ filteredRecords.length - 8 }} תוצאות...
+          </div>
+        </div>
+      </div>
+      
+      <!-- Navigation Controls -->
+      <div class="navigation-controls">
+        <button mat-icon-button 
+                (click)="onNavigatePrevious()" 
+                [disabled]="!canNavigatePrevious()"
+                matTooltip="רשומה קודמת">
+          <mat-icon>chevron_right</mat-icon>
+        </button>
+        
+        <span class="navigation-info">{{ getNavigationInfo() }}</span>
+        
+        <button mat-icon-button 
+                (click)="onNavigateNext()" 
+                [disabled]="!canNavigateNext()"
+                matTooltip="רשומה הבאה">
+          <mat-icon>chevron_left</mat-icon>
+        </button>
+      </div>
+    </div>
+    
+    <!-- Right Side: Filters -->
+    <div class="navigation-right">
+      <!-- Filter Toggle Button -->
+      <button mat-stroked-button 
+              (click)="toggleFilters()" 
+              class="filter-toggle"
+              [class.active]="showFilters">
+        <mat-icon>filter_list</mat-icon>
+        <span>פילטרים</span>
+        <mat-icon class="expand-icon" [class.expanded]="showFilters">expand_more</mat-icon>
+      </button>
+      
+      <!-- Active Filters Chips -->
+      <div class="active-filters" *ngIf="activeFilters.length > 0">
+        <mat-chip-listbox class="filter-chips">
+          <mat-chip-option *ngFor="let filter of activeFilters; let i = index"
+                          class="filter-chip"
+                          [class.negative]="filter.isNegative">
+            <span>{{ getFilterDisplayText(filter) }}</span>
+            <mat-icon matChipRemove (click)="removeFilter(i)">cancel</mat-icon>
+          </mat-chip-option>
+        </mat-chip-listbox>
+        
+        <button mat-button 
+                class="clear-filters-btn" 
+                (click)="clearAllFilters()">
+          <mat-icon>clear_all</mat-icon>
+          נקה הכל
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Filter Panel -->
+  <div class="filter-panel" [class.show]="showFilters" *ngIf="filterOptions.length > 0">
+    <div class="filter-form">
+      <!-- Filter Selection -->
+      <div class="filter-row">
+        <mat-form-field appearance="outline" class="filter-select">
+          <mat-label>בחר פילטר</mat-label>
+          <mat-select [(ngModel)]="selectedFilterKey">
+            <mat-option value="">-- בחר פילטר --</mat-option>
+            <mat-option *ngFor="let option of filterOptions" [value]="option.key">
+              {{ option.label }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+        
+        <!-- Dynamic Filter Value Input -->
+        <div class="filter-value" *ngIf="selectedFilterKey">
+          <ng-container [ngSwitch]="getSelectedFilterOption()?.type">
+            
+            <!-- Boolean Filter -->
+            <mat-form-field appearance="outline" *ngSwitchCase="'boolean'">
+              <mat-label>ערך</mat-label>
+              <mat-select [(ngModel)]="selectedFilterValue">
+                <mat-option [value]="true">כן</mat-option>
+                <mat-option [value]="false">לא</mat-option>
+              </mat-select>
+            </mat-form-field>
+            
+            <!-- Select Filter -->
+            <mat-form-field appearance="outline" *ngSwitchCase="'select'">
+              <mat-label>בחר ערך</mat-label>
+              <mat-select [(ngModel)]="selectedFilterValue">
+                <mat-option *ngFor="let opt of getSelectedFilterOption()?.options" [value]="opt.value">
+                  {{ opt.label }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+            
+            <!-- Range Filter -->
+            <div class="range-inputs" *ngSwitchCase="'range'">
+              <mat-form-field appearance="outline">
+                <mat-label>מ</mat-label>
+                <input matInput type="number" [(ngModel)]="rangeMin" [min]="getSelectedFilterOption()?.min || 0">
+              </mat-form-field>
+              <span class="range-separator">-</span>
+              <mat-form-field appearance="outline">
+                <mat-label>עד</mat-label>
+                <input matInput type="number" [(ngModel)]="rangeMax" [max]="getSelectedFilterOption()?.max || 100">
+              </mat-form-field>
+            </div>
+            
+            <!-- Amount Filter -->
+            <div class="range-inputs" *ngSwitchCase="'amount'">
+              <mat-form-field appearance="outline">
+                <mat-label>סכום מ</mat-label>
+                <input matInput type="number" [(ngModel)]="amountMin" min="0">
+                <span matTextPrefix>₪</span>
+              </mat-form-field>
+              <span class="range-separator">-</span>
+              <mat-form-field appearance="outline">
+                <mat-label>סכום עד</mat-label>
+                <input matInput type="number" [(ngModel)]="amountMax" min="0">
+                <span matTextPrefix>₪</span>
+              </mat-form-field>
+            </div>
+            
+          </ng-container>
+        </div>
+        
+        <!-- Add Filter Buttons -->
+        <div class="filter-actions" *ngIf="selectedFilterKey">
+          <button mat-raised-button 
+                  color="primary" 
+                  (click)="addFilter(false)"
+                  class="add-filter-btn">
+            <mat-icon>add</mat-icon>
+            הוסף פילטר
+          </button>
+          
+          <button mat-raised-button 
+                  color="warn" 
+                  (click)="addFilter(true)"
+                  class="add-negative-filter-btn">
+            <mat-icon>remove</mat-icon>
+            הוסף "ללא"
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Results Summary -->
+  <div class="results-summary" *ngIf="searchTerm || activeFilters.length > 0">
+    <span class="results-count">
+      <mat-icon>info</mat-icon>
+      נמצאו {{ filteredRecords.length }} תוצאות מתוך {{ records.length }}
+    </span>
+  </div>
+</div>

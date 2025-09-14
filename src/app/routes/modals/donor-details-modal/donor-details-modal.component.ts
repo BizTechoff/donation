@@ -1,7 +1,14 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, NO_ERRORS_SCHEMA } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { Donor, Donation, Event, DonorEvent, CompanyInfo } from '../../../../shared/entity';
 import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
+import { ModernDualDatePickerComponent } from '../../../shared/modern-dual-date-picker/modern-dual-date-picker.component';
+import { ModalNavigationHeaderComponent, NavigationRecord, FilterOption, ActiveFilter } from '../../../shared/modal-navigation-header/modal-navigation-header.component';
 
 export interface DonorDetailsModalArgs {
   donorId: string; // Can be 'new' for new donor or donor ID
@@ -12,7 +19,17 @@ export interface DonorDetailsModalArgs {
 @Component({
   selector: 'app-donor-details-modal',
   templateUrl: './donor-details-modal.component.html',
-  styleUrls: ['./donor-details-modal.component.scss']
+  styleUrls: ['./donor-details-modal.component.scss'],
+  standalone: true,
+  imports: [
+    CommonModule,
+    FormsModule,
+    MatButtonModule,
+    MatIconModule,
+    MatTooltipModule,
+    ModalNavigationHeaderComponent
+  ],
+  schemas: [NO_ERRORS_SCHEMA]
 })
 export class DonorDetailsModalComponent implements OnInit {
   args!: DonorDetailsModalArgs;
@@ -41,12 +58,19 @@ export class DonorDetailsModalComponent implements OnInit {
   // Event search and creation
   eventSearchTerm = '';
   showCreateNewEvent = false;
+  
+  // Navigation header properties
+  allDonors: NavigationRecord[] = [];
+  filterOptions: FilterOption[] = [];
+  currentDonorRecord?: NavigationRecord;
 
   constructor(public i18n: I18nService) {}
 
   async ngOnInit() {
     await this.loadAvailableEvents();
     await this.initializeDonor();
+    await this.loadAllDonors();
+    this.setupFilterOptions();
   }
 
   private async loadAvailableEvents() {
@@ -467,5 +491,162 @@ export class DonorDetailsModalComponent implements OnInit {
     // TODO: Implement receipts functionality
     console.log('Opening receipts for donor:', this.donor?.id);
     alert('פונקציונליות הוצאת קבלות תבוצע בהמשך');
+  }
+  
+  closeModal(event?: MouseEvent) {
+    // If clicking on overlay, close modal
+    if (event && event.target === event.currentTarget) {
+      this.changed = false;
+    } else if (!event) {
+      // Direct close button click
+      this.changed = false;
+    }
+  }
+  
+  // Navigation Header Methods
+  private async loadAllDonors() {
+    try {
+      const donors = await this.donorRepo.find({
+        where: { isActive: true },
+        orderBy: { fullName: 'asc' }
+      });
+      
+      this.allDonors = donors.map(donor => ({
+        ...donor,
+        id: donor.id,
+        displayName: donor.fullName || `${donor.firstName} ${donor.lastName}`
+      }));
+      
+      // Set current donor record
+      if (this.donor && this.donor.id) {
+        this.currentDonorRecord = this.allDonors.find(d => d.id === this.donor!.id);
+      }
+    } catch (error) {
+      console.error('Error loading all donors:', error);
+    }
+  }
+  
+  private setupFilterOptions() {
+    this.filterOptions = [
+      {
+        key: 'isAnash',
+        label: 'אנ"ש',
+        type: 'boolean'
+      },
+      {
+        key: 'isAlumni',
+        label: 'בוגר',
+        type: 'boolean'
+      },
+      {
+        key: 'isOtherConnection',
+        label: 'קשר אחר',
+        type: 'boolean'
+      },
+      {
+        key: 'level',
+        label: 'רמת תורם',
+        type: 'select',
+        options: [
+          { value: 'platinum', label: 'פלטינום' },
+          { value: 'gold', label: 'זהב' },
+          { value: 'silver', label: 'כסף' },
+          { value: 'regular', label: 'רגיל' }
+        ]
+      },
+      {
+        key: 'preferredLanguage',
+        label: 'שפה מועדפת',
+        type: 'select',
+        options: [
+          { value: 'he', label: 'עברית' },
+          { value: 'en', label: 'אנגלית' },
+          { value: 'yi', label: 'יידיש' }
+        ]
+      },
+      {
+        key: 'age',
+        label: 'גיל',
+        type: 'range',
+        min: 0,
+        max: 120
+      },
+      {
+        key: 'totalDonationAmount',
+        label: 'סכום תרומות',
+        type: 'amount'
+      },
+      {
+        key: 'city',
+        label: 'עיר',
+        type: 'select',
+        options: [] // Will be populated dynamically
+      },
+      {
+        key: 'country',
+        label: 'מדינה',
+        type: 'select',
+        options: [] // Will be populated dynamically
+      }
+    ];
+    
+    // Populate dynamic options
+    this.populateDynamicFilterOptions();
+  }
+  
+  private populateDynamicFilterOptions() {
+    // Get unique cities
+    const cities = new Set<string>();
+    const countries = new Set<string>();
+    
+    this.allDonors.forEach(donor => {
+      if (donor['city']) cities.add(donor['city']);
+      if (donor['country']) countries.add(donor['country']);
+    });
+    
+    // Update city filter options
+    const cityFilter = this.filterOptions.find(f => f.key === 'city');
+    if (cityFilter) {
+      cityFilter.options = Array.from(cities).sort().map(city => ({
+        value: city,
+        label: city
+      }));
+    }
+    
+    // Update country filter options
+    const countryFilter = this.filterOptions.find(f => f.key === 'country');
+    if (countryFilter) {
+      countryFilter.options = Array.from(countries).sort().map(country => ({
+        value: country,
+        label: country
+      }));
+    }
+  }
+  
+  onRecordSelected(record: NavigationRecord) {
+    if (record.id !== this.donor?.id) {
+      this.args.donorId = record.id;
+      this.initializeDonor();
+    }
+  }
+  
+  onSearchChanged(searchTerm: string) {
+    // Search is handled by the navigation header component
+    console.log('Search term changed:', searchTerm);
+  }
+  
+  onFiltersChanged(filters: ActiveFilter[]) {
+    // Filters are applied by the navigation header component
+    console.log('Filters changed:', filters);
+  }
+  
+  onNavigateNext() {
+    // Navigation is handled by the navigation header component
+    console.log('Navigate to next donor');
+  }
+  
+  onNavigatePrevious() {
+    // Navigation is handled by the navigation header component
+    console.log('Navigate to previous donor');
   }
 }

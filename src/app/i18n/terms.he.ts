@@ -269,7 +269,7 @@ export const termsHe = {
   // Languages
   hebrew: 'עברית',
   english: 'English',
-  arabic: 'العربية',
+  yiddish: 'יידיש',
 
   // Form Labels
   selectDonor: 'בחר תורם',
@@ -960,6 +960,9 @@ export const termsHe = {
   activeFilters: 'סינונים פעילים',
   fromDate: 'מתאריך',
   toDate: 'עד תאריך',
+  newStandingOrder: 'הוראת קבע חדשה',
+  newCertificate: 'תעודה חדשה',
+  blessingsBook: 'ספר ברכות',
 
   // Donor modal terms
   addNewDonorModal: 'הוספת תורם חדש',
