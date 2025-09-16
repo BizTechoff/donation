@@ -1,6 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { Donation, Donor, Campaign, DonationMethod } from '../../../../shared/entity';
 import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
@@ -15,11 +18,18 @@ export interface DonationDetailsModalArgs {
   templateUrl: './donation-details-modal.component.html',
   styleUrls: ['./donation-details-modal.component.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule]
+  imports: [
+    CommonModule,
+    FormsModule,
+    MatButtonModule,
+    MatIconModule,
+    MatTooltipModule
+  ]
 })
 export class DonationDetailsModalComponent implements OnInit {
   args!: DonationDetailsModalArgs;
   changed = false;
+  shouldClose = false;
 
   donation!: Donation;
   originalDonationData?: string; // To track changes
@@ -34,6 +44,7 @@ export class DonationDetailsModalComponent implements OnInit {
   
   loading = false;
   isNewDonation = false;
+  selectedDonor?: Donor;
 
   constructor(public i18n: I18nService) {}
 
@@ -92,6 +103,9 @@ export class DonationDetailsModalComponent implements OnInit {
       this.donationMethods = await this.donationMethodRepo.find({
         orderBy: { name: 'asc' }
       });
+
+      // Load selected donor if donation has donorId
+      await this.loadSelectedDonor();
     } catch (error) {
       console.error('Error loading dropdown data:', error);
     }
@@ -156,7 +170,30 @@ export class DonationDetailsModalComponent implements OnInit {
     }
   }
 
-  getDonorDisplayName(donor: Donor): string {
+  getDonorDisplayName(donor?: Donor): string {
+    if (!donor) return '';
     return `${donor.firstName} ${donor.lastName}`.trim();
+  }
+
+  closeModal(event?: MouseEvent) {
+    // If clicking on overlay, close modal
+    if (event && event.target === event.currentTarget) {
+      this.changed = false;
+      this.shouldClose = true;
+    } else if (!event) {
+      // Direct close button click
+      this.changed = false;
+      this.shouldClose = true;
+    }
+  }
+
+  async loadSelectedDonor() {
+    if (this.donation?.donorId) {
+      try {
+        this.selectedDonor = await this.donorRepo.findId(this.donation.donorId) || undefined;
+      } catch (error) {
+        console.error('Error loading selected donor:', error);
+      }
+    }
   }
 }

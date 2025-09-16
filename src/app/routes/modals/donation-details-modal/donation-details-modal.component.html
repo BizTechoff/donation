@@ -1,9 +1,23 @@
 <!-- Donation Details Modal -->
-<div class="modal-overlay">
-  <div class="modal-content donation-details-modal">
+<div class="modal-overlay" (click)="closeModal($event)">
+  <div class="modal-content donation-details-modal" (click)="$event.stopPropagation()">
+
+    <!-- Modal Header with gradient and icon -->
     <div class="modal-header">
-      <h2>{{isNewDonation ? 'רישום תרומה חדשה' : 'פרטי תרומה'}}</h2>
-      <button class="modal-close">&times;</button>
+      <div class="header-content">
+        <div class="header-icon">
+          <mat-icon>{{isNewDonation ? 'add_circle' : 'attach_money'}}</mat-icon>
+        </div>
+        <div class="header-text">
+          <h2>{{isNewDonation ? 'רישום תרומה חדשה' : 'פרטי תרומה'}}</h2>
+          <p class="header-subtitle" *ngIf="!isNewDonation && donation">
+            {{getDonorDisplayName(selectedDonor)}}
+          </p>
+        </div>
+      </div>
+      <button class="modal-close" (click)="closeModal()" matTooltip="סגור" [dir]="'rtl'">
+        <mat-icon>close</mat-icon>
+      </button>
     </div>
     
     <!-- Loading State -->
@@ -18,7 +32,10 @@
           <h3>פרטי תרומה בסיסיים</h3>
           <div class="form-grid">
             <div class="form-group">
-              <label>תורם *</label>
+              <div class="field-title">
+                <mat-icon class="field-icon">person</mat-icon>
+                <label>תורם *</label>
+              </div>
               <select class="form-control" [(ngModel)]="donation.donorId">
                 <option value="">בחר תורם</option>
                 <option *ngFor="let donor of donors" [value]="donor.id">
@@ -28,13 +45,19 @@
             </div>
             
             <div class="form-group">
-              <label>סכום *</label>
-              <input type="number" class="form-control" [(ngModel)]="donation.amount" 
+              <div class="field-title">
+                <mat-icon class="field-icon">attach_money</mat-icon>
+                <label>סכום *</label>
+              </div>
+              <input type="number" class="form-control" [(ngModel)]="donation.amount"
                      placeholder="הכנס סכום" min="0" step="0.01">
             </div>
             
             <div class="form-group">
-              <label>מטבע</label>
+              <div class="field-title">
+                <mat-icon class="field-icon">monetization_on</mat-icon>
+                <label>מטבע</label>
+              </div>
               <select class="form-control" [(ngModel)]="donation.currency">
                 <option value="ILS">שקל</option>
                 <option value="USD">דולר</option>
@@ -43,12 +66,18 @@
             </div>
             
             <div class="form-group">
-              <label>תאריך תרומה *</label>
+              <div class="field-title">
+                <mat-icon class="field-icon">event</mat-icon>
+                <label>תאריך תרומה *</label>
+              </div>
               <input type="date" class="form-control" [(ngModel)]="donation.donationDate">
             </div>
             
             <div class="form-group">
-              <label>אמצעי תשלום *</label>
+              <div class="field-title">
+                <mat-icon class="field-icon">payment</mat-icon>
+                <label>אמצעי תשלום *</label>
+              </div>
               <select class="form-control" [(ngModel)]="donation.donationMethodId">
                 <option value="">בחר אמצעי תשלום</option>
                 <option *ngFor="let method of donationMethods" [value]="method.id">
@@ -58,7 +87,10 @@
             </div>
             
             <div class="form-group">
-              <label>קמפיין</label>
+              <div class="field-title">
+                <mat-icon class="field-icon">campaign</mat-icon>
+                <label>קמפיין</label>
+              </div>
               <select class="form-control" [(ngModel)]="donation.campaignId">
                 <option value="">ללא קמפיין</option>
                 <option *ngFor="let campaign of campaigns" [value]="campaign.id">
@@ -68,13 +100,19 @@
             </div>
             
             <div class="form-group">
-              <label>מתרים</label>
-              <input type="text" class="form-control" [(ngModel)]="donation.fundraiserName" 
+              <div class="field-title">
+                <mat-icon class="field-icon">support_agent</mat-icon>
+                <label>מתרים</label>
+              </div>
+              <input type="text" class="form-control" [(ngModel)]="donation.fundraiserName"
                      placeholder="שם המתרים">
             </div>
             
             <div class="form-group">
-              <label>סטטוס תרומה *</label>
+              <div class="field-title">
+                <mat-icon class="field-icon">info</mat-icon>
+                <label>סטטוס תרומה *</label>
+              </div>
               <select class="form-control" [(ngModel)]="donation.status">
                 <option value="pending">ממתין</option>
                 <option value="completed">הושלם</option>
@@ -89,15 +127,23 @@
           <h3>פרטי אישור</h3>
           <div class="form-grid">
             <div class="form-group">
-              <label class="checkbox-label">
-                <input type="checkbox" [(ngModel)]="donation.receiptIssued">
-                התקבל אישור
-              </label>
+              <div class="receipt-status-option" [class.active]="donation.receiptIssued">
+                <label class="receipt-status-card">
+                  <input type="checkbox" [(ngModel)]="donation.receiptIssued" class="receipt-status-checkbox">
+                  <div class="receipt-status-content">
+                    <mat-icon class="receipt-status-icon">receipt_long</mat-icon>
+                    <span class="receipt-status-label">התקבל אישור</span>
+                  </div>
+                </label>
+              </div>
             </div>
-            
+
             <div class="form-group">
-              <label>מספר אישור</label>
-              <input type="text" class="form-control" [(ngModel)]="donation.receiptNumber" 
+              <div class="field-title">
+                <mat-icon class="field-icon">confirmation_number</mat-icon>
+                <label>מספר אישור</label>
+              </div>
+              <input type="text" class="form-control" [(ngModel)]="donation.receiptNumber"
                      placeholder="הכנס מספר אישור">
             </div>
           </div>
@@ -108,16 +154,24 @@
           <h3>הערות</h3>
           <div class="form-grid">
             <div class="form-group full-width">
-              <label>הערות</label>
-              <textarea class="form-control" rows="4" [(ngModel)]="donation.notes" 
+              <div class="field-title">
+                <mat-icon class="field-icon">note</mat-icon>
+                <label>הערות</label>
+              </div>
+              <textarea class="form-control" rows="4" [(ngModel)]="donation.notes"
                         placeholder="הכנס הערות..."></textarea>
             </div>
-            
+
             <div class="form-group">
-              <label class="checkbox-label">
-                <input type="checkbox" [(ngModel)]="donation.isAnonymous">
-                תרומה אנונימית
-              </label>
+              <div class="anonymous-option" [class.active]="donation.isAnonymous">
+                <label class="anonymous-card">
+                  <input type="checkbox" [(ngModel)]="donation.isAnonymous" class="anonymous-checkbox">
+                  <div class="anonymous-content">
+                    <mat-icon class="anonymous-icon">visibility_off</mat-icon>
+                    <span class="anonymous-label">תרומה אנונימית</span>
+                  </div>
+                </label>
+              </div>
             </div>
           </div>
         </div>
@@ -125,15 +179,33 @@
     </div>
     
     <div class="modal-footer">
-      <button class="btn btn-secondary">ביטול</button>
-      
-      <button class="btn btn-danger" *ngIf="!isNewDonation" (click)="deleteDonation()">
-        מחק
-      </button>
-      
-      <button class="btn btn-primary" (click)="saveDonation()">
-        שמור תרומה
-      </button>
+      <div class="footer-actions-left">
+        <!-- Admin Actions -->
+        <button mat-stroked-button
+                color="warn"
+                *ngIf="!isNewDonation"
+                (click)="deleteDonation()"
+                class="action-button">
+          <mat-icon>delete</mat-icon>
+          מחק תרומה
+        </button>
+      </div>
+      <div class="footer-actions-right">
+        <button mat-stroked-button
+                (click)="closeModal()"
+                class="cancel-button">
+          <mat-icon>close</mat-icon>
+          ביטול
+        </button>
+        <button mat-raised-button
+                color="primary"
+                (click)="saveDonation()"
+                class="save-button"
+                [disabled]="loading">
+          <mat-icon>save</mat-icon>
+          {{isNewDonation ? 'שמור תרומה' : 'עדכן תרומה'}}
+        </button>
+      </div>
     </div>
   </div>
 </div>
