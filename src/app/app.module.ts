@@ -48,7 +48,7 @@ import { LanguageSwitcherComponent } from './i18n/language-switcher.component'
 import { DonorsMapComponent } from './route/donors-map/donors-map.component'
 import { DonorDetailsModalComponent } from './routes/modals/donor-details-modal/donor-details-modal.component'
 import { DualDatePickerComponent } from './shared/dual-date-picker/dual-date-picker.component'
-import { ModernDualDatePickerComponent } from './shared/modern-dual-date-picker/modern-dual-date-picker.component'
+import { SharedComponentsModule } from './shared/shared-components.module'
 import { HebrewDateService } from './services/hebrew-date.service'
 import { GlobalFiltersComponent } from './components/global-filters/global-filters.component'
 import { QuickActionsComponent } from './components/quick-actions/quick-actions.component'
@@ -76,12 +76,12 @@ import { QuickActionsComponent } from './components/quick-actions/quick-actions.
     ReportsComponent,
     LanguageSwitcherComponent,
     DonorsMapComponent,
-    DualDatePickerComponent,
-    ModernDualDatePickerComponent
+    DualDatePickerComponent
   ],
   imports: [
     BrowserModule,
     CommonModule,
+    SharedComponentsModule,
     AppRoutingModule,
     FormsModule,
     MatSidenavModule,

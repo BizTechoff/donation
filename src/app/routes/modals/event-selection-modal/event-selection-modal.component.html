@@ -1,0 +1,100 @@
+<div class="modal-backdrop" (click)="cancel()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ args.title || 'בחר אירוע' }}</h2>
+      <button class="close-btn" (click)="cancel()" title="סגור">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <!-- Search Section -->
+      <div class="search-section">
+        <div class="search-input-group">
+          <input
+            type="text"
+            class="form-control search-input"
+            [(ngModel)]="eventSearchTerm"
+            placeholder="חפש אירוע...">
+          <button *ngIf="eventSearchTerm" class="clear-search-btn" (click)="clearSearch()">
+            <mat-icon>clear</mat-icon>
+          </button>
+        </div>
+        <button class="btn btn-success add-new-btn" (click)="toggleCreateNewEvent()">
+          <mat-icon>{{ showCreateNewEvent ? 'close' : 'add' }}</mat-icon>
+          {{ showCreateNewEvent ? 'ביטול' : 'יצירת אירוע חדש' }}
+        </button>
+      </div>
+
+      <!-- Create New Event Section -->
+      <div class="create-event-section" *ngIf="showCreateNewEvent">
+        <div class="create-event-card">
+          <h3>יצירת אירוע חדש</h3>
+          <div class="new-event-form">
+            <input
+              type="text"
+              class="form-control"
+              [(ngModel)]="newEventDescription"
+              placeholder="שם האירוע (לדוגמה: יום הולדת בן)"
+              (keyup.enter)="createNewEvent()">
+            <div class="form-actions">
+              <button class="btn btn-primary" (click)="createNewEvent()" [disabled]="!newEventDescription.trim()">
+                <mat-icon>save</mat-icon>
+                יצור ושמור
+              </button>
+              <button class="btn btn-secondary" (click)="toggleCreateNewEvent()">
+                <mat-icon>cancel</mat-icon>
+                ביטול
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Events Table -->
+      <div class="events-table-section" *ngIf="!showCreateNewEvent">
+        <div class="events-by-category" *ngFor="let category of getEventCategories()">
+          <h4 class="category-title">{{ category }}</h4>
+          <div class="events-list">
+            <div class="event-item"
+                 *ngFor="let event of getEventsByCategory(category)"
+                 (click)="selectEvent(event)"
+                 [class.selected]="selectedEvent?.id === event.id">
+              <div class="event-info">
+                <div class="event-title">{{ event.description }}</div>
+                <div class="event-details" *ngIf="event.type">סוג: {{ event.type }}</div>
+              </div>
+              <button class="select-btn">
+                <mat-icon>check_circle</mat-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty state when no events found -->
+        <div class="no-events-found" *ngIf="getFilteredEvents().length === 0">
+          <mat-icon class="empty-icon">event_busy</mat-icon>
+          <p *ngIf="eventSearchTerm">לא נמצאו אירועים התואמים לחיפוש "{{ eventSearchTerm }}"</p>
+          <p *ngIf="!eventSearchTerm">אין אירועים זמינים</p>
+          <button class="btn btn-primary" (click)="toggleCreateNewEvent()">
+            <mat-icon>add</mat-icon>
+            יצור אירוע חדש
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="cancel()">
+        <mat-icon>cancel</mat-icon>
+        ביטול
+      </button>
+      <button class="btn btn-primary"
+              [disabled]="!selectedEvent"
+              (click)="changed = true">
+        <mat-icon>check</mat-icon>
+        בחר אירוع
+      </button>
+    </div>
+  </div>
+</div>

@@ -8,8 +8,10 @@ import { Donor, Donation, Event, DonorEvent, CompanyInfo } from '../../../../sha
 import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
 import { ModalNavigationHeaderComponent, NavigationRecord, FilterOption, ActiveFilter } from '../../../shared/modal-navigation-header/modal-navigation-header.component';
+import { SharedComponentsModule } from '../../../shared/shared-components.module';
 import { openDialog } from 'common-ui-elements';
 import { DataAreaDialogComponent } from '../../../common/data-area-dialog/data-area-dialog.component';
+import { UIToolsService } from '../../../common/UIToolsService';
 
 export interface DonorDetailsModalArgs {
   donorId: string; // Can be 'new' for new donor or donor ID
@@ -28,7 +30,8 @@ export interface DonorDetailsModalArgs {
     MatButtonModule,
     MatIconModule,
     MatTooltipModule,
-    ModalNavigationHeaderComponent
+    ModalNavigationHeaderComponent,
+    SharedComponentsModule
   ],
   schemas: [NO_ERRORS_SCHEMA]
 })
@@ -52,20 +55,13 @@ export class DonorDetailsModalComponent implements OnInit {
   
   // Custom personal dates (legacy - keeping for backward compatibility)
   customPersonalDates: { name: string; date: Date | null }[] = [];
-  showAddDateDialog = false;
-  newDateName = '';
-  newEventDescription = '';
-  
-  // Event search and creation
-  eventSearchTerm = '';
-  showCreateNewEvent = false;
   
   // Navigation header properties
   allDonors: NavigationRecord[] = [];
   filterOptions: FilterOption[] = [];
   currentDonorRecord?: NavigationRecord;
 
-  constructor(public i18n: I18nService) {}
+  constructor(public i18n: I18nService, private ui: UIToolsService) {}
 
   async ngOnInit() {
     await this.loadAvailableEvents();
@@ -232,15 +228,7 @@ export class DonorDetailsModalComponent implements OnInit {
 
   // Custom personal dates methods
   addCustomDate() {
-    if (this.newDateName.trim()) {
-      this.customPersonalDates.push({
-        name: this.newDateName.trim(),
-        date: null
-      });
-      this.newDateName = '';
-      this.showAddDateDialog = false;
-      this.changed = true;
-    }
+    // This method is now handled by the UIToolsService dialog
   }
 
   removeCustomDate(index: number) {
@@ -255,18 +243,24 @@ export class DonorDetailsModalComponent implements OnInit {
     }
   }
 
-  async openAddDateDialog() {
+  async openAddDateDialog(event: MouseEvent) {
     const availableEvents = this.getAvailableEvents();
-    
-    // Keep the original custom dialog for now since DataAreaDialog needs different configuration
-    this.showAddDateDialog = true;
-    this.newDateName = '';
+
+    if (availableEvents.length === 0) {
+      this.ui.info('אין אירועים זמינים להוספה');
+      return;
+    }
+
+    try {
+      const selectedEvent = await this.ui.selectEventDialog(availableEvents, 'בחר אירוע להוספה');
+      if (selectedEvent) {
+        await this.addEventFromDialog(selectedEvent);
+      }
+    } catch (error) {
+      console.error('Error in openAddDateDialog:', error);
+    }
   }
 
-  closeAddDateDialog() {
-    this.showAddDateDialog = false;
-    this.newDateName = '';
-  }
 
   // Events Management
   async addEventFromDialog(event: Event) {
@@ -298,8 +292,7 @@ export class DonorDetailsModalComponent implements OnInit {
       
       // Add to the current list instead of reloading from DB
       this.donorEvents.push(donorEvent);
-      
-      this.closeAddDateDialog();
+
       this.changed = true;
     } catch (error) {
       console.error('Error adding event:', error);
@@ -368,64 +361,6 @@ export class DonorDetailsModalComponent implements OnInit {
     );
   }
 
-  // Filter events based on search term
-  getFilteredEvents(): Event[] {
-    if (!this.eventSearchTerm.trim()) {
-      return this.getAvailableEvents();
-    }
-    
-    return this.getAvailableEvents().filter(event =>
-      event.description.toLowerCase().includes(this.eventSearchTerm.toLowerCase())
-    );
-  }
-
-  // Create a new event and save to database
-  async createNewEvent() {
-    if (!this.newEventDescription.trim()) {
-      alert('יש להזין תיאור לאירוע החדש');
-      return;
-    }
-
-    try {
-      const newEvent = this.eventRepo.create({
-        description: this.newEventDescription.trim(),
-        type: 'personal',
-        isRequired: false,
-        isActive: true,
-        sortOrder: 999,
-        category: 'אישי'
-      });
-
-      await newEvent.save();
-      
-      // Add to available events list
-      this.availableEvents.push(newEvent);
-      
-      // Reset form
-      this.newEventDescription = '';
-      this.showCreateNewEvent = false;
-      
-      // Add the new event to the donor
-      await this.addEventFromDialog(newEvent);
-      
-    } catch (error) {
-      console.error('Error creating new event:', error);
-      alert('שגיאה ביצירת האירוע החדש');
-    }
-  }
-
-  // Toggle create new event form
-  toggleCreateNewEvent() {
-    this.showCreateNewEvent = !this.showCreateNewEvent;
-    if (this.showCreateNewEvent) {
-      this.newEventDescription = '';
-    }
-  }
-
-  // Clear search
-  clearSearch() {
-    this.eventSearchTerm = '';
-  }
 
   // Company management methods
   addCompany() {

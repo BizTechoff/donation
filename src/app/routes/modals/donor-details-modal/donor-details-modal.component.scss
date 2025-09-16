@@ -544,260 +544,51 @@
   }
 }
 
-/* Events Dialog Styling */
-.custom-date-dialog {
-  position: fixed;
-  top: 0;
-  left: 0;
+/* Date Picker Container */
+.date-picker-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   width: 100%;
-  height: 100%;
-  z-index: 2000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  
-  .dialog-backdrop {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(3px);
-  }
-  
-  .dialog-content {
-    position: relative;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.2);
-    max-width: 800px;
-    width: 70%;
-    max-height: 75vh;
-    overflow-y: auto;
-    z-index: 2001;
-    
-    &.events-table-dialog {
-      padding: 24px;
-      max-width: 900px;
-      width: 75%;
-    }
-  }
-}
 
-/* Events Table Styling */
-.events-table-section {
-  margin: 20px 0;
-  
-  .events-table-container {
-    max-height: 300px;
-    overflow-y: auto;
-    border: 1px solid #e1e8ed;
-    border-radius: 8px;
-    
-    .events-table {
-      width: 100%;
-      border-collapse: collapse;
-      
-      th {
-        background: #f8f9fa;
-        padding: 12px;
-        text-align: right;
-        font-weight: 600;
-        color: #2c3e50;
-        border-bottom: 2px solid #e1e8ed;
-      }
-      
-      td {
-        padding: 10px 12px;
-        border-bottom: 1px solid #e1e8ed;
-      }
-      
-      tr:hover {
-        background: #f8f9fa;
-      }
-    }
-  }
-  
-  .no-events-found {
-    text-align: center;
-    padding: 40px;
-    color: #7f8c8d;
-    
-    p {
-      margin-bottom: 16px;
-    }
-  }
-}
-
-/* Search Section Styling */
-.search-section {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  margin-bottom: 20px;
-  
-  .search-input-group {
+  app-modern-dual-date-picker {
     flex: 1;
-    position: relative;
-    
-    .search-input {
-      width: 100%;
-      padding: 12px 16px;
-      padding-right: 40px;
-      border: 2px solid #e1e8ed;
-      border-radius: 8px;
-      font-size: 14px;
-      
-      &:focus {
-        outline: none;
-        border-color: #667eea;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-      }
-    }
-    
-    .clear-search-btn {
-      position: absolute;
-      right: 12px;
-      top: 50%;
-      transform: translateY(-50%);
-      background: none;
-      border: none;
-      color: #7f8c8d;
-      cursor: pointer;
-      font-size: 18px;
-      line-height: 1;
-      
-      &:hover {
-        color: #e74c3c;
-      }
-    }
   }
-  
-  .add-new-btn {
-    padding: 10px 16px;
-    background: #27ae60;
+
+  .remove-date-btn {
+    flex-shrink: 0;
+    background: #ff4757;
     color: white;
     border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
-    white-space: nowrap;
-    transition: all 0.3s ease;
-    
-    &:hover {
-      background: #229954;
-    }
-  }
-}
-
-/* Create Event Section */
-.create-event-section {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-  
-  .create-event-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(2px);
+    border-radius: 4px;
+    width: 24px;
+    height: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
-  }
-  
-  .create-event-card {
-    background: white;
-    padding: 32px;
-    border-radius: 12px;
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
-    width: 500px;
-    max-width: 90vw;
-    position: relative;
-    z-index: 2001;
-    animation: slideInUp 0.3s ease-out;
-    
-    h5 {
-      margin: 0 0 20px 0;
-      color: #2c3e50;
-      font-size: 18px;
-      text-align: center;
-      font-weight: 600;
-    }
-    
-    .new-event-form {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      
-      input {
-        padding: 12px 16px;
-        border: 2px solid #e1e8ed;
-        border-radius: 8px;
-        font-size: 14px;
-        
-        &:focus {
-          outline: none;
-          border-color: #667eea;
-          box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-      }
-      
-      .form-actions {
-        display: flex;
-        gap: 12px;
-        justify-content: center;
-        
-        button {
-          padding: 12px 24px;
-          border: none;
-          border-radius: 8px;
-          cursor: pointer;
-          font-weight: 500;
-          transition: all 0.3s ease;
-          
-          &.btn-primary {
-            background: #667eea;
-            color: white;
-            
-            &:hover:not(:disabled) {
-              background: #5a6fd8;
-              transform: translateY(-1px);
-            }
-            
-            &:disabled {
-              background: #bdc3c7;
-              cursor: not-allowed;
-              transform: none;
-            }
-          }
-          
-          &.btn-secondary {
-            background: #f8f9fa;
-            color: #6c757d;
-            border: 1px solid #dee2e6;
-            
-            &:hover {
-              background: #e9ecef;
-              transform: translateY(-1px);
-            }
-          }
-        }
-      }
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: #ff3838;
+      transform: scale(1.05);
     }
   }
 }
+
+.custom-date-item {
+  margin-bottom: 12px;
+
+  label {
+    display: block;
+    margin-bottom: 4px;
+    font-weight: 500;
+    color: #2c3e50;
+  }
+}
+
+
 
 // Marital Status Selection Grid
 .marital-status-grid {

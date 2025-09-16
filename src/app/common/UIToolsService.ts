@@ -112,6 +112,14 @@ export class UIToolsService implements UITools {
       (dlg) => dlg.changed
     )
   }
+
+  async selectEventDialog(availableEvents: any[], title?: string): Promise<any> {
+    return await openDialog(
+      (await import('../routes/modals/event-selection-modal/event-selection-modal.component')).EventSelectionModalComponent,
+      (dlg) => dlg.args = { availableEvents, title },
+      (dlg) => dlg.selectedEvent
+    );
+  }
   private enhanceFieldOptionsAndDataControlOptions(
     commonUIPlugin: CommonUIElementsPluginsService
   ) {
