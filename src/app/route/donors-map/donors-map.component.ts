@@ -498,9 +498,14 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   // Navigation and action methods for popup buttons
-  openDonorDetails(donorId: string) {
-    // Navigate to donor details page
-    this.router.navigate(['/פרטי תורם'], { queryParams: { id: donorId } });
+  async openDonorDetails(donorId: string) {
+    // Open donor details modal instead of navigating
+    const changed = await this.ui.donorDetailsDialog(donorId);
+    if (changed) {
+      // Reload data if donor was changed to refresh the map
+      await this.loadData();
+      this.addMarkersToMap();
+    }
   }
 
   async addDonationForDonor(donorId: string) {
