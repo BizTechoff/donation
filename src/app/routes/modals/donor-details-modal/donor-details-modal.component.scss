@@ -1026,8 +1026,8 @@
       background: white;
 
       &:hover {
-        border-color: #FF9800;
-        box-shadow: 0 2px 8px rgba(255, 152, 0, 0.2);
+        border-color: #9C27B0;
+        box-shadow: 0 2px 8px rgba(156, 39, 176, 0.2);
         transform: translateY(-2px);
       }
 
@@ -1060,20 +1060,20 @@
     }
 
     &.active .style-card {
-      border-color: #FF9800;
-      background: linear-gradient(135deg, rgba(255, 152, 0, 0.1), rgba(255, 152, 0, 0.05));
+      border-color: #9C27B0;
+      background: linear-gradient(135deg, rgba(156, 39, 176, 0.1), rgba(156, 39, 176, 0.05));
 
       .style-icon {
-        color: #FF9800;
+        color: #9C27B0;
       }
 
       .style-label {
-        color: #FF9800;
+        color: #9C27B0;
         font-weight: 600;
       }
 
       .style-desc {
-        color: #FF9800;
+        color: #9C27B0;
       }
     }
   }

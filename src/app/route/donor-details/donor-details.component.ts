@@ -34,7 +34,7 @@ export class DonorDetailsComponent implements OnInit {
       this.donor.wantsUpdates = true;
       this.donor.wantsTaxReceipts = true;
       this.donor.preferredLanguage = 'he';
-      this.donor.country = 'ישראל';
+      this.donor.countryId = ''; // Will need to be set to Israel country ID
     } else if (id) {
       await this.loadDonor(id);
     }

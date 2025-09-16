@@ -1,0 +1,64 @@
+<mat-form-field class="address-input-field" appearance="outline">
+  <mat-label>{{ label }}</mat-label>
+
+  <input
+    matInput
+    [placeholder]="placeholder"
+    [value]="searchValue"
+    [disabled]="disabled"
+    [required]="required"
+    [matAutocomplete]="auto"
+    (input)="onInput($event)"
+    (focus)="onFocus()"
+    dir="rtl"
+  >
+
+  <mat-icon matSuffix class="address-icon">location_on</mat-icon>
+
+  <!-- Loading spinner -->
+  <mat-spinner
+    *ngIf="isLoading"
+    matSuffix
+    diameter="20"
+    class="loading-spinner">
+  </mat-spinner>
+
+  <mat-autocomplete
+    #auto="matAutocomplete"
+    [displayWith]="displayFn"
+    (optionSelected)="onSuggestionSelect($event.option.value)"
+    dir="rtl">
+
+    <mat-option
+      *ngFor="let suggestion of suggestions"
+      [value]="suggestion"
+      class="address-option">
+
+      <div class="suggestion-content">
+        <!-- Main address line -->
+        <div class="main-address">
+          <mat-icon class="location-icon">place</mat-icon>
+          <span class="address-text">{{ getDisplayAddress(suggestion) }}</span>
+        </div>
+
+        <!-- Address details -->
+        <div class="address-details" *ngIf="getAddressDetails(suggestion)">
+          <span class="details-text">{{ getAddressDetails(suggestion) }}</span>
+        </div>
+
+        <!-- City and country -->
+        <div class="city-country">
+          <span class="city-country-text">{{ getCityAndCountry(suggestion) }}</span>
+        </div>
+      </div>
+    </mat-option>
+
+    <!-- No results option -->
+    <mat-option *ngIf="!isLoading && suggestions.length === 0 && searchValue.length >= 3" disabled>
+      <div class="no-results">
+        <mat-icon>search_off</mat-icon>
+        <span>לא נמצאו תוצאות</span>
+      </div>
+    </mat-option>
+  </mat-autocomplete>
+</mat-form-field>

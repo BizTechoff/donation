@@ -469,7 +469,7 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
         const coords = await this.geocodingService.geocodeAddress(
           donor.fullAddress!,
           donor.city,
-          donor.country
+          donor.country?.name || ''
         );
 
         if (coords) {

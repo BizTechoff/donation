@@ -79,9 +79,30 @@ export class Donation extends IdEntity {
   notes = ''
 
   @Fields.string({
-    caption: 'מתרים',
+    caption: 'מתרים ID',
   })
-  fundraiserName = ''
+  fundraiserId = ''
+
+  @Fields.json({
+    caption: 'שותפים לתרומה',
+  })
+  partnerIds: string[] = []
+
+
+  @Fields.string({
+    caption: 'שם ח"ן',
+  })
+  bankName = ''
+
+  @Fields.string({
+    caption: 'מספר צק',
+  })
+  checkNumber = ''
+
+  @Fields.string({
+    caption: 'מספר שובר',
+  })
+  voucherNumber = ''
 
   @Fields.boolean({
     caption: 'תרומה אנונימית',
@@ -136,6 +157,12 @@ export class Donation extends IdEntity {
     validate: Validators.required,
   })
   status: 'pending' | 'completed' | 'cancelled' = 'pending'
+
+  @Fields.string({
+    caption: 'סוג תרומה',
+    validate: Validators.required,
+  })
+  donationType: 'full' | 'commitment' = 'full'
 
   @BackendMethod({ allowed: [Roles.admin] })
   async issueReceipt() {

@@ -296,6 +296,15 @@
   }
 }
 
+// Partners field gets special treatment for full width
+.form-group.full-width {
+  grid-column: 1 / -1;
+
+  .field-title .field-icon {
+    color: #667eea;
+  }
+}
+
 // Field title with icon styling
 .field-title {
   display: flex;
@@ -439,6 +448,13 @@
   position: sticky;
   bottom: 0;
   z-index: 100;
+
+  .footer-divider {
+    width: 1px;
+    height: 30px;
+    background: #d0d0d0;
+    margin: 0 12px;
+  }
 }
 
 .footer-actions-left,
@@ -492,6 +508,69 @@
   }
 }
 
+/* Special action buttons */
+.print-letter-btn {
+  border-color: #4CAF50;
+  color: #4CAF50;
+
+  &:hover {
+    background: rgba(76, 175, 80, 0.08);
+    border-color: #45a049;
+  }
+
+  mat-icon {
+    margin-right: 4px;
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    vertical-align: middle;
+  }
+}
+
+.add-reminder-btn {
+  border-color: #FF9800;
+  color: #FF9800;
+
+  &:hover {
+    background: rgba(255, 152, 0, 0.08);
+    border-color: #F57C00;
+  }
+
+  mat-icon {
+    margin-right: 4px;
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    vertical-align: middle;
+  }
+}
+
+/* Campaign Actions */
+.campaign-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-right: 16px;
+}
+
+.campaign-contacts-btn {
+  border-color: #2196F3;
+  color: #2196F3;
+
+  &:hover {
+    background: rgba(33, 150, 243, 0.08);
+    border-color: #1976D2;
+  }
+
+  mat-icon {
+    margin-right: 4px;
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    vertical-align: middle;
+  }
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .donation-details-modal {
@@ -526,6 +605,33 @@
   .form-grid {
     grid-template-columns: 1fr;
   }
+
+  .donation-type-selector {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .donation-type-card {
+    padding: 14px !important;
+  }
+
+  .donation-type-content {
+    .donation-type-icon {
+      font-size: 24px !important;
+      width: 24px !important;
+      height: 24px !important;
+    }
+
+    .donation-type-text {
+      .donation-type-label {
+        font-size: 15px !important;
+      }
+
+      .donation-type-description {
+        font-size: 12px !important;
+      }
+    }
+  }
 }
 
 /* RTL Support */
@@ -539,5 +645,241 @@
   .save-button mat-icon {
     margin-right: 0;
     margin-left: 8px;
+  }
+
+  .print-letter-btn mat-icon,
+  .add-reminder-btn mat-icon,
+  .campaign-contacts-btn mat-icon {
+    margin-right: 0;
+    margin-left: 4px;
+  }
+}
+
+/* Partners Management Styling */
+.partners-selected {
+  margin-bottom: 16px;
+}
+
+.selected-partners-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.selected-partner {
+  display: flex;
+  align-items: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  animation: slideInScale 0.3s ease-out;
+
+  .partner-name {
+    margin-right: 8px;
+    transition: all 0.3s ease;
+
+    &.clickable {
+      cursor: pointer;
+      position: relative;
+
+      &:hover {
+        text-decoration: underline;
+        transform: scale(1.05);
+        text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+      }
+
+      &:active {
+        transform: scale(0.98);
+      }
+    }
+  }
+
+  .remove-partner-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+      color: white;
+    }
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: scale(1.1);
+    }
+  }
+}
+
+@keyframes slideInScale {
+  from {
+    transform: scale(0.8) translateY(-10px);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+.add-partner-section {
+  margin-bottom: 12px;
+
+  .form-control {
+    background: #f8f9fa;
+    border-color: #e1e8ed;
+
+    &:focus {
+      background: white;
+      border-color: #667eea;
+    }
+  }
+}
+
+.partners-help-text {
+  color: #6c757d;
+  font-style: italic;
+  text-align: center;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px dashed #dee2e6;
+}
+
+/* Donation Type Selector Styling */
+.donation-type-selector {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.donation-type-option {
+  .donation-type-card {
+    display: block;
+    cursor: pointer;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 16px;
+    transition: all 0.3s ease;
+    background: white;
+    height: 100%;
+
+    &:hover {
+      border-color: #667eea;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+      transform: translateY(-2px);
+    }
+
+    .donation-type-radio {
+      display: none;
+    }
+
+    .donation-type-content {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+
+      .donation-type-icon {
+        font-size: 28px;
+        width: 28px;
+        height: 28px;
+        color: #666;
+        flex-shrink: 0;
+        margin-top: 2px;
+      }
+
+      .donation-type-text {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+
+        .donation-type-label {
+          font-weight: 600;
+          color: #333;
+          font-size: 16px;
+          line-height: 1.2;
+        }
+
+        .donation-type-description {
+          font-size: 13px;
+          color: #666;
+          line-height: 1.3;
+        }
+      }
+    }
+  }
+
+  &.active .donation-type-card {
+    border-color: #667eea;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.05));
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+
+    .donation-type-icon {
+      color: #667eea;
+    }
+
+    .donation-type-label {
+      color: #667eea;
+      font-weight: 700;
+    }
+
+    .donation-type-description {
+      color: #555;
+    }
+  }
+}
+
+// Special styling for commitment type
+.donation-type-option:nth-child(2) {
+  &.active .donation-type-card {
+    border-color: #FF9800;
+    background: linear-gradient(135deg, rgba(255, 152, 0, 0.1), rgba(255, 152, 0, 0.05));
+    box-shadow: 0 4px 16px rgba(255, 152, 0, 0.3);
+
+    .donation-type-icon {
+      color: #FF9800;
+    }
+
+    .donation-type-label {
+      color: #FF9800;
+    }
+  }
+
+  .donation-type-card:hover {
+    border-color: #FF9800;
+    box-shadow: 0 4px 12px rgba(255, 152, 0, 0.2);
+  }
+}
+
+/* RTL Support for partners */
+[dir="rtl"] {
+  .selected-partner {
+    .partner-name {
+      margin-right: 0;
+      margin-left: 8px;
+    }
+  }
+
+  .donation-type-content {
+    flex-direction: row-reverse;
+
+    .donation-type-text {
+      text-align: right;
+    }
   }
 }

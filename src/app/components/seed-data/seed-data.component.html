@@ -1,0 +1,45 @@
+<div class="seed-data-container">
+  <div class="seed-card">
+    <h2>ייבוא נתונים למערכת</h2>
+
+    <div class="button-group">
+      <button mat-raised-button
+              color="primary"
+              (click)="seedCountries()"
+              [disabled]="loading"
+              class="seed-button">
+        <mat-icon>public</mat-icon>
+        ייבוא רשימת מדינות (110+ מדינות)
+      </button>
+
+      <button mat-raised-button
+              color="accent"
+              (click)="seedAllData()"
+              [disabled]="loading"
+              class="seed-button">
+        <mat-icon>upload</mat-icon>
+        ייבוא כל הנתונים ההתחלתיים
+      </button>
+    </div>
+
+    <div *ngIf="loading" class="loading-section">
+      <mat-spinner diameter="50"></mat-spinner>
+      <p>מייבא נתונים, אנא המתן...</p>
+    </div>
+
+    <div *ngIf="results && !loading" class="results-section">
+      <h3>תוצאות הייבוא:</h3>
+      <div class="results-details">
+        <div *ngIf="results.countries" class="result-item">
+          <mat-icon>public</mat-icon>
+          <div>
+            <strong>מדינות:</strong>
+            <p>נוצרו: {{ results.countries?.created || results.created }}</p>
+            <p>עודכנו: {{ results.countries?.updated || results.updated }}</p>
+            <p>סה"כ במערכת: {{ results.countries?.total || results.total }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

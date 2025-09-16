@@ -159,13 +159,32 @@
         <!-- כתובת מגורים -->
         <div class="section address-section">
           <h3>כתובת מגורים</h3>
+
+          <!-- Address Autocomplete Component -->
+          <div class="form-group full-width">
+            <app-osm-address-input
+              label="חיפוש כתובת"
+              placeholder="הקלד כתובת לחיפוש..."
+              countryCode="il"
+              (addressSelected)="onAddressSelected($event)">
+            </app-osm-address-input>
+          </div>
+
+          <!-- Manual Address Fields -->
           <div class="form-grid">
             <div class="form-group">
               <div class="field-title">
                 <mat-icon class="field-icon">home</mat-icon>
-                <label>רחוב 1</label>
+                <label>רחוב</label>
               </div>
-              <input type="text" class="form-control" [(ngModel)]="donor.street1" placeholder="רחוב ומספר">
+              <input type="text" class="form-control" [(ngModel)]="donor.street1" placeholder="שם רחוב">
+            </div>
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">tag</mat-icon>
+                <label>מספר בית</label>
+              </div>
+              <input type="text" class="form-control" [(ngModel)]="donor.houseNumber" placeholder="מספר בית">
             </div>
             <div class="form-group">
               <div class="field-title">
@@ -184,23 +203,28 @@
             <div class="form-group">
               <div class="field-title">
                 <mat-icon class="field-icon">place</mat-icon>
-                <label>{{ (i18n.terms$ | async)?.city }}</label>
+                <label>עיר</label>
               </div>
-              <input type="text" class="form-control" [(ngModel)]="donor.city" [placeholder]="(i18n.terms$ | async)?.city">
+              <input type="text" class="form-control" [(ngModel)]="donor.city" placeholder="עיר">
             </div>
             <div class="form-group">
               <div class="field-title">
                 <mat-icon class="field-icon">markunread_mailbox</mat-icon>
-                <label>{{ (i18n.terms$ | async)?.zipCode }}</label>
+                <label>מיקוד</label>
               </div>
-              <input type="text" class="form-control" [(ngModel)]="donor.zipCode" [placeholder]="(i18n.terms$ | async)?.zipCode">
+              <input type="text" class="form-control" [(ngModel)]="donor.zipCode" placeholder="מיקוד">
             </div>
             <div class="form-group">
               <div class="field-title">
                 <mat-icon class="field-icon">public</mat-icon>
-                <label>{{ (i18n.terms$ | async)?.country }}</label>
+                <label>מדינה</label>
               </div>
-              <input type="text" class="form-control" [(ngModel)]="donor.country" [placeholder]="(i18n.terms$ | async)?.country">
+              <select class="form-control" [(ngModel)]="donor.countryId">
+                <option value="">בחר מדינה</option>
+                <option *ngFor="let country of countries" [value]="country.id">
+                  {{ country.name }}
+                </option>
+              </select>
             </div>
           </div>
         </div>
@@ -547,7 +571,12 @@
                   <mat-icon class="field-icon">public</mat-icon>
                   <label>מדינה</label>
                 </div>
-                <input type="text" class="form-control" [(ngModel)]="company.country" placeholder="מדינה">
+                <select class="form-control" [(ngModel)]="company.countryId">
+                  <option value="">בחר מדינה</option>
+                  <option *ngFor="let country of countries" [value]="country.id">
+                    {{ country.name }}
+                  </option>
+                </select>
               </div>
               <div class="form-group">
                 <div class="field-title">

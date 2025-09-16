@@ -11,6 +11,7 @@ import {
 import { EmailField } from '../../app/common/fields/EmailField'
 import { PhoneField } from '../../app/common/fields/PhoneField'
 import { User } from './user'
+import { Country } from './country'
 import { Roles } from '../enum/roles'
 
 export interface CompanyInfo {
@@ -23,7 +24,7 @@ export interface CompanyInfo {
   neighborhood: string
   city: string
   zipCode: string
-  country: string
+  countryId: string
   phone: string
   email: string
   website: string
@@ -124,6 +125,11 @@ export class Donor extends IdEntity {
   street1 = ''
 
   @Fields.string({
+    caption: 'מספר בית',
+  })
+  houseNumber = ''
+
+  @Fields.string({
     caption: 'רחוב 2',
   })
   street2 = ''
@@ -143,10 +149,15 @@ export class Donor extends IdEntity {
   })
   zipCode = ''
 
-  @Fields.string({
+  @Relations.toOne<Donor, Country>(() => Country, {
     caption: 'מדינה',
   })
-  country = 'ישראל'
+  country?: Country
+
+  @Fields.string({
+    caption: 'מדינה ID',
+  })
+  countryId = ''
 
   @Fields.string({
     caption: 'כתובת נופש',
@@ -458,7 +469,7 @@ export class Donor extends IdEntity {
     if (this.neighborhood) parts.push(this.neighborhood)
     if (this.city) parts.push(this.city)
     if (this.zipCode) parts.push(this.zipCode)
-    if (this.country && this.country !== 'ישראל') parts.push(this.country)
+    if (this.country && this.country.name !== 'ישראל') parts.push(this.country.name)
     return parts.join(', ').trim()
   }
 

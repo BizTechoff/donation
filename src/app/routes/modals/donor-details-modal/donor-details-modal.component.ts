@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { Donor, Donation, Event, DonorEvent, CompanyInfo } from '../../../../shared/entity';
+import { Donor, Donation, Event, DonorEvent, CompanyInfo, Country } from '../../../../shared/entity';
 import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
 import { ModalNavigationHeaderComponent, NavigationRecord, FilterOption, ActiveFilter } from '../../../shared/modal-navigation-header/modal-navigation-header.component';
@@ -12,6 +12,7 @@ import { SharedComponentsModule } from '../../../shared/shared-components.module
 import { openDialog } from 'common-ui-elements';
 import { DataAreaDialogComponent } from '../../../common/data-area-dialog/data-area-dialog.component';
 import { UIToolsService } from '../../../common/UIToolsService';
+import { OsmAddressInputComponent, AddressComponents } from '../../../common/osm-address-input/osm-address-input.component';
 
 export interface DonorDetailsModalArgs {
   donorId: string; // Can be 'new' for new donor or donor ID
@@ -31,7 +32,8 @@ export interface DonorDetailsModalArgs {
     MatIconModule,
     MatTooltipModule,
     ModalNavigationHeaderComponent,
-    SharedComponentsModule
+    SharedComponentsModule,
+    OsmAddressInputComponent
   ],
   schemas: [NO_ERRORS_SCHEMA]
 })
@@ -43,10 +45,12 @@ export class DonorDetailsModalComponent implements OnInit {
   donor?: Donor;
   originalDonorData?: string; // To track changes
   donations: Donation[] = [];
+  countries: Country[] = [];
   donorRepo = remult.repo(Donor);
   donationRepo = remult.repo(Donation);
   eventRepo = remult.repo(Event);
   donorEventRepo = remult.repo(DonorEvent);
+  countryRepo = remult.repo(Country);
   loading = false;
   isNewDonor = false;
   
@@ -66,6 +70,7 @@ export class DonorDetailsModalComponent implements OnInit {
 
   async ngOnInit() {
     await this.loadAvailableEvents();
+    await this.loadCountries();
     await this.initializeDonor();
     await this.loadAllDonors();
     this.setupFilterOptions();
@@ -82,6 +87,24 @@ export class DonorDetailsModalComponent implements OnInit {
     }
   }
 
+  private async loadCountries() {
+    try {
+      this.countries = await this.countryRepo.find({
+        where: { isActive: true },
+        orderBy: { name: 'asc' }
+      });
+    } catch (error) {
+      console.error('Error loading countries:', error);
+    }
+  }
+
+  private async setDefaultCountry() {
+    const israelCountry = this.countries.find(c => c.name === 'ישראל');
+    if (israelCountry && this.donor) {
+      this.donor.countryId = israelCountry.id;
+    }
+  }
+
   private async initializeDonor() {
     if (!this.args?.donorId) return;
     
@@ -94,8 +117,11 @@ export class DonorDetailsModalComponent implements OnInit {
         this.donor.wantsUpdates = true;
         this.donor.wantsTaxReceipts = true;
         this.donor.preferredLanguage = 'he';
-        this.donor.country = 'ישראל';
+        this.donor.countryId = ''; // Will be set after countries are loaded
         this.donor.companies = [];
+
+        // Set default Israel country if available
+        await this.setDefaultCountry();
         this.originalDonorData = JSON.stringify(this.donor);
       } else {
         this.isNewDonor = false;
@@ -162,12 +188,111 @@ export class DonorDetailsModalComponent implements OnInit {
     try {
       const wasNew = this.isNewDonor;
       await this.donor.save();
-      
+
       this.changed = wasNew || this.hasChanges();
       // The dialog will automatically close and return this.changed
     } catch (error) {
       console.error('Error saving donor:', error);
     }
+  }
+
+  onAddressSelected(addressComponents: AddressComponents) {
+    if (!this.donor) return;
+
+    console.log('Address selected:', addressComponents);
+    console.log('Available countries:', this.countries);
+
+    // עדכון השדות מהכתובת שנבחרה
+    this.donor.street1 = addressComponents.street || '';
+    this.donor.houseNumber = addressComponents.houseNumber || '';
+    this.donor.neighborhood = addressComponents.neighborhood || '';
+    this.donor.city = addressComponents.city || '';
+    this.donor.zipCode = addressComponents.postcode || '';
+
+    // עדכון קואורדינטות
+    if (addressComponents.latitude && addressComponents.longitude) {
+      this.donor.latitude = addressComponents.latitude;
+      this.donor.longitude = addressComponents.longitude;
+    }
+
+    // עדכון מדינה אם יש
+    if (this.countries && this.countries.length > 0) {
+      let foundCountry = null;
+
+      // חיפוש לפי קוד מדינה
+      if (addressComponents.countryCode) {
+        foundCountry = this.countries.find(c =>
+          c.code?.toLowerCase() === addressComponents.countryCode?.toLowerCase()
+        );
+      }
+
+      // אם לא נמצא, חיפוש לפי שם המדינה באנגלית
+      if (!foundCountry && addressComponents.country) {
+        foundCountry = this.countries.find(c =>
+          c.nameEn?.toLowerCase() === addressComponents.country?.toLowerCase()
+        );
+      }
+
+      // אם לא נמצא, חיפוש לפי שם המדינה בעברית
+      if (!foundCountry && addressComponents.country) {
+        const countryMappings: { [key: string]: string } = {
+          'israel': 'ישראל',
+          'united states': 'ארצות הברית',
+          'united kingdom': 'בריטניה',
+          'france': 'צרפת',
+          'germany': 'גרמניה',
+          'canada': 'קנדה',
+          'australia': 'אוסטרליה'
+        };
+
+        const hebrewName = countryMappings[addressComponents.country?.toLowerCase() || ''];
+        if (hebrewName) {
+          foundCountry = this.countries.find(c => c.name === hebrewName);
+        }
+      }
+
+      // אם עדיין לא נמצא ואנחנו בישראל (קוד il), נגדיר ישראל כברירת מחדל
+      if (!foundCountry && addressComponents.countryCode === 'IL') {
+        foundCountry = this.countries.find(c => c.name === 'ישראל');
+      }
+
+      if (foundCountry) {
+        this.donor.countryId = foundCountry.id;
+        console.log('Found country:', foundCountry.name);
+      } else {
+        console.log('Country not found:', {
+          countryCode: addressComponents.countryCode,
+          country: addressComponents.country,
+          availableCountries: this.countries.map(c => ({ name: c.name, code: c.code }))
+        });
+      }
+    } else {
+      console.log('Countries not loaded yet or empty, storing for later processing');
+      // אם המדינות לא נטענו עדיין, נשמור את הנתונים ונעדכן מאוחר יותר
+      if (addressComponents.countryCode === 'IL' || addressComponents.country === 'Israel') {
+        // נמתין שהמדינות ייטענו ואז נעדכן
+        setTimeout(() => {
+          if (this.countries && this.countries.length > 0) {
+            const israelCountry = this.countries.find(c => c.name === 'ישראל');
+            if (israelCountry && this.donor) {
+              this.donor.countryId = israelCountry.id;
+              console.log('Delayed country update - set to Israel');
+            }
+          }
+        }, 1000);
+      }
+    }
+
+    console.log('Updated donor:', {
+      street1: this.donor.street1,
+      houseNumber: this.donor.houseNumber,
+      neighborhood: this.donor.neighborhood,
+      city: this.donor.city,
+      zipCode: this.donor.zipCode,
+      countryId: this.donor.countryId,
+      latitude: this.donor.latitude,
+      longitude: this.donor.longitude
+    });
   }
 
   onDateChange(field: string, value: Date | null) {
@@ -381,7 +506,7 @@ export class DonorDetailsModalComponent implements OnInit {
       neighborhood: '',
       city: '',
       zipCode: '',
-      country: 'ישראל',
+      countryId: '',
       phone: '',
       email: '',
       website: ''

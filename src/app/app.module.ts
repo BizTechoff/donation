@@ -52,6 +52,7 @@ import { SharedComponentsModule } from './shared/shared-components.module'
 import { HebrewDateService } from './services/hebrew-date.service'
 import { GlobalFiltersComponent } from './components/global-filters/global-filters.component'
 import { QuickActionsComponent } from './components/quick-actions/quick-actions.component'
+import { SeedDataComponent } from './components/seed-data/seed-data.component'
 
 @NgModule({
   declarations: [
@@ -104,6 +105,7 @@ import { QuickActionsComponent } from './components/quick-actions/quick-actions.
     CommonUIElementsModule,
     GlobalFiltersComponent,
     QuickActionsComponent,
+    SeedDataComponent,
   ],
   providers: [
     UIToolsService,

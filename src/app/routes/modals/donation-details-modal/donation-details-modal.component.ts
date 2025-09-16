@@ -4,9 +4,10 @@ import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { Donation, Donor, Campaign, DonationMethod } from '../../../../shared/entity';
+import { Donation, Donor, Campaign, DonationMethod, User, DonationPartner, DonationFile } from '../../../../shared/entity';
 import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
+import { UIToolsService } from '../../../common/UIToolsService';
 
 export interface DonationDetailsModalArgs {
   donationId: string; // Can be 'new' for new donation or donation ID
@@ -36,17 +37,26 @@ export class DonationDetailsModalComponent implements OnInit {
   donors: Donor[] = [];
   campaigns: Campaign[] = [];
   donationMethods: DonationMethod[] = [];
+  fundraisers: User[] = [];
+  availablePartners: Donor[] = [];
+  selectedPartners: Donor[] = [];
   
   donationRepo = remult.repo(Donation);
   donorRepo = remult.repo(Donor);
   campaignRepo = remult.repo(Campaign);
   donationMethodRepo = remult.repo(DonationMethod);
+  userRepo = remult.repo(User);
+  donationPartnerRepo = remult.repo(DonationPartner);
+  fileRepo = remult.repo(DonationFile);
   
   loading = false;
   isNewDonation = false;
   selectedDonor?: Donor;
+  selectedCampaign?: Campaign;
+  selectedPaymentMethod?: DonationMethod;
+  selectedFundraiser?: User;
 
-  constructor(public i18n: I18nService) {}
+  constructor(public i18n: I18nService, private ui: UIToolsService) {}
 
   async ngOnInit() {
     await this.initializeDonation();
@@ -64,7 +74,14 @@ export class DonationDetailsModalComponent implements OnInit {
         this.donation.donationDate = new Date();
         this.donation.currency = 'ILS';
         this.donation.status = 'pending';
-        
+
+        // Initialize additional fields for dynamic payment methods
+        this.donation.bankName = '';
+        this.donation.checkNumber = '';
+        this.donation.voucherNumber = '';
+        this.donation.fundraiserId = '';
+        this.donation.partnerIds = [];
+
         // Pre-select donor if donorId is provided
         if (this.args.donorId) {
           this.donation.donorId = this.args.donorId;
@@ -76,6 +93,15 @@ export class DonationDetailsModalComponent implements OnInit {
         const foundDonation = await this.donationRepo.findId(this.args.donationId);
         if (foundDonation) {
           this.donation = foundDonation;
+
+          // Set default values for existing donations that don't have these fields
+          if (!this.donation.donationType) {
+            this.donation.donationType = 'full';
+          }
+          if (!this.donation.partnerIds) {
+            this.donation.partnerIds = [];
+          }
+
           this.originalDonationData = JSON.stringify(this.donation);
         }
       }
@@ -104,10 +130,51 @@ export class DonationDetailsModalComponent implements OnInit {
         orderBy: { name: 'asc' }
       });
 
+      // Load fundraisers (users with donator=true)
+      this.fundraisers = await this.userRepo.find({
+        where: { disabled: false, donator: true },
+        orderBy: { name: 'asc' }
+      });
+
+      // Load available partners (all active donors)
+      this.availablePartners = await this.donorRepo.find({
+        where: { isActive: true },
+        orderBy: { firstName: 'asc' }
+      });
+
       // Load selected donor if donation has donorId
       await this.loadSelectedDonor();
+
+      // Load selected campaign and payment method
+      this.updateSelectedOptions();
+
+      // Load selected partners if donation has partnerIds
+      await this.loadSelectedPartners();
     } catch (error) {
       console.error('Error loading dropdown data:', error);
+    }
+  }
+
+  private updateSelectedOptions() {
+    // Update selected campaign
+    if (this.donation?.campaignId) {
+      this.selectedCampaign = this.campaigns.find(c => c.id === this.donation.campaignId);
+    } else {
+      this.selectedCampaign = undefined;
+    }
+
+    // Update selected payment method
+    if (this.donation?.donationMethodId) {
+      this.selectedPaymentMethod = this.donationMethods.find(m => m.id === this.donation.donationMethodId);
+    } else {
+      this.selectedPaymentMethod = undefined;
+    }
+
+    // Update selected fundraiser
+    if (this.donation?.fundraiserId) {
+      this.selectedFundraiser = this.fundraisers.find(f => f.id === this.donation.fundraiserId);
+    } else {
+      this.selectedFundraiser = undefined;
     }
   }
 
@@ -175,6 +242,104 @@ export class DonationDetailsModalComponent implements OnInit {
     return `${donor.firstName} ${donor.lastName}`.trim();
   }
 
+  getFundraiserDisplayName(fundraiser: User): string {
+    return fundraiser.name;
+  }
+
+  onFundraiserChange() {
+    this.updateSelectedOptions();
+    console.log('Fundraiser changed to:', this.selectedFundraiser?.name);
+  }
+
+  async loadSelectedPartners() {
+    if (!this.donation?.partnerIds || this.donation.partnerIds.length === 0) {
+      this.selectedPartners = [];
+      return;
+    }
+
+    try {
+      this.selectedPartners = [];
+      for (const partnerId of this.donation.partnerIds) {
+        const partner = await this.donorRepo.findId(partnerId);
+        if (partner) {
+          this.selectedPartners.push(partner);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading selected partners:', error);
+    }
+  }
+
+  addPartner(partner: Donor) {
+    if (!this.donation.partnerIds.includes(partner.id)) {
+      this.donation.partnerIds.push(partner.id);
+      this.selectedPartners.push(partner);
+      console.log('Added partner:', partner.fullName);
+    }
+  }
+
+  removePartner(partner: Donor) {
+    const index = this.donation.partnerIds.indexOf(partner.id);
+    if (index > -1) {
+      this.donation.partnerIds.splice(index, 1);
+      const selectedIndex = this.selectedPartners.findIndex(p => p.id === partner.id);
+      if (selectedIndex > -1) {
+        this.selectedPartners.splice(selectedIndex, 1);
+      }
+      console.log('Removed partner:', partner.fullName);
+    }
+  }
+
+  isPartnerSelected(partner: Donor): boolean {
+    if (!this.donation || !this.donation.partnerIds) {
+      return false;
+    }
+    return this.donation.partnerIds.includes(partner.id);
+  }
+
+  getAvailablePartnersForSelection(): Donor[] {
+    if (!this.donation || !this.donation.partnerIds) {
+      return this.availablePartners;
+    }
+    return this.availablePartners.filter(partner =>
+      !this.donation.partnerIds.includes(partner.id)
+    );
+  }
+
+  getPartnerDisplayName(partner: Donor): string {
+    return partner.fullName;
+  }
+
+  onPartnerSelect(event: Event) {
+    const select = event.target as HTMLSelectElement;
+    const partnerId = select.value;
+
+    if (partnerId) {
+      const partner = this.availablePartners.find(p => p.id === partnerId);
+      if (partner) {
+        this.addPartner(partner);
+        // Reset the select to empty value
+        select.value = '';
+      }
+    }
+  }
+
+  async openPartnerDonorDetails(partner: Donor, event?: Event) {
+    // נמנע מהפעלת פונקציות אחרות (כמו הסרת שותף)
+    if (event) {
+      event.stopPropagation();
+    }
+
+    try {
+      // השותף הוא תורם בפני עצמו - פשוט נפתח את המודל שלו
+      console.log('Opening donor details for partner:', partner.fullName);
+      await this.ui.donorDetailsDialog(partner.id);
+    } catch (error) {
+      console.error('Error opening donor details for partner:', error);
+      alert('שגיאה בפתיחת פרטי התורם');
+    }
+  }
+
   closeModal(event?: MouseEvent) {
     // If clicking on overlay, close modal
     if (event && event.target === event.currentTarget) {
@@ -194,6 +359,179 @@ export class DonationDetailsModalComponent implements OnInit {
       } catch (error) {
         console.error('Error loading selected donor:', error);
       }
+    }
+  }
+
+  async printLetter() {
+    if (!this.donation) return;
+
+    try {
+      // First save the donation data
+      console.log('Saving donation before printing letter...');
+      await this.saveDonation();
+
+      // Then open letter properties selection
+      console.log('Opening letter properties selection for donation:', this.donation.id);
+      // TODO: Implement letter properties dialog
+      alert('פתיחת מאפייני מכתב תבוצע בהמשך');
+    } catch (error) {
+      console.error('Error printing letter:', error);
+      alert('שגיאה בהדפסת מכתב');
+    }
+  }
+
+  async addReminder() {
+    if (!this.donation) return;
+
+    try {
+      console.log('Adding reminder for donation:', this.donation.id);
+      // TODO: Implement reminder functionality
+      alert('פונקציונליות תזכורת תבוצע בהמשך');
+    } catch (error) {
+      console.error('Error adding reminder:', error);
+      alert('שגיאה בהוספת תזכורת');
+    }
+  }
+
+  onCampaignChange() {
+    this.updateSelectedOptions();
+    console.log('Campaign changed to:', this.selectedCampaign?.name);
+  }
+
+  onPaymentMethodChange() {
+    this.updateSelectedOptions();
+    console.log('Payment method changed to:', this.selectedPaymentMethod?.name);
+
+    // Handle special payment methods
+    if (this.selectedPaymentMethod?.name === 'כרטיס אשראי') {
+      this.openPaymentModal();
+    } else if (this.selectedPaymentMethod?.name === 'הוק') {
+      this.openStandingOrderModal();
+    }
+  }
+
+  // Getter methods for template conditionals
+  get isCheckPayment(): boolean {
+    return this.selectedPaymentMethod?.name === 'צק' || false;
+  }
+
+  get isTransferPayment(): boolean {
+    return this.selectedPaymentMethod?.name === 'העברה' || false;
+  }
+
+  get isOrganizationPayment(): boolean {
+    return this.selectedPaymentMethod?.name === 'עמותה' || false;
+  }
+
+  get isCreditCardPayment(): boolean {
+    return this.selectedPaymentMethod?.name === 'כרטיס אשראי' || false;
+  }
+
+  get isStandingOrderPayment(): boolean {
+    return this.selectedPaymentMethod?.name === 'הוק' || false;
+  }
+
+  openCampaignContacts() {
+    if (!this.selectedCampaign) return;
+
+    try {
+      console.log('Opening campaign contacts for:', this.selectedCampaign.name);
+      // TODO: Implement campaign contacts functionality
+      alert(`פתיחת אנשי קשר ופעילים עבור קמפיין: ${this.selectedCampaign.name}`);
+    } catch (error) {
+      console.error('Error opening campaign contacts:', error);
+      alert('שגיאה בפתיחת אנשי קשר ופעילים');
+    }
+  }
+
+  openPaymentModal() {
+    try {
+      console.log('Opening payment modal for credit card');
+      // TODO: Implement payment modal
+      alert('פתיחת מודל תשלום לכרטיס אשראי תבוצע בהמשך');
+    } catch (error) {
+      console.error('Error opening payment modal:', error);
+      alert('שגיאה בפתיחת מודל תשלום');
+    }
+  }
+
+  openStandingOrderModal() {
+    try {
+      console.log('Opening StandingOrderModal for הו"ק');
+      // TODO: Implement StandingOrderModal - this should replace the local showAddOrderModal
+      alert('פתיחת StandingOrderModal לפרטי הו"ק תבוצע בהמשך');
+    } catch (error) {
+      console.error('Error opening StandingOrderModal:', error);
+      alert('שגיאה בפתיחת StandingOrderModal');
+    }
+  }
+
+  async scanFile() {
+    if (!this.donation) return;
+
+    try {
+      console.log('Opening file scan for donation:', this.donation.id);
+
+      // Create file input element
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*,.pdf';
+      input.multiple = true;
+
+      input.onchange = async (event: any) => {
+        const files = event.target.files;
+        if (files && files.length > 0) {
+          await this.uploadFiles(files);
+        }
+      };
+
+      input.click();
+    } catch (error) {
+      console.error('Error opening file scan:', error);
+      alert('שגיאה בפתיחת סריקת קבצים');
+    }
+  }
+
+  async uploadFiles(files: FileList) {
+    try {
+      // First save the donation if it's new
+      if (this.isNewDonation) {
+        await this.saveDonation();
+      }
+
+      for (let i = 0; i < files.length; i++) {
+        const uploadedFile = files[i];
+        await this.uploadSingleFile(uploadedFile);
+      }
+
+      alert(`הועלו ${files.length} קבצים בהצלחה`);
+    } catch (error) {
+      console.error('Error uploading files:', error);
+      alert('שגיאה בהעלאת קבצים');
+    }
+  }
+
+  async uploadSingleFile(uploadedFile: File) {
+    try {
+      // Create file entity
+      const fileEntity = this.fileRepo.create();
+      fileEntity.fileName = uploadedFile.name;
+      fileEntity.fileType = uploadedFile.type;
+      fileEntity.fileSize = uploadedFile.size;
+      fileEntity.donationId = this.donation.id;
+      fileEntity.description = `סריקת קובץ עבור תרומה`;
+      fileEntity.isActive = true;
+
+      // For now, we'll save just the metadata
+      // In a real implementation, you would upload the file to storage
+      // and save the file path
+      fileEntity.filePath = `/uploads/donations/${this.donation.id}/${uploadedFile.name}`;
+
+      await fileEntity.save();
+      console.log('File metadata saved:', fileEntity.fileName);
+    } catch (error) {
+      console.error('Error uploading single file:', error);
+      throw error;
     }
   }
 }

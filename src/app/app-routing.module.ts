@@ -17,6 +17,7 @@ import { terms } from './terms'
 import { AdminGuard } from './users/AuthGuard'
 import { UsersComponent } from './users/users.component'
 import { SilentRedirectComponent } from './users/silent-redirect.component'
+import { SeedDataComponent } from './components/seed-data/seed-data.component'
 
 const defaultRoute = terms.home
 const routes: Routes = [
@@ -33,6 +34,7 @@ const routes: Routes = [
   { path: terms.donorsMap, component: DonorsMapComponent, canActivate: [AuthenticatedGuard], data: { name: 'donorsMap' } },
   { path: terms.reports, component: ReportsComponent, canActivate: [AdminGuard], data: { name: 'reports' } },
   { path: terms.userAccounts, component: UsersComponent, canActivate: [AdminGuard], data: { name: 'userAccounts' } },
+  { path: 'seed-data', component: SeedDataComponent, canActivate: [AdminGuard], data: { name: 'seedData' } },
   { path: '', component: SilentRedirectComponent, pathMatch: 'full' },
   { path: '**', component: SilentRedirectComponent } // תופס כל נתיב 
 ]

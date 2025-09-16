@@ -1,0 +1,143 @@
+.address-input-field {
+  width: 100%;
+
+  .address-icon {
+    color: #667eea;
+  }
+
+  .loading-spinner {
+    ::ng-deep .mat-progress-spinner circle {
+      stroke: #667eea;
+    }
+  }
+}
+
+.address-option {
+  min-height: 60px !important;
+  padding: 8px 16px !important;
+
+  .suggestion-content {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    .main-address {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      .location-icon {
+        color: #667eea;
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+      }
+
+      .address-text {
+        font-weight: 500;
+        color: #2c3e50;
+        font-size: 14px;
+        line-height: 1.2;
+      }
+    }
+
+    .address-details {
+      margin-right: 26px; // Align with text after icon
+
+      .details-text {
+        color: #7f8c8d;
+        font-size: 12px;
+        line-height: 1.2;
+      }
+    }
+
+    .city-country {
+      margin-right: 26px; // Align with text after icon
+
+      .city-country-text {
+        color: #95a5a6;
+        font-size: 11px;
+        line-height: 1.2;
+        font-style: italic;
+      }
+    }
+  }
+
+  &:hover {
+    background-color: rgba(102, 126, 234, 0.08) !important;
+  }
+
+  &.mat-selected {
+    background-color: rgba(102, 126, 234, 0.12) !important;
+  }
+}
+
+.no-results {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #95a5a6;
+  font-style: italic;
+  padding: 12px 0;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+}
+
+// RTL support
+[dir="rtl"] {
+  .suggestion-content {
+    .main-address {
+      flex-direction: row-reverse;
+    }
+
+    .address-details,
+    .city-country {
+      margin-right: 0;
+      margin-left: 26px;
+    }
+  }
+
+  .no-results {
+    flex-direction: row-reverse;
+  }
+}
+
+// Animation for smooth loading
+.loading-spinner {
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+// Responsive design
+@media (max-width: 600px) {
+  .address-option {
+    min-height: 70px !important;
+
+    .suggestion-content {
+      .address-text {
+        font-size: 13px;
+      }
+
+      .details-text {
+        font-size: 11px;
+      }
+
+      .city-country-text {
+        font-size: 10px;
+      }
+    }
+  }
+}
