@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { Donation, Donor, Campaign, DonationMethod, User, DonationPartner, DonationFile } from '../../../../shared/entity';
+import { Donation, Donor, Campaign, DonationMethod, User, DonationPartner, DonationFile, Country } from '../../../../shared/entity';
 import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
 import { UIToolsService } from '../../../common/UIToolsService';
@@ -48,6 +48,7 @@ export class DonationDetailsModalComponent implements OnInit {
   userRepo = remult.repo(User);
   donationPartnerRepo = remult.repo(DonationPartner);
   fileRepo = remult.repo(DonationFile);
+  countryRepo = remult.repo(Country);
   
   loading = false;
   isNewDonation = false;
@@ -55,6 +56,129 @@ export class DonationDetailsModalComponent implements OnInit {
   selectedCampaign?: Campaign;
   selectedPaymentMethod?: DonationMethod;
   selectedFundraiser?: User;
+
+  // Country to currency mapping
+  private countryCurrencyMap: { [countryCode: string]: string } = {
+    // מדינות עיקריות
+    'IL': 'ILS', // ישראל
+    'US': 'USD', // ארצות הברית
+    'GB': 'GBP', // בריטניה
+    'CA': 'CAD', // קנדה
+    'AU': 'AUD', // אוסטרליה
+
+    // אירופה - יורו
+    'FR': 'EUR', // צרפת
+    'DE': 'EUR', // גרמניה
+    'IT': 'EUR', // איטליה
+    'ES': 'EUR', // ספרד
+    'NL': 'EUR', // הולנד
+    'BE': 'EUR', // בלגיה
+    'AT': 'EUR', // אוסטריה
+    'PT': 'EUR', // פורטוגל
+    'IE': 'EUR', // אירלנד
+    'LU': 'EUR', // לוקסמבורג
+    'FI': 'EUR', // פינלנד
+    'GR': 'EUR', // יוון
+    'MT': 'EUR', // מלטה
+    'EE': 'EUR', // אסטוניה
+    'LV': 'EUR', // לטביה
+    'LT': 'EUR', // ליטא
+    'SK': 'EUR', // סלובקיה
+    'SI': 'EUR', // סלובניה
+    'CY': 'EUR', // קפריסין
+
+    // אירופה - מטבעות מקומיים
+    'CH': 'CHF', // שוויץ
+    'DK': 'DKK', // דנמרק
+    'SE': 'SEK', // שוודיה
+    'NO': 'NOK', // נורווגיה
+    'PL': 'PLN', // פולין
+    'HU': 'HUF', // הונגריה
+    'CZ': 'CZK', // צ'כיה
+    'RO': 'RON', // רומניה
+    'BG': 'BGN', // בולגריה
+    'HR': 'HRK', // קרואטיה
+    'IS': 'ISK', // איסלנד
+    'UA': 'UAH', // אוקראינה
+    'RS': 'RSD', // סרביה
+    'MK': 'MKD', // מקדוניה הצפונית
+    'AL': 'ALL', // אלבניה
+    'MD': 'MDL', // מולדובה
+    'BY': 'BYN', // בלארוס
+    'RU': 'RUB', // רוסיה
+    'TR': 'TRY', // טורקיה
+
+    // אמריקה הלטינית
+    'BR': 'BRL', // ברזיל
+    'AR': 'ARS', // ארגנטינה
+    'MX': 'MXN', // מקסיקו
+    'CL': 'CLP', // צ'ילה
+    'CO': 'COP', // קולומביה
+    'PE': 'PEN', // פרו
+    'VE': 'VES', // ונצואלה
+    'UY': 'UYU', // אורוגוואי
+    'PA': 'PAB', // פנמה
+    'CR': 'CRC', // קוסטה ריקה
+
+    // אסיה
+    'CN': 'CNY', // סין
+    'JP': 'JPY', // יפן
+    'IN': 'INR', // הודו
+    'KR': 'KRW', // קוריאה הדרומית
+    'TH': 'THB', // תאילנד
+    'SG': 'SGD', // סינגפור
+    'MY': 'MYR', // מלזיה
+    'ID': 'IDR', // אינדונזיה
+    'PH': 'PHP', // פיליפינים
+    'VN': 'VND', // וייטנאם
+    'HK': 'HKD', // הונג קונג
+    'TW': 'TWD', // טייוואן
+    'PK': 'PKR', // פקיסטן
+    'BD': 'BDT', // בנגלדש
+    'LK': 'LKR', // סרי לנקה
+    'NP': 'NPR', // נפאל
+    'MM': 'MMK', // מיאנמר
+    'KH': 'KHR', // קמבודיה
+    'MN': 'MNT', // מונגוליה
+
+    // המזרח התיכון
+    'AE': 'AED', // איחוד האמירויות
+    'SA': 'SAR', // ערב הסעודית
+    'JO': 'JOD', // ירדן
+    'EG': 'EGP', // מצרים
+    'LB': 'LBP', // לבנון
+    'MA': 'MAD', // מרוקו
+    'TN': 'TND', // תוניסיה
+    'BH': 'BHD', // בחריין
+    'KW': 'KWD', // כווית
+    'QA': 'QAR', // קטאר
+    'OM': 'OMR', // עומאן
+    'GE': 'GEL', // גאורגיה
+    'AZ': 'AZN', // אזרבייג'ן
+    'AM': 'AMD', // ארמניה
+    'KZ': 'KZT', // קזחסטן
+    'AF': 'AFN', // אפגניסטן
+    'IQ': 'IQD', // עיראק
+    'IR': 'IRR', // איראן
+    'SY': 'SYP', // סוריה
+    'YE': 'YER', // תימן
+
+    // אפריקה
+    'ZA': 'ZAR', // דרום אפריקה
+    'NG': 'NGN', // ניגריה
+    'KE': 'KES', // קניה
+    'ET': 'ETB', // אתיופיה
+    'UG': 'UGX', // אוגנדה
+    'TZ': 'TZS', // טנזניה
+    'ZW': 'ZWL', // זימבבואה
+    'GH': 'GHS', // גאנה
+    'DZ': 'DZD', // אלג'יריה
+    'LY': 'LYD', // לוב
+    'SD': 'SDG', // סודן
+
+    // אוקיאניה
+    'NZ': 'NZD', // ניו זילנד
+  };
 
   constructor(public i18n: I18nService, private ui: UIToolsService) {}
 
@@ -356,6 +480,11 @@ export class DonationDetailsModalComponent implements OnInit {
     if (this.donation?.donorId) {
       try {
         this.selectedDonor = await this.donorRepo.findId(this.donation.donorId) || undefined;
+
+        // Auto-update currency for new donations when loading existing donor
+        if (this.isNewDonation && this.selectedDonor) {
+          await this.updateCurrencyBasedOnCountry(this.selectedDonor);
+        }
       } catch (error) {
         console.error('Error loading selected donor:', error);
       }
@@ -532,6 +661,62 @@ export class DonationDetailsModalComponent implements OnInit {
     } catch (error) {
       console.error('Error uploading single file:', error);
       throw error;
+    }
+  }
+
+  // Update currency based on selected donor's country
+  async onDonorChange(donorId: string) {
+    if (!donorId) {
+      // If no donor selected, default to ILS
+      this.donation.currency = 'ILS';
+      this.selectedDonor = undefined;
+      return;
+    }
+
+    try {
+      // Load the selected donor
+      this.selectedDonor = await this.donorRepo.findId(donorId) || undefined;
+
+      if (this.selectedDonor) {
+        await this.updateCurrencyBasedOnCountry(this.selectedDonor);
+      }
+    } catch (error) {
+      console.error('Error in onDonorChange:', error);
+      // Default to ILS on error
+      this.donation.currency = 'ILS';
+    }
+  }
+
+  // Helper function to update currency based on donor's country
+  private async updateCurrencyBasedOnCountry(donor: Donor) {
+    try {
+      if (donor.countryId) {
+        // Load the country to get the country code
+        const country = await this.countryRepo.findId(donor.countryId);
+
+        if (country?.code) {
+          // Map country code to currency
+          const currency = this.countryCurrencyMap[country.code];
+          if (currency) {
+            this.donation.currency = currency;
+            console.log(`Updated currency to ${currency} based on country ${country.name} (${country.code})`);
+          } else {
+            // Default to ILS if no mapping found
+            this.donation.currency = 'ILS';
+            console.log(`No currency mapping found for country ${country.code}, defaulting to ILS`);
+          }
+        } else {
+          // Default to ILS if country has no code
+          this.donation.currency = 'ILS';
+        }
+      } else {
+        // Default to ILS if donor has no country
+        this.donation.currency = 'ILS';
+      }
+    } catch (error) {
+      console.error('Error updating currency based on donor country:', error);
+      // Default to ILS on error
+      this.donation.currency = 'ILS';
     }
   }
 }
