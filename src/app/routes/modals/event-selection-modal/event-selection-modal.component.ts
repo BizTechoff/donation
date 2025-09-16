@@ -57,10 +57,14 @@ export class EventSelectionModalComponent implements OnInit {
     );
   }
 
-  // Select event and close dialog
+  // Select event and close dialog immediately
   selectEvent(event: Event) {
     this.selectedEvent = event;
-    this.changed = true;
+    // Use setTimeout to ensure the dialog closes after the selection is processed
+    setTimeout(() => {
+      this.changed = true;
+      this.closeDialog()
+    }, 100);
   }
 
   // Create a new event and save to database
@@ -111,8 +115,8 @@ export class EventSelectionModalComponent implements OnInit {
     this.eventSearchTerm = '';
   }
 
-  // Cancel dialog
-  cancel() {
+  // Close dialog without selection
+  closeDialog() {
     this.selectedEvent = null;
     this.changed = false;
   }

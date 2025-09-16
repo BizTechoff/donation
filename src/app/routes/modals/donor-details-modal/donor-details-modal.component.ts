@@ -38,6 +38,7 @@ export interface DonorDetailsModalArgs {
 export class DonorDetailsModalComponent implements OnInit {
   args!: DonorDetailsModalArgs;
   changed = false;
+  shouldClose = false;
 
   donor?: Donor;
   originalDonorData?: string; // To track changes
@@ -436,9 +437,11 @@ export class DonorDetailsModalComponent implements OnInit {
     // If clicking on overlay, close modal
     if (event && event.target === event.currentTarget) {
       this.changed = false;
+      this.shouldClose = true;
     } else if (!event) {
       // Direct close button click
       this.changed = false;
+      this.shouldClose = true;
     }
   }
   

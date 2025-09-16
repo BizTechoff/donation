@@ -588,6 +588,64 @@
   }
 }
 
+/* Fix for dual-date-picker popups inside modal */
+.modal-content {
+  // Ensure the modal has proper stacking context
+  z-index: 1000;
+
+  // Make sure calendar popups stay within modal bounds
+  app-modern-dual-date-picker {
+    .calendar-popup {
+      // Override the z-index to be within modal context
+      z-index: 1050 !important;
+
+      // Ensure popups don't overflow modal boundaries
+      &.hebrew-popup.parallel-mode {
+        right: 10px !important; // Keep within modal bounds
+        margin-right: 0 !important;
+        max-width: 280px !important;
+      }
+
+      &.gregorian-popup.parallel-mode {
+        left: 10px !important; // Keep within modal bounds
+        margin-left: 0 !important;
+        max-width: 280px !important;
+      }
+
+      // For single popup mode, ensure they stay within bounds
+      &:not(.parallel-mode) {
+        // Position Hebrew popup on the right side but within bounds
+        &.hebrew-popup {
+          right: 0 !important;
+          left: auto !important;
+          transform: translateX(0) !important;
+          max-width: min(320px, calc(100vw - 60px)) !important;
+        }
+
+        // Position Gregorian popup on the left side but within bounds
+        &.gregorian-popup {
+          left: 0 !important;
+          right: auto !important;
+          transform: translateX(0) !important;
+          max-width: min(280px, calc(100vw - 60px)) !important;
+        }
+      }
+    }
+
+    // Add overflow handling to the date input groups within modal
+    .date-input-group {
+      position: relative;
+      overflow: visible; // Allow popups to show
+    }
+  }
+}
+
+// Additional modal boundary constraints
+.modal-backdrop {
+  .modal-content {
+    overflow: visible; // Allow calendar popups to show outside modal content area
+  }
+}
 
 
 // Marital Status Selection Grid

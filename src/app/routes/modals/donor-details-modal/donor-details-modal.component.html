@@ -149,7 +149,8 @@
               <app-modern-dual-date-picker
                 name="birthDate"
                 [(ngModel)]="donor.birthDate"
-                [label]="''">
+                [label]="''"
+                [calendar_open_heb_and_eng_parallel]="true">
               </app-modern-dual-date-picker>
             </div>
           </div>
@@ -416,7 +417,8 @@
                     [name]="'donorEvent_' + donorEvent.id"
                     [(ngModel)]="donorEvent.hebrewDate"
                     [label]="''"
-                    [compact]="true">
+                    [compact]="true"
+                    [calendar_open_heb_and_eng_parallel]="true">
                   </app-modern-dual-date-picker>
                   <button
                     *ngIf="!donorEvent.event?.isRequired"
@@ -436,7 +438,8 @@
                     [name]="'customDate_' + i"
                     [(ngModel)]="customDate.date"
                     [label]="''"
-                    [compact]="true">
+                    [compact]="true"
+                    [calendar_open_heb_and_eng_parallel]="true">
                   </app-modern-dual-date-picker>
                   <button class="remove-date-btn" (click)="removeCustomDate(i)" title="הסר תאריך">
                     ×

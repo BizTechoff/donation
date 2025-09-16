@@ -101,7 +101,7 @@ export class UIToolsService implements UITools {
     return await openDialog(
       (await import('../routes/modals/donor-details-modal/donor-details-modal.component')).DonorDetailsModalComponent,
       (dlg) => dlg.args = { donorId },
-      (dlg) => dlg.changed
+      (dlg) => dlg.changed || dlg.shouldClose
     )
   }
 
