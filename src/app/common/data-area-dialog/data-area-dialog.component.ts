@@ -12,8 +12,10 @@ import { DialogConfig } from '../../common-ui-elements/src/angular/DialogConfig'
 import { Dialog } from '@angular/cdk/dialog'
 
 @DialogConfig({
-  maxWidth: '99vw',
-  panelClass: 'slim-dialog',
+  maxWidth: '80vw',
+  width: '800px',
+  maxHeight: '90vh',
+  panelClass: 'data-area-dialog',
 })
 @Component({
   templateUrl: './data-area-dialog.component.html',

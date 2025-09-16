@@ -23,6 +23,7 @@
 .donor-details-modal {
   width: 90vw;
   max-width: 1200px;
+  height: 90vh;
   max-height: 90vh;
   background: white;
   border-radius: 16px;
@@ -31,6 +32,7 @@
   flex-direction: column;
   position: relative;
   animation: slideIn 0.3s ease-out;
+  overflow: hidden;
   
   // Adjust for navigation header
   app-modal-navigation-header {
@@ -187,9 +189,10 @@
 .modal-body {
   flex: 1;
   overflow-y: auto;
-  overflow-x: visible;
+  overflow-x: hidden;
   padding: 32px;
   background: #fafbfc;
+  min-height: 0;
   position: relative;
   z-index: 1;
 }
@@ -387,6 +390,9 @@
   align-items: center;
   gap: 16px;
   border-radius: 0 0 16px 16px;
+  position: sticky;
+  bottom: 0;
+  z-index: 100;
   
   .footer-divider {
     width: 1px;
@@ -565,14 +571,16 @@
     background: white;
     border-radius: 12px;
     box-shadow: 0 24px 48px rgba(0, 0, 0, 0.2);
-    max-width: 600px;
-    width: 90%;
-    max-height: 80vh;
+    max-width: 800px;
+    width: 70%;
+    max-height: 75vh;
     overflow-y: auto;
     z-index: 2001;
     
     &.events-table-dialog {
       padding: 24px;
+      max-width: 900px;
+      width: 75%;
     }
   }
 }
@@ -842,11 +850,11 @@
   }
   
   &.active .marital-status-card {
-    border-color: #4caf50;
-    background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%);
+    border-color: #9C27B0;
+    background: linear-gradient(135deg, rgba(156, 39, 176, 0.1), rgba(156, 39, 176, 0.05));
     
     .marital-status-label {
-      color: #2e7d32;
+      color: #9C27B0;
       font-weight: 600;
     }
     
@@ -855,7 +863,7 @@
       position: absolute;
       top: 8px;
       right: 8px;
-      background: #4caf50;
+      background: #9C27B0;
       color: white;
       width: 18px;
       height: 18px;
@@ -1066,17 +1074,17 @@
     }
 
     &.active .day-card {
-      border-color: #4CAF50;
-      background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(76, 175, 80, 0.05));
+      border-color: #9C27B0;
+      background: linear-gradient(135deg, rgba(156, 39, 176, 0.1), rgba(156, 39, 176, 0.05));
 
       .day-name {
-        color: #4CAF50;
+        color: #9C27B0;
         font-weight: 600;
       }
 
       .day-indicator {
-        background: #4CAF50;
-        box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+        background: #9C27B0;
+        box-shadow: 0 0 0 3px rgba(156, 39, 176, 0.2);
       }
     }
   }
@@ -1133,20 +1141,20 @@
     }
 
     &.active .method-card {
-      border-color: #4CAF50;
-      background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(76, 175, 80, 0.05));
+      border-color: #9C27B0;
+      background: linear-gradient(135deg, rgba(156, 39, 176, 0.1), rgba(156, 39, 176, 0.05));
 
       .method-icon {
-        color: #4CAF50;
+        color: #9C27B0;
       }
 
       .method-label {
-        color: #4CAF50;
+        color: #9C27B0;
         font-weight: 600;
       }
 
       .method-desc {
-        color: #4CAF50;
+        color: #9C27B0;
       }
     }
   }
@@ -1442,20 +1450,20 @@
   }
 
   &.active .type-card {
-    border-color: #4CAF50;
-    background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(76, 175, 80, 0.05));
+    border-color: #9C27B0;
+    background: linear-gradient(135deg, rgba(156, 39, 176, 0.1), rgba(156, 39, 176, 0.05));
 
     .type-icon {
-      color: #4CAF50;
+      color: #9C27B0;
     }
 
     .type-label {
-      color: #4CAF50;
+      color: #9C27B0;
       font-weight: 600;
     }
 
     .type-desc {
-      color: #4CAF50;
+      color: #9C27B0;
     }
   }
 }
@@ -1510,11 +1518,11 @@
   }
 
   &.active .level-card {
-    border-color: #4CAF50;
-    background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(76, 175, 80, 0.05));
+    border-color: #9C27B0;
+    background: linear-gradient(135deg, rgba(156, 39, 176, 0.1), rgba(156, 39, 176, 0.05));
 
     .level-label {
-      color: #4CAF50;
+      color: #9C27B0;
       font-weight: 600;
     }
   }
@@ -1570,11 +1578,11 @@
   }
 
   &.active .language-card {
-    border-color: #4CAF50;
-    background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(76, 175, 80, 0.05));
+    border-color: #9C27B0;
+    background: linear-gradient(135deg, rgba(156, 39, 176, 0.1), rgba(156, 39, 176, 0.05));
 
     .language-label {
-      color: #4CAF50;
+      color: #9C27B0;
       font-weight: 600;
     }
   }

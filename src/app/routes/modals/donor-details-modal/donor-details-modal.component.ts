@@ -7,8 +7,9 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { Donor, Donation, Event, DonorEvent, CompanyInfo } from '../../../../shared/entity';
 import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
-import { ModernDualDatePickerComponent } from '../../../shared/modern-dual-date-picker/modern-dual-date-picker.component';
 import { ModalNavigationHeaderComponent, NavigationRecord, FilterOption, ActiveFilter } from '../../../shared/modal-navigation-header/modal-navigation-header.component';
+import { openDialog } from 'common-ui-elements';
+import { DataAreaDialogComponent } from '../../../common/data-area-dialog/data-area-dialog.component';
 
 export interface DonorDetailsModalArgs {
   donorId: string; // Can be 'new' for new donor or donor ID
@@ -254,7 +255,10 @@ export class DonorDetailsModalComponent implements OnInit {
     }
   }
 
-  openAddDateDialog() {
+  async openAddDateDialog() {
+    const availableEvents = this.getAvailableEvents();
+    
+    // Keep the original custom dialog for now since DataAreaDialog needs different configuration
     this.showAddDateDialog = true;
     this.newDateName = '';
   }

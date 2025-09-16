@@ -146,7 +146,10 @@
                 <mat-icon class="field-icon">cake</mat-icon>
                 <label>{{ (i18n.terms$ | async)?.birthDate || 'תאריך לידה' }}</label>
               </div>
-              <input type="date" class="form-control" [(ngModel)]="donor.birthDate">
+              <app-modern-dual-date-picker
+                [(value)]="donor.birthDate"
+                [compact]="false">
+              </app-modern-dual-date-picker>
             </div>
           </div>
         </div>
@@ -249,10 +252,10 @@
                 </h4>
                 <div class="form-grid">
                   <div class="form-group">
-                    <div class="field-title">
+                    <!-- <div class="field-title">
                       <mat-icon class="field-icon">favorite</mat-icon>
                       <label>{{ (i18n.terms$ | async)?.maritalStatus }}</label>
-                    </div>
+                    </div> -->
                     <div class="marital-status-grid">
                       <div class="marital-status-option" [class.active]="donor.maritalStatus === 'married'">
                         <label class="marital-status-card">
@@ -325,12 +328,21 @@
                 </div>
               </div>
 
+            <!-- Family Connections & Contact -->
+            <div class="family-extended-info">
               <div class="family-group">
                 <h4 class="group-title">
-                  <mat-icon>account_tree</mat-icon>
-                  עץ משפחה
+                  <mat-icon>family_restroom</mat-icon>
+                  קשרים משפחתיים
                 </h4>
                 <div class="form-grid">
+                  <div class="form-group full-width">
+                    <!-- <div class="field-title">
+                      <mat-icon class="field-icon">connect_without_contact</mat-icon>
+                      <label>סוג הקישור המשפחתי</label>
+                    </div> -->
+                    <input type="text" class="form-control" [(ngModel)]="donor.familyConnection" placeholder="אח של, דוד של, חבר של...">
+                  </div>
                   <div class="form-group">
                     <div class="field-title">
                       <mat-icon class="field-icon">man</mat-icon>
@@ -345,53 +357,13 @@
                     </div>
                     <input type="text" class="form-control" [(ngModel)]="donor.fatherInLawName" placeholder="שם החותן">
                   </div>
-                  <div class="form-group" *ngIf="donor.maritalStatus === 'married'">
-                    <div class="field-title">
-                      <mat-icon class="field-icon">favorite</mat-icon>
-                      <label>יום נישואין</label>
-                    </div>
-                    <input type="date" class="form-control" [(ngModel)]="donor.anniversaryDate">
-                  </div>
-                  <div class="form-group">
-                    <div class="field-title">
-                      <mat-icon class="field-icon">candle</mat-icon>
-                      <label>יארצייט אב</label>
-                    </div>
-                    <input type="date" class="form-control" [(ngModel)]="donor.fatherYahrzeit">
-                  </div>
-                  <div class="form-group">
-                    <div class="field-title">
-                      <mat-icon class="field-icon">candle</mat-icon>
-                      <label>יארצייט אם</label>
-                    </div>
-                    <input type="date" class="form-control" [(ngModel)]="donor.motherYahrzeit">
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Family Connections & Contact -->
-            <div class="family-extended-info">
-              <div class="family-group">
-                <h4 class="group-title">
-                  <mat-icon>family_restroom</mat-icon>
-                  קשרים משפחתיים
-                </h4>
-                <div class="form-grid">
-                  <div class="form-group full-width">
-                    <div class="field-title">
-                      <mat-icon class="field-icon">connect_without_contact</mat-icon>
-                      <label>סוג הקישור המשפחתי</label>
-                    </div>
-                    <input type="text" class="form-control" [(ngModel)]="donor.familyConnection" placeholder="אח של, דוד של, חבר של...">
-                  </div>
-                  <div class="form-group full-width">
+                  <!-- <div class="form-group full-width">
                     <div class="field-title">
                       <mat-icon class="field-icon">notes</mat-icon>
                       <label>הערות נוספות</label>
                     </div>
                     <textarea class="form-control" [(ngModel)]="donor.familyConnectionNotes" placeholder="פרטים נוספים על הקשר" rows="2"></textarea>
-                  </div>
+                  </div> -->
                 </div>
               </div>
 
@@ -667,10 +639,6 @@
           
           <!-- Donor Level Card -->
           <div class="info-card donor-level-card">
-            <div class="card-header">
-              <mat-icon class="card-icon">star</mat-icon>
-              <h4>רמת התורם</h4>
-            </div>
             <div class="form-grid">
               <div class="form-group full-width">
                 <div class="field-title">
@@ -799,13 +767,13 @@
                   </div>
                 </div>
               </div>
-              <div class="form-group">
+              <!-- <div class="form-group">
                 <div class="field-title">
                   <mat-icon class="field-icon">group_work</mat-icon>
                   <label>{{ (i18n.terms$ | async)?.circle }}</label>
                 </div>
                 <input type="text" class="form-control" [(ngModel)]="donor.circle" [placeholder]="(i18n.terms$ | async)?.circle">
-              </div>
+              </div> -->
               <div class="form-group full-width">
                 <div class="field-title">
                   <mat-icon class="field-icon">translate</mat-icon>
