@@ -1,0 +1,131 @@
+<div class="modal-overlay" (click)="closeModal()">
+  <div class="campaign-donors-modal" (click)="$event.stopPropagation()">
+
+    <!-- Modal Header -->
+    <div class="modal-header">
+      <div class="header-content">
+        <mat-icon class="header-icon">list_alt</mat-icon>
+        <div class="header-text">
+          <h2>רשימת מוזמנים - {{campaign.name}}</h2>
+          <p class="header-subtitle">{{invitedDonors.length}} מוזמנים על פי הקריטריונים</p>
+        </div>
+      </div>
+      <button mat-icon-button class="close-button" (click)="closeModal($event)">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <!-- Filter Summary -->
+    <div class="filter-summary" *ngIf="campaign">
+      <h3>קריטריונים פעילים:</h3>
+      <div class="filter-chips">
+        <div class="filter-chip" *ngIf="campaign.isAnash">
+          <mat-icon>group</mat-icon>
+          <span>אנ"ש בלבד</span>
+        </div>
+        <div class="filter-chip" *ngIf="campaign.invitationLevels?.length">
+          <mat-icon>stars</mat-icon>
+          <span>רמות: {{campaign.invitationLevels.join(', ')}}</span>
+        </div>
+        <div class="filter-chip" *ngIf="campaign.sameCountryOnly">
+          <mat-icon>location_on</mat-icon>
+          <span>תושבי המדינה</span>
+        </div>
+        <div class="filter-chip" *ngIf="campaign.minAge || campaign.maxAge">
+          <mat-icon>cake</mat-icon>
+          <span>גילאים: {{campaign.minAge || '0'}} - {{campaign.maxAge || '120'}}</span>
+        </div>
+        <div class="filter-chip" *ngIf="campaign.socialCircle">
+          <mat-icon>group_work</mat-icon>
+          <span>חוג: {{campaign.socialCircle}}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Body -->
+    <div class="modal-body">
+      <!-- Loading State -->
+      <div class="loading-state" *ngIf="loading">
+        <mat-icon class="spinner">refresh</mat-icon>
+        <p>טוען רשימת מוזמנים...</p>
+      </div>
+
+      <!-- Donors Table -->
+      <div class="donors-table-container" *ngIf="!loading">
+        <table class="donors-table">
+          <thead>
+            <tr>
+              <th>שם</th>
+              <th>טלפון</th>
+              <th>אימייל</th>
+              <th>רמה</th>
+              <th>עיר</th>
+              <th>פעולות</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let donor of invitedDonors" class="donor-row">
+              <td class="donor-name">
+                <strong>{{getDonorDisplayName(donor)}}</strong>
+              </td>
+              <td>{{getDonorPhone(donor)}}</td>
+              <td>{{getDonorEmail(donor)}}</td>
+              <td>
+                <span class="level-badge">{{getDonorLevel(donor)}}</span>
+              </td>
+              <td>{{donor.city || '-'}}</td>
+              <td class="actions">
+                <button mat-icon-button
+                        matTooltip="פרטי תורם"
+                        (click)="openDonorDetails(donor)">
+                  <mat-icon>info</mat-icon>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Empty State -->
+        <div class="empty-state" *ngIf="invitedDonors.length === 0">
+          <mat-icon>people_outline</mat-icon>
+          <p>לא נמצאו מוזמנים התואמים את הקריטריונים</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Footer -->
+    <div class="modal-footer">
+      <div class="footer-stats">
+        <span class="stat-item">
+          <mat-icon>people</mat-icon>
+          סה"כ: {{invitedDonors.length}} מוזמנים
+        </span>
+      </div>
+
+      <div class="footer-actions">
+        <button mat-raised-button
+                color="accent"
+                (click)="exportToExcel()"
+                [disabled]="loading || invitedDonors.length === 0">
+          <mat-icon>file_download</mat-icon>
+          ייצוא לאקסל
+        </button>
+
+        <button mat-raised-button
+                color="primary"
+                (click)="sendInvitations()"
+                [disabled]="loading || invitedDonors.length === 0">
+          <mat-icon>send</mat-icon>
+          שלח הזמנות
+        </button>
+
+        <button mat-stroked-button
+                (click)="closeModal()">
+          <mat-icon>close</mat-icon>
+          סגור
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>

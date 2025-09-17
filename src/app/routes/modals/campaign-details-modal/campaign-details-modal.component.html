@@ -107,6 +107,20 @@
                      [disabled]="!canEdit" placeholder="הכנס שם קמפיין"
                      (ngModelChange)="markAsChanged()">
             </div>
+            
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">supervisor_account</mat-icon>
+                <label>אחראי קמפיין</label>
+              </div>
+              <select class="form-control" [(ngModel)]="campaign.managerId"
+                      [disabled]="!canEdit" (ngModelChange)="onManagerChange()">
+                <option value="">בחר אחראי</option>
+                <option *ngFor="let user of users" [value]="user.id">
+                  {{ getUserDisplayName(user) }}
+                </option>
+              </select>
+            </div>
 
             <div class="form-group">
               <div class="field-title">
@@ -116,6 +130,16 @@
               <input type="text" class="form-control" [(ngModel)]="campaign.category"
                      [disabled]="!canEdit" placeholder="קטגוריה"
                      (ngModelChange)="markAsChanged()">
+            </div>
+
+            <div class="form-group full-width">
+              <div class="field-title">
+                <mat-icon class="field-icon">place</mat-icon>
+                <label>מיקום האירוע</label>
+              </div>
+              <input type="text" class="form-control" [(ngModel)]="campaign.eventLocation"
+                     [disabled]="!canEdit" placeholder="מיקום האירוע (עיר, מדינה)"
+                     (ngModelChange)="onEventLocationChange($event)">
             </div>
 
             <div class="form-group full-width">
@@ -216,31 +240,58 @@
 
         <!-- Management Information -->
         <div class="section management-details">
-          <h3>ניהול וחברים</h3>
+          <h3>מוזמנים</h3>
           <div class="form-grid">
-            <div class="form-group">
-              <div class="field-title">
-                <mat-icon class="field-icon">supervisor_account</mat-icon>
-                <label>אחראי קמפיין</label>
-              </div>
-              <select class="form-control" [(ngModel)]="campaign.managerId"
-                      [disabled]="!canEdit" (ngModelChange)="onManagerChange()">
-                <option value="">בחר אחראי</option>
-                <option *ngFor="let user of users" [value]="user.id">
-                  {{ getUserDisplayName(user) }}
-                </option>
-              </select>
-            </div>
-
 
             <div class="form-group full-width">
               <div class="field-title">
-                <mat-icon class="field-icon">place</mat-icon>
-                <label>מיקום האירוע</label>
+                <mat-icon class="field-icon">group_work</mat-icon>
+                <label>קריטריונים כלליים</label>
               </div>
-              <input type="text" class="form-control" [(ngModel)]="campaign.eventLocation"
-                     [disabled]="!canEdit" placeholder="מיקום האירוע (עיר, מדינה)"
-                     (ngModelChange)="onEventLocationChange($event)">
+              <div class="criteria-selection-grid">
+                <div class="criteria-option" [class.active]="campaign.isAnash">
+                  <label class="criteria-card">
+                    <input type="checkbox" [(ngModel)]="campaign.isAnash"
+                           [disabled]="!canEdit" (ngModelChange)="markAsChanged()" class="criteria-checkbox">
+                    <div class="criteria-content">
+                      <mat-icon class="criteria-icon">groups</mat-icon>
+                      <span class="criteria-label">אנ"ש</span>
+                    </div>
+                  </label>
+                </div>
+
+                <div class="criteria-option" [class.active]="campaign.sameCountryOnly">
+                  <label class="criteria-card">
+                    <input type="checkbox" [(ngModel)]="campaign.sameCountryOnly"
+                           [disabled]="!canEdit" (ngModelChange)="markAsChanged()" class="criteria-checkbox">
+                    <div class="criteria-content">
+                      <mat-icon class="criteria-icon">location_on</mat-icon>
+                      <span class="criteria-label">תושבי המדינה</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group full-width">
+              <div class="field-title">
+                <mat-icon class="field-icon">stars</mat-icon>
+                <label>רמות - בחירה מרובה</label>
+              </div>
+              <div class="level-selection-grid">
+                <div class="level-option" *ngFor="let level of availableLevels" [class.active]="isLevelSelected(level)">
+                  <label class="level-card">
+                    <input type="checkbox"
+                           [checked]="isLevelSelected(level)"
+                           [disabled]="!canEdit"
+                           (change)="toggleLevel(level)" class="level-checkbox">
+                    <div class="level-content">
+                      <span class="level-icon">{{level.icon}}</span>
+                      <span class="level-label">{{level.label}}</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
             </div>
 
             <div class="form-group">
@@ -253,13 +304,58 @@
                      (ngModelChange)="markAsChanged()">
             </div>
 
-            <div class="form-group checkbox-group">
-              <label class="checkbox-label">
-                <input type="checkbox" [(ngModel)]="campaign.isAnash"
-                       [disabled]="!canEdit" (ngModelChange)="markAsChanged()">
-                <mat-icon class="checkbox-icon">{{campaign.isAnash ? 'check_box' : 'check_box_outline_blank'}}</mat-icon>
-                <span>אנ"ש</span>
-              </label>
+            <div class="form-group age-range-container">
+              <div class="field-title">
+                <mat-icon class="field-icon">cake</mat-icon>
+                <label>טווח גילאים</label>
+              </div>
+              <div class="age-range-inputs">
+                <input type="number" class="form-control" [(ngModel)]="campaign.minAge"
+                       [disabled]="!canEdit" placeholder="מ-"
+                       min="0" max="120"
+                       (ngModelChange)="markAsChanged()">
+                <span class="age-separator">-</span>
+                <input type="number" class="form-control" [(ngModel)]="campaign.maxAge"
+                       [disabled]="!canEdit" placeholder="עד"
+                       min="0" max="120"
+                       (ngModelChange)="markAsChanged()">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">group</mat-icon>
+                <label>חוג</label>
+              </div>
+              <input type="text" class="form-control" [(ngModel)]="campaign.socialCircle"
+                     [disabled]="!canEdit" placeholder="שם החוג"
+                     (ngModelChange)="markAsChanged()">
+            </div>
+
+            <div class="form-group full-width">
+              <div class="field-title">
+                <mat-icon class="field-icon">people</mat-icon>
+                <label>פעילים ואנשי קשר</label>
+              </div>
+              <div class="criteria-selection-grid">
+                <div class="criteria-option">
+                  <button type="button" class="criteria-card action-card" (click)="openActivists()">
+                    <div class="criteria-content">
+                      <mat-icon class="criteria-icon">volunteer_activism</mat-icon>
+                      <span class="criteria-label">פעילים</span>
+                    </div>
+                  </button>
+                </div>
+
+                <div class="criteria-option">
+                  <button type="button" class="criteria-card action-card" (click)="openContacts()">
+                    <div class="criteria-content">
+                      <mat-icon class="criteria-icon">contacts</mat-icon>
+                      <span class="criteria-label">אנשי קשר</span>
+                    </div>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -268,28 +364,20 @@
         <div class="section settings-details">
           <h3>הגדרות</h3>
           <div class="form-grid">
-            <div class="form-group checkbox-group">
-              <label class="checkbox-label">
-                <input type="checkbox" [(ngModel)]="campaign.isActive"
-                       [disabled]="!canEdit" (ngModelChange)="markAsChanged()">
-                <mat-icon class="checkbox-icon">{{campaign.isActive ? 'check_box' : 'check_box_outline_blank'}}</mat-icon>
-                <span>קמפיין פעיל</span>
-              </label>
-            </div>
 
-            <div class="form-group checkbox-group">
+            <!-- <div class="form-group checkbox-group">
               <label class="checkbox-label">
                 <input type="checkbox" [(ngModel)]="campaign.isPublic"
                        [disabled]="!canEdit" (ngModelChange)="markAsChanged()">
                 <mat-icon class="checkbox-icon">{{campaign.isPublic ? 'check_box' : 'check_box_outline_blank'}}</mat-icon>
                 <span>מוצג באתר</span>
               </label>
-            </div>
+            </div> -->
 
             <div class="form-group full-width">
               <div class="field-title">
                 <mat-icon class="field-icon">link</mat-icon>
-                <label>קישור לעמוד</label>
+                <label>קישור להזמנה לדינעער</label>
               </div>
               <input type="url" class="form-control" [(ngModel)]="campaign.websiteUrl"
                      [disabled]="!canEdit" placeholder="https://example.com"
@@ -299,14 +387,14 @@
             <div class="form-group full-width">
               <div class="field-title">
                 <mat-icon class="field-icon">image</mat-icon>
-                <label>קישור לתמונה</label>
+                <label>קישור לספר ברכות של הדינעער</label>
               </div>
               <input type="url" class="form-control" [(ngModel)]="campaign.imageUrl"
                      [disabled]="!canEdit" placeholder="https://example.com/image.jpg"
                      (ngModelChange)="markAsChanged()">
             </div>
 
-            <div class="form-group full-width">
+            <!-- <div class="form-group full-width">
               <div class="field-title">
                 <mat-icon class="field-icon">notes</mat-icon>
                 <label>הערות פנימיות</label>
@@ -314,7 +402,7 @@
               <textarea class="form-control" [(ngModel)]="campaign.internalNotes"
                         [disabled]="!canEdit" placeholder="הערות פנימיות" rows="3"
                         (ngModelChange)="markAsChanged()"></textarea>
-            </div>
+            </div> -->
           </div>
         </div>
 
@@ -324,6 +412,20 @@
     <!-- Modal Footer -->
     <div class="modal-footer">
       <div class="footer-actions-left">
+        <!-- Campaign Status Toggle - Light Switch Style -->
+        <div class="light-switch-container">
+          <label class="light-switch" [class.active]="campaign.isActive">
+            <input type="checkbox" [(ngModel)]="campaign.isActive"
+                   [disabled]="!canEdit" (ngModelChange)="toggleCampaignActive()">
+            <span class="switch-slider">
+              <span class="switch-handle">
+                <mat-icon class="switch-icon">{{campaign.isActive ? 'light_mode' : 'dark_mode'}}</mat-icon>
+              </span>
+            </span>
+            <span class="switch-label">{{campaign.isActive ? 'קמפיין פעיל' : 'קמפיין כבוי'}}</span>
+          </label>
+        </div>
+
         <!-- Campaign Action Buttons -->
         <button mat-raised-button color="primary"
                 *ngIf="canActivate"
@@ -342,18 +444,18 @@
           <mat-icon>check_circle</mat-icon>
           סמן כהושלם
         </button>
-
-        <button mat-stroked-button color="warn"
-                *ngIf="canCancel"
-                (click)="cancelCampaign()"
-                [disabled]="loading"
-                class="action-button">
-          <mat-icon>cancel</mat-icon>
-          בטל קמפיין
-        </button>
       </div>
 
       <div class="footer-actions-right">
+        <button mat-raised-button
+                color="accent"
+                *ngIf="campaign.campaignType === 'דינעער'"
+                (click)="openInvitedList()"
+                class="action-button invited-list-button">
+          <mat-icon>list_alt</mat-icon>
+          רשימת מוזמנים
+        </button>
+
         <button mat-stroked-button
                 color="warn"
                 *ngIf="!isNewCampaign"

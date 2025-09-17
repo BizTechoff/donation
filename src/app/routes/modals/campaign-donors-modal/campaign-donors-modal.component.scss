@@ -1,0 +1,332 @@
+/* Modal Overlay */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1050;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Modal Content */
+.campaign-donors-modal {
+  width: 90vw;
+  max-width: 1200px;
+  height: 85vh;
+  max-height: 85vh;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  animation: slideIn 0.3s ease-out;
+  overflow: hidden;
+}
+
+@keyframes slideIn {
+  from {
+    transform: scale(0.9) translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Modal Header */
+.modal-header {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  padding: 24px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  .header-content {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+
+    .header-icon {
+      font-size: 32px;
+      width: 32px;
+      height: 32px;
+    }
+
+    .header-text {
+      h2 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 600;
+      }
+
+      .header-subtitle {
+        margin: 4px 0 0 0;
+        font-size: 14px;
+        opacity: 0.9;
+      }
+    }
+  }
+
+  .close-button {
+    color: white;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+  }
+}
+
+/* Filter Summary */
+.filter-summary {
+  background: #f8f9fa;
+  padding: 16px 32px;
+  border-bottom: 1px solid #e0e0e0;
+
+  h3 {
+    margin: 0 0 12px 0;
+    font-size: 14px;
+    color: #666;
+    font-weight: 500;
+  }
+
+  .filter-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+
+    .filter-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: white;
+      border: 1px solid #9c27b0;
+      border-radius: 20px;
+      font-size: 13px;
+      color: #9c27b0;
+
+      mat-icon {
+        font-size: 16px;
+        width: 16px;
+        height: 16px;
+      }
+    }
+  }
+}
+
+/* Modal Body */
+.modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 32px;
+  background: #fafafa;
+}
+
+/* Loading State */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  color: #666;
+
+  .spinner {
+    font-size: 48px;
+    animation: spin 1s linear infinite;
+  }
+
+  p {
+    margin-top: 16px;
+    font-size: 16px;
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Donors Table */
+.donors-table-container {
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.donors-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  thead {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+
+    th {
+      padding: 12px;
+      text-align: right;
+      font-weight: 500;
+      font-size: 14px;
+    }
+  }
+
+  tbody {
+    tr {
+      border-bottom: 1px solid #f0f0f0;
+      transition: background 0.2s ease;
+
+      &:hover {
+        background: #f8f9fa;
+      }
+
+      td {
+        padding: 12px;
+        font-size: 14px;
+        color: #333;
+
+        &.donor-name {
+          font-weight: 500;
+        }
+
+        &.actions {
+          text-align: center;
+
+          button {
+            mat-icon {
+              font-size: 18px;
+              color: #666;
+            }
+
+            &:hover mat-icon {
+              color: #9c27b0;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+.level-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #f0f0f0;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* Empty State */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 24px;
+  color: #999;
+
+  mat-icon {
+    font-size: 64px;
+    width: 64px;
+    height: 64px;
+    margin-bottom: 16px;
+  }
+
+  p {
+    font-size: 16px;
+    margin: 0;
+  }
+}
+
+/* Modal Footer */
+.modal-footer {
+  background: white;
+  border-top: 1px solid #e0e0e0;
+  padding: 20px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  .footer-stats {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+      color: #666;
+
+      mat-icon {
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+      }
+    }
+  }
+
+  .footer-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+
+    button {
+      mat-icon {
+        margin-left: 8px;
+      }
+    }
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .campaign-donors-modal {
+    width: 95vw;
+    height: 95vh;
+  }
+
+  .modal-header {
+    padding: 16px 20px;
+
+    .header-text h2 {
+      font-size: 20px;
+    }
+  }
+
+  .modal-body {
+    padding: 16px;
+  }
+
+  .donors-table-container {
+    overflow-x: auto;
+  }
+
+  .modal-footer {
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+
+    .footer-stats,
+    .footer-actions {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+}

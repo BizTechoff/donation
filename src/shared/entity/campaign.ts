@@ -165,6 +165,32 @@ export class Campaign extends IdEntity {
   })
   hebrewEndDate?: Date
 
+  // Invitation criteria fields
+  @Fields.json({
+    caption: 'רמות מוזמנים',
+  })
+  invitationLevels: string[] = []
+
+  @Fields.boolean({
+    caption: 'רק תושבי המדינה',
+  })
+  sameCountryOnly = false
+
+  @Fields.number({
+    caption: 'גיל מינימלי',
+  })
+  minAge?: number
+
+  @Fields.number({
+    caption: 'גיל מקסימלי',
+  })
+  maxAge?: number
+
+  @Fields.string({
+    caption: 'חוג',
+  })
+  socialCircle = ''
+
   get progressPercentage() {
     if (this.targetAmount === 0) return 0
     return Math.min(100, Math.round((this.raisedAmount / this.targetAmount) * 100))

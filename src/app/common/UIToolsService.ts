@@ -113,6 +113,14 @@ export class UIToolsService implements UITools {
     )
   }
 
+  async campaignDonorsDialog(campaignId: string): Promise<boolean> {
+    return await openDialog(
+      (await import('../routes/modals/campaign-donors-modal/campaign-donors-modal.component')).CampaignDonorsModalComponent,
+      (dlg) => dlg.args = { campaignId },
+      (dlg) => dlg.shouldClose
+    )
+  }
+
   async donationDetailsDialog(donationId: string, options?: { donorId?: string }): Promise<boolean> {
     return await openDialog(
       (await import('../routes/modals/donation-details-modal/donation-details-modal.component')).DonationDetailsModalComponent,

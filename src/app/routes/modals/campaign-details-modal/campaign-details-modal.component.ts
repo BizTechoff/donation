@@ -10,6 +10,7 @@ import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { SharedComponentsModule } from '../../../shared/shared-components.module';
+import { DONOR_LEVELS_ARRAY, DonorLevel } from '../../../../shared/enum/donor-levels';
 
 export interface CampaignDetailsModalArgs {
   campaignId: string; // Can be 'new' for new campaign or campaign ID
@@ -47,6 +48,9 @@ export class CampaignDetailsModalComponent implements OnInit {
   selectedManager?: User;
   selectedCreatedBy?: User;
 
+  // Available levels for multi-select from donor levels enum
+  availableLevels = DONOR_LEVELS_ARRAY;
+
   constructor(public i18n: I18nService, private ui: UIToolsService, private snackBar: MatSnackBar) {}
 
   async ngOnInit() {
@@ -70,6 +74,8 @@ export class CampaignDetailsModalComponent implements OnInit {
         this.campaign.isPublic = true;
         this.campaign.targetAmount = 0;
         this.campaign.raisedAmount = 0;
+        this.campaign.invitationLevels = [];
+        this.campaign.sameCountryOnly = false;
 
         this.originalCampaignData = JSON.stringify(this.campaign);
       } else {
@@ -354,5 +360,121 @@ export class CampaignDetailsModalComponent implements OnInit {
 
   get canCancel(): boolean {
     return (this.isDraft || this.isActive) && !this.isNewCampaign;
+  }
+
+  // Methods for level selection
+  isLevelSelected(level: DonorLevel): boolean {
+    if (!this.campaign?.invitationLevels) {
+      return false;
+    }
+    return this.campaign.invitationLevels.includes(level.value);
+  }
+
+  toggleLevel(level: DonorLevel) {
+    if (!this.campaign) return;
+
+    if (!this.campaign.invitationLevels) {
+      this.campaign.invitationLevels = [];
+    }
+
+    const index = this.campaign.invitationLevels.indexOf(level.value);
+    if (index > -1) {
+      this.campaign.invitationLevels.splice(index, 1);
+    } else {
+      this.campaign.invitationLevels.push(level.value);
+    }
+
+    this.markAsChanged();
+  }
+
+  // Toggle campaign active status with confirmation
+  toggleCampaignActive() {
+    if (this.campaign.isActive) {
+      // If trying to deactivate, show confirmation
+      const confirmMessage = 'האם אתה בטוח שברצונך להפוך את הקמפיין ללא פעיל?';
+      if (!confirm(confirmMessage)) {
+        // Revert the change if user cancels
+        this.campaign.isActive = true;
+        return;
+      }
+    }
+    this.markAsChanged();
+  }
+
+  // Open activists related to campaign
+  openActivists() {
+    // TODO: Implement navigation to activists with campaign filter
+    console.log('Opening activists for campaign:', this.campaign.id);
+  }
+
+  // Open contacts related to campaign
+  openContacts() {
+    // TODO: Implement navigation to contacts with campaign filter
+    console.log('Opening contacts for campaign:', this.campaign.id);
+  }
+
+  // Open invited list modal - save campaign first if needed
+  async openInvitedList() {
+    if (!this.campaign) return;
+
+    try {
+      this.loading = true;
+
+      // Save campaign first if it's new or has unsaved changes
+      if (this.isNewCampaign || this.hasUnsavedChanges()) {
+        // Validate required fields
+        if (!this.campaign.name?.trim()) {
+          this.ui.error('שם הקמפיין הוא שדה חובה');
+          return;
+        }
+
+        if (!this.campaign.startDate) {
+          this.ui.error('תאריך התחלה הוא שדה חובה');
+          return;
+        }
+
+        // Save the campaign
+        await this.campaign.save();
+        this.snackBar.open('הקמפיין נשמר', 'סגור', { duration: 2000 });
+        this.originalCampaignData = JSON.stringify(this.campaign);
+        this.changed = false;
+        this.isNewCampaign = false;
+      }
+
+      // Now open the invited list modal with the campaign ID
+      const result = await this.ui.campaignDonorsDialog(this.campaign.id);
+
+      if (result) {
+        // Refresh campaign data if needed
+        await this.reloadCampaign();
+      }
+    } catch (error: any) {
+      console.error('Error opening invited list:', error);
+      this.ui.error('שגיאה בפתיחת רשימת המוזמנים: ' + (error.message || error));
+    } finally {
+      this.loading = false;
+    }
+  }
+
+  // Helper method to check if there are unsaved changes
+  private hasUnsavedChanges(): boolean {
+    const currentData = JSON.stringify(this.campaign);
+    return this.originalCampaignData !== currentData;
+  }
+
+  // Helper method to reload campaign data
+  private async reloadCampaign() {
+    if (!this.campaign?.id) return;
+
+    try {
+      const reloaded = await this.campaignRepo.findId(this.campaign.id, { useCache: false });
+      if (reloaded) {
+        this.campaign = reloaded;
+        this.originalCampaignData = JSON.stringify(this.campaign);
+        this.changed = false;
+      }
+    } catch (error) {
+      console.error('Error reloading campaign:', error);
+    }
   }
 }
