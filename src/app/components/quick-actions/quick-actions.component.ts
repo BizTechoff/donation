@@ -39,10 +39,11 @@ export class QuickActionsComponent {
     // No need to navigate or refresh since it's a modal
   }
   
-  createNewCampaign() {
-    this.router.navigate(['/קמפיינים'], { 
-      queryParams: { action: 'add' }
-    });
+ async createNewCampaign() {
+    const changed = await this.ui.campaignDetailsDialog('new');
+    // this.router.navigate(['/קמפיינים'], { 
+    //   queryParams: { action: 'add' }
+    // });
   }
   
   createNewStandingOrder() {

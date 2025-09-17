@@ -4,6 +4,7 @@ import { Campaign } from '../../../shared/entity/campaign';
 import { User } from '../../../shared/entity/user';
 import { Blessing } from '../../../shared/entity/blessing';
 import { I18nService } from '../../i18n/i18n.service';
+import { UIToolsService } from '../../common/UIToolsService';
 
 @Component({
   selector: 'app-campaigns-list',
@@ -30,7 +31,7 @@ export class CampaignsListComponent implements OnInit {
   sortField = 'name';
   sortDirection = 'asc';
 
-  constructor(public i18n: I18nService) {}
+  constructor(public i18n: I18nService, private ui: UIToolsService) {}
 
   async ngOnInit() {
     await this.loadData();
@@ -87,19 +88,17 @@ export class CampaignsListComponent implements OnInit {
   }
 
   async createCampaign() {
-    this.editingCampaign = this.campaignRepo.create({
-      status: 'draft',
-      currency: 'ILS',
-      startDate: new Date(),
-      isActive: true,
-      isPublic: false
-    });
-    this.showAddCampaignModal = true;
+    const changed = await this.ui.campaignDetailsDialog('new');
+    if (changed) {
+      await this.loadCampaigns();
+    }
   }
 
   async editCampaign(campaign: Campaign) {
-    this.editingCampaign = campaign;
-    this.showAddCampaignModal = true;
+    const changed = await this.ui.campaignDetailsDialog(campaign.id);
+    if (changed) {
+      await this.loadCampaigns();
+    }
   }
 
   async saveCampaign() {

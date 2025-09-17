@@ -1,0 +1,383 @@
+<!-- Campaign Details Modal -->
+<div class="modal-overlay" (click)="closeModal($event)">
+  <div class="modal-content campaign-details-modal" (click)="$event.stopPropagation()">
+
+    <!-- Modal Header with gradient and icon -->
+    <div class="modal-header">
+      <div class="header-content">
+        <div class="header-icon">
+          <mat-icon>{{isNewCampaign ? 'add_circle' : 'campaign'}}</mat-icon>
+        </div>
+        <div class="header-text">
+          <h2>{{isNewCampaign ? 'יצירת קמפיין חדש' : 'פרטי קמפיין'}}</h2>
+          <p class="header-subtitle" *ngIf="!isNewCampaign && campaign">
+            {{campaign.name}}
+          </p>
+        </div>
+      </div>
+      <button class="modal-close" (click)="closeModal()" matTooltip="סגור" [dir]="'rtl'">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-overlay" *ngIf="loading">
+      <div class="loading-spinner">טוען נתונים...</div>
+    </div>
+
+    <div class="modal-body">
+      <div class="details-grid" *ngIf="campaign && !loading">
+
+        <!-- Status Display -->
+        <div class="section status-section" *ngIf="!isNewCampaign">
+          <h3>סטטוס קמפיין</h3>
+          <div class="status-display">
+            <div class="status-badge" [class.draft]="isDraft" [class.active]="isActive"
+                 [class.completed]="isCompleted" [class.cancelled]="isCancelled">
+              <mat-icon>{{isDraft ? 'edit' : isActive ? 'play_circle' : isCompleted ? 'check_circle' : 'cancel'}}</mat-icon>
+              <span>{{isDraft ? 'טיוטה' : isActive ? 'פעיל' : isCompleted ? 'הושלם' : 'בוטל'}}</span>
+            </div>
+            <div class="progress-info" *ngIf="campaign.targetAmount > 0">
+              <div class="progress-bar">
+                <div class="progress-fill" [style.width.%]="campaign.progressPercentage"></div>
+              </div>
+              <span class="progress-text">{{campaign.progressPercentage}}% ({{campaign.raisedAmount}} / {{campaign.targetAmount}} {{campaign.currency}})</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- סוג קמפיין -->
+        <div class="section campaign-type-section">
+          <h3>סוג קמפיין</h3>
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <div class="campaign-type-selector">
+                <div class="campaign-type-option" [class.active]="campaign.campaignType === 'רגיל'">
+                  <label class="campaign-type-card">
+                    <input type="radio"
+                           name="campaignType"
+                           value="רגיל"
+                           [(ngModel)]="campaign.campaignType"
+                           [disabled]="!canEdit"
+                           (ngModelChange)="markAsChanged()"
+                           class="campaign-type-radio">
+                    <div class="campaign-type-content">
+                      <mat-icon class="campaign-type-icon">campaign</mat-icon>
+                      <div class="campaign-type-text">
+                        <span class="campaign-type-label">קמפיין רגיל</span>
+                        <span class="campaign-type-description">קמפיין גיוס כספים סטנדרטי</span>
+                      </div>
+                    </div>
+                  </label>
+                </div>
+
+                <div class="campaign-type-option" [class.active]="campaign.campaignType === 'דינעער'">
+                  <label class="campaign-type-card">
+                    <input type="radio"
+                           name="campaignType"
+                           value="דינעער"
+                           [(ngModel)]="campaign.campaignType"
+                           [disabled]="!canEdit"
+                           (ngModelChange)="markAsChanged()"
+                           class="campaign-type-radio">
+                    <div class="campaign-type-content">
+                      <mat-icon class="campaign-type-icon">restaurant</mat-icon>
+                      <div class="campaign-type-text">
+                        <span class="campaign-type-label">דינעער</span>
+                        <span class="campaign-type-description">אירוע גיוס כספים חגיגי</span>
+                      </div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Basic Campaign Information -->
+        <div class="section basic-details">
+          <h3>פרטי קמפיין בסיסיים</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">title</mat-icon>
+                <label>שם הקמפיין *</label>
+              </div>
+              <input type="text" class="form-control" [(ngModel)]="campaign.name"
+                     [disabled]="!canEdit" placeholder="הכנס שם קמפיין"
+                     (ngModelChange)="markAsChanged()">
+            </div>
+
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">category</mat-icon>
+                <label>קטגוריה</label>
+              </div>
+              <input type="text" class="form-control" [(ngModel)]="campaign.category"
+                     [disabled]="!canEdit" placeholder="קטגוריה"
+                     (ngModelChange)="markAsChanged()">
+            </div>
+
+            <div class="form-group full-width">
+              <div class="field-title">
+                <mat-icon class="field-icon">description</mat-icon>
+                <label>תיאור</label>
+              </div>
+              <textarea class="form-control" [(ngModel)]="campaign.description"
+                        [disabled]="!canEdit" placeholder="תיאור הקמפיין" rows="3"
+                        (ngModelChange)="markAsChanged()"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Financial Information -->
+        <div class="section financial-details">
+          <h3>מידע כספי</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">attach_money</mat-icon>
+                <label>יעד כספי</label>
+              </div>
+              <input type="number" class="form-control" [(ngModel)]="campaign.targetAmount"
+                     [disabled]="!canEdit" placeholder="יעד כספי" min="0" step="0.01"
+                     (ngModelChange)="markAsChanged()">
+            </div>
+
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">monetization_on</mat-icon>
+                <label>מטבע</label>
+              </div>
+              <select class="form-control" [(ngModel)]="campaign.currency"
+                      [disabled]="!canEdit" (ngModelChange)="markAsChanged()">
+                <option value="ILS">שקל ישראלי (₪)</option>
+                <option value="USD">דולר אמריקני ($)</option>
+                <option value="EUR">יורו (€)</option>
+                <option value="GBP">פאונד בריטי (£)</option>
+                <option value="CAD">דולר קנדי (C$)</option>
+                <option value="AUD">דולר אוסטרלי (A$)</option>
+              </select>
+            </div>
+
+            <div class="form-group" *ngIf="!isNewCampaign">
+              <div class="field-title">
+                <mat-icon class="field-icon">savings</mat-icon>
+                <label>סכום שנאסף</label>
+              </div>
+              <input type="number" class="form-control" [value]="campaign.raisedAmount"
+                     disabled placeholder="סכום שנאסף" step="0.01">
+            </div>
+
+            <div class="form-group" *ngIf="!isNewCampaign">
+              <div class="field-title">
+                <mat-icon class="field-icon">trending_up</mat-icon>
+                <label>אחוז השלמה</label>
+              </div>
+              <input type="text" class="form-control" [value]="campaign.progressPercentage + '%'"
+                     disabled>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dates Information -->
+        <div class="section dates-details">
+          <h3>תאריכים</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">event</mat-icon>
+                <label>תאריך התחלה *</label>
+              </div>
+              <app-modern-dual-date-picker
+                [(ngModel)]="campaign.startDate"
+                [disabled]="!canEdit"
+                [compact]="false"
+                [calendar_open_heb_and_eng_parallel]="true"
+                (dateChange)="markAsChanged()">
+              </app-modern-dual-date-picker>
+            </div>
+
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">event_available</mat-icon>
+                <label>תאריך סיום</label>
+              </div>
+              <app-modern-dual-date-picker
+                [(ngModel)]="campaign.endDate"
+                [disabled]="!canEdit"
+                [compact]="false"
+                [calendar_open_heb_and_eng_parallel]="true"
+                (dateChange)="markAsChanged()">
+              </app-modern-dual-date-picker>
+            </div>
+          </div>
+        </div>
+
+        <!-- Management Information -->
+        <div class="section management-details">
+          <h3>ניהול וחברים</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">supervisor_account</mat-icon>
+                <label>אחראי קמפיין</label>
+              </div>
+              <select class="form-control" [(ngModel)]="campaign.managerId"
+                      [disabled]="!canEdit" (ngModelChange)="onManagerChange()">
+                <option value="">בחר אחראי</option>
+                <option *ngFor="let user of users" [value]="user.id">
+                  {{ getUserDisplayName(user) }}
+                </option>
+              </select>
+            </div>
+
+
+            <div class="form-group full-width">
+              <div class="field-title">
+                <mat-icon class="field-icon">place</mat-icon>
+                <label>מיקום האירוע</label>
+              </div>
+              <input type="text" class="form-control" [(ngModel)]="campaign.eventLocation"
+                     [disabled]="!canEdit" placeholder="מיקום האירוע (עיר, מדינה)"
+                     (ngModelChange)="onEventLocationChange($event)">
+            </div>
+
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">info</mat-icon>
+                <label>מעמד</label>
+              </div>
+              <input type="text" class="form-control" [(ngModel)]="campaign.status2"
+                     [disabled]="!canEdit" placeholder="מעמד נוסף"
+                     (ngModelChange)="markAsChanged()">
+            </div>
+
+            <div class="form-group checkbox-group">
+              <label class="checkbox-label">
+                <input type="checkbox" [(ngModel)]="campaign.isAnash"
+                       [disabled]="!canEdit" (ngModelChange)="markAsChanged()">
+                <mat-icon class="checkbox-icon">{{campaign.isAnash ? 'check_box' : 'check_box_outline_blank'}}</mat-icon>
+                <span>אנ"ש</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Settings -->
+        <div class="section settings-details">
+          <h3>הגדרות</h3>
+          <div class="form-grid">
+            <div class="form-group checkbox-group">
+              <label class="checkbox-label">
+                <input type="checkbox" [(ngModel)]="campaign.isActive"
+                       [disabled]="!canEdit" (ngModelChange)="markAsChanged()">
+                <mat-icon class="checkbox-icon">{{campaign.isActive ? 'check_box' : 'check_box_outline_blank'}}</mat-icon>
+                <span>קמפיין פעיל</span>
+              </label>
+            </div>
+
+            <div class="form-group checkbox-group">
+              <label class="checkbox-label">
+                <input type="checkbox" [(ngModel)]="campaign.isPublic"
+                       [disabled]="!canEdit" (ngModelChange)="markAsChanged()">
+                <mat-icon class="checkbox-icon">{{campaign.isPublic ? 'check_box' : 'check_box_outline_blank'}}</mat-icon>
+                <span>מוצג באתר</span>
+              </label>
+            </div>
+
+            <div class="form-group full-width">
+              <div class="field-title">
+                <mat-icon class="field-icon">link</mat-icon>
+                <label>קישור לעמוד</label>
+              </div>
+              <input type="url" class="form-control" [(ngModel)]="campaign.websiteUrl"
+                     [disabled]="!canEdit" placeholder="https://example.com"
+                     (ngModelChange)="markAsChanged()">
+            </div>
+
+            <div class="form-group full-width">
+              <div class="field-title">
+                <mat-icon class="field-icon">image</mat-icon>
+                <label>קישור לתמונה</label>
+              </div>
+              <input type="url" class="form-control" [(ngModel)]="campaign.imageUrl"
+                     [disabled]="!canEdit" placeholder="https://example.com/image.jpg"
+                     (ngModelChange)="markAsChanged()">
+            </div>
+
+            <div class="form-group full-width">
+              <div class="field-title">
+                <mat-icon class="field-icon">notes</mat-icon>
+                <label>הערות פנימיות</label>
+              </div>
+              <textarea class="form-control" [(ngModel)]="campaign.internalNotes"
+                        [disabled]="!canEdit" placeholder="הערות פנימיות" rows="3"
+                        (ngModelChange)="markAsChanged()"></textarea>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Modal Footer -->
+    <div class="modal-footer">
+      <div class="footer-actions-left">
+        <!-- Campaign Action Buttons -->
+        <button mat-raised-button color="primary"
+                *ngIf="canActivate"
+                (click)="activateCampaign()"
+                [disabled]="loading"
+                class="action-button">
+          <mat-icon>play_circle</mat-icon>
+          הפעל קמפיין
+        </button>
+
+        <button mat-raised-button color="accent"
+                *ngIf="canComplete"
+                (click)="completeCampaign()"
+                [disabled]="loading"
+                class="action-button">
+          <mat-icon>check_circle</mat-icon>
+          סמן כהושלם
+        </button>
+
+        <button mat-stroked-button color="warn"
+                *ngIf="canCancel"
+                (click)="cancelCampaign()"
+                [disabled]="loading"
+                class="action-button">
+          <mat-icon>cancel</mat-icon>
+          בטל קמפיין
+        </button>
+      </div>
+
+      <div class="footer-actions-right">
+        <button mat-stroked-button
+                color="warn"
+                *ngIf="!isNewCampaign"
+                (click)="deleteCampaign()"
+                class="action-button">
+          <mat-icon>delete</mat-icon>
+          מחק קמפיין
+        </button>
+
+        <button mat-stroked-button
+                (click)="closeModal()"
+                class="cancel-button">
+          <mat-icon>close</mat-icon>
+          ביטול
+        </button>
+        <button mat-raised-button
+                color="primary"
+                (click)="saveCampaign()"
+                class="save-button"
+                [disabled]="loading">
+          <mat-icon>save</mat-icon>
+          שמור קמפיין
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
