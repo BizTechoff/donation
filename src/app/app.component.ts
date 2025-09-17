@@ -38,6 +38,9 @@ export class AppComponent implements OnInit {
           object: signIn,
           ok: async () => {
             remult.user = await signIn.signIn()
+            if(remult.user){
+              this.router.navigate([`/${this.i18n.currentTerms.donorList}`]);
+            }
           },
         })
     )
