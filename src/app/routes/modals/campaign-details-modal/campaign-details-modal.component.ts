@@ -415,16 +415,37 @@ export class CampaignDetailsModalComponent implements OnInit {
     console.log('Opening contacts for campaign:', this.campaign.id);
   }
 
-  // Open blessing book modal
+  // Open blessing book modal - save campaign first if needed
   async openBlessingBook() {
-    if (!this.campaign?.id) return;
+    if (!this.campaign) return;
 
-    const args: CampaignBlessingBookModalArgs = {
-      campaignId: this.campaign.id,
-      campaignName: this.campaign.name
-    };
+    try {
+      this.loading = true;
 
-    await openDialog(CampaignBlessingBookModalComponent, (dlg) => dlg.args = args);
+      // Save campaign first if it's new or has unsaved changes
+      if (this.isNewCampaign || this.hasUnsavedChanges()) {
+        await this.saveCampaign();
+
+        // If save failed, don't proceed
+        if (!this.campaign.id) {
+          this.ui.error('יש לשמור את הקמפיין תחילה');
+          return;
+        }
+      }
+
+      const args: CampaignBlessingBookModalArgs = {
+        campaignId: this.campaign.id,
+        campaignName: this.campaign.name
+      };
+
+      await openDialog(CampaignBlessingBookModalComponent, (dlg) => dlg.args = args);
+
+    } catch (error) {
+      console.error('Error opening blessing book:', error);
+      this.ui.error('שגיאה בפתיחת ספר הברכות');
+    } finally {
+      this.loading = false;
+    }
   }
 
   // Open invited list modal - save campaign first if needed
