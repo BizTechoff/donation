@@ -13,6 +13,7 @@ import { openDialog } from 'common-ui-elements';
 import { DataAreaDialogComponent } from '../../../common/data-area-dialog/data-area-dialog.component';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { OsmAddressInputComponent, AddressComponents } from '../../../common/osm-address-input/osm-address-input.component';
+import { DonorDonationsModalComponent, DonorDonationsModalArgs } from '../donor-donations-modal/donor-donations-modal.component';
 
 export interface DonorDetailsModalArgs {
   donorId: string; // Can be 'new' for new donor or donor ID
@@ -540,22 +541,40 @@ export class DonorDetailsModalComponent implements OnInit {
   }
 
   // Action button methods
-  openGifts() {
-    // TODO: Implement gifts functionality
-    console.log('Opening gifts for donor:', this.donor?.id);
-    alert('פונקציונליות מתנות תבוצע בהמשך');
+  async openGifts() {
+    if (!this.donor?.id) return;
+
+    const args: DonorDonationsModalArgs = {
+      donorId: this.donor.id,
+      donationType: 'gifts',
+      donorName: this.donor.fullName
+    };
+
+    await openDialog(DonorDonationsModalComponent, (dlg) => dlg.args = args);
   }
 
-  openDonations() {
-    // TODO: Implement donations functionality
-    console.log('Opening donations for donor:', this.donor?.id);
-    alert('פונקציונליות תרומות תבוצע בהמשך');
+  async openDonations() {
+    if (!this.donor?.id) return;
+
+    const args: DonorDonationsModalArgs = {
+      donorId: this.donor.id,
+      donationType: 'donations',
+      donorName: this.donor.fullName
+    };
+
+    await openDialog(DonorDonationsModalComponent, (dlg) => dlg.args = args);
   }
 
-  openReceipts() {
-    // TODO: Implement receipts functionality
-    console.log('Opening receipts for donor:', this.donor?.id);
-    alert('פונקציונליות הוצאת קבלות תבוצע בהמשך');
+  async openReceipts() {
+    if (!this.donor?.id) return;
+
+    const args: DonorDonationsModalArgs = {
+      donorId: this.donor.id,
+      donationType: 'receipts',
+      donorName: this.donor.fullName
+    };
+
+    await openDialog(DonorDonationsModalComponent, (dlg) => dlg.args = args);
   }
   
   closeModal(event?: MouseEvent) {

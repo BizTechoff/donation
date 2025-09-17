@@ -11,6 +11,8 @@ import { I18nService } from '../../../i18n/i18n.service';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { SharedComponentsModule } from '../../../shared/shared-components.module';
 import { DONOR_LEVELS_ARRAY, DonorLevel } from '../../../../shared/enum/donor-levels';
+import { CampaignBlessingBookModalComponent, CampaignBlessingBookModalArgs } from '../campaign-blessing-book-modal/campaign-blessing-book-modal.component';
+import { openDialog } from 'common-ui-elements';
 
 export interface CampaignDetailsModalArgs {
   campaignId: string; // Can be 'new' for new campaign or campaign ID
@@ -411,6 +413,18 @@ export class CampaignDetailsModalComponent implements OnInit {
   openContacts() {
     // TODO: Implement navigation to contacts with campaign filter
     console.log('Opening contacts for campaign:', this.campaign.id);
+  }
+
+  // Open blessing book modal
+  async openBlessingBook() {
+    if (!this.campaign?.id) return;
+
+    const args: CampaignBlessingBookModalArgs = {
+      campaignId: this.campaign.id,
+      campaignName: this.campaign.name
+    };
+
+    await openDialog(CampaignBlessingBookModalComponent, (dlg) => dlg.args = args);
   }
 
   // Open invited list modal - save campaign first if needed
