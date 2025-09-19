@@ -121,10 +121,10 @@ export class UIToolsService implements UITools {
     )
   }
 
-  async donationDetailsDialog(donationId: string, options?: { donorId?: string }): Promise<boolean> {
+  async donationDetailsDialog(donationId: string, options?: { donorId?: string; campaignId?: string }): Promise<boolean> {
     return await openDialog(
       (await import('../routes/modals/donation-details-modal/donation-details-modal.component')).DonationDetailsModalComponent,
-      (dlg) => dlg.args = { donationId, donorId: options?.donorId },
+      (dlg) => dlg.args = { donationId, donorId: options?.donorId, campaignId: options?.campaignId },
       (dlg) => dlg.changed
     )
   }
@@ -135,6 +135,14 @@ export class UIToolsService implements UITools {
       (dlg) => dlg.args = { availableEvents, title },
       (dlg) => dlg.selectedEvent
     );
+  }
+
+  async standingOrderDetailsDialog(standingOrderId: string, options?: { donorId?: string }): Promise<boolean> {
+    return await openDialog(
+      (await import('../routes/modals/standing-order-details-modal/standing-order-details-modal.component')).StandingOrderDetailsModalComponent,
+      (dlg) => dlg.args = { standingOrderId, donorId: options?.donorId },
+      (dlg) => dlg.changed || dlg.shouldClose
+    )
   }
   private enhanceFieldOptionsAndDataControlOptions(
     commonUIPlugin: CommonUIElementsPluginsService

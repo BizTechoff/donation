@@ -1,0 +1,424 @@
+<!-- Standing Order Details Modal -->
+<div class="modal-overlay" (click)="closeModal($event)">
+  <div class="modal-content standing-order-details-modal" (click)="$event.stopPropagation()">
+
+    <!-- Modal Header with gradient and icon -->
+    <div class="modal-header">
+      <div class="header-content">
+        <div class="header-icon">
+          <mat-icon>{{isNewStandingOrder ? 'add_card' : 'credit_card'}}</mat-icon>
+        </div>
+        <div class="header-text">
+          <h2>{{isNewStandingOrder ? 'הוראת קבע חדשה' : 'פרטי הוראת קבע'}}</h2>
+          <p class="header-subtitle" *ngIf="!isNewStandingOrder && standingOrder && selectedDonor">
+            {{getDonorDisplayName(selectedDonor)}}
+          </p>
+        </div>
+      </div>
+      <button class="modal-close" (click)="closeModal()" matTooltip="סגור" [dir]="'rtl'">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-overlay" *ngIf="loading">
+      <div class="loading-spinner">טוען נתונים...</div>
+    </div>
+
+    <div class="modal-body">
+      <div class="details-grid" *ngIf="standingOrder && !loading">
+
+        <!-- Status Bar for existing standing orders -->
+        <div class="status-bar" *ngIf="!isNewStandingOrder">
+          <div class="status-item">
+            <div class="status-icon">
+              <mat-icon [class]="'status-icon-' + standingOrder.status">
+                {{standingOrder.status === 'active' ? 'check_circle' :
+                  standingOrder.status === 'paused' ? 'pause_circle' :
+                  standingOrder.status === 'cancelled' ? 'cancel' : 'help'}}
+              </mat-icon>
+            </div>
+            <div class="status-text">
+              <span class="status-label">סטטוס</span>
+              <span class="status-value">{{ getStatusDisplay() }}</span>
+            </div>
+          </div>
+
+          <div class="status-item">
+            <div class="status-icon">
+              <mat-icon class="progress-icon">trending_up</mat-icon>
+            </div>
+            <div class="status-text">
+              <span class="status-label">התקדמות</span>
+              <div class="progress-container">
+                <div class="progress-bar">
+                  <div class="progress-fill" [style.width.%]="getProgressPercentage()"></div>
+                </div>
+                <span class="progress-text">{{ standingOrder.completedPayments }} מתוך {{ standingOrder.numberOfPayments }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="status-item">
+            <div class="status-icon">
+              <mat-icon class="date-icon">event</mat-icon>
+            </div>
+            <div class="status-text">
+              <span class="status-label">תשלום הבא</span>
+              <span class="status-value">{{ standingOrder.nextPaymentDate | date:'dd/MM/yyyy' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- פרטי תרומה -->
+        <div class="section donation-details">
+          <h3>פרטי תרומה</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">person</mat-icon>
+                <label>תורם *</label>
+              </div>
+              <select class="form-control" [(ngModel)]="standingOrder.donorId"
+                      (ngModelChange)="onDonorChange($event)" [disabled]="!isEditable">
+                <option value="">בחר תורם...</option>
+                <option *ngFor="let donor of donors" [value]="donor.id">
+                  {{ getDonorDisplayName(donor) }}
+                </option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">campaign</mat-icon>
+                <label>קמפיין</label>
+              </div>
+              <select class="form-control" [(ngModel)]="standingOrder.campaignId"
+                      (ngModelChange)="onCampaignChange()" [disabled]="!isEditable">
+                <option value="">בחר קמפיין...</option>
+                <option *ngFor="let campaign of campaigns" [value]="campaign.id">
+                  {{ campaign.name }}
+                </option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- לוח זמנים -->
+        <div class="section schedule-details">
+          <h3>לוח זמנים</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">schedule</mat-icon>
+                <label>תדירות *</label>
+              </div>
+              <select class="form-control" [(ngModel)]="standingOrder.frequency"
+                      (ngModelChange)="onFrequencyChange()" [disabled]="!isEditable">
+                <option *ngFor="let freq of frequencyOptions" [value]="freq.value">
+                  {{ freq.label }}
+                </option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">today</mat-icon>
+                <label>יום בחודש</label>
+              </div>
+              <select class="form-control" [(ngModel)]="standingOrder.dayOfMonth" [disabled]="!isEditable">
+                <option *ngFor="let day of dayOfMonthOptions" [value]="day">{{ day }}</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">repeat</mat-icon>
+                <label>מספר תשלומים *</label>
+              </div>
+              <input type="number" class="form-control" [(ngModel)]="standingOrder.numberOfPayments"
+                     [disabled]="!isEditable" min="1" placeholder="מספר תשלומים">
+            </div>
+
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">event</mat-icon>
+                <label>תאריך התחלה *</label>
+              </div>
+              <input type="date" class="form-control" [(ngModel)]="standingOrder.startDate"
+                     [disabled]="!isEditable">
+            </div>
+          </div>
+        </div>
+
+        <!-- פרטי סכום -->
+        <div class="section amount-details">
+          <h3>פרטי סכום</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">attach_money</mat-icon>
+                <label>סכום לתשלום *</label>
+              </div>
+              <input type="number" class="form-control" [(ngModel)]="standingOrder.amount"
+                     [disabled]="!isEditable" min="1" placeholder="הכנס סכום">
+            </div>
+
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">monetization_on</mat-icon>
+                <label>מטבע</label>
+              </div>
+              <select class="form-control" [(ngModel)]="standingOrder.currency" [disabled]="!isEditable">
+                <option value="ILS">שקל ישראלי (₪)</option>
+                <option value="USD">דולר אמריקני ($)</option>
+                <option value="EUR">יורו (€)</option>
+                <option value="GBP">פאונד בריטי (£)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- אמצעי תשלום -->
+        <div class="section payment-method-section">
+          <h3>אמצעי תשלום</h3>
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <div class="field-title">
+                <mat-icon class="field-icon">payment</mat-icon>
+                <label>סוג תשלום *</label>
+              </div>
+              <select class="form-control" [(ngModel)]="standingOrder.paymentType"
+                      (ngModelChange)="onPaymentTypeChange()" [disabled]="!isEditable">
+                <option *ngFor="let type of paymentTypes" [value]="type.value">
+                  {{ type.label }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Credit Card Details -->
+          <div class="payment-details" *ngIf="isCreditCardPayment">
+            <div class="payment-details-header">
+              <mat-icon class="payment-icon">credit_card</mat-icon>
+              <h4>פרטי כרטיס אשראי</h4>
+            </div>
+            <div class="form-grid">
+              <div class="form-group">
+                <div class="field-title">
+                  <mat-icon class="field-icon">numbers</mat-icon>
+                  <label>מספר כרטיס (4 ספרות אחרונות)</label>
+                </div>
+                <input type="text" class="form-control" [(ngModel)]="standingOrder.cardNumber"
+                       [disabled]="!isEditable" maxlength="4" placeholder="1234">
+              </div>
+
+              <div class="form-group">
+                <div class="field-title">
+                  <mat-icon class="field-icon">date_range</mat-icon>
+                  <label>תוקף (MM/YY)</label>
+                </div>
+                <input type="text" class="form-control" [(ngModel)]="standingOrder.cardExpiry"
+                       [disabled]="!isEditable" placeholder="MM/YY" maxlength="5">
+              </div>
+
+              <div class="form-group full-width">
+                <div class="field-title">
+                  <mat-icon class="field-icon">person</mat-icon>
+                  <label>שם בעל הכרטיס</label>
+                </div>
+                <input type="text" class="form-control" [(ngModel)]="standingOrder.cardHolderName"
+                       [disabled]="!isEditable" placeholder="שם בעל הכרטיס">
+              </div>
+            </div>
+          </div>
+
+          <!-- Bank Details -->
+          <div class="payment-details" *ngIf="isBankTransferPayment">
+            <div class="payment-details-header">
+              <mat-icon class="payment-icon">account_balance</mat-icon>
+              <h4>פרטי חשבון בנק</h4>
+            </div>
+            <div class="form-grid">
+              <div class="form-group">
+                <div class="field-title">
+                  <mat-icon class="field-icon">business</mat-icon>
+                  <label>שם הבנק</label>
+                </div>
+                <input type="text" class="form-control" [(ngModel)]="standingOrder.bankName"
+                       [disabled]="!isEditable" placeholder="שם הבנק">
+              </div>
+
+              <div class="form-group">
+                <div class="field-title">
+                  <mat-icon class="field-icon">location_on</mat-icon>
+                  <label>סניף</label>
+                </div>
+                <input type="text" class="form-control" [(ngModel)]="standingOrder.bankBranch"
+                       [disabled]="!isEditable" placeholder="מספר סניף">
+              </div>
+
+              <div class="form-group">
+                <div class="field-title">
+                  <mat-icon class="field-icon">account_balance_wallet</mat-icon>
+                  <label>מספר חשבון</label>
+                </div>
+                <input type="text" class="form-control" [(ngModel)]="standingOrder.bankAccount"
+                       [disabled]="!isEditable" placeholder="מספר חשבון">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- הגדרות נוספות -->
+        <div class="section additional-settings">
+          <h3>הגדרות נוספות</h3>
+          <div class="form-grid">
+            <div class="form-group full-width checkbox-group">
+              <div class="checkbox-container">
+                <mat-icon class="field-icon">autorenew</mat-icon>
+                <label class="checkbox-label">
+                  <input type="checkbox" [(ngModel)]="standingOrder.autoRenewal" [disabled]="!isEditable">
+                  <span class="checkmark"></span>
+                  חידוש אוטומטי בסיום התשלומים
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group full-width">
+              <div class="field-title">
+                <mat-icon class="field-icon">notes</mat-icon>
+                <label>הערות</label>
+              </div>
+              <textarea class="form-control" [(ngModel)]="standingOrder.notes" rows="3"
+                        [disabled]="!isEditable" placeholder="הערות נוספות..."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Summary for existing orders -->
+        <div class="summary-section" *ngIf="!isNewStandingOrder">
+          <div class="summary-header">
+            <mat-icon class="summary-icon">assessment</mat-icon>
+            <h3>סיכום כספי</h3>
+          </div>
+          <div class="summary-grid">
+            <div class="summary-item">
+              <div class="summary-icon-container">
+                <mat-icon>account_balance</mat-icon>
+              </div>
+              <div class="summary-details">
+                <span class="summary-label">סה"כ לתשלום</span>
+                <span class="summary-value">{{ standingOrder.totalAmount | currency:standingOrder.currency:'symbol':'1.0-0' }}</span>
+              </div>
+            </div>
+
+            <div class="summary-item">
+              <div class="summary-icon-container success">
+                <mat-icon>check_circle</mat-icon>
+              </div>
+              <div class="summary-details">
+                <span class="summary-label">שולם עד כה</span>
+                <span class="summary-value success">{{ standingOrder.processedAmount | currency:standingOrder.currency:'symbol':'1.0-0' }}</span>
+              </div>
+            </div>
+
+            <div class="summary-item">
+              <div class="summary-icon-container pending">
+                <mat-icon>schedule</mat-icon>
+              </div>
+              <div class="summary-details">
+                <span class="summary-label">יתרה לתשלום</span>
+                <span class="summary-value pending">{{ standingOrder.remainingAmount | currency:standingOrder.currency:'symbol':'1.0-0' }}</span>
+              </div>
+            </div>
+
+            <div class="summary-item">
+              <div class="summary-icon-container">
+                <mat-icon>done_all</mat-icon>
+              </div>
+              <div class="summary-details">
+                <span class="summary-label">תשלומים שהושלמו</span>
+                <span class="summary-value">{{ standingOrder.completedPayments }}</span>
+              </div>
+            </div>
+
+            <div class="summary-item">
+              <div class="summary-icon-container error">
+                <mat-icon>error</mat-icon>
+              </div>
+              <div class="summary-details">
+                <span class="summary-label">תשלומים שנכשלו</span>
+                <span class="summary-value error">{{ standingOrder.failedPayments }}</span>
+              </div>
+            </div>
+
+            <div class="summary-item">
+              <div class="summary-icon-container info">
+                <mat-icon>hourglass_empty</mat-icon>
+              </div>
+              <div class="summary-details">
+                <span class="summary-label">תשלומים שנותרו</span>
+                <span class="summary-value info">{{ getRemainingPayments() }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Footer -->
+    <div class="modal-footer">
+      <div class="footer-actions">
+        <button mat-raised-button color="primary" (click)="saveStandingOrder()" [disabled]="loading">
+          <mat-icon>save</mat-icon>
+          שמור
+        </button>
+
+        <!-- Actions for existing standing orders -->
+        <ng-container *ngIf="!isNewStandingOrder">
+          <button mat-raised-button *ngIf="standingOrder.status === 'active'"
+                  (click)="pauseStandingOrder()" [disabled]="loading" class="action-pause">
+            <mat-icon>pause</mat-icon>
+            השהה
+          </button>
+
+          <button mat-raised-button *ngIf="standingOrder.status === 'paused'"
+                  (click)="resumeStandingOrder()" [disabled]="loading" class="action-resume">
+            <mat-icon>play_arrow</mat-icon>
+            חדש
+          </button>
+
+          <button mat-raised-button (click)="processNextPayment()"
+                  [disabled]="loading || standingOrder.status !== 'active'" class="action-payment">
+            <mat-icon>payment</mat-icon>
+            בצע תשלום
+          </button>
+
+          <button mat-raised-button (click)="viewPaymentHistory()" [disabled]="loading" class="action-history">
+            <mat-icon>history</mat-icon>
+            היסטוריה
+          </button>
+
+          <button mat-raised-button color="warn" *ngIf="standingOrder.status !== 'cancelled'"
+                  (click)="cancelStandingOrder()" [disabled]="loading" class="action-cancel">
+            <mat-icon>cancel</mat-icon>
+            בטל
+          </button>
+        </ng-container>
+      </div>
+
+      <div class="footer-secondary">
+        <button mat-raised-button color="warn" (click)="deleteStandingOrder()"
+                *ngIf="!isNewStandingOrder" [disabled]="loading" class="action-delete">
+          <mat-icon>delete</mat-icon>
+          מחק
+        </button>
+
+        <button mat-button (click)="closeModal()" class="action-cancel-text">
+          ביטול
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

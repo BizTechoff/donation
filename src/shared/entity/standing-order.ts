@@ -77,7 +77,7 @@ export class StandingOrder extends IdEntity {
     caption: 'תדירות',
     validate: Validators.required,
   })
-  frequency: 'monthly' | 'quarterly' | 'bi-annual' | 'annual' = 'monthly'
+  frequency: 'monthly' | 'quarterly' | 'semiAnnual' | 'annual' = 'monthly'
 
   @Fields.date({
     caption: 'תאריך התחלה',
@@ -94,6 +94,11 @@ export class StandingOrder extends IdEntity {
     caption: 'תאריך ביצוע הבא',
   })
   nextExecutionDate?: Date
+
+  @Fields.date({
+    caption: 'תשלום הבא',
+  })
+  nextPaymentDate?: Date
 
   @Fields.number({
     caption: 'יום חיוב בחודש',
@@ -116,6 +121,90 @@ export class StandingOrder extends IdEntity {
     caption: 'הערות',
   })
   notes = ''
+
+  // Payment related fields
+  @Fields.number({
+    caption: 'מספר תשלומים',
+    validate: [Validators.min(1)],
+  })
+  numberOfPayments = 12
+
+  @Fields.number({
+    caption: 'תשלומים שהושלמו',
+  })
+  completedPayments = 0
+
+  @Fields.number({
+    caption: 'תשלומים שנכשלו',
+  })
+  failedPayments = 0
+
+  @Fields.number({
+    caption: 'סכום כולל',
+  })
+  totalAmount = 0
+
+  @Fields.number({
+    caption: 'סכום ששולם',
+  })
+  processedAmount = 0
+
+  @Fields.number({
+    caption: 'יתרה לתשלום',
+  })
+  remainingAmount = 0
+
+  // Payment method fields
+  @Fields.string({
+    caption: 'סוג תשלום',
+  })
+  paymentType: 'creditCard' | 'bankTransfer' | 'directDebit' = 'creditCard'
+
+  @Fields.string({
+    caption: 'שם בנק',
+  })
+  bankName = ''
+
+  @Fields.string({
+    caption: 'סניף בנק',
+  })
+  bankBranch = ''
+
+  @Fields.string({
+    caption: 'מספר חשבון',
+  })
+  bankAccount = ''
+
+  @Fields.string({
+    caption: 'מספר כרטיס (4 ספרות אחרונות)',
+  })
+  cardNumber = ''
+
+  @Fields.string({
+    caption: 'תוקף כרטיס',
+  })
+  cardExpiry = ''
+
+  @Fields.string({
+    caption: 'שם בעל הכרטיס',
+  })
+  cardHolderName = ''
+
+  @Fields.boolean({
+    caption: 'חידוש אוטומטי',
+  })
+  autoRenewal = true
+
+  // Fundraiser
+  @Relations.toOne<StandingOrder, User>(() => User, {
+    caption: 'גייס',
+  })
+  fundraiser?: User
+
+  @Fields.string({
+    caption: 'גייס ID',
+  })
+  fundraiserId = ''
 
   @Fields.number({
     allowApiUpdate: false,
@@ -161,7 +250,7 @@ export class StandingOrder extends IdEntity {
     switch (this.frequency) {
       case 'monthly': return 'חודשי'
       case 'quarterly': return 'רבעוני'
-      case 'bi-annual': return 'חצי שנתי'
+      case 'semiAnnual': return 'חצי שנתי'
       case 'annual': return 'שנתי'
       default: return this.frequency
     }
@@ -205,7 +294,7 @@ export class StandingOrder extends IdEntity {
       case 'quarterly':
         nextDate.setMonth(nextDate.getMonth() + 3)
         break
-      case 'bi-annual':
+      case 'semiAnnual':
         nextDate.setMonth(nextDate.getMonth() + 6)
         break
       case 'annual':

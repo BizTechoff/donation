@@ -424,13 +424,23 @@ export class CampaignDetailsModalComponent implements OnInit {
 
       // Save campaign first if it's new or has unsaved changes
       if (this.isNewCampaign || this.hasUnsavedChanges()) {
-        await this.saveCampaign();
-
-        // If save failed, don't proceed
-        if (!this.campaign.id) {
-          this.ui.error('יש לשמור את הקמפיין תחילה');
+        // Validate required fields
+        if (!this.campaign.name?.trim()) {
+          this.ui.error('שם הקמפיין הוא שדה חובה');
           return;
         }
+
+        if (!this.campaign.startDate) {
+          this.ui.error('תאריך התחלה הוא שדה חובה');
+          return;
+        }
+
+        // Save the campaign
+        await this.campaign.save();
+        this.snackBar.open('הקמפיין נשמר', 'סגור', { duration: 2000 });
+        this.originalCampaignData = JSON.stringify(this.campaign);
+        this.changed = false;
+        this.isNewCampaign = false;
       }
 
       const args: CampaignBlessingBookModalArgs = {
@@ -510,6 +520,45 @@ export class CampaignDetailsModalComponent implements OnInit {
       }
     } catch (error) {
       console.error('Error reloading campaign:', error);
+    }
+  }
+
+  // Open new donation modal with campaign pre-selected
+  async openNewDonation() {
+    if (!this.campaign) return;
+
+    try {
+      // Save campaign first if it's new or has unsaved changes
+      if (this.isNewCampaign || this.hasUnsavedChanges()) {
+        // Validate required fields
+        if (!this.campaign.name?.trim()) {
+          this.ui.error('שם הקמפיין הוא שדה חובה');
+          return;
+        }
+
+        if (!this.campaign.startDate) {
+          this.ui.error('תאריך התחלה הוא שדה חובה');
+          return;
+        }
+
+        // Save the campaign
+        await this.campaign.save();
+        this.snackBar.open('הקמפיין נשמר', 'סגור', { duration: 2000 });
+        this.originalCampaignData = JSON.stringify(this.campaign);
+        this.changed = false;
+        this.isNewCampaign = false;
+      }
+
+      // Open new donation dialog with campaign ID
+      const result = await this.ui.donationDetailsDialog('new', { campaignId: this.campaign.id });
+
+      if (result) {
+        // Optionally refresh campaign data to update raised amount
+        await this.reloadCampaign();
+      }
+    } catch (error: any) {
+      console.error('Error opening new donation:', error);
+      this.ui.error('שגיאה בפתיחת תרומה חדשה: ' + (error.message || error));
     }
   }
 }

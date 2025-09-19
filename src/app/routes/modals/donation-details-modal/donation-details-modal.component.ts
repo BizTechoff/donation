@@ -8,10 +8,12 @@ import { Donation, Donor, Campaign, DonationMethod, User, DonationPartner, Donat
 import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
 import { UIToolsService } from '../../../common/UIToolsService';
+import { SharedComponentsModule } from '../../../shared/shared-components.module';
 
 export interface DonationDetailsModalArgs {
   donationId: string; // Can be 'new' for new donation or donation ID
   donorId?: string; // Optional donor ID for pre-selecting donor in new donations
+  campaignId?: string; // Optional campaign ID for pre-selecting campaign in new donations
 }
 
 @Component({
@@ -24,7 +26,8 @@ export interface DonationDetailsModalArgs {
     FormsModule,
     MatButtonModule,
     MatIconModule,
-    MatTooltipModule
+    MatTooltipModule,
+    SharedComponentsModule
   ]
 })
 export class DonationDetailsModalComponent implements OnInit {
@@ -196,6 +199,7 @@ export class DonationDetailsModalComponent implements OnInit {
         this.isNewDonation = true;
         this.donation = this.donationRepo.create();
         this.donation.donationDate = new Date();
+        // this.donation.notes = 'נו?'
         this.donation.currency = 'ILS';
         this.donation.status = 'pending';
 
@@ -210,7 +214,12 @@ export class DonationDetailsModalComponent implements OnInit {
         if (this.args.donorId) {
           this.donation.donorId = this.args.donorId;
         }
-        
+
+        // Pre-select campaign if campaignId is provided
+        if (this.args.campaignId) {
+          this.donation.campaignId = this.args.campaignId;
+        }
+
         this.originalDonationData = JSON.stringify(this.donation);
       } else {
         this.isNewDonation = false;
@@ -249,10 +258,34 @@ export class DonationDetailsModalComponent implements OnInit {
         orderBy: { name: 'asc' }
       });
 
-      // Load donation methods
-      this.donationMethods = await this.donationMethodRepo.find({
+      // Load donation methods and filter out unwanted ones
+      const allMethods = await this.donationMethodRepo.find({
         orderBy: { name: 'asc' }
       });
+
+      // Filter out paypal and cash, keep others
+      this.donationMethods = allMethods.filter(method =>
+        method.name !== 'paypal' && method.name !== 'מזומן'
+      );
+
+      // Add "עמותה" and "הו"ק" if they don't exist
+      const hasOrganization = this.donationMethods.some(m => m.name === 'עמותה');
+      const hasBankTransfer = this.donationMethods.some(m => m.name === 'הו"ק');
+
+      if (!hasOrganization) {
+        const orgMethod = this.donationMethodRepo.create();
+        orgMethod.name = 'עמותה';
+        this.donationMethods.push(orgMethod);
+      }
+
+      if (!hasBankTransfer) {
+        const transferMethod = this.donationMethodRepo.create();
+        transferMethod.name = 'הו"ק';
+        this.donationMethods.push(transferMethod);
+      }
+
+      // Re-sort after adding new methods
+      this.donationMethods.sort((a, b) => a.name.localeCompare(b.name, 'he'));
 
       // Load fundraisers (users with donator=true)
       this.fundraisers = await this.userRepo.find({
@@ -271,6 +304,11 @@ export class DonationDetailsModalComponent implements OnInit {
 
       // Load selected campaign and payment method
       this.updateSelectedOptions();
+
+      // If campaign was pre-selected, trigger onCampaignChange to set defaults
+      if (this.isNewDonation && this.selectedCampaign) {
+        this.onCampaignChange();
+      }
 
       // Load selected partners if donation has partnerIds
       await this.loadSelectedPartners();
@@ -525,6 +563,26 @@ export class DonationDetailsModalComponent implements OnInit {
   onCampaignChange() {
     this.updateSelectedOptions();
     console.log('Campaign changed to:', this.selectedCampaign?.name);
+
+    if (this.selectedCampaign) {
+      // Update default donation amount only if the amount field is empty or 0
+      if ((!this.donation.amount || this.donation.amount === 0) && this.selectedCampaign.defaultDonationAmount > 0) {
+        this.donation.amount = this.selectedCampaign.defaultDonationAmount;
+        this.changed = true;
+      }
+
+      // Update currency to match campaign currency
+      if (this.selectedCampaign.currency) {
+        this.donation.currency = this.selectedCampaign.currency;
+        this.changed = true;
+      }
+
+      // Set donation date to today if not already set
+      if (!this.donation.donationDate) {
+        this.donation.donationDate = new Date();
+        this.changed = true;
+      }
+    }
   }
 
   onPaymentMethodChange() {
@@ -577,21 +635,28 @@ export class DonationDetailsModalComponent implements OnInit {
     try {
       console.log('Opening payment modal for credit card');
       // TODO: Implement payment modal
-      alert('פתיחת מודל תשלום לכרטיס אשראי תבוצע בהמשך');
+      // alert('פתיחת מודל תשלום לכרטיס אשראי תבוצע בהמשך');
+      this.ui.info('פתיחת מודל תשלום לכרטיס אשראי תבוצע בהמשך');
     } catch (error) {
       console.error('Error opening payment modal:', error);
       alert('שגיאה בפתיחת מודל תשלום');
     }
   }
 
-  openStandingOrderModal() {
+  async openStandingOrderModal() {
     try {
       console.log('Opening StandingOrderModal for הו"ק');
-      // TODO: Implement StandingOrderModal - this should replace the local showAddOrderModal
-      alert('פתיחת StandingOrderModal לפרטי הו"ק תבוצע בהמשך');
+
+      // Open the standing order modal for creating a new standing order
+      const donorId = this.donation?.donorId;
+      const result = await this.ui.standingOrderDetailsDialog('new', donorId ? { donorId } : undefined);
+
+      if (result) {
+        console.log('Standing order created successfully');
+      }
     } catch (error) {
       console.error('Error opening StandingOrderModal:', error);
-      alert('שגיאה בפתיחת StandingOrderModal');
+      alert('שגיאה בפתיחת הוראת קבע');
     }
   }
 

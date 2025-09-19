@@ -191,6 +191,12 @@ export class Campaign extends IdEntity {
   })
   socialCircle = ''
 
+  @Fields.number({
+    caption: 'תרומה סטנדרטית',
+    validate: [Validators.min(0)],
+  })
+  defaultDonationAmount = 0
+
   get progressPercentage() {
     if (this.targetAmount === 0) return 0
     return Math.min(100, Math.round((this.raisedAmount / this.targetAmount) * 100))

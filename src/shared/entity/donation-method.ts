@@ -42,7 +42,7 @@ export class DonationMethod extends IdEntity {
     caption: 'סוג',
     validate: Validators.required,
   })
-  type: 'cash' | 'check' | 'credit_card' | 'bank_transfer' | 'paypal' | 'crypto' | 'other' = 'cash'
+  type: 'cash' | 'check' | 'credit_card' | 'bank_transfer' | 'crypto' | 'other' = 'cash'
 
   @Fields.boolean({
     caption: 'פעיל',

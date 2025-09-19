@@ -611,7 +611,16 @@
     gap: 12px;
   }
 
+  .payment-method-selector {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
   .donation-type-card {
+    padding: 14px !important;
+  }
+
+  .payment-method-card {
     padding: 14px !important;
   }
 
@@ -866,6 +875,78 @@
   }
 }
 
+/* Payment Method Selector Styling */
+.payment-method-selector {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.payment-method-option {
+  .payment-method-card {
+    display: block;
+    cursor: pointer;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 16px;
+    transition: all 0.3s ease;
+    background: white;
+    height: 100%;
+
+    &:hover {
+      border-color: #4CAF50;
+      box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
+      transform: translateY(-2px);
+    }
+
+    .payment-method-radio {
+      display: none;
+    }
+
+    .payment-method-content {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+
+      .payment-method-icon {
+        font-size: 24px;
+        width: 24px;
+        height: 24px;
+        color: #666;
+        flex-shrink: 0;
+      }
+
+      .payment-method-text {
+        display: flex;
+        flex-direction: column;
+
+        .payment-method-label {
+          font-weight: 500;
+          color: #333;
+          font-size: 14px;
+          line-height: 1.2;
+        }
+      }
+    }
+  }
+
+  &.active .payment-method-card {
+    border-color: #4CAF50;
+    background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(76, 175, 80, 0.05));
+    box-shadow: 0 4px 16px rgba(76, 175, 80, 0.3);
+
+    .payment-method-icon {
+      color: #4CAF50;
+    }
+
+    .payment-method-label {
+      color: #4CAF50;
+      font-weight: 600;
+    }
+  }
+}
+
 /* RTL Support for partners */
 [dir="rtl"] {
   .selected-partner {
@@ -879,6 +960,14 @@
     flex-direction: row-reverse;
 
     .donation-type-text {
+      text-align: right;
+    }
+  }
+
+  .payment-method-content {
+    flex-direction: row-reverse;
+
+    .payment-method-text {
       text-align: right;
     }
   }

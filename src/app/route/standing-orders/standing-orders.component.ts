@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { remult } from 'remult';
 import { StandingOrder, Donor, Campaign, DonationMethod } from '../../../shared/entity';
 import { I18nService } from '../../i18n/i18n.service';
+import { UIToolsService } from '../../common/UIToolsService';
 
 @Component({
   selector: 'app-standing-orders',
@@ -21,10 +22,8 @@ export class StandingOrdersComponent implements OnInit {
   donationMethodRepo = remult.repo(DonationMethod);
   
   loading = false;
-  showAddOrderModal = false;
-  editingOrder?: StandingOrder;
 
-  constructor(public i18n: I18nService) {}
+  constructor(public i18n: I18nService, private ui: UIToolsService) {}
 
   async ngOnInit() {
     await this.loadData();
@@ -80,29 +79,19 @@ export class StandingOrdersComponent implements OnInit {
   }
 
   async createOrder() {
-    this.editingOrder = this.standingOrderRepo.create();
-    this.showAddOrderModal = true;
+    const result = await this.ui.standingOrderDetailsDialog('new');
+    if (result) {
+      await this.loadStandingOrders();
+    }
   }
 
   async editOrder(order: StandingOrder) {
-    this.editingOrder = order;
-    this.showAddOrderModal = true;
-  }
-
-  async saveOrder() {
-    if (!this.editingOrder) return;
-
-    try {
-      // Calculate next execution date
-      this.editingOrder.nextExecutionDate = this.editingOrder.calculateNextExecutionDate();
-      
-      await this.editingOrder.save();
+    const result = await this.ui.standingOrderDetailsDialog(order.id);
+    if (result) {
       await this.loadStandingOrders();
-      this.closeModal();
-    } catch (error) {
-      console.error('Error saving standing order:', error);
     }
   }
+
 
   async deleteOrder(order: StandingOrder) {
     if (confirm(`${this.i18n.terms.confirmDeleteDonor?.replace('{name}', order.donor?.displayName || '')}`)) {
@@ -153,10 +142,6 @@ export class StandingOrdersComponent implements OnInit {
     }
   }
 
-  closeModal() {
-    this.showAddOrderModal = false;
-    this.editingOrder = undefined;
-  }
 
   getDonorName(order: StandingOrder): string {
     return order.donor?.displayName || this.i18n.terms.unknown;
