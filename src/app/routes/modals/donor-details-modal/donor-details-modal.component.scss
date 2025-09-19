@@ -267,6 +267,10 @@
   &.full-width {
     grid-column: 1 / -1;
   }
+
+  &.half-full-width {
+    grid-column: span 2;
+  }
   
   label {
     margin-bottom: 6px;

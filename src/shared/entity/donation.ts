@@ -164,6 +164,82 @@ export class Donation extends IdEntity {
   })
   donationType: 'full' | 'commitment' = 'full'
 
+  // Additional payment fields
+  @Fields.string({
+    caption: 'מספר סניף',
+  })
+  bankBranch = ''
+
+  @Fields.string({
+    caption: 'מספר חשבון',
+  })
+  bankAccount = ''
+
+  @Fields.string({
+    caption: 'מספר אסמכתא',
+  })
+  referenceNumber = ''
+
+  @Fields.string({
+    caption: 'מספר כרטיס (4 ספרות אחרונות)',
+  })
+  cardNumber = ''
+
+  @Fields.string({
+    caption: 'תוקף כרטיס',
+  })
+  cardExpiry = ''
+
+  @Fields.string({
+    caption: 'שם בעל הכרטיס',
+  })
+  cardHolderName = ''
+
+  @Fields.string({
+    caption: 'מספר אישור כרטיס',
+  })
+  approvalNumber = ''
+
+  @Fields.string({
+    caption: 'שם ארגון',
+  })
+  organizationName = ''
+
+  @Fields.string({
+    caption: 'מקבל התשלום',
+  })
+  receivedBy = ''
+
+  @Fields.string({
+    caption: 'פלטפורמת תשלום',
+  })
+  paymentPlatform = ''
+
+  @Fields.string({
+    caption: 'מזהה עסקה',
+  })
+  transactionId = ''
+
+  @Fields.string({
+    caption: 'שם המשלם',
+  })
+  payerName = ''
+
+  @Fields.string({
+    caption: 'תדירות',
+  })
+  frequency = ''
+
+  @Fields.number({
+    caption: 'יום בחודש',
+  })
+  dayOfMonth?: number
+
+  @Fields.number({
+    caption: 'מספר תשלומים',
+  })
+  numberOfPayments?: number
+
   @BackendMethod({ allowed: [Roles.admin] })
   async issueReceipt() {
     if (!this.receiptIssued) {

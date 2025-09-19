@@ -259,26 +259,48 @@
                 <label>קריטריונים כלליים</label>
               </div>
               <div class="criteria-selection-grid">
-                <div class="criteria-option" [class.active]="campaign.isAnash">
-                  <label class="criteria-card">
-                    <input type="checkbox" [(ngModel)]="campaign.isAnash"
-                           [disabled]="!canEdit" (ngModelChange)="markAsChanged()" class="criteria-checkbox">
-                    <div class="criteria-content">
-                      <mat-icon class="criteria-icon">groups</mat-icon>
-                      <span class="criteria-label">אנ"ש</span>
-                    </div>
-                  </label>
+                <!-- אנ"ש criteria with include/exclude options -->
+                <div class="criteria-option-container">
+                  <div class="criteria-card-header">
+                    <mat-icon class="criteria-icon">groups</mat-icon>
+                    <span class="criteria-title">אנ"ש</span>
+                  </div>
+                  <div class="criteria-options">
+                    <label class="option-label">
+                      <input type="checkbox" [(ngModel)]="campaign.isAnash"
+                             [disabled]="!canEdit || campaign.excludeAnash"
+                             (ngModelChange)="onAnashIncludeChange()">
+                      <span>כולל</span>
+                    </label>
+                    <label class="option-label exclude-option">
+                      <input type="checkbox" [(ngModel)]="campaign.excludeAnash"
+                             [disabled]="!canEdit || campaign.isAnash"
+                             (ngModelChange)="onAnashExcludeChange()">
+                      <span>ללא</span>
+                    </label>
+                  </div>
                 </div>
 
-                <div class="criteria-option" [class.active]="campaign.sameCountryOnly">
-                  <label class="criteria-card">
-                    <input type="checkbox" [(ngModel)]="campaign.sameCountryOnly"
-                           [disabled]="!canEdit" (ngModelChange)="markAsChanged()" class="criteria-checkbox">
-                    <div class="criteria-content">
-                      <mat-icon class="criteria-icon">location_on</mat-icon>
-                      <span class="criteria-label">תושבי המדינה</span>
-                    </div>
-                  </label>
+                <!-- תושבי המדינה criteria with include/exclude options -->
+                <div class="criteria-option-container">
+                  <div class="criteria-card-header">
+                    <mat-icon class="criteria-icon">location_on</mat-icon>
+                    <span class="criteria-title">תושבי המדינה</span>
+                  </div>
+                  <div class="criteria-options">
+                    <label class="option-label">
+                      <input type="checkbox" [(ngModel)]="campaign.sameCountryOnly"
+                             [disabled]="!canEdit || campaign.excludeSameCountry"
+                             (ngModelChange)="onSameCountryIncludeChange()">
+                      <span>כולל</span>
+                    </label>
+                    <label class="option-label exclude-option">
+                      <input type="checkbox" [(ngModel)]="campaign.excludeSameCountry"
+                             [disabled]="!canEdit || campaign.sameCountryOnly"
+                             (ngModelChange)="onSameCountryExcludeChange()">
+                      <span>ללא</span>
+                    </label>
+                  </div>
                 </div>
               </div>
             </div>
@@ -289,17 +311,27 @@
                 <label>רמות - בחירה מרובה</label>
               </div>
               <div class="level-selection-grid">
-                <div class="level-option" *ngFor="let level of availableLevels" [class.active]="isLevelSelected(level)">
-                  <label class="level-card">
-                    <input type="checkbox"
-                           [checked]="isLevelSelected(level)"
-                           [disabled]="!canEdit"
-                           (change)="toggleLevel(level)" class="level-checkbox">
-                    <div class="level-content">
-                      <span class="level-icon">{{level.icon}}</span>
-                      <span class="level-label">{{level.label}}</span>
-                    </div>
-                  </label>
+                <div class="level-option-container" *ngFor="let level of availableLevels">
+                  <div class="criteria-card-header">
+                    <span class="level-icon">{{level.icon}}</span>
+                    <span class="criteria-title">{{level.label}}</span>
+                  </div>
+                  <div class="criteria-options">
+                    <label class="option-label">
+                      <input type="checkbox"
+                             [checked]="isLevelSelected(level)"
+                             [disabled]="!canEdit || isLevelExcluded(level)"
+                             (change)="toggleLevel(level)">
+                      <span>כולל</span>
+                    </label>
+                    <label class="option-label exclude-option">
+                      <input type="checkbox"
+                             [checked]="isLevelExcluded(level)"
+                             [disabled]="!canEdit || isLevelSelected(level)"
+                             (change)="toggleExcludedLevel(level)">
+                      <span>ללא</span>
+                    </label>
+                  </div>
                 </div>
               </div>
             </div>

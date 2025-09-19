@@ -121,47 +121,145 @@
                 </div>
               </div>
             </div>
+          </div>
+        </div>
 
-            <!-- Dynamic Payment Fields -->
-            <!-- Check fields -->
-            <div class="form-group" *ngIf="isCheckPayment">
-              <div class="field-title">
-                <mat-icon class="field-icon">account_balance</mat-icon>
-                <label>שם חן</label>
+        <!-- Payment Details Section -->
+        <div class="section payment-details-section" *ngIf="selectedPaymentMethod">
+          <!-- Check Payment Details -->
+          <div class="payment-details info-background" *ngIf="isCheckPayment">
+            <div class="form-grid">
+              <div class="form-group">
+                <div class="field-title">
+                  <mat-icon class="field-icon">person</mat-icon>
+                  <label>שם</label>
+                </div>
+                <input type="text" class="form-control" [(ngModel)]="donation.payerName"
+                       placeholder="שם">
               </div>
-              <input type="text" class="form-control" [(ngModel)]="donation.bankName" placeholder="שם חשבון">
-            </div>
-            <div class="form-group" *ngIf="isCheckPayment">
-              <div class="field-title">
-                <mat-icon class="field-icon">receipt</mat-icon>
-                <label>מס' צק</label>
-              </div>
-              <input type="text" class="form-control" [(ngModel)]="donation.checkNumber" placeholder="מספר צק">
-            </div>
 
-            <!-- Transfer fields -->
-            <div class="form-group" *ngIf="isTransferPayment">
-              <div class="field-title">
-                <mat-icon class="field-icon">account_balance</mat-icon>
-                <label>שם חן</label>
+              <div class="form-group">
+                <div class="field-title">
+                  <mat-icon class="field-icon">account_balance</mat-icon>
+                  <label>מספר ח"ן</label>
+                </div>
+                <input type="text" class="form-control" [(ngModel)]="donation.bankAccount"
+                       placeholder="מספר חשבון">
               </div>
-              <input type="text" class="form-control" [(ngModel)]="donation.bankName" placeholder="שם חשבון">
-            </div>
 
-            <!-- Organization fields -->
-            <div class="form-group" *ngIf="isOrganizationPayment">
-              <div class="field-title">
-                <mat-icon class="field-icon">account_balance</mat-icon>
-                <label>שם חן</label>
+              <div class="form-group">
+                <div class="field-title">
+                  <mat-icon class="field-icon">receipt</mat-icon>
+                  <label>מספר צ'ק</label>
+                </div>
+                <input type="text" class="form-control" [(ngModel)]="donation.checkNumber"
+                       placeholder="מספר צ'ק">
               </div>
-              <input type="text" class="form-control" [(ngModel)]="donation.bankName" placeholder="שם חשבון">
             </div>
-            <div class="form-group" *ngIf="isOrganizationPayment">
-              <div class="field-title">
-                <mat-icon class="field-icon">confirmation_number</mat-icon>
-                <label>מס' שובר</label>
+          </div>
+
+          <!-- Bank Transfer Details -->
+          <div class="payment-details info-background" *ngIf="isTransferPayment">
+            <div class="form-grid">
+              <div class="form-group">
+                <div class="field-title">
+                  <mat-icon class="field-icon">person</mat-icon>
+                  <label>שם</label>
+                </div>
+                <input type="text" class="form-control" [(ngModel)]="donation.payerName"
+                       placeholder="שם">
               </div>
-              <input type="text" class="form-control" [(ngModel)]="donation.voucherNumber" placeholder="מספר שובר">
+
+              <div class="form-group">
+                <div class="field-title">
+                  <mat-icon class="field-icon">account_balance</mat-icon>
+                  <label>מס ח"ן</label>
+                </div>
+                <input type="text" class="form-control" [(ngModel)]="donation.bankAccount"
+                       placeholder="מספר חשבון">
+              </div>
+            </div>
+          </div>
+
+          <!-- Organization Payment Details -->
+          <div class="payment-details info-background" *ngIf="isOrganizationPayment">
+            <div class="form-grid">
+              <div class="form-group">
+                <div class="field-title">
+                  <mat-icon class="field-icon">person</mat-icon>
+                  <label>שם</label>
+                </div>
+                <input type="text" class="form-control" [(ngModel)]="donation.payerName"
+                       placeholder="שם">
+              </div>
+
+              <div class="form-group">
+                <div class="field-title">
+                  <mat-icon class="field-icon">account_balance</mat-icon>
+                  <label>מס. ח"ן</label>
+                </div>
+                <input type="text" class="form-control" [(ngModel)]="donation.bankAccount"
+                       placeholder="מספר חשבון">
+              </div>
+
+              <div class="form-group">
+                <div class="field-title">
+                  <mat-icon class="field-icon">confirmation_number</mat-icon>
+                  <label>מס. שובר</label>
+                </div>
+                <input type="text" class="form-control" [(ngModel)]="donation.voucherNumber"
+                       placeholder="מספר שובר">
+              </div>
+            </div>
+          </div>
+
+          <!-- Credit Card Details -->
+          <div class="payment-details info-background" *ngIf="isCreditCardPayment">
+            <div class="form-grid">
+              <div class="form-group">
+                <div class="field-title">
+                  <mat-icon class="field-icon">credit_card</mat-icon>
+                  <label>פרטי כרטיס</label>
+                </div>
+                <input type="text" class="form-control" [(ngModel)]="donation.cardNumber"
+                       maxlength="4" placeholder="4 ספרות אחרונות">
+              </div>
+            </div>
+          </div>
+
+          <!-- Standing Order Details -->
+          <div class="payment-details info-background" *ngIf="isStandingOrderPayment">
+            <div class="form-grid">
+              <div class="form-group">
+                <div class="field-title">
+                  <mat-icon class="field-icon">schedule</mat-icon>
+                  <label>תדירות</label>
+                </div>
+                <select class="form-control" [(ngModel)]="donation.frequency">
+                  <option value="monthly">חודשי</option>
+                  <option value="quarterly">רבעוני</option>
+                  <option value="yearly">שנתי</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <div class="field-title">
+                  <mat-icon class="field-icon">today</mat-icon>
+                  <label>יום בחודש</label>
+                </div>
+                <select class="form-control" [(ngModel)]="donation.dayOfMonth">
+                  <option *ngFor="let day of getDaysOfMonth()" [value]="day">{{ day }}</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <div class="field-title">
+                  <mat-icon class="field-icon">repeat</mat-icon>
+                  <label>מספר תשלומים</label>
+                </div>
+                <input type="number" class="form-control" [(ngModel)]="donation.numberOfPayments"
+                       min="1" placeholder="מספר תשלומים">
+              </div>
             </div>
           </div>
         </div>

@@ -96,38 +96,31 @@ export class ModernDualDatePickerComponent implements OnInit, OnDestroy, Control
     this.generateGregorianCalendar();
   }
 
+  private clickOutsideListener?: (event: MouseEvent) => void;
+
   setupClickOutsideListener() {
-    document.addEventListener('click', (event: MouseEvent) => {
+    this.clickOutsideListener = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
-      
-      // In parallel mode, check if click is outside the entire parallel container
-      if (this.calendar_open_heb_and_eng_parallel && this.showHebrewPopup && this.showGregorianPopup) {
-        const isInsideParallelContainer = target.closest('.parallel-popups-container') || 
-                                         target.closest('.hebrew-trigger') || 
-                                         target.closest('.gregorian-trigger');
-        if (!isInsideParallelContainer) {
-          this.showHebrewPopup = false;
-          this.showGregorianPopup = false;
-        }
-        return; // Don't run the individual checks in parallel mode
+
+      // Check if target is valid
+      if (!target) return;
+
+      // Find the component's root element
+      const componentElement = target.closest('app-modern-dual-date-picker');
+
+      // If we clicked inside this component, don't close
+      if (componentElement) return;
+
+      // Close popups if we clicked outside
+      if (this.showHebrewPopup || this.showGregorianPopup) {
+        this.showHebrewPopup = false;
+        this.showGregorianPopup = false;
+        // Trigger change detection
+        setTimeout(() => {}, 0);
       }
-      
-      // Check if click is outside Hebrew popup (single mode only)
-      if (this.showHebrewPopup) {
-        const isInsideHebrewPopup = target.closest('.hebrew-popup') || target.closest('.hebrew-trigger');
-        if (!isInsideHebrewPopup) {
-          this.showHebrewPopup = false;
-        }
-      }
-      
-      // Check if click is outside Gregorian popup (single mode only)
-      if (this.showGregorianPopup) {
-        const isInsideGregorianPopup = target.closest('.gregorian-popup') || target.closest('.gregorian-trigger');
-        if (!isInsideGregorianPopup) {
-          this.showGregorianPopup = false;
-        }
-      }
-    });
+    };
+
+    document.addEventListener('click', this.clickOutsideListener, true);
   }
 
   // Hebrew calendar methods
@@ -399,6 +392,11 @@ export class ModernDualDatePickerComponent implements OnInit, OnDestroy, Control
   ngOnDestroy() {
     // Remove this instance from the global set
     ModernDualDatePickerComponent.allInstances.delete(this);
+
+    // Remove click outside listener
+    if (this.clickOutsideListener) {
+      document.removeEventListener('click', this.clickOutsideListener, true);
+    }
   }
 
   closeAllPopups() {

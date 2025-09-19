@@ -588,6 +588,13 @@ export class DonationDetailsModalComponent implements OnInit {
   onPaymentMethodChange() {
     this.updateSelectedOptions();
     console.log('Payment method changed to:', this.selectedPaymentMethod?.name);
+    console.log('Payment method type:', this.selectedPaymentMethod?.type);
+    console.log('isCheckPayment:', this.isCheckPayment);
+    console.log('isTransferPayment:', this.isTransferPayment);
+    console.log('isOrganizationPayment:', this.isOrganizationPayment);
+    console.log('isCreditCardPayment:', this.isCreditCardPayment);
+    console.log('isStandingOrderPayment:', this.isStandingOrderPayment);
+    console.log('isCashPayment:', this.isCashPayment);
 
     // Handle special payment methods
     if (this.selectedPaymentMethod?.name === 'כרטיס אשראי') {
@@ -599,23 +606,52 @@ export class DonationDetailsModalComponent implements OnInit {
 
   // Getter methods for template conditionals
   get isCheckPayment(): boolean {
-    return this.selectedPaymentMethod?.name === 'צק' || false;
+    return this.selectedPaymentMethod?.type === 'check' ||
+           this.selectedPaymentMethod?.name === 'צק' ||
+           this.selectedPaymentMethod?.name?.includes('צ\'ק') || false;
   }
 
   get isTransferPayment(): boolean {
-    return this.selectedPaymentMethod?.name === 'העברה' || false;
+    return this.selectedPaymentMethod?.type === 'bank_transfer' ||
+           this.selectedPaymentMethod?.name === 'העברה' ||
+           this.selectedPaymentMethod?.name?.includes('העברה') || false;
   }
 
   get isOrganizationPayment(): boolean {
-    return this.selectedPaymentMethod?.name === 'עמותה' || false;
+    return this.selectedPaymentMethod?.name === 'עמותה' ||
+           this.selectedPaymentMethod?.name?.includes('עמותה') ||
+           this.selectedPaymentMethod?.name?.includes('ארגון') || false;
   }
 
   get isCreditCardPayment(): boolean {
-    return this.selectedPaymentMethod?.name === 'כרטיס אשראי' || false;
+    return this.selectedPaymentMethod?.type === 'credit_card' ||
+           this.selectedPaymentMethod?.name === 'כרטיס אשראי' ||
+           this.selectedPaymentMethod?.name?.includes('כרטיס') ||
+           this.selectedPaymentMethod?.name?.includes('אשראי') || false;
   }
 
   get isStandingOrderPayment(): boolean {
-    return this.selectedPaymentMethod?.name === 'הוק' || false;
+    return this.selectedPaymentMethod?.name === 'הוק' ||
+           this.selectedPaymentMethod?.name?.includes('הוראת קבע') ||
+           this.selectedPaymentMethod?.name?.includes('הו"ק') || false;
+  }
+
+  get isCashPayment(): boolean {
+    return this.selectedPaymentMethod?.type === 'cash' ||
+           this.selectedPaymentMethod?.name === 'מזומן' ||
+           this.selectedPaymentMethod?.name?.includes('מזומן') || false;
+  }
+
+  get isOnlinePayment(): boolean {
+    return this.selectedPaymentMethod?.isOnline ||
+           this.selectedPaymentMethod?.name === 'תשלום מקוון' ||
+           this.selectedPaymentMethod?.name === 'PayPal' ||
+           this.selectedPaymentMethod?.name === 'Stripe' ||
+           this.selectedPaymentMethod?.name?.includes('מקוון') || false;
+  }
+
+  getDaysOfMonth(): number[] {
+    return Array.from({ length: 31 }, (_, i) => i + 1);
   }
 
   openCampaignContacts() {

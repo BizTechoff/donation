@@ -197,6 +197,22 @@ export class Campaign extends IdEntity {
   })
   defaultDonationAmount = 0
 
+  // Exclusion criteria fields
+  @Fields.boolean({
+    caption: 'ללא אנ"ש',
+  })
+  excludeAnash = false
+
+  @Fields.boolean({
+    caption: 'ללא תושבי המדינה',
+  })
+  excludeSameCountry = false
+
+  @Fields.json({
+    caption: 'רמות מוחרגות',
+  })
+  excludedLevels: string[] = []
+
   get progressPercentage() {
     if (this.targetAmount === 0) return 0
     return Math.min(100, Math.round((this.raisedAmount / this.targetAmount) * 100))

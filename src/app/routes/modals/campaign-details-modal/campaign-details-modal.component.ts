@@ -77,7 +77,10 @@ export class CampaignDetailsModalComponent implements OnInit {
         this.campaign.targetAmount = 0;
         this.campaign.raisedAmount = 0;
         this.campaign.invitationLevels = [];
+        this.campaign.excludedLevels = [];
         this.campaign.sameCountryOnly = false;
+        this.campaign.excludeAnash = false;
+        this.campaign.excludeSameCountry = false;
 
         this.originalCampaignData = JSON.stringify(this.campaign);
       } else {
@@ -386,6 +389,61 @@ export class CampaignDetailsModalComponent implements OnInit {
       this.campaign.invitationLevels.push(level.value);
     }
 
+    this.markAsChanged();
+  }
+
+  // Methods for exclusion criteria
+  isLevelExcluded(level: DonorLevel): boolean {
+    if (!this.campaign?.excludedLevels) {
+      return false;
+    }
+    return this.campaign.excludedLevels.includes(level.value);
+  }
+
+  toggleExcludedLevel(level: DonorLevel) {
+    if (!this.campaign) return;
+
+    if (!this.campaign.excludedLevels) {
+      this.campaign.excludedLevels = [];
+    }
+
+    const index = this.campaign.excludedLevels.indexOf(level.value);
+    if (index > -1) {
+      this.campaign.excludedLevels.splice(index, 1);
+    } else {
+      this.campaign.excludedLevels.push(level.value);
+    }
+
+    this.markAsChanged();
+  }
+
+  // Methods for אנ"ש include/exclude
+  onAnashIncludeChange() {
+    if (this.campaign.isAnash && this.campaign.excludeAnash) {
+      this.campaign.excludeAnash = false;
+    }
+    this.markAsChanged();
+  }
+
+  onAnashExcludeChange() {
+    if (this.campaign.excludeAnash && this.campaign.isAnash) {
+      this.campaign.isAnash = false;
+    }
+    this.markAsChanged();
+  }
+
+  // Methods for same country include/exclude
+  onSameCountryIncludeChange() {
+    if (this.campaign.sameCountryOnly && this.campaign.excludeSameCountry) {
+      this.campaign.excludeSameCountry = false;
+    }
+    this.markAsChanged();
+  }
+
+  onSameCountryExcludeChange() {
+    if (this.campaign.excludeSameCountry && this.campaign.sameCountryOnly) {
+      this.campaign.sameCountryOnly = false;
+    }
     this.markAsChanged();
   }
 
