@@ -1,33 +1,48 @@
-import { Component, OnInit } from '@angular/core';
-import { remult } from 'remult';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { Donor } from '../../../shared/entity';
 import { I18nService } from '../../i18n/i18n.service';
 import { UIToolsService } from '../../common/UIToolsService';
+import { DonorService } from '../../services/donor.service';
+import { GlobalFilterService } from '../../services/global-filter.service';
 
 @Component({
   selector: 'app-donor-list',
   templateUrl: './donor-list.component.html',
   styleUrls: ['./donor-list.component.scss']
 })
-export class DonorListComponent implements OnInit {
-  
+export class DonorListComponent implements OnInit, OnDestroy {
+
   donors: Donor[] = [];
-  donorRepo = remult.repo(Donor);
   loading = false;
-  
-  constructor(public i18n: I18nService, private ui: UIToolsService) {}
+  private subscription = new Subscription();
+
+  constructor(
+    public i18n: I18nService,
+    private ui: UIToolsService,
+    private donorService: DonorService,
+    private filterService: GlobalFilterService
+  ) {}
 
   async ngOnInit() {
+    // Subscribe to filter changes
+    this.subscription.add(
+      this.filterService.filters$.subscribe(() => {
+        this.loadDonors();
+      })
+    );
     await this.loadDonors();
+  }
+
+  ngOnDestroy() {
+    this.subscription.unsubscribe();
   }
 
   async loadDonors() {
     this.loading = true;
     try {
-      this.donors = await this.donorRepo.find({
-        orderBy: { lastName: 'asc' },
-        where: { isActive: true }
-      });
+      // Use the new service which automatically applies global filters
+      this.donors = await this.donorService.findFiltered();
     } catch (error) {
       console.error('Error loading donors:', error);
     } finally {

@@ -4,6 +4,8 @@
   padding: 15px;
   margin: 10px 0;
   background-color: #f9f9f9;
+  position: relative;
+  z-index: 9999;
 
   legend {
     font-weight: bold;
@@ -61,6 +63,8 @@
         background-color: white;
         cursor: pointer;
         transition: border-color 0.3s;
+        position: relative;
+        z-index: 10000;
 
         &:hover:not(:disabled) {
           border-color: #007bff;
@@ -99,6 +103,8 @@
       font-size: 14px;
       background-color: white;
       transition: border-color 0.3s;
+      position: relative;
+      z-index: 10000;
 
       &:hover:not(:disabled) {
         border-color: #007bff;

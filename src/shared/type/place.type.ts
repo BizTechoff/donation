@@ -9,5 +9,8 @@ export interface placeDto {
     area: string,
     neighborhood: string,
     postcode: string,   // Postal Code
+    state: string,      // State/Province Name
+    country: string,    // Country Name
+    countryCode: string, // Country Code
     name: string        // Place Name
 }

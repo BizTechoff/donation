@@ -15,30 +15,45 @@ export async function seedDatabase() {
   console.log('Starting database seeding...')
 
   try {
-    // Create admin user
-    let admin = await remult.repo(User).findFirst({ name: 'admin' })
-    if (!admin) {
-      admin = remult.repo(User).create({
-        name: 'admin',
-        admin: true,
-        disabled: false
-      })
-      await admin.hashAndSetPassword('123456')
-      await admin.save()
-      console.log('Admin user created')
-    }
+    // User data with commission rates (המתרימים)
+    const userData = [
+      { name: 'אדמין', admin: true, commission: 0, password: '123456' },
+      { name: 'ראש ישיבה', donator: true, commission: 0, password: '123456' },
+      { name: 'משה ראובן', donator: true, commission: 5, password: '123456' },
+      { name: 'יוסף חיים', donator: true, commission: 0, password: '123456' },
+      { name: 'אברהם פסח', donator: true, commission: 0, password: '123456' },
+      { name: 'שלמה', donator: true, commission: 0, password: '123456' },
+      { name: 'יעקב', admin: true, commission: 0, password: '123456' }
+    ];
 
-    // Create admin user
-    let yaacov = await remult.repo(User).findFirst({ name: 'yaacov' })
-    if (!yaacov) {
-      admin = remult.repo(User).create({
-        name: 'yaacov',
-        donator: true,
-        disabled: false
-      })
-      await admin.hashAndSetPassword('123456')
-      await admin.save()
-      console.log('Anonimi user created')
+    // Create or update users
+    let admin: User | undefined;
+    for (const userInfo of userData) {
+      let user = await remult.repo(User).findFirst({ name: userInfo.name });
+      if (!user) {
+        user = remult.repo(User).create({
+          name: userInfo.name,
+          admin: userInfo.admin || false,
+          donator: userInfo.donator || false,
+          commission: userInfo.commission,
+          disabled: false
+        });
+        await user.hashAndSetPassword(userInfo.password);
+        await user.save();
+        console.log(`User '${userInfo.name}' created with commission ${userInfo.commission}%`);
+      } else {
+        // Update existing user with commission
+        user.commission = userInfo.commission;
+        if (userInfo.admin) user.admin = true;
+        if (userInfo.donator) user.donator = true;
+        await user.save();
+        console.log(`User '${userInfo.name}' updated with commission ${userInfo.commission}%`);
+      }
+
+      // Keep reference to admin user
+      if (userInfo.name === 'אדמין') {
+        admin = user;
+      }
     }
 
     // Create donation methods
@@ -526,8 +541,8 @@ export async function seedDatabase() {
         ...certificateData,
         donor: donor,
         donorId: donor.id,
-        createdBy: admin,
-        createdById: admin.id
+        createdBy: admin!,
+        createdById: admin!.id
       })
 
       await certificate.save()
@@ -588,8 +603,8 @@ export async function seedDatabase() {
           event: event,
           eventId: event.id,
           hebrewDate: donorEventData.hebrewDate,
-          gregorianDate: donorEventData.gregorianDate,
-          notes: donorEventData.notes
+          gregorianDate: donorEventData.gregorianDate//,
+          // notes: donorEventData.notes
         })
 
         await donorEvent.save()

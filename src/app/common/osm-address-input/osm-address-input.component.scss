@@ -1,12 +1,14 @@
 .address-container {
   width: 100%;
   position: relative;
+  z-index: 100;
 
   .address-search-row {
     display: flex;
     align-items: center;
     gap: 8px;
     position: relative;
+    z-index: 101;
 
     .address-input {
       flex: 1;
@@ -147,6 +149,18 @@
         font-size: 18px;
         width: 18px;
         height: 18px;
+
+        &.saved-place {
+          color: #28a745;
+        }
+      }
+
+      .saved-indicator {
+        color: #ffc107;
+        font-size: 16px;
+        width: 16px;
+        height: 16px;
+        margin-right: 4px;
       }
 
       .address-text {
@@ -233,6 +247,16 @@
   .no-results {
     flex-direction: row-reverse;
   }
+}
+
+// Global override to ensure autocomplete doesn't interfere with dual-date
+::ng-deep .mat-autocomplete-panel {
+  z-index: 102 !important;
+}
+
+// Ensure dual-date picker is always on top when both are visible
+::ng-deep .dual-date-picker {
+  z-index: 9999 !important;
 }
 
 // Animation for smooth loading

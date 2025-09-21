@@ -24,7 +24,7 @@ export const getPlace = async (req: Request, res: Response, next: NextFunction) 
         // console.log('getPlace: placeId: ', placeId);
 
         if (placeId && placeId.length) {
-            const url = `${process.env['GOOGLE_GEO_API_URL_PLACE']}?place_id=${placeId}&key=${process.env['GOOGLE_GEO_API_KEY']}&language=he`;
+            const url = `${process.env['GOOGLE_GEO_API_URL_PLACE']}?place_id=${placeId}&key=${process.env['GOOGLE_GEO_API_KEY']}`//&language=he`;
 
             try {
                 const response = await fetch(url, {
@@ -94,15 +94,20 @@ export const getPlace = async (req: Request, res: Response, next: NextFunction) 
                                     result.neighborhood = component.long_name;
                                     console.log(`    -> Using admin_area_2 as neighborhood: ${component.long_name}`);
                                 }
+                                // מחוז/מדינה
+                                if (component.types.includes('administrative_area_level_1')) {
+                                    result.state = component.long_name; // State/Province name
+                                    console.log(`    -> Found state: ${component.long_name}`);
+                                }
+                                // מדינה וקוד מדינה
+                                if (component.types.includes('country')) {
+                                    result.country = component.long_name; // Country name
+                                    result.countryCode = component.short_name; // Country code
+                                    console.log(`    -> Found country: ${component.long_name} (${component.short_name})`);
+                                }
                             });
 
-                            console.log('Final extracted data:', {
-                                streetname: result.streetname || 'N/A',
-                                homenumber: result.homenumber || 'N/A',
-                                cityname: result.cityname || 'N/A',
-                                neighborhood: result.neighborhood || 'N/A',
-                                postcode: result.postcode || 'N/A'
-                            });
+                            console.log('Final extracted data:', JSON.stringify(result));
                         }
 
                         // result.area = AreaType.getAreaContains({ x: result.x, y: result.y });
@@ -158,7 +163,8 @@ export const getPlaces = async (req: Request, res: Response, next: NextFunction)
             }
 
             // const url = `${apiUrl}?key=${apiKey}&language=he&components=country:il&types=geocode&input=${encodeURIComponent(input)}`;
-            const url = `${apiUrl}?key=${apiKey}&language=he&components=country:il&types=geocode|establishment&input=${encodeURIComponent(input)}`;
+            // language=he&components=country:il&
+            const url = `${apiUrl}?key=${apiKey}&types=geocode|establishment&input=${encodeURIComponent(input)}`;
             // console.log(`getPlaces: { url: ${url} }`);
 
             // Fetch data from Google API

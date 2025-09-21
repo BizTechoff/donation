@@ -1,18 +1,16 @@
 import {
-  IdEntity,
-  Entity,
-  Validators,
-  isBackend,
   Allow,
-  Fields,
   BackendMethod,
+  Entity,
+  Fields,
+  IdEntity,
   Relations,
-  Field,
-  remult
+  Validators,
+  isBackend
 } from 'remult'
-import { User } from './user'
-import { Place } from './place'
 import { Roles } from '../enum/roles'
+import { Place } from './place'
+import { User } from './user'
 
 @Entity<Campaign>('campaigns', {
   allowApiCrud: Allow.authenticated,
@@ -137,21 +135,15 @@ export class Campaign extends IdEntity {
   })
   status: 'draft' | 'active' | 'completed' | 'cancelled' = 'draft'
 
-  // New fields for enhanced campaign functionality
-  @Relations.toOne(() => Place, {
-    caption: 'מיקום האירוע',
-    includeInApi: true
-  })
-  eventLocationId?: string
+  @Fields.string({ caption: 'מזהה מיקום האירוע' })
+  eventLocationId?: string;
 
-  @Field(() => Place, {
-    serverExpression: async (campaign: Campaign) => {
-      if (!campaign.eventLocationId) return undefined
-      return await remult.repo(Place).findId(campaign.eventLocationId)
-    },
-    includeInApi: true
+  @Relations.toOne(() => Place, {
+    field: "eventLocationId",
+    caption: 'מיקום האירוע',
+    defaultIncluded: true
   })
-  eventLocation?: Place
+  eventLocation?: Place;
 
   @Fields.boolean({
     caption: 'אנ"ש',

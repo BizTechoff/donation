@@ -1,4 +1,6 @@
 import { Injectable } from '@angular/core';
+import { remult } from 'remult';
+import { Place } from '../../shared/entity/place';
 
 interface GooglePlacePrediction {
   description: string;
@@ -140,5 +142,73 @@ export class GeoService {
    */
   getSecondaryText(prediction: GooglePlacePrediction): string {
     return prediction.structured_formatting?.secondary_text || '';
+  }
+
+  /**
+   * Search for existing places in the database
+   * @param query - Search query string
+   * @returns Promise with matching places
+   */
+  async searchSavedPlaces(query: string): Promise<any[]> {
+    if (!query || query.length < 3) {
+      return [];
+    }
+
+    try {
+      const places = await remult.repo(Place).find({
+        where: {
+          $or: [
+            { fullAddress: { $contains: query } },
+            { street: { $contains: query } },
+            { city: { $contains: query } },
+            { placeName: { $contains: query } }
+          ]
+        },
+        limit: 5,
+        orderBy: { updatedAt: 'desc' }
+      });
+
+      return places.map(place => ({
+        description: place.fullAddress,
+        place_id: place.placeId,
+        structured_formatting: {
+          main_text: place.placeName || place.street || place.fullAddress,
+          secondary_text: [place.city, place.country].filter(Boolean).join(', ')
+        },
+        isFromDatabase: true,
+        placeRecordId: place.id,
+        savedPlace: place
+      }));
+    } catch (error) {
+      console.error('Error searching saved places:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Combined search: first search saved places, then Google Places
+   * @param query - Search query string
+   * @returns Promise with combined suggestions
+   */
+  async getCombinedSuggestions(query: string): Promise<any[]> {
+    if (!query || query.length < 3) {
+      return [];
+    }
+
+    try {
+      const savedPlaces = await this.searchSavedPlaces(query);
+      const googlePlaces = await this.getPlacesSuggestions(query);
+
+      const allSuggestions = [...savedPlaces, ...googlePlaces];
+
+      const uniqueSuggestions = allSuggestions.filter((suggestion, index, self) =>
+        index === self.findIndex(s => s.place_id === suggestion.place_id)
+      );
+
+      return uniqueSuggestions;
+    } catch (error) {
+      console.error('Error getting combined suggestions:', error);
+      return [];
+    }
   }
 }

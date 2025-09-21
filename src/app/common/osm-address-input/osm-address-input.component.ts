@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnDestroy, forwardRef } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnDestroy, OnChanges, SimpleChanges, forwardRef } from '@angular/core';
 import { trigger, state, style, transition, animate } from '@angular/animations';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
@@ -11,10 +11,13 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Subject, debounceTime, distinctUntilChanged, switchMap, of } from 'rxjs';
 import { GeoService } from '../../services/geo.service';
+import { Place } from '../../../shared/entity/place';
+import { remult } from 'remult';
 
 export interface AddressComponents {
   fullAddress: string;
   placeId?: string;
+  placeRecordId?: string; // ID של הרשומה בטבלת Places
   street?: string;
   houseNumber?: string;
   neighborhood?: string;
@@ -63,12 +66,13 @@ export interface AddressComponents {
     }
   ]
 })
-export class OsmAddressInputComponent implements ControlValueAccessor, OnDestroy {
+export class OsmAddressInputComponent implements ControlValueAccessor, OnDestroy, OnChanges {
   @Input() label: string = 'כתובת';
   @Input() placeholder: string = 'הקלד כתובת...';
   @Input() countryCode: string = 'il';
   @Input() required: boolean = false;
   @Input() disabled: boolean = false;
+  @Input() initialAddress?: AddressComponents;
 
   @Output() addressSelected = new EventEmitter<AddressComponents>();
 
@@ -85,6 +89,7 @@ export class OsmAddressInputComponent implements ControlValueAccessor, OnDestroy
     houseNumber: '',
     neighborhood: '',
     city: '',
+    state: '',
     postcode: '',
     country: '',
     countryCode: '',
@@ -108,7 +113,7 @@ export class OsmAddressInputComponent implements ControlValueAccessor, OnDestroy
       }
       this.isLoading = true;
       try {
-        const predictions = await this.geoService.getPlacesSuggestions(query);
+        const predictions = await this.geoService.getCombinedSuggestions(query);
         this.suggestions = predictions;
       } catch (error) {
         console.error('Error getting suggestions:', error);
@@ -121,6 +126,51 @@ export class OsmAddressInputComponent implements ControlValueAccessor, OnDestroy
 
   ngOnDestroy() {
     this.searchSubject.complete();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['initialAddress']) {
+      console.log('ngOnChanges - initialAddress changed:', {
+        currentValue: changes['initialAddress'].currentValue,
+        previousValue: changes['initialAddress'].previousValue
+      });
+
+      if (changes['initialAddress'].currentValue) {
+        this.loadInitialAddress(changes['initialAddress'].currentValue);
+      } else {
+        // Clear address if initialAddress becomes undefined/null
+        this.clearAddress();
+      }
+    }
+  }
+
+  private clearAddress(): void {
+    this.addressDetails = {
+      fullAddress: '',
+      placeId: '',
+      street: '',
+      houseNumber: '',
+      neighborhood: '',
+      city: '',
+      state: '',
+      postcode: '',
+      country: '',
+      countryCode: '',
+      placeName: ''
+    };
+    this.searchValue = '';
+    this.hasSelectedAddress = false;
+    this.selectedPlaceId = null;
+    console.log('Address cleared');
+  }
+
+  private loadInitialAddress(address: AddressComponents): void {
+    this.addressDetails = { ...address };
+    this.searchValue = address.fullAddress || '';
+    this.hasSelectedAddress = true;
+    this.selectedPlaceId = address.placeId || null;
+
+    console.log('Loaded initial address:', address);
   }
 
   // ControlValueAccessor implementation
@@ -157,15 +207,48 @@ export class OsmAddressInputComponent implements ControlValueAccessor, OnDestroy
   }
 
   async onSuggestionSelect(suggestion: any): Promise<void> {
-    console.log('Step 1: User selected from Google Places suggestions:', suggestion);
+    console.log('Step 1: User selected suggestion:', suggestion);
 
     this.selectedPlaceId = suggestion.place_id;
     this.searchValue = suggestion.description;
     this.onChange(this.searchValue);
     this.suggestions = [];
 
-    // Step 2: קבלת פרטים מלאים על המקום באמצעות place_id
+    // בדיקה אם זה מקום שמור או מקום חדש מגוגל
+    if (suggestion.isFromDatabase && suggestion.savedPlace) {
+      console.log('Step 2: Using saved place from database:', suggestion.savedPlace);
+
+      // שימוש במקום השמור
+      const savedPlace = suggestion.savedPlace;
+      const addressComponents: AddressComponents = {
+        fullAddress: savedPlace.fullAddress,
+        placeId: savedPlace.placeId,
+        placeRecordId: savedPlace.id,
+        latitude: savedPlace.latitude,
+        longitude: savedPlace.longitude,
+        street: savedPlace.street,
+        houseNumber: savedPlace.houseNumber,
+        neighborhood: savedPlace.neighborhood,
+        city: savedPlace.city,
+        state: savedPlace.state,
+        postcode: savedPlace.postcode,
+        country: savedPlace.country,
+        countryCode: savedPlace.countryCode,
+        placeName: savedPlace.placeName
+      };
+
+      this.addressDetails = { ...addressComponents };
+      this.hasSelectedAddress = true;
+      this.showAddressDetails = false;
+
+      console.log('Step 3: Using existing place record, no API call needed');
+      this.addressSelected.emit(addressComponents);
+      return;
+    }
+
+    // Step 2: קבלת פרטים מלאים על המקום באמצעות place_id (רק למקומות חדשים מגוגל)
     try {
+      console.log('Step 2: Getting place details from Google for new place');
       const placeDetails = await this.geoService.getPlaceDetails(suggestion.place_id);
       console.log('Step 2: Received full place details from Google:', placeDetails);
 
@@ -189,8 +272,9 @@ export class OsmAddressInputComponent implements ControlValueAccessor, OnDestroy
         street: placeDetails.streetname || '',
         houseNumber: placeDetails.homenumber || '',
         city: placeDetails.cityname || '',
-        country: 'ישראל',  // ברירת מחדל לישראל
-        countryCode: 'IL',
+        state: placeDetails.state || '',  // מחוז מהשרת
+        country: placeDetails.country || 'ישראל',  // מדינה מהשרת או ברירת מחדל לישראל
+        countryCode: placeDetails.countryCode || 'IL', // קוד מדינה מהשרת או ברירת מחדל
         neighborhood: placeDetails.neighborhood || '',  // שכונה מהשרת
         postcode: placeDetails.postcode || ''  // מיקוד מהשרת
       };
@@ -206,6 +290,7 @@ export class OsmAddressInputComponent implements ControlValueAccessor, OnDestroy
         street: addressComponents.street || 'חסר',
         houseNumber: addressComponents.houseNumber || 'חסר',
         city: addressComponents.city || 'חסר',
+        state: addressComponents.state || 'חסר',
         country: addressComponents.country || 'חסר',
         neighborhood: addressComponents.neighborhood || 'חסר',
         postcode: addressComponents.postcode || 'חסר'
@@ -213,23 +298,84 @@ export class OsmAddressInputComponent implements ControlValueAccessor, OnDestroy
 
       console.log('Step 4: Final parsed address components:', addressComponents);
 
+      // Step 5: שמירת המקום ב-Places טבלה מיד ברגע הבחירה
+      try {
+        const placeData = {
+          placeId: String(addressComponents.placeId || ''),
+          fullAddress: String(addressComponents.fullAddress || ''),
+          placeName: placeDetails.name || '',
+          street: addressComponents.street,
+          houseNumber: addressComponents.houseNumber,
+          neighborhood: addressComponents.neighborhood,
+          city: String(addressComponents.city || ''),
+          state: addressComponents.state,
+          postcode: addressComponents.postcode,
+          country: String(addressComponents.country || 'Unknown'),
+          countryCode: addressComponents.countryCode,
+          latitude: addressComponents.latitude,
+          longitude: addressComponents.longitude
+        };
+
+        console.log('Creating/updating Place record immediately upon selection:', placeData);
+        console.log('PlaceId type and value:', typeof placeData.placeId, placeData.placeId);
+        console.log('Required fields check:', {
+          placeId: placeData.placeId,
+          fullAddress: placeData.fullAddress,
+          city: placeData.city,
+          country: placeData.country
+        });
+        const savedPlace = await Place.findOrCreate(placeData, remult.repo(Place));
+        console.log('Place saved successfully with ID:', savedPlace.id);
+
+        // הוספת ה-ID של המקום לכתובת
+        addressComponents.placeRecordId = savedPlace.id;
+      } catch (error) {
+        console.error('Error saving place:', error);
+      }
+
       // שמירת הפרטים למקרה של עריכה
       this.addressDetails = { ...addressComponents };
       this.addressDetails.placeName = placeDetails.name || '';
       this.hasSelectedAddress = true;
       this.showAddressDetails = false; // ברירת מחדל - לא להציג את הפרטים
 
-      // Step 5: שליחת הכתובת המפורקת עם כל השדות הנדרשים להורה
+      // Step 6: שליחת הכתובת המפורקת עם כל השדות הנדרשים להורה
       this.addressSelected.emit(addressComponents);
     } catch (error) {
       console.error('Error getting place details:', error);
 
-      // במקרה של שגיאה, שולחים לפחות את המידע הבסיסי עם place_id
-      const basicAddress: AddressComponents = {
-        fullAddress: suggestion.description,
-        placeId: suggestion.place_id  // תמיד נשמור את ה-place_id
-      };
-      this.addressSelected.emit(basicAddress);
+      // במקרה של שגיאה, ננסה עדיין לשמור במאגר עם המידע הבסיסי
+      try {
+        const basicPlaceData = {
+          placeId: String(suggestion.place_id || ''),
+          fullAddress: String(suggestion.description || ''),
+          placeName: suggestion.structured_formatting?.main_text || '',
+          city: String(suggestion.structured_formatting?.secondary_text || 'Unknown'),
+          country: 'ישראל', // ברירת מחדל
+          countryCode: 'IL'
+        };
+
+        console.log('Fallback: creating Place with basic data:', basicPlaceData);
+        console.log('Fallback PlaceId type and value:', typeof basicPlaceData.placeId, basicPlaceData.placeId);
+        const savedPlace = await Place.findOrCreate(basicPlaceData, remult.repo(Place));
+
+        const basicAddress: AddressComponents = {
+          fullAddress: suggestion.description,
+          placeId: String(suggestion.place_id || ''),
+          placeRecordId: savedPlace.id  // החשוב - המזהה שלנו ב-DB
+        };
+
+        this.addressSelected.emit(basicAddress);
+      } catch (saveError) {
+        console.error('Error saving fallback place:', saveError);
+
+        // אם גם השמירה נכשלה, שלח רק את המידע הבסיסי
+        const basicAddress: AddressComponents = {
+          fullAddress: suggestion.description,
+          placeId: String(suggestion.place_id || '')
+        };
+        this.addressSelected.emit(basicAddress);
+      }
     }
   }
 
@@ -286,6 +432,9 @@ export class OsmAddressInputComponent implements ControlValueAccessor, OnDestroy
     }
     if (this.addressDetails.city) {
       parts.push(this.addressDetails.city);
+    }
+    if (this.addressDetails.state) {
+      parts.push(this.addressDetails.state);
     }
     if (this.addressDetails.country) {
       parts.push(this.addressDetails.country);

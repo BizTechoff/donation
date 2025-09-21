@@ -50,7 +50,10 @@
                 <mat-icon class="field-icon">military_tech</mat-icon>
                 <label>תואר</label>
               </div>
-              <input type="text" class="form-control" [(ngModel)]="donor.title" placeholder="תואר (כגון: רב, ד&quot;ר)">
+              <select class="form-control" [(ngModel)]="donor.title">
+                <option value="">{{ getTitlePlaceholder() }}</option>
+                <option *ngFor="let title of getTitleOptions()" [value]="title">{{title}}</option>
+              </select>
             </div>
             <div class="form-group">
               <div class="field-title">
@@ -71,7 +74,10 @@
                 <mat-icon class="field-icon">title</mat-icon>
                 <label>סיומת</label>
               </div>
-              <input type="text" class="form-control" [(ngModel)]="donor.suffix" placeholder="סיומת (כגון: הי&quot;ו)">
+              <select class="form-control" [(ngModel)]="donor.suffix">
+                <option value="">{{ getSuffixPlaceholder() }}</option>
+                <option *ngFor="let suffix of getSuffixOptions()" [value]="suffix">{{suffix}}</option>
+              </select>
             </div>
             
             <!-- שורה שנייה: כינוי, שם באנגלית -->
@@ -137,7 +143,7 @@
                 <mat-icon class="field-icon">add_call</mat-icon>
                 <label>טלפון נוסף</label>
               </div>
-              <input type="tel" class="form-control" [(ngModel)]="donor.additionalPhone" placeholder="טלפון נוסף">
+              <input type="tel" class="form-control" [(ngModel)]="donor.additionalPhone" placeholder="טלפון נוסף" (ngModelChange)="onFieldChange()">
             </div>
             
             <!-- Birth Date -->
@@ -174,6 +180,7 @@
                 label="כתובת מגורים"
                 placeholder="הקלד כתובת מגורים..."
                 countryCode="il"
+                [initialAddress]="getHomeAddressComponents()"
                 (addressSelected)="onHomeAddressSelected($event)">
               </app-osm-address-input>
             </div>
@@ -188,6 +195,7 @@
                 label="כתובת נופש"
                 placeholder="הקלד כתובת נופש..."
                 countryCode="il"
+                [initialAddress]="getVacationAddressComponents()"
                 (addressSelected)="onVacationAddressSelected($event)">
               </app-osm-address-input>
             </div>
@@ -365,15 +373,8 @@
               
               <!-- Donor Events displayed with dual-date pickers -->
               <div *ngFor="let donorEvent of donorEvents; trackBy: trackDonorEventById" class="form-group full-width custom-date-item">
-                <label>{{donorEvent.event?.description || 'אירוע'}}</label>
-                <div class="date-picker-container">
-                  <app-modern-dual-date-picker
-                    [name]="'donorEvent_' + donorEvent.id"
-                    [(ngModel)]="donorEvent.hebrewDate"
-                    [label]="''"
-                    [compact]="true"
-                    [calendar_open_heb_and_eng_parallel]="true">
-                  </app-modern-dual-date-picker>
+                <div class="event-header">
+                  <label>{{donorEvent.event?.description || 'אירוע'}}</label>
                   <button
                     *ngIf="!donorEvent.event?.isRequired"
                     class="remove-date-btn"
@@ -381,6 +382,16 @@
                     title="הסר אירוע">
                     ×
                   </button>
+                </div>
+                <div class="date-picker-container">
+                  <app-modern-dual-date-picker
+                    [name]="'donorEvent_' + donorEvent.id"
+                    [(ngModel)]="donorEvent.hebrewDate"
+                    [label]="''"
+                    [compact]="true"
+                    [calendar_open_heb_and_eng_parallel]="true"
+                    (ngModelChange)="onDonorEventDateChange(donorEvent, $event)">
+                  </app-modern-dual-date-picker>
                 </div>
               </div>
 
@@ -744,53 +755,11 @@
               </div>
             </div>
           </div>
-          
-          <!-- Interests Card -->
-          <div class="info-card interests-card">
-            <div class="card-header">
-              <mat-icon class="card-icon">interests</mat-icon>
-              <h4>תחומי עניין</h4>
-            </div>
-            <div class="form-grid">
-              <div class="form-group full-width">
-                <div class="field-title">
-                  <mat-icon class="field-icon">interests</mat-icon>
-                  <label>ריגושים ונושאים מעניינים</label>
-                </div>
-                <textarea class="form-control interests-textarea" [(ngModel)]="donor.interests" 
-                          placeholder="נושאים שמעניינים את התורם: תורה, חסידות, חינוך, קהילה..." rows="3"></textarea>
-              </div>
-              <div class="form-group full-width">
-                <div class="field-title">
-                  <mat-icon class="field-icon">sports_soccer</mat-icon>
-                  <label>תחביבים ופעילויות</label>
-                </div>
-                <textarea class="form-control hobbies-textarea" [(ngModel)]="donor.hobbies" 
-                          placeholder="תחביבים ופעילויות פנאי: ספורט, מוסיקה, קריאה, נסיעות..." rows="3"></textarea>
-              </div>
-            </div>
-          </div>
         </div>
 
         <!-- העדפות יצירת קשר -->
         <div class="section contact-preferences">
           <h3>{{ (i18n.terms$ | async)?.contactPreferences }}</h3>
-          
-          <!-- Reception Hours Card -->
-          <div class="info-card reception-card">
-            <div class="card-header">
-              <mat-icon class="card-icon">schedule</mat-icon>
-              <h4>שעות קבלה</h4>
-            </div>
-            <div class="form-group">
-              <div class="field-title">
-                <mat-icon class="field-icon">access_time</mat-icon>
-                <label>{{ (i18n.terms$ | async)?.receptionHours }}</label>
-              </div>
-              <input type="text" class="form-control modern-input" [(ngModel)]="donor.receptionHours" 
-                     placeholder="לדוגמה: 09:00-17:00 או בשעות הערב">
-            </div>
-          </div>
           
           <!-- Preferred Days Card -->
           <div class="info-card days-card">
@@ -1007,11 +976,54 @@
               </div>
             </div>
           </div>
+
+          <!-- Reception Hours Card -->
+          <div class="info-card reception-card">
+            <div class="card-header">
+              <mat-icon class="card-icon">schedule</mat-icon>
+              <h4>שעות קבלה</h4>
+            </div>
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">access_time</mat-icon>
+                <label>{{ (i18n.terms$ | async)?.receptionHours }}</label>
+              </div>
+              <input type="text" class="form-control modern-input" [(ngModel)]="donor.receptionHours"
+                     placeholder="לדוגמה: 09:00-17:00 או בשעות הערב">
+            </div>
+          </div>
         </div>
 
         <!-- העדפות כלליות -->
         <div class="section preferences">
           <h3>{{ (i18n.terms$ | async)?.notes }}</h3>
+
+          <!-- Interests Card -->
+          <div class="info-card interests-card">
+            <div class="card-header">
+              <mat-icon class="card-icon">interests</mat-icon>
+              <h4>תחומי עניין</h4>
+            </div>
+            <div class="form-grid">
+              <div class="form-group full-width">
+                <div class="field-title">
+                  <mat-icon class="field-icon">interests</mat-icon>
+                  <label>ריגושים ונושאים מעניינים</label>
+                </div>
+                <textarea class="form-control interests-textarea" [(ngModel)]="donor.interests"
+                          placeholder="נושאים שמעניינים את התורם: תורה, חסידות, חינוך, קהילה..." rows="3"></textarea>
+              </div>
+              <div class="form-group full-width">
+                <div class="field-title">
+                  <mat-icon class="field-icon">sports_soccer</mat-icon>
+                  <label>תחביבים ופעילויות</label>
+                </div>
+                <textarea class="form-control hobbies-textarea" [(ngModel)]="donor.hobbies"
+                          placeholder="תחביבים ופעילויות פנאי: ספורט, מוסיקה, קריאה, נסיעות..." rows="3"></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
           <div class="form-grid">
             <div class="form-group full-width">
               <div class="field-title">
@@ -1021,7 +1033,6 @@
               <textarea class="form-control" rows="4" [(ngModel)]="donor.notes" [placeholder]="(i18n.terms$ | async)?.enterNotesPlaceholder"></textarea>
             </div>
           </div>
-        </div>
       </div>
     </div>
     <div class="modal-footer">

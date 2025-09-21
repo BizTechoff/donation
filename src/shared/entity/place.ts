@@ -10,12 +10,15 @@ export class Place {
 
   @Fields.string({
     caption: 'Google Place ID',
-    required: true,
-    validate: (value:string) => {
-      if (!value || value.trim().length === 0) {
-        throw new Error('Place ID חובה');
-      }
-    }
+    required: true//,
+    // validate: (value: string | null | undefined) => {
+    //   console.log('Place validation - value:', value, 'type:', typeof value);
+    //   if (!value || typeof value !== 'string' || value.trim().length === 0) {
+    //     console.log('Place validation failed:', { value, type: typeof value, trimLength: value ? (typeof value === 'string' ? value.trim().length : 'not string') : 'no value' });
+    //     throw new Error('Place ID חובה');
+    //   }
+    //   console.log('Place validation passed');
+    // }
   })
   placeId!: string;
 
@@ -90,20 +93,33 @@ export class Place {
 
   // Helper method to create or update a place
   static async findOrCreate(placeData: Partial<Place>, repo: any): Promise<Place> {
+    console.log('Place.findOrCreate called with data:', placeData);
+
     if (!placeData.placeId) {
+      console.error('Place ID is missing from placeData');
       throw new Error('Place ID is required');
     }
 
+    console.log('Searching for existing place with placeId:', placeData.placeId);
     // Try to find existing place by placeId
     let place = await repo.findFirst({ placeId: placeData.placeId });
 
     if (!place) {
-      // Create new place
-      place = await repo.insert(placeData);
+      console.log('Place not found, creating new place');
+      try {
+        // Create new place
+        place = await repo.insert(placeData);
+        console.log('New place created successfully:', place);
+      } catch (error) {
+        console.error('Error creating new place:', error);
+        throw error;
+      }
     } else {
+      console.log('Existing place found, updating:', place);
       // Update existing place with new data
       Object.assign(place, placeData);
       await repo.save(place);
+      console.log('Place updated successfully');
     }
 
     return place;

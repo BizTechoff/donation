@@ -1,19 +1,18 @@
-import { Component, OnInit, NO_ERRORS_SCHEMA, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ChangeDetectorRef, Component, NO_ERRORS_SCHEMA, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { Donor, Donation, Event, DonorEvent, CompanyInfo, Country, Place } from '../../../../shared/entity';
-import { remult } from 'remult';
-import { I18nService } from '../../../i18n/i18n.service';
-import { ModalNavigationHeaderComponent, NavigationRecord, FilterOption, ActiveFilter } from '../../../shared/modal-navigation-header/modal-navigation-header.component';
-import { SharedComponentsModule } from '../../../shared/shared-components.module';
 import { openDialog } from 'common-ui-elements';
-import { DataAreaDialogComponent } from '../../../common/data-area-dialog/data-area-dialog.component';
+import { remult } from 'remult';
+import { CompanyInfo, Country, Donation, Donor, DonorEvent, Event, Place } from '../../../../shared/entity';
+import { AddressComponents, OsmAddressInputComponent } from '../../../common/osm-address-input/osm-address-input.component';
 import { UIToolsService } from '../../../common/UIToolsService';
-import { OsmAddressInputComponent, AddressComponents } from '../../../common/osm-address-input/osm-address-input.component';
-import { DonorDonationsModalComponent, DonorDonationsModalArgs } from '../donor-donations-modal/donor-donations-modal.component';
+import { I18nService } from '../../../i18n/i18n.service';
+import { ActiveFilter, FilterOption, ModalNavigationHeaderComponent, NavigationRecord } from '../../../shared/modal-navigation-header/modal-navigation-header.component';
+import { SharedComponentsModule } from '../../../shared/shared-components.module';
+import { DonorDonationsModalArgs, DonorDonationsModalComponent } from '../donor-donations-modal/donor-donations-modal.component';
 
 export interface DonorDetailsModalArgs {
   donorId: string; // Can be 'new' for new donor or donor ID
@@ -54,20 +53,20 @@ export class DonorDetailsModalComponent implements OnInit {
   countryRepo = remult.repo(Country);
   loading = false;
   isNewDonor = false;
-  
+
   // Events system
   availableEvents: Event[] = [];
   donorEvents: DonorEvent[] = [];
-  
+
   // Custom personal dates (legacy - keeping for backward compatibility)
   customPersonalDates: { name: string; date: Date | null }[] = [];
-  
+
   // Navigation header properties
   allDonors: NavigationRecord[] = [];
   filterOptions: FilterOption[] = [];
   currentDonorRecord?: NavigationRecord;
 
-  constructor(public i18n: I18nService, private ui: UIToolsService, private changeDetector: ChangeDetectorRef) {}
+  constructor(public i18n: I18nService, private ui: UIToolsService, private changeDetector: ChangeDetectorRef) { }
 
   async ngOnInit() {
     await this.loadAvailableEvents();
@@ -108,10 +107,11 @@ export class DonorDetailsModalComponent implements OnInit {
 
   private async initializeDonor() {
     if (!this.args?.donorId) return;
-    
+
     this.loading = true;
     try {
       if (this.args.donorId === 'new') {
+        console.log('Loading NEW donor');
         this.isNewDonor = true;
         this.donor = this.donorRepo.create();
         this.donor.isActive = true;
@@ -126,18 +126,37 @@ export class DonorDetailsModalComponent implements OnInit {
         this.originalDonorData = JSON.stringify(this.donor);
       } else {
         this.isNewDonor = false;
-        this.donor = await this.donorRepo.findId(this.args.donorId) || undefined;
+        console.log('Loading existing donor with ID:', this.args.donorId);
+        this.donor = await this.donorRepo.findId(this.args.donorId, { useCache: false }) || undefined;
+
         if (this.donor) {
+          console.log('Donor loaded:', {
+            id: this.donor.id,
+            name: this.donor.fullName,
+            homePlaceId: this.donor.homePlaceId,
+            vacationPlaceId: this.donor.vacationPlaceId
+          });
+
           // Ensure companies array exists
           if (!this.donor.companies) {
             this.donor.companies = [];
           }
           this.originalDonorData = JSON.stringify(this.donor);
+
+          console.log('Starting to load related data...');
           await this.loadDonations();
           await this.loadDonorEvents();
+          await this.loadDonorPlaces();
+
+          // Force change detection after loading places
+          console.log('Forcing change detection...');
+          this.changeDetector.detectChanges();
+          console.log('All loading completed');
+        } else {
+          console.error('Failed to load donor with ID:', this.args.donorId);
         }
       }
-      
+
     } catch (error) {
       console.error('Error initializing donor:', error);
     } finally {
@@ -147,12 +166,12 @@ export class DonorDetailsModalComponent implements OnInit {
 
   private async loadDonorEvents() {
     if (!this.donor?.id) return;
-    
+
     try {
       this.donorEvents = await this.donorEventRepo.find({
         where: { donorId: this.donor.id, isActive: true }
       });
-      
+
       // Manually load the event details for each donor event
       for (const donorEvent of this.donorEvents) {
         if (donorEvent.eventId) {
@@ -165,9 +184,51 @@ export class DonorDetailsModalComponent implements OnInit {
     }
   }
 
+  private async loadDonorPlaces() {
+    if (!this.donor) return;
+
+    console.log('loadDonorPlaces - Donor info:', {
+      donorId: this.donor.id,
+      homePlaceId: this.donor.homePlaceId,
+      vacationPlaceId: this.donor.vacationPlaceId
+    });
+
+    try {
+      // Load home place if homePlaceId exists
+      if (this.donor.homePlaceId) {
+        console.log('Attempting to load home place with ID:', this.donor.homePlaceId);
+        const homePlace = await remult.repo(Place).findId(this.donor.homePlaceId);
+        if (homePlace) {
+          this.donor.homePlace = homePlace;
+          console.log('Loaded home place successfully:', homePlace);
+        } else {
+          console.log('Home place not found in database with ID:', this.donor.homePlaceId);
+        }
+      } else {
+        console.log('No homePlaceId found for donor');
+      }
+
+      // Load vacation place if vacationPlaceId exists
+      if (this.donor.vacationPlaceId) {
+        console.log('Attempting to load vacation place with ID:', this.donor.vacationPlaceId);
+        const vacationPlace = await remult.repo(Place).findId(this.donor.vacationPlaceId);
+        if (vacationPlace) {
+          this.donor.vacationPlace = vacationPlace;
+          console.log('Loaded vacation place successfully:', vacationPlace);
+        } else {
+          console.log('Vacation place not found in database with ID:', this.donor.vacationPlaceId);
+        }
+      } else {
+        console.log('No vacationPlaceId found for donor');
+      }
+    } catch (error) {
+      console.error('Error loading donor places:', error);
+    }
+  }
+
   async loadDonations() {
     if (!this.donor || !this.donor.id) return;
-    
+
     try {
       this.donations = await this.donationRepo.find({
         where: { donorId: this.donor.id },
@@ -191,6 +252,7 @@ export class DonorDetailsModalComponent implements OnInit {
       await this.donor.save();
 
       this.changed = wasNew || this.hasChanges();
+      this.shouldClose = true;
       // The dialog will automatically close and return this.changed
     } catch (error) {
       console.error('Error saving donor:', error);
@@ -201,10 +263,28 @@ export class DonorDetailsModalComponent implements OnInit {
     if (!this.donor) return;
 
     console.log('Home address selected:', addressComponents);
+    console.log('PlaceId:', addressComponents.placeId);
+    console.log('FullAddress:', addressComponents.fullAddress);
 
     try {
-      // יצירת או עדכון מקום
-      if (addressComponents.placeId) {
+      // השתמש ב-Place שכבר נשמר או צור חדש אם צריך
+      if (addressComponents.placeRecordId) {
+        // המקום כבר נשמר ברגע הבחירה
+        console.log('Using existing Place ID:', addressComponents.placeRecordId);
+        this.donor.homePlaceId = addressComponents.placeRecordId;
+
+        // טען את המקום מהשרת להצגה
+        const place = await remult.repo(Place).findId(addressComponents.placeRecordId);
+        if (place) {
+          this.donor.homePlace = place;
+        }
+
+        // Save donor to persist the homePlaceId
+        await this.donor.save();
+        this.changed = true;
+        console.log('Home place ID assigned to donor:', addressComponents.placeRecordId);
+      } else if (addressComponents.placeId) {
+        // fallback - אם מסיבה כלשהי לא נשמר, צור כעת
         const placeData = {
           placeId: addressComponents.placeId,
           fullAddress: addressComponents.fullAddress,
@@ -221,10 +301,15 @@ export class DonorDetailsModalComponent implements OnInit {
           longitude: addressComponents.longitude
         };
 
+        console.log('Fallback: creating Place now:', placeData);
         const place = await Place.findOrCreate(placeData, remult.repo(Place));
         this.donor.homePlaceId = place.id;
         this.donor.homePlace = place;
-        console.log('Home place saved:', place);
+
+        // Save donor to persist the homePlaceId
+        await this.donor.save();
+        this.changed = true;
+        console.log('Home place saved and donor updated:', place);
       }
     } catch (error) {
       console.error('Error saving home place:', error);
@@ -240,8 +325,24 @@ export class DonorDetailsModalComponent implements OnInit {
     console.log('Vacation address selected:', addressComponents);
 
     try {
-      // יצירת או עדכון מקום
-      if (addressComponents.placeId) {
+      // השתמש ב-Place שכבר נשמר או צור חדש אם צריך
+      if (addressComponents.placeRecordId) {
+        // המקום כבר נשמר ברגע הבחירה
+        console.log('Using existing Place ID:', addressComponents.placeRecordId);
+        this.donor.vacationPlaceId = addressComponents.placeRecordId;
+
+        // טען את המקום מהשרת להצגה
+        const place = await remult.repo(Place).findId(addressComponents.placeRecordId);
+        if (place) {
+          this.donor.vacationPlace = place;
+        }
+
+        // Save donor to persist the vacationPlaceId
+        await this.donor.save();
+        this.changed = true;
+        console.log('Vacation place ID assigned to donor:', addressComponents.placeRecordId);
+      } else if (addressComponents.placeId) {
+        // fallback - אם מסיבה כלשהי לא נשמר, צור כעת
         const placeData = {
           placeId: addressComponents.placeId,
           fullAddress: addressComponents.fullAddress,
@@ -258,10 +359,15 @@ export class DonorDetailsModalComponent implements OnInit {
           longitude: addressComponents.longitude
         };
 
+        console.log('Fallback: creating Place now:', placeData);
         const place = await Place.findOrCreate(placeData, remult.repo(Place));
         this.donor.vacationPlaceId = place.id;
         this.donor.vacationPlace = place;
-        console.log('Vacation place saved:', place);
+
+        // Save donor to persist the vacationPlaceId
+        await this.donor.save();
+        this.changed = true;
+        console.log('Vacation place saved and donor updated:', place);
       }
     } catch (error) {
       console.error('Error saving vacation place:', error);
@@ -274,7 +380,7 @@ export class DonorDetailsModalComponent implements OnInit {
   onDateChange(field: string, value: Date | null) {
     if (this.donor && field in this.donor) {
       (this.donor as any)[field] = value;
-      
+
       // Note: Birth date handling is now done through DonorEvent entities
     }
   }
@@ -345,6 +451,10 @@ export class DonorDetailsModalComponent implements OnInit {
     }
   }
 
+  onFieldChange() {
+    this.changed = true;
+  }
+
   async openAddDateDialog(event: MouseEvent) {
     const availableEvents = this.getAvailableEvents();
 
@@ -388,10 +498,10 @@ export class DonorDetailsModalComponent implements OnInit {
       });
 
       await donorEvent.save();
-      
+
       // Set the event relation manually
       donorEvent.event = event;
-      
+
       // Add to the current list instead of reloading from DB
       this.donorEvents.push(donorEvent);
 
@@ -412,13 +522,13 @@ export class DonorDetailsModalComponent implements OnInit {
     if (confirm('האם אתה בטוח שברצונך להסיר את האירוע?')) {
       try {
         await donorEvent.delete();
-        
+
         // Remove from local array instead of reloading
         const index = this.donorEvents.findIndex(de => de.id === donorEvent.id);
         if (index > -1) {
           this.donorEvents.splice(index, 1);
         }
-        
+
         this.changed = true;
       } catch (error) {
         console.error('Error removing event:', error);
@@ -440,7 +550,7 @@ export class DonorDetailsModalComponent implements OnInit {
   }
 
   getAvailableEvents() {
-    return this.availableEvents.filter(event => 
+    return this.availableEvents.filter(event =>
       !this.donorEvents.find(donorEvent => donorEvent.eventId === event.id)
     );
   }
@@ -458,7 +568,7 @@ export class DonorDetailsModalComponent implements OnInit {
   }
 
   getEventsByCategory(category: string): Event[] {
-    return this.getAvailableEvents().filter(event => 
+    return this.getAvailableEvents().filter(event =>
       (event.category || 'אחר') === category
     );
   }
@@ -467,11 +577,11 @@ export class DonorDetailsModalComponent implements OnInit {
   // Company management methods
   addCompany() {
     if (!this.donor) return;
-    
+
     if (!this.donor.companies) {
       this.donor.companies = [];
     }
-    
+
     const newCompany: CompanyInfo = {
       id: this.generateCompanyId(),
       name: '',
@@ -484,13 +594,13 @@ export class DonorDetailsModalComponent implements OnInit {
       email: '',
       website: ''
     };
-    
+
     this.donor.companies.push(newCompany);
   }
 
   removeCompany(index: number) {
     if (!this.donor || !this.donor.companies) return;
-    
+
     if (confirm('האם אתה בטוח שברצונך להסיר חברה זו?')) {
       this.donor.companies.splice(index, 1);
     }
@@ -548,19 +658,19 @@ export class DonorDetailsModalComponent implements OnInit {
 
     await openDialog(DonorDonationsModalComponent, (dlg) => dlg.args = args);
   }
-  
+
   closeModal(event?: MouseEvent) {
     // If clicking on overlay, close modal
     if (event && event.target === event.currentTarget) {
-      this.changed = false;
+      // Don't reset changed - let parent handle it
       this.shouldClose = true;
     } else if (!event) {
       // Direct close button click
-      this.changed = false;
+      // Don't reset changed - let parent handle it
       this.shouldClose = true;
     }
   }
-  
+
   // Navigation Header Methods
   private async loadAllDonors() {
     try {
@@ -568,13 +678,13 @@ export class DonorDetailsModalComponent implements OnInit {
         where: { isActive: true },
         orderBy: { fullName: 'asc' }
       });
-      
+
       this.allDonors = donors.map(donor => ({
         ...donor,
         id: donor.id,
         displayName: donor.fullName || `${donor.firstName} ${donor.lastName}`
       }));
-      
+
       // Set current donor record
       if (this.donor && this.donor.id) {
         this.currentDonorRecord = this.allDonors.find(d => d.id === this.donor!.id);
@@ -583,7 +693,7 @@ export class DonorDetailsModalComponent implements OnInit {
       console.error('Error loading all donors:', error);
     }
   }
-  
+
   private setupFilterOptions() {
     this.filterOptions = [
       {
@@ -647,21 +757,21 @@ export class DonorDetailsModalComponent implements OnInit {
         options: [] // Will be populated dynamically
       }
     ];
-    
+
     // Populate dynamic options
     this.populateDynamicFilterOptions();
   }
-  
+
   private populateDynamicFilterOptions() {
     // Get unique cities
     const cities = new Set<string>();
     const countries = new Set<string>();
-    
+
     this.allDonors.forEach(donor => {
       if (donor['city']) cities.add(donor['city']);
       if (donor['country']) countries.add(donor['country']);
     });
-    
+
     // Update city filter options
     const cityFilter = this.filterOptions.find(f => f.key === 'city');
     if (cityFilter) {
@@ -670,7 +780,7 @@ export class DonorDetailsModalComponent implements OnInit {
         label: city
       }));
     }
-    
+
     // Update country filter options
     const countryFilter = this.filterOptions.find(f => f.key === 'country');
     if (countryFilter) {
@@ -680,31 +790,164 @@ export class DonorDetailsModalComponent implements OnInit {
       }));
     }
   }
-  
+
   onRecordSelected(record: NavigationRecord) {
     if (record.id !== this.donor?.id) {
       this.args.donorId = record.id;
       this.initializeDonor();
     }
   }
-  
+
   onSearchChanged(searchTerm: string) {
     // Search is handled by the navigation header component
     console.log('Search term changed:', searchTerm);
   }
-  
+
   onFiltersChanged(filters: ActiveFilter[]) {
     // Filters are applied by the navigation header component
     console.log('Filters changed:', filters);
   }
-  
+
   onNavigateNext() {
     // Navigation is handled by the navigation header component
     console.log('Navigate to next donor');
   }
-  
+
   onNavigatePrevious() {
     // Navigation is handled by the navigation header component
     console.log('Navigate to previous donor');
+  }
+
+  // Convert Place to AddressComponents for the address input component
+  getHomeAddressComponents(): AddressComponents | undefined {
+    console.log('getHomeAddressComponents called - donor.homePlace:', this.donor?.homePlace);
+    if (!this.donor?.homePlace) {
+      console.log('No homePlace found, returning undefined');
+      return undefined;
+    }
+
+    const place = this.donor.homePlace;
+    const addressComponents = {
+      fullAddress: place.fullAddress || '',
+      placeId: place.placeId || '',
+      placeRecordId: place.id, // החשוב - המזהה שלנו ב-DB
+      street: place.street || '',
+      houseNumber: place.houseNumber || '',
+      neighborhood: place.neighborhood || '',
+      city: place.city || '',
+      state: place.state || '',
+      postcode: place.postcode || '',
+      country: place.country || '',
+      countryCode: place.countryCode || '',
+      latitude: place.latitude,
+      longitude: place.longitude,
+      placeName: place.placeName || ''
+    };
+
+    console.log('getHomeAddressComponents - returning address components:', addressComponents);
+    return addressComponents;
+  }
+
+  getVacationAddressComponents(): AddressComponents | undefined {
+    if (!this.donor?.vacationPlace) return undefined;
+
+    const place = this.donor.vacationPlace;
+    return {
+      fullAddress: place.fullAddress || '',
+      placeId: place.placeId || '',
+      placeRecordId: place.id, // החשוב - המזהה שלנו ב-DB
+      street: place.street || '',
+      houseNumber: place.houseNumber || '',
+      neighborhood: place.neighborhood || '',
+      city: place.city || '',
+      state: place.state || '',
+      postcode: place.postcode || '',
+      country: place.country || '',
+      countryCode: place.countryCode || '',
+      latitude: place.latitude,
+      longitude: place.longitude,
+      placeName: place.placeName || ''
+    };
+  }
+
+  // Title options based on platform language
+  getTitleOptions(): string[] {
+    if (this.i18n.lang.language === 'en') {
+      return [
+        'Family',
+        'Mr.',
+        'Mrs.',
+        'Mr. & Mrs.',
+        'Rabbi',
+        'Rabbi & Mrs.',
+        'Dr.',
+        'Dr. & Mrs.'
+      ];
+    } else {
+      // Hebrew titles
+      return [
+        'גב\'',
+        'הבחור המופלג בתויר"ש כמר',
+        'הגאון החסיד ר\'',
+        'הגאון הרב',
+        'הגאון רבי',
+        'הגה"ח ר\'',
+        'החתן המופלג בתויר"ש כמר',
+        'המשגיח הרה"ח ר\'',
+        'הנגיד הרה"ח ר\'',
+        'הר"ר',
+        'הרב',
+        'הרבנית',
+        'הרה"ג ר\'',
+        'הרה"ח ר\'',
+        'הרה"צ ר\'',
+        'כ"ק אדמו"ר רבי',
+        'כ"ק מרן',
+        'כמר',
+        'מג"ש בישיבתנו הרב',
+        'מוהרה"ח ר\'',
+        'מורינו הרה"ח ר\'',
+        'מר',
+        'מרן',
+        'מרת',
+        'משפחת',
+        'ראש הישיבה',
+        'תלמידנו הרה"ח ר\''
+      ];
+    }
+  }
+
+  getTitlePlaceholder(): string {
+    if (this.i18n.lang.language === 'en') {
+      return '-- Select Title --';
+    } else {
+      return '-- בחר תואר --';
+    }
+  }
+
+  // Suffix options - primarily Hebrew religious suffixes
+  getSuffixOptions(): string[] {
+    return [
+      'הי"ד',
+      'הי"ו',
+      'ז"ל',
+      'זי"ע',
+      'זצ"ל',
+      'זצוק"ל',
+      'זצוקללה"ה',
+      'נ"י',
+      'ע"ה',
+      'שיחי\'',
+      'שליט"א',
+      'תחי\''
+    ];
+  }
+
+  getSuffixPlaceholder(): string {
+    if (this.i18n.lang.language === 'en') {
+      return '-- Select Suffix --';
+    } else {
+      return '-- בחר סיומת --';
+    }
   }
 }

@@ -1,12 +1,11 @@
 import {
-  IdEntity,
+  Allow,
   Entity,
   Fields,
-  Relations,
-  Allow,
+  IdEntity,
   isBackend,
+  Relations,
 } from 'remult'
-import { Roles } from '../enum/roles'
 import { Donor } from './donor'
 import { Event } from './event'
 
@@ -26,25 +25,27 @@ import { Event } from './event'
   },
 })
 export class DonorEvent extends IdEntity {
-  @Relations.toOne<DonorEvent, Donor>(() => Donor, {
+
+
+  @Fields.string({ caption: 'מזהה תורם' })
+  donorId?: string;
+
+  @Relations.toOne(() => Donor, {
+    field: "donorId",
     caption: 'תורם',
+    defaultIncluded: true
   })
-  donor?: Donor
+  donor?: Donor;
 
-  @Fields.string({
-    caption: 'מזהה תורם',
-  })
-  donorId = ''
+  @Fields.string({ caption: 'מזהה אירוע' })
+  eventId?: string;
 
-  @Relations.toOne<DonorEvent, Event>(() => Event, {
+  @Relations.toOne(() => Event, {
+    field: "eventId",
     caption: 'אירוע',
+    defaultIncluded: true
   })
-  event?: Event
-
-  @Fields.string({
-    caption: 'מזהה אירוע',
-  })
-  eventId = ''
+  event?: Event;
 
   @Fields.dateOnly({
     caption: 'תאריך עברי',
@@ -58,11 +59,11 @@ export class DonorEvent extends IdEntity {
   })
   gregorianDate?: Date
 
-  @Fields.string({
-    caption: 'הערות',
-    allowNull: true,
-  })
-  notes = ''
+  // @Fields.string({
+  //   caption: 'הערות',
+  //   allowNull: true,
+  // })
+  // notes = ''
 
   @Fields.boolean({
     caption: 'פעיל',

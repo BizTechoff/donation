@@ -1,3 +1,4 @@
+
 <button mat-icon-button 
         [matMenuTriggerFor]="filtersMenu"
         [class.filters-active]="hasActiveFilters"
@@ -32,10 +33,10 @@
     <!-- Country Filter -->
     <mat-form-field appearance="outline" class="filter-field">
       <mat-label>{{ (i18n.terms$ | async)?.country }}</mat-label>
-      <mat-select [value]="currentFilters.countryIds || []"
-                  (valueChange)="updateFilter('countryIds', $event.length > 0 ? $event : undefined)"
+      <mat-select [value]="currentFilters.countryNames || []"
+                  (valueChange)="updateFilter('countryNames', $event.length > 0 ? $event : undefined)"
                   multiple>
-        <mat-option *ngFor="let country of countries" [value]="country.id">
+        <mat-option *ngFor="let country of countries" [value]="country.name">
           {{ country.name }}
         </mat-option>
       </mat-select>
@@ -98,10 +99,10 @@
           <mat-icon matChipRemove>cancel</mat-icon>
         </mat-chip>
 
-        <mat-chip *ngFor="let countryId of currentFilters.countryIds || []"
+        <mat-chip *ngFor="let countryName of currentFilters.countryNames || []"
                   [removable]="true"
-                  (removed)="removeCountryFilter(countryId)">
-          {{ (i18n.terms$ | async)?.country }}: {{ getCountryName(countryId) }}
+                  (removed)="removeCountryFilter(countryName)">
+          {{ (i18n.terms$ | async)?.country }}: {{ countryName }}
           <mat-icon matChipRemove>cancel</mat-icon>
         </mat-chip>
         

@@ -85,8 +85,18 @@
         </div>
       </div>
 
-      <!-- שורה שלישית: מיקוד ומדינה -->
+      <!-- שורה שלישית: מחוז ומיקוד -->
       <div class="detail-row">
+        <div class="detail-field">
+          <label>מחוז</label>
+          <input
+            type="text"
+            [(ngModel)]="addressDetails.state"
+            (change)="onDetailChange()"
+            placeholder="מחוז"
+            dir="rtl"
+          >
+        </div>
         <div class="detail-field small">
           <label>מיקוד</label>
           <input
@@ -97,9 +107,13 @@
             dir="rtl"
           >
         </div>
-        <div class="detail-field">
+      </div>
+
+      <!-- שורה רביעית: מדינה -->
+      <div class="detail-row">
+        <div class="detail-field full-width">
           <label>מדינה</label>
-          <input
+          <input readonly
             type="text"
             [(ngModel)]="addressDetails.country"
             (change)="onDetailChange()"
@@ -140,8 +154,21 @@
       <div class="suggestion-content">
         <!-- Main address line -->
         <div class="main-address">
-          <mat-icon class="location-icon">place</mat-icon>
+          <!-- אינדיקטור חזותי להבחנה בין מקומות שמורים לחדשים -->
+          <mat-icon
+            class="location-icon"
+            [class.saved-place]="suggestion.isFromDatabase"
+            [matTooltip]="suggestion.isFromDatabase ? 'מקום שמור במערכת' : 'מקום חדש מגוגל'">
+            {{ suggestion.isFromDatabase ? 'bookmark' : 'place' }}
+          </mat-icon>
           <span class="address-text">{{ getDisplayAddress(suggestion) }}</span>
+          <!-- סמן "שמור" למקומות מהמערכת -->
+          <mat-icon
+            *ngIf="suggestion.isFromDatabase"
+            class="saved-indicator"
+            matTooltip="נשמר במערכת">
+            star
+          </mat-icon>
         </div>
 
         <!-- Address details -->

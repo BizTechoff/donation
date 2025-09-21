@@ -1,21 +1,18 @@
 import {
-  IdEntity,
-  Entity,
-  Validators,
-  isBackend,
   Allow,
-  Fields,
   BackendMethod,
+  Entity,
+  Fields,
+  IdEntity,
   Relations,
-  Field,
-  remult
+  Validators,
+  isBackend
 } from 'remult'
 import { EmailField } from '../../app/common/fields/EmailField'
 import { PhoneField } from '../../app/common/fields/PhoneField'
-import { User } from './user'
-import { Country } from './country'
-import { Place } from './place'
 import { Roles } from '../enum/roles'
+import { Place } from './place'
+import { User } from './user'
 
 export interface CompanyInfo {
   id: string
@@ -49,6 +46,18 @@ export interface CompanyInfo {
 export class Donor extends IdEntity {
   @Fields.string({
     caption: 'תואר',
+    allowNull: true,
+    includeInApi: true,
+    valueList: [
+      // Hebrew titles
+      '', 'גב\'', 'הבחור המופלג בתויר"ש כמר', 'הגאון החסיד ר\'', 'הגאון הרב', 'הגאון רבי',
+      'הגה"ח ר\'', 'החתן המופלג בתויר"ש כמר', 'המשגיח הרה"ח ר\'', 'הנגיד הרה"ח ר\'', 'הר"ר',
+      'הרב', 'הרבנית', 'הרה"ג ר\'', 'הרה"ח ר\'', 'הרה"צ ר\'', 'כ"ק אדמו"ר רבי', 'כ"ק מרן',
+      'כמר', 'מג"ש בישיבתנו הרב', 'מוהרה"ח ר\'', 'מורינו הרה"ח ר\'', 'מר', 'מרן', 'מרת',
+      'משפחת', 'ראש הישיבה', 'תלמידנו הרה"ח ר\'',
+      // English titles
+      'Family', 'Mr.', 'Mrs.', 'Mr. & Mrs.', 'Rabbi', 'Rabbi & Mrs.', 'Dr.', 'Dr. & Mrs.'
+    ]
   })
   title = ''
 
@@ -121,36 +130,38 @@ export class Donor extends IdEntity {
   internationalPrefix = '+972'
 
   // כתובות
+  // @Relations.toOne(() => Place, {
+  //   caption: 'כתובת מגורים',
+  //   includeInApi: true,
+  // })
+  // homePlaceId?: string
+
+  // @Field(() => Place, {
+  //   // serverExpression: async (donor: Donor) => {
+  //   //   if (!donor.homePlaceId) return undefined
+  //   //   return await remult.repo(Place).findId(donor.homePlaceId)
+  //   // },
+  //   // includeInApi: true
+  // })
+  // homePlace?: Place
+
+  @Fields.string()
+  homePlaceId?: string;
+
   @Relations.toOne(() => Place, {
-    caption: 'כתובת מגורים',
-    includeInApi: true
+    field: "homePlaceId",
+    defaultIncluded: true
   })
-  homePlaceId?: string
+  homePlace?: Place;
 
-  @Field(() => Place, {
-    serverExpression: async (donor: Donor) => {
-      if (!donor.homePlaceId) return undefined
-      return await remult.repo(Place).findId(donor.homePlaceId)
-    },
-    includeInApi: true
-  })
-  homePlace?: Place
+  @Fields.string()
+  vacationPlaceId?: string;
 
   @Relations.toOne(() => Place, {
-    caption: 'כתובת נופש',
-    includeInApi: true
+    field: "vacationPlaceId",
+    defaultIncluded: true
   })
-  vacationPlaceId?: string
-
-  @Field(() => Place, {
-    serverExpression: async (donor: Donor) => {
-      if (!donor.vacationPlaceId) return undefined
-      return await remult.repo(Place).findId(donor.vacationPlaceId)
-    },
-    includeInApi: true
-  })
-  vacationPlace?: Place
-
+  vacationPlace?: Place;
 
   @Fields.date({
     caption: 'תאריך לידה',

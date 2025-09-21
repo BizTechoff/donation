@@ -101,6 +101,17 @@ export class User extends IdEntity {
     globalFilters?: any; // Store global filter preferences
   };
 
+  @Fields.number({
+    allowApiUpdate: Roles.admin,
+    caption: 'עמלה (%)',
+    validate: (value: number) => {
+      if (value < 0 || value > 100) {
+        throw new Error('עמלה חייבת להיות בין 0 ל-100 אחוזים');
+      }
+    }
+  })
+  commission = 0
+
   @Fields.boolean({
     allowApiUpdate: Roles.admin,
     caption: terms.disabled,
