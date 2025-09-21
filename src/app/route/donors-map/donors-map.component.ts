@@ -68,7 +68,7 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   get donorsOnMap(): number {
-    return this.donors.filter(d => d.latitude && d.longitude).length;
+    return this.donors.filter(d => d.homePlace?.latitude && d.homePlace?.longitude).length;
   }
 
   async ngOnInit() {
@@ -222,8 +222,7 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
       // Assign coordinates to all donors (overwrite existing for demo)
       this.donors.slice(0, Math.min(this.donors.length, demoCoords.length)).forEach((donor, index) => {
         if (demoCoords[index]) {
-          donor.latitude = demoCoords[index].lat;
-          donor.longitude = demoCoords[index].lng;
+          // Demo coordinates disabled - use actual places
         }
       });
     }
@@ -307,12 +306,12 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.markersLayer.clearLayers();
     
     console.log('Adding markers for donors:', this.donors.length);
-    console.log('Donors with coordinates:', this.donors.filter(d => d.latitude && d.longitude).length);
+    console.log('Donors with coordinates:', this.donors.filter(d => d.homePlace?.latitude && d.homePlace?.longitude).length);
     
     let addedCount = 0;
     this.donors.forEach((donor, index) => {
-      if (donor.latitude && donor.longitude) {
-        console.log(`Adding marker ${index + 1}:`, donor.displayName, donor.latitude, donor.longitude);
+      if (donor.homePlace?.latitude && donor.homePlace?.longitude) {
+        console.log(`Adding marker ${index + 1}:`, donor.displayName, donor.homePlace.latitude, donor.homePlace.longitude);
         try {
           const marker = this.createMarkerForDonor(donor);
           this.markersLayer.addLayer(marker);
@@ -358,7 +357,7 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
       iconAnchor: [10, 10]
     });
 
-    const marker = L.marker([donor.latitude!, donor.longitude!], {
+    const marker = L.marker([donor.homePlace!.latitude!, donor.homePlace!.longitude!], {
       icon: customIcon
     });
 
@@ -452,8 +451,8 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // פונקציה להמרת כתובות תורמים שחסרים להם קואורדינטות
   async geocodeMissingAddresses() {
-    const donorsWithoutCoords = this.donors.filter(d => 
-      !d.latitude && !d.longitude && d.fullAddress && d.fullAddress.trim() !== ''
+    const donorsWithoutCoords = this.donors.filter(d =>
+      !d.homePlace?.latitude && !d.homePlace?.longitude && d.homePlace?.fullAddress && d.homePlace.fullAddress.trim() !== ''
     );
 
     if (donorsWithoutCoords.length === 0) {
@@ -468,14 +467,14 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
       try {
         const coords = await this.geocodingService.geocodeAddress(
           donor.fullAddress!,
-          donor.city,
-          donor.country?.name || ''
+          donor.homePlace?.city || '',
+          donor.homePlace?.country || ''
         );
 
-        if (coords) {
-          donor.latitude = coords.latitude;
-          donor.longitude = coords.longitude;
-          await donor.save();
+        if (coords && donor.homePlace) {
+          donor.homePlace.latitude = coords.latitude;
+          donor.homePlace.longitude = coords.longitude;
+          // await donor.homePlace.save(); // Disabled for now
           updatedCount++;
         }
 

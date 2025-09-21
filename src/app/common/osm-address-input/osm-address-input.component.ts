@@ -1,10 +1,13 @@
 import { Component, Input, Output, EventEmitter, OnDestroy, forwardRef } from '@angular/core';
+import { trigger, state, style, transition, animate } from '@angular/animations';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Subject, debounceTime, distinctUntilChanged, switchMap, of } from 'rxjs';
 import { GeoService } from '../../services/geo.service';
@@ -22,6 +25,7 @@ export interface AddressComponents {
   countryCode?: string;
   latitude?: number;
   longitude?: number;
+  placeName?: string;
 }
 
 @Component({
@@ -36,7 +40,20 @@ export interface AddressComponents {
     MatInputModule,
     MatAutocompleteModule,
     MatIconModule,
+    MatButtonModule,
+    MatTooltipModule,
     MatProgressSpinnerModule
+  ],
+  animations: [
+    trigger('slideDown', [
+      transition(':enter', [
+        style({ opacity: 0, transform: 'translateY(-10px)' }),
+        animate('300ms ease-out', style({ opacity: 1, transform: 'translateY(0)' }))
+      ]),
+      transition(':leave', [
+        animate('200ms ease-in', style({ opacity: 0, transform: 'translateY(-10px)' }))
+      ])
+    ])
   ],
   providers: [
     {
@@ -59,6 +76,20 @@ export class OsmAddressInputComponent implements ControlValueAccessor, OnDestroy
   suggestions: any[] = [];
   isLoading = false;
   selectedPlaceId: string | null = null;
+  hasSelectedAddress = false;
+  showAddressDetails = false;
+  addressDetails: AddressComponents = {
+    fullAddress: '',
+    placeId: '',
+    street: '',
+    houseNumber: '',
+    neighborhood: '',
+    city: '',
+    postcode: '',
+    country: '',
+    countryCode: '',
+    placeName: ''
+  };
 
   private searchSubject = new Subject<string>();
   private onChange = (value: string) => {};
@@ -182,6 +213,12 @@ export class OsmAddressInputComponent implements ControlValueAccessor, OnDestroy
 
       console.log('Step 4: Final parsed address components:', addressComponents);
 
+      // שמירת הפרטים למקרה של עריכה
+      this.addressDetails = { ...addressComponents };
+      this.addressDetails.placeName = placeDetails.name || '';
+      this.hasSelectedAddress = true;
+      this.showAddressDetails = false; // ברירת מחדל - לא להציג את הפרטים
+
       // Step 5: שליחת הכתובת המפורקת עם כל השדות הנדרשים להורה
       this.addressSelected.emit(addressComponents);
     } catch (error) {
@@ -228,5 +265,37 @@ export class OsmAddressInputComponent implements ControlValueAccessor, OnDestroy
     }
 
     return '';
+  }
+
+  toggleAddressDetails(): void {
+    this.showAddressDetails = !this.showAddressDetails;
+  }
+
+  onDetailChange(): void {
+    // עדכון הכתובת המלאה בהתאם לשינויים
+    const parts = [];
+
+    if (this.addressDetails.street) {
+      parts.push(this.addressDetails.street);
+    }
+    if (this.addressDetails.houseNumber) {
+      parts.push(this.addressDetails.houseNumber);
+    }
+    if (this.addressDetails.neighborhood) {
+      parts.push(this.addressDetails.neighborhood);
+    }
+    if (this.addressDetails.city) {
+      parts.push(this.addressDetails.city);
+    }
+    if (this.addressDetails.country) {
+      parts.push(this.addressDetails.country);
+    }
+
+    this.addressDetails.fullAddress = parts.filter(p => p).join(', ');
+    this.searchValue = this.addressDetails.fullAddress;
+    this.onChange(this.searchValue);
+
+    // שליחת הכתובת המעודכנת להורה
+    this.addressSelected.emit(this.addressDetails);
   }
 }

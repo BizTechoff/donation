@@ -227,7 +227,12 @@
     gap: 8px;
     padding-bottom: 8px;
     border-bottom: 2px solid #667eea;
-    
+
+    .section-icon {
+      color: #667eea;
+      font-size: 24px;
+    }
+
     &::before {
       content: '';
       width: 4px;
@@ -251,6 +256,47 @@
     font-weight: 500;
   }
 }
+
+/* Addresses Section */
+.addresses-section {
+  .addresses-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+    }
+  }
+
+  .address-item {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 16px;
+    background: #f8f9fa;
+    transition: all 0.3s ease;
+
+    &:hover {
+      border-color: #667eea;
+      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+    }
+
+    .address-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+
+      .address-type-icon {
+        color: #667eea;
+        font-size: 20px;
+      }
+
+      h4 {
+        margin: 0;
+        color: #2c3e50;
+        font-size: 16px;
+        font-weight: 500;
+      }
+    }
+  }
 
 /* Form Grid */
 .form-grid {

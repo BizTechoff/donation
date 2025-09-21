@@ -5,7 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { Campaign, User } from '../../../../shared/entity';
+import { Campaign, User, Place } from '../../../../shared/entity';
 import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
 import { UIToolsService } from '../../../common/UIToolsService';
@@ -13,6 +13,7 @@ import { SharedComponentsModule } from '../../../shared/shared-components.module
 import { DONOR_LEVELS_ARRAY, DonorLevel } from '../../../../shared/enum/donor-levels';
 import { CampaignBlessingBookModalComponent, CampaignBlessingBookModalArgs } from '../campaign-blessing-book-modal/campaign-blessing-book-modal.component';
 import { openDialog } from 'common-ui-elements';
+import { OsmAddressInputComponent, AddressComponents } from '../../../common/osm-address-input/osm-address-input.component';
 
 export interface CampaignDetailsModalArgs {
   campaignId: string; // Can be 'new' for new campaign or campaign ID
@@ -30,7 +31,8 @@ export interface CampaignDetailsModalArgs {
     MatIconModule,
     MatTooltipModule,
     MatSnackBarModule,
-    SharedComponentsModule
+    SharedComponentsModule,
+    OsmAddressInputComponent
   ]
 })
 export class CampaignDetailsModalComponent implements OnInit {
@@ -289,11 +291,136 @@ export class CampaignDetailsModalComponent implements OnInit {
     this.changed = true;
   }
 
-  onEventLocationChange(location: string) {
-    if (location) {
-      // Auto-select currency based on location text
-      this.selectCurrencyByLocation(location);
-      this.markAsChanged();
+  async onEventLocationSelected(addressComponents: AddressComponents) {
+    if (!this.campaign) return;
+
+    console.log('Event location selected:', addressComponents);
+
+    try {
+      // יצירת או עדכון מקום
+      if (addressComponents.placeId) {
+        const placeData = {
+          placeId: addressComponents.placeId,
+          fullAddress: addressComponents.fullAddress,
+          placeName: addressComponents.placeName,
+          street: addressComponents.street,
+          houseNumber: addressComponents.houseNumber,
+          neighborhood: addressComponents.neighborhood,
+          city: addressComponents.city,
+          state: addressComponents.state,
+          postcode: addressComponents.postcode,
+          country: addressComponents.country,
+          countryCode: addressComponents.countryCode,
+          latitude: addressComponents.latitude,
+          longitude: addressComponents.longitude
+        };
+
+        const place = await Place.findOrCreate(placeData, remult.repo(Place));
+        this.campaign.eventLocationId = place.id;
+        this.campaign.eventLocation = place;
+        console.log('Event location saved:', place);
+
+        // Auto-select currency based on location
+        if (addressComponents.countryCode) {
+          this.selectCurrencyByCountryCode(addressComponents.countryCode);
+        }
+      }
+    } catch (error) {
+      console.error('Error saving event location:', error);
+    }
+
+    this.markAsChanged();
+  }
+
+  private selectCurrencyByCountryCode(countryCode: string) {
+    if (!this.campaign || !countryCode) return;
+
+    const currencyMap: { [key: string]: string } = {
+      'IL': 'ILS', // Israel
+      'US': 'USD', // United States
+      'CA': 'CAD', // Canada
+      'GB': 'GBP', // United Kingdom
+      'AU': 'AUD', // Australia
+      'NZ': 'NZD', // New Zealand
+      'CH': 'CHF', // Switzerland
+      'JP': 'JPY', // Japan
+      'CN': 'CNY', // China
+      'IN': 'INR', // India
+      'ZA': 'ZAR', // South Africa
+      'BR': 'BRL', // Brazil
+      'MX': 'MXN', // Mexico
+      'AR': 'ARS', // Argentina
+      'CL': 'CLP', // Chile
+      'CO': 'COP', // Colombia
+      'PE': 'PEN', // Peru
+      'UY': 'UYU', // Uruguay
+      'PY': 'PYG', // Paraguay
+      'BO': 'BOB', // Bolivia
+      'EC': 'USD', // Ecuador uses USD
+      'PA': 'PAB', // Panama
+      'CR': 'CRC', // Costa Rica
+      'GT': 'GTQ', // Guatemala
+      'HN': 'HNL', // Honduras
+      'NI': 'NIO', // Nicaragua
+      'SV': 'USD', // El Salvador uses USD
+      'BZ': 'BZD', // Belize
+      'JM': 'JMD', // Jamaica
+      'TT': 'TTD', // Trinidad and Tobago
+      'BB': 'BBD', // Barbados
+      'BS': 'BSD', // Bahamas
+      'KY': 'KYD', // Cayman Islands
+      'VG': 'USD', // British Virgin Islands use USD
+      'AG': 'XCD', // Antigua and Barbuda
+      'DM': 'XCD', // Dominica
+      'GD': 'XCD', // Grenada
+      'KN': 'XCD', // Saint Kitts and Nevis
+      'LC': 'XCD', // Saint Lucia
+      'VC': 'XCD', // Saint Vincent and the Grenadines
+      // Eurozone countries
+      'AD': 'EUR', 'AT': 'EUR', 'BE': 'EUR', 'CY': 'EUR', 'EE': 'EUR',
+      'FI': 'EUR', 'FR': 'EUR', 'DE': 'EUR', 'GR': 'EUR', 'IE': 'EUR',
+      'IT': 'EUR', 'LV': 'EUR', 'LT': 'EUR', 'LU': 'EUR', 'MT': 'EUR',
+      'MC': 'EUR', 'NL': 'EUR', 'PT': 'EUR', 'SM': 'EUR', 'SK': 'EUR',
+      'SI': 'EUR', 'ES': 'EUR', 'VA': 'EUR', // Vatican
+      // Other European countries
+      'NO': 'NOK', 'SE': 'SEK', 'DK': 'DKK', 'IS': 'ISK',
+      'CZ': 'CZK', 'PL': 'PLN', 'HU': 'HUF', 'RO': 'RON',
+      'BG': 'BGN', 'HR': 'HRK', 'RS': 'RSD', 'BA': 'BAM',
+      'MK': 'MKD', 'AL': 'ALL', 'ME': 'EUR', 'XK': 'EUR', // Kosovo
+      'MD': 'MDL', 'UA': 'UAH', 'BY': 'BYN', 'RU': 'RUB',
+      // Asian countries
+      'TR': 'TRY', 'AE': 'AED', 'SA': 'SAR', 'QA': 'QAR',
+      'KW': 'KWD', 'BH': 'BHD', 'OM': 'OMR', 'JO': 'JOD',
+      'LB': 'LBP', 'SY': 'SYP', 'IQ': 'IQD', 'IR': 'IRR',
+      'AF': 'AFN', 'PK': 'PKR', 'BD': 'BDT', 'LK': 'LKR',
+      'MV': 'MVR', 'NP': 'NPR', 'BT': 'BTN', 'MM': 'MMK',
+      'TH': 'THB', 'VN': 'VND', 'KH': 'KHR', 'LA': 'LAK',
+      'MY': 'MYR', 'SG': 'SGD', 'BN': 'BND', 'ID': 'IDR',
+      'PH': 'PHP', 'TW': 'TWD', 'HK': 'HKD', 'MO': 'MOP',
+      'KR': 'KRW', 'KP': 'KPW', 'MN': 'MNT', 'KZ': 'KZT',
+      'KG': 'KGS', 'TJ': 'TJS', 'UZ': 'UZS', 'TM': 'TMT',
+      'GE': 'GEL', 'AM': 'AMD', 'AZ': 'AZN',
+      // African countries
+      'EG': 'EGP', 'LY': 'LYD', 'TN': 'TND', 'DZ': 'DZD',
+      'MA': 'MAD', 'SD': 'SDG', 'SS': 'SSP', 'ET': 'ETB',
+      'ER': 'ERN', 'DJ': 'DJF', 'SO': 'SOS', 'KE': 'KES',
+      'UG': 'UGX', 'TZ': 'TZS', 'RW': 'RWF', 'BI': 'BIF',
+      'CD': 'CDF', 'CF': 'XAF', 'TD': 'XAF', 'CM': 'XAF',
+      'GQ': 'XAF', 'GA': 'XAF', 'CG': 'XAF', 'ST': 'STN',
+      'AO': 'AOA', 'ZM': 'ZMW', 'ZW': 'ZWL', 'MW': 'MWK',
+      'MZ': 'MZN', 'MG': 'MGA', 'MU': 'MUR', 'SC': 'SCR',
+      'KM': 'KMF', 'BW': 'BWP', 'SZ': 'SZL', 'LS': 'LSL',
+      'NA': 'NAD', 'GH': 'GHS', 'NG': 'NGN', 'BF': 'XOF',
+      'ML': 'XOF', 'NE': 'XOF', 'CI': 'XOF', 'GN': 'GNF',
+      'SN': 'XOF', 'MR': 'MRU', 'GM': 'GMD', 'GW': 'XOF',
+      'CV': 'CVE', 'SL': 'SLL', 'LR': 'LRD', 'TG': 'XOF',
+      'BJ': 'XOF'
+    };
+
+    const currency = currencyMap[countryCode.toUpperCase()];
+    if (currency) {
+      this.campaign.currency = currency;
+      console.log(`Currency auto-selected: ${currency} for country code: ${countryCode}`);
     }
   }
 

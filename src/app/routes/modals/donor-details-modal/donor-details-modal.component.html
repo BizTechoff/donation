@@ -156,110 +156,40 @@
           </div>
         </div>
         
-        <!-- כתובת מגורים -->
-        <div class="section address-section">
-          <h3>כתובת מגורים</h3>
+        <!-- כתובות -->
+        <div class="section addresses-section">
+          <h3>
+            <mat-icon class="section-icon">location_on</mat-icon>
+            כתובות
+          </h3>
 
-          <!-- Address Autocomplete Component -->
-          <div class="form-group full-width">
-            <app-osm-address-input
-              label="חיפוש כתובת"
-              placeholder="הקלד כתובת לחיפוש..."
-              countryCode="il"
-              (addressSelected)="onAddressSelected($event)">
-            </app-osm-address-input>
-          </div>
+          <div class="addresses-grid">
+            <!-- כתובת מגורים -->
+            <div class="address-item">
+              <div class="address-header">
+                <mat-icon class="address-type-icon">home</mat-icon>
+                <h4>כתובת מגורים</h4>
+              </div>
+              <app-osm-address-input
+                label="כתובת מגורים"
+                placeholder="הקלד כתובת מגורים..."
+                countryCode="il"
+                (addressSelected)="onHomeAddressSelected($event)">
+              </app-osm-address-input>
+            </div>
 
-          <!-- Manual Address Fields -->
-          <div class="form-grid">
-            <div class="form-group">
-              <div class="field-title">
-                <mat-icon class="field-icon">home</mat-icon>
-                <label>רחוב</label>
+            <!-- כתובת נופש -->
+            <div class="address-item">
+              <div class="address-header">
+                <mat-icon class="address-type-icon">beach_access</mat-icon>
+                <h4>כתובת נופש</h4>
               </div>
-              <input type="text" class="form-control" [(ngModel)]="donor.street1" placeholder="שם רחוב">
-            </div>
-            <div class="form-group">
-              <div class="field-title">
-                <mat-icon class="field-icon">tag</mat-icon>
-                <label>מספר בית</label>
-              </div>
-              <input type="text" class="form-control" [(ngModel)]="donor.houseNumber" placeholder="מספר בית">
-            </div>
-            <div class="form-group">
-              <div class="field-title">
-                <mat-icon class="field-icon">apartment</mat-icon>
-                <label>רחוב 2</label>
-              </div>
-              <input type="text" class="form-control" [(ngModel)]="donor.street2" placeholder="כניסה/דירה">
-            </div>
-            <div class="form-group">
-              <div class="field-title">
-                <mat-icon class="field-icon">location_city</mat-icon>
-                <label>שכונה</label>
-              </div>
-              <input type="text" class="form-control" [(ngModel)]="donor.neighborhood" placeholder="שכונה">
-            </div>
-            <div class="form-group">
-              <div class="field-title">
-                <mat-icon class="field-icon">place</mat-icon>
-                <label>עיר</label>
-              </div>
-              <input type="text" class="form-control" [(ngModel)]="donor.city" placeholder="עיר">
-            </div>
-            <div class="form-group">
-              <div class="field-title">
-                <mat-icon class="field-icon">markunread_mailbox</mat-icon>
-                <label>מיקוד</label>
-              </div>
-              <input type="text" class="form-control" [(ngModel)]="donor.zipCode" placeholder="מיקוד">
-            </div>
-            <div class="form-group">
-              <div class="field-title">
-                <mat-icon class="field-icon">public</mat-icon>
-                <label>מדינה</label>
-              </div>
-              <select class="form-control" [(ngModel)]="donor.countryId">
-                <option value="">בחר מדינה</option>
-                <option *ngFor="let country of countries" [value]="country.id">
-                  {{ country.name }}
-                </option>
-              </select>
-            </div>
-          </div>
-        </div>
-        
-        <!-- כתובת נופש -->
-        <div class="section vacation-address-section">
-          <h3>כתובת נופש</h3>
-          <div class="form-grid">
-            <div class="form-group full-width">
-              <div class="field-title">
-                <mat-icon class="field-icon">beach_access</mat-icon>
-                <label>כתובת נופש</label>
-              </div>
-              <input type="text" class="form-control" [(ngModel)]="donor.vacationAddress" placeholder="כתובת מלאה">
-            </div>
-            <div class="form-group">
-              <div class="field-title">
-                <mat-icon class="field-icon">holiday_village</mat-icon>
-                <label>עיר נופש</label>
-              </div>
-              <input type="text" class="form-control" [(ngModel)]="donor.vacationCity" placeholder="עיר">
-            </div>
-            <div class="form-group">
-              <div class="field-title">
-                <mat-icon class="field-icon">local_post_office</mat-icon>
-                <label>מיקוד נופש</label>
-              </div>
-              <input type="text" class="form-control" [(ngModel)]="donor.vacationZipCode" placeholder="מיקוד">
-            </div>
-            <div class="form-group">
-              <div class="field-title">
-                <mat-icon class="field-icon">travel_explore</mat-icon>
-                <label>מדינה נופש</label>
-              </div>
-              <input type="text" class="form-control" [(ngModel)]="donor.vacationCountry" placeholder="מדינה">
+              <app-osm-address-input
+                label="כתובת נופש"
+                placeholder="הקלד כתובת נופש..."
+                countryCode="il"
+                (addressSelected)="onVacationAddressSelected($event)">
+              </app-osm-address-input>
             </div>
           </div>
         </div>
@@ -536,14 +466,7 @@
                   <mat-icon class="field-icon">business_center</mat-icon>
                   <label>רחוב 1</label>
                 </div>
-                <input type="text" class="form-control" [(ngModel)]="company.street1" placeholder="רחוב ומספר">
-              </div>
-              <div class="form-group">
-                <div class="field-title">
-                  <mat-icon class="field-icon">domain</mat-icon>
-                  <label>רחוב 2</label>
-                </div>
-                <input type="text" class="form-control" [(ngModel)]="company.street2" placeholder="כניסה/קומה/משרד">
+                <input type="text" class="form-control" [(ngModel)]="company.address" placeholder="רחוב ומספר">
               </div>
               <div class="form-group">
                 <div class="field-title">
@@ -557,26 +480,7 @@
                   <mat-icon class="field-icon">place</mat-icon>
                   <label>עיר</label>
                 </div>
-                <input type="text" class="form-control" [(ngModel)]="company.city" placeholder="עיר">
-              </div>
-              <div class="form-group">
-                <div class="field-title">
-                  <mat-icon class="field-icon">markunread_mailbox</mat-icon>
-                  <label>מיקוד</label>
-                </div>
-                <input type="text" class="form-control" [(ngModel)]="company.zipCode" placeholder="מיקוד">
-              </div>
-              <div class="form-group">
-                <div class="field-title">
-                  <mat-icon class="field-icon">public</mat-icon>
-                  <label>מדינה</label>
-                </div>
-                <select class="form-control" [(ngModel)]="company.countryId">
-                  <option value="">בחר מדינה</option>
-                  <option *ngFor="let country of countries" [value]="country.id">
-                    {{ country.name }}
-                  </option>
-                </select>
+                <input type="text" class="form-control" [(ngModel)]="company.location" placeholder="עיר">
               </div>
               <div class="form-group">
                 <div class="field-title">

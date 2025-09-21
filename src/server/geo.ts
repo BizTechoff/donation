@@ -54,7 +54,11 @@ export const getPlace = async (req: Request, res: Response, next: NextFunction) 
 
                         // Extract address components
                         if (address_components && Array.isArray(address_components)) {
+                            console.log('Processing address_components from Google:');
+
                             address_components.forEach(component => {
+                                console.log(`  Component: ${component.long_name} (${component.short_name}), Types: ${component.types.join(', ')}`);
+
                                 if (component.types.includes('route')) {
                                     result.streetname = component.long_name; // Street Name
                                 }
@@ -64,16 +68,40 @@ export const getPlace = async (req: Request, res: Response, next: NextFunction) 
                                 if (component.types.includes('locality')) {
                                     result.cityname = component.long_name; // City Name
                                 }
-                                // מיקוד
-                                if (component.types.includes('postal_code')) {
+                                // מיקוד - חיפוש מורחב
+                                if (component.types.includes('postal_code') ||
+                                    component.types.includes('postal_code_prefix') ||
+                                    component.types.includes('postal_code_suffix')) {
                                     result.postcode = component.long_name; // Postal Code
+                                    console.log(`    -> Found postal code: ${component.long_name}`);
                                 }
-                                // שכונה
+                                // שכונה - חיפוש מורחב
                                 if (component.types.includes('neighborhood') ||
                                     component.types.includes('sublocality') ||
-                                    component.types.includes('sublocality_level_1')) {
-                                    result.neighborhood = component.long_name; // Neighborhood
+                                    component.types.includes('sublocality_level_1') ||
+                                    component.types.includes('sublocality_level_2') ||
+                                    component.types.includes('sublocality_level_3') ||
+                                    component.types.includes('sublocality_level_4') ||
+                                    component.types.includes('sublocality_level_5')) {
+                                    // אם אין שכונה עדיין, או אם זה neighborhood ספציפי
+                                    if (!result.neighborhood || component.types.includes('neighborhood')) {
+                                        result.neighborhood = component.long_name; // Neighborhood
+                                        console.log(`    -> Found neighborhood: ${component.long_name}`);
+                                    }
                                 }
+                                // שמירת administrative_area_level_2 כשכונה אם עדיין אין
+                                if (!result.neighborhood && component.types.includes('administrative_area_level_2')) {
+                                    result.neighborhood = component.long_name;
+                                    console.log(`    -> Using admin_area_2 as neighborhood: ${component.long_name}`);
+                                }
+                            });
+
+                            console.log('Final extracted data:', {
+                                streetname: result.streetname || 'N/A',
+                                homenumber: result.homenumber || 'N/A',
+                                cityname: result.cityname || 'N/A',
+                                neighborhood: result.neighborhood || 'N/A',
+                                postcode: result.postcode || 'N/A'
                             });
                         }
 

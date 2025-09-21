@@ -1,14 +1,129 @@
-.address-input-field {
+.address-container {
   width: 100%;
+  position: relative;
 
-  .address-icon {
-    color: #667eea;
+  .address-search-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+
+    .address-input {
+      flex: 1;
+      padding: 10px 40px 10px 12px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      background: white;
+
+      &:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      }
+
+      &:disabled {
+        background-color: #f5f5f5;
+        color: #9e9e9e;
+      }
+    }
+
+    .address-icon {
+      position: absolute;
+      left: 12px;
+      color: #667eea;
+      pointer-events: none;
+    }
+
+    .loading-spinner {
+      position: absolute;
+      left: 12px;
+
+      ::ng-deep .mat-progress-spinner circle {
+        stroke: #667eea;
+      }
+    }
+
+    .toggle-details-btn {
+      position: absolute;
+      left: 8px;
+      color: #667eea;
+
+      &:hover {
+        background-color: rgba(102, 126, 234, 0.08);
+      }
+    }
   }
 
-  .loading-spinner {
-    ::ng-deep .mat-progress-spinner circle {
-      stroke: #667eea;
+  .address-details-section {
+    margin-top: 12px;
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    animation: slideDown 0.3s ease-out;
+
+    .details-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+
+      .detail-row {
+        display: flex;
+        gap: 12px;
+
+        .detail-field {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+
+          &.small {
+            flex: 0 0 100px;
+          }
+
+          &.full-width {
+            flex: 1 0 100%;
+          }
+
+          label {
+            font-size: 12px;
+            color: #666;
+            font-weight: 500;
+          }
+
+          input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            background: white;
+            transition: all 0.2s ease;
+
+            &:focus {
+              outline: none;
+              border-color: #667eea;
+              box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+            }
+
+            &:hover:not(:focus) {
+              border-color: #bbb;
+            }
+          }
+        }
+      }
     }
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -43,7 +158,7 @@
     }
 
     .address-details {
-      margin-right: 26px; // Align with text after icon
+      margin-right: 26px;
 
       .details-text {
         color: #7f8c8d;
@@ -53,7 +168,7 @@
     }
 
     .city-country {
-      margin-right: 26px; // Align with text after icon
+      margin-right: 26px;
 
       .city-country-text {
         color: #95a5a6;
@@ -90,6 +205,19 @@
 
 // RTL support
 [dir="rtl"] {
+  .address-search-row {
+    .address-input {
+      padding: 10px 12px 10px 40px;
+    }
+
+    .address-icon,
+    .loading-spinner,
+    .toggle-details-btn {
+      left: auto;
+      right: 8px;
+    }
+  }
+
   .suggestion-content {
     .main-address {
       flex-direction: row-reverse;
@@ -123,6 +251,20 @@
 
 // Responsive design
 @media (max-width: 600px) {
+  .address-details-section {
+    .details-grid {
+      .detail-row {
+        flex-direction: column;
+
+        .detail-field {
+          &.small {
+            flex: 1;
+          }
+        }
+      }
+    }
+  }
+
   .address-option {
     min-height: 70px !important;
 

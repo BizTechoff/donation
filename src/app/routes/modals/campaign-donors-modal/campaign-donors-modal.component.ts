@@ -109,7 +109,7 @@ export class CampaignDonorsModalComponent implements OnInit {
       // 3. Filter by same country
       if (this.campaign.sameCountryOnly && this.campaign.eventLocation) {
         // Extract country from event location
-        const country = this.extractCountry(this.campaign.eventLocation);
+        const country = this.extractCountry(this.campaign.eventLocation?.fullAddress || '');
         if (country) {
           where.country = country;
         }

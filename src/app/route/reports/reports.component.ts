@@ -250,7 +250,7 @@ export class ReportsComponent implements OnInit {
     // ניתוח לפי אזור
     const regionMap = new Map<string, number>();
     donations.forEach(donation => {
-      const region = donation.donor?.city || 'לא צוין';
+      const region = donation.donor?.homePlace?.city || 'לא צוין';
       regionMap.set(region, (regionMap.get(region) || 0) + donation.amount);
     });
 

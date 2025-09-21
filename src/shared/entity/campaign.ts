@@ -7,8 +7,11 @@ import {
   Fields,
   BackendMethod,
   Relations,
+  Field,
+  remult
 } from 'remult'
 import { User } from './user'
+import { Place } from './place'
 import { Roles } from '../enum/roles'
 
 @Entity<Campaign>('campaigns', {
@@ -135,10 +138,20 @@ export class Campaign extends IdEntity {
   status: 'draft' | 'active' | 'completed' | 'cancelled' = 'draft'
 
   // New fields for enhanced campaign functionality
-  @Fields.string({
+  @Relations.toOne(() => Place, {
     caption: 'מיקום האירוע',
+    includeInApi: true
   })
-  eventLocation = ''
+  eventLocationId?: string
+
+  @Field(() => Place, {
+    serverExpression: async (campaign: Campaign) => {
+      if (!campaign.eventLocationId) return undefined
+      return await remult.repo(Place).findId(campaign.eventLocationId)
+    },
+    includeInApi: true
+  })
+  eventLocation?: Place
 
   @Fields.boolean({
     caption: 'אנ"ש',

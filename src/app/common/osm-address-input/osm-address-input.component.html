@@ -1,28 +1,131 @@
-<mat-form-field class="address-input-field" appearance="outline">
-  <mat-label>{{ label }}</mat-label>
+<div class="address-container">
+  <!-- שורת הכתובת הראשית -->
+  <div class="address-search-row">
+    <input
+      class="address-input"
+      [placeholder]="placeholder"
+      [value]="searchValue"
+      [disabled]="disabled"
+      [required]="required"
+      [matAutocomplete]="auto"
+      (input)="onInput($event)"
+      (focus)="onFocus()"
+      dir="rtl"
+    >
 
-  <input
-    matInput
-    [placeholder]="placeholder"
-    [value]="searchValue"
-    [disabled]="disabled"
-    [required]="required"
-    [matAutocomplete]="auto"
-    (input)="onInput($event)"
-    (focus)="onFocus()"
-    dir="rtl"
-  >
+    <!-- Loading spinner -->
+    <mat-spinner
+      *ngIf="isLoading"
+      diameter="20"
+      class="loading-spinner">
+    </mat-spinner>
 
-  <mat-icon matSuffix class="address-icon">location_on</mat-icon>
+    <!-- Toggle button for address details -->
+    <button
+      *ngIf="hasSelectedAddress"
+      mat-icon-button
+      class="toggle-details-btn"
+      (click)="toggleAddressDetails()"
+      [matTooltip]="showAddressDetails ? 'הסתר פרטי כתובת' : 'הצג פרטי כתובת'"
+      type="button">
+      <mat-icon>{{ showAddressDetails ? 'expand_less' : 'expand_more' }}</mat-icon>
+    </button>
 
-  <!-- Loading spinner -->
-  <mat-spinner
-    *ngIf="isLoading"
-    matSuffix
-    diameter="20"
-    class="loading-spinner">
-  </mat-spinner>
+    <mat-icon *ngIf="!hasSelectedAddress" class="address-icon">location_on</mat-icon>
+  </div>
 
+  <!-- פרטי הכתובת המורחבים -->
+  <div class="address-details-section" *ngIf="hasSelectedAddress && showAddressDetails" [@slideDown]>
+    <div class="details-grid">
+      <!-- שורה ראשונה: רחוב ומספר בית -->
+      <div class="detail-row">
+        <div class="detail-field">
+          <label>רחוב</label>
+          <input
+            type="text"
+            [(ngModel)]="addressDetails.street"
+            (change)="onDetailChange()"
+            placeholder="שם רחוב"
+            dir="rtl"
+          >
+        </div>
+        <div class="detail-field small">
+          <label>מס׳</label>
+          <input
+            type="text"
+            [(ngModel)]="addressDetails.houseNumber"
+            (change)="onDetailChange()"
+            placeholder="מספר"
+            dir="rtl"
+          >
+        </div>
+      </div>
+
+      <!-- שורה שנייה: שכונה ועיר -->
+      <div class="detail-row">
+        <div class="detail-field">
+          <label>שכונה</label>
+          <input
+            type="text"
+            [(ngModel)]="addressDetails.neighborhood"
+            (change)="onDetailChange()"
+            placeholder="שכונה"
+            dir="rtl"
+          >
+        </div>
+        <div class="detail-field">
+          <label>עיר</label>
+          <input
+            type="text"
+            [(ngModel)]="addressDetails.city"
+            (change)="onDetailChange()"
+            placeholder="עיר"
+            dir="rtl"
+          >
+        </div>
+      </div>
+
+      <!-- שורה שלישית: מיקוד ומדינה -->
+      <div class="detail-row">
+        <div class="detail-field small">
+          <label>מיקוד</label>
+          <input
+            type="text"
+            [(ngModel)]="addressDetails.postcode"
+            (change)="onDetailChange()"
+            placeholder="מיקוד"
+            dir="rtl"
+          >
+        </div>
+        <div class="detail-field">
+          <label>מדינה</label>
+          <input
+            type="text"
+            [(ngModel)]="addressDetails.country"
+            (change)="onDetailChange()"
+            placeholder="מדינה"
+            dir="rtl"
+          >
+        </div>
+      </div>
+
+      <!-- שורה רביעית: שם המקום (אם יש) -->
+      <div class="detail-row" *ngIf="addressDetails.placeName">
+        <div class="detail-field full-width">
+          <label>שם המקום</label>
+          <input
+            type="text"
+            [(ngModel)]="addressDetails.placeName"
+            (change)="onDetailChange()"
+            placeholder="שם המקום"
+            dir="rtl"
+          >
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Autocomplete dropdown -->
   <mat-autocomplete
     #auto="matAutocomplete"
     [displayWith]="displayFn"
@@ -61,4 +164,4 @@
       </div>
     </mat-option>
   </mat-autocomplete>
-</mat-form-field>
+</div>

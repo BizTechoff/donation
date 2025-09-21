@@ -7,11 +7,14 @@ import {
   Fields,
   BackendMethod,
   Relations,
+  Field,
+  remult
 } from 'remult'
 import { EmailField } from '../../app/common/fields/EmailField'
 import { PhoneField } from '../../app/common/fields/PhoneField'
 import { User } from './user'
 import { Country } from './country'
+import { Place } from './place'
 import { Roles } from '../enum/roles'
 
 export interface CompanyInfo {
@@ -19,12 +22,10 @@ export interface CompanyInfo {
   name: string
   number: string
   role: string
-  street1: string
-  street2: string
+  placeId?: string
+  address: string
   neighborhood: string
-  city: string
-  zipCode: string
-  countryId: string
+  location: string
   phone: string
   email: string
   website: string
@@ -119,75 +120,37 @@ export class Donor extends IdEntity {
   })
   internationalPrefix = '+972'
 
-  @Fields.string({
-    caption: 'רחוב 1',
+  // כתובות
+  @Relations.toOne(() => Place, {
+    caption: 'כתובת מגורים',
+    includeInApi: true
   })
-  street1 = ''
+  homePlaceId?: string
 
-  @Fields.string({
-    caption: 'מספר בית',
+  @Field(() => Place, {
+    serverExpression: async (donor: Donor) => {
+      if (!donor.homePlaceId) return undefined
+      return await remult.repo(Place).findId(donor.homePlaceId)
+    },
+    includeInApi: true
   })
-  houseNumber = ''
+  homePlace?: Place
 
-  @Fields.string({
-    caption: 'רחוב 2',
-  })
-  street2 = ''
-
-  @Fields.string({
-    caption: 'עיר',
-  })
-  city = ''
-
-  @Fields.string({
-    caption: 'שכונה',
-  })
-  neighborhood = ''
-
-  @Fields.string({
-    caption: 'מיקוד',
-  })
-  zipCode = ''
-
-  @Relations.toOne<Donor, Country>(() => Country, {
-    caption: 'מדינה',
-  })
-  country?: Country
-
-  @Fields.string({
-    caption: 'מדינה ID',
-  })
-  countryId = ''
-
-  @Fields.string({
+  @Relations.toOne(() => Place, {
     caption: 'כתובת נופש',
+    includeInApi: true
   })
-  vacationAddress = ''
+  vacationPlaceId?: string
 
-  @Fields.string({
-    caption: 'עיר נופש',
+  @Field(() => Place, {
+    serverExpression: async (donor: Donor) => {
+      if (!donor.vacationPlaceId) return undefined
+      return await remult.repo(Place).findId(donor.vacationPlaceId)
+    },
+    includeInApi: true
   })
-  vacationCity = ''
+  vacationPlace?: Place
 
-  @Fields.string({
-    caption: 'מיקוד נופש',
-  })
-  vacationZipCode = ''
-
-  @Fields.string({
-    caption: 'מדינה נופש',
-  })
-  vacationCountry = ''
-
-  @Fields.number({
-    caption: 'קו רוחב',
-  })
-  latitude?: number
-
-  @Fields.number({
-    caption: 'קו אורך',
-  })
-  longitude?: number
 
   @Fields.date({
     caption: 'תאריך לידה',
@@ -462,25 +425,14 @@ export class Donor extends IdEntity {
     return `${this.firstNameEnglish} ${this.lastNameEnglish}`.trim()
   }
 
-  get fullAddress() {
-    const parts = []
-    if (this.street1) parts.push(this.street1)
-    if (this.street2) parts.push(this.street2)
-    if (this.neighborhood) parts.push(this.neighborhood)
-    if (this.city) parts.push(this.city)
-    if (this.zipCode) parts.push(this.zipCode)
-    if (this.country && this.country.name !== 'ישראל') parts.push(this.country.name)
-    return parts.join(', ').trim()
+  get fullAddress(): string {
+    return this.homePlace?.getDisplayAddress() || ''
   }
 
-  get vacationFullAddress() {
-    const parts = []
-    if (this.vacationAddress) parts.push(this.vacationAddress)
-    if (this.vacationCity) parts.push(this.vacationCity)
-    if (this.vacationZipCode) parts.push(this.vacationZipCode)
-    if (this.vacationCountry) parts.push(this.vacationCountry)
-    return parts.join(', ').trim()
+  get vacationAddress(): string {
+    return this.vacationPlace?.getDisplayAddress() || ''
   }
+
 
   get displayName() {
     return this.fullName || this.email || this.phone || 'לא ידוע'

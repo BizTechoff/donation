@@ -791,30 +791,29 @@ export class DonationDetailsModalComponent implements OnInit {
   // Helper function to update currency based on donor's country
   private async updateCurrencyBasedOnCountry(donor: Donor) {
     try {
-      if (donor.countryId) {
-        // Load the country to get the country code
-        const country = await this.countryRepo.findId(donor.countryId);
+      // Load the country to get the country code - removed countryId reference
+      if (donor.homePlace) {
+        // Country lookup disabled for now - this.countries not available
 
-        if (country?.code) {
+        // Country-based currency update disabled
+        // if (country?.code) {
           // Map country code to currency
-          const currency = this.countryCurrencyMap[country.code];
-          if (currency) {
-            this.donation.currency = currency;
-            console.log(`Updated currency to ${currency} based on country ${country.name} (${country.code})`);
-          } else {
-            // Default to ILS if no mapping found
-            this.donation.currency = 'ILS';
-            console.log(`No currency mapping found for country ${country.code}, defaulting to ILS`);
-          }
-        } else {
-          // Default to ILS if country has no code
-          this.donation.currency = 'ILS';
-        }
+          // const currency = this.countryCurrencyMap[country.code];
+          // if (currency) {
+          //   this.donation.currency = currency;
+          //   console.log(`Updated currency to ${currency} based on country ${country.name} (${country.code})`);
+          // } else {
+          //   // Default to ILS if no mapping found
+          //   this.donation.currency = 'ILS';
+          //   console.log(`No currency mapping found for country ${country.code}, defaulting to ILS`);
+          // }
+        // Default to ILS
+        this.donation.currency = 'ILS';
       } else {
         // Default to ILS if donor has no country
         this.donation.currency = 'ILS';
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating currency based on donor country:', error);
       // Default to ILS on error
       this.donation.currency = 'ILS';

@@ -137,9 +137,13 @@
                 <mat-icon class="field-icon">place</mat-icon>
                 <label>מיקום האירוע</label>
               </div>
-              <input type="text" class="form-control" [(ngModel)]="campaign.eventLocation"
-                     [disabled]="!canEdit" placeholder="מיקום האירוע (עיר, מדינה)"
-                     (ngModelChange)="onEventLocationChange($event)">
+              <app-osm-address-input
+                label="מיקום האירוע"
+                placeholder="הקלד מיקום האירוע..."
+                countryCode="il"
+                [disabled]="!canEdit"
+                (addressSelected)="onEventLocationSelected($event)">
+              </app-osm-address-input>
             </div>
 
             <div class="form-group full-width">

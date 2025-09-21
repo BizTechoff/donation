@@ -235,7 +235,7 @@ export class CampaignsListComponent implements OnInit {
   onLocationChange() {
     if (this.editingCampaign && this.editingCampaign.eventLocation) {
       // Auto-set currency based on location (example logic)
-      const location = this.editingCampaign.eventLocation.toLowerCase();
+      const location = this.editingCampaign.eventLocation?.fullAddress?.toLowerCase() || '';
       if (location.includes('ארה"ב') || location.includes('america') || location.includes('usa')) {
         this.editingCampaign.currency = 'USD';
       } else if (location.includes('אירופה') || location.includes('europe')) {
