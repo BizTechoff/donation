@@ -6,6 +6,7 @@ import { User } from '../../shared/entity/user';
 export interface GlobalFilters {
   campaignId?: string;
   donorTypeId?: string;
+  countryId?: string;
   dateFrom?: Date;
   dateTo?: Date;
   statusFilter?: 'all' | 'active' | 'inactive';
@@ -121,6 +122,10 @@ export class GlobalFilterService {
     
     if (filters.donorTypeId) {
       where.donorTypeId = filters.donorTypeId;
+    }
+
+    if (filters.countryId) {
+      where.countryId = filters.countryId;
     }
     
     if (filters.dateFrom || filters.dateTo) {

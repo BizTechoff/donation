@@ -1,16 +1,15 @@
 import { remult } from 'remult'
-import { createPostgresConnection } from 'remult/postgres'
-import { User, Donor, Donation, Campaign, DonationMethod, StandingOrder, Reminder, Certificate, Event, DonorEvent } from '../shared/entity'
+import { Campaign, Certificate, Donation, DonationMethod, Donor, DonorEvent, Event, Reminder, StandingOrder, User } from '../shared/entity'
 
 // Initialize Remult with database connection
-async function initRemult() {
-  const dataProvider = createPostgresConnection({
-    configuration: 'heroku',
-    sslInDev: !(process.env['DEV_MODE'] === 'DEV')
-  })
-  
-  remult.dataProvider = await dataProvider
-}
+// async function initRemult() {
+//   const dataProvider = createPostgresConnection({
+//     configuration: 'heroku',
+//     sslInDev: !(process.env['DEV_MODE'] === 'DEV')
+//   })
+
+//   remult.dataProvider = await dataProvider
+// }
 
 export async function seedDatabase() {
   console.log('Starting database seeding...')
@@ -28,12 +27,12 @@ export async function seedDatabase() {
       await admin.save()
       console.log('Admin user created')
     }
-    
+
     // Create admin user
-    let anonimi = await remult.repo(User).findFirst({ name: 'anonimi' })
-    if (!anonimi) {
+    let yaacov = await remult.repo(User).findFirst({ name: 'yaacov' })
+    if (!yaacov) {
       admin = remult.repo(User).create({
-        name: 'anonimi',
+        name: 'yaacov',
         donator: true,
         disabled: false
       })
@@ -48,7 +47,8 @@ export async function seedDatabase() {
       { name: 'צק', type: 'check' as const, description: 'תשלום בצק', feePercentage: 0, fixedFee: 5 },
       { name: 'כרטיס אשראי', type: 'credit_card' as const, description: 'תשלום בכרטיס אשראי', feePercentage: 2.5, fixedFee: 0 },
       { name: 'העברה בנקאית', type: 'bank_transfer' as const, description: 'העברה בנקאית', feePercentage: 0, fixedFee: 2 },
-      { name: 'PayPal', type: 'paypal' as const, description: 'תשלום דרך PayPal', feePercentage: 3.4, fixedFee: 1.2 },
+      { name: 'הו"ק', type: 'standing_order' as const, description: 'הוראת קבע', feePercentage: 0, fixedFee: 0 },
+      { name: 'עמותה', type: 'association' as const, description: 'שובר עמותה', feePercentage: 0, fixedFee: 0 }
     ]
 
     const createdMethods = []
@@ -239,37 +239,37 @@ export async function seedDatabase() {
       // High donor (>10,000) - תורם גדול (כתום)
       { amount: 15000, currency: 'ILS', donationDate: new Date('2024-01-15'), status: 'completed' as const, receiptIssued: true, receiptNumber: 'R2024001', notes: 'תרומה גדולה לבניין' },
       { amount: 8000, currency: 'ILS', donationDate: new Date('2024-02-15'), status: 'completed' as const, receiptIssued: true, receiptNumber: 'R2024002', notes: 'תרומה נוספת' },
-      
+
       // Recent donors (תרמו בחודשים האחרונים) - תרם לאחרונה (אדום)
       { amount: 3500, currency: 'ILS', donationDate: new Date(Date.now() - (30 * 24 * 60 * 60 * 1000)), status: 'completed' as const, receiptIssued: true, receiptNumber: 'R2024003', notes: 'תרומה אחרונה' },
       { amount: 2000, currency: 'ILS', donationDate: new Date(Date.now() - (45 * 24 * 60 * 60 * 1000)), status: 'completed' as const, receiptIssued: true, receiptNumber: 'R2024004', notes: 'תרומה חדשה' },
       { amount: 1800, currency: 'ILS', donationDate: new Date(Date.now() - (60 * 24 * 60 * 60 * 1000)), status: 'completed' as const, receiptIssued: true, receiptNumber: 'R2024005', notes: 'תרומה עדכנית' },
-      
+
       // Active donors (regular amounts, older dates) - פעילים (ירוק)
       { amount: 2500, currency: 'ILS', donationDate: new Date('2024-01-20'), status: 'completed' as const, receiptIssued: true, receiptNumber: 'R2024006', notes: 'תרומה רגילה' },
       { amount: 1200, currency: 'ILS', donationDate: new Date('2023-12-10'), status: 'completed' as const, receiptIssued: true, receiptNumber: 'R2024007', notes: 'תרומה קודמת' },
       { amount: 900, currency: 'ILS', donationDate: new Date('2023-11-15'), status: 'completed' as const, receiptIssued: false, notes: 'תרומה ישנה' },
-      
+
       // More high donors
       { amount: 12000, currency: 'ILS', donationDate: new Date('2024-01-01'), status: 'completed' as const, receiptIssued: true, receiptNumber: 'R2024008', notes: 'תורם גדול נוסף' },
       { amount: 25000, currency: 'ILS', donationDate: new Date('2023-12-20'), status: 'completed' as const, receiptIssued: true, receiptNumber: 'R2024009', notes: 'תרומה ענקית' },
-      
+
       // More recent donors
       { amount: 1500, currency: 'ILS', donationDate: new Date(Date.now() - (20 * 24 * 60 * 60 * 1000)), status: 'completed' as const, receiptIssued: true, receiptNumber: 'R2024010', notes: 'תרומה זמינה' },
       { amount: 800, currency: 'ILS', donationDate: new Date(Date.now() - (35 * 24 * 60 * 60 * 1000)), status: 'completed' as const, receiptIssued: false, notes: 'תרומה קרובה' },
-      
+
       // Regular active donors
       { amount: 600, currency: 'ILS', donationDate: new Date('2023-10-05'), status: 'completed' as const, receiptIssued: false, notes: 'תרומה בסיסית' },
       { amount: 750, currency: 'ILS', donationDate: new Date('2023-09-12'), status: 'completed' as const, receiptIssued: true, receiptNumber: 'R2024011', notes: 'תרומה קטנה' },
       { amount: 1100, currency: 'ILS', donationDate: new Date('2023-08-20'), status: 'completed' as const, receiptIssued: false, notes: 'תרומה רגילה' },
-      
+
       // Additional high donor
       { amount: 18000, currency: 'ILS', donationDate: new Date('2023-12-01'), status: 'completed' as const, receiptIssued: true, receiptNumber: 'R2024012', notes: 'תורם VIP' },
-      
+
       // More recent donors for color variety
       { amount: 950, currency: 'ILS', donationDate: new Date(Date.now() - (15 * 24 * 60 * 60 * 1000)), status: 'completed' as const, receiptIssued: true, receiptNumber: 'R2024013', notes: 'תרומה טריה' },
       { amount: 1300, currency: 'ILS', donationDate: new Date(Date.now() - (25 * 24 * 60 * 60 * 1000)), status: 'completed' as const, receiptIssued: false, notes: 'תרומה חמה' },
-      
+
       // Additional active donors
       { amount: 450, currency: 'ILS', donationDate: new Date('2023-07-10'), status: 'completed' as const, receiptIssued: false, notes: 'תרומה ותיקה' },
       { amount: 850, currency: 'ILS', donationDate: new Date('2023-06-25'), status: 'completed' as const, receiptIssued: true, receiptNumber: 'R2024014', notes: 'תרומה היסטורית' }
@@ -293,7 +293,7 @@ export async function seedDatabase() {
 
       await donation.save()
       console.log(`Donation #${donationIndex + 1} created: ₪${donationData.amount} from ${donor.firstName} ${donor.lastName}`)
-      
+
       donationIndex++
     }
 
@@ -344,7 +344,7 @@ export async function seedDatabase() {
       order.nextExecutionDate = order.calculateNextExecutionDate()
       await order.save()
       console.log(`Standing order #${orderIndex + 1} created: ₪${orderData.amount} ${order.frequencyText} from ${donor.firstName} ${donor.lastName}`)
-      
+
       orderIndex++
     }
 
@@ -394,7 +394,7 @@ export async function seedDatabase() {
     let reminderIndex = 0
     for (const reminderData of reminders) {
       const donor = createdDonors[reminderIndex % createdDonors.length]
-      
+
       const reminder = remult.repo(Reminder).create({
         ...reminderData,
         relatedDonor: donor,
@@ -403,7 +403,7 @@ export async function seedDatabase() {
 
       await reminder.save()
       console.log(`Reminder #${reminderIndex + 1} created: "${reminderData.title}" for ${donor.firstName} ${donor.lastName}`)
-      
+
       reminderIndex++
     }
 
@@ -518,10 +518,10 @@ export async function seedDatabase() {
 
     const createdCertificates = []
     let certificateIndex = 0
-    
+
     for (const certificateData of certificatesData) {
       const donor = createdDonors[certificateIndex % createdDonors.length]
-      
+
       const certificate = remult.repo(Certificate).create({
         ...certificateData,
         donor: donor,
@@ -533,7 +533,7 @@ export async function seedDatabase() {
       await certificate.save()
       createdCertificates.push(certificate)
       console.log(`Certificate #${certificateIndex + 1} created: "${certificateData.typeText} - ${certificateData.recipientName}" for ${donor.firstName} ${donor.lastName}`)
-      
+
       certificateIndex++
     }
 
@@ -595,7 +595,7 @@ export async function seedDatabase() {
         await donorEvent.save()
         console.log(`DonorEvent #${donorEventIndex + 1} created: "${event.description}" for ${donor.firstName} ${donor.lastName}`)
       }
-      
+
       donorEventIndex++
     }
 
@@ -617,14 +617,15 @@ export async function seedDatabase() {
   }
 }
 
-// Run seeding if this file is executed directly
-if (require.main === module) {
-  initRemult().then(async () => {
-    await seedDatabase()
-    console.log('Seeding completed!')
-    process.exit(0)
-  }).catch((error) => {
-    console.error('Seeding failed:', error)
-    process.exit(1)
-  })
+// אם רצים את הקובץ ישירות - רק בסביבת Node.js
+if (typeof module !== 'undefined' && require.main === module) {
+  seedDatabase()
+    .then(() => {
+      console.log('Done!');
+      process.exit(0);
+    })
+    .catch(err => {
+      console.error('Error:', err);
+      process.exit(1);
+    });
 }

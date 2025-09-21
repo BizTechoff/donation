@@ -15,6 +15,7 @@ import { remult } from 'remult';
 import { Subscription } from 'rxjs';
 import { GlobalFilterService, GlobalFilters } from '../../services/global-filter.service';
 import { Campaign } from '../../../shared/entity/campaign';
+import { Country } from '../../../shared/entity/country';
 import { I18nService } from '../../i18n/i18n.service';
 
 @Component({
@@ -41,9 +42,11 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
   
   currentFilters: GlobalFilters = {};
   campaigns: Campaign[] = [];
+  countries: Country[] = [];
   availableYears: number[] = [];
-  
+
   campaignRepo = remult.repo(Campaign);
+  countryRepo = remult.repo(Country);
   
   private subscription = new Subscription();
   
@@ -75,7 +78,13 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
         where: { isActive: true },
         orderBy: { name: 'asc' }
       });
-      
+
+      // Load countries
+      this.countries = await this.countryRepo.find({
+        where: { isActive: true },
+        orderBy: { name: 'asc' }
+      });
+
       // Generate available years (current year and last 10 years)
       const currentYear = new Date().getFullYear();
       this.availableYears = [];
@@ -114,6 +123,11 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
   getCampaignName(campaignId: string): string {
     const campaign = this.campaigns.find(c => c.id === campaignId);
     return campaign?.name || campaignId;
+  }
+
+  getCountryName(countryId: string): string {
+    const country = this.countries.find(c => c.id === countryId);
+    return country?.name || countryId;
   }
   
   getStatusText(status: string): string {

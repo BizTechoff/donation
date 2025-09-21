@@ -75,8 +75,8 @@ export class SeedDataComponent {
     this.results = null;
 
     try {
-      const result = await SeedController.seedAllData();
-      this.results = result;
+      const result = await SeedController.seedDatabase();
+      this.results = result;  
 
       this.snackBar.open(
         `✅ ייבוא הנתונים הושלם בהצלחה!`,

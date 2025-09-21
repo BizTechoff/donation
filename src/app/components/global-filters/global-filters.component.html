@@ -28,6 +28,18 @@
         </mat-option>
       </mat-select>
     </mat-form-field>
+
+    <!-- Country Filter -->
+    <mat-form-field appearance="outline" class="filter-field">
+      <mat-label>{{ (i18n.terms$ | async)?.country }}</mat-label>
+      <mat-select [value]="currentFilters.countryId || ''"
+                  (valueChange)="updateFilter('countryId', $event || undefined)">
+        <mat-option value="">{{ (i18n.terms$ | async)?.all }}</mat-option>
+        <mat-option *ngFor="let country of countries" [value]="country.id">
+          {{ country.name }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
     
     <!-- Status Filter -->
     <mat-form-field appearance="outline" class="filter-field">
@@ -98,10 +110,17 @@
     <div *ngIf="hasActiveFilters" class="active-filters">
       <h4>{{ (i18n.terms$ | async)?.activeFilters }}</h4>
       <mat-chip-set>
-        <mat-chip *ngIf="currentFilters.campaignId" 
-                  [removable]="true" 
+        <mat-chip *ngIf="currentFilters.campaignId"
+                  [removable]="true"
                   (removed)="clearFilter('campaignId')">
           {{ (i18n.terms$ | async)?.campaign }}: {{ getCampaignName(currentFilters.campaignId) }}
+          <mat-icon matChipRemove>cancel</mat-icon>
+        </mat-chip>
+
+        <mat-chip *ngIf="currentFilters.countryId"
+                  [removable]="true"
+                  (removed)="clearFilter('countryId')">
+          {{ (i18n.terms$ | async)?.country }}: {{ getCountryName(currentFilters.countryId) }}
           <mat-icon matChipRemove>cancel</mat-icon>
         </mat-chip>
         

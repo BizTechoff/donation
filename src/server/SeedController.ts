@@ -1,6 +1,8 @@
 import { BackendMethod, remult } from 'remult';
 import { seedCountries } from './seed-countries';
+import { seedDatabase } from './seed';
 import { Roles } from '../shared/enum/roles';
+import { Country } from '../shared/entity/country';
 
 export class SeedController {
   @BackendMethod({ allowed: [Roles.admin] })
@@ -12,20 +14,10 @@ export class SeedController {
   }
 
   @BackendMethod({ allowed: [Roles.admin] })
-  static async seedAllData() {
+  static async seedDatabase() {
     console.log('Starting full database seeding...');
-
-    // Seed countries first
-    const countriesResult = await seedCountries();
-
-    // Add more seed functions here in the future
-    // const usersResult = await seedUsers();
-    // const donorsResult = await seedDonors();
-
-    return {
-      countries: countriesResult,
-      // users: usersResult,
-      // donors: donorsResult,
-    };
+    const result = await seedDatabase();
+    console.log('Database seeding completed');
+    return 'Database seeding completed successfully!';
   }
 }
