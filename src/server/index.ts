@@ -6,6 +6,7 @@ import helmet from 'helmet'
 import sslRedirect from 'heroku-ssl-redirect'
 import path from 'path'
 import { api } from './api'
+import { getPlace, getPlaces } from './geo'
 
 async function startup() {
   const app = express()
@@ -25,6 +26,8 @@ async function startup() {
   app.use(helmet({ contentSecurityPolicy: false }))
 
   app.use(api)
+  app.use('/api/geo/places', getPlaces)
+  app.use('/api/geo/place-details', getPlace)
 
   let dist = path.resolve('dist/donation/browser')
   if (!fs.existsSync(dist)) {

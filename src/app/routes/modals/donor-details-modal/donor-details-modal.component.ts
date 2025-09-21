@@ -1,4 +1,4 @@
-import { Component, OnInit, NO_ERRORS_SCHEMA } from '@angular/core';
+import { Component, OnInit, NO_ERRORS_SCHEMA, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -67,7 +67,7 @@ export class DonorDetailsModalComponent implements OnInit {
   filterOptions: FilterOption[] = [];
   currentDonorRecord?: NavigationRecord;
 
-  constructor(public i18n: I18nService, private ui: UIToolsService) {}
+  constructor(public i18n: I18nService, private ui: UIToolsService, private changeDetector: ChangeDetectorRef) {}
 
   async ngOnInit() {
     await this.loadAvailableEvents();
@@ -210,6 +210,12 @@ export class DonorDetailsModalComponent implements OnInit {
     this.donor.city = addressComponents.city || '';
     this.donor.zipCode = addressComponents.postcode || '';
 
+    // שמירת placeId למעקב
+    if (addressComponents.placeId) {
+      // יכול להיות שימושי בעתיד לעדכונים או לוידוא כתובת
+      console.log('Google Place ID:', addressComponents.placeId);
+    }
+
     // עדכון קואורדינטות
     if (addressComponents.latitude && addressComponents.longitude) {
       this.donor.latitude = addressComponents.latitude;
@@ -294,6 +300,9 @@ export class DonorDetailsModalComponent implements OnInit {
       latitude: this.donor.latitude,
       longitude: this.donor.longitude
     });
+
+    // Force UI update
+    this.changeDetector.detectChanges();
   }
 
   onDateChange(field: string, value: Date | null) {
