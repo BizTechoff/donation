@@ -4,15 +4,13 @@ import { remult } from 'remult';
 import { User } from '../../shared/entity/user';
 
 export interface GlobalFilters {
-  campaignId?: string;
-  donorTypeId?: string;
-  countryId?: string;
+  campaignIds?: string[];
+  donorTypeIds?: string[];
+  countryIds?: string[];
   dateFrom?: Date;
   dateTo?: Date;
-  statusFilter?: 'all' | 'active' | 'inactive';
   amountMin?: number;
   amountMax?: number;
-  selectedYear?: number;
 }
 
 @Injectable({
@@ -23,10 +21,9 @@ export class GlobalFilterService {
   public filters$: Observable<GlobalFilters> = this.filtersSubject.asObservable();
   
   private userRepo = remult.repo(User);
-  private storageKey = 'global-filters';
   
   constructor() {
-    this.loadFiltersFromStorage();
+    this.loadFiltersFromUserSettings();
   }
   
   get currentFilters(): GlobalFilters {
@@ -35,62 +32,68 @@ export class GlobalFilterService {
   
   updateFilter(key: keyof GlobalFilters, value: any) {
     const currentFilters = this.filtersSubject.value;
-    const updatedFilters = { ...currentFilters, [key]: value };
+    let updatedFilters = { ...currentFilters, [key]: value };
+
+    // Validate date ranges
+    if (key === 'dateFrom' || key === 'dateTo') {
+      updatedFilters = this.validateDateRange(updatedFilters);
+    }
+
+    // Validate amount ranges
+    if (key === 'amountMin' || key === 'amountMax') {
+      updatedFilters = this.validateAmountRange(updatedFilters);
+    }
+
     this.filtersSubject.next(updatedFilters);
-    this.saveFiltersToStorage(updatedFilters);
+    this.saveFiltersToUserSettings(updatedFilters);
   }
   
   updateFilters(filters: Partial<GlobalFilters>) {
     const currentFilters = this.filtersSubject.value;
-    const updatedFilters = { ...currentFilters, ...filters };
+    let updatedFilters = { ...currentFilters, ...filters };
+
+    // Validate date ranges
+    updatedFilters = this.validateDateRange(updatedFilters);
+
+    // Validate amount ranges
+    updatedFilters = this.validateAmountRange(updatedFilters);
+
     this.filtersSubject.next(updatedFilters);
-    this.saveFiltersToStorage(updatedFilters);
+    this.saveFiltersToUserSettings(updatedFilters);
   }
   
   clearFilters() {
     this.filtersSubject.next({});
-    this.saveFiltersToStorage({});
+    this.saveFiltersToUserSettings({});
   }
-  
+
   clearFilter(key: keyof GlobalFilters) {
     const currentFilters = this.filtersSubject.value;
     const { [key]: _, ...updatedFilters } = currentFilters;
     this.filtersSubject.next(updatedFilters);
-    this.saveFiltersToStorage(updatedFilters);
+    this.saveFiltersToUserSettings(updatedFilters);
   }
   
-  private async loadFiltersFromStorage() {
+  private async loadFiltersFromUserSettings() {
     try {
-      // First try to load from user settings if logged in
       const currentUser = remult.user;
       if (currentUser?.id) {
         const user = await this.userRepo.findId(currentUser.id);
         if (user && user.settings?.globalFilters) {
-          this.filtersSubject.next(user.settings.globalFilters);
-          return;
+          const filters = user.settings.globalFilters;
+          // Convert date strings back to Date objects
+          if (filters.dateFrom) filters.dateFrom = new Date(filters.dateFrom);
+          if (filters.dateTo) filters.dateTo = new Date(filters.dateTo);
+          this.filtersSubject.next(filters);
         }
       }
-      
-      // Fallback to localStorage
-      const storedFilters = localStorage.getItem(this.storageKey);
-      if (storedFilters) {
-        const filters = JSON.parse(storedFilters);
-        // Convert date strings back to Date objects
-        if (filters.dateFrom) filters.dateFrom = new Date(filters.dateFrom);
-        if (filters.dateTo) filters.dateTo = new Date(filters.dateTo);
-        this.filtersSubject.next(filters);
-      }
     } catch (error) {
-      console.error('Error loading filters from storage:', error);
+      console.error('Error loading filters from user settings:', error);
     }
   }
   
-  private async saveFiltersToStorage(filters: GlobalFilters) {
+  private async saveFiltersToUserSettings(filters: GlobalFilters) {
     try {
-      // Save to localStorage immediately
-      localStorage.setItem(this.storageKey, JSON.stringify(filters));
-      
-      // Also save to user settings if logged in
       const currentUser = remult.user;
       if (currentUser?.id) {
         const user = await this.userRepo.findId(currentUser.id);
@@ -107,7 +110,7 @@ export class GlobalFilterService {
         }
       }
     } catch (error) {
-      console.error('Error saving filters to storage:', error);
+      console.error('Error saving filters to user settings:', error);
     }
   }
   
@@ -115,19 +118,19 @@ export class GlobalFilterService {
   applyFiltersToQuery(query: any): any {
     const filters = this.currentFilters;
     const where: any = { ...query.where };
-    
-    if (filters.campaignId) {
-      where.campaignId = filters.campaignId;
-    }
-    
-    if (filters.donorTypeId) {
-      where.donorTypeId = filters.donorTypeId;
+
+    if (filters.campaignIds && filters.campaignIds.length > 0) {
+      where.campaignId = { $in: filters.campaignIds };
     }
 
-    if (filters.countryId) {
-      where.countryId = filters.countryId;
+    if (filters.donorTypeIds && filters.donorTypeIds.length > 0) {
+      where.donorTypeId = { $in: filters.donorTypeIds };
     }
-    
+
+    if (filters.countryIds && filters.countryIds.length > 0) {
+      where.countryId = { $in: filters.countryIds };
+    }
+
     if (filters.dateFrom || filters.dateTo) {
       where.donationDate = {};
       if (filters.dateFrom) {
@@ -137,11 +140,7 @@ export class GlobalFilterService {
         where.donationDate.$lte = filters.dateTo;
       }
     }
-    
-    if (filters.statusFilter && filters.statusFilter !== 'all') {
-      where.isActive = filters.statusFilter === 'active';
-    }
-    
+
     if (filters.amountMin !== undefined || filters.amountMax !== undefined) {
       where.amount = {};
       if (filters.amountMin !== undefined) {
@@ -151,16 +150,29 @@ export class GlobalFilterService {
         where.amount.$lte = filters.amountMax;
       }
     }
-    
-    if (filters.selectedYear) {
-      const yearStart = new Date(filters.selectedYear, 0, 1);
-      const yearEnd = new Date(filters.selectedYear, 11, 31, 23, 59, 59);
-      where.donationDate = {
-        $gte: yearStart,
-        $lte: yearEnd
-      };
-    }
-    
+
     return { ...query, where };
+  }
+
+  private validateDateRange(filters: GlobalFilters): GlobalFilters {
+    if (filters.dateFrom && filters.dateTo) {
+      if (filters.dateFrom > filters.dateTo) {
+        // If dateFrom is greater than dateTo, set dateTo to dateFrom
+        filters.dateTo = new Date(filters.dateFrom);
+      }
+    }
+    return filters;
+  }
+
+  private validateAmountRange(filters: GlobalFilters): GlobalFilters {
+    if (filters.amountMin !== undefined && filters.amountMax !== undefined) {
+      if (filters.amountMin > filters.amountMax) {
+        // If amountMin is greater than amountMax, swap them
+        const temp = filters.amountMin;
+        filters.amountMin = filters.amountMax;
+        filters.amountMax = temp;
+      }
+    }
+    return filters;
   }
 }

@@ -43,7 +43,6 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
   currentFilters: GlobalFilters = {};
   campaigns: Campaign[] = [];
   countries: Country[] = [];
-  availableYears: number[] = [];
 
   campaignRepo = remult.repo(Campaign);
   countryRepo = remult.repo(Country);
@@ -76,21 +75,14 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
       // Load campaigns
       this.campaigns = await this.campaignRepo.find({
         where: { isActive: true },
-        orderBy: { name: 'asc' }
+        orderBy: { name: 'asc' as 'asc' }
       });
 
       // Load countries
       this.countries = await this.countryRepo.find({
         where: { isActive: true },
-        orderBy: { name: 'asc' }
+        orderBy: { name: 'asc' as 'asc' }
       });
-
-      // Generate available years (current year and last 10 years)
-      const currentYear = new Date().getFullYear();
-      this.availableYears = [];
-      for (let i = 0; i <= 10; i++) {
-        this.availableYears.push(currentYear - i);
-      }
     } catch (error) {
       console.error('Error loading filter data:', error);
     }
@@ -113,11 +105,14 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
   }
   
   get activeFiltersCount(): number {
-    return Object.keys(this.currentFilters).filter(key => 
-      this.currentFilters[key as keyof GlobalFilters] !== undefined &&
-      this.currentFilters[key as keyof GlobalFilters] !== null &&
-      this.currentFilters[key as keyof GlobalFilters] !== ''
-    ).length;
+    let count = 0;
+    if (this.currentFilters.campaignIds && this.currentFilters.campaignIds.length > 0) count += this.currentFilters.campaignIds.length;
+    if (this.currentFilters.countryIds && this.currentFilters.countryIds.length > 0) count += this.currentFilters.countryIds.length;
+    if (this.currentFilters.dateFrom) count++;
+    if (this.currentFilters.dateTo) count++;
+    if (this.currentFilters.amountMin !== undefined) count++;
+    if (this.currentFilters.amountMax !== undefined) count++;
+    return count;
   }
   
   getCampaignName(campaignId: string): string {
@@ -130,21 +125,32 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
     return country?.name || countryId;
   }
   
-  getStatusText(status: string): string {
-    switch (status) {
-      case 'active': return this.i18n.currentTerms.active || 'Active';
-      case 'inactive': return this.i18n.currentTerms.inactive || 'Inactive';
-      case 'all': return this.i18n.currentTerms.all || 'All';
-      default: return status;
-    }
+  removeCampaignFilter(campaignId: string) {
+    const currentIds = this.currentFilters.campaignIds || [];
+    const updatedIds = currentIds.filter(id => id !== campaignId);
+    this.updateFilter('campaignIds', updatedIds.length > 0 ? updatedIds : undefined);
+  }
+
+  removeCountryFilter(countryId: string) {
+    const currentIds = this.currentFilters.countryIds || [];
+    const updatedIds = currentIds.filter(id => id !== countryId);
+    this.updateFilter('countryIds', updatedIds.length > 0 ? updatedIds : undefined);
   }
   
+  onDateFromChange(date: Date | null) {
+    this.updateFilter('dateFrom', date);
+  }
+
+  onDateToChange(date: Date | null) {
+    this.updateFilter('dateTo', date);
+  }
+
   onAmountMinInput(event: Event) {
     const input = event.target as HTMLInputElement;
     const value = input.value ? +input.value : undefined;
     this.updateFilter('amountMin', value);
   }
-  
+
   onAmountMaxInput(event: Event) {
     const input = event.target as HTMLInputElement;
     const value = input.value ? +input.value : undefined;

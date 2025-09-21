@@ -20,9 +20,9 @@
     <!-- Campaign Filter -->
     <mat-form-field appearance="outline" class="filter-field">
       <mat-label>{{ (i18n.terms$ | async)?.campaign }}</mat-label>
-      <mat-select [value]="currentFilters.campaignId || ''"
-                  (valueChange)="updateFilter('campaignId', $event || undefined)">
-        <mat-option value="">{{ (i18n.terms$ | async)?.all }}</mat-option>
+      <mat-select [value]="currentFilters.campaignIds || []"
+                  (valueChange)="updateFilter('campaignIds', $event.length > 0 ? $event : undefined)"
+                  multiple>
         <mat-option *ngFor="let campaign of campaigns" [value]="campaign.id">
           {{ campaign.name }}
         </mat-option>
@@ -32,56 +32,35 @@
     <!-- Country Filter -->
     <mat-form-field appearance="outline" class="filter-field">
       <mat-label>{{ (i18n.terms$ | async)?.country }}</mat-label>
-      <mat-select [value]="currentFilters.countryId || ''"
-                  (valueChange)="updateFilter('countryId', $event || undefined)">
-        <mat-option value="">{{ (i18n.terms$ | async)?.all }}</mat-option>
+      <mat-select [value]="currentFilters.countryIds || []"
+                  (valueChange)="updateFilter('countryIds', $event.length > 0 ? $event : undefined)"
+                  multiple>
         <mat-option *ngFor="let country of countries" [value]="country.id">
           {{ country.name }}
         </mat-option>
       </mat-select>
     </mat-form-field>
-    
-    <!-- Status Filter -->
-    <mat-form-field appearance="outline" class="filter-field">
-      <mat-label>{{ (i18n.terms$ | async)?.status }}</mat-label>
-      <mat-select [value]="currentFilters.statusFilter || 'all'"
-                  (valueChange)="updateFilter('statusFilter', $event)">
-        <mat-option value="all">{{ (i18n.terms$ | async)?.all }}</mat-option>
-        <mat-option value="active">{{ (i18n.terms$ | async)?.active }}</mat-option>
-        <mat-option value="inactive">{{ (i18n.terms$ | async)?.inactive }}</mat-option>
-      </mat-select>
-    </mat-form-field>
-    
-    <!-- Year Filter -->
-    <mat-form-field appearance="outline" class="filter-field">
-      <mat-label>{{ (i18n.terms$ | async)?.year }}</mat-label>
-      <mat-select [value]="currentFilters.selectedYear || ''"
-                  (valueChange)="updateFilter('selectedYear', $event || undefined)">
-        <mat-option value="">{{ (i18n.terms$ | async)?.all }}</mat-option>
-        <mat-option *ngFor="let year of availableYears" [value]="year">
-          {{ year }}
-        </mat-option>
-      </mat-select>
-    </mat-form-field>
-    
+
     <!-- Date Range -->
     <div class="date-range-container">
       <mat-form-field appearance="outline" class="filter-field date-field">
         <mat-label>{{ (i18n.terms$ | async)?.fromDate }}</mat-label>
-        <input matInput 
-               [matDatepicker]="fromPicker" 
-               [value]="currentFilters.dateFrom || ''"
-               (dateChange)="updateFilter('dateFrom', $event.value)">
+        <input matInput
+               [matDatepicker]="fromPicker"
+               [value]="currentFilters.dateFrom"
+               [max]="currentFilters.dateTo"
+               (dateChange)="onDateFromChange($event.value)">
         <mat-datepicker-toggle matSuffix [for]="fromPicker"></mat-datepicker-toggle>
         <mat-datepicker #fromPicker></mat-datepicker>
       </mat-form-field>
-      
+
       <mat-form-field appearance="outline" class="filter-field date-field">
         <mat-label>{{ (i18n.terms$ | async)?.toDate }}</mat-label>
-        <input matInput 
-               [matDatepicker]="toPicker" 
-               [value]="currentFilters.dateTo || ''"
-               (dateChange)="updateFilter('dateTo', $event.value)">
+        <input matInput
+               [matDatepicker]="toPicker"
+               [value]="currentFilters.dateTo"
+               [min]="currentFilters.dateFrom"
+               (dateChange)="onDateToChange($event.value)">
         <mat-datepicker-toggle matSuffix [for]="toPicker"></mat-datepicker-toggle>
         <mat-datepicker #toPicker></mat-datepicker>
       </mat-form-field>
@@ -91,17 +70,19 @@
     <div class="amount-range-container">
       <mat-form-field appearance="outline" class="filter-field amount-field">
         <mat-label>{{ (i18n.terms$ | async)?.minAmount }}</mat-label>
-        <input matInput 
-               type="number" 
+        <input matInput
+               type="number"
                [value]="currentFilters.amountMin || ''"
+               [max]="currentFilters.amountMax"
                (input)="onAmountMinInput($event)">
       </mat-form-field>
-      
+
       <mat-form-field appearance="outline" class="filter-field amount-field">
         <mat-label>{{ (i18n.terms$ | async)?.maxAmount }}</mat-label>
-        <input matInput 
-               type="number" 
+        <input matInput
+               type="number"
                [value]="currentFilters.amountMax || ''"
+               [min]="currentFilters.amountMin"
                (input)="onAmountMaxInput($event)">
       </mat-form-field>
     </div>
@@ -110,31 +91,17 @@
     <div *ngIf="hasActiveFilters" class="active-filters">
       <h4>{{ (i18n.terms$ | async)?.activeFilters }}</h4>
       <mat-chip-set>
-        <mat-chip *ngIf="currentFilters.campaignId"
+        <mat-chip *ngFor="let campaignId of currentFilters.campaignIds || []"
                   [removable]="true"
-                  (removed)="clearFilter('campaignId')">
-          {{ (i18n.terms$ | async)?.campaign }}: {{ getCampaignName(currentFilters.campaignId) }}
+                  (removed)="removeCampaignFilter(campaignId)">
+          {{ (i18n.terms$ | async)?.campaign }}: {{ getCampaignName(campaignId) }}
           <mat-icon matChipRemove>cancel</mat-icon>
         </mat-chip>
 
-        <mat-chip *ngIf="currentFilters.countryId"
+        <mat-chip *ngFor="let countryId of currentFilters.countryIds || []"
                   [removable]="true"
-                  (removed)="clearFilter('countryId')">
-          {{ (i18n.terms$ | async)?.country }}: {{ getCountryName(currentFilters.countryId) }}
-          <mat-icon matChipRemove>cancel</mat-icon>
-        </mat-chip>
-        
-        <mat-chip *ngIf="currentFilters.statusFilter && currentFilters.statusFilter !== 'all'" 
-                  [removable]="true" 
-                  (removed)="clearFilter('statusFilter')">
-          {{ (i18n.terms$ | async)?.status }}: {{ getStatusText(currentFilters.statusFilter) }}
-          <mat-icon matChipRemove>cancel</mat-icon>
-        </mat-chip>
-        
-        <mat-chip *ngIf="currentFilters.selectedYear" 
-                  [removable]="true" 
-                  (removed)="clearFilter('selectedYear')">
-          {{ (i18n.terms$ | async)?.year }}: {{ currentFilters.selectedYear }}
+                  (removed)="removeCountryFilter(countryId)">
+          {{ (i18n.terms$ | async)?.country }}: {{ getCountryName(countryId) }}
           <mat-icon matChipRemove>cancel</mat-icon>
         </mat-chip>
         
