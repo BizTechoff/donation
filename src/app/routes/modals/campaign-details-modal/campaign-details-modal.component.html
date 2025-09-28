@@ -274,13 +274,17 @@
                       <input type="checkbox" [(ngModel)]="campaign.isAnash"
                              [disabled]="!canEdit || campaign.excludeAnash"
                              (ngModelChange)="onAnashIncludeChange()">
-                      <span>כולל</span>
+                      <span class="visual-option-label">
+                        <span class="option-icon include">✓</span>
+                      </span>
                     </label>
                     <label class="option-label exclude-option">
                       <input type="checkbox" [(ngModel)]="campaign.excludeAnash"
                              [disabled]="!canEdit || campaign.isAnash"
                              (ngModelChange)="onAnashExcludeChange()">
-                      <span>ללא</span>
+                      <span class="visual-option-label">
+                        <span class="option-icon exclude">✗</span>
+                      </span>
                     </label>
                   </div>
                 </div>
@@ -296,13 +300,17 @@
                       <input type="checkbox" [(ngModel)]="campaign.sameCountryOnly"
                              [disabled]="!canEdit || campaign.excludeSameCountry"
                              (ngModelChange)="onSameCountryIncludeChange()">
-                      <span>כולל</span>
+                      <span class="visual-option-label">
+                        <span class="option-icon include">✓</span>
+                      </span>
                     </label>
                     <label class="option-label exclude-option">
                       <input type="checkbox" [(ngModel)]="campaign.excludeSameCountry"
                              [disabled]="!canEdit || campaign.sameCountryOnly"
                              (ngModelChange)="onSameCountryExcludeChange()">
-                      <span>ללא</span>
+                      <span class="visual-option-label">
+                        <span class="option-icon exclude">✗</span>
+                      </span>
                     </label>
                   </div>
                 </div>

@@ -177,6 +177,60 @@
   to { transform: rotate(360deg); }
 }
 
+/* Visual option icons styling */
+.visual-option-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .option-icon {
+    font-size: 22px;
+    font-weight: bold;
+    min-width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+
+    &.include {
+      color: #4caf50; // Green for include
+      background-color: rgba(76, 175, 80, 0.1);
+
+      &:hover {
+        background-color: rgba(76, 175, 80, 0.2);
+      }
+    }
+
+    &.exclude {
+      color: #f44336; // Red for exclude
+      background-color: rgba(244, 67, 54, 0.1);
+
+      &:hover {
+        background-color: rgba(244, 67, 54, 0.2);
+      }
+    }
+  }
+}
+
+.option-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: #f5f5f5;
+  }
+
+  input[type="checkbox"] {
+    margin-right: 8px;
+  }
+}
+
 /* Modal Body */
 .modal-body {
   flex: 1;

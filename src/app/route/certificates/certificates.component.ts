@@ -3,27 +3,22 @@ import { Certificate } from '../../../shared/entity/certificate';
 import { Donor } from '../../../shared/entity/donor';
 import { repo } from 'remult';
 import { I18nService } from '../../i18n/i18n.service';
+import { UIToolsService } from '../../common/UIToolsService';
 
 @Component({
   selector: 'app-certificates',
   templateUrl: './certificates.component.html',
-  styleUrls: ['./certificates.component.scss']
+  styleUrls: ['./certificates.component.scss'],
+  standalone: false
 })
 export class CertificatesComponent implements OnInit {
-  
-  showCreateCertificateModal = false;
-  showPreviewModal = false;
-  certificates: Certificate[] = [];
-  donors: Donor[] = [];
-  
-  newCertificate = new Certificate();
-  selectedDonorId = '';
 
-  constructor(public i18n: I18nService) { }
+  certificates: Certificate[] = [];
+
+  constructor(public i18n: I18nService, private ui: UIToolsService) { }
 
   async ngOnInit() {
     await this.loadCertificates();
-    await this.loadDonors();
   }
 
   async loadCertificates() {
@@ -36,73 +31,15 @@ export class CertificatesComponent implements OnInit {
     });
   }
 
-  async loadDonors() {
-    this.donors = await repo(Donor).find({
-      where: { isActive: true },
-      orderBy: { firstName: 'asc' }
-    });
-  }
-
-  openCreateModal() {
-    this.showCreateCertificateModal = true;
-    this.newCertificate = new Certificate();
-    this.newCertificate.eventDate = new Date();
-    this.selectedDonorId = '';
-  }
-
-  get eventDateForInput(): string {
-    return this.newCertificate.eventDate?.toISOString().split('T')[0] || '';
-  }
-
-  set eventDateForInput(value: string) {
-    this.newCertificate.eventDate = value ? new Date(value) : new Date();
-  }
-
-  closeCreateModal() {
-    this.showCreateCertificateModal = false;
-  }
-
-  onCertificateTypeChange(event: any) {
-    const type = event.target.value;
-    this.newCertificate.type = type as any;
-    switch (type) {
-      case 'donation':
-        this.newCertificate.typeText = this.i18n.terms.donationCertificate;
-        this.newCertificate.mainTitle = this.i18n.terms.mainTitlePlaceholder;
-        break;
-      case 'memorial':
-        this.newCertificate.typeText = this.i18n.terms.memorialCertificate;
-        this.newCertificate.mainTitle = this.i18n.terms.memorialCertificate;
-        break;
-      case 'dedication':
-        this.newCertificate.typeText = this.i18n.terms.dedication;
-        this.newCertificate.mainTitle = this.i18n.terms.dedication;
-        break;
-      case 'appreciation':
-        this.newCertificate.typeText = this.i18n.terms.appreciation;
-        this.newCertificate.mainTitle = this.i18n.terms.mainTitlePlaceholder;
-        break;
-    }
-  }
-
-  onDonorSelect(event: any) {
-    const donorId = event.target.value;
-    this.selectedDonorId = donorId;
-    this.newCertificate.donorId = donorId;
-    const selectedDonor = this.donors.find(d => d.id === donorId);
-    if (selectedDonor) {
-      this.newCertificate.donor = selectedDonor;
-    }
-  }
-
-  async saveCertificate() {
-    try {
-      this.newCertificate.statusText = this.i18n.terms.draftStatusCert;
-      await this.newCertificate.save();
+  async openCreateModal() {
+    if (await this.ui.certificateDetailsDialog('new')) {
       await this.loadCertificates();
-      this.closeCreateModal();
-    } catch (error) {
-      console.error('Error saving certificate:', error);
+    }
+  }
+
+  async openEditModal(certificate: Certificate) {
+    if (await this.ui.certificateDetailsDialog(certificate.id)) {
+      await this.loadCertificates();
     }
   }
 
@@ -130,18 +67,6 @@ export class CertificatesComponent implements OnInit {
 
   getDonorName(certificate: Certificate): string {
     return certificate.donor?.fullName || this.i18n.terms.unknown;
-  }
-
-  openPreview() {
-    this.showPreviewModal = true;
-  }
-
-  closePreview() {
-    this.showPreviewModal = false;
-  }
-
-  get currentDate(): Date {
-    return new Date();
   }
 
 }

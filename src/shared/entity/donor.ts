@@ -13,6 +13,7 @@ import { PhoneField } from '../../app/common/fields/PhoneField'
 import { Roles } from '../enum/roles'
 import { Place } from './place'
 import { User } from './user'
+import { Contact } from './contact'
 
 export interface CompanyInfo {
   id: string
@@ -20,6 +21,7 @@ export interface CompanyInfo {
   number: string
   role: string
   placeId?: string
+  placeRecordId?: string // ID של הרשומה בטבלת Places
   address: string
   neighborhood: string
   location: string
@@ -400,6 +402,16 @@ export class Donor extends IdEntity {
     caption: 'תורם פעיל',
   })
   isActive = true
+
+  @Relations.toOne<Donor, Contact>(() => Contact, {
+    caption: 'איש קשר ראשי',
+  })
+  primaryContact?: Contact
+
+  @Fields.string({
+    caption: 'איש קשר ID',
+  })
+  primaryContactId = ''
 
   @Fields.date({
     allowApiUpdate: false,

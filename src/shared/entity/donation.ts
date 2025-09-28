@@ -79,6 +79,21 @@ export class Donation extends IdEntity {
   notes = ''
 
   @Fields.string({
+    caption: 'סיבה',
+  })
+  reason = ''
+
+  @Fields.boolean({
+    caption: 'תרומה חריגה',
+  })
+  isExceptional = false
+
+  @Fields.boolean({
+    caption: 'חדר תה',
+  })
+  isUrgent = false
+
+  @Fields.string({
     caption: 'מתרים ID',
   })
   fundraiserId = ''
@@ -236,9 +251,19 @@ export class Donation extends IdEntity {
   dayOfMonth?: number
 
   @Fields.number({
+    caption: 'יום בשבוע',
+  })
+  dayOfWeek?: number
+
+  @Fields.number({
     caption: 'מספר תשלומים',
   })
   numberOfPayments?: number
+
+  @Fields.string({
+    caption: 'אסמכתא העברה',
+  })
+  transferReference = ''
 
   @BackendMethod({ allowed: [Roles.admin] })
   async issueReceipt() {

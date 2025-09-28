@@ -144,6 +144,14 @@ export class UIToolsService implements UITools {
       (dlg) => dlg.changed || dlg.shouldClose
     )
   }
+
+  async certificateDetailsDialog(certificateId?: string): Promise<boolean> {
+    return await openDialog(
+      (await import('../routes/modals/certificate-details-modal/certificate-details-modal.component')).CertificateDetailsModalComponent,
+      (dlg) => dlg.args = { certificateId },
+      (dlg) => dlg.changed
+    )
+  }
   private enhanceFieldOptionsAndDataControlOptions(
     commonUIPlugin: CommonUIElementsPluginsService
   ) {

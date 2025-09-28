@@ -4,6 +4,7 @@ import { remult } from 'remult';
 import * as L from 'leaflet';
 import { Donor } from '../../../shared/entity/donor';
 import { Donation } from '../../../shared/entity/donation';
+import { Place } from '../../../shared/entity/place';
 import { GeocodingService } from '../../services/geocoding.service';
 import { I18nService } from '../../i18n/i18n.service';
 import { UIToolsService } from '../../common/UIToolsService';
@@ -114,9 +115,53 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.donors = await this.donorRepo.find({
       orderBy: { lastName: 'asc' }
     }) as DonorWithStats[];
-    
-    // Add demo coordinates for testing - more extensive data
+
+    console.log('Loaded donors:', this.donors.length);
+
+    // Add demo coordinates for Israel testing
     if (this.donors.length > 0) {
+      const israelCoords = [
+        { lat: 32.0853, lng: 34.7818, name: 'תל אביב' },
+        { lat: 31.7683, lng: 35.2137, name: 'ירושלים' },
+        { lat: 32.7940, lng: 34.9896, name: 'חיפה' },
+        { lat: 31.2530, lng: 34.7915, name: 'באר שבע' },
+        { lat: 32.3215, lng: 34.8532, name: 'נתניה' },
+        { lat: 31.8044, lng: 34.6553, name: 'אשדוד' },
+        { lat: 31.6739, lng: 34.5614, name: 'אשקלון' },
+        { lat: 32.0208, lng: 34.7806, name: 'רמת גן' },
+        { lat: 32.0930, lng: 34.8864, name: 'פתח תקווה' },
+        { lat: 32.4379, lng: 34.9104, name: 'רעננה' }
+      ];
+
+      // Assign Israeli coordinates to first 10 donors
+      this.donors.slice(0, Math.min(this.donors.length, israelCoords.length)).forEach((donor, index) => {
+        if (israelCoords[index]) {
+          // Create a mock homePlace if it doesn't exist
+          if (!donor.homePlace) {
+            const place = new Place();
+            place.id = `demo-${index}`;
+            place.fullAddress = israelCoords[index].name;
+            place.city = israelCoords[index].name;
+            place.country = 'ישראל';
+            place.latitude = israelCoords[index].lat;
+            place.longitude = israelCoords[index].lng;
+            place.placeName = israelCoords[index].name;
+            place.placeId = `demo-${index}`;
+            place.street = '';
+            place.houseNumber = '';
+            place.neighborhood = '';
+            place.state = '';
+            place.postcode = '';
+            place.countryCode = 'IL';
+            donor.homePlace = place;
+          } else {
+            // Update existing homePlace with demo coordinates
+            donor.homePlace.latitude = israelCoords[index].lat;
+            donor.homePlace.longitude = israelCoords[index].lng;
+          }
+          console.log(`Added coordinates for donor ${index + 1}:`, donor.displayName, israelCoords[index]);
+        }
+      });
       const demoCoords = [
         { lat: 40.7128, lng: -74.0060 }, // New York
         { lat: 34.0522, lng: -118.2437 }, // Los Angeles
@@ -274,27 +319,41 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   initializeMap() {
-    // מרכז המפה בארה"ב
-    this.map = L.map(this.mapElement.nativeElement).setView([39.8283, -98.5795], 4);
+    console.log('Initializing map...');
 
-    // הוסף שכבת מפה
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors'
-    }).addTo(this.map);
+    if (!this.mapElement?.nativeElement) {
+      console.error('Map element not found!');
+      return;
+    }
 
-    // יצירת שכבת סימנים
-    this.markersLayer = L.layerGroup().addTo(this.map);
+    try {
+      // מרכז המפה בישראל
+      this.map = L.map(this.mapElement.nativeElement).setView([31.7683, 35.2137], 7);
 
-    // Force map to redraw after a short delay
-    setTimeout(() => {
-      if (this.map && this.map.getContainer()) {
-        try {
-          this.map.invalidateSize();
-        } catch (error) {
-          console.warn('Map initialization invalidateSize error:', error);
+      // הוסף שכבת מפה
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+      }).addTo(this.map);
+
+      // יצירת שכבת סימנים
+      this.markersLayer = L.layerGroup().addTo(this.map);
+
+      console.log('Map initialized successfully');
+
+      // Force map to redraw after a short delay
+      setTimeout(() => {
+        if (this.map && this.map.getContainer()) {
+          try {
+            this.map.invalidateSize();
+            console.log('Map size invalidated');
+          } catch (error) {
+            console.warn('Map initialization invalidateSize error:', error);
+          }
         }
-      }
-    }, 200);
+      }, 200);
+    } catch (error) {
+      console.error('Error initializing map:', error);
+    }
   }
 
   addMarkersToMap() {

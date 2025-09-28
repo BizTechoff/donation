@@ -1,21 +1,7 @@
 <!-- Donor Details Modal -->
 <div class="modal-overlay" (click)="closeModal($event)">
   <div class="modal-content donor-details-modal" (click)="$event.stopPropagation()">
-    
-    <!-- Navigation Header -->
-    <app-modal-navigation-header
-      title="פרטי תורם"
-      [records]="allDonors"
-      [currentRecordId]="donor?.id || ''"
-      [filterOptions]="filterOptions"
-      placeholder="חיפוש תורמים..."
-      (recordSelected)="onRecordSelected($event)"
-      (searchChanged)="onSearchChanged($event)"
-      (filtersChanged)="onFiltersChanged($event)"
-      (navigateNext)="onNavigateNext()"
-      (navigatePrevious)="onNavigatePrevious()">
-    </app-modal-navigation-header>
-    
+
     <div class="modal-header">
       <div class="header-content">
         <div class="header-icon">
@@ -102,13 +88,6 @@
               </div>
               <input type="text" class="form-control" [(ngModel)]="donor.lastNameEnglish" placeholder="Last Name">
             </div>
-            <div class="form-group">
-              <div class="field-title">
-                <mat-icon class="field-icon">fingerprint</mat-icon>
-                <label>{{ (i18n.terms$ | async)?.idNumber }}</label>
-              </div>
-              <input type="text" class="form-control" [(ngModel)]="donor.idNumber" [placeholder]="(i18n.terms$ | async)?.idNumber">
-            </div>
             
             <!-- שורה שלישית: דוא&quot;ל, טלפונים -->
             <div class="form-group">
@@ -145,7 +124,22 @@
               </div>
               <input type="tel" class="form-control" [(ngModel)]="donor.additionalPhone" placeholder="טלפון נוסף" (ngModelChange)="onFieldChange()">
             </div>
-            
+
+            <!-- Contact Person -->
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">person</mat-icon>
+                <label>איש קשר</label>
+              </div>
+              <select class="form-control" [(ngModel)]="donor.primaryContactId" (change)="onContactChange()">
+                <option value="">בחר איש קשר</option>
+                <option *ngFor="let contact of contacts" [value]="contact.id">
+                  {{ contact.firstName }} {{ contact.lastName }}
+                  <span *ngIf="contact.position"> - {{ contact.position }}</span>
+                </option>
+              </select>
+            </div>
+
             <!-- Birth Date -->
             <div class="form-group half-full-width">
               <div class="field-title">
@@ -472,26 +466,14 @@
             
             <h5>כתובת החברה/עמותה</h5>
             <div class="form-grid">
-              <div class="form-group">
-                <div class="field-title">
-                  <mat-icon class="field-icon">business_center</mat-icon>
-                  <label>רחוב 1</label>
-                </div>
-                <input type="text" class="form-control" [(ngModel)]="company.address" placeholder="רחוב ומספר">
-              </div>
-              <div class="form-group">
-                <div class="field-title">
-                  <mat-icon class="field-icon">location_city</mat-icon>
-                  <label>שכונה</label>
-                </div>
-                <input type="text" class="form-control" [(ngModel)]="company.neighborhood" placeholder="שכונה">
-              </div>
-              <div class="form-group">
-                <div class="field-title">
-                  <mat-icon class="field-icon">place</mat-icon>
-                  <label>עיר</label>
-                </div>
-                <input type="text" class="form-control" [(ngModel)]="company.location" placeholder="עיר">
+              <div class="form-group full-width">
+                <app-osm-address-input
+                  label="כתובת החברה/עמותה"
+                  placeholder="הקלד כתובת החברה/עמותה..."
+                  countryCode="il"
+                  [initialAddress]="getCompanyAddressComponents(company)"
+                  (addressSelected)="onCompanyAddressSelected(company, $event)">
+                </app-osm-address-input>
               </div>
               <div class="form-group">
                 <div class="field-title">

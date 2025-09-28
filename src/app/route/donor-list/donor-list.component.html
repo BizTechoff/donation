@@ -1,4 +1,18 @@
 <div class="donor-list-container">
+  <!-- Navigation Header -->
+  <!-- <app-modal-navigation-header
+    title="רשימת תורמים"
+    [records]="allDonors"
+    [currentRecordId]="''"
+    [filterOptions]="filterOptions"
+    placeholder="חיפוש תורמים..."
+    (recordSelected)="onRecordSelected($event)"
+    (searchChanged)="onSearchChanged($event)"
+    (filtersChanged)="onFiltersChanged($event)"
+    (navigateNext)="onNavigateNext()"
+    (navigatePrevious)="onNavigatePrevious()">
+  </app-modal-navigation-header> -->
+
   <div class="page-header">
     <h1>{{ (i18n.terms$ | async)?.donorListTitle }}</h1>
     <button class="btn btn-primary add-donor-btn" (click)="createDonor()">{{ (i18n.terms$ | async)?.addNewDonor }}</button>

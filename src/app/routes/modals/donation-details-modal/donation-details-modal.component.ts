@@ -654,6 +654,18 @@ export class DonationDetailsModalComponent implements OnInit {
     return Array.from({ length: 31 }, (_, i) => i + 1);
   }
 
+  getDaysOfWeek(): { value: number; name: string }[] {
+    return [
+      { value: 0, name: 'ראשון' },
+      { value: 1, name: 'שני' },
+      { value: 2, name: 'שלישי' },
+      { value: 3, name: 'רביעי' },
+      { value: 4, name: 'חמישי' },
+      { value: 5, name: 'שישי' },
+      { value: 6, name: 'שבת' }
+    ];
+  }
+
   openCampaignContacts() {
     if (!this.selectedCampaign) return;
 
@@ -672,7 +684,7 @@ export class DonationDetailsModalComponent implements OnInit {
       console.log('Opening payment modal for credit card');
       // TODO: Implement payment modal
       // alert('פתיחת מודל תשלום לכרטיס אשראי תבוצע בהמשך');
-      this.ui.info('פתיחת מודל תשלום לכרטיס אשראי תבוצע בהמשך');
+      // this.ui.info('פתיחת מודל תשלום לכרטיס אשראי תבוצע בהמשך');
     } catch (error) {
       console.error('Error opening payment modal:', error);
       alert('שגיאה בפתיחת מודל תשלום');

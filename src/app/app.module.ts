@@ -39,6 +39,7 @@ import { HomeComponent } from './route/home/home.component'
 import { DonorListComponent } from './route/donor-list/donor-list.component'
 import { DonorDetailsComponent } from './route/donor-details/donor-details.component'
 import { DonationsListComponent } from './route/donations-list/donations-list.component'
+import { ModalNavigationHeaderComponent } from './shared/modal-navigation-header/modal-navigation-header.component'
 import { CampaignsListComponent } from './route/campaigns-list/campaigns-list.component'
 import { StandingOrdersComponent } from './route/standing-orders/standing-orders.component'
 import { CertificatesComponent } from './route/certificates/certificates.component'
@@ -83,6 +84,7 @@ import { SeedDataComponent } from './components/seed-data/seed-data.component'
     BrowserModule,
     CommonModule,
     SharedComponentsModule,
+    ModalNavigationHeaderComponent,
     AppRoutingModule,
     FormsModule,
     MatSidenavModule,

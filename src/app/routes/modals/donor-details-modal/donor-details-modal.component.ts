@@ -6,7 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { openDialog } from 'common-ui-elements';
 import { remult } from 'remult';
-import { CompanyInfo, Country, Donation, Donor, DonorEvent, Event, Place } from '../../../../shared/entity';
+import { CompanyInfo, Country, Donation, Donor, DonorEvent, Event, Place, Contact } from '../../../../shared/entity';
 import { AddressComponents, OsmAddressInputComponent } from '../../../common/osm-address-input/osm-address-input.component';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
@@ -51,8 +51,13 @@ export class DonorDetailsModalComponent implements OnInit {
   eventRepo = remult.repo(Event);
   donorEventRepo = remult.repo(DonorEvent);
   countryRepo = remult.repo(Country);
+  contactRepo = remult.repo(Contact);
   loading = false;
   isNewDonor = false;
+
+  // Contact related
+  contacts: Contact[] = [];
+  selectedContact?: Contact;
 
   // Events system
   availableEvents: Event[] = [];
@@ -71,6 +76,7 @@ export class DonorDetailsModalComponent implements OnInit {
   async ngOnInit() {
     await this.loadAvailableEvents();
     await this.loadCountries();
+    await this.loadContacts();
     await this.initializeDonor();
     await this.loadAllDonors();
     this.setupFilterOptions();
@@ -95,6 +101,16 @@ export class DonorDetailsModalComponent implements OnInit {
       });
     } catch (error) {
       console.error('Error loading countries:', error);
+    }
+  }
+
+  private async loadContacts() {
+    try {
+      this.contacts = await this.contactRepo.find({
+        orderBy: { firstName: 'asc', lastName: 'asc' }
+      });
+    } catch (error) {
+      console.error('Error loading contacts:', error);
     }
   }
 
@@ -147,6 +163,11 @@ export class DonorDetailsModalComponent implements OnInit {
           await this.loadDonations();
           await this.loadDonorEvents();
           await this.loadDonorPlaces();
+
+          // Load primary contact if exists
+          if (this.donor.primaryContactId) {
+            this.selectedContact = await this.contactRepo.findId(this.donor.primaryContactId) || undefined;
+          }
 
           // Force change detection after loading places
           console.log('Forcing change detection...');
@@ -220,6 +241,30 @@ export class DonorDetailsModalComponent implements OnInit {
         }
       } else {
         console.log('No vacationPlaceId found for donor');
+      }
+
+      // Load places for companies
+      if (this.donor.companies && this.donor.companies.length > 0) {
+        for (const company of this.donor.companies) {
+          if (company.placeRecordId) {
+            console.log('Attempting to load company place with ID:', company.placeRecordId);
+            try {
+              const companyPlace = await remult.repo(Place).findId(company.placeRecordId);
+              if (companyPlace) {
+                // עדכן את השדות של החברה עם המידע מה-Place
+                company.address = companyPlace.fullAddress || company.address;
+                company.neighborhood = companyPlace.neighborhood || company.neighborhood;
+                company.location = companyPlace.city || company.location;
+                company.placeId = companyPlace.placeId || company.placeId;
+                console.log('Loaded company place successfully:', companyPlace);
+              } else {
+                console.log('Company place not found with ID:', company.placeRecordId);
+              }
+            } catch (error) {
+              console.error('Error loading company place:', error);
+            }
+          }
+        }
       }
     } catch (error) {
       console.error('Error loading donor places:', error);
@@ -803,6 +848,15 @@ export class DonorDetailsModalComponent implements OnInit {
     console.log('Search term changed:', searchTerm);
   }
 
+  onContactChange() {
+    if (this.donor?.primaryContactId) {
+      this.selectedContact = this.contacts.find(c => c.id === this.donor!.primaryContactId);
+    } else {
+      this.selectedContact = undefined;
+    }
+    this.changed = true;
+  }
+
   onFiltersChanged(filters: ActiveFilter[]) {
     // Filters are applied by the navigation header component
     console.log('Filters changed:', filters);
@@ -868,6 +922,93 @@ export class DonorDetailsModalComponent implements OnInit {
       longitude: place.longitude,
       placeName: place.placeName || ''
     };
+  }
+
+  getCompanyAddressComponents(company: CompanyInfo): AddressComponents | undefined {
+    console.log('getCompanyAddressComponents called with company:', company);
+
+    // אם יש כתובת או נתונים, צור AddressComponents
+    if (!company.address && !company.neighborhood && !company.location && !company.placeRecordId) {
+      console.log('No address data found for company');
+      return undefined;
+    }
+
+    // בנה כתובת מלאה מהשדות הקיימים
+    const addressParts = [];
+    if (company.address) addressParts.push(company.address);
+    if (company.neighborhood) addressParts.push(company.neighborhood);
+    if (company.location) addressParts.push(company.location);
+
+    const fullAddress = addressParts.join(', ');
+
+    const addressComponents = {
+      fullAddress: fullAddress,
+      placeId: company.placeId || '',
+      placeRecordId: company.placeRecordId,
+      street: company.address || '', // השדה address מכיל את הרחוב
+      houseNumber: '',
+      neighborhood: company.neighborhood || '',
+      city: company.location || '', // השדה location מכיל את העיר
+      state: '',
+      postcode: '',
+      country: '',
+      countryCode: '',
+      latitude: undefined,
+      longitude: undefined,
+      placeName: company.name || ''
+    };
+
+    console.log('getCompanyAddressComponents returning:', addressComponents);
+    return addressComponents;
+  }
+
+  async onCompanyAddressSelected(company: CompanyInfo, addressComponents: AddressComponents) {
+    console.log('Company address selected:', addressComponents);
+
+    try {
+      // עדכון פרטי החברה עם הכתובת החדשה
+      if (addressComponents.placeRecordId) {
+        // המקום כבר נשמר ברגע הבחירה
+        console.log('Using existing Place ID for company:', addressComponents.placeRecordId);
+        company.placeRecordId = addressComponents.placeRecordId;
+        company.placeId = addressComponents.placeId;
+      } else if (addressComponents.placeId) {
+        // fallback - אם מסיבה כלשהי לא נשמר, צור כעת
+        const placeData = {
+          placeId: addressComponents.placeId,
+          fullAddress: addressComponents.fullAddress,
+          placeName: addressComponents.placeName,
+          street: addressComponents.street,
+          houseNumber: addressComponents.houseNumber,
+          neighborhood: addressComponents.neighborhood,
+          city: addressComponents.city,
+          state: addressComponents.state,
+          postcode: addressComponents.postcode,
+          country: addressComponents.country,
+          countryCode: addressComponents.countryCode,
+          latitude: addressComponents.latitude,
+          longitude: addressComponents.longitude
+        };
+
+        console.log('Fallback: creating Place for company:', placeData);
+        const place = await Place.findOrCreate(placeData, remult.repo(Place));
+        company.placeRecordId = place.id;
+        company.placeId = place.placeId;
+      }
+
+      // עדכון השדות הישנים לתאימות לאחור
+      company.address = addressComponents.fullAddress || '';
+      company.neighborhood = addressComponents.neighborhood || '';
+      company.location = addressComponents.city || '';
+
+      this.changed = true;
+      console.log('Company address updated:', company);
+    } catch (error) {
+      console.error('Error saving company address:', error);
+    }
+
+    // Force UI update
+    this.changeDetector.detectChanges();
   }
 
   // Title options based on platform language

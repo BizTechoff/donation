@@ -4,7 +4,7 @@
   <div class="date-inputs-container">
     <!-- Hebrew Date Input -->
     <div class="date-input-group" *ngIf="!showOnlyGregorian">
-      <div class="date-input hebrew-trigger" (click)="toggleHebrewPopup($event)" [class.disabled]="disabled">
+      <div class="date-input hebrew-trigger" (click)="toggleHebrewPopup($event)" [class.disabled]="disabled" [class.has-popup-open]="showHebrewPopup">
         <span class="date-value" [class.placeholder]="!hebrewDateDisplay">
           {{ hebrewDateDisplay || (compact ? 'עברי' : 'בחר תאריך עברי') }}
         </span>
@@ -80,7 +80,7 @@
 
     <!-- Gregorian Date Input -->
     <div class="date-input-group" *ngIf="!showOnlyHebrew">
-      <div class="date-input gregorian-trigger" (click)="toggleGregorianPopup($event)" [class.disabled]="disabled">
+      <div class="date-input gregorian-trigger" (click)="toggleGregorianPopup($event)" [class.disabled]="disabled" [class.has-popup-open]="showGregorianPopup">
         <span class="date-value" [class.placeholder]="!gregorianDateDisplay">
           {{ gregorianDateDisplay || (compact ? 'לועזי' : 'בחר תאריך לועזי') }}
         </span>

@@ -19,8 +19,9 @@ import { Country } from '../shared/entity/country'
 import { Place } from '../shared/entity/place'
 import { DonationPartner } from '../shared/entity/donation-partner'
 import { DonationFile } from '../shared/entity/file'
+import { Contact } from '../shared/entity'
 
-export const entities = [User, Donor, Donation, Campaign, DonationMethod, StandingOrder, Reminder, Certificate, Event, DonorEvent, Blessing, Country, Place, DonationPartner, DonationFile]
+export const entities = [User, Donor, Donation, Campaign, DonationMethod, StandingOrder, Reminder, Certificate, Event, DonorEvent, Blessing, Country, Place, DonationPartner, DonationFile, Contact]
 export const api = remultExpress({
   admin: true,
   controllers: [SignInController, UpdatePasswordController, SeedController, DonorController],

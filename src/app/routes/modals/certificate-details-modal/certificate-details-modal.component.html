@@ -1,0 +1,203 @@
+<div class="modal-overlay" *ngIf="!shouldClose">
+  <div class="modal-content large-modal" *ngIf="!loading">
+    <div class="modal-header">
+      <h2>{{ certificate?.id ? (i18n.terms$ | async)?.newCertificate : (i18n.terms$ | async)?.createNewCertificateModal }}</h2>
+      <button class="modal-close" (click)="onClose()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-sections">
+        <div class="section basic-info">
+          <h3>{{ (i18n.terms$ | async)?.basicInfo }}</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>{{ (i18n.terms$ | async)?.certificateTypeSelect }}</label>
+              <select class="form-control certificate-type-select" [(ngModel)]="certificate!.type" (change)="onCertificateTypeChange()">
+                <option value="donation">{{ (i18n.terms$ | async)?.donationCertificate }}</option>
+                <option value="memorial">{{ (i18n.terms$ | async)?.memorialCertificate }}</option>
+                <option value="dedication">{{ (i18n.terms$ | async)?.dedication }}</option>
+                <option value="appreciation">{{ (i18n.terms$ | async)?.appreciation }}</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>{{ (i18n.terms$ | async)?.donorSelect }}</label>
+              <select class="form-control" [(ngModel)]="selectedDonorId" (change)="onDonorChange()">
+                <option value="">{{ (i18n.terms$ | async)?.selectDonorOption }}</option>
+                <option *ngFor="let donor of donors" [value]="donor.id">{{donor.fullName}}</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>{{ (i18n.terms$ | async)?.recipientName }}</label>
+              <input type="text" class="form-control" [placeholder]="(i18n.terms$ | async)?.recipientNamePlaceholder" [(ngModel)]="certificate!.recipientName">
+            </div>
+            <div class="form-group">
+              <label>{{ (i18n.terms$ | async)?.eventDateField }}</label>
+              <input type="date" class="form-control" [(ngModel)]="eventDateForInput">
+            </div>
+            <div class="form-group">
+              <label>{{ (i18n.terms$ | async)?.donationAmount }}</label>
+              <input type="number" class="form-control" placeholder="0" [(ngModel)]="certificate!.amount">
+            </div>
+            <div class="form-group">
+              <label>{{ (i18n.terms$ | async)?.eventReason }}</label>
+              <input type="text" class="form-control" [placeholder]="(i18n.terms$ | async)?.eventReasonPlaceholder" [(ngModel)]="certificate!.eventName">
+            </div>
+          </div>
+        </div>
+
+        <div class="section text-content">
+          <h3>{{ (i18n.terms$ | async)?.certificateContent }}</h3>
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <label>{{ (i18n.terms$ | async)?.mainTitle }}</label>
+              <input type="text" class="form-control" [placeholder]="(i18n.terms$ | async)?.mainTitlePlaceholder" [(ngModel)]="certificate!.mainTitle">
+            </div>
+            <div class="form-group full-width">
+              <label>{{ (i18n.terms$ | async)?.mainText }}</label>
+              <textarea class="form-control" rows="4" [placeholder]="(i18n.terms$ | async)?.mainTextPlaceholder" [(ngModel)]="certificate!.mainText"></textarea>
+            </div>
+            <div class="form-group full-width">
+              <label>{{ (i18n.terms$ | async)?.specialDedication }}</label>
+              <textarea class="form-control" rows="3" [placeholder]="(i18n.terms$ | async)?.specialDedicationPlaceholder" [(ngModel)]="certificate!.specialText"></textarea>
+            </div>
+            <div class="form-group">
+              <label>{{ (i18n.terms$ | async)?.hebrewDateField }}</label>
+              <input type="text" class="form-control" [placeholder]="(i18n.terms$ | async)?.hebrewDatePlaceholder" [(ngModel)]="certificate!.hebrewDate">
+            </div>
+            <div class="form-group">
+              <label>{{ (i18n.terms$ | async)?.signature }}</label>
+              <input type="text" class="form-control" [placeholder]="(i18n.terms$ | async)?.signaturePlaceholder" [(ngModel)]="certificate!.signature">
+            </div>
+          </div>
+        </div>
+
+        <div *ngIf="false" class="section design-options">
+          <h3>{{ (i18n.terms$ | async)?.designAndLayout }}</h3>
+          <div class="design-grid">
+            <div class="template-option" [class.selected]="certificate!.template === 'classic'" (click)="certificate!.template = 'classic'; changed = true">
+              <div class="template-preview classic">
+                <div class="preview-content">
+                  <div class="preview-header">{{ (i18n.terms$ | async)?.mainTitlePlaceholder }}</div>
+                  <div class="preview-body">{{ (i18n.terms$ | async)?.mainTextPlaceholder }}</div>
+                  <div class="preview-footer">{{ (i18n.terms$ | async)?.signature }}</div>
+                </div>
+              </div>
+              <span class="template-name">{{ (i18n.terms$ | async)?.classicTemplate }}</span>
+            </div>
+
+            <div class="template-option" [class.selected]="certificate!.template === 'modern'" (click)="certificate!.template = 'modern'; changed = true">
+              <div class="template-preview modern">
+                <div class="preview-content">
+                  <div class="preview-header">{{ (i18n.terms$ | async)?.mainTitlePlaceholder }}</div>
+                  <div class="preview-body">{{ (i18n.terms$ | async)?.mainTextPlaceholder }}</div>
+                  <div class="preview-footer">{{ (i18n.terms$ | async)?.signature }}</div>
+                </div>
+              </div>
+              <span class="template-name">{{ (i18n.terms$ | async)?.modernTemplate }}</span>
+            </div>
+
+            <div class="template-option" [class.selected]="certificate!.template === 'elegant'" (click)="certificate!.template = 'elegant'; changed = true">
+              <div class="template-preview elegant">
+                <div class="preview-content">
+                  <div class="preview-header">{{ (i18n.terms$ | async)?.mainTitlePlaceholder }}</div>
+                  <div class="preview-body">{{ (i18n.terms$ | async)?.mainTextPlaceholder }}</div>
+                  <div class="preview-footer">{{ (i18n.terms$ | async)?.signature }}</div>
+                </div>
+              </div>
+              <span class="template-name">{{ (i18n.terms$ | async)?.elegantTemplate }}</span>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label>{{ (i18n.terms$ | async)?.paperSize }}</label>
+              <select class="form-control" [(ngModel)]="certificate!.paperSize">
+                <option value="a4">{{ (i18n.terms$ | async)?.paperSizeA4 }}</option>
+                <option value="a3">{{ (i18n.terms$ | async)?.paperSizeA3 }}</option>
+                <option value="letter">{{ (i18n.terms$ | async)?.paperSizeLetter }}</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>{{ (i18n.terms$ | async)?.orientation }}</label>
+              <select class="form-control" [(ngModel)]="certificate!.orientation">
+                <option value="portrait">{{ (i18n.terms$ | async)?.portrait }}</option>
+                <option value="landscape">{{ (i18n.terms$ | async)?.landscape }}</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="onClose()">{{ (i18n.terms$ | async)?.cancel }}</button>
+      <button class="btn btn-info" (click)="openPreview()">{{ (i18n.terms$ | async)?.previewModal }}</button>
+      <button class="btn btn-primary" (click)="save()">{{ (i18n.terms$ | async)?.saveCampaign }}</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay preview-overlay" *ngIf="showPreview">
+  <div class="modal-content preview-modal">
+    <div class="modal-header">
+      <h2>{{ (i18n.terms$ | async)?.certificatePreview }}</h2>
+      <button class="modal-close" (click)="closePreview()">&times;</button>
+    </div>
+    <div class="modal-body preview-body">
+      <div class="certificate-preview" [class]="'template-' + certificate!.template">
+        <div class="certificate-paper" [class.landscape]="certificate!.orientation === 'landscape'">
+          <div class="certificate-border">
+            <div class="certificate-header">
+              <div class="main-title">{{certificate!.mainTitle || (i18n.terms$ | async)?.mainTitlePlaceholder}}</div>
+            </div>
+
+            <div class="certificate-body">
+              <div class="main-text">
+                {{certificate!.mainText || (i18n.terms$ | async)?.mainTextPlaceholder}}
+              </div>
+
+              <div class="recipient-section">
+                <div class="recipient-name" *ngIf="certificate!.recipientName">
+                  {{certificate!.recipientName}}
+                </div>
+                <div class="donor-info" *ngIf="certificate!.donor">
+                  {{ (i18n.terms$ | async)?.from }}: {{certificate!.donor.fullName}}
+                </div>
+              </div>
+
+              <div class="details-section">
+                <div class="amount" *ngIf="certificate!.amount">
+                  {{ (i18n.terms$ | async)?.amount }}: ₪{{certificate!.amount | number}}
+                </div>
+                <div class="event-name" *ngIf="certificate!.eventName">
+                  {{ (i18n.terms$ | async)?.eventReason }}: {{certificate!.eventName}}
+                </div>
+                <div class="event-date" *ngIf="certificate!.eventDate">
+                  {{ (i18n.terms$ | async)?.date }}: {{certificate!.eventDate | date:'dd/MM/yyyy'}}
+                </div>
+                <div class="hebrew-date" *ngIf="certificate!.hebrewDate">
+                  {{certificate!.hebrewDate}}
+                </div>
+              </div>
+
+              <div class="special-text" *ngIf="certificate!.specialText">
+                {{certificate!.specialText}}
+              </div>
+            </div>
+
+            <div class="certificate-footer">
+              <div class="signature" *ngIf="certificate!.signature">
+                {{certificate!.signature}}
+              </div>
+              <div class="creation-date">
+                {{ currentDate | date:'dd/MM/yyyy' }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closePreview()">{{ (i18n.terms$ | async)?.close }}</button>
+      <button class="btn btn-primary" (click)="closePreview(); save()">{{ (i18n.terms$ | async)?.saveAndExitAction }}</button>
+    </div>
+  </div>
+</div>
