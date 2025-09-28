@@ -22,6 +22,11 @@ export interface UITools {
     title?: string
   }): Promise<void>
   multiSelectValueDialog<T>(args: MultiSelectOptions<T>): Promise<void>
+
+  donorDetailsDialog(donorId: string): Promise<boolean>
+  campaignDetailsDialog(campaignId: string): Promise<boolean>
+  donationDetailsDialog(donationId: string, options?: { donorId?: string; campaignId?: string }): Promise<boolean>
+  reminderDetailsDialog(reminderId?: string, options?: { donorId?: string; donationId?: string }): Promise<boolean>
 }
 
 export interface MultiSelectOptions<T> {

@@ -93,13 +93,25 @@
       </div>
       
       <!-- Gregorian Calendar Popup (Single Mode Only) -->
-      <div class="calendar-popup gregorian-popup" 
+      <div class="calendar-popup gregorian-popup"
            *ngIf="showGregorianPopup && !(calendar_open_heb_and_eng_parallel && showGregorianPopup && showHebrewPopup)" #gregorianPopup>
         <div class="calendar-header">
           <button class="nav-button" (click)="changeGregorianMonth(-1)">‹</button>
-          <div class="month-year">
-            {{ gregorianMonths[gregorianMonth] }} {{ gregorianYear }}
+
+          <div class="dropdowns-container">
+            <select class="month-dropdown" [(ngModel)]="gregorianMonth" (change)="onGregorianMonthChange($event)">
+              <option *ngFor="let month of gregorianMonths; let i = index" [value]="i">
+                {{ month }}
+              </option>
+            </select>
+
+            <select class="year-dropdown" [(ngModel)]="gregorianYear" (change)="onGregorianYearChange($event)">
+              <option *ngFor="let year of gregorianYearsList" [value]="year">
+                {{ year }}
+              </option>
+            </select>
           </div>
+
           <button class="nav-button" (click)="changeGregorianMonth(1)">›</button>
         </div>
         
@@ -190,9 +202,21 @@
       <div class="calendar-popup gregorian-popup" #gregorianPopupParallel>
         <div class="calendar-header">
           <button class="nav-button" (click)="changeGregorianMonth(-1)">‹</button>
-          <div class="month-year">
-            {{ gregorianMonths[gregorianMonth] }} {{ gregorianYear }}
+
+          <div class="dropdowns-container">
+            <select class="month-dropdown" [(ngModel)]="gregorianMonth" (change)="onGregorianMonthChange($event)">
+              <option *ngFor="let month of gregorianMonths; let i = index" [value]="i">
+                {{ month }}
+              </option>
+            </select>
+
+            <select class="year-dropdown" [(ngModel)]="gregorianYear" (change)="onGregorianYearChange($event)">
+              <option *ngFor="let year of gregorianYearsList" [value]="year">
+                {{ year }}
+              </option>
+            </select>
           </div>
+
           <button class="nav-button" (click)="changeGregorianMonth(1)">›</button>
         </div>
         

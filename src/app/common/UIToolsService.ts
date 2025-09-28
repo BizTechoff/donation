@@ -152,6 +152,14 @@ export class UIToolsService implements UITools {
       (dlg) => dlg.changed
     )
   }
+
+  async reminderDetailsDialog(reminderId?: string, options?: { donorId?: string; donationId?: string }): Promise<boolean> {
+    return await openDialog(
+      (await import('../routes/modals/reminder-details-modal/reminder-details-modal.component')).ReminderDetailsModalComponent,
+      (dlg) => dlg.args = { reminderId, donorId: options?.donorId, donationId: options?.donationId },
+      (dlg) => dlg.changed
+    )
+  }
   private enhanceFieldOptionsAndDataControlOptions(
     commonUIPlugin: CommonUIElementsPluginsService
   ) {

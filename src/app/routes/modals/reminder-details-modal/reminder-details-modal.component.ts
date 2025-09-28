@@ -11,6 +11,7 @@ import { remult } from 'remult';
 import { Reminder, Donor, Donation, User } from '../../../../shared/entity';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
+import { SharedComponentsModule } from '../../../shared/shared-components.module';
 
 export interface ReminderDetailsModalArgs {
   reminderId?: string; // 'new' for new reminder or reminder ID for editing
@@ -30,7 +31,8 @@ export interface ReminderDetailsModalArgs {
     MatIconModule,
     MatTooltipModule,
     MatDatepickerModule,
-    MatNativeDateModule
+    MatNativeDateModule,
+    SharedComponentsModule
   ]
 })
 export class ReminderDetailsModalComponent implements OnInit {
@@ -311,6 +313,12 @@ export class ReminderDetailsModalComponent implements OnInit {
 
   cancel() {
     this.shouldClose = true;
+  }
+
+  closeModal(event: MouseEvent) {
+    if (event.target === event.currentTarget) {
+      this.cancel();
+    }
   }
 
   get formattedDueDate(): string {
