@@ -5,6 +5,13 @@ import { placeDto } from "../shared/type/place.type";
 config()
 const fetch = require('node-fetch')
 
+// Helper function to get language parameter based on user preference
+const getLanguageParam = (lang?: string): string => {
+    // Default to Hebrew if not specified
+    const language = lang === 'en' ? 'en' : 'he';
+    return `&language=${language}`;
+}
+
 export const getPlace = async (req: Request, res: Response, next: NextFunction) => {
     let result: placeDto = {} as placeDto
     //     valid: false,
@@ -18,13 +25,14 @@ export const getPlace = async (req: Request, res: Response, next: NextFunction) 
     // };
     console.debug('getPlace called at ' + new Date().toString());
 
-    const { key } = req.query;
+    const { key, lang } = req.query;
     if (key === process.env['SERVER_API_KEY']!) {
         const { placeId } = req.query;
         // console.log('getPlace: placeId: ', placeId);
 
         if (placeId && placeId.length) {
-            const url = `${process.env['GOOGLE_GEO_API_URL_PLACE']}?place_id=${placeId}&key=${process.env['GOOGLE_GEO_API_KEY']}`//&language=he`;
+            const langParam = getLanguageParam(lang as string);
+            const url = `${process.env['GOOGLE_GEO_API_URL_PLACE']}?place_id=${placeId}&key=${process.env['GOOGLE_GEO_API_KEY']}${langParam}`;
 
             try {
                 const response = await fetch(url, {
@@ -136,7 +144,7 @@ export const getPlace = async (req: Request, res: Response, next: NextFunction) 
 
 export const getPlaces = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     // console.log(`getPlaces: { called: ${new Date().toLocaleString()} }`);
-    const { key } = req.query;
+    const { key, lang } = req.query;
     if (key === process.env['SERVER_API_KEY']!) {
         try {
             // Extract input from query parameters
@@ -164,7 +172,8 @@ export const getPlaces = async (req: Request, res: Response, next: NextFunction)
 
             // const url = `${apiUrl}?key=${apiKey}&language=he&components=country:il&types=geocode&input=${encodeURIComponent(input)}`;
             // language=he&components=country:il&
-            const url = `${apiUrl}?key=${apiKey}&types=geocode|establishment&input=${encodeURIComponent(input)}`;
+            const langParam = getLanguageParam(lang as string);
+            const url = `${apiUrl}?key=${apiKey}&types=geocode|establishment&input=${encodeURIComponent(input)}${langParam}`;
             // console.log(`getPlaces: { url: ${url} }`);
 
             // Fetch data from Google API

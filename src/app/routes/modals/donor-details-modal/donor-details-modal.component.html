@@ -102,12 +102,10 @@
                 <mat-icon class="field-icon">flag</mat-icon>
                 <label>קידומת בינלאומית</label>
               </div>
-              <select class="form-control" [(ngModel)]="donor.internationalPrefix">
-                <option value="+972">+972 (ישראל)</option>
-                <option value="+1">+1 (ארה&quot;ב/קנדה)</option>
-                <option value="+44">+44 (בריטניה)</option>
-                <option value="+33">+33 (צרפת)</option>
-                <option value="+49">+49 (גרמניה)</option>
+              <select class="form-control" [(ngModel)]="donor.country">
+                <option *ngFor="let country of countryOptions" [ngValue]="country">
+                  {{ country.captionHebrew }} ({{ country.phonePrefix }})
+                </option>
               </select>
             </div>
             <div class="form-group">

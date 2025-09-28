@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { remult } from 'remult';
 import { Reminder, Donor } from '../../../shared/entity';
 import { I18nService } from '../../i18n/i18n.service';
+import { ReminderDetailsModalComponent } from '../../routes/modals/reminder-details-modal/reminder-details-modal.component';
 
 @Component({
   selector: 'app-reminders',
@@ -57,13 +58,23 @@ export class RemindersComponent implements OnInit {
   }
 
   async createReminder() {
-    this.editingReminder = this.reminderRepo.create();
-    this.showAddReminderModal = true;
+    const reminderCreated = await ReminderDetailsModalComponent.open({
+      reminderId: 'new'
+    });
+
+    if (reminderCreated) {
+      await this.loadData(); // Refresh the list
+    }
   }
 
   async editReminder(reminder: Reminder) {
-    this.editingReminder = reminder;
-    this.showAddReminderModal = true;
+    const reminderEdited = await ReminderDetailsModalComponent.open({
+      reminderId: reminder.id
+    });
+
+    if (reminderEdited) {
+      await this.loadData(); // Refresh the list
+    }
   }
 
   async saveReminder() {

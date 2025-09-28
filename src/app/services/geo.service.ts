@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { remult } from 'remult';
 import { Place } from '../../shared/entity/place';
+import { I18nService } from '../i18n/i18n.service';
 
 interface GooglePlacePrediction {
   description: string;
@@ -29,7 +30,15 @@ export class GeoService {
   private debounceTimer?: number;
   public suggestions: GooglePlacePrediction[] = [];
 
-  constructor() { }
+  constructor(private i18n: I18nService) { }
+
+  /**
+   * Get current user language preference from i18n service
+   * @returns 'he' for Hebrew or 'en' for English
+   */
+  private getUserLanguage(): string {
+    return this.i18n.currentLanguage;
+  }
 
   /**
    * Get autocomplete suggestions for address input
@@ -48,7 +57,8 @@ export class GeoService {
       this.debounceTimer = window.setTimeout(() => {
         const url = ''; // 'http://localhost:3007'
 
-        fetch(`${url}/api/geo/places?key=${encodeURIComponent(this.key)}&input=${encodeURIComponent(input)}`)
+        const lang = this.getUserLanguage();
+        fetch(`${url}/api/geo/places?key=${encodeURIComponent(this.key)}&input=${encodeURIComponent(input)}&lang=${lang}`)
           .then((response) => {
             if (!response.ok) {
               throw new Error(`HTTP error! status: ${response.status}`);
@@ -88,7 +98,8 @@ export class GeoService {
   getPlaceDetails(placeId: string): Promise<any> {
     const url = ''; // 'http://localhost:3007'
 
-    return fetch(`${url}/api/geo/place-details?key=${encodeURIComponent(this.key)}&placeId=${encodeURIComponent(placeId)}`)
+    const lang = this.getUserLanguage();
+    return fetch(`${url}/api/geo/place-details?key=${encodeURIComponent(this.key)}&placeId=${encodeURIComponent(placeId)}&lang=${lang}`)
       .then((response) => {
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);

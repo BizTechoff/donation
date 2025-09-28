@@ -2,6 +2,7 @@ import {
   Allow,
   BackendMethod,
   Entity,
+  Field,
   Fields,
   IdEntity,
   Relations,
@@ -14,6 +15,7 @@ import { Roles } from '../enum/roles'
 import { Place } from './place'
 import { User } from './user'
 import { Contact } from './contact'
+import { Country } from '../enum/country.enum'
 
 export interface CompanyInfo {
   id: string
@@ -126,10 +128,10 @@ export class Donor extends IdEntity {
   })
   additionalPhone = ''
 
-  @Fields.string({
+  @Field(() => Country, {
     caption: 'קידומת בינלאומית',
   })
-  internationalPrefix = '+972'
+  country = Country.israel
 
   // כתובות
   // @Relations.toOne(() => Place, {

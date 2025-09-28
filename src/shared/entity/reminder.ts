@@ -11,6 +11,7 @@ import {
 } from 'remult'
 import { Donor } from './donor'
 import { User } from './user'
+import { Donation } from './donation'
 import { Roles } from '../enum/roles'
 
 @Entity<Reminder>('reminders', {
@@ -67,6 +68,16 @@ export class Reminder extends IdEntity {
     caption: 'תורם קשור ID',
   })
   relatedDonorId = ''
+
+  @Relations.toOne<Reminder, Donation>(() => Donation, {
+    caption: 'תרומה קשורה',
+  })
+  relatedDonation?: Donation
+
+  @Fields.string({
+    caption: 'תרומה קשורה ID',
+  })
+  relatedDonationId = ''
 
   @Fields.date({
     caption: 'תאריך יעד',
@@ -140,6 +151,24 @@ export class Reminder extends IdEntity {
     caption: 'תדירות חזרה',
   })
   recurringPattern: 'daily' | 'weekly' | 'monthly' | 'yearly' | 'none' = 'none'
+
+  @Fields.number({
+    caption: 'יום בשבוע (תזכורת שבועית)',
+    allowNull: true
+  })
+  recurringWeekDay?: number // 0=ראשון, 1=שני, 2=שלישי, 3=רביעי, 4=חמישי, 5=שישי, 6=שבת
+
+  @Fields.number({
+    caption: 'יום בחודש (תזכורת חודשית)',
+    allowNull: true
+  })
+  recurringDayOfMonth?: number // 1-31
+
+  @Fields.number({
+    caption: 'חודש בשנה (תזכורת שנתית)',
+    allowNull: true
+  })
+  recurringMonth?: number // 1-12
 
   @Fields.date({
     caption: 'תזכורת הבאה',
@@ -235,27 +264,58 @@ export class Reminder extends IdEntity {
 
   calculateNextReminderDate(): Date | undefined {
     if (!this.isRecurring || this.recurringPattern === 'none') return undefined
-    
+
     const baseDate = this.completedDate || this.dueDate
     const nextDate = new Date(baseDate)
-    
+
     switch (this.recurringPattern) {
       case 'daily':
         nextDate.setDate(nextDate.getDate() + 1)
         break
       case 'weekly':
         nextDate.setDate(nextDate.getDate() + 7)
+        // If specific weekday is set, adjust to that day
+        if (this.recurringWeekDay !== undefined) {
+          const currentDay = nextDate.getDay()
+          const targetDay = this.recurringWeekDay
+          const daysToAdd = (targetDay - currentDay + 7) % 7
+          if (daysToAdd === 0 && currentDay === targetDay) {
+            // If it's the same day, move to next week
+            nextDate.setDate(nextDate.getDate() + 7)
+          } else {
+            nextDate.setDate(nextDate.getDate() + daysToAdd)
+          }
+        }
         break
       case 'monthly':
         nextDate.setMonth(nextDate.getMonth() + 1)
+        // If specific day of month is set, adjust to that day
+        if (this.recurringDayOfMonth !== undefined) {
+          nextDate.setDate(this.recurringDayOfMonth)
+          // Handle edge case where the day doesn't exist in the month (e.g., Feb 31)
+          if (nextDate.getDate() !== this.recurringDayOfMonth) {
+            nextDate.setDate(0) // Go to last day of previous month
+          }
+        }
         break
       case 'yearly':
         nextDate.setFullYear(nextDate.getFullYear() + 1)
+        // If specific month is set, adjust to that month
+        if (this.recurringMonth !== undefined) {
+          nextDate.setMonth(this.recurringMonth - 1) // Month is 0-based
+          if (this.recurringDayOfMonth !== undefined) {
+            nextDate.setDate(this.recurringDayOfMonth)
+            // Handle edge case for Feb 29 in non-leap years
+            if (nextDate.getDate() !== this.recurringDayOfMonth) {
+              nextDate.setDate(0) // Go to last day of previous month
+            }
+          }
+        }
         break
       default:
         return undefined
     }
-    
+
     return nextDate
   }
 

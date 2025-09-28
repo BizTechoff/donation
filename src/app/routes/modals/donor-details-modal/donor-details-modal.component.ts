@@ -6,7 +6,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { openDialog } from 'common-ui-elements';
 import { remult } from 'remult';
-import { CompanyInfo, Country, Donation, Donor, DonorEvent, Event, Place, Contact } from '../../../../shared/entity';
+import { CompanyInfo, Donation, Donor, DonorEvent, Event, Place, Contact } from '../../../../shared/entity';
+import { Country } from '../../../../shared/enum/country.enum';
 import { AddressComponents, OsmAddressInputComponent } from '../../../common/osm-address-input/osm-address-input.component';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
@@ -45,12 +46,33 @@ export class DonorDetailsModalComponent implements OnInit {
   donor?: Donor;
   originalDonorData?: string; // To track changes
   donations: Donation[] = [];
-  countries: Country[] = [];
   donorRepo = remult.repo(Donor);
   donationRepo = remult.repo(Donation);
+  countryOptions = [
+    Country.israel,
+    Country.usa,
+    Country.uk,
+    Country.scotland,
+    Country.france,
+    Country.belgium,
+    Country.switzerland,
+    Country.canada,
+    Country.australia,
+    Country.germany,
+    Country.netherlands,
+    Country.argentina,
+    Country.brazil,
+    Country.mexico,
+    Country.southAfrica,
+    Country.russia,
+    Country.ukraine,
+    Country.spain,
+    Country.italy,
+    Country.poland,
+    Country.austria
+  ];
   eventRepo = remult.repo(Event);
   donorEventRepo = remult.repo(DonorEvent);
-  countryRepo = remult.repo(Country);
   contactRepo = remult.repo(Contact);
   loading = false;
   isNewDonor = false;
@@ -94,14 +116,8 @@ export class DonorDetailsModalComponent implements OnInit {
   }
 
   private async loadCountries() {
-    try {
-      this.countries = await this.countryRepo.find({
-        where: { isActive: true },
-        orderBy: { name: 'asc' }
-      });
-    } catch (error) {
-      console.error('Error loading countries:', error);
-    }
+    // Country is a ValueListFieldType, not an entity
+    // Countries are already available as static properties
   }
 
   private async loadContacts() {
@@ -115,10 +131,7 @@ export class DonorDetailsModalComponent implements OnInit {
   }
 
   private async setDefaultCountry() {
-    const israelCountry = this.countries.find(c => c.name === 'ישראל');
-    if (israelCountry && this.donor) {
-      // Country will be set via homePlace
-    }
+    // Default country is already set in the entity definition
   }
 
   private async initializeDonor() {

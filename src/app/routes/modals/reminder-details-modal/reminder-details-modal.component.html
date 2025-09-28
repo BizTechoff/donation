@@ -1,0 +1,228 @@
+<div class="modal-container">
+  <div class="modal-header">
+    <h2>{{ isNewReminder ? 'תזכורת חדשה' : 'עריכת תזכורת' }}</h2>
+    <button mat-icon-button class="close-button" (click)="cancel()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <div class="modal-content" *ngIf="!loading && reminder">
+    <!-- Donor Info -->
+    <div class="info-section" *ngIf="donor">
+      <div class="section-header">
+        <mat-icon>person</mat-icon>
+        <span>תורם מקושר</span>
+      </div>
+      <div class="donor-info">
+        <strong>{{ donor.fullName }}</strong>
+        <span class="secondary-text">{{ donor.phone }} | {{ donor.email }}</span>
+      </div>
+    </div>
+
+    <!-- Donation Info -->
+    <div class="info-section" *ngIf="donation">
+      <div class="section-header">
+        <mat-icon>monetization_on</mat-icon>
+        <span>תרומה מקושרת</span>
+      </div>
+      <div class="donation-info">
+        <strong>₪{{ donation.amount.toLocaleString() }}</strong>
+        <span class="secondary-text">{{ donation.donationDate | date:'dd/MM/yyyy' }}</span>
+        <span class="secondary-text" *ngIf="donation.campaign">קמפיין: {{ donation.campaign.name }}</span>
+      </div>
+    </div>
+
+    <!-- Reminder Details -->
+    <div class="form-section">
+      <div class="form-row">
+        <div class="form-group full-width">
+          <label class="required">כותרת התזכורת</label>
+          <input
+            type="text"
+            class="form-control"
+            [(ngModel)]="reminder.title"
+            placeholder="הזן כותרת לתזכורת">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group full-width">
+          <label>תיאור</label>
+          <textarea
+            class="form-control"
+            [(ngModel)]="reminder.description"
+            rows="3"
+            placeholder="הוסף תיאור או הערות לתזכורת">
+          </textarea>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="required">סוג תזכורת</label>
+          <select class="form-control" [(ngModel)]="reminder.type">
+            <option *ngFor="let type of typeOptions" [value]="type.value">
+              {{ type.label }}
+            </option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="required">עדיפות</label>
+          <select class="form-control" [(ngModel)]="reminder.priority">
+            <option *ngFor="let priority of priorityOptions" [value]="priority.value">
+              {{ priority.label }}
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="required">תאריך יעד</label>
+          <input
+            matInput
+            [matDatepicker]="dueDatePicker"
+            [(ngModel)]="reminder.dueDate"
+            class="form-control date-input">
+          <mat-datepicker-toggle matSuffix [for]="dueDatePicker"></mat-datepicker-toggle>
+          <mat-datepicker #dueDatePicker></mat-datepicker>
+        </div>
+        <div class="form-group">
+          <label>שעת יעד</label>
+          <input
+            type="time"
+            class="form-control"
+            [(ngModel)]="reminder.dueTime">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>שיוך למשתמש</label>
+          <select class="form-control" [(ngModel)]="reminder.assignedToId">
+            <option value="">ללא שיוך</option>
+            <option *ngFor="let user of users" [value]="user.id">
+              {{ user.name }}
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Alert Settings -->
+      <div class="alert-section">
+        <div class="section-header">
+          <mat-icon>notifications</mat-icon>
+          <span>הגדרות התראה</span>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>
+              <input
+                type="checkbox"
+                [(ngModel)]="reminder.sendAlert">
+              שלח התראה
+            </label>
+          </div>
+          <div class="form-group" *ngIf="reminder.sendAlert">
+            <label>אמצעי התראה</label>
+            <select class="form-control" [(ngModel)]="reminder.alertMethod">
+              <option *ngFor="let method of alertMethodOptions" [value]="method.value">
+                {{ method.label }}
+              </option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recurring Settings -->
+      <div class="recurring-section">
+        <div class="section-header">
+          <mat-icon>repeat</mat-icon>
+          <span>הגדרות חזרה</span>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>
+              <input
+                type="checkbox"
+                [(ngModel)]="reminder.isRecurring">
+              תזכורת חוזרת
+            </label>
+          </div>
+          <div class="form-group" *ngIf="reminder.isRecurring">
+            <label>תדירות חזרה</label>
+            <select class="form-control" [(ngModel)]="reminder.recurringPattern">
+              <option *ngFor="let pattern of recurringPatternOptions" [value]="pattern.value">
+                {{ pattern.label }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Weekly recurring options -->
+        <div class="form-row" *ngIf="reminder.isRecurring && reminder.recurringPattern === 'weekly'">
+          <div class="form-group">
+            <label>יום בשבוע</label>
+            <select class="form-control" [(ngModel)]="reminder.recurringWeekDay">
+              <option value="">בחר יום</option>
+              <option *ngFor="let day of weekDayOptions" [value]="day.value">
+                {{ day.label }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Monthly recurring options -->
+        <div class="form-row" *ngIf="reminder.isRecurring && reminder.recurringPattern === 'monthly'">
+          <div class="form-group">
+            <label>יום בחודש</label>
+            <select class="form-control" [(ngModel)]="reminder.recurringDayOfMonth">
+              <option value="">בחר יום</option>
+              <option *ngFor="let day of dayOfMonthOptions" [value]="day.value">
+                {{ day.label }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Yearly recurring options -->
+        <div class="form-row" *ngIf="reminder.isRecurring && reminder.recurringPattern === 'yearly'">
+          <div class="form-group">
+            <label>חודש</label>
+            <select class="form-control" [(ngModel)]="reminder.recurringMonth">
+              <option value="">בחר חודש</option>
+              <option *ngFor="let month of monthOptions" [value]="month.value">
+                {{ month.label }}
+              </option>
+            </select>
+          </div>
+          <div class="form-group" *ngIf="reminder.recurringMonth">
+            <label>יום בחודש</label>
+            <select class="form-control" [(ngModel)]="reminder.recurringDayOfMonth">
+              <option value="">בחר יום</option>
+              <option *ngFor="let day of dayOfMonthOptions" [value]="day.value">
+                {{ day.label }}
+              </option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-container" *ngIf="loading">
+    <mat-icon class="loading-icon">hourglass_empty</mat-icon>
+    <p>טוען...</p>
+  </div>
+
+  <!-- Footer Buttons -->
+  <div class="modal-footer">
+    <button mat-button (click)="cancel()">ביטול</button>
+    <button mat-raised-button color="primary" (click)="save()" [disabled]="loading">
+      {{ isNewReminder ? 'צור תזכורת' : 'שמור שינויים' }}
+    </button>
+  </div>
+</div>

@@ -9,6 +9,7 @@ import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { SharedComponentsModule } from '../../../shared/shared-components.module';
+import { ReminderDetailsModalComponent } from '../reminder-details-modal/reminder-details-modal.component';
 
 export interface DonationDetailsModalArgs {
   donationId: string; // Can be 'new' for new donation or donation ID
@@ -551,12 +552,17 @@ export class DonationDetailsModalComponent implements OnInit {
     if (!this.donation) return;
 
     try {
-      console.log('Adding reminder for donation:', this.donation.id);
-      // TODO: Implement reminder functionality
-      alert('פונקציונליות תזכורת תבוצע בהמשך');
+      const reminderCreated = await ReminderDetailsModalComponent.open({
+        reminderId: 'new',
+        donationId: this.donation.id
+      });
+
+      if (reminderCreated) {
+        console.log('Reminder created successfully for donation:', this.donation.id);
+      }
     } catch (error) {
-      console.error('Error adding reminder:', error);
-      alert('שגיאה בהוספת תזכורת');
+      console.error('Error opening reminder modal:', error);
+      this.ui.error('שגיאה בפתיחת מודל התזכורת');
     }
   }
 
