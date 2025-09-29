@@ -1,248 +1,272 @@
 <div class="modal-overlay" (click)="closeModal($event)">
-  <div class="modal-content reminder-details-modal" (click)="$event.stopPropagation()">
-  <div class="modal-header">
-    <h2>{{ isNewReminder ? 'תזכורת חדשה' : 'עריכת תזכורת' }}</h2>
-    <button mat-icon-button class="close-button" (click)="cancel()">
-      <mat-icon>close</mat-icon>
-    </button>
-  </div>
-
-  <div class="modal-content" *ngIf="!loading && reminder">
-    <!-- Donor Info -->
-    <div class="info-section" *ngIf="donor">
-      <div class="section-header">
-        <mat-icon>person</mat-icon>
-        <span>תורם מקושר</span>
-      </div>
-      <div class="donor-info">
-        <strong>{{ donor.fullName }}</strong>
-        <span class="secondary-text">{{ donor.phone }} | {{ donor.email }}</span>
-      </div>
+  <div class="modal-content reminder-details-modal" [attr.dir]="(i18n.terms$ | async)?.RTL ? 'rtl' : 'ltr'"
+    (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ isNewReminder ? (i18n.terms$ | async)?.newReminder : (i18n.terms$ | async)?.editReminderTitle }}</h2>
+      <button mat-icon-button class="close-button" (click)="cancel()">
+        <mat-icon>close</mat-icon>
+      </button>
     </div>
 
-    <!-- Donation Info -->
-    <div class="info-section" *ngIf="donation">
-      <div class="section-header">
-        <mat-icon>monetization_on</mat-icon>
-        <span>תרומה מקושרת</span>
+    <div class="modal-content" *ngIf="!loading && reminder">
+      <!-- Donor Info -->
+      <div class="info-section" *ngIf="reminder.relatedDonor">
+        <div class="section-header">
+          <mat-icon>person</mat-icon>
+          <span>{{ (i18n.terms$ | async)?.relatedDonor }}</span>
+        </div>
+        <div class="donor-info">
+          <strong>{{ reminder.relatedDonor.fullName }}</strong>
+          <span class="secondary-text">{{ reminder.relatedDonor.phone }} | {{ reminder.relatedDonor.email }}</span>
+        </div>
       </div>
-      <div class="donation-info">
-        <strong>₪{{ donation.amount.toLocaleString() }}</strong>
-        <span class="secondary-text">{{ donation.donationDate | date:'dd/MM/yyyy' }}</span>
-        <span class="secondary-text" *ngIf="donation.campaign">קמפיין: {{ donation.campaign.name }}</span>
-      </div>
-    </div>
 
-    <!-- Main Content Layout -->
-    <div class="main-content-layout">
-      <!-- Left Column - Reminder Details -->
-      <div class="left-column">
-        <div class="form-section">
-          <div class="form-row">
-            <div class="form-group full-width">
-              <label class="required">כותרת התזכורת</label>
-              <input
-                type="text"
-                class="form-control"
-                [(ngModel)]="reminder.title"
-                placeholder="הזן כותרת לתזכורת">
+      <!-- Donation Info -->
+      <div class="info-section" *ngIf="reminder.relatedDonation">
+        <div class="section-header">
+          <mat-icon>monetization_on</mat-icon>
+          <span>{{ (i18n.terms$ | async)?.relatedDonation }}</span>
+        </div>
+        <div class="donation-info">
+          <strong>₪{{ reminder.relatedDonation.amount.toLocaleString() }}</strong>
+          <span class="secondary-text">{{ reminder.relatedDonation.donationDate | date:'dd/MM/yyyy' }}</span>
+          <span class="secondary-text" *ngIf="reminder.relatedDonation.campaign">{{ (i18n.terms$ | async)?.campaign }}: {{
+            reminder.relatedDonation.campaign.name }}</span>
+        </div>
+      </div>
+
+      <!-- Main Content Layout -->
+      <div class="main-content-layout">
+        <!-- Left Column - Reminder Details -->
+        <div class="left-column">
+          <div class="form-section">
+            <div class="form-row">
+              <div class="form-group full-width">
+                <label class="required">{{ (i18n.terms$ | async)?.reminderTitle }}</label>
+                <input type="text" class="form-control" [(ngModel)]="reminder.title"
+                  [placeholder]="(i18n.terms$ | async)?.enterReminderTitle">
+              </div>
             </div>
-          </div>
 
-          <div class="form-row">
-            <div class="form-group full-width">
-              <label>תיאור</label>
-              <textarea
-                class="form-control"
-                [(ngModel)]="reminder.description"
-                rows="3"
-                placeholder="הוסף תיאור או הערות לתזכורת">
+            <div class="form-row">
+              <div class="form-group full-width">
+                <label>{{ (i18n.terms$ | async)?.reminderDescription }}</label>
+                <textarea class="form-control" [(ngModel)]="reminder.description" rows="3"
+                  [placeholder]="(i18n.terms$ | async)?.addDescriptionOrNotes">
               </textarea>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="required">{{ (i18n.terms$ | async)?.reminderTypeSelect }}</label>
+                <select class="form-control" [(ngModel)]="reminder.type">
+                  <option *ngFor="let type of typeOptions" [value]="type.value">
+                    {{ type.label }}
+                  </option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="required">{{ (i18n.terms$ | async)?.priorityField }}</label>
+                <select class="form-control" [(ngModel)]="reminder.priority">
+                  <option *ngFor="let priority of priorityOptions" [value]="priority.value">
+                    {{ priority.label }}
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group full-width">
+                <app-modern-dual-date-picker [label]="getDueDateLabel()" [(ngModel)]="reminder.dueDate"
+                  [disabled]="loading" [compact]="false">
+                </app-modern-dual-date-picker>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>{{ (i18n.terms$ | async)?.dueTime }}</label>
+                <input type="time" class="form-control" [(ngModel)]="reminder.dueTime">
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Right Column - Settings -->
+        <div class="right-column">
+          <!-- Alert Settings -->
+          <div class="alert-section">
+            <div class="section-header">
+              <mat-icon>notifications</mat-icon>
+              <span>{{ (i18n.terms$ | async)?.alertSettings }}</span>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>
+                  <input type="checkbox" [(ngModel)]="reminder.sendAlert">
+                  {{ (i18n.terms$ | async)?.sendAlert }}
+                </label>
+              </div>
+            </div>
+
+            <div class="form-row" *ngIf="reminder.sendAlert">
+              <div class="form-group">
+                <label>{{ (i18n.terms$ | async)?.alertMethod }}</label>
+                <select class="form-control" [(ngModel)]="reminder.alertMethod">
+                  <option *ngFor="let method of alertMethodOptions" [value]="method.value">
+                    {{ method.label }}
+                  </option>
+                </select>
+              </div>
             </div>
           </div>
 
-          <div class="form-row">
-            <div class="form-group">
-              <label class="required">סוג תזכורת</label>
-              <select class="form-control" [(ngModel)]="reminder.type">
-                <option *ngFor="let type of typeOptions" [value]="type.value">
-                  {{ type.label }}
-                </option>
-              </select>
+          <!-- Recurring Settings -->
+          <div class="recurring-section">
+            <div class="section-header">
+              <mat-icon>repeat</mat-icon>
+              <span>{{ (i18n.terms$ | async)?.recurringSettings }}</span>
             </div>
-            <div class="form-group">
-              <label class="required">עדיפות</label>
-              <select class="form-control" [(ngModel)]="reminder.priority">
-                <option *ngFor="let priority of priorityOptions" [value]="priority.value">
-                  {{ priority.label }}
-                </option>
-              </select>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>
+                  <input type="checkbox" [(ngModel)]="reminder.isRecurring">
+                  {{ (i18n.terms$ | async)?.recurringReminder }}
+                </label>
+              </div>
+            </div>
+
+            <div class="form-row" *ngIf="reminder.isRecurring">
+              <div class="form-group">
+                <label>{{ (i18n.terms$ | async)?.recurringPattern }}</label>
+                <select class="form-control" [(ngModel)]="reminder.recurringPattern">
+                  <option *ngFor="let pattern of recurringPatternOptions" [value]="pattern.value">
+                    {{ pattern.label }}
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Weekly recurring options -->
+            <div class="form-row" *ngIf="reminder.isRecurring && reminder.recurringPattern === 'weekly'">
+              <div class="form-group">
+                <label>{{ (i18n.terms$ | async)?.weekday }}</label>
+                <select class="form-control" [(ngModel)]="reminder.recurringWeekDay">
+                  <option value="">{{ (i18n.terms$ | async)?.selectDay }}</option>
+                  <option *ngFor="let day of weekDayOptions" [value]="day.value">
+                    {{ day.label }}
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Monthly recurring options -->
+            <div class="form-row" *ngIf="reminder.isRecurring && reminder.recurringPattern === 'monthly'">
+              <div class="form-group">
+                <label>{{ (i18n.terms$ | async)?.dayOfMonth }}</label>
+                <select class="form-control" [(ngModel)]="reminder.recurringDayOfMonth">
+                  <option value="">{{ (i18n.terms$ | async)?.selectDay }}</option>
+                  <option *ngFor="let day of dayOfMonthOptions" [value]="day.value">
+                    {{ day.label }}
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Yearly recurring options -->
+            <div class="form-row" *ngIf="reminder.isRecurring && reminder.recurringPattern === 'yearly'">
+              <div class="form-group">
+                <label>{{ (i18n.terms$ | async)?.month }}</label>
+                <select class="form-control" [(ngModel)]="reminder.recurringMonth">
+                  <option value="">{{ (i18n.terms$ | async)?.selectMonth }}</option>
+                  <option *ngFor="let month of monthOptions" [value]="month.value">
+                    {{ month.label }}
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row"
+              *ngIf="reminder.isRecurring && reminder.recurringPattern === 'yearly' && reminder.recurringMonth">
+              <div class="form-group">
+                <label>{{ (i18n.terms$ | async)?.dayOfMonth }}</label>
+                <select class="form-control" [(ngModel)]="reminder.recurringDayOfMonth">
+                  <option value="">{{ (i18n.terms$ | async)?.selectDay }}</option>
+                  <option *ngFor="let day of dayOfMonthOptions" [value]="day.value">
+                    {{ day.label }}
+                  </option>
+                </select>
+              </div>
             </div>
           </div>
 
-          <div class="form-row">
-            <div class="form-group full-width">
-              <app-modern-dual-date-picker
-                label="תאריך יעד"
-                [(ngModel)]="reminder.dueDate"
-                [disabled]="loading"
-                [compact]="false">
-              </app-modern-dual-date-picker>
+          <!-- Assignment Settings -->
+          <div class="assignment-section">
+            <div class="section-header">
+              <mat-icon>group</mat-icon>
+              <span>{{ (i18n.terms$ | async)?.assignmentSettings }}</span>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>{{ (i18n.terms$ | async)?.assignToUser }}</label>
+                <select class="form-control" [(ngModel)]="reminder.assignedToId">
+                  <option value="">{{ (i18n.terms$ | async)?.noAssignment }}</option>
+                  <option *ngFor="let user of users" [value]="user.id">
+                    {{ user.name }}
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>{{ (i18n.terms$ | async)?.assignToDonor }}</label>
+                <select class="form-control" [(ngModel)]="reminder.relatedDonorId"
+                  (ngModelChange)="onDonorSelectionChange($event)">
+                  <option value="">{{ (i18n.terms$ | async)?.noAssignment }}</option>
+                  <option *ngFor="let donor of donors" [value]="donor.id">
+                    {{ donor.fullName }} ({{ donor.email }})
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>{{ (i18n.terms$ | async)?.assignToDonation }}</label>
+                <select class="form-control" [(ngModel)]="reminder.relatedDonationId">
+                  <option value="">{{ (i18n.terms$ | async)?.noAssignment }}</option>
+                  <option *ngFor="let donation of filteredDonations" [value]="donation.id">
+                    {{ getDonationDisplayText(donation) }}
+                  </option>
+                </select>
+              </div>
             </div>
           </div>
 
-          <div class="form-row">
-            <div class="form-group">
-              <label>שעת יעד</label>
-              <input
-                type="time"
-                class="form-control"
-                [(ngModel)]="reminder.dueTime">
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label>שיוך למשתמש</label>
-              <select class="form-control" [(ngModel)]="reminder.assignedToId">
-                <option value="">ללא שיוך</option>
-                <option *ngFor="let user of users" [value]="user.id">
-                  {{ user.name }}
-                </option>
-              </select>
-            </div>
-          </div>
         </div>
       </div>
 
-      <!-- Right Column - Settings -->
-      <div class="right-column">
-        <!-- Alert Settings -->
-        <div class="alert-section">
-          <div class="section-header">
-            <mat-icon>notifications</mat-icon>
-            <span>הגדרות התראה</span>
-          </div>
 
-          <div class="form-row">
-            <div class="form-group">
-              <label>
-                <input
-                  type="checkbox"
-                  [(ngModel)]="reminder.sendAlert">
-                שלח התראה
-              </label>
-            </div>
-          </div>
-
-          <div class="form-row" *ngIf="reminder.sendAlert">
-            <div class="form-group">
-              <label>אמצעי התראה</label>
-              <select class="form-control" [(ngModel)]="reminder.alertMethod">
-                <option *ngFor="let method of alertMethodOptions" [value]="method.value">
-                  {{ method.label }}
-                </option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <!-- Recurring Settings -->
-        <div class="recurring-section">
-          <div class="section-header">
-            <mat-icon>repeat</mat-icon>
-            <span>הגדרות חזרה</span>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label>
-                <input
-                  type="checkbox"
-                  [(ngModel)]="reminder.isRecurring">
-                תזכורת חוזרת
-              </label>
-            </div>
-          </div>
-
-          <div class="form-row" *ngIf="reminder.isRecurring">
-            <div class="form-group">
-              <label>תדירות חזרה</label>
-              <select class="form-control" [(ngModel)]="reminder.recurringPattern">
-                <option *ngFor="let pattern of recurringPatternOptions" [value]="pattern.value">
-                  {{ pattern.label }}
-                </option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Weekly recurring options -->
-          <div class="form-row" *ngIf="reminder.isRecurring && reminder.recurringPattern === 'weekly'">
-            <div class="form-group">
-              <label>יום בשבוע</label>
-              <select class="form-control" [(ngModel)]="reminder.recurringWeekDay">
-                <option value="">בחר יום</option>
-                <option *ngFor="let day of weekDayOptions" [value]="day.value">
-                  {{ day.label }}
-                </option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Monthly recurring options -->
-          <div class="form-row" *ngIf="reminder.isRecurring && reminder.recurringPattern === 'monthly'">
-            <div class="form-group">
-              <label>יום בחודש</label>
-              <select class="form-control" [(ngModel)]="reminder.recurringDayOfMonth">
-                <option value="">בחר יום</option>
-                <option *ngFor="let day of dayOfMonthOptions" [value]="day.value">
-                  {{ day.label }}
-                </option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Yearly recurring options -->
-          <div class="form-row" *ngIf="reminder.isRecurring && reminder.recurringPattern === 'yearly'">
-            <div class="form-group">
-              <label>חודש</label>
-              <select class="form-control" [(ngModel)]="reminder.recurringMonth">
-                <option value="">בחר חודש</option>
-                <option *ngFor="let month of monthOptions" [value]="month.value">
-                  {{ month.label }}
-                </option>
-              </select>
-            </div>
-          </div>
-
-          <div class="form-row" *ngIf="reminder.isRecurring && reminder.recurringPattern === 'yearly' && reminder.recurringMonth">
-            <div class="form-group">
-              <label>יום בחודש</label>
-              <select class="form-control" [(ngModel)]="reminder.recurringDayOfMonth">
-                <option value="">בחר יום</option>
-                <option *ngFor="let day of dayOfMonthOptions" [value]="day.value">
-                  {{ day.label }}
-                </option>
-              </select>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
-  </div>
 
-  <!-- Loading State -->
-  <div class="loading-container" *ngIf="loading">
-    <mat-icon class="loading-icon">hourglass_empty</mat-icon>
-    <p>טוען...</p>
-  </div>
+    <!-- Loading State -->
+    <div class="loading-container" *ngIf="loading">
+      <mat-icon class="loading-icon">hourglass_empty</mat-icon>
+      <p>{{ (i18n.terms$ | async)?.loading }}</p>
+    </div>
 
-  <!-- Footer Buttons -->
-  <div class="modal-footer">
-    <button mat-button (click)="cancel()">ביטול</button>
-    <button mat-raised-button color="primary" (click)="save()" [disabled]="loading">
-      {{ isNewReminder ? 'צור תזכורת' : 'שמור שינויים' }}
-    </button>
-  </div>
+    <!-- Footer Buttons -->
+    <div class="modal-footer">
+      <button mat-button (click)="cancel()">{{ (i18n.terms$ | async)?.cancel }}</button>
+      <button mat-raised-button color="primary" (click)="save()" [disabled]="loading">
+        {{ isNewReminder ? (i18n.terms$ | async)?.createReminder : (i18n.terms$ | async)?.saveChanges }}
+      </button>
+    </div>
   </div>
 </div>

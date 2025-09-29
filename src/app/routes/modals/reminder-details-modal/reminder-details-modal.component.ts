@@ -2,21 +2,22 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { MatNativeDateModule } from '@angular/material/core';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatNativeDateModule } from '@angular/material/core';
 import { openDialog } from 'common-ui-elements';
 import { remult } from 'remult';
-import { Reminder, Donor, Donation, User } from '../../../../shared/entity';
+import { Donation, Donor, Reminder, User } from '../../../../shared/entity';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
 import { SharedComponentsModule } from '../../../shared/shared-components.module';
 
 export interface ReminderDetailsModalArgs {
   reminderId?: string; // 'new' for new reminder or reminder ID for editing
-  donationId?: string; // Optional donation ID to link
+  userId?: string; // Optional user ID to assign
   donorId?: string; // Optional donor ID to link
+  donationId?: string; // Optional donation ID to link
 }
 
 @Component({
@@ -41,8 +42,6 @@ export class ReminderDetailsModalComponent implements OnInit {
   shouldClose = false;
 
   reminder?: Reminder;
-  donor?: Donor;
-  donation?: Donation;
 
   reminderRepo = remult.repo(Reminder);
   donorRepo = remult.repo(Donor);
@@ -52,70 +51,17 @@ export class ReminderDetailsModalComponent implements OnInit {
   loading = false;
   isNewReminder = false;
   users: User[] = [];
+  donors: Donor[] = [];
+  donations: Donation[] = [];
+  filteredDonations: Donation[] = [];
 
-  // Reminder type options
-  typeOptions = [
-    { value: 'donation_followup', label: 'מעקב תרומה' },
-    { value: 'thank_you', label: 'מכתב תודה' },
-    { value: 'receipt', label: 'קבלה' },
-    { value: 'birthday', label: 'יום הולדת' },
-    { value: 'holiday', label: 'חג' },
-    { value: 'general', label: 'כללי' },
-    { value: 'meeting', label: 'פגישה' },
-    { value: 'phone_call', label: 'שיחת טלפון' }
-  ];
-
-  // Priority options
-  priorityOptions = [
-    { value: 'low', label: 'נמוך' },
-    { value: 'normal', label: 'רגיל' },
-    { value: 'high', label: 'גבוה' },
-    { value: 'urgent', label: 'דחוף' }
-  ];
-
-  // Alert method options
-  alertMethodOptions = [
-    { value: 'email', label: 'אימייל' },
-    { value: 'sms', label: 'SMS' },
-    { value: 'popup', label: 'התראה במערכת' },
-    { value: 'none', label: 'ללא' }
-  ];
-
-  // Recurring pattern options
-  recurringPatternOptions = [
-    { value: 'none', label: 'ללא' },
-    { value: 'daily', label: 'יומי' },
-    { value: 'weekly', label: 'שבועי' },
-    { value: 'monthly', label: 'חודשי' },
-    { value: 'yearly', label: 'שנתי' }
-  ];
-
-  // Weekday options (0=Sunday to 6=Saturday)
-  weekDayOptions = [
-    { value: 0, label: 'ראשון' },
-    { value: 1, label: 'שני' },
-    { value: 2, label: 'שלישי' },
-    { value: 3, label: 'רביעי' },
-    { value: 4, label: 'חמישי' },
-    { value: 5, label: 'שישי' },
-    { value: 6, label: 'שבת' }
-  ];
-
-  // Month options
-  monthOptions = [
-    { value: 1, label: 'ינואר' },
-    { value: 2, label: 'פברואר' },
-    { value: 3, label: 'מרץ' },
-    { value: 4, label: 'אפריל' },
-    { value: 5, label: 'מאי' },
-    { value: 6, label: 'יוני' },
-    { value: 7, label: 'יולי' },
-    { value: 8, label: 'אוגוסט' },
-    { value: 9, label: 'ספטמבר' },
-    { value: 10, label: 'אוקטובר' },
-    { value: 11, label: 'נובמבר' },
-    { value: 12, label: 'דצמבר' }
-  ];
+  // Options will be populated with i18n values
+  typeOptions: { value: string, label: string }[] = [];
+  priorityOptions: { value: string, label: string }[] = [];
+  alertMethodOptions: { value: string, label: string }[] = [];
+  recurringPatternOptions: { value: string, label: string }[] = [];
+  weekDayOptions: { value: number, label: string }[] = [];
+  monthOptions: { value: number, label: string }[] = [];
 
   // Day of month options (1-31)
   dayOfMonthOptions = Array.from({ length: 31 }, (_, i) => ({ value: i + 1, label: (i + 1).toString() }));
@@ -123,16 +69,20 @@ export class ReminderDetailsModalComponent implements OnInit {
   constructor(
     public i18n: I18nService,
     private ui: UIToolsService
-  ) {}
+  ) { }
 
   async ngOnInit() {
     this.loading = true;
     try {
-      // Load users for assignment
-      this.users = await this.userRepo.find({
-        where: { disabled: false },
-        orderBy: { name: 'asc' }
-      });
+      // Initialize options with i18n
+      this.initializeOptions();
+
+      // Load data in parallel
+      await Promise.all([
+        this.loadUsers(),
+        this.loadDonors(),
+        this.loadDonations()
+      ]);
 
       // Check if new or editing
       if (!this.args.reminderId || this.args.reminderId === 'new') {
@@ -166,6 +116,7 @@ export class ReminderDetailsModalComponent implements OnInit {
         // Edit existing reminder
         this.reminder = await this.reminderRepo.findId(this.args.reminderId, {
           include: {
+            relatedDonation: true,
             relatedDonor: true,
             assignedTo: true,
             createdBy: true
@@ -176,15 +127,25 @@ export class ReminderDetailsModalComponent implements OnInit {
           this.shouldClose = true;
           return;
         }
-        this.donor = this.reminder.relatedDonor;
+        // relatedDonor is already loaded from the include
       }
 
-      // Set current user as default assignee if new
+      // Set user assignment from args or current user as default
       if (this.isNewReminder && !this.reminder.assignedToId) {
-        const currentUser = await remult.repo(User).findFirst({ name: remult.user?.name });
-        if (currentUser) {
-          this.reminder.assignedToId = currentUser.id;
-          this.reminder.assignedTo = currentUser;
+        if (this.args.userId) {
+          // Use the provided userId
+          this.reminder.assignedToId = this.args.userId;
+          const assignedUser = this.users.find(u => u.id === this.args.userId);
+          if (assignedUser) {
+            this.reminder.assignedTo = assignedUser;
+          }
+        } else {
+          // Default to current user
+          const currentUser = await remult.repo(User).findFirst({ name: remult.user?.name });
+          if (currentUser) {
+            this.reminder.assignedToId = currentUser.id;
+            this.reminder.assignedTo = currentUser;
+          }
         }
       }
 
@@ -198,29 +159,28 @@ export class ReminderDetailsModalComponent implements OnInit {
 
   async loadDonation(donationId: string) {
     try {
-      this.donation = await this.donationRepo.findId(donationId, {
+      const loadedDonation = await this.donationRepo.findId(donationId, {
         include: {
           donor: true,
           campaign: true
         }
       }) || undefined;
 
-      if (this.donation) {
-        this.donor = this.donation.donor;
-        if (this.donor) {
-          this.reminder!.relatedDonorId = this.donor.id;
-          this.reminder!.relatedDonor = this.donor;
+      if (loadedDonation) {
+        // Link to donation
+        this.reminder!.relatedDonationId = loadedDonation.id;
+        this.reminder!.relatedDonation = loadedDonation;
+
+        if (loadedDonation.donor) {
+          this.reminder!.relatedDonorId = loadedDonation.donor.id;
+          this.reminder!.relatedDonor = loadedDonation.donor;
         }
 
-        // Link to donation
-        this.reminder!.relatedDonationId = this.donation.id;
-        this.reminder!.relatedDonation = this.donation;
-
         // Set title based on donation
-        this.reminder!.title = `מעקב תרומה - ${this.donor?.fullName || 'תורם'}`;
-        this.reminder!.description = `סכום: ₪${this.donation.amount.toLocaleString()}`;
-        if (this.donation.campaign) {
-          this.reminder!.description += `\nקמפיין: ${this.donation.campaign.name}`;
+        this.reminder!.title = `מעקב תרומה - ${this.reminder!.relatedDonor?.fullName || 'תורם'}`;
+        this.reminder!.description = `סכום: ₪${loadedDonation.amount.toLocaleString()}`;
+        if (loadedDonation.campaign) {
+          this.reminder!.description += `\nקמפיין: ${loadedDonation.campaign.name}`;
         }
       }
     } catch (error) {
@@ -231,10 +191,10 @@ export class ReminderDetailsModalComponent implements OnInit {
 
   async loadDonor(donorId: string) {
     try {
-      this.donor = await this.donorRepo.findId(donorId) || undefined;
-      if (this.donor) {
-        this.reminder!.relatedDonorId = this.donor.id;
-        this.reminder!.relatedDonor = this.donor;
+      const loadedDonor = await this.donorRepo.findId(donorId) || undefined;
+      if (loadedDonor) {
+        this.reminder!.relatedDonorId = loadedDonor.id;
+        this.reminder!.relatedDonor = loadedDonor;
       }
     } catch (error) {
       console.error('Error loading donor:', error);
@@ -334,6 +294,133 @@ export class ReminderDetailsModalComponent implements OnInit {
       case 'low': return 'gray';
       default: return 'blue';
     }
+  }
+
+  async loadUsers() {
+    this.users = await this.userRepo.find({
+      where: { disabled: false },
+      orderBy: { name: 'asc' }
+    });
+  }
+
+  async loadDonors() {
+    this.donors = await this.donorRepo.find({
+      orderBy: { fullName: 'asc' }
+    });
+  }
+
+  async loadDonations() {
+    this.donations = await this.donationRepo.find({
+      include: {
+        donor: true,
+        campaign: true
+      },
+      orderBy: { donationDate: 'desc' }
+    });
+    this.filteredDonations = [...this.donations]; // Initialize with all donations
+  }
+
+  onDonorSelectionChange(donorId: string) {
+    if (donorId) {
+      // Update the related donor
+      const selectedDonor = this.donors.find(d => d.id === donorId);
+      if (selectedDonor && this.reminder) {
+        this.reminder.relatedDonorId = donorId;
+        this.reminder.relatedDonor = selectedDonor;
+      }
+
+      // Filter donations to show only those of the selected donor
+      this.filteredDonations = this.donations.filter(donation => donation.donorId === donorId);
+
+      // Clear donation selection if it doesn't belong to the selected donor
+      if (this.reminder?.relatedDonationId) {
+        const selectedDonation = this.donations.find(d => d.id === this.reminder?.relatedDonationId);
+        if (selectedDonation && selectedDonation.donorId !== donorId) {
+          this.reminder.relatedDonationId = '';
+        }
+      }
+    } else {
+      // Clear the related donor
+      if (this.reminder) {
+        this.reminder.relatedDonorId = '';
+        this.reminder.relatedDonor = undefined;
+      }
+      // Show all donations if no donor is selected
+      this.filteredDonations = [...this.donations];
+    }
+  }
+
+  getDonationDisplayText(donation: Donation): string {
+    const amount = `₪${donation.amount.toLocaleString()}`;
+    const date = new Date(donation.donationDate).toLocaleDateString('he-IL');
+    const donor = donation.donor?.fullName || 'תורם לא ידוע';
+    return `${amount} - ${donor} (${date})`;
+  }
+
+  getDueDateLabel(): string {
+    return this.i18n.terms.dueDate || 'תאריך יעד';
+  }
+
+  initializeOptions() {
+    const terms = this.i18n.terms;
+
+    this.typeOptions = [
+      { value: 'donation_followup', label: terms.donationFollowUp },
+      { value: 'thank_you', label: terms.thankYouLetter },
+      { value: 'receipt', label: terms.receipt },
+      { value: 'birthday', label: terms.birthdayType },
+      { value: 'holiday', label: terms.holiday },
+      { value: 'general', label: terms.generalType },
+      { value: 'meeting', label: terms.meetingType },
+      { value: 'phone_call', label: terms.phoneCallType }
+    ];
+
+    this.priorityOptions = [
+      { value: 'low', label: terms.lowPriority },
+      { value: 'normal', label: terms.normalPriority },
+      { value: 'high', label: terms.highPriority },
+      { value: 'urgent', label: terms.urgentPriority }
+    ];
+
+    this.alertMethodOptions = [
+      { value: 'email', label: terms.emailAlert },
+      { value: 'sms', label: terms.smsAlert },
+      { value: 'popup', label: terms.popupAlert },
+      { value: 'none', label: terms.noAlert }
+    ];
+
+    this.recurringPatternOptions = [
+      { value: 'none', label: terms.noRepeat },
+      { value: 'daily', label: terms.dailyRepeat },
+      { value: 'weekly', label: terms.weeklyRepeat },
+      { value: 'monthly', label: terms.monthlyRepeat },
+      { value: 'yearly', label: terms.yearlyRepeat }
+    ];
+
+    this.weekDayOptions = [
+      { value: 0, label: 'ראשון' },
+      { value: 1, label: 'שני' },
+      { value: 2, label: 'שלישי' },
+      { value: 3, label: 'רביעי' },
+      { value: 4, label: 'חמישי' },
+      { value: 5, label: 'שישי' },
+      { value: 6, label: 'שבת' }
+    ];
+
+    this.monthOptions = [
+      { value: 1, label: 'ינואר' },
+      { value: 2, label: 'פברואר' },
+      { value: 3, label: 'מרץ' },
+      { value: 4, label: 'אפריל' },
+      { value: 5, label: 'מאי' },
+      { value: 6, label: 'יוני' },
+      { value: 7, label: 'יולי' },
+      { value: 8, label: 'אוגוסט' },
+      { value: 9, label: 'ספטמבר' },
+      { value: 10, label: 'אוקטובר' },
+      { value: 11, label: 'נובמבר' },
+      { value: 12, label: 'דצמבר' }
+    ];
   }
 
   static async open(args: ReminderDetailsModalArgs): Promise<boolean> {

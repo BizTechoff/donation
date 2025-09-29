@@ -100,6 +100,152 @@
           </div>
         </div>
 
+        <!-- פרטי תרומה בסיסיים -->
+        <div class="section basic-details">
+          <h3>פרטי תרומה בסיסיים</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">attach_money</mat-icon>
+                <label>סכום *</label>
+              </div>
+              <input type="number" class="form-control" [(ngModel)]="donation.amount" placeholder="הכנס סכום" min="0"
+                step="0.01">
+            </div>
+
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">monetization_on</mat-icon>
+                <label>מטבע</label>
+              </div>
+              <select class="form-control" [(ngModel)]="donation.currency">
+                <!-- מטבעות עיקריים -->
+                <option value="ILS">שקל ישראלי (₪)</option>
+                <option value="USD">דולר אמריקני ($)</option>
+                <option value="EUR">יורו (€)</option>
+                <option value="GBP">פאונד בריטי (£)</option>
+                <option value="CAD">דולר קנדי (C$)</option>
+                <option value="AUD">דולר אוסטרלי (A$)</option>
+                <option value="CHF">פרנק שוויצרי (CHF)</option>
+                <option value="JPY">ין יפני (¥)</option>
+
+                <!-- מטבעות אירופיים -->
+                <option value="SEK">כתר שוודי (SEK)</option>
+                <option value="NOK">כתר נורבגי (NOK)</option>
+                <option value="DKK">כתר דני (DKK)</option>
+                <option value="PLN">זלוטי פולני (PLN)</option>
+                <option value="HUF">פורינט הונגרי (HUF)</option>
+                <option value="CZK">כתר צ'כי (CZK)</option>
+                <option value="RON">לאו רומני (RON)</option>
+                <option value="BGN">לב בולגרי (BGN)</option>
+                <option value="HRK">קונה קרואטית (HRK)</option>
+                <option value="ISK">כתר איסלנדי (ISK)</option>
+                <option value="UAH">חריבניה אוקראינית (UAH)</option>
+                <option value="RUB">רובל רוסי (₽)</option>
+                <option value="TRY">לירה טורקית (₺)</option>
+
+                <!-- אסיה -->
+                <option value="CNY">יואן סיני (¥)</option>
+                <option value="INR">רופי הודי (₹)</option>
+                <option value="KRW">וון קוריאני (₩)</option>
+                <option value="THB">באט תאילנדי (฿)</option>
+                <option value="SGD">דולר סינגפורי (S$)</option>
+                <option value="MYR">רינגיט מלזי (RM)</option>
+                <option value="IDR">רופיה אינדונזית (Rp)</option>
+                <option value="PHP">פזו פיליפיני (₱)</option>
+                <option value="VND">דונג וייטנאמי (₫)</option>
+                <option value="HKD">דולר הונג קונגי (HK$)</option>
+                <option value="TWD">דולר טייוואני (NT$)</option>
+                <option value="PKR">רופי פקיסטני (PKR)</option>
+                <option value="BDT">טאקה בנגלדשי (৳)</option>
+                <option value="LKR">רופי סרי לנקי (Rs)</option>
+
+                <!-- אמריקה הלטינית -->
+                <option value="BRL">ריאל ברזילאי (R$)</option>
+                <option value="ARS">פזו ארגנטינאי (ARS)</option>
+                <option value="MXN">פזו מקסיקני (MXN)</option>
+                <option value="CLP">פזו צ'יליאני (CLP)</option>
+                <option value="COP">פזו קולומביאני (COP)</option>
+                <option value="PEN">סול פרואני (S/)</option>
+                <option value="UYU">פזו אורוגוואי (UYU)</option>
+
+                <!-- המזרח התיכון -->
+                <option value="AED">דירהם איחוד האמירויות (AED)</option>
+                <option value="SAR">ריאל סעודי (SAR)</option>
+                <option value="JOD">דינר ירדני (JD)</option>
+                <option value="EGP">פאונד מצרי (EGP)</option>
+                <option value="LBP">לירה לבנונית (LBP)</option>
+                <option value="BHD">דינר בחריני (BHD)</option>
+                <option value="KWD">דינר כוויתי (KWD)</option>
+                <option value="QAR">ריאל קטארי (QAR)</option>
+                <option value="OMR">ריאל עומאני (OMR)</option>
+
+                <!-- אפריקה -->
+                <option value="ZAR">ראנד דרום אפריקני (ZAR)</option>
+                <option value="NGN">נאירה ניגרית (₦)</option>
+                <option value="KES">שילינג קנייתי (KSh)</option>
+                <option value="ETB">ביר אתיופי (ETB)</option>
+                <option value="GHS">סדי גאני (GH₵)</option>
+
+                <!-- אוקיאניה -->
+                <option value="NZD">דולר ניו זילנדי (NZ$)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">support_agent</mat-icon>
+                <label>מתרים</label>
+              </div>
+              <select class="form-control" [(ngModel)]="donation.fundraiserId" (change)="onFundraiserChange()">
+                <option value="">בחר מתרים</option>
+                <option *ngFor="let fundraiser of fundraisers" [value]="fundraiser.id">
+                  {{ getFundraiserDisplayName(fundraiser) }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <div class="field-title">
+                <mat-icon class="field-icon">event</mat-icon>
+                <label>תאריך תרומה *</label>
+              </div>
+              <app-modern-dual-date-picker
+                [(ngModel)]="donation.donationDate"
+                [disabled]="false"
+                [compact]="false"
+                [calendar_open_heb_and_eng_parallel]="true"
+                (dateChange)="changed = true">
+              </app-modern-dual-date-picker>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">info</mat-icon>
+                <label>סטטוס תרומה *</label>
+              </div>
+              <select class="form-control" [(ngModel)]="donation.status">
+                <option value="pending">ממתין</option>
+                <option value="completed">הושלם</option>
+                <option value="cancelled">בוטל</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">help</mat-icon>
+                <label>סיבה</label>
+              </div>
+              <input type="text" class="form-control" [(ngModel)]="donation.reason" placeholder="הכנס סיבה">
+            </div>
+          </div>
+        </div>
+
+
         <!-- אמצעי תשלום -->
         <div class="section payment-method-section">
           <h3>אמצעי תשלום</h3>
@@ -324,152 +470,7 @@
             </div>
           </div>
         </div>
-
-        <!-- פרטי תרומה בסיסיים -->
-        <div class="section basic-details">
-          <h3>פרטי תרומה בסיסיים</h3>
-          <div class="form-grid">
-            <div class="form-group">
-              <div class="field-title">
-                <mat-icon class="field-icon">attach_money</mat-icon>
-                <label>סכום *</label>
-              </div>
-              <input type="number" class="form-control" [(ngModel)]="donation.amount" placeholder="הכנס סכום" min="0"
-                step="0.01">
-            </div>
-
-            <div class="form-group">
-              <div class="field-title">
-                <mat-icon class="field-icon">monetization_on</mat-icon>
-                <label>מטבע</label>
-              </div>
-              <select class="form-control" [(ngModel)]="donation.currency">
-                <!-- מטבעות עיקריים -->
-                <option value="ILS">שקל ישראלי (₪)</option>
-                <option value="USD">דולר אמריקני ($)</option>
-                <option value="EUR">יורו (€)</option>
-                <option value="GBP">פאונד בריטי (£)</option>
-                <option value="CAD">דולר קנדי (C$)</option>
-                <option value="AUD">דולר אוסטרלי (A$)</option>
-                <option value="CHF">פרנק שוויצרי (CHF)</option>
-                <option value="JPY">ין יפני (¥)</option>
-
-                <!-- מטבעות אירופיים -->
-                <option value="SEK">כתר שוודי (SEK)</option>
-                <option value="NOK">כתר נורבגי (NOK)</option>
-                <option value="DKK">כתר דני (DKK)</option>
-                <option value="PLN">זלוטי פולני (PLN)</option>
-                <option value="HUF">פורינט הונגרי (HUF)</option>
-                <option value="CZK">כתר צ'כי (CZK)</option>
-                <option value="RON">לאו רומני (RON)</option>
-                <option value="BGN">לב בולגרי (BGN)</option>
-                <option value="HRK">קונה קרואטית (HRK)</option>
-                <option value="ISK">כתר איסלנדי (ISK)</option>
-                <option value="UAH">חריבניה אוקראינית (UAH)</option>
-                <option value="RUB">רובל רוסי (₽)</option>
-                <option value="TRY">לירה טורקית (₺)</option>
-
-                <!-- אסיה -->
-                <option value="CNY">יואן סיני (¥)</option>
-                <option value="INR">רופי הודי (₹)</option>
-                <option value="KRW">וון קוריאני (₩)</option>
-                <option value="THB">באט תאילנדי (฿)</option>
-                <option value="SGD">דולר סינגפורי (S$)</option>
-                <option value="MYR">רינגיט מלזי (RM)</option>
-                <option value="IDR">רופיה אינדונזית (Rp)</option>
-                <option value="PHP">פזו פיליפיני (₱)</option>
-                <option value="VND">דונג וייטנאמי (₫)</option>
-                <option value="HKD">דולר הונג קונגי (HK$)</option>
-                <option value="TWD">דולר טייוואני (NT$)</option>
-                <option value="PKR">רופי פקיסטני (PKR)</option>
-                <option value="BDT">טאקה בנגלדשי (৳)</option>
-                <option value="LKR">רופי סרי לנקי (Rs)</option>
-
-                <!-- אמריקה הלטינית -->
-                <option value="BRL">ריאל ברזילאי (R$)</option>
-                <option value="ARS">פזו ארגנטינאי (ARS)</option>
-                <option value="MXN">פזו מקסיקני (MXN)</option>
-                <option value="CLP">פזו צ'יליאני (CLP)</option>
-                <option value="COP">פזו קולומביאני (COP)</option>
-                <option value="PEN">סול פרואני (S/)</option>
-                <option value="UYU">פזו אורוגוואי (UYU)</option>
-
-                <!-- המזרח התיכון -->
-                <option value="AED">דירהם איחוד האמירויות (AED)</option>
-                <option value="SAR">ריאל סעודי (SAR)</option>
-                <option value="JOD">דינר ירדני (JD)</option>
-                <option value="EGP">פאונד מצרי (EGP)</option>
-                <option value="LBP">לירה לבנונית (LBP)</option>
-                <option value="BHD">דינר בחריני (BHD)</option>
-                <option value="KWD">דינר כוויתי (KWD)</option>
-                <option value="QAR">ריאל קטארי (QAR)</option>
-                <option value="OMR">ריאל עומאני (OMR)</option>
-
-                <!-- אפריקה -->
-                <option value="ZAR">ראנד דרום אפריקני (ZAR)</option>
-                <option value="NGN">נאירה ניגרית (₦)</option>
-                <option value="KES">שילינג קנייתי (KSh)</option>
-                <option value="ETB">ביר אתיופי (ETB)</option>
-                <option value="GHS">סדי גאני (GH₵)</option>
-
-                <!-- אוקיאניה -->
-                <option value="NZD">דולר ניו זילנדי (NZ$)</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <div class="field-title">
-                <mat-icon class="field-icon">support_agent</mat-icon>
-                <label>מתרים</label>
-              </div>
-              <select class="form-control" [(ngModel)]="donation.fundraiserId" (change)="onFundraiserChange()">
-                <option value="">בחר מתרים</option>
-                <option *ngFor="let fundraiser of fundraisers" [value]="fundraiser.id">
-                  {{ getFundraiserDisplayName(fundraiser) }}
-                </option>
-              </select>
-            </div>
-          </div>
-
-          <div class="form-grid">
-            <div class="form-group full-width">
-              <div class="field-title">
-                <mat-icon class="field-icon">event</mat-icon>
-                <label>תאריך תרומה *</label>
-              </div>
-              <app-modern-dual-date-picker
-                [(ngModel)]="donation.donationDate"
-                [disabled]="false"
-                [compact]="false"
-                [calendar_open_heb_and_eng_parallel]="true"
-                (dateChange)="changed = true">
-              </app-modern-dual-date-picker>
-            </div>
-          </div>
-
-          <div class="form-grid">
-            <div class="form-group">
-              <div class="field-title">
-                <mat-icon class="field-icon">info</mat-icon>
-                <label>סטטוס תרומה *</label>
-              </div>
-              <select class="form-control" [(ngModel)]="donation.status">
-                <option value="pending">ממתין</option>
-                <option value="completed">הושלם</option>
-                <option value="cancelled">בוטל</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <div class="field-title">
-                <mat-icon class="field-icon">help</mat-icon>
-                <label>סיבה</label>
-              </div>
-              <input type="text" class="form-control" [(ngModel)]="donation.reason" placeholder="הכנס סיבה">
-            </div>
-          </div>
-        </div>
-
+        
         <!-- פרטי אישור -->
         <!-- <div class="section receipt-details">
           <h3>פרטי אישור</h3>

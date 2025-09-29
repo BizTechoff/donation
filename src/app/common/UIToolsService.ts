@@ -153,10 +153,10 @@ export class UIToolsService implements UITools {
     )
   }
 
-  async reminderDetailsDialog(reminderId?: string, options?: { donorId?: string; donationId?: string }): Promise<boolean> {
+  async reminderDetailsDialog(reminderId?: string, options?: { userId?: string; donorId?: string; donationId?: string }): Promise<boolean> {
     return await openDialog(
       (await import('../routes/modals/reminder-details-modal/reminder-details-modal.component')).ReminderDetailsModalComponent,
-      (dlg) => dlg.args = { reminderId, donorId: options?.donorId, donationId: options?.donationId },
+      (dlg) => dlg.args = { reminderId, userId: options?.userId, donorId: options?.donorId, donationId: options?.donationId },
       (dlg) => dlg.changed
     )
   }
