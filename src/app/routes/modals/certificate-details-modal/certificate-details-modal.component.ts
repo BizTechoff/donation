@@ -3,11 +3,14 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Certificate } from '../../../../shared/entity/certificate';
 import { Donor } from '../../../../shared/entity/donor';
+import { Donation } from '../../../../shared/entity/donation';
 import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
 
 export interface CertificateDetailsModalArgs {
-  certificateId?: string;
+  certificateId?: string; // 'new' for new certificate or certificate ID for editing
+  donorId?: string; // Optional donor ID to pre-select
+  donationId?: string; // Optional donation ID to link
 }
 
 @Component({
@@ -31,6 +34,7 @@ export class CertificateDetailsModalComponent implements OnInit {
 
   donorRepo = remult.repo(Donor);
   certificateRepo = remult.repo(Certificate);
+  donationRepo = remult.repo(Donation);
 
   constructor(public i18n: I18nService) {}
 
@@ -41,6 +45,17 @@ export class CertificateDetailsModalComponent implements OnInit {
       this.isNewCertificate = true;
       this.certificate = new Certificate();
       this.certificate.eventDate = new Date();
+
+      // Pre-select donor if donorId is provided
+      if (this.args.donorId) {
+        this.selectedDonorId = this.args.donorId;
+        this.certificate.donorId = this.args.donorId;
+      }
+
+      // Load donation details if donationId is provided
+      if (this.args.donationId) {
+        await this.loadDonationDetails(this.args.donationId);
+      }
     } else {
       const cert = await this.certificateRepo.findId(this.args.certificateId, {
         include: {
@@ -137,5 +152,34 @@ export class CertificateDetailsModalComponent implements OnInit {
 
   get currentDate(): Date {
     return new Date();
+  }
+
+  async loadDonationDetails(donationId: string) {
+    try {
+      const donation = await this.donationRepo.findId(donationId, {
+        include: {
+          donor: true,
+          campaign: true
+        }
+      });
+
+      if (donation) {
+        // Pre-fill certificate details from donation
+        this.certificate.amount = donation.amount;
+        this.certificate.eventDate = donation.donationDate;
+
+        // Set donor information
+        if (donation.donor) {
+          this.selectedDonorId = donation.donorId;
+          this.certificate.donorId = donation.donorId;
+        }
+
+        // Set certificate type based on donation
+        this.certificate.type = 'donation';
+        this.certificate.typeText = this.i18n.terms.donationCertificate;
+      }
+    } catch (error) {
+      console.error('Error loading donation details:', error);
+    }
   }
 }

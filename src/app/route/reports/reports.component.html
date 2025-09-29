@@ -29,10 +29,10 @@
 
   <!-- תפריט טאבים -->
   <div class="reports-tabs">
-    <button class="tab-button" [class.active]="activeReport === 'general'" (click)="switchReport('general')">
+    <!-- <button class="tab-button" [class.active]="activeReport === 'general'" (click)="switchReport('general')">
       <span class="tab-icon">📊</span>
       {{ (i18n.terms$ | async)?.generalReports }}
-    </button>
+    </button> -->
     <button class="tab-button" [class.active]="activeReport === 'donations'" (click)="switchReport('donations')">
       <span class="tab-icon">💰</span>
       {{ (i18n.terms$ | async)?.donationsReport }}

@@ -145,10 +145,10 @@ export class UIToolsService implements UITools {
     )
   }
 
-  async certificateDetailsDialog(certificateId?: string): Promise<boolean> {
+  async certificateDetailsDialog(certificateId?: string, options?: { donorId?: string; donationId?: string }): Promise<boolean> {
     return await openDialog(
       (await import('../routes/modals/certificate-details-modal/certificate-details-modal.component')).CertificateDetailsModalComponent,
-      (dlg) => dlg.args = { certificateId },
+      (dlg) => dlg.args = { certificateId, donorId: options?.donorId, donationId: options?.donationId },
       (dlg) => dlg.changed
     )
   }

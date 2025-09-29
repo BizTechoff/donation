@@ -10,7 +10,7 @@
 
     <div class="modal-content" *ngIf="!loading && reminder">
       <!-- Donor Info -->
-      <div class="info-section" *ngIf="reminder.relatedDonor">
+      <!-- <div class="info-section" *ngIf="reminder.relatedDonor">
         <div class="section-header">
           <mat-icon>person</mat-icon>
           <span>{{ (i18n.terms$ | async)?.relatedDonor }}</span>
@@ -19,10 +19,10 @@
           <strong>{{ reminder.relatedDonor.fullName }}</strong>
           <span class="secondary-text">{{ reminder.relatedDonor.phone }} | {{ reminder.relatedDonor.email }}</span>
         </div>
-      </div>
+      </div> -->
 
       <!-- Donation Info -->
-      <div class="info-section" *ngIf="reminder.relatedDonation">
+      <!-- <div class="info-section" *ngIf="reminder.relatedDonation">
         <div class="section-header">
           <mat-icon>monetization_on</mat-icon>
           <span>{{ (i18n.terms$ | async)?.relatedDonation }}</span>
@@ -33,7 +33,7 @@
           <span class="secondary-text" *ngIf="reminder.relatedDonation.campaign">{{ (i18n.terms$ | async)?.campaign }}: {{
             reminder.relatedDonation.campaign.name }}</span>
         </div>
-      </div>
+      </div> -->
 
       <!-- Main Content Layout -->
       <div class="main-content-layout">

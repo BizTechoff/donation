@@ -67,7 +67,7 @@ export class ReportsComponent implements OnInit {
   };
 
   // Active report type
-  activeReport: 'general' | 'donations' | 'payments' | 'yearly' | 'blessings' = 'general';
+  activeReport: 'general' | 'donations' | 'payments' | 'yearly' | 'blessings' = 'donations';
   
   // סטטיסטיקות כלליות
   totalStats = {
