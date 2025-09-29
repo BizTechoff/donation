@@ -1012,3 +1012,158 @@
     }
   }
 }
+
+// Standing Order Type Selector
+.standing-order-type-selector {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+
+  .radio-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding: 8px 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+
+    &:hover {
+      border-color: #667eea;
+      background: #f8f9ff;
+    }
+
+    input[type="radio"] {
+      margin: 0;
+      accent-color: #667eea;
+    }
+
+    input[type="radio"]:checked + span {
+      color: #667eea;
+      font-weight: 500;
+    }
+
+    span {
+      font-size: 14px;
+      color: #333;
+      transition: all 0.3s ease;
+    }
+  }
+}
+
+// Payment Count Selector
+.payment-count-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  .checkbox-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding: 8px 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    background: white;
+
+    &:hover {
+      border-color: #667eea;
+      background: #f8f9ff;
+    }
+
+    input[type="checkbox"] {
+      margin: 0;
+      accent-color: #667eea;
+    }
+
+    input[type="checkbox"]:checked + span {
+      color: #667eea;
+      font-weight: 500;
+    }
+
+    span {
+      font-size: 14px;
+      color: #333;
+      transition: all 0.3s ease;
+    }
+  }
+
+  .payment-count-input {
+    margin-left: 20px;
+
+    .form-control {
+      width: 200px;
+      max-width: 100%;
+    }
+  }
+}
+
+// Inline Payment Count Selector (for single row layout)
+.payment-count-selector-inline {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  .checkbox-option {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    font-size: 13px;
+
+    input[type="checkbox"] {
+      margin: 0;
+      accent-color: #667eea;
+    }
+
+    input[type="checkbox"]:checked + span {
+      color: #667eea;
+      font-weight: 500;
+    }
+
+    span {
+      font-size: 13px;
+      color: #333;
+      transition: all 0.3s ease;
+    }
+  }
+
+  .payment-count-input {
+    margin-top: 4px;
+
+    .form-control {
+      width: 100%;
+      padding: 8px 12px;
+      font-size: 13px;
+    }
+  }
+}
+
+// Bank and Credit Card Details Sections
+.bank-details-section,
+.credit-card-details-section {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #e0e0e0;
+
+  h5 {
+    margin: 0 0 16px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    &::before {
+      content: '';
+      width: 4px;
+      height: 20px;
+      background: #667eea;
+      border-radius: 2px;
+    }
+  }
+}

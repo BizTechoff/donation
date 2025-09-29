@@ -422,6 +422,30 @@
               <mat-icon class="payment-icon">autorenew</mat-icon>
               <h4>פרטי הוראת קבע</h4>
             </div>
+
+            <!-- Standing Order Type Selection -->
+            <div class="form-grid">
+              <div class="form-group full-width">
+                <div class="field-title">
+                  <mat-icon class="field-icon">payment</mat-icon>
+                  <label>{{ (i18n.terms$ | async)?.standingOrderTypeLabel }}</label>
+                </div>
+                <div class="standing-order-type-selector">
+                  <label class="radio-option">
+                    <input type="radio" name="standingOrderType" value="bank"
+                           [(ngModel)]="donation.standingOrderType">
+                    <span>{{ (i18n.terms$ | async)?.bankStandingOrder }}</span>
+                  </label>
+                  <label class="radio-option">
+                    <input type="radio" name="standingOrderType" value="creditCard"
+                           [(ngModel)]="donation.standingOrderType">
+                    <span>{{ (i18n.terms$ | async)?.creditCardStandingOrder }}</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Frequency and Payment Settings -->
             <div class="form-grid">
               <div class="form-group">
                 <div class="field-title">
@@ -458,14 +482,90 @@
                   <option *ngFor="let day of getDaysOfWeek()" [value]="day.value">{{ day.name }}</option>
                 </select>
               </div>
+            </div>
 
-              <div class="form-group">
+            <!-- Number of Payments Section -->
+            <div class="form-grid">
+              <div class="form-group full-width">
                 <div class="field-title">
                   <mat-icon class="field-icon">repeat</mat-icon>
-                  <label>מספר תשלומים</label>
+                  <label>{{ (i18n.terms$ | async)?.numberOfPaymentsLabel }}</label>
                 </div>
-                <input type="number" class="form-control" [(ngModel)]="donation.numberOfPayments"
-                       min="1" placeholder="מספר תשלומים">
+                <div class="payment-count-selector">
+                  <label class="checkbox-option">
+                    <input type="checkbox" [(ngModel)]="donation.unlimitedPayments"
+                           (change)="onUnlimitedPaymentsChange()">
+                    <span>{{ (i18n.terms$ | async)?.unlimitedPayments }}</span>
+                  </label>
+                  <div class="payment-count-input" *ngIf="!donation.unlimitedPayments">
+                    <input type="number" class="form-control" [(ngModel)]="donation.numberOfPayments"
+                           min="1" [placeholder]="(i18n.terms$ | async)?.paymentsCount">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+
+            <!-- Bank Details Section -->
+            <div class="bank-details-section" *ngIf="donation.standingOrderType === 'bank'">
+              <h5>{{ (i18n.terms$ | async)?.bankDetailsSection }}</h5>
+              <div class="form-grid">
+                <div class="form-group">
+                  <div class="field-title">
+                    <mat-icon class="field-icon">account_balance</mat-icon>
+                    <label>{{ (i18n.terms$ | async)?.bankNameLabel }}</label>
+                  </div>
+                  <input type="text" class="form-control" [(ngModel)]="donation.bankName"
+                         [placeholder]="(i18n.terms$ | async)?.bankNameLabel">
+                </div>
+                <div class="form-group">
+                  <div class="field-title">
+                    <mat-icon class="field-icon">store</mat-icon>
+                    <label>{{ (i18n.terms$ | async)?.bankBranchLabel }}</label>
+                  </div>
+                  <input type="text" class="form-control" [(ngModel)]="donation.bankBranch"
+                         [placeholder]="(i18n.terms$ | async)?.bankBranchLabel">
+                </div>
+                <div class="form-group">
+                  <div class="field-title">
+                    <mat-icon class="field-icon">account_box</mat-icon>
+                    <label>{{ (i18n.terms$ | async)?.bankAccountLabel }}</label>
+                  </div>
+                  <input type="text" class="form-control" [(ngModel)]="donation.bankAccount"
+                         [placeholder]="(i18n.terms$ | async)?.bankAccountLabel">
+                </div>
+              </div>
+            </div>
+
+            <!-- Credit Card Details Section -->
+            <div class="credit-card-details-section" *ngIf="donation.standingOrderType === 'creditCard'">
+              <h5>{{ (i18n.terms$ | async)?.creditCardDetailsSection }}</h5>
+              <div class="form-grid">
+                <div class="form-group">
+                  <div class="field-title">
+                    <mat-icon class="field-icon">credit_card</mat-icon>
+                    <label>{{ (i18n.terms$ | async)?.cardNumberLabel }}</label>
+                  </div>
+                  <input type="text" class="form-control" [(ngModel)]="donation.cardNumber"
+                         maxlength="4" pattern="[0-9]{4}"
+                         [placeholder]="(i18n.terms$ | async)?.cardNumberLabel">
+                </div>
+                <div class="form-group">
+                  <div class="field-title">
+                    <mat-icon class="field-icon">date_range</mat-icon>
+                    <label>{{ (i18n.terms$ | async)?.cardExpiryLabel }}</label>
+                  </div>
+                  <input type="text" class="form-control" [(ngModel)]="donation.cardExpiry"
+                         placeholder="MM/YY" maxlength="5">
+                </div>
+                <div class="form-group">
+                  <div class="field-title">
+                    <mat-icon class="field-icon">person</mat-icon>
+                    <label>{{ (i18n.terms$ | async)?.cardHolderLabel }}</label>
+                  </div>
+                  <input type="text" class="form-control" [(ngModel)]="donation.cardHolderName"
+                         [placeholder]="(i18n.terms$ | async)?.cardHolderLabel">
+                </div>
               </div>
             </div>
           </div>

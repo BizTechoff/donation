@@ -718,6 +718,23 @@ export const termsHe = {
   saveAndExitButton: 'שמור ויצא',
   saveDonationButton: 'שמור תרומה',
 
+  // Standing Order Fields
+  standingOrderTypeLabel: 'סוג הוראת קבע',
+  bankStandingOrder: 'הוראת קבע בנקאית',
+  creditCardStandingOrder: 'הוראת קבע בכרטיס אשראי',
+  numberOfPaymentsLabel: 'מספר תשלומים לחיוב',
+  unlimitedPayments: 'ללא הגבלה',
+  limitedPayments: 'מספר מוגבל',
+  paymentsCount: 'מספר תשלומים',
+  bankDetailsSection: 'פרטי חשבון בנק',
+  bankNameLabel: 'שם הבנק',
+  bankBranchLabel: 'מספר סניף',
+  bankAccountLabel: 'מספר חשבון',
+  creditCardDetailsSection: 'פרטי כרטיס אשראי',
+  cardNumberLabel: 'מספר כרטיס (4 ספרות אחרונות)',
+  cardExpiryLabel: 'תוקף כרטיס',
+  cardHolderLabel: 'שם בעל הכרטיס',
+
   // Reminders Page - From reminders.component.html
   remindersAndTracking: 'תזכורות ומעקבים',
   addReminder: 'הוספת תזכורת',

@@ -211,6 +211,11 @@ export class DonationDetailsModalComponent implements OnInit {
         this.donation.fundraiserId = '';
         this.donation.partnerIds = [];
 
+        // Initialize standing order defaults
+        this.donation.standingOrderType = 'bank';
+        this.donation.unlimitedPayments = true; // Default to unlimited
+        this.donation.numberOfPayments = 0; // 0 when unlimited is true
+
         // Pre-select donor if donorId is provided
         if (this.args.donorId) {
           this.donation.donorId = this.args.donorId;
@@ -670,6 +675,19 @@ export class DonationDetailsModalComponent implements OnInit {
       { value: 5, name: 'שישי' },
       { value: 6, name: 'שבת' }
     ];
+  }
+
+  onUnlimitedPaymentsChange() {
+    if (this.donation.unlimitedPayments) {
+      // When unlimited is selected, clear the number of payments
+      this.donation.numberOfPayments = 0;
+    } else {
+      // When limited is selected, set a default value if it's 0
+      if (!this.donation.numberOfPayments || this.donation.numberOfPayments === 0) {
+        this.donation.numberOfPayments = 12; // Default to 12 payments
+      }
+    }
+    this.changed = true;
   }
 
   openCampaignContacts() {

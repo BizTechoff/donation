@@ -123,11 +123,16 @@ export class StandingOrder extends IdEntity {
   notes = ''
 
   // Payment related fields
+  @Fields.boolean({
+    caption: 'ללא הגבלת תשלומים',
+  })
+  unlimitedPayments = false
+
   @Fields.number({
     caption: 'מספר תשלומים',
-    validate: [Validators.min(1)],
+    validate: [Validators.min(0)],
   })
-  numberOfPayments = 12
+  numberOfPayments = 0
 
   @Fields.number({
     caption: 'תשלומים שהושלמו',
@@ -155,6 +160,12 @@ export class StandingOrder extends IdEntity {
   remainingAmount = 0
 
   // Payment method fields
+  @Fields.string({
+    caption: 'סוג הוראת קבע',
+    validate: Validators.required,
+  })
+  standingOrderType: 'bank' | 'creditCard' = 'bank'
+
   @Fields.string({
     caption: 'סוג תשלום',
   })

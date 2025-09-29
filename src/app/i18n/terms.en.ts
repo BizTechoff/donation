@@ -720,6 +720,23 @@ export const termsEn = {
   saveAndExitButton: 'Save and Exit',
   saveDonationButton: 'Save Donation',
 
+  // Standing Order Fields
+  standingOrderTypeLabel: 'Standing Order Type',
+  bankStandingOrder: 'Bank Standing Order',
+  creditCardStandingOrder: 'Credit Card Standing Order',
+  numberOfPaymentsLabel: 'Number of Payments to Charge',
+  unlimitedPayments: 'Unlimited',
+  limitedPayments: 'Limited Number',
+  paymentsCount: 'Number of Payments',
+  bankDetailsSection: 'Bank Account Details',
+  bankNameLabel: 'Bank Name',
+  bankBranchLabel: 'Branch Number',
+  bankAccountLabel: 'Account Number',
+  creditCardDetailsSection: 'Credit Card Details',
+  cardNumberLabel: 'Card Number (Last 4 digits)',
+  cardExpiryLabel: 'Card Expiry',
+  cardHolderLabel: 'Cardholder Name',
+
   // Reminders Page - From reminders.component.html
   remindersAndTracking: 'Reminders and Tracking',
   addReminder: 'Add Reminder',

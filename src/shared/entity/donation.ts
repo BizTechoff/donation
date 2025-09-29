@@ -177,7 +177,17 @@ export class Donation extends IdEntity {
     caption: 'סוג תרומה',
     validate: Validators.required,
   })
-  donationType: 'full' | 'commitment' = 'full'
+  donationType: 'full' | 'commitment' | 'standingOrder' = 'full'
+
+  @Fields.string({
+    caption: 'סוג הוראת קבע',
+  })
+  standingOrderType: 'bank' | 'creditCard' = 'bank'
+
+  @Fields.boolean({
+    caption: 'ללא הגבלת תשלומים',
+  })
+  unlimitedPayments = false
 
   // Additional payment fields
   @Fields.string({
