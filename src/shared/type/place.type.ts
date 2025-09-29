@@ -11,6 +11,7 @@ export interface placeDto {
     postcode: string,   // Postal Code
     state: string,      // State/Province Name
     country: string,    // Country Name
+    countryName: string, // Country Name (for mapping to Country entity)
     countryCode: string, // Country Code
     name: string        // Place Name
 }

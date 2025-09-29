@@ -437,7 +437,34 @@ export class Donor extends IdEntity {
   })
   createdById = ''
 
-  get fullName() {
+  @Field(() => String, {
+    caption: 'שם מלא',
+    serverExpression: async (donor: Donor) => {
+      const parts = []
+      if (donor.title) parts.push(donor.title)
+      if (donor.firstName) parts.push(donor.firstName)
+      if (donor.lastName) parts.push(donor.lastName)
+      if (donor.suffix) parts.push(donor.suffix)
+      return parts.join(' ').trim()
+    }
+  })
+  fullName?: string
+
+  @Field(() => String, {
+    caption: 'שם תצוגה',
+    serverExpression: async (donor: Donor) => {
+      const parts = []
+      if (donor.title) parts.push(donor.title)
+      if (donor.firstName) parts.push(donor.firstName)
+      if (donor.lastName) parts.push(donor.lastName)
+      if (donor.suffix) parts.push(donor.suffix)
+      const fullName = parts.join(' ').trim()
+      return fullName || donor.email || donor.phone || 'לא ידוע'
+    }
+  })
+  displayName?: string
+
+  get fullNameGetter() {
     const parts = []
     if (this.title) parts.push(this.title)
     if (this.firstName) parts.push(this.firstName)
@@ -459,7 +486,7 @@ export class Donor extends IdEntity {
   }
 
 
-  get displayName() {
+  get displayNameGetter() {
     return this.fullName || this.email || this.phone || 'לא ידוע'
   }
 

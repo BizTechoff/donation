@@ -174,7 +174,7 @@ export class CampaignBlessingBookModalComponent implements OnInit {
   get filteredDonorBlessings(): DonorBlessing[] {
     return this.donorBlessings.filter(donorBlessing => {
       const matchesText = !this.filterText ||
-        donorBlessing.donor.fullName.toLowerCase().includes(this.filterText.toLowerCase()) ||
+        donorBlessing.donor.fullName?.toLowerCase().includes(this.filterText.toLowerCase()) ||
         donorBlessing.donor.phone?.includes(this.filterText) ||
         donorBlessing.donor.email?.toLowerCase().includes(this.filterText.toLowerCase()) ||
         donorBlessing.blessing?.blessingContent?.toLowerCase().includes(this.filterText.toLowerCase());
@@ -226,7 +226,7 @@ export class CampaignBlessingBookModalComponent implements OnInit {
       blessing = this.blessingRepo.create();
       blessing.donorId = donorBlessing.donor.id;
       blessing.campaignId = this.args.campaignId;
-      blessing.name = donorBlessing.donor.fullName;
+      blessing.name = donorBlessing.donor.fullName || '';
     }
 
     // Open blessing edit dialog

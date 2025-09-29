@@ -475,7 +475,7 @@ export class DonationDetailsModalComponent implements OnInit {
   }
 
   getPartnerDisplayName(partner: Donor): string {
-    return partner.fullName;
+    return partner.fullName || '';
   }
 
   onPartnerSelect(event: Event) {

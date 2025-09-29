@@ -1,7 +1,7 @@
 <div class="modal-overlay" *ngIf="!shouldClose">
   <div class="modal-content large-modal" *ngIf="!loading">
     <div class="modal-header">
-      <h2>{{ certificate?.id ? (i18n.terms$ | async)?.newCertificate : (i18n.terms$ | async)?.createNewCertificateModal }}</h2>
+      <h2>{{ certificate && certificate.id ? (i18n.terms$ | async)?.newCertificate : (i18n.terms$ | async)?.createNewCertificateModal }}</h2>
       <button class="modal-close" (click)="onClose()">&times;</button>
     </div>
     <div class="modal-body">

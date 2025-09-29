@@ -150,6 +150,7 @@ export const termsEn = {
   lastName: 'Last Name',
   fullName: 'Full Name',
   idNumber: 'ID Number',
+  idNumberShort: 'ID#',
   email: 'Email',
   phone: 'Phone',
   address: 'Address',

@@ -2,12 +2,15 @@ import { Component, ElementRef, OnInit, ViewChild, AfterViewInit, OnDestroy } fr
 import { Router } from '@angular/router';
 import { remult } from 'remult';
 import * as L from 'leaflet';
+import { Subscription } from 'rxjs';
 import { Donor } from '../../../shared/entity/donor';
 import { Donation } from '../../../shared/entity/donation';
 import { Place } from '../../../shared/entity/place';
 import { GeocodingService } from '../../services/geocoding.service';
 import { I18nService } from '../../i18n/i18n.service';
 import { UIToolsService } from '../../common/UIToolsService';
+import { DonorService } from '../../services/donor.service';
+import { GlobalFilterService } from '../../services/global-filter.service';
 
 // Fix for default markers in Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -35,13 +38,14 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private map!: L.Map;
   private markersLayer!: L.LayerGroup;
-  
+  private subscription = new Subscription();
+
   donors: DonorWithStats[] = [];
   donations: Donation[] = [];
-  
+
   loading = false;
   showSummary = true;
-  
+
   donorRepo = remult.repo(Donor);
   donationRepo = remult.repo(Donation);
 
@@ -49,7 +53,9 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     private geocodingService: GeocodingService,
     public i18n: I18nService,
     private router: Router,
-    private ui: UIToolsService
+    private ui: UIToolsService,
+    private donorService: DonorService,
+    private filterService: GlobalFilterService
   ) {}
 
   // סטטיסטיקות
@@ -77,10 +83,18 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     (window as any).openDonorDetails = (donorId: string) => {
       this.openDonorDetails(donorId);
     };
-    
+
     (window as any).addDonationForDonor = (donorId: string) => {
       this.addDonationForDonor(donorId);
     };
+
+    // Subscribe to global filter changes
+    this.subscription.add(
+      this.filterService.filters$.subscribe((filters) => {
+        console.log('DonorsMap: Global filters changed:', filters);
+        this.loadData();
+      })
+    );
 
     await this.loadData();
   }
@@ -104,6 +118,11 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
         this.loadDonations()
       ]);
       this.calculateDonorStats();
+
+      // Update map markers if map is initialized
+      if (this.map && this.markersLayer) {
+        this.addMarkersToMap();
+      }
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -112,11 +131,14 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   async loadDonors() {
-    this.donors = await this.donorRepo.find({
-      orderBy: { lastName: 'asc' }
-    }) as DonorWithStats[];
+    // Use DonorService which automatically applies global filters
+    const currentFilters = this.filterService.currentFilters;
+    console.log('DonorsMap: Loading donors with filters:', currentFilters);
 
-    console.log('Loaded donors:', this.donors.length);
+    this.donors = await this.donorService.findFiltered() as DonorWithStats[];
+
+    console.log('DonorsMap: Loaded donors:', this.donors.length);
+    console.log('DonorsMap: Donors with locations:', this.donors.filter(d => d.homePlace?.latitude && d.homePlace?.longitude).length);
 
     // Add demo coordinates for Israel testing
     if (this.donors.length > 0) {
@@ -581,7 +603,10 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.map) {
       this.map.remove();
     }
-    
+
+    // Clean up subscriptions
+    this.subscription.unsubscribe();
+
     // Clean up global functions
     delete (window as any).openDonorDetails;
     delete (window as any).addDonationForDonor;

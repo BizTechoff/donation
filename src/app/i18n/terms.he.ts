@@ -150,6 +150,7 @@ export const termsHe = {
   lastName: 'שם משפחה',
   fullName: 'שם מלא',
   idNumber: 'תעודת זהות',
+  idNumberShort: 'ת.ז',
   email: 'דואר אלקטרוני',
   phone: 'טלפון',
   address: 'כתובת',

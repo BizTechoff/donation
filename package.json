@@ -8,6 +8,7 @@
     "ng": "ng",
     "start": "tsx src/server/",
     "seed": "tsx -r dotenv/config src/server/seed.ts",
+    "seed:countries": "tsx -r dotenv/config src/server/seed/run-seed.ts",
     "build": "ng build && tsc -p tsconfig.server.json",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"

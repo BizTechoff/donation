@@ -111,8 +111,8 @@ export class DonorListComponent implements OnInit, OnDestroy {
 
       this.allDonors = donors.map(donor => ({
         id: donor.id,
-        displayName: donor.fullName || donor.displayName,
-        name: donor.fullName || donor.displayName,
+        displayName: donor.fullName || donor.displayName || '',
+        name: donor.fullName || donor.displayName || '',
         city: donor.homePlace?.city || '',
         country: donor.homePlace?.country || '',
         isActive: donor.isActive

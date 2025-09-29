@@ -109,7 +109,8 @@ export const getPlace = async (req: Request, res: Response, next: NextFunction) 
                                 }
                                 // מדינה וקוד מדינה
                                 if (component.types.includes('country')) {
-                                    result.country = component.long_name; // Country name
+                                    result.country = component.long_name; // Country name for backward compatibility
+                                    result.countryName = component.long_name; // Country name (will be mapped to countryId later)
                                     result.countryCode = component.short_name; // Country code
                                     console.log(`    -> Found country: ${component.long_name} (${component.short_name})`);
                                 }
