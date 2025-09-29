@@ -734,7 +734,7 @@ export class DonorDetailsModalComponent implements OnInit {
     try {
       const donors = await this.donorRepo.find({
         where: { isActive: true },
-        orderBy: { fullName: 'asc' }
+        orderBy: { lastName: 'asc', firstName: 'asc' }
       });
 
       this.allDonors = donors.map(donor => ({

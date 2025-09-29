@@ -305,7 +305,7 @@ export class ReminderDetailsModalComponent implements OnInit {
 
   async loadDonors() {
     this.donors = await this.donorRepo.find({
-      orderBy: { fullName: 'asc' }
+      orderBy: { lastName: 'asc', firstName: 'asc' }
     });
   }
 

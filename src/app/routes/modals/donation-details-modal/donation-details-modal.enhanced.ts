@@ -198,7 +198,7 @@ export class DonationDetailsModalComponent implements OnInit {
   private async loadDropdownData() {
     try {
       const [donors, campaigns, methods] = await Promise.all([
-        this.donorRepo.find({ where: { isActive: true }, orderBy: { fullName: 'asc' } }),
+        this.donorRepo.find({ where: { isActive: true }, orderBy: { lastName: 'asc', firstName: 'asc' } }),
         this.campaignRepo.find({ where: { isActive: true }, orderBy: { name: 'asc' } }),
         this.donationMethodRepo.find({ orderBy: { name: 'asc' } })
       ]);
