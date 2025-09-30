@@ -966,7 +966,7 @@ export const termsHe = {
   generalReports: 'דוחות כלליים',
   
   // Donations Report
-  donationsReportTitle: 'דוח תרומות - כמה בפועל ניתן',
+  donationsReportTitle: 'דוח תרומות',
   filterByDonor: 'סינון לפי תורם',
   filterByDonorType: 'סינון לפי סוג תורם',
   filterByYears: 'סינון לפי שנים',

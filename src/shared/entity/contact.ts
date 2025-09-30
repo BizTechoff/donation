@@ -1,14 +1,14 @@
 import {
-  IdEntity,
+  Allow,
   Entity,
   Fields,
+  IdEntity,
   Relations,
-  Allow,
   Validators,
   isBackend
 } from 'remult'
-import { Donor } from './donor'
 import { Roles } from '../enum/roles'
+import { Donor } from './donor'
 
 @Entity<Contact>('contacts', {
   allowApiCrud: Allow.authenticated,
