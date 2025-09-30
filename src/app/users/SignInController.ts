@@ -86,8 +86,8 @@ export async function setSessionUserBasedOnUserRow(user?: User) {
     if (user.admin) {
       roles.push(Roles.admin)
     }
-    else if (user.manager) {
-      roles.push(Roles.manager)
+    else if (user.secretary) {
+      roles.push(Roles.secretary)
     }
     else if (user.donator) {
       roles.push(Roles.donator)

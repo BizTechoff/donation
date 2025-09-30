@@ -11,7 +11,9 @@ export const termsHe = {
   hello: 'שלום',
   invalidOperation: 'פעולה לא חוקית',
   admin: 'מנהל',
+  secretary: 'מזכיר',
   donator: 'מתרים',
+  manager: 'אחראי קמפיין',
   disabled: 'מושבת',
   yes: 'כן',
   no: 'לא',
@@ -192,7 +194,6 @@ export const termsHe = {
   imageUrl: 'תמונה',
   websiteUrl: 'קישור לאתר',
   internalNotes: 'הערות פנימיות',
-  manager: 'אחראי קמפיין',
   progressPercentage: 'אחוז התקדמות',
 
   // Donation Methods
@@ -766,7 +767,7 @@ export const termsHe = {
   
   // Reminders Tabs
   todayTab: 'היום',
-  weekTab: 'השבוع',
+  weekTab: 'השבוע',
   overdueTab: 'באיחור',
   allTab: 'הכל',
   
@@ -856,6 +857,7 @@ export const termsHe = {
   assignToUser: 'שיוך למשתמש',
   assignToDonor: 'שיוך לתורם',
   assignToDonation: 'שיוך לתרומה',
+  assignToContact: 'מתרים',
   noAssignment: 'ללא שיוך',
   relatedDonor: 'תורם מקושר',
   relatedDonation: 'תרומה מקושרת',

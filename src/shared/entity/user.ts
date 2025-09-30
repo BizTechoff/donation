@@ -13,7 +13,7 @@ import { Roles } from '../enum/roles'
 
 @Entity<User>('users', {
   allowApiCrud: true,
-  defaultOrderBy: { admin: 'desc', manager: 'desc', donator: 'desc', name: 'asc' },
+  defaultOrderBy: { admin: 'desc', secretary: 'desc', donator: 'desc', name: 'asc' },
   // allowApiRead: Allow.authenticated,
   // allowApiUpdate: Allow.authenticated,
   // allowApiDelete: false,
@@ -47,7 +47,7 @@ export class User extends IdEntity {
   @DataControl<User, boolean>({
     valueChange: (row, col) => {
       if (col.value) {
-        row.manager = false
+        row.secretary = false
         row.donator = false
       }
     }
@@ -69,15 +69,15 @@ export class User extends IdEntity {
   })
   @Fields.boolean({
     allowApiUpdate: Roles.admin,
-    caption: terms.manager,
+    caption: terms.secretary,
   })
-  manager = false
+  secretary = false
 
   @DataControl<User, boolean>({
     valueChange: (row, col) => {
       if (col.value) {
         row.admin = false
-        row.manager = false
+        row.secretary = false
       }
     }
   })

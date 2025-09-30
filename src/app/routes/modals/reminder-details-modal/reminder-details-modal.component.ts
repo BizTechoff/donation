@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatNativeDateModule } from '@angular/material/core';
@@ -8,10 +8,12 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { openDialog } from 'common-ui-elements';
 import { remult } from 'remult';
-import { Donation, Donor, Reminder, User } from '../../../../shared/entity';
+import { Donation, Donor, Reminder, User, Contact } from '../../../../shared/entity';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
 import { SharedComponentsModule } from '../../../shared/shared-components.module';
+import { GlobalFilterService } from '../../../services/global-filter.service';
+import { Subscription } from 'rxjs';
 
 export interface ReminderDetailsModalArgs {
   reminderId?: string; // 'new' for new reminder or reminder ID for editing
@@ -36,7 +38,7 @@ export interface ReminderDetailsModalArgs {
     SharedComponentsModule
   ]
 })
-export class ReminderDetailsModalComponent implements OnInit {
+export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
   args!: ReminderDetailsModalArgs;
   changed = false;
   shouldClose = false;
@@ -47,13 +49,17 @@ export class ReminderDetailsModalComponent implements OnInit {
   donorRepo = remult.repo(Donor);
   donationRepo = remult.repo(Donation);
   userRepo = remult.repo(User);
+  contactRepo = remult.repo(Contact);
 
   loading = false;
   isNewReminder = false;
   users: User[] = [];
+  fundraisers: User[] = [];
   donors: Donor[] = [];
   donations: Donation[] = [];
+  contacts: Contact[] = [];
   filteredDonations: Donation[] = [];
+  filteredContacts: Contact[] = [];
 
   // Options will be populated with i18n values
   typeOptions: { value: string, label: string }[] = [];
@@ -66,9 +72,12 @@ export class ReminderDetailsModalComponent implements OnInit {
   // Day of month options (1-31)
   dayOfMonthOptions = Array.from({ length: 31 }, (_, i) => ({ value: i + 1, label: (i + 1).toString() }));
 
+  private filterSubscription?: Subscription;
+
   constructor(
     public i18n: I18nService,
-    private ui: UIToolsService
+    private ui: UIToolsService,
+    private globalFilterService: GlobalFilterService
   ) { }
 
   async ngOnInit() {
@@ -79,7 +88,7 @@ export class ReminderDetailsModalComponent implements OnInit {
 
       // Load data in parallel
       await Promise.all([
-        this.loadUsers(),
+        this.loadFundraisers(),
         this.loadDonors(),
         this.loadDonations()
       ]);
@@ -135,13 +144,13 @@ export class ReminderDetailsModalComponent implements OnInit {
         if (this.args.userId) {
           // Use the provided userId
           this.reminder.assignedToId = this.args.userId;
-          const assignedUser = this.users.find(u => u.id === this.args.userId);
+          const assignedUser = this.fundraisers.find(u => u.id === this.args.userId);
           if (assignedUser) {
             this.reminder.assignedTo = assignedUser;
           }
         } else {
-          // Default to current user
-          const currentUser = await remult.repo(User).findFirst({ name: remult.user?.name });
+          // Default to current user if they are a donator (fundraiser)
+          const currentUser = await remult.repo(User).findFirst({ name: remult.user?.name, donator: true });
           if (currentUser) {
             this.reminder.assignedToId = currentUser.id;
             this.reminder.assignedTo = currentUser;
@@ -149,11 +158,25 @@ export class ReminderDetailsModalComponent implements OnInit {
         }
       }
 
+      // Subscribe to global filter changes
+      this.filterSubscription = this.globalFilterService.filters$.subscribe(() => {
+        this.applyGlobalFiltersToLists();
+      });
+
+      // Apply initial filters
+      this.applyGlobalFiltersToLists();
+
     } catch (error) {
       console.error('Error loading reminder:', error);
       this.ui.error('שגיאה בטעינת התזכורת');
     } finally {
       this.loading = false;
+    }
+  }
+
+  ngOnDestroy() {
+    if (this.filterSubscription) {
+      this.filterSubscription.unsubscribe();
     }
   }
 
@@ -303,6 +326,13 @@ export class ReminderDetailsModalComponent implements OnInit {
     });
   }
 
+  async loadFundraisers() {
+    this.fundraisers = await this.userRepo.find({
+      where: { disabled: false, donator: true },
+      orderBy: { name: 'asc' }
+    });
+  }
+
   async loadDonors() {
     this.donors = await this.donorRepo.find({
       orderBy: { lastName: 'asc', firstName: 'asc' }
@@ -318,6 +348,16 @@ export class ReminderDetailsModalComponent implements OnInit {
       orderBy: { donationDate: 'desc' }
     });
     this.filteredDonations = [...this.donations]; // Initialize with all donations
+  }
+
+  async loadContacts() {
+    this.contacts = await this.contactRepo.find({
+      include: {
+        donor: true
+      },
+      orderBy: { lastName: 'asc', firstName: 'asc' }
+    });
+    this.filteredContacts = [...this.contacts]; // Initialize with all contacts
   }
 
   onDonorSelectionChange(donorId: string) {
@@ -348,6 +388,7 @@ export class ReminderDetailsModalComponent implements OnInit {
       // Show all donations if no donor is selected
       this.filteredDonations = [...this.donations];
     }
+
   }
 
   getDonationDisplayText(donation: Donation): string {
@@ -355,6 +396,47 @@ export class ReminderDetailsModalComponent implements OnInit {
     const date = new Date(donation.donationDate).toLocaleDateString('he-IL');
     const donor = donation.donor?.fullName || 'תורם לא ידוע';
     return `${amount} - ${donor} (${date})`;
+  }
+
+  getContactDisplayText(contact: Contact): string {
+    const fullName = `${contact.firstName} ${contact.lastName}`;
+    const position = contact.position ? ` - ${contact.position}` : '';
+    const phone = contact.phone ? ` (${contact.phone})` : '';
+    return `${fullName}${position}${phone}`;
+  }
+
+  applyGlobalFiltersToLists() {
+    const filters = this.globalFilterService.currentFilters;
+
+    // Filter donors by country
+    if (filters.countryNames && filters.countryNames.length > 0) {
+      const filteredDonors = this.donors.filter(donor =>
+        donor.country?.caption && filters.countryNames!.includes(donor.country.caption)
+      );
+
+      // Update filtered lists based on selected donor
+      if (this.reminder?.relatedDonorId) {
+        const selectedDonor = filteredDonors.find(d => d.id === this.reminder!.relatedDonorId);
+        if (selectedDonor) {
+          this.filteredDonations = this.donations.filter(d => d.donorId === this.reminder!.relatedDonorId);
+        } else {
+          // Current donor is not in the filtered list - show filtered donors' data
+          const filteredDonorIds = filteredDonors.map(d => d.id);
+          this.filteredDonations = this.donations.filter(d => filteredDonorIds.includes(d.donorId));
+        }
+      } else {
+        // No donor selected - show all data from filtered donors
+        const filteredDonorIds = filteredDonors.map(d => d.id);
+        this.filteredDonations = this.donations.filter(d => filteredDonorIds.includes(d.donorId));
+      }
+    } else {
+      // No country filter - show all or donor-specific data
+      if (this.reminder?.relatedDonorId) {
+        this.filteredDonations = this.donations.filter(d => d.donorId === this.reminder!.relatedDonorId);
+      } else {
+        this.filteredDonations = [...this.donations];
+      }
+    }
   }
 
   getDueDateLabel(): string {

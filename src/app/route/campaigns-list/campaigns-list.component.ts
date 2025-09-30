@@ -82,7 +82,7 @@ export class CampaignsListComponent implements OnInit {
 
   async loadUsers() {
     this.users = await this.userRepo.find({
-      where: { manager: true },
+      where: { secretary: true },
       orderBy: { name: 'asc' }
     });
   }

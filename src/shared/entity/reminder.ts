@@ -12,6 +12,7 @@ import {
 import { Donor } from './donor'
 import { User } from './user'
 import { Donation } from './donation'
+import { Contact } from './contact'
 import { Roles } from '../enum/roles'
 
 @Entity<Reminder>('reminders', {
@@ -78,6 +79,16 @@ export class Reminder extends IdEntity {
     caption: 'תרומה קשורה ID',
   })
   relatedDonationId = ''
+
+  @Relations.toOne<Reminder, Contact>(() => Contact, {
+    caption: 'איש קשר קשור',
+  })
+  relatedContact?: Contact
+
+  @Fields.string({
+    caption: 'איש קשר קשור ID',
+  })
+  relatedContactId = ''
 
   @Fields.date({
     caption: 'תאריך יעד',
@@ -234,6 +245,7 @@ export class Reminder extends IdEntity {
     if (this.isCompleted) return false
     const today = new Date()
     today.setHours(23, 59, 59, 999)
+    today.setHours(0, 0, 0, 0)
     return this.dueDate < today
   }
 

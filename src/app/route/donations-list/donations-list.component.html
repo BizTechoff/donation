@@ -1,7 +1,8 @@
 <div class="donations-container">
   <div class="page-header">
     <h1>{{ (i18n.terms$ | async)?.donationRecording }}</h1>
-    <button class="btn btn-primary add-donation-btn" (click)="createDonation()">{{ (i18n.terms$ | async)?.recordNewDonation }}</button>
+    <button class="btn btn-primary add-donation-btn" (click)="createDonation()">{{ (i18n.terms$ |
+      async)?.recordNewDonation }}</button>
   </div>
 
   <div class="filters-section">
@@ -10,7 +11,7 @@
         <label>{{ (i18n.terms$ | async)?.donorSearchFilter }}</label>
         <input type="text" class="form-control" [placeholder]="(i18n.terms$ | async)?.donorNamePlaceholder">
       </div>
-      
+
       <div class="filter-group">
         <label>{{ (i18n.terms$ | async)?.dateFromFilter }}</label>
         <input type="date" class="form-control">
@@ -126,126 +127,24 @@
         </span>
       </div>
       <div class="grid-col actions">
-        <button class="btn-icon btn-view" (click)="editDonation(donation)" [title]="(i18n.terms$ | async)?.viewDetails">👁</button>
-        <button class="btn-icon btn-edit" (click)="editDonation(donation)" [title]="(i18n.terms$ | async)?.edit">✏</button>
-        <button class="btn-icon btn-receipt" (click)="issueReceipt(donation)" [disabled]="donation.receiptIssued" [title]="(i18n.terms$ | async)?.receiptAction">🧾</button>
-        <button class="btn-icon btn-delete" (click)="deleteDonation(donation)" [title]="(i18n.terms$ | async)?.delete">🗑</button>
-        <button class="btn-icon btn-cancel" (click)="cancelDonation(donation)" [disabled]="donation.status === 'cancelled'" [title]="(i18n.terms$ | async)?.cancelDonation">❌</button>
+        <button class="btn-icon btn-view" (click)="editDonation(donation)"
+          [title]="(i18n.terms$ | async)?.viewDetails">👁</button>
+        <button class="btn-icon btn-edit" (click)="editDonation(donation)"
+          [title]="(i18n.terms$ | async)?.edit">✏</button>
+        <button class="btn-icon btn-receipt" (click)="issueReceipt(donation)" [disabled]="donation.receiptIssued"
+          [title]="(i18n.terms$ | async)?.receiptAction">🧾</button>
+        <button class="btn-icon btn-delete" (click)="deleteDonation(donation)"
+          [title]="(i18n.terms$ | async)?.delete">🗑</button>
+        <button class="btn-icon btn-cancel" (click)="cancelDonation(donation)"
+          [disabled]="donation.status === 'cancelled'" [title]="(i18n.terms$ | async)?.cancelDonation">❌</button>
       </div>
     </div>
   </div>
 
   <div class="pagination">
     <button class="btn-page">{{ (i18n.terms$ | async)?.previousPage }}</button>
-    <span class="page-info">{{ (i18n.terms$ | async)?.pageOf?.replace('{current}', '1')?.replace('{total}', '15') }}</span>
+    <span class="page-info">{{ (i18n.terms$ | async)?.pageOf?.replace('{current}', '1')?.replace('{total}', '15')
+      }}</span>
     <button class="btn-page">{{ (i18n.terms$ | async)?.nextPage }}</button>
-  </div>
-</div>
-
-<!-- מודל רישום תרומה חדשה -->
-<div class="modal-overlay" *ngIf="showAddDonationModal">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h2>{{ (i18n.terms$ | async)?.donationRecordingModal }}</h2>
-      <button class="modal-close" (click)="closeModal()">&times;</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-grid">
-        <div class="form-group" *ngIf="editingDonation">
-          <label>{{ (i18n.terms$ | async)?.donor }}</label>
-          <select class="form-control" [(ngModel)]="editingDonation!.donorId">
-            <option value="">{{ (i18n.terms$ | async)?.selectDonor }}</option>
-            <option *ngFor="let donor of donors" [value]="donor.id">{{ donor.displayName }}</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>{{ (i18n.terms$ | async)?.gregorianDateField }}</label>
-          <input type="date" class="form-control" [(ngModel)]="donationDateForInput">
-        </div>
-        <div class="form-group">
-          <label>{{ (i18n.terms$ | async)?.hebrewDate }}</label>
-          <input type="text" class="form-control" [placeholder]="(i18n.terms$ | async)?.automaticDate" [(ngModel)]="hebrewDate">
-        </div>
-        <div class="form-group" *ngIf="editingDonation">
-          <label>{{ (i18n.terms$ | async)?.amountField }}</label>
-          <input type="number" class="form-control" placeholder="0" [(ngModel)]="editingDonation!.amount">
-        </div>
-        <div class="form-group" *ngIf="editingDonation">
-          <label>{{ (i18n.terms$ | async)?.currencySelect }}</label>
-          <select class="form-control" [(ngModel)]="editingDonation!.currency">
-            <option value="ILS">{{ (i18n.terms$ | async)?.shekelOption }}</option>
-            <option value="USD">{{ (i18n.terms$ | async)?.dollarOption }}</option>
-            <option value="EUR">{{ (i18n.terms$ | async)?.euroOption }}</option>
-          </select>
-        </div>
-        <div class="form-group" *ngIf="editingDonation">
-          <label>{{ (i18n.terms$ | async)?.donationMethodSelect }}</label>
-          <select class="form-control" [(ngModel)]="editingDonation!.donationMethodId">
-            <option value="">{{ (i18n.terms$ | async)?.selectDonationMethodOption }}</option>
-            <option *ngFor="let method of donationMethods" [value]="method.id">{{ method.name }}</option>
-          </select>
-        </div>
-        <div class="form-group" *ngIf="editingDonation">
-          <label>{{ (i18n.terms$ | async)?.productSelect }}</label>
-          <select class="form-control" [(ngModel)]="editingDonation!.campaignId">
-            <option value="">{{ (i18n.terms$ | async)?.selectProductOption }}</option>
-            <option *ngFor="let campaign of campaigns" [value]="campaign.id">{{ campaign.name }}</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>{{ (i18n.terms$ | async)?.fundraiserNameField }}</label>
-          <input type="text" class="form-control" [placeholder]="(i18n.terms$ | async)?.fundraiserNamePlaceholder" [(ngModel)]="fundraiserName">
-        </div>
-        <div class="form-group full-width" *ngIf="editingDonation">
-          <label>{{ (i18n.terms$ | async)?.reasonNotesField }}</label>
-          <textarea class="form-control" rows="3" [placeholder]="(i18n.terms$ | async)?.notesPlaceholder" [(ngModel)]="editingDonation!.notes"></textarea>
-        </div>
-      </div>
-
-      <!-- תצוגה מקדימה -->
-      <div class="preview-section" *ngIf="showPreview">
-        <h3>{{ (i18n.terms$ | async)?.previewSection }}</h3>
-        <div class="preview-card">
-          <div class="preview-row">
-            <strong>{{ (i18n.terms$ | async)?.donor }}:</strong>
-            <span>{{ getSelectedDonorName() || (i18n.terms$ | async)?.notSelectedValue }}</span>
-          </div>
-          <div class="preview-row">
-            <strong>{{ (i18n.terms$ | async)?.gregorianDate }}:</strong>
-            <span>{{ editingDonation?.donationDate ? (editingDonation!.donationDate | date:'dd/MM/yyyy') : (i18n.terms$ | async)?.notSelectedValue }}</span>
-          </div>
-          <div class="preview-row">
-            <strong>{{ (i18n.terms$ | async)?.hebrewDate }}:</strong>
-            <span>{{ hebrewDate || (i18n.terms$ | async)?.automatic }}</span>
-          </div>
-          <div class="preview-row">
-            <strong>{{ (i18n.terms$ | async)?.amount }}:</strong>
-            <span>{{ getCurrencySymbol() }}{{ editingDonation?.amount || '0' | number }}</span>
-          </div>
-          <div class="preview-row">
-            <strong>{{ (i18n.terms$ | async)?.method }}:</strong>
-            <span>{{ getSelectedMethodName() }}</span>
-          </div>
-          <div class="preview-row">
-            <strong>{{ (i18n.terms$ | async)?.product }}:</strong>
-            <span>{{ getSelectedCampaignName() }}</span>
-          </div>
-          <div class="preview-row">
-            <strong>{{ (i18n.terms$ | async)?.fundraiser }}:</strong>
-            <span>{{ fundraiserName || (i18n.terms$ | async)?.notSpecified }}</span>
-          </div>
-          <div class="preview-row" *ngIf="editingDonation?.notes">
-            <strong>{{ (i18n.terms$ | async)?.notes }}:</strong>
-            <span>{{ editingDonation!.notes }}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" (click)="closeModal()">{{ (i18n.terms$ | async)?.cancel }}</button>
-      <button class="btn btn-info" (click)="togglePreview()">{{ showPreview ? (i18n.terms$ | async)?.hidePreviewButton : (i18n.terms$ | async)?.showPreviewButton }}</button>
-      <button class="btn btn-success" (click)="saveDonationAndExit()">{{ (i18n.terms$ | async)?.saveAndExitButton }}</button>
-      <button class="btn btn-primary" (click)="saveDonation()">{{ (i18n.terms$ | async)?.saveDonationButton }}</button>
-    </div>
   </div>
 </div>

@@ -90,10 +90,18 @@
   </div>
 
   <div class="reminders-tabs">
-    <button class="tab-btn" data-tab="today">{{ (i18n.terms$ | async)?.todayTab }} (8)</button>
-    <button class="tab-btn active" data-tab="week">{{ (i18n.terms$ | async)?.weekTab }} (23)</button>
-    <button class="tab-btn" data-tab="overdue">{{ (i18n.terms$ | async)?.overdueTab }} (5)</button>
-    <button class="tab-btn" data-tab="all">{{ (i18n.terms$ | async)?.allTab }}</button>
+    <button class="tab-btn" [class.active]="activeTab === 'today'" (click)="switchTab('today')">
+      {{ (i18n.terms$ | async)?.todayTab }} ({{todayReminders.length}})
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'week'" (click)="switchTab('week')">
+      {{ (i18n.terms$ | async)?.weekTab }} ({{thisWeekReminders.length}})
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'overdue'" (click)="switchTab('overdue')">
+      {{ (i18n.terms$ | async)?.overdueTab }} ({{overdueReminders.length}})
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'all'" (click)="switchTab('all')">
+      {{ (i18n.terms$ | async)?.allTab }}
+    </button>
   </div>
 
   <div class="reminders-table-container">
@@ -110,8 +118,8 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let reminder of reminders" 
-           [class.overdue]="reminder.isOverdue" 
+        <tr *ngFor="let reminder of filteredReminders"
+           [class.overdue]="reminder.isOverdue"
            [class.today]="reminder.isDueToday"
            [class.completed]="reminder.isCompleted">
           

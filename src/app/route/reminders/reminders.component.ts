@@ -1,30 +1,50 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { remult } from 'remult';
 import { Reminder, Donor } from '../../../shared/entity';
 import { I18nService } from '../../i18n/i18n.service';
 import { ReminderDetailsModalComponent } from '../../routes/modals/reminder-details-modal/reminder-details-modal.component';
+import { GlobalFilterService } from '../../services/global-filter.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-reminders',
   templateUrl: './reminders.component.html',
   styleUrls: ['./reminders.component.scss']
 })
-export class RemindersComponent implements OnInit {
+export class RemindersComponent implements OnInit, OnDestroy {
 
   reminders: Reminder[] = [];
   donors: Donor[] = [];
-  
+  filteredReminders: Reminder[] = [];
+
   reminderRepo = remult.repo(Reminder);
   donorRepo = remult.repo(Donor);
-  
+
   loading = false;
   showAddReminderModal = false;
   editingReminder?: Reminder;
+  activeTab: 'today' | 'week' | 'overdue' | 'all' = 'all';
 
-  constructor(public i18n: I18nService) { }
+  private filterSubscription?: Subscription;
+
+  constructor(
+    public i18n: I18nService,
+    private globalFilterService: GlobalFilterService
+  ) { }
 
   async ngOnInit() {
     await this.loadData();
+
+    // Subscribe to global filter changes
+    this.filterSubscription = this.globalFilterService.filters$.subscribe(() => {
+      this.applyGlobalFilters();
+    });
+  }
+
+  ngOnDestroy() {
+    if (this.filterSubscription) {
+      this.filterSubscription.unsubscribe();
+    }
   }
 
   async loadData() {
@@ -43,11 +63,28 @@ export class RemindersComponent implements OnInit {
 
   async loadReminders() {
     this.reminders = await this.reminderRepo.find({
-      orderBy: { dueDate: 'asc' },
+      orderBy: { dueDate: 'asc', dueTime: 'asc' },
       include: {
         relatedDonor: true
       }
     });
+    this.applyGlobalFilters();
+  }
+
+  applyGlobalFilters() {
+    const filters = this.globalFilterService.currentFilters;
+    let filtered = [...this.reminders];
+
+    // Apply country filter - filter by donor's country
+    if (filters.countryNames && filters.countryNames.length > 0) {
+      filtered = filtered.filter(reminder =>
+        reminder.relatedDonor?.country?.caption &&
+        filters.countryNames!.includes(reminder.relatedDonor.country.caption)
+      );
+    }
+
+    this.reminders = filtered;
+    this.applyTabFilter();
   }
 
   async loadDonors() {
@@ -220,5 +257,37 @@ export class RemindersComponent implements OnInit {
     return this.reminders.filter(r => r.isCompleted).length;
   }
 
+  get thisWeekReminders(): Reminder[] {
+    const today = new Date();
+    const oneWeekFromNow = new Date(today.getTime() + (7 * 24 * 60 * 60 * 1000));
+    return this.reminders.filter(r =>
+      !r.isCompleted &&
+      r.dueDate >= today &&
+      r.dueDate <= oneWeekFromNow
+    );
+  }
+
+  switchTab(tab: 'today' | 'week' | 'overdue' | 'all') {
+    this.activeTab = tab;
+    this.applyTabFilter();
+  }
+
+  applyTabFilter() {
+    switch (this.activeTab) {
+      case 'today':
+        this.filteredReminders = this.reminders.filter(r => r.isDueToday && !r.isCompleted);
+        break;
+      case 'week':
+        this.filteredReminders = this.thisWeekReminders;
+        break;
+      case 'overdue':
+        this.filteredReminders = this.overdueReminders;
+        break;
+      case 'all':
+      default:
+        this.filteredReminders = this.reminders;
+        break;
+    }
+  }
 
 }

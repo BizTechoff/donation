@@ -190,17 +190,17 @@
   margin-bottom: 30px;
   
   .grid-header {
-    background: #e74c3c;
+    background: #34495e;
     color: white;
     display: grid;
     grid-template-columns: 1.5fr 1fr 2fr 2.5fr 1fr 1fr 1fr 1.5fr;
     padding: 0;
-    
+
     .grid-col {
       padding: 15px 10px;
       font-weight: 600;
       font-size: 14px;
-      border-left: 1px solid #c0392b;
+      border-left: 1px solid #2c3e50;
       
       &:last-child {
         border-left: none;

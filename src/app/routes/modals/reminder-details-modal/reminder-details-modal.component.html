@@ -213,11 +213,11 @@
 
             <div class="form-row">
               <div class="form-group">
-                <label>{{ (i18n.terms$ | async)?.assignToUser }}</label>
+                <label>{{ (i18n.terms$ | async)?.assignToContact }}</label>
                 <select class="form-control" [(ngModel)]="reminder.assignedToId">
                   <option value="">{{ (i18n.terms$ | async)?.noAssignment }}</option>
-                  <option *ngFor="let user of users" [value]="user.id">
-                    {{ user.name }}
+                  <option *ngFor="let fundraiser of fundraisers" [value]="fundraiser.id">
+                    {{ fundraiser.name }}
                   </option>
                 </select>
               </div>
