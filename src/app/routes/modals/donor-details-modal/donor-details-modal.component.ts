@@ -307,7 +307,7 @@ export class DonorDetailsModalComponent implements OnInit {
 
     try {
       const wasNew = this.isNewDonor;
-      await this.donor.save();
+      await this.donorRepo.save(this.donor);
 
       this.changed = wasNew || this.hasChanges();
       this.shouldClose = true;
@@ -325,8 +325,19 @@ export class DonorDetailsModalComponent implements OnInit {
     console.log('FullAddress:', addressComponents.fullAddress);
 
     try {
+      // בדיקה אם הכתובת ריקה (כתוצאה מניקוי)
+      if (!addressComponents.placeId && !addressComponents.fullAddress) {
+        console.log('Address is empty - clearing home place');
+        this.donor.homePlaceId = undefined;
+        this.donor.homePlace = undefined;
+        this.changed = true;
+        console.log('Home place cleared');
+        return;
+      }
+
       // השתמש ב-Place שכבר נשמר או צור חדש אם צריך
       if (addressComponents.placeRecordId) {
+        console.log(1)
         // המקום כבר נשמר ברגע הבחירה
         console.log('Using existing Place ID:', addressComponents.placeRecordId);
         this.donor.homePlaceId = addressComponents.placeRecordId;
@@ -337,11 +348,10 @@ export class DonorDetailsModalComponent implements OnInit {
           this.donor.homePlace = place;
         }
 
-        // Save donor to persist the homePlaceId
-        await this.donor.save();
         this.changed = true;
         console.log('Home place ID assigned to donor:', addressComponents.placeRecordId);
       } else if (addressComponents.placeId) {
+        console.log(2)
         // fallback - אם מסיבה כלשהי לא נשמר, צור כעת
         const placeData = {
           placeId: addressComponents.placeId,
@@ -364,8 +374,6 @@ export class DonorDetailsModalComponent implements OnInit {
         this.donor.homePlaceId = place.id;
         this.donor.homePlace = place;
 
-        // Save donor to persist the homePlaceId
-        await this.donor.save();
         this.changed = true;
         console.log('Home place saved and donor updated:', place);
       }
@@ -383,6 +391,16 @@ export class DonorDetailsModalComponent implements OnInit {
     console.log('Vacation address selected:', addressComponents);
 
     try {
+      // בדיקה אם הכתובת ריקה (כתוצאה מניקוי)
+      if (!addressComponents.placeId && !addressComponents.fullAddress) {
+        console.log('Address is empty - clearing vacation place');
+        this.donor.vacationPlaceId = undefined;
+        this.donor.vacationPlace = undefined;
+        this.changed = true;
+        console.log('Vacation place cleared');
+        return;
+      }
+
       // השתמש ב-Place שכבר נשמר או צור חדש אם צריך
       if (addressComponents.placeRecordId) {
         // המקום כבר נשמר ברגע הבחירה
@@ -395,8 +413,6 @@ export class DonorDetailsModalComponent implements OnInit {
           this.donor.vacationPlace = place;
         }
 
-        // Save donor to persist the vacationPlaceId
-        await this.donor.save();
         this.changed = true;
         console.log('Vacation place ID assigned to donor:', addressComponents.placeRecordId);
       } else if (addressComponents.placeId) {
@@ -422,8 +438,6 @@ export class DonorDetailsModalComponent implements OnInit {
         this.donor.vacationPlaceId = place.id;
         this.donor.vacationPlace = place;
 
-        // Save donor to persist the vacationPlaceId
-        await this.donor.save();
         this.changed = true;
         console.log('Vacation place saved and donor updated:', place);
       }
@@ -555,7 +569,7 @@ export class DonorDetailsModalComponent implements OnInit {
         isActive: true
       });
 
-      await donorEvent.save();
+      await this.donorEventRepo.save(donorEvent);
 
       // Set the event relation manually
       donorEvent.event = event;
@@ -600,7 +614,7 @@ export class DonorDetailsModalComponent implements OnInit {
       // Update both Hebrew and Gregorian dates with the same value
       donorEvent.hebrewDate = value || undefined;
       donorEvent.gregorianDate = value || undefined;
-      await donorEvent.save();
+      await this.donorEventRepo.save(donorEvent);
       this.changed = true;
     } catch (error) {
       console.error('Error updating event date:', error);

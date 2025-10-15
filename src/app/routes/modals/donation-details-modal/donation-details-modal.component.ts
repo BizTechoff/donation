@@ -380,12 +380,15 @@ export class DonationDetailsModalComponent implements OnInit {
 
     try {
       const wasNew = this.isNewDonation;
-      await this.donation.save();
-      
+
+      // Use remult.repo() for saving in the app (client side)
+      await this.donationRepo.save(this.donation);
+
       this.changed = wasNew || this.hasChanges();
       // The dialog will automatically close and return this.changed
     } catch (error) {
       console.error('Error saving donation:', error);
+      this.ui.error('שגיאה בשמירת התרומה');
     }
   }
 
@@ -395,11 +398,13 @@ export class DonationDetailsModalComponent implements OnInit {
     const confirmMessage = this.i18n.currentTerms.confirmDeleteDonation?.replace('{amount}', this.donation.amount.toString()) || '';
     if (confirm(confirmMessage)) {
       try {
-        await this.donation.delete();
+        // Use remult.repo() for deleting in the app (client side)
+        await this.donationRepo.delete(this.donation);
         this.changed = true;
         // The dialog will automatically close and return this.changed
       } catch (error) {
         console.error('Error deleting donation:', error);
+        this.ui.error('שגיאה במחיקת התרומה');
       }
     }
   }
@@ -830,7 +835,8 @@ export class DonationDetailsModalComponent implements OnInit {
       // and save the file path
       fileEntity.filePath = `/uploads/donations/${this.donation.id}/${uploadedFile.name}`;
 
-      await fileEntity.save();
+      // Use remult.repo() for saving in the app (client side)
+      await this.fileRepo.save(fileEntity);
       console.log('File metadata saved:', fileEntity.fileName);
     } catch (error) {
       console.error('Error uploading single file:', error);

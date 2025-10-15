@@ -127,13 +127,26 @@
       <div class="detail-row" *ngIf="addressDetails.placeName">
         <div class="detail-field full-width">
           <label>שם המקום</label>
-          <input
-            type="text"
-            [(ngModel)]="addressDetails.placeName"
-            (change)="onDetailChange()"
-            placeholder="שם המקום"
-            dir="rtl"
-          >
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <input
+              type="text"
+              [(ngModel)]="addressDetails.placeName"
+              (change)="onDetailChange()"
+              placeholder="שם המקום"
+              dir="rtl"
+              style="flex: 1;"
+            >
+            <button
+              mat-stroked-button
+              type="button"
+              (click)="clearAddress(); $event.stopPropagation(); $event.preventDefault()"
+              class="clear-address-btn"
+              matTooltip="נקה כתובת"
+              style="white-space: nowrap;">
+              <mat-icon>clear</mat-icon>
+              נקה כתובת
+            </button>
+          </div>
         </div>
       </div>
     </div>

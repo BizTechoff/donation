@@ -99,6 +99,7 @@ export class OsmAddressInputComponent implements ControlValueAccessor, OnDestroy
   private searchSubject = new Subject<string>();
   private onChange = (value: string) => {};
   private onTouched = () => {};
+  private justCleared = false; // דגל למניעת טעינה חוזרת מיד אחרי ניקוי
 
   constructor(private geoService: GeoService) {
     // הגדרת debounce לחיפוש
@@ -132,8 +133,16 @@ export class OsmAddressInputComponent implements ControlValueAccessor, OnDestroy
     if (changes['initialAddress']) {
       console.log('ngOnChanges - initialAddress changed:', {
         currentValue: changes['initialAddress'].currentValue,
-        previousValue: changes['initialAddress'].previousValue
+        previousValue: changes['initialAddress'].previousValue,
+        justCleared: this.justCleared
       });
+
+      // אם זה עתה ניקינו את הכתובת, נתעלם מהשינוי הזה
+      if (this.justCleared) {
+        console.log('ngOnChanges - ignoring change because address was just cleared');
+        this.justCleared = false;
+        return;
+      }
 
       if (changes['initialAddress'].currentValue) {
         this.loadInitialAddress(changes['initialAddress'].currentValue);
@@ -144,10 +153,17 @@ export class OsmAddressInputComponent implements ControlValueAccessor, OnDestroy
     }
   }
 
-  private clearAddress(): void {
+  clearAddress(): void {
+    console.log('clearAddress() called - before clear:', this.addressDetails);
+
+    // סימון שהכתובת נוקתה - למנוע טעינה חוזרת מיד אחרי
+    this.justCleared = true;
+
+    // Clear all address details
     this.addressDetails = {
       fullAddress: '',
       placeId: '',
+      placeRecordId: '',
       street: '',
       houseNumber: '',
       neighborhood: '',
@@ -156,12 +172,23 @@ export class OsmAddressInputComponent implements ControlValueAccessor, OnDestroy
       postcode: '',
       country: '',
       countryCode: '',
+      latitude: undefined,
+      longitude: undefined,
       placeName: ''
     };
+
     this.searchValue = '';
     this.hasSelectedAddress = false;
     this.selectedPlaceId = null;
-    console.log('Address cleared');
+    this.showAddressDetails = false;
+
+    console.log('Address cleared - after clear:', this.addressDetails);
+
+    // שליחת איוונט להורה שהכתובת נוקתה
+    this.addressSelected.emit(this.addressDetails);
+    this.onChange('');
+
+    console.log('clearAddress() completed - emit sent to parent');
   }
 
   private loadInitialAddress(address: AddressComponents): void {
@@ -192,6 +219,7 @@ export class OsmAddressInputComponent implements ControlValueAccessor, OnDestroy
 
   onInput(event: any): void {
     const value = event.target.value;
+    console.log('onInput() called with value:', value);
     this.searchValue = value;
     this.onChange(value);
 
@@ -203,6 +231,7 @@ export class OsmAddressInputComponent implements ControlValueAccessor, OnDestroy
   }
 
   onFocus(): void {
+    console.log('onFocus() called, current searchValue:', this.searchValue);
     this.onTouched();
   }
 
