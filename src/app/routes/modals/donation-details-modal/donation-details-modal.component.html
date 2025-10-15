@@ -223,7 +223,7 @@
           </div>
 
           <div class="form-grid">
-            <div class="form-group">
+            <!-- <div class="form-group">
               <div class="field-title">
                 <mat-icon class="field-icon">info</mat-icon>
                 <label>סטטוס תרומה *</label>
@@ -233,7 +233,7 @@
                 <option value="completed">הושלם</option>
                 <option value="cancelled">בוטל</option>
               </select>
-            </div>
+            </div> -->
 
             <div class="form-group">
               <div class="field-title">
@@ -247,7 +247,7 @@
 
 
         <!-- אמצעי תשלום -->
-        <div class="section payment-method-section">
+        <div class="section payment-method-section" *ngIf="donation.donationType !== 'commitment'">
           <h3>אמצעי תשלום</h3>
           <div class="form-grid">
             <div class="form-group full-width">
@@ -441,6 +441,11 @@
                            [(ngModel)]="donation.standingOrderType">
                     <span>{{ (i18n.terms$ | async)?.creditCardStandingOrder }}</span>
                   </label>
+                  <label class="radio-option">
+                    <input type="radio" name="standingOrderType" value="organization"
+                           [(ngModel)]="donation.standingOrderType">
+                    <span>{{ (i18n.terms$ | async)?.organizationStandingOrder }}</span>
+                  </label>
                 </div>
               </div>
             </div>
@@ -510,13 +515,42 @@
             <div class="bank-details-section" *ngIf="donation.standingOrderType === 'bank'">
               <h5>{{ (i18n.terms$ | async)?.bankDetailsSection }}</h5>
               <div class="form-grid">
+                <!-- Bank Dropdown Selector -->
+                <div class="form-group full-width">
+                  <div class="field-title">
+                    <mat-icon class="field-icon">account_balance</mat-icon>
+                    <label>בחר בנק</label>
+                  </div>
+                  <div style="display: flex; gap: 10px; align-items: center;">
+                    <select class="form-control" [(ngModel)]="donation.bankId" (change)="onBankChange()" style="flex: 1;">
+                      <option value="">בחר בנק</option>
+                      <option *ngFor="let bank of banks" [value]="bank.id">
+                        {{ bank.name }}
+                      </option>
+                    </select>
+                    <button mat-stroked-button type="button" (click)="editBank()" class="edit-btn"
+                            matTooltip="ערוך בנק"
+                            [disabled]="!donation.bankId"
+                            style="white-space: nowrap;">
+                      <mat-icon>edit</mat-icon>
+                      ערוך
+                    </button>
+                    <button mat-stroked-button type="button" (click)="addNewBank()" class="add-new-btn"
+                            matTooltip="הוסף בנק חדש" style="white-space: nowrap;">
+                      <mat-icon>add</mat-icon>
+                      הוסף בנק חדש
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Bank Fields (can be overridden) -->
                 <div class="form-group">
                   <div class="field-title">
                     <mat-icon class="field-icon">account_balance</mat-icon>
                     <label>{{ (i18n.terms$ | async)?.bankNameLabel }}</label>
                   </div>
                   <input type="text" class="form-control" [(ngModel)]="donation.bankName"
-                         [placeholder]="(i18n.terms$ | async)?.bankNameLabel">
+                         [placeholder]="selectedBank?.name || (i18n.terms$ | async)?.bankNameLabel">
                 </div>
                 <div class="form-group">
                   <div class="field-title">
@@ -565,6 +599,66 @@
                   </div>
                   <input type="text" class="form-control" [(ngModel)]="donation.cardHolderName"
                          [placeholder]="(i18n.terms$ | async)?.cardHolderLabel">
+                </div>
+              </div>
+            </div>
+
+            <!-- Organization Standing Order Details Section -->
+            <div class="organization-details-section" *ngIf="donation.standingOrderType === 'organization'">
+              <h5>פרטי עמותה</h5>
+              <div class="form-grid">
+                <!-- Organization Dropdown Selector -->
+                <div class="form-group full-width">
+                  <div class="field-title">
+                    <mat-icon class="field-icon">business</mat-icon>
+                    <label>בחר עמותה</label>
+                  </div>
+                  <div style="display: flex; gap: 10px; align-items: center;">
+                    <select class="form-control" [(ngModel)]="donation.organizationId" (change)="onOrganizationChange()" style="flex: 1;">
+                      <option value="">בחר עמותה</option>
+                      <option *ngFor="let org of organizations" [value]="org.id">
+                        {{ org.name }}
+                      </option>
+                    </select>
+                    <button mat-stroked-button type="button" (click)="editOrganization()" class="edit-btn"
+                            matTooltip="ערוך עמותה"
+                            [disabled]="!donation.organizationId"
+                            style="white-space: nowrap;">
+                      <mat-icon>edit</mat-icon>
+                      ערוך
+                    </button>
+                    <button mat-stroked-button type="button" (click)="addNewOrganization()" class="add-new-btn"
+                            matTooltip="הוסף עמותה חדשה" style="white-space: nowrap;">
+                      <mat-icon>add</mat-icon>
+                      הוסף עמותה חדשה
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Organization Fields (can be overridden) -->
+                <div class="form-group">
+                  <div class="field-title">
+                    <mat-icon class="field-icon">person</mat-icon>
+                    <label>שם</label>
+                  </div>
+                  <input type="text" class="form-control" [(ngModel)]="donation.payerName"
+                         [placeholder]="selectedOrganization?.name || 'שם'">
+                </div>
+                <div class="form-group">
+                  <div class="field-title">
+                    <mat-icon class="field-icon">account_balance</mat-icon>
+                    <label>מס. ח"ן</label>
+                  </div>
+                  <input type="text" class="form-control" [(ngModel)]="donation.bankAccount"
+                         placeholder="מספר חשבון">
+                </div>
+                <div class="form-group">
+                  <div class="field-title">
+                    <mat-icon class="field-icon">confirmation_number</mat-icon>
+                    <label>מס. שובר</label>
+                  </div>
+                  <input type="text" class="form-control" [(ngModel)]="donation.voucherNumber"
+                         placeholder="מספר שובר">
                 </div>
               </div>
             </div>
@@ -727,9 +821,9 @@
           הוסף תזכורת
         </button>
 
-        <button mat-stroked-button class="action-button scan-btn" (click)="scanFile()" title="סריקה">
-          <mat-icon>scanner</mat-icon>
-          סריקה
+        <button mat-stroked-button class="action-button scan-btn" (click)="scanFile()" title="העלאת קובץ">
+          <mat-icon>upload_file</mat-icon>
+          העלאת קובץ
         </button>
 
         <!-- Divider -->

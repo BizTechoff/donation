@@ -4,12 +4,15 @@ import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { Donation, Donor, Campaign, DonationMethod, User, DonationPartner, DonationFile, Country } from '../../../../shared/entity';
+import { Donation, Donor, Campaign, DonationMethod, User, DonationPartner, DonationFile, Country, Organization, Bank } from '../../../../shared/entity';
 import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { SharedComponentsModule } from '../../../shared/shared-components.module';
 import { ReminderDetailsModalComponent } from '../reminder-details-modal/reminder-details-modal.component';
+import { openDialog } from 'common-ui-elements';
+import { OrganizationDetailsModalComponent } from '../organization-details-modal/organization-details-modal.component';
+import { BankDetailsModalComponent } from '../bank-details-modal/bank-details-modal.component';
 
 export interface DonationDetailsModalArgs {
   donationId: string; // Can be 'new' for new donation or donation ID
@@ -44,7 +47,9 @@ export class DonationDetailsModalComponent implements OnInit {
   fundraisers: User[] = [];
   availablePartners: Donor[] = [];
   selectedPartners: Donor[] = [];
-  
+  organizations: Organization[] = [];
+  banks: Bank[] = [];
+
   donationRepo = remult.repo(Donation);
   donorRepo = remult.repo(Donor);
   campaignRepo = remult.repo(Campaign);
@@ -53,6 +58,8 @@ export class DonationDetailsModalComponent implements OnInit {
   donationPartnerRepo = remult.repo(DonationPartner);
   fileRepo = remult.repo(DonationFile);
   countryRepo = remult.repo(Country);
+  organizationRepo = remult.repo(Organization);
+  bankRepo = remult.repo(Bank);
   
   loading = false;
   isNewDonation = false;
@@ -60,6 +67,8 @@ export class DonationDetailsModalComponent implements OnInit {
   selectedCampaign?: Campaign;
   selectedPaymentMethod?: DonationMethod;
   selectedFundraiser?: User;
+  selectedOrganization?: Organization;
+  selectedBank?: Bank;
 
   // Country to currency mapping
   private countryCurrencyMap: { [countryCode: string]: string } = {
@@ -265,14 +274,14 @@ export class DonationDetailsModalComponent implements OnInit {
       });
 
       // Load donation methods and filter out unwanted ones
-      const allMethods = await this.donationMethodRepo.find({
+      this.donationMethods = await this.donationMethodRepo.find({
         orderBy: { name: 'asc' }
       });
 
       // Filter out paypal and cash, keep others
-      this.donationMethods = allMethods.filter(method =>
-        method.name !== 'paypal' && method.name !== 'מזומן'
-      );
+      // this.donationMethods = allMethods.filter(method =>
+      //   method.name !== 'paypal' && method.name !== 'מזומן'
+      // );
 
       // Add "עמותה" and "הו"ק" if they don't exist
       const hasOrganization = this.donationMethods.some(m => m.name === 'עמותה');
@@ -291,7 +300,7 @@ export class DonationDetailsModalComponent implements OnInit {
       }
 
       // Re-sort after adding new methods
-      this.donationMethods.sort((a, b) => a.name.localeCompare(b.name, 'he'));
+      // this.donationMethods.sort((a, b) => a.name.localeCompare(b.name, 'he'));
 
       // Load fundraisers (users with donator=true)
       this.fundraisers = await this.userRepo.find({
@@ -318,6 +327,21 @@ export class DonationDetailsModalComponent implements OnInit {
 
       // Load selected partners if donation has partnerIds
       await this.loadSelectedPartners();
+
+      // Load organizations (active only)
+      this.organizations = await this.organizationRepo.find({
+        where: { isActive: true },
+        orderBy: { name: 'asc' }
+      });
+
+      // Load banks (active only)
+      this.banks = await this.bankRepo.find({
+        where: { isActive: true },
+        orderBy: { name: 'asc' }
+      });
+
+      // Load selected organization and bank
+      await this.loadSelectedOrganizationAndBank();
     } catch (error) {
       console.error('Error loading dropdown data:', error);
     }
@@ -532,6 +556,19 @@ export class DonationDetailsModalComponent implements OnInit {
       } catch (error) {
         console.error('Error loading selected donor:', error);
       }
+    }
+  }
+
+  async loadSelectedOrganizationAndBank() {
+    try {
+      if (this.donation?.organizationId) {
+        this.selectedOrganization = await this.organizationRepo.findId(this.donation.organizationId) || undefined;
+      }
+      if (this.donation?.bankId) {
+        this.selectedBank = await this.bankRepo.findId(this.donation.bankId) || undefined;
+      }
+    } catch (error) {
+      console.error('Error loading selected organization and bank:', error);
     }
   }
 
@@ -853,6 +890,178 @@ export class DonationDetailsModalComponent implements OnInit {
       console.error('Error updating currency based on donor country:', error);
       // Default to ILS on error
       this.donation.currency = 'ILS';
+    }
+  }
+
+  // Organization and Bank handlers
+  onOrganizationChange() {
+    if (this.donation?.organizationId) {
+      this.selectedOrganization = this.organizations.find(o => o.id === this.donation.organizationId);
+      console.log('Organization changed to:', this.selectedOrganization?.name);
+
+      // Auto-populate organization fields
+      if (this.selectedOrganization) {
+        this.donation.payerName = this.selectedOrganization.name;
+        this.donation.bankAccount = this.selectedOrganization.accountNumber || '';
+        // Note: voucherNumber is typically filled manually per donation, not from organization
+      }
+    } else {
+      this.selectedOrganization = undefined;
+      // Clear fields when no organization selected
+      this.donation.payerName = '';
+      this.donation.bankAccount = '';
+    }
+  }
+
+  onBankChange() {
+    if (this.donation?.bankId) {
+      this.selectedBank = this.banks.find(b => b.id === this.donation.bankId);
+      console.log('Bank changed to:', this.selectedBank?.name);
+
+      // Auto-populate bank fields
+      if (this.selectedBank) {
+        this.donation.bankName = this.selectedBank.name;
+        this.donation.bankBranch = this.selectedBank.branchCode || '';
+        this.donation.bankAccount = this.selectedBank.bankCode || '';
+      }
+    } else {
+      this.selectedBank = undefined;
+      // Clear fields when no bank selected
+      this.donation.bankName = '';
+      this.donation.bankBranch = '';
+      this.donation.bankAccount = '';
+    }
+  }
+
+  async addNewOrganization() {
+    try {
+      // Open organization details modal for new organization
+      const result = await openDialog(OrganizationDetailsModalComponent, (dlg) => {
+        dlg.args = { organizationId: undefined }; // undefined = new organization
+      });
+
+      // If the modal closed with changes (organization was saved)
+      if (result) {
+        // Refresh organizations list
+        this.organizations = await this.organizationRepo.find({
+          where: { isActive: true },
+          orderBy: { name: 'asc' }
+        });
+
+        // Find and select the newly added organization (it should be the last one if sorted by creation date)
+        if (this.organizations.length > 0) {
+          // Get the most recently created organization
+          const newestOrg = this.organizations.reduce((prev, current) =>
+            (current.createdDate > prev.createdDate) ? current : prev
+          );
+
+          this.donation.organizationId = newestOrg.id;
+          this.selectedOrganization = newestOrg;
+
+          this.ui.info(`עמותה "${newestOrg.name}" נוספה בהצלחה`);
+          console.log('New organization added:', newestOrg.name);
+        }
+      }
+    } catch (error) {
+      console.error('Error adding new organization:', error);
+      this.ui.error('שגיאה בהוספת עמותה חדשה');
+    }
+  }
+
+  async addNewBank() {
+    try {
+      // Open bank details modal for new bank
+      const result = await openDialog(BankDetailsModalComponent, (dlg) => {
+        dlg.args = { bankId: undefined }; // undefined = new bank
+      });
+
+      // If the modal closed with changes (bank was saved)
+      if (result) {
+        // Refresh banks list
+        this.banks = await this.bankRepo.find({
+          where: { isActive: true },
+          orderBy: { name: 'asc' }
+        });
+
+        // Find and select the newly added bank (it should be the last one if sorted by creation date)
+        if (this.banks.length > 0) {
+          // Get the most recently created bank
+          const newestBank = this.banks.reduce((prev, current) =>
+            (current.createdDate > prev.createdDate) ? current : prev
+          );
+
+          this.donation.bankId = newestBank.id;
+          this.selectedBank = newestBank;
+
+          this.ui.info(`בנק "${newestBank.name}" נוסף בהצלחה`);
+          console.log('New bank added:', newestBank.name);
+        }
+      }
+    } catch (error) {
+      console.error('Error adding new bank:', error);
+      this.ui.error('שגיאה בהוספת בנק חדש');
+    }
+  }
+
+  async editBank() {
+    if (!this.donation.bankId) {
+      this.ui.info('אנא בחר בנק לעריכה');
+      return;
+    }
+
+    try {
+      // Open bank details modal for editing existing bank
+      const result = await openDialog(BankDetailsModalComponent, (dlg) => {
+        dlg.args = { bankId: this.donation.bankId }; // Pass bank ID for editing
+      });
+
+      // If the modal closed with changes (bank was updated)
+      if (result) {
+        // Refresh banks list
+        this.banks = await this.bankRepo.find({
+          where: { isActive: true },
+          orderBy: { name: 'asc' }
+        });
+
+        // Reload the selected bank
+        await this.loadSelectedOrganizationAndBank();
+
+        this.ui.info('הבנק עודכן בהצלחה');
+      }
+    } catch (error) {
+      console.error('Error editing bank:', error);
+      this.ui.error('שגיאה בעריכת הבנק');
+    }
+  }
+
+  async editOrganization() {
+    if (!this.donation.organizationId) {
+      this.ui.info('אנא בחר עמותה לעריכה');
+      return;
+    }
+
+    try {
+      // Open organization details modal for editing existing organization
+      const result = await openDialog(OrganizationDetailsModalComponent, (dlg) => {
+        dlg.args = { organizationId: this.donation.organizationId }; // Pass organization ID for editing
+      });
+
+      // If the modal closed with changes (organization was updated)
+      if (result) {
+        // Refresh organizations list
+        this.organizations = await this.organizationRepo.find({
+          where: { isActive: true },
+          orderBy: { name: 'asc' }
+        });
+
+        // Reload the selected organization
+        await this.loadSelectedOrganizationAndBank();
+
+        this.ui.info('העמותה עודכנה בהצלחה');
+      }
+    } catch (error) {
+      console.error('Error editing organization:', error);
+      this.ui.error('שגיאה בעריכת העמותה');
     }
   }
 }

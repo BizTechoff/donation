@@ -722,8 +722,9 @@ export const termsHe = {
 
   // Standing Order Fields
   standingOrderTypeLabel: 'סוג הוראת קבע',
-  bankStandingOrder: 'הוראת קבע בנקאית',
-  creditCardStandingOrder: 'הוראת קבע בכרטיס אשראי',
+  bankStandingOrder: 'בנקאית',
+  creditCardStandingOrder: 'כרטיס אשראי',
+  organizationStandingOrder: 'עמותה',
   numberOfPaymentsLabel: 'מספר תשלומים לחיוב',
   unlimitedPayments: 'ללא הגבלה',
   limitedPayments: 'מספר מוגבל',

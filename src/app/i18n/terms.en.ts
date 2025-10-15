@@ -726,6 +726,7 @@ export const termsEn = {
   standingOrderTypeLabel: 'Standing Order Type',
   bankStandingOrder: 'Bank Standing Order',
   creditCardStandingOrder: 'Credit Card Standing Order',
+  organizationStandingOrder: 'Organization Standing Order',
   numberOfPaymentsLabel: 'Number of Payments to Charge',
   unlimitedPayments: 'Unlimited',
   limitedPayments: 'Limited Number',

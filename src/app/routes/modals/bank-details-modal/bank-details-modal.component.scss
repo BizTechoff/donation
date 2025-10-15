@@ -1,0 +1,462 @@
+/* Modern Modal Overlay */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1050;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Modern Modal Content */
+.bank-details-modal {
+  width: 90vw;
+  max-width: 900px;
+  height: 90vh;
+  max-height: 90vh;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  animation: slideIn 0.3s ease-out;
+  overflow: hidden;
+}
+
+@keyframes slideIn {
+  from {
+    transform: scale(0.9) translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Modern Header */
+.modal-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 24px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.modal-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
+  animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: relative;
+  z-index: 1;
+}
+
+.header-icon {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 12px;
+  border-radius: 12px;
+
+  mat-icon {
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+  }
+}
+
+.header-text {
+  h2 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  .header-subtitle {
+    margin: 4px 0 0 0;
+    opacity: 0.9;
+    font-size: 14px;
+    font-weight: 400;
+  }
+}
+
+.modal-close {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 1;
+
+  mat-icon {
+    color: white;
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+  }
+}
+
+/* Loading Overlay */
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  border-radius: 16px;
+}
+
+.loading-spinner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 16px;
+  color: #666;
+
+  &::before {
+    content: '';
+    width: 24px;
+    height: 24px;
+    border: 3px solid #e0e0e0;
+    border-top: 3px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Modal Body */
+.modal-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 32px;
+  background: #fafbfc;
+  min-height: 0;
+}
+
+/* Sections */
+.details-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.section {
+  background: white;
+  border: 1px solid #e1e8ed;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: all 0.3s ease;
+
+  &:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    transform: translateY(-1px);
+  }
+
+  h3 {
+    margin: 0 0 20px 0;
+    color: #2c3e50;
+    font-size: 20px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #667eea;
+
+    .section-icon {
+      color: #667eea;
+      font-size: 24px;
+    }
+
+    &::before {
+      content: '';
+      width: 4px;
+      height: 20px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      border-radius: 2px;
+    }
+  }
+}
+
+/* Form Grid */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+
+  &.full-width {
+    grid-column: 1 / -1;
+  }
+
+  .form-control {
+    padding: 12px 16px;
+    border: 2px solid #e1e8ed;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    background: white;
+
+    &:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    &::placeholder {
+      color: #95a5a6;
+    }
+  }
+
+  select.form-control {
+    cursor: pointer;
+  }
+
+  textarea.form-control {
+    resize: vertical;
+    min-height: 80px;
+  }
+}
+
+/* Field Title with Icon */
+.field-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+
+  .field-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    color: #667eea;
+  }
+
+  label {
+    margin: 0;
+    font-weight: 500;
+    color: #2c3e50;
+    font-size: 14px;
+  }
+}
+
+/* Checkbox Styling */
+.checkbox-wrapper {
+  padding: 12px 0;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+
+  input[type="checkbox"] {
+    margin-left: 12px;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: #667eea;
+  }
+
+  .checkbox-text {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #2c3e50;
+
+    .checkbox-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+
+      &.check_circle {
+        color: #27ae60;
+      }
+
+      &.cancel {
+        color: #95a5a6;
+      }
+    }
+  }
+}
+
+/* Modern Footer */
+.modal-footer {
+  background: #f8f9fa;
+  padding: 20px 32px;
+  border-top: 1px solid #e1e8ed;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  border-radius: 0 0 16px 16px;
+  position: sticky;
+  bottom: 0;
+  z-index: 100;
+}
+
+.footer-actions-left,
+.footer-actions-right {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.footer-actions-left {
+  flex: 1;
+}
+
+.footer-actions-right {
+  flex-shrink: 0;
+}
+
+/* Material Button Overrides */
+.cancel-button,
+.save-button {
+  height: 44px;
+  min-width: 120px;
+  font-weight: 500;
+  border-radius: 8px;
+  text-transform: none;
+
+  mat-icon {
+    margin-right: 8px;
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.save-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+
+  &:hover {
+    box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    background: #bdc3c7;
+    color: white;
+    box-shadow: none;
+    transform: none;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .bank-details-modal {
+    width: 95vw;
+    max-height: 95vh;
+  }
+
+  .modal-header {
+    padding: 16px 20px;
+
+    .header-text h2 {
+      font-size: 20px;
+    }
+  }
+
+  .modal-body {
+    padding: 20px;
+  }
+
+  .modal-footer {
+    padding: 16px 20px;
+    flex-direction: column-reverse;
+    gap: 12px;
+
+    .footer-actions-left,
+    .footer-actions-right {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* RTL Support */
+[dir="rtl"] {
+  .header-content {
+    flex-direction: row-reverse;
+  }
+
+  .cancel-button mat-icon,
+  .save-button mat-icon {
+    margin-right: 0;
+    margin-left: 8px;
+  }
+
+  .checkbox-label input[type="checkbox"] {
+    margin-left: 0;
+    margin-right: 12px;
+  }
+}

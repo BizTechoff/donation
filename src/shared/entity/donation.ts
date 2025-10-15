@@ -12,6 +12,8 @@ import { User } from './user'
 import { Donor } from './donor'
 import { Campaign } from './campaign'
 import { DonationMethod } from './donation-method'
+import { Organization } from './organization'
+import { Bank } from './bank'
 import { Roles } from '../enum/roles'
 
 @Entity<Donation>('donations', {
@@ -182,7 +184,7 @@ export class Donation extends IdEntity {
   @Fields.string({
     caption: 'סוג הוראת קבע',
   })
-  standingOrderType: 'bank' | 'creditCard' = 'bank'
+  standingOrderType: 'bank' | 'creditCard' | 'organization' = 'bank'
 
   @Fields.boolean({
     caption: 'ללא הגבלת תשלומים',
@@ -274,6 +276,26 @@ export class Donation extends IdEntity {
     caption: 'אסמכתא העברה',
   })
   transferReference = ''
+
+  @Relations.toOne<Donation, Organization>(() => Organization, {
+    caption: 'עמותה',
+  })
+  organization?: Organization
+
+  @Fields.string({
+    caption: 'עמותה ID',
+  })
+  organizationId = ''
+
+  @Relations.toOne<Donation, Bank>(() => Bank, {
+    caption: 'בנק',
+  })
+  bank?: Bank
+
+  @Fields.string({
+    caption: 'בנק ID',
+  })
+  bankId = ''
 
   @BackendMethod({ allowed: [Roles.admin] })
   async issueReceipt() {

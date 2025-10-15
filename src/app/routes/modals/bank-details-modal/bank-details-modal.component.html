@@ -1,0 +1,240 @@
+<!-- Bank Details Modal -->
+<div class="modal-overlay" (click)="closeModal($event)">
+  <div class="modal-content bank-details-modal" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+      <div class="header-content">
+        <div class="header-icon">
+          <mat-icon>{{isNew ? 'account_balance' : 'account_balance'}}</mat-icon>
+        </div>
+        <div class="header-text">
+          <h2>{{isNew ? 'בנק חדש' : 'עריכת בנק'}}</h2>
+          <p class="header-subtitle" *ngIf="!isNew && bank">
+            {{bank.name}}
+          </p>
+        </div>
+      </div>
+      <button class="modal-close" (click)="closeModal()" matTooltip="סגור" [dir]="i18n.lang.RTL ? 'rtl' : 'ltr'">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-overlay" *ngIf="loading">
+      <div class="loading-spinner">טוען נתונים...</div>
+    </div>
+
+    <div class="modal-body">
+      <div class="details-grid" *ngIf="bank && !loading">
+
+        <!-- פרטי בנק בסיסיים -->
+        <div class="section basic-info">
+          <h3>פרטי בנק בסיסיים</h3>
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <div class="field-title">
+                <mat-icon class="field-icon">account_balance</mat-icon>
+                <label>שם הבנק *</label>
+              </div>
+              <input type="text"
+                     class="form-control"
+                     [(ngModel)]="bank.name"
+                     (ngModelChange)="onFieldChange()"
+                     placeholder="שם הבנק"
+                     required>
+            </div>
+
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">tag</mat-icon>
+                <label>מספר בנק</label>
+              </div>
+              <input type="text"
+                     class="form-control"
+                     [(ngModel)]="bank.bankCode"
+                     (ngModelChange)="onFieldChange()"
+                     placeholder="מספר בנק">
+            </div>
+
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">store</mat-icon>
+                <label>מספר סניף</label>
+              </div>
+              <input type="text"
+                     class="form-control"
+                     [(ngModel)]="bank.branchCode"
+                     (ngModelChange)="onFieldChange()"
+                     placeholder="מספר סניף">
+            </div>
+
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">attach_money</mat-icon>
+                <label>מטבע</label>
+              </div>
+              <select class="form-control"
+                      [(ngModel)]="bank.currency"
+                      (ngModelChange)="onFieldChange()">
+                <option *ngFor="let curr of currencyOptions" [value]="curr.value">
+                  {{curr.label}}
+                </option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- פרטי כתובת -->
+        <div class="section address-info">
+          <h3>
+            <mat-icon class="section-icon">location_on</mat-icon>
+            פרטי כתובת
+          </h3>
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <div class="field-title">
+                <mat-icon class="field-icon">home</mat-icon>
+                <label>כתובת</label>
+              </div>
+              <input type="text"
+                     class="form-control"
+                     [(ngModel)]="bank.address"
+                     (ngModelChange)="onFieldChange()"
+                     placeholder="רחוב ומספר">
+            </div>
+
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">location_city</mat-icon>
+                <label>עיר</label>
+              </div>
+              <input type="text"
+                     class="form-control"
+                     [(ngModel)]="bank.city"
+                     (ngModelChange)="onFieldChange()"
+                     placeholder="עיר">
+            </div>
+
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">public</mat-icon>
+                <label>מדינה</label>
+              </div>
+              <select class="form-control"
+                      [(ngModel)]="bank.countryId"
+                      (ngModelChange)="onFieldChange()">
+                <option value="">-- בחר מדינה --</option>
+                <option *ngFor="let country of countries" [value]="country.id">
+                  {{country.name}} ({{country.nameEn}})
+                </option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- פרטי קשר -->
+        <div class="section contact-info">
+          <h3>
+            <mat-icon class="section-icon">contacts</mat-icon>
+            פרטי קשר
+          </h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">phone</mat-icon>
+                <label>טלפון</label>
+              </div>
+              <input type="tel"
+                     class="form-control"
+                     [(ngModel)]="bank.phone"
+                     (ngModelChange)="onFieldChange()"
+                     placeholder="מספר טלפון">
+            </div>
+
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">confirmation_number</mat-icon>
+                <label>SWIFT/BIC</label>
+              </div>
+              <input type="text"
+                     class="form-control"
+                     [(ngModel)]="bank.swiftCode"
+                     (ngModelChange)="onFieldChange()"
+                     placeholder="קוד SWIFT">
+            </div>
+
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">account_box</mat-icon>
+                <label>IBAN</label>
+              </div>
+              <input type="text"
+                     class="form-control"
+                     [(ngModel)]="bank.iban"
+                     (ngModelChange)="onFieldChange()"
+                     placeholder="מספר IBAN">
+            </div>
+          </div>
+        </div>
+
+        <!-- אחר -->
+        <div class="section other-info">
+          <h3>
+            <mat-icon class="section-icon">note</mat-icon>
+            אחר
+          </h3>
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <div class="field-title">
+                <mat-icon class="field-icon">notes</mat-icon>
+                <label>הערות</label>
+              </div>
+              <textarea class="form-control"
+                        rows="4"
+                        [(ngModel)]="bank.notes"
+                        (ngModelChange)="onFieldChange()"
+                        placeholder="הערות והשתהות נוספות"></textarea>
+            </div>
+
+            <div class="form-group full-width">
+              <div class="checkbox-wrapper">
+                <label class="checkbox-label">
+                  <input type="checkbox"
+                         [(ngModel)]="bank.isActive"
+                         (ngModelChange)="onFieldChange()">
+                  <span class="checkbox-text">
+                    <mat-icon class="checkbox-icon">{{bank.isActive ? 'check_circle' : 'cancel'}}</mat-icon>
+                    פעיל
+                  </span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <div class="footer-actions-left">
+        <!-- Empty for future actions -->
+      </div>
+      <div class="footer-actions-right">
+        <button mat-stroked-button
+                (click)="closeModal()"
+                class="cancel-button">
+          <mat-icon>close</mat-icon>
+          ביטול
+        </button>
+        <button mat-raised-button
+                color="primary"
+                (click)="save()"
+                class="save-button"
+                [disabled]="loading">
+          <mat-icon>save</mat-icon>
+          {{ isNew ? 'שמור בנק' : 'עדכן בנק' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

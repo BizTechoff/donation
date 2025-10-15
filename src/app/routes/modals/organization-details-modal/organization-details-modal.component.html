@@ -1,0 +1,228 @@
+<!-- Organization Details Modal -->
+<div class="modal-overlay" (click)="closeModal($event)">
+  <div class="modal-content organization-details-modal" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+      <div class="header-content">
+        <div class="header-icon">
+          <mat-icon>{{isNew ? 'business_center' : 'business'}}</mat-icon>
+        </div>
+        <div class="header-text">
+          <h2>{{isNew ? 'עמותה חדשה' : 'עריכת עמותה'}}</h2>
+          <p class="header-subtitle" *ngIf="!isNew && organization">
+            {{organization.name}}
+          </p>
+        </div>
+      </div>
+      <button class="modal-close" (click)="closeModal()" matTooltip="סגור" [dir]="i18n.lang.RTL ? 'rtl' : 'ltr'">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-overlay" *ngIf="loading">
+      <div class="loading-spinner">טוען נתונים...</div>
+    </div>
+
+    <div class="modal-body">
+      <div class="details-grid" *ngIf="organization && !loading">
+
+        <!-- פרטי עמותה בסיסיים -->
+        <div class="section basic-info">
+          <h3>פרטי עמותה בסיסיים</h3>
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <div class="field-title">
+                <mat-icon class="field-icon">business</mat-icon>
+                <label>שם העמותה *</label>
+              </div>
+              <input type="text"
+                     class="form-control"
+                     [(ngModel)]="organization.name"
+                     (ngModelChange)="onFieldChange()"
+                     placeholder="שם העמותה"
+                     required>
+            </div>
+
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">badge</mat-icon>
+                <label>מספר עמותה (ח"פ)</label>
+              </div>
+              <input type="text"
+                     class="form-control"
+                     [(ngModel)]="organization.registrationNumber"
+                     (ngModelChange)="onFieldChange()"
+                     placeholder="מספר רישום">
+            </div>
+
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">account_balance</mat-icon>
+                <label>מספר חשבון</label>
+              </div>
+              <input type="text"
+                     class="form-control"
+                     [(ngModel)]="organization.accountNumber"
+                     (ngModelChange)="onFieldChange()"
+                     placeholder="מספר חשבון בנק">
+            </div>
+
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">attach_money</mat-icon>
+                <label>מטבע</label>
+              </div>
+              <select class="form-control"
+                      [(ngModel)]="organization.currency"
+                      (ngModelChange)="onFieldChange()">
+                <option *ngFor="let curr of currencyOptions" [value]="curr.value">
+                  {{curr.label}}
+                </option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- פרטי כתובת -->
+        <div class="section address-info">
+          <h3>
+            <mat-icon class="section-icon">location_on</mat-icon>
+            פרטי כתובת
+          </h3>
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <div class="field-title">
+                <mat-icon class="field-icon">home</mat-icon>
+                <label>כתובת</label>
+              </div>
+              <input type="text"
+                     class="form-control"
+                     [(ngModel)]="organization.address"
+                     (ngModelChange)="onFieldChange()"
+                     placeholder="רחוב ומספר">
+            </div>
+
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">location_city</mat-icon>
+                <label>עיר</label>
+              </div>
+              <input type="text"
+                     class="form-control"
+                     [(ngModel)]="organization.city"
+                     (ngModelChange)="onFieldChange()"
+                     placeholder="עיר">
+            </div>
+
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">public</mat-icon>
+                <label>מדינה</label>
+              </div>
+              <select class="form-control"
+                      [(ngModel)]="organization.countryId"
+                      (ngModelChange)="onFieldChange()">
+                <option value="">-- בחר מדינה --</option>
+                <option *ngFor="let country of countries" [value]="country.id">
+                  {{country.name}} ({{country.nameEn}})
+                </option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- פרטי קשר -->
+        <div class="section contact-info">
+          <h3>
+            <mat-icon class="section-icon">contacts</mat-icon>
+            פרטי קשר
+          </h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">phone</mat-icon>
+                <label>טלפון</label>
+              </div>
+              <input type="tel"
+                     class="form-control"
+                     [(ngModel)]="organization.phone"
+                     (ngModelChange)="onFieldChange()"
+                     placeholder="מספר טלפון">
+            </div>
+
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">email</mat-icon>
+                <label>אימייל</label>
+              </div>
+              <input type="email"
+                     class="form-control"
+                     [(ngModel)]="organization.email"
+                     (ngModelChange)="onFieldChange()"
+                     placeholder="כתובת דואר אלקטרוני">
+            </div>
+          </div>
+        </div>
+
+        <!-- אחר -->
+        <div class="section other-info">
+          <h3>
+            <mat-icon class="section-icon">note</mat-icon>
+            אחר
+          </h3>
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <div class="field-title">
+                <mat-icon class="field-icon">notes</mat-icon>
+                <label>הערות</label>
+              </div>
+              <textarea class="form-control"
+                        rows="4"
+                        [(ngModel)]="organization.notes"
+                        (ngModelChange)="onFieldChange()"
+                        placeholder="הערות והשתהות נוספות"></textarea>
+            </div>
+
+            <div class="form-group full-width">
+              <div class="checkbox-wrapper">
+                <label class="checkbox-label">
+                  <input type="checkbox"
+                         [(ngModel)]="organization.isActive"
+                         (ngModelChange)="onFieldChange()">
+                  <span class="checkbox-text">
+                    <mat-icon class="checkbox-icon">{{organization.isActive ? 'check_circle' : 'cancel'}}</mat-icon>
+                    פעיל
+                  </span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <div class="footer-actions-left">
+        <!-- Empty for future actions -->
+      </div>
+      <div class="footer-actions-right">
+        <button mat-stroked-button
+                (click)="closeModal()"
+                class="cancel-button">
+          <mat-icon>close</mat-icon>
+          ביטול
+        </button>
+        <button mat-raised-button
+                color="primary"
+                (click)="save()"
+                class="save-button"
+                [disabled]="loading">
+          <mat-icon>save</mat-icon>
+          {{ isNew ? 'שמור עמותה' : 'עדכן עמותה' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
