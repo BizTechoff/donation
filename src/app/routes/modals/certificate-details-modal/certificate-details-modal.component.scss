@@ -11,6 +11,9 @@
   justify-content: center;
   z-index: 1050;
   animation: fadeIn 0.3s ease-out;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 @keyframes fadeIn {
@@ -29,6 +32,7 @@
   flex-direction: column;
   animation: slideIn 0.3s ease-out;
   overflow: hidden;
+  cursor: default;
 
   &.large-modal {
     max-width: 1200px;
@@ -158,6 +162,56 @@
   }
 }
 
+.certificate-type-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-top: 8px;
+
+  .type-card {
+    background: white;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 24px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+
+    &:hover {
+      border-color: #667eea;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+    }
+
+    &.selected {
+      border-color: #667eea;
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+      transform: translateY(-2px);
+
+      .type-card-title {
+        color: #667eea;
+        font-weight: 600;
+      }
+    }
+
+    .type-card-icon {
+      font-size: 48px;
+    }
+
+    .type-card-title {
+      font-size: 16px;
+      font-weight: 500;
+      color: #333;
+      transition: all 0.3s ease;
+    }
+  }
+}
+
 textarea.form-control {
   resize: vertical;
   min-height: 80px;
@@ -278,6 +332,19 @@ textarea.form-control {
     &:hover {
       background: #138496;
       border-color: #138496;
+    }
+  }
+
+  &.btn-success {
+    background: #28a745;
+    color: white;
+    border-color: #28a745;
+
+    &:hover {
+      background: #218838;
+      border-color: #218838;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
     }
   }
 

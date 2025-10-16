@@ -72,14 +72,84 @@ mat-toolbar {
 
 
 .sidenav-toggle {
-
-
-
   @media (max-width: 720px) {
     display: flex;
     align-items: center;
     justify-content: center;
   }
+}
 
+// Mobile improvements for toolbar
+@media (max-width: 768px) {
+  mat-toolbar {
+    padding: 0 8px;
+    gap: 8px;
 
+    .toolbar-title {
+      font-size: 1.1rem;
+    }
+
+    .toolbar-actions {
+      gap: 6px;
+
+      app-quick-actions,
+      app-global-filters,
+      app-language-switcher {
+        ::ng-deep button {
+          padding: 6px 10px;
+          font-size: 0.85rem;
+        }
+      }
+
+      .toolbar-button {
+        padding: 6px 12px;
+        font-size: 0.85rem;
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  mat-toolbar {
+    padding: 0 4px;
+    gap: 4px;
+    flex-wrap: wrap;
+    min-height: 56px;
+
+    .toolbar-title {
+      font-size: 1rem;
+      flex: 1 1 100%;
+      order: 1;
+      text-align: center;
+      padding: 4px 0;
+    }
+
+    .sidenav-toggle {
+      order: 0;
+    }
+
+    .toolbar-actions {
+      order: 2;
+      gap: 4px;
+      flex: 1;
+      justify-content: flex-end;
+
+      app-quick-actions,
+      app-global-filters {
+        display: none; // Hide on very small screens
+      }
+
+      app-language-switcher {
+        ::ng-deep button {
+          padding: 4px 8px;
+          font-size: 0.75rem;
+        }
+      }
+
+      .toolbar-button {
+        padding: 4px 8px;
+        font-size: 0.75rem;
+      }
+    }
+  }
 }

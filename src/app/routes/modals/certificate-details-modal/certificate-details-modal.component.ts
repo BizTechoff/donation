@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Certificate } from '../../../../shared/entity/certificate';
@@ -6,6 +6,7 @@ import { Donor } from '../../../../shared/entity/donor';
 import { Donation } from '../../../../shared/entity/donation';
 import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
+import { SharedComponentsModule } from '../../../shared/shared-components.module';
 
 export interface CertificateDetailsModalArgs {
   certificateId?: string; // 'new' for new certificate or certificate ID for editing
@@ -16,7 +17,7 @@ export interface CertificateDetailsModalArgs {
 @Component({
   selector: 'app-certificate-details-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SharedComponentsModule],
   templateUrl: './certificate-details-modal.component.html',
   styleUrl: './certificate-details-modal.component.scss'
 })
@@ -36,7 +37,7 @@ export class CertificateDetailsModalComponent implements OnInit {
   certificateRepo = remult.repo(Certificate);
   donationRepo = remult.repo(Donation);
 
-  constructor(public i18n: I18nService) {}
+  constructor(public i18n: I18nService, private cdr: ChangeDetectorRef) {}
 
   async ngOnInit() {
     this.loading = true;
@@ -133,6 +134,7 @@ export class CertificateDetailsModalComponent implements OnInit {
       await this.certificate.save();
       this.changed = true;
       this.shouldClose = true;
+      this.cdr.detectChanges();
     } catch (error) {
       console.error('Error saving certificate:', error);
     }
@@ -140,6 +142,7 @@ export class CertificateDetailsModalComponent implements OnInit {
 
   onClose() {
     this.shouldClose = true;
+    this.cdr.detectChanges();
   }
 
   openPreview() {
@@ -148,6 +151,15 @@ export class CertificateDetailsModalComponent implements OnInit {
 
   closePreview() {
     this.showPreview = false;
+  }
+
+  onFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      const file = input.files[0];
+      console.log('File selected:', file.name, file.type, file.size);
+      // TODO: Handle file upload - store in certificate or upload to server
+    }
   }
 
   get currentDate(): Date {

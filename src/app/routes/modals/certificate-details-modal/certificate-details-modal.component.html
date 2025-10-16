@@ -9,14 +9,22 @@
         <div class="section basic-info">
           <h3>{{ (i18n.terms$ | async)?.basicInfo }}</h3>
           <div class="form-grid">
-            <div class="form-group">
+            <div class="form-group full-width">
               <label>{{ (i18n.terms$ | async)?.certificateTypeSelect }}</label>
-              <select class="form-control certificate-type-select" [(ngModel)]="certificate!.type" (change)="onCertificateTypeChange()">
-                <option value="donation">{{ (i18n.terms$ | async)?.donationCertificate }}</option>
-                <option value="memorial">{{ (i18n.terms$ | async)?.memorialCertificate }}</option>
-                <option value="dedication">{{ (i18n.terms$ | async)?.dedication }}</option>
-                <option value="appreciation">{{ (i18n.terms$ | async)?.appreciation }}</option>
-              </select>
+              <div class="certificate-type-cards">
+                <div class="type-card"
+                     [class.selected]="certificate!.type === 'dedication'"
+                     (click)="certificate!.type = 'dedication'; onCertificateTypeChange()">
+                  <div class="type-card-icon">📜</div>
+                  <div class="type-card-title">נציב יום</div>
+                </div>
+                <div class="type-card"
+                     [class.selected]="certificate!.type === 'memorial'"
+                     (click)="certificate!.type = 'memorial'; onCertificateTypeChange()">
+                  <div class="type-card-icon">🕯️</div>
+                  <div class="type-card-title">{{ (i18n.terms$ | async)?.memorialCertificate }}</div>
+                </div>
+              </div>
             </div>
             <div class="form-group">
               <label>{{ (i18n.terms$ | async)?.donorSelect }}</label>
@@ -29,13 +37,11 @@
               <label>{{ (i18n.terms$ | async)?.recipientName }}</label>
               <input type="text" class="form-control" [placeholder]="(i18n.terms$ | async)?.recipientNamePlaceholder" [(ngModel)]="certificate!.recipientName">
             </div> -->
-            <div class="form-group">
-              <label>{{ (i18n.terms$ | async)?.eventDateField }}</label>
-              <input type="date" class="form-control" [(ngModel)]="eventDateForInput">
-            </div>
-            <div class="form-group">
-              <label>{{ (i18n.terms$ | async)?.donationAmount }}</label>
-              <input type="number" class="form-control" placeholder="0" [(ngModel)]="certificate!.amount">
+            <div class="form-group full-width">
+              <app-modern-dual-date-picker
+                [label]="(i18n.terms$ | async)?.eventDateField || 'תאריך אירוע'"
+                [(ngModel)]="certificate!.eventDate">
+              </app-modern-dual-date-picker>
             </div>
             <div class="form-group">
               <label>{{ (i18n.terms$ | async)?.eventReason }}</label>
@@ -45,27 +51,10 @@
         </div>
 
         <div class="section text-content">
-          <h3>{{ (i18n.terms$ | async)?.certificateContent }}</h3>
+          <h3>תקציר תוכן התעודה</h3>
           <div class="form-grid">
             <div class="form-group full-width">
-              <label>{{ (i18n.terms$ | async)?.mainTitle }}</label>
-              <input type="text" class="form-control" [placeholder]="(i18n.terms$ | async)?.mainTitlePlaceholder" [(ngModel)]="certificate!.mainTitle">
-            </div>
-            <div class="form-group full-width">
-              <label>{{ (i18n.terms$ | async)?.mainText }}</label>
-              <textarea class="form-control" rows="4" [placeholder]="(i18n.terms$ | async)?.mainTextPlaceholder" [(ngModel)]="certificate!.mainText"></textarea>
-            </div>
-            <div class="form-group full-width">
-              <label>{{ (i18n.terms$ | async)?.specialDedication }}</label>
-              <textarea class="form-control" rows="3" [placeholder]="(i18n.terms$ | async)?.specialDedicationPlaceholder" [(ngModel)]="certificate!.specialText"></textarea>
-            </div>
-            <div class="form-group">
-              <label>{{ (i18n.terms$ | async)?.hebrewDateField }}</label>
-              <input type="text" class="form-control" [placeholder]="(i18n.terms$ | async)?.hebrewDatePlaceholder" [(ngModel)]="certificate!.hebrewDate">
-            </div>
-            <div class="form-group">
-              <label>{{ (i18n.terms$ | async)?.signature }}</label>
-              <input type="text" class="form-control" [placeholder]="(i18n.terms$ | async)?.signaturePlaceholder" [(ngModel)]="certificate!.signature">
+              <textarea class="form-control" rows="6" placeholder="תקציר תוכן התעודה" [(ngModel)]="certificate!.mainText"></textarea>
             </div>
           </div>
         </div>
@@ -128,9 +117,10 @@
       </div>
     </div>
     <div class="modal-footer">
+      <input type="file" #fileInput style="display: none" (change)="onFileSelected($event)" accept="image/*,.pdf">
       <button class="btn btn-secondary" (click)="onClose()">{{ (i18n.terms$ | async)?.cancel }}</button>
-      <button class="btn btn-info" (click)="openPreview()">{{ (i18n.terms$ | async)?.previewModal }}</button>
-      <button class="btn btn-primary" (click)="save()">{{ (i18n.terms$ | async)?.saveCampaign }}</button>
+      <button class="btn btn-success" (click)="fileInput.click()">העלה קובץ</button>
+      <button class="btn btn-primary" (click)="save()">שמור תעודה</button>
     </div>
   </div>
 </div>

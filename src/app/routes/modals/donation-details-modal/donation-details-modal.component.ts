@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -193,7 +193,7 @@ export class DonationDetailsModalComponent implements OnInit {
     'NZ': 'NZD', // ניו זילנד
   };
 
-  constructor(public i18n: I18nService, private ui: UIToolsService) {}
+  constructor(public i18n: I18nService, private ui: UIToolsService, private cdr: ChangeDetectorRef) {}
 
   async ngOnInit() {
     await this.initializeDonation();
@@ -542,10 +542,12 @@ export class DonationDetailsModalComponent implements OnInit {
     if (event && event.target === event.currentTarget) {
       this.changed = false;
       this.shouldClose = true;
+      this.cdr.detectChanges();
     } else if (!event) {
       // Direct close button click
       this.changed = false;
       this.shouldClose = true;
+      this.cdr.detectChanges();
     }
   }
 

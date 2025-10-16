@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatNativeDateModule } from '@angular/material/core';
@@ -77,7 +77,8 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
   constructor(
     public i18n: I18nService,
     private ui: UIToolsService,
-    private globalFilterService: GlobalFilterService
+    private globalFilterService: GlobalFilterService,
+    private cdr: ChangeDetectorRef
   ) { }
 
   async ngOnInit() {
@@ -134,6 +135,7 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
         if (!this.reminder) {
           this.ui.error('התזכורת לא נמצאה');
           this.shouldClose = true;
+          this.cdr.detectChanges();
           return;
         }
         // relatedDonor is already loaded from the include
@@ -261,6 +263,7 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
 
       this.changed = true;
       this.shouldClose = true;
+      this.cdr.detectChanges();
     } catch (error) {
       console.error('Error saving reminder:', error);
       this.ui.error('שגיאה בשמירת התזכורת');
@@ -296,6 +299,7 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
 
   cancel() {
     this.shouldClose = true;
+    this.cdr.detectChanges();
   }
 
   closeModal(event: MouseEvent) {

@@ -1,4 +1,4 @@
-<div *ngIf="!this.loading" class="modal-overlay" (click)="closeModal()">
+<div *ngIf="!this.loading && !shouldClose" class="modal-overlay" (click)="closeModal()">
   <div class="campaign-donors-modal" (click)="$event.stopPropagation()">
 
     <!-- Modal Header -->

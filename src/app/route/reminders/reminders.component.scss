@@ -711,54 +711,201 @@
 
 @media (max-width: 1200px) {
   .reminders-grid {
-    .grid-header,
+    .grid-header {
+      display: none;
+    }
+
     .grid-row {
-      grid-template-columns: 1fr;
-      
+      display: block;
+      margin-bottom: 15px;
+      border: 1px solid #ecf0f1;
+      border-radius: 8px;
+      padding: 15px;
+
+      &.overdue,
+      &.today {
+        border-left-width: 4px;
+      }
+
       .grid-col {
-        border-left: none;
-        border-bottom: 1px solid #ecf0f1;
-        padding: 10px 15px;
-        
-        &:before {
-          content: attr(data-label) ': ';
-          font-weight: 600;
-          color: #2c3e50;
+        display: block;
+        border: none;
+        padding: 8px 0;
+
+        &.actions {
+          border-top: 1px solid #ecf0f1;
+          padding-top: 12px;
+          margin-top: 10px;
+          display: flex;
+          justify-content: flex-start;
+          flex-wrap: wrap;
+          gap: 10px;
         }
       }
     }
   }
-  
+
   .quick-reminder-cards {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
 @media (max-width: 768px) {
+  .reminders-container {
+    padding: 15px;
+  }
+
+  .page-header {
+    flex-direction: column;
+    gap: 15px;
+    align-items: stretch;
+
+    h1 {
+      font-size: 1.5rem;
+      text-align: center;
+    }
+
+    .add-reminder-btn {
+      width: 100%;
+    }
+  }
+
   .summary-cards {
     grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+
+    .summary-card {
+      flex-direction: column;
+      padding: 15px;
+      text-align: center;
+
+      .card-icon {
+        font-size: 1.8rem;
+      }
+
+      .card-content {
+        h3 {
+          font-size: 12px;
+        }
+
+        .count {
+          font-size: 1.3rem;
+        }
+      }
+    }
   }
-  
-  .filters-section .filter-row {
-    grid-template-columns: 1fr;
+
+  .filters-section {
+    padding: 15px;
+
+    .filter-row {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
   }
-  
+
   .quick-reminder-cards {
     grid-template-columns: 1fr;
   }
-  
+
   .reminders-tabs {
     flex-wrap: wrap;
     gap: 5px;
-    
+    overflow-x: auto;
+
     .tab-btn {
       padding: 8px 12px;
       font-size: 12px;
+      flex-shrink: 0;
     }
   }
-  
+
+  .pagination {
+    flex-direction: column;
+    gap: 12px;
+
+    .btn-page {
+      width: 100%;
+      max-width: 200px;
+    }
+  }
+
   .modal-overlay .modal-content {
     width: 95%;
     margin: 20px;
+
+    .modal-body {
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .reminders-container {
+    padding: 10px;
+  }
+
+  .page-header {
+    h1 {
+      font-size: 1.3rem;
+    }
+
+    .add-reminder-btn {
+      padding: 10px 20px;
+      font-size: 13px;
+    }
+  }
+
+  .summary-cards {
+    grid-template-columns: 1fr;
+
+    .summary-card {
+      .card-icon {
+        font-size: 1.6rem;
+      }
+    }
+  }
+
+  .quick-reminder-cards {
+    .quick-card {
+      .card-header {
+        padding: 12px 15px;
+
+        h3 {
+          font-size: 0.9rem;
+        }
+      }
+
+      .card-body {
+        padding: 12px 15px;
+        max-height: 150px;
+
+        .birthday-item,
+        .memorial-item,
+        .donation-candidate,
+        .meeting-item {
+          .name {
+            font-size: 13px;
+          }
+
+          .date,
+          .relation,
+          .last-donation,
+          .purpose,
+          .datetime {
+            font-size: 11px;
+          }
+        }
+      }
+    }
+  }
+
+  .reminders-tabs {
+    .tab-btn {
+      padding: 6px 10px;
+      font-size: 11px;
+    }
   }
 }

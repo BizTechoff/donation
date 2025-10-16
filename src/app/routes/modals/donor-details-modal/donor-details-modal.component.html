@@ -1,5 +1,5 @@
 <!-- Donor Details Modal -->
-<div class="modal-overlay" (click)="closeModal($event)">
+<div class="modal-overlay" *ngIf="!shouldClose" (click)="closeModal($event)">
   <div class="modal-content donor-details-modal" (click)="$event.stopPropagation()">
 
     <div class="modal-header">
@@ -168,7 +168,7 @@
                 <mat-icon class="address-type-icon">home</mat-icon>
                 <h4>כתובת מגורים</h4>
               </div>
-            {{this.donor?.homePlace?.id}}
+            {{this.donor && this.donor.homePlace  && this.donor.homePlace.id}}
               <app-osm-address-input
                 label="כתובת מגורים"
                 placeholder="הקלד כתובת מגורים..."

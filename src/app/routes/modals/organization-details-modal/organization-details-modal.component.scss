@@ -12,6 +12,9 @@
   justify-content: center;
   z-index: 1050;
   animation: fadeIn 0.3s ease-out;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 @keyframes fadeIn {
@@ -33,6 +36,7 @@
   position: relative;
   animation: slideIn 0.3s ease-out;
   overflow: hidden;
+  cursor: default;
 }
 
 @keyframes slideIn {

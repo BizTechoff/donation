@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -55,7 +55,8 @@ export class OrganizationDetailsModalComponent implements OnInit {
 
   constructor(
     public i18n: I18nService,
-    private ui: UIToolsService
+    private ui: UIToolsService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   async ngOnInit() {
@@ -126,6 +127,7 @@ export class OrganizationDetailsModalComponent implements OnInit {
 
       this.changed = true;
       this.shouldClose = true;
+      this.cdr.detectChanges();
     } catch (error) {
       console.error('Error saving organization:', error);
       this.ui.error('שגיאה בשמירת העמותה');
@@ -143,6 +145,7 @@ export class OrganizationDetailsModalComponent implements OnInit {
         }
       }
       this.shouldClose = true;
+      this.cdr.detectChanges();
     } else if (!event) {
       // Direct close button click
       if (this.hasChanges()) {
@@ -151,6 +154,7 @@ export class OrganizationDetailsModalComponent implements OnInit {
         }
       }
       this.shouldClose = true;
+      this.cdr.detectChanges();
     }
   }
 

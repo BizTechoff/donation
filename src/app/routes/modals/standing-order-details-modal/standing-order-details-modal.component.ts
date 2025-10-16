@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -70,7 +70,7 @@ export class StandingOrderDetailsModalComponent implements OnInit {
   // Day of month options (1-28 to avoid issues with February)
   dayOfMonthOptions: number[] = Array.from({ length: 28 }, (_, i) => i + 1);
 
-  constructor(public i18n: I18nService, private ui: UIToolsService) {}
+  constructor(public i18n: I18nService, private ui: UIToolsService, private cdr: ChangeDetectorRef) {}
 
   async ngOnInit() {
     await this.initializeStandingOrder();
@@ -206,6 +206,7 @@ export class StandingOrderDetailsModalComponent implements OnInit {
 
       this.changed = wasNew || this.hasChanges();
       this.shouldClose = true;
+      this.cdr.detectChanges();
     } catch (error) {
       console.error('Error saving standing order:', error);
       alert('שגיאה בשמירת הוראת הקבע');
@@ -249,6 +250,7 @@ export class StandingOrderDetailsModalComponent implements OnInit {
         await this.standingOrder.delete();
         this.changed = true;
         this.shouldClose = true;
+        this.cdr.detectChanges();
       } catch (error) {
         console.error('Error deleting standing order:', error);
         alert('שגיאה במחיקת הוראת קבע');
@@ -327,10 +329,12 @@ export class StandingOrderDetailsModalComponent implements OnInit {
     if (event && event.target === event.currentTarget) {
       this.changed = false;
       this.shouldClose = true;
+      this.cdr.detectChanges();
     } else if (!event) {
       // Direct close button click
       this.changed = false;
       this.shouldClose = true;
+      this.cdr.detectChanges();
     }
   }
 

@@ -1,5 +1,5 @@
 <!-- Standing Order Details Modal -->
-<div class="modal-overlay" (click)="closeModal($event)">
+<div class="modal-overlay" *ngIf="!shouldClose" (click)="closeModal($event)">
   <div class="modal-content standing-order-details-modal" (click)="$event.stopPropagation()">
 
     <!-- Modal Header with gradient and icon -->

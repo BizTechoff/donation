@@ -5,7 +5,7 @@
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
-// ÞáÚ ØâÙàÔ
+// ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½
 .loading-overlay {
   position: fixed;
   top: 0;
@@ -48,7 +48,7 @@
   }
 }
 
-// âÞÕÓ ÑÙê ÜÞéêÞéÙÝ ÜÐ Þ×ÕÑèÙÝ
+// ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 .welcome-section {
   min-height: 100vh;
   color: white;
@@ -159,7 +159,7 @@
   }
 }
 
-// êÛÕàÕê ÔÞâèÛê
+// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 .features-section {
   padding: 100px 20px;
   max-width: 1200px;
@@ -221,7 +221,7 @@
   }
 }
 
-// çèÙÐÔ ÜäâÕÜÔ
+// ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 .cta-section {
   padding: 100px 20px;
   text-align: center;
@@ -297,7 +297,7 @@
   }
 }
 
-// ÜÕ× Þ×ÕÕàÙÝ ÜÞéêÞéÙÝ Þ×ÕÑèÙÝ
+// ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 .dashboard-section {
   min-height: 100vh;
   background: #f8f9fa;
@@ -569,7 +569,7 @@
   }
 }
 
-// ÐàÙÞæÙÕê
+// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -617,33 +617,60 @@
       .hero-title {
         font-size: 2.5rem;
       }
-      
+
+      .hero-subtitle {
+        font-size: 1.1rem;
+      }
+
       .hero-stats {
         grid-template-columns: repeat(2, 1fr);
         gap: 20px;
-        
+
         .stat-item {
           padding: 20px 15px;
-          
+
           .stat-number {
             font-size: 2rem;
+          }
+
+          .stat-label {
+            font-size: 0.8rem;
           }
         }
       }
     }
   }
-  
+
   .features-section {
+    padding: 60px 15px;
+
+    h2 {
+      font-size: 2rem;
+    }
+
     .features-grid {
       grid-template-columns: 1fr;
+      gap: 20px;
+
+      .feature-card {
+        padding: 30px 20px;
+      }
     }
   }
-  
+
   .cta-section {
+    padding: 60px 15px;
+
+    .cta-content {
+      h2 {
+        font-size: 1.8rem;
+      }
+    }
+
     .cta-buttons {
       flex-direction: column;
       align-items: center;
-      
+
       .btn {
         width: 100%;
         max-width: 300px;
@@ -651,20 +678,163 @@
       }
     }
   }
-  
+
   .dashboard-section {
-    padding: 20px;
-    
+    padding: 20px 15px;
+
+    .dashboard-header {
+      h1 {
+        font-size: 2rem;
+      }
+
+      p {
+        font-size: 1rem;
+      }
+    }
+
     .stats-grid {
       grid-template-columns: 1fr;
+      gap: 15px;
+
+      .stat-card {
+        padding: 20px 15px;
+      }
     }
-    
+
+    .recent-section, .campaigns-section {
+      padding: 20px;
+
+      h2 {
+        font-size: 1.3rem;
+      }
+
+      .donation-item {
+        flex-wrap: wrap;
+        gap: 10px;
+
+        .donation-info {
+          flex: 1 1 100%;
+          order: 1;
+        }
+
+        .donation-amount {
+          flex: 1 1 auto;
+          order: 2;
+        }
+
+        .donation-campaign {
+          flex: 1 1 auto;
+          order: 3;
+        }
+      }
+    }
+
     .campaigns-grid {
       grid-template-columns: 1fr;
     }
-    
+
     .actions-grid {
       grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+
+      .action-btn {
+        padding: 20px 15px;
+
+        .action-icon {
+          font-size: 1.8rem;
+        }
+
+        span {
+          font-size: 0.9rem;
+        }
+      }
+    }
+
+    .quick-actions {
+      padding: 20px;
+
+      h2 {
+        font-size: 1.3rem;
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-section {
+    .hero-content {
+      .hero-title {
+        font-size: 2rem;
+      }
+
+      .hero-subtitle {
+        font-size: 1rem;
+      }
+
+      .hero-stats {
+        grid-template-columns: 1fr;
+        gap: 15px;
+
+        .stat-item {
+          .stat-number {
+            font-size: 1.8rem;
+          }
+        }
+      }
+    }
+  }
+
+  .features-section {
+    padding: 40px 10px;
+
+    h2 {
+      font-size: 1.6rem;
+    }
+  }
+
+  .cta-section {
+    padding: 40px 10px;
+
+    .cta-content {
+      h2 {
+        font-size: 1.5rem;
+      }
+
+      p {
+        font-size: 1rem;
+      }
+    }
+  }
+
+  .dashboard-section {
+    padding: 15px 10px;
+
+    .dashboard-header {
+      h1 {
+        font-size: 1.6rem;
+      }
+    }
+
+    .stats-grid {
+      .stat-card {
+        flex-direction: column;
+        text-align: center;
+
+        .stat-icon {
+          font-size: 2rem;
+          padding: 10px;
+        }
+
+        .stat-content {
+          .stat-number {
+            font-size: 1.5rem;
+          }
+        }
+      }
+    }
+
+    .actions-grid {
+      grid-template-columns: 1fr;
     }
   }
 }

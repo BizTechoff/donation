@@ -98,7 +98,7 @@
             "allowedHosts": [
               "localhost",
               "127.0.0.1",
-              "eea41190f1ca.ngrok-free.app"
+              "823fd32369c3.ngrok.app"
             ]
           },
           "configurations": {

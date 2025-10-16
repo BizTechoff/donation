@@ -311,6 +311,7 @@ export class DonorDetailsModalComponent implements OnInit {
 
       this.changed = wasNew || this.hasChanges();
       this.shouldClose = true;
+      this.changeDetector.detectChanges();
       // The dialog will automatically close and return this.changed
     } catch (error) {
       console.error('Error saving donor:', error);
@@ -736,10 +737,12 @@ export class DonorDetailsModalComponent implements OnInit {
     if (event && event.target === event.currentTarget) {
       // Don't reset changed - let parent handle it
       this.shouldClose = true;
+      this.changeDetector.detectChanges();
     } else if (!event) {
       // Direct close button click
       // Don't reset changed - let parent handle it
       this.shouldClose = true;
+      this.changeDetector.detectChanges();
     }
   }
 

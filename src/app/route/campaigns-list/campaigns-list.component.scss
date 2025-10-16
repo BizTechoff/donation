@@ -645,41 +645,310 @@
   .campaigns-container {
     padding: 15px;
   }
-  
+
   .page-header {
     flex-direction: column;
     gap: 15px;
     align-items: stretch;
-  }
-  
-  .summary-cards {
-    grid-template-columns: 1fr;
-  }
-  
-  .filters-section .filter-row {
-    grid-template-columns: 1fr;
-    gap: 15px;
-    
-    .filter-actions {
-      justify-content: center;
+
+    h1 {
+      font-size: 1.5rem;
+      text-align: center;
+    }
+
+    .add-campaign-btn {
+      width: 100%;
     }
   }
-  
+
+  .summary-cards {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+
+    .summary-card {
+      flex-direction: column;
+      padding: 15px;
+      text-align: center;
+
+      .card-icon {
+        font-size: 2rem;
+        padding: 12px;
+      }
+
+      .card-content {
+        h3 {
+          font-size: 0.85rem;
+        }
+
+        .count, .amount, .percentage {
+          font-size: 1.4rem;
+        }
+      }
+    }
+  }
+
+  .filters-section {
+    padding: 15px;
+
+    .filter-row {
+      grid-template-columns: 1fr;
+      gap: 12px;
+
+      .filter-actions {
+        justify-content: stretch;
+
+        .btn {
+          flex: 1;
+        }
+      }
+    }
+  }
+
   .campaigns-table-container {
-    overflow-x: auto;
+    overflow: visible;
   }
-  
+
   .campaigns-table {
-    min-width: 800px;
+    thead {
+      display: none;
+    }
+
+    tbody {
+      tr {
+        display: block;
+        margin-bottom: 15px;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 15px;
+        background: white;
+
+        &:hover {
+          background: #fafafa;
+        }
+
+        td {
+          display: block;
+          padding: 8px 0;
+          border: none;
+          text-align: right !important;
+
+          &::before {
+            content: attr(data-label);
+            font-weight: 600;
+            color: #7f8c8d;
+            font-size: 13px;
+            display: block;
+            margin-bottom: 5px;
+          }
+
+          &.campaign-name-col::before {
+            content: 'שם הקמפיין: ';
+          }
+
+          &.amount-col::before {
+            content: 'יעד: ';
+
+            &:nth-of-type(2)::before {
+              content: 'נגבה: ';
+            }
+          }
+
+          &.progress-col {
+            &::before {
+              content: 'התקדמות: ';
+            }
+
+            .progress-container {
+              flex-direction: column;
+              align-items: stretch;
+              gap: 8px;
+
+              .progress-bar {
+                width: 100%;
+              }
+
+              .progress-text {
+                text-align: center;
+              }
+            }
+          }
+
+          &.actions {
+            border-top: 1px solid #dee2e6;
+            padding-top: 12px;
+            margin-top: 10px;
+
+            &::before {
+              content: 'פעולות: ';
+            }
+
+            .btn-icon {
+              margin: 0 5px;
+            }
+          }
+        }
+      }
+    }
   }
-  
+
+  .no-campaigns {
+    padding: 40px 15px;
+
+    .no-campaigns-icon {
+      font-size: 3rem;
+    }
+
+    h3 {
+      font-size: 1.3rem;
+    }
+  }
+
   .modal-content {
     margin: 10px;
     max-width: none;
     width: auto;
   }
-  
+
+  .modal-header {
+    padding: 15px 20px;
+
+    h2 {
+      font-size: 1.3rem;
+    }
+  }
+
+  .modal-body {
+    padding: 20px;
+  }
+
   .form-grid {
     grid-template-columns: 1fr;
+  }
+
+  .modal-footer {
+    padding: 15px 20px;
+    flex-direction: column;
+    align-items: stretch;
+
+    .action-buttons,
+    .main-buttons {
+      width: 100%;
+      justify-content: center;
+      margin-left: 0;
+    }
+
+    .main-buttons {
+      .btn {
+        flex: 1;
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .campaigns-container {
+    padding: 10px;
+  }
+
+  .page-header {
+    h1 {
+      font-size: 1.3rem;
+    }
+
+    .add-campaign-btn {
+      padding: 10px 20px;
+      font-size: 0.9rem;
+    }
+  }
+
+  .summary-cards {
+    grid-template-columns: 1fr;
+
+    .summary-card {
+      .card-icon {
+        font-size: 1.8rem;
+      }
+    }
+  }
+
+  .filters-section {
+    padding: 12px;
+
+    .filter-row {
+      .filter-group {
+        label {
+          font-size: 0.85rem;
+        }
+
+        .form-control {
+          padding: 8px 10px;
+          font-size: 0.9rem;
+        }
+      }
+
+      .filter-actions {
+        .btn {
+          padding: 8px 14px;
+          font-size: 0.85rem;
+        }
+      }
+    }
+  }
+
+  .campaigns-table {
+    tbody {
+      tr {
+        padding: 12px;
+
+        td {
+          font-size: 0.9rem;
+
+          &::before {
+            font-size: 12px;
+          }
+
+          &.actions {
+            .btn-icon {
+              font-size: 1rem;
+              padding: 6px;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .modal-header {
+    padding: 12px 15px;
+
+    h2 {
+      font-size: 1.1rem;
+    }
+
+    .modal-close {
+      font-size: 1.5rem;
+    }
+  }
+
+  .modal-body {
+    padding: 15px;
+  }
+
+  .modal-footer {
+    padding: 12px 15px;
+
+    .action-buttons {
+      .btn {
+        padding: 6px 12px;
+        font-size: 13px;
+      }
+    }
+
+    .main-buttons {
+      .btn {
+        padding: 10px 20px;
+        font-size: 0.9rem;
+      }
+    }
   }
 }

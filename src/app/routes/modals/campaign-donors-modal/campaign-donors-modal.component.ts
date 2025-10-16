@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -52,7 +52,8 @@ export class CampaignDonorsModalComponent implements OnInit {
   constructor(
     public i18n: I18nService,
     private ui: UIToolsService,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private cdr: ChangeDetectorRef
   ) {}
 
   async ngOnInit() {
@@ -212,6 +213,7 @@ export class CampaignDonorsModalComponent implements OnInit {
       event.stopPropagation();
     }
     this.shouldClose = true;
+    this.cdr.detectChanges();
   }
 
   getDonorDisplayName(donor: Donor): string {

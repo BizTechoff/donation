@@ -101,7 +101,7 @@ export class UIToolsService implements UITools {
     return await openDialog(
       (await import('../routes/modals/donor-details-modal/donor-details-modal.component')).DonorDetailsModalComponent,
       (dlg) => dlg.args = { donorId },
-      (dlg) => dlg.changed || dlg.shouldClose
+      (dlg) => !!dlg?.changed || dlg?.shouldClose
     )
   }
 
@@ -109,7 +109,7 @@ export class UIToolsService implements UITools {
     return await openDialog(
       (await import('../routes/modals/campaign-details-modal/campaign-details-modal.component')).CampaignDetailsModalComponent,
       (dlg) => dlg.args = { campaignId },
-      (dlg) => dlg.changed || dlg.shouldClose
+      (dlg) => !!dlg?.changed || dlg?.shouldClose
     )
   }
 
@@ -117,7 +117,7 @@ export class UIToolsService implements UITools {
     return await openDialog(
       (await import('../routes/modals/campaign-donors-modal/campaign-donors-modal.component')).CampaignDonorsModalComponent,
       (dlg) => dlg.args = { campaignId },
-      (dlg) => dlg.shouldClose
+      (dlg) => !!dlg?.shouldClose
     )
   }
 
@@ -125,7 +125,7 @@ export class UIToolsService implements UITools {
     return await openDialog(
       (await import('../routes/modals/donation-details-modal/donation-details-modal.component')).DonationDetailsModalComponent,
       (dlg) => dlg.args = { donationId, donorId: options?.donorId, campaignId: options?.campaignId },
-      (dlg) => dlg.changed
+      (dlg) => !!dlg?.changed
     )
   }
 
@@ -133,7 +133,7 @@ export class UIToolsService implements UITools {
     return await openDialog(
       (await import('../routes/modals/event-selection-modal/event-selection-modal.component')).EventSelectionModalComponent,
       (dlg) => dlg.args = { availableEvents, title },
-      (dlg) => dlg.selectedEvent
+      (dlg) => !!dlg?.selectedEvent
     );
   }
 
@@ -141,7 +141,7 @@ export class UIToolsService implements UITools {
     return await openDialog(
       (await import('../routes/modals/standing-order-details-modal/standing-order-details-modal.component')).StandingOrderDetailsModalComponent,
       (dlg) => dlg.args = { standingOrderId, donorId: options?.donorId },
-      (dlg) => dlg.changed || dlg.shouldClose
+      (dlg) => !!(dlg?.changed || dlg?.shouldClose)
     )
   }
 
@@ -149,7 +149,7 @@ export class UIToolsService implements UITools {
     return await openDialog(
       (await import('../routes/modals/certificate-details-modal/certificate-details-modal.component')).CertificateDetailsModalComponent,
       (dlg) => dlg.args = { certificateId, donorId: options?.donorId, donationId: options?.donationId },
-      (dlg) => dlg.changed
+      (dlg) => !!dlg?.changed
     )
   }
 
@@ -157,7 +157,7 @@ export class UIToolsService implements UITools {
     return await openDialog(
       (await import('../routes/modals/reminder-details-modal/reminder-details-modal.component')).ReminderDetailsModalComponent,
       (dlg) => dlg.args = { reminderId, userId: options?.userId, donorId: options?.donorId, donationId: options?.donationId },
-      (dlg) => dlg.changed
+      (dlg) => !!dlg?.changed
     )
   }
   private enhanceFieldOptionsAndDataControlOptions(

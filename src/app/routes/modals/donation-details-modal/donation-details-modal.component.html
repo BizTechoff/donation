@@ -1,5 +1,5 @@
 <!-- Donation Details Modal -->
-<div class="modal-overlay" (click)="closeModal($event)">
+<div class="modal-overlay" *ngIf="!shouldClose">
   <div class="modal-content donation-details-modal" (click)="$event.stopPropagation()">
 
     <!-- Modal Header with gradient and icon -->

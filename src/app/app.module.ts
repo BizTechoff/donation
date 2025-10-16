@@ -48,7 +48,6 @@ import { ReportsComponent } from './route/reports/reports.component'
 import { LanguageSwitcherComponent } from './i18n/language-switcher.component'
 import { DonorsMapComponent } from './route/donors-map/donors-map.component'
 import { DonorDetailsModalComponent } from './routes/modals/donor-details-modal/donor-details-modal.component'
-import { DualDatePickerComponent } from './shared/dual-date-picker/dual-date-picker.component'
 import { SharedComponentsModule } from './shared/shared-components.module'
 import { HebrewDateService } from './services/hebrew-date.service'
 import { GlobalFiltersComponent } from './components/global-filters/global-filters.component'
@@ -77,8 +76,7 @@ import { SeedDataComponent } from './components/seed-data/seed-data.component'
     RemindersComponent,
     ReportsComponent,
     LanguageSwitcherComponent,
-    DonorsMapComponent,
-    DualDatePickerComponent
+    DonorsMapComponent
   ],
   imports: [
     BrowserModule,

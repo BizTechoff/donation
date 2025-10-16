@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -55,7 +55,7 @@ export class CampaignDetailsModalComponent implements OnInit {
   // Available levels for multi-select from donor levels enum
   availableLevels = DONOR_LEVELS_ARRAY;
 
-  constructor(public i18n: I18nService, private ui: UIToolsService, private snackBar: MatSnackBar) {}
+  constructor(public i18n: I18nService, private ui: UIToolsService, private snackBar: MatSnackBar, private cdr: ChangeDetectorRef) {}
 
   async ngOnInit() {
     await this.initializeCampaign();
@@ -171,6 +171,7 @@ export class CampaignDetailsModalComponent implements OnInit {
       this.originalCampaignData = JSON.stringify(this.campaign);
       this.changed = false;
       this.shouldClose = true;
+      this.cdr.detectChanges();
     } catch (error: any) {
       console.error('Error saving campaign:', error);
       this.ui.error('שגיאה בשמירת הקמפיין: ' + (error.message || error));
@@ -190,6 +191,7 @@ export class CampaignDetailsModalComponent implements OnInit {
       await this.campaign.delete();
       this.snackBar.open('הקמפיין נמחק בהצלחה', 'סגור', { duration: 3000 });
       this.shouldClose = true;
+      this.cdr.detectChanges();
     } catch (error: any) {
       console.error('Error deleting campaign:', error);
       this.ui.error('שגיאה במחיקת הקמפיין: ' + (error.message || error));
@@ -267,6 +269,7 @@ export class CampaignDetailsModalComponent implements OnInit {
     }
 
     this.shouldClose = true;
+    this.cdr.detectChanges();
   }
 
   onManagerChange() {
