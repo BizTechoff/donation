@@ -2,6 +2,7 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDialogRef } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Donation, Donor, Campaign, DonationMethod, User, DonationPartner, DonationFile, Country, Organization, Bank } from '../../../../shared/entity';
@@ -37,7 +38,6 @@ export interface DonationDetailsModalArgs {
 export class DonationDetailsModalComponent implements OnInit {
   args!: DonationDetailsModalArgs;
   changed = false;
-  shouldClose = false;
 
   donation!: Donation;
   originalDonationData?: string; // To track changes
@@ -193,7 +193,12 @@ export class DonationDetailsModalComponent implements OnInit {
     'NZ': 'NZD', // ניו זילנד
   };
 
-  constructor(public i18n: I18nService, private ui: UIToolsService, private cdr: ChangeDetectorRef) {}
+  constructor(
+    public i18n: I18nService,
+    private ui: UIToolsService,
+    private cdr: ChangeDetectorRef,
+    public dialogRef: MatDialogRef<DonationDetailsModalComponent>
+  ) {}
 
   async ngOnInit() {
     await this.initializeDonation();
@@ -385,7 +390,7 @@ export class DonationDetailsModalComponent implements OnInit {
       await this.donationRepo.save(this.donation);
 
       this.changed = wasNew || this.hasChanges();
-      // The dialog will automatically close and return this.changed
+      this.dialogRef.close(this.changed);
     } catch (error) {
       console.error('Error saving donation:', error);
       this.ui.error('שגיאה בשמירת התרומה');
@@ -400,8 +405,7 @@ export class DonationDetailsModalComponent implements OnInit {
       try {
         // Use remult.repo() for deleting in the app (client side)
         await this.donationRepo.delete(this.donation);
-        this.changed = true;
-        // The dialog will automatically close and return this.changed
+        this.dialogRef.close(true);
       } catch (error) {
         console.error('Error deleting donation:', error);
         this.ui.error('שגיאה במחיקת התרומה');
@@ -538,16 +542,9 @@ export class DonationDetailsModalComponent implements OnInit {
   }
 
   closeModal(event?: MouseEvent) {
-    // If clicking on overlay, close modal
-    if (event && event.target === event.currentTarget) {
-      this.changed = false;
-      this.shouldClose = true;
-      this.cdr.detectChanges();
-    } else if (!event) {
-      // Direct close button click
-      this.changed = false;
-      this.shouldClose = true;
-      this.cdr.detectChanges();
+    // If clicking on overlay or direct close button click
+    if ((event && event.target === event.currentTarget) || !event) {
+      this.dialogRef.close(this.changed);
     }
   }
 

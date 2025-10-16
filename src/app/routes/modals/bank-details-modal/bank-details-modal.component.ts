@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDialogRef } from '@angular/material/dialog';
 import { remult } from 'remult';
 import { Bank, Country } from '../../../../shared/entity';
 import { UIToolsService } from '../../../common/UIToolsService';
@@ -31,7 +32,6 @@ export interface BankDetailsModalArgs {
 export class BankDetailsModalComponent implements OnInit {
   args!: BankDetailsModalArgs;
   changed = false;
-  shouldClose = false;
 
   bank?: Bank;
   originalBankData?: string;
@@ -56,7 +56,8 @@ export class BankDetailsModalComponent implements OnInit {
   constructor(
     public i18n: I18nService,
     private ui: UIToolsService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    public dialogRef: MatDialogRef<BankDetailsModalComponent>
   ) {}
 
   async ngOnInit() {
@@ -126,8 +127,7 @@ export class BankDetailsModalComponent implements OnInit {
       this.ui.info(this.isNew ? 'הבנק נוסף בהצלחה' : 'הבנק עודכן בהצלחה');
 
       this.changed = true;
-      this.shouldClose = true;
-      this.cdr.detectChanges();
+      this.dialogRef.close(true);
     } catch (error) {
       console.error('Error saving bank:', error);
       this.ui.error('שגיאה בשמירת הבנק');
@@ -144,8 +144,7 @@ export class BankDetailsModalComponent implements OnInit {
           return;
         }
       }
-      this.shouldClose = true;
-      this.cdr.detectChanges();
+      this.dialogRef.close(this.changed);
     } else if (!event) {
       // Direct close button click
       if (this.hasChanges()) {
@@ -153,8 +152,7 @@ export class BankDetailsModalComponent implements OnInit {
           return;
         }
       }
-      this.shouldClose = true;
-      this.cdr.detectChanges();
+      this.dialogRef.close(this.changed);
     }
   }
 

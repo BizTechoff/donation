@@ -1,6 +1,7 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { MatDialogRef } from '@angular/material/dialog';
 import { Certificate } from '../../../../shared/entity/certificate';
 import { Donor } from '../../../../shared/entity/donor';
 import { Donation } from '../../../../shared/entity/donation';
@@ -24,7 +25,6 @@ export interface CertificateDetailsModalArgs {
 export class CertificateDetailsModalComponent implements OnInit {
   args!: CertificateDetailsModalArgs;
   changed = false;
-  shouldClose = false;
 
   certificate!: Certificate;
   donors: Donor[] = [];
@@ -37,7 +37,11 @@ export class CertificateDetailsModalComponent implements OnInit {
   certificateRepo = remult.repo(Certificate);
   donationRepo = remult.repo(Donation);
 
-  constructor(public i18n: I18nService, private cdr: ChangeDetectorRef) {}
+  constructor(
+    public i18n: I18nService,
+    private cdr: ChangeDetectorRef,
+    public dialogRef: MatDialogRef<CertificateDetailsModalComponent>
+  ) {}
 
   async ngOnInit() {
     this.loading = true;
@@ -133,16 +137,14 @@ export class CertificateDetailsModalComponent implements OnInit {
       this.certificate.statusText = this.i18n.terms.draftStatusCert;
       await this.certificate.save();
       this.changed = true;
-      this.shouldClose = true;
-      this.cdr.detectChanges();
+      this.dialogRef.close(true);
     } catch (error) {
       console.error('Error saving certificate:', error);
     }
   }
 
   onClose() {
-    this.shouldClose = true;
-    this.cdr.detectChanges();
+    this.dialogRef.close(this.changed);
   }
 
   openPreview() {

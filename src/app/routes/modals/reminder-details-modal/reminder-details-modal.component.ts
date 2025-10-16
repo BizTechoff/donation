@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDialogRef } from '@angular/material/dialog';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatIconModule } from '@angular/material/icon';
@@ -41,7 +42,6 @@ export interface ReminderDetailsModalArgs {
 export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
   args!: ReminderDetailsModalArgs;
   changed = false;
-  shouldClose = false;
 
   reminder?: Reminder;
 
@@ -78,7 +78,8 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
     public i18n: I18nService,
     private ui: UIToolsService,
     private globalFilterService: GlobalFilterService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    public dialogRef: MatDialogRef<ReminderDetailsModalComponent>
   ) { }
 
   async ngOnInit() {
@@ -134,8 +135,7 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
         }) || undefined;
         if (!this.reminder) {
           this.ui.error('התזכורת לא נמצאה');
-          this.shouldClose = true;
-          this.cdr.detectChanges();
+          this.dialogRef.close(false);
           return;
         }
         // relatedDonor is already loaded from the include
@@ -262,8 +262,7 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
       this.ui.info(`התזכורת נוספה בהצלחה - ${nextDateInfo}`);
 
       this.changed = true;
-      this.shouldClose = true;
-      this.cdr.detectChanges();
+      this.dialogRef.close(this.changed);
     } catch (error) {
       console.error('Error saving reminder:', error);
       this.ui.error('שגיאה בשמירת התזכורת');
@@ -298,8 +297,7 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
   }
 
   cancel() {
-    this.shouldClose = true;
-    this.cdr.detectChanges();
+    this.dialogRef.close(this.changed);
   }
 
   closeModal(event: MouseEvent) {
@@ -512,9 +510,8 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
   static async open(args: ReminderDetailsModalArgs): Promise<boolean> {
     const result = await openDialog(
       ReminderDetailsModalComponent,
-      x => x.args = args,
-      x => x.shouldClose
+      x => x.args = args
     );
-    return result;
+    return !!result;
   }
 }

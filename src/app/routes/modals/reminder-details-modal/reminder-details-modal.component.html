@@ -1,4 +1,4 @@
-<div class="modal-overlay" *ngIf="!shouldClose" (click)="closeModal($event)">
+<div class="modal-overlay" (click)="closeModal($event)">
   <div class="modal-content reminder-details-modal" [attr.dir]="(i18n.terms$ | async)?.RTL ? 'rtl' : 'ltr'"
     (click)="$event.stopPropagation()">
     <div class="modal-header">

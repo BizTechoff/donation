@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, NO_ERRORS_SCHEMA, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDialogRef } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { openDialog } from 'common-ui-elements';
@@ -41,7 +42,6 @@ export interface DonorDetailsModalArgs {
 export class DonorDetailsModalComponent implements OnInit {
   args!: DonorDetailsModalArgs;
   changed = false;
-  shouldClose = false;
 
   donor?: Donor;
   originalDonorData?: string; // To track changes
@@ -93,7 +93,12 @@ export class DonorDetailsModalComponent implements OnInit {
   filterOptions: FilterOption[] = [];
   currentDonorRecord?: NavigationRecord;
 
-  constructor(public i18n: I18nService, private ui: UIToolsService, private changeDetector: ChangeDetectorRef) { }
+  constructor(
+    public i18n: I18nService,
+    private ui: UIToolsService,
+    private changeDetector: ChangeDetectorRef,
+    public dialogRef: MatDialogRef<DonorDetailsModalComponent>
+  ) { }
 
   async ngOnInit() {
     await this.loadAvailableEvents();
@@ -310,9 +315,7 @@ export class DonorDetailsModalComponent implements OnInit {
       await this.donorRepo.save(this.donor);
 
       this.changed = wasNew || this.hasChanges();
-      this.shouldClose = true;
-      this.changeDetector.detectChanges();
-      // The dialog will automatically close and return this.changed
+      this.dialogRef.close(this.changed);
     } catch (error) {
       console.error('Error saving donor:', error);
     }
@@ -465,8 +468,7 @@ export class DonorDetailsModalComponent implements OnInit {
     if (confirm(confirmMessage)) {
       try {
         await this.donor.delete();
-        this.changed = true;
-        // The dialog will automatically close and return this.changed
+        this.dialogRef.close(true);
       } catch (error) {
         console.error('Error deleting donor:', error);
       }
@@ -733,16 +735,9 @@ export class DonorDetailsModalComponent implements OnInit {
   }
 
   closeModal(event?: MouseEvent) {
-    // If clicking on overlay, close modal
-    if (event && event.target === event.currentTarget) {
-      // Don't reset changed - let parent handle it
-      this.shouldClose = true;
-      this.changeDetector.detectChanges();
-    } else if (!event) {
-      // Direct close button click
-      // Don't reset changed - let parent handle it
-      this.shouldClose = true;
-      this.changeDetector.detectChanges();
+    // If clicking on overlay or direct close button click
+    if ((event && event.target === event.currentTarget) || !event) {
+      this.dialogRef.close(this.changed);
     }
   }
 

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDialogRef } from '@angular/material/dialog';
 import { Event } from '../../../../shared/entity';
 import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
@@ -29,7 +30,6 @@ export interface EventSelectionModalArgs {
 export class EventSelectionModalComponent implements OnInit {
   args!: EventSelectionModalArgs;
   selectedEvent: Event | null = null;
-  changed = false;
 
   // Events system
   availableEvents: Event[] = [];
@@ -40,7 +40,10 @@ export class EventSelectionModalComponent implements OnInit {
   showCreateNewEvent = false;
   newEventDescription = '';
 
-  constructor(public i18n: I18nService) {}
+  constructor(
+    public i18n: I18nService,
+    public dialogRef: MatDialogRef<EventSelectionModalComponent>
+  ) {}
 
   async ngOnInit() {
     this.availableEvents = this.args.availableEvents || [];
@@ -62,8 +65,7 @@ export class EventSelectionModalComponent implements OnInit {
     this.selectedEvent = event;
     // Use setTimeout to ensure the dialog closes after the selection is processed
     setTimeout(() => {
-      this.changed = true;
-      this.closeDialog()
+      this.dialogRef.close(event);
     }, 100);
   }
 
@@ -117,8 +119,7 @@ export class EventSelectionModalComponent implements OnInit {
 
   // Close dialog without selection
   closeDialog() {
-    this.selectedEvent = null;
-    this.changed = false;
+    this.dialogRef.close(null);
   }
 
   getEventCategories(): string[] {

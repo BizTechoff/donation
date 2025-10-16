@@ -2,6 +2,7 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDialogRef } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
@@ -38,7 +39,6 @@ export interface CampaignDetailsModalArgs {
 export class CampaignDetailsModalComponent implements OnInit {
   args!: CampaignDetailsModalArgs;
   changed = false;
-  shouldClose = false;
 
   campaign!: Campaign;
   originalCampaignData?: string; // To track changes
@@ -55,7 +55,13 @@ export class CampaignDetailsModalComponent implements OnInit {
   // Available levels for multi-select from donor levels enum
   availableLevels = DONOR_LEVELS_ARRAY;
 
-  constructor(public i18n: I18nService, private ui: UIToolsService, private snackBar: MatSnackBar, private cdr: ChangeDetectorRef) {}
+  constructor(
+    public i18n: I18nService,
+    private ui: UIToolsService,
+    private snackBar: MatSnackBar,
+    private cdr: ChangeDetectorRef,
+    public dialogRef: MatDialogRef<CampaignDetailsModalComponent>
+  ) {}
 
   async ngOnInit() {
     await this.initializeCampaign();
@@ -170,8 +176,7 @@ export class CampaignDetailsModalComponent implements OnInit {
       this.snackBar.open('הקמפיין נשמר בהצלחה', 'סגור', { duration: 3000 });
       this.originalCampaignData = JSON.stringify(this.campaign);
       this.changed = false;
-      this.shouldClose = true;
-      this.cdr.detectChanges();
+      this.dialogRef.close(true);
     } catch (error: any) {
       console.error('Error saving campaign:', error);
       this.ui.error('שגיאה בשמירת הקמפיין: ' + (error.message || error));
@@ -190,8 +195,7 @@ export class CampaignDetailsModalComponent implements OnInit {
       this.loading = true;
       await this.campaign.delete();
       this.snackBar.open('הקמפיין נמחק בהצלחה', 'סגור', { duration: 3000 });
-      this.shouldClose = true;
-      this.cdr.detectChanges();
+      this.dialogRef.close(true);
     } catch (error: any) {
       console.error('Error deleting campaign:', error);
       this.ui.error('שגיאה במחיקת הקמפיין: ' + (error.message || error));
@@ -268,8 +272,7 @@ export class CampaignDetailsModalComponent implements OnInit {
       }
     }
 
-    this.shouldClose = true;
-    this.cdr.detectChanges();
+    this.dialogRef.close(this.changed);
   }
 
   onManagerChange() {

@@ -5,6 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatDialogRef } from '@angular/material/dialog';
 import { Campaign, Donor } from '../../../../shared/entity';
 import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
@@ -32,7 +33,6 @@ export interface CampaignDonorsModalArgs {
 })
 export class CampaignDonorsModalComponent implements OnInit {
   args!: CampaignDonorsModalArgs;
-  shouldClose = false;
 
   campaign!: Campaign;
   invitedDonors: Donor[] = [];
@@ -53,7 +53,8 @@ export class CampaignDonorsModalComponent implements OnInit {
     public i18n: I18nService,
     private ui: UIToolsService,
     private snackBar: MatSnackBar,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    public dialogRef: MatDialogRef<CampaignDonorsModalComponent>
   ) {}
 
   async ngOnInit() {
@@ -212,8 +213,7 @@ export class CampaignDonorsModalComponent implements OnInit {
     if (event) {
       event.stopPropagation();
     }
-    this.shouldClose = true;
-    this.cdr.detectChanges();
+    this.dialogRef.close();
   }
 
   getDonorDisplayName(donor: Donor): string {

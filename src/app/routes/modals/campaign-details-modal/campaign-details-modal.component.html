@@ -1,5 +1,5 @@
 <!-- Campaign Details Modal -->
-<div *ngIf="!this.loading && !shouldClose" class="modal-overlay" (click)="closeModal($event)">
+<div *ngIf="!this.loading" class="modal-overlay" (click)="closeModal($event)">
   <div class="modal-content campaign-details-modal" (click)="$event.stopPropagation()">
 
     <!-- Modal Header with gradient and icon -->

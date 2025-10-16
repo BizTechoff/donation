@@ -1,4 +1,4 @@
-<div class="modal-overlay" *ngIf="!shouldClose">
+<div class="modal-overlay">
   <div class="modal-content large-modal" *ngIf="!loading">
     <div class="modal-header">
       <h2>{{ certificate && certificate.id ? (i18n.terms$ | async)?.newCertificate : (i18n.terms$ | async)?.createNewCertificateModal }}</h2>

@@ -10,6 +10,7 @@ import { MatSortModule } from '@angular/material/sort';
 import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatDialogRef } from '@angular/material/dialog';
 import { Donation, Donor, Campaign, Blessing } from '../../../../shared/entity';
 import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
@@ -51,7 +52,6 @@ export interface DonorBlessing {
 })
 export class CampaignBlessingBookModalComponent implements OnInit {
   args!: CampaignBlessingBookModalArgs;
-  shouldClose = false;
 
   campaign?: Campaign;
   donorBlessings: DonorBlessing[] = [];
@@ -81,7 +81,8 @@ export class CampaignBlessingBookModalComponent implements OnInit {
     public i18n: I18nService,
     private ui: UIToolsService,
     private snackBar: MatSnackBar,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    public dialogRef: MatDialogRef<CampaignBlessingBookModalComponent>
   ) {}
 
   async ngOnInit() {
@@ -300,7 +301,6 @@ export class CampaignBlessingBookModalComponent implements OnInit {
   }
 
   closeModal() {
-    this.shouldClose = true;
-    this.cdr.detectChanges();
+    this.dialogRef.close();
   }
 }

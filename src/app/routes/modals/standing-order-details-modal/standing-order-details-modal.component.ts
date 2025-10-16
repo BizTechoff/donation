@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDialogRef } from '@angular/material/dialog';
 import { StandingOrder, Donor, Campaign, DonationMethod, User } from '../../../../shared/entity';
 import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
@@ -30,7 +31,6 @@ export interface StandingOrderDetailsModalArgs {
 export class StandingOrderDetailsModalComponent implements OnInit {
   args!: StandingOrderDetailsModalArgs;
   changed = false;
-  shouldClose = false;
 
   standingOrder!: StandingOrder;
   originalStandingOrderData?: string; // To track changes
@@ -70,7 +70,12 @@ export class StandingOrderDetailsModalComponent implements OnInit {
   // Day of month options (1-28 to avoid issues with February)
   dayOfMonthOptions: number[] = Array.from({ length: 28 }, (_, i) => i + 1);
 
-  constructor(public i18n: I18nService, private ui: UIToolsService, private cdr: ChangeDetectorRef) {}
+  constructor(
+    public i18n: I18nService,
+    private ui: UIToolsService,
+    private cdr: ChangeDetectorRef,
+    public dialogRef: MatDialogRef<StandingOrderDetailsModalComponent>
+  ) {}
 
   async ngOnInit() {
     await this.initializeStandingOrder();
@@ -205,8 +210,7 @@ export class StandingOrderDetailsModalComponent implements OnInit {
       await this.standingOrder.save();
 
       this.changed = wasNew || this.hasChanges();
-      this.shouldClose = true;
-      this.cdr.detectChanges();
+      this.dialogRef.close(true);
     } catch (error) {
       console.error('Error saving standing order:', error);
       alert('שגיאה בשמירת הוראת הקבע');
@@ -249,8 +253,7 @@ export class StandingOrderDetailsModalComponent implements OnInit {
       try {
         await this.standingOrder.delete();
         this.changed = true;
-        this.shouldClose = true;
-        this.cdr.detectChanges();
+        this.dialogRef.close(true);
       } catch (error) {
         console.error('Error deleting standing order:', error);
         alert('שגיאה במחיקת הוראת קבע');
@@ -327,14 +330,10 @@ export class StandingOrderDetailsModalComponent implements OnInit {
   closeModal(event?: MouseEvent) {
     // If clicking on overlay, close modal
     if (event && event.target === event.currentTarget) {
-      this.changed = false;
-      this.shouldClose = true;
-      this.cdr.detectChanges();
+      this.dialogRef.close(this.changed);
     } else if (!event) {
       // Direct close button click
-      this.changed = false;
-      this.shouldClose = true;
-      this.cdr.detectChanges();
+      this.dialogRef.close(this.changed);
     }
   }
 

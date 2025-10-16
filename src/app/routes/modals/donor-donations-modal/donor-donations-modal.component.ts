@@ -8,6 +8,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatSortModule } from '@angular/material/sort';
 import { MatPaginatorModule } from '@angular/material/paginator';
+import { MatDialogRef } from '@angular/material/dialog';
 import { Donation, Donor, DonationMethod, Campaign } from '../../../../shared/entity';
 import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
@@ -40,7 +41,6 @@ export interface DonorDonationsModalArgs {
 })
 export class DonorDonationsModalComponent implements OnInit {
   args!: DonorDonationsModalArgs;
-  shouldClose = false;
 
   donor?: Donor;
   donations: Donation[] = [];
@@ -71,7 +71,8 @@ export class DonorDonationsModalComponent implements OnInit {
     public i18n: I18nService,
     private ui: UIToolsService,
     private snackBar: MatSnackBar,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    public dialogRef: MatDialogRef<DonorDonationsModalComponent>
   ) {}
 
   async ngOnInit() {
@@ -265,7 +266,6 @@ export class DonorDonationsModalComponent implements OnInit {
   }
 
   closeModal() {
-    this.shouldClose = true;
-    this.cdr.detectChanges();
+    this.dialogRef.close();
   }
 }

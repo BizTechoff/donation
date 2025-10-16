@@ -100,64 +100,56 @@ export class UIToolsService implements UITools {
   async donorDetailsDialog(donorId: string): Promise<boolean> {
     return await openDialog(
       (await import('../routes/modals/donor-details-modal/donor-details-modal.component')).DonorDetailsModalComponent,
-      (dlg) => dlg.args = { donorId },
-      (dlg) => !!dlg?.changed || dlg?.shouldClose
+      (dlg) => dlg.args = { donorId }
     )
   }
 
   async campaignDetailsDialog(campaignId: string): Promise<boolean> {
     return await openDialog(
       (await import('../routes/modals/campaign-details-modal/campaign-details-modal.component')).CampaignDetailsModalComponent,
-      (dlg) => dlg.args = { campaignId },
-      (dlg) => !!dlg?.changed || dlg?.shouldClose
+      (dlg) => dlg.args = { campaignId }
     )
   }
 
   async campaignDonorsDialog(campaignId: string): Promise<boolean> {
     return await openDialog(
       (await import('../routes/modals/campaign-donors-modal/campaign-donors-modal.component')).CampaignDonorsModalComponent,
-      (dlg) => dlg.args = { campaignId },
-      (dlg) => !!dlg?.shouldClose
+      (dlg) => dlg.args = { campaignId }
     )
   }
 
   async donationDetailsDialog(donationId: string, options?: { donorId?: string; campaignId?: string }): Promise<boolean> {
     return await openDialog(
       (await import('../routes/modals/donation-details-modal/donation-details-modal.component')).DonationDetailsModalComponent,
-      (dlg) => dlg.args = { donationId, donorId: options?.donorId, campaignId: options?.campaignId },
-      (dlg) => !!dlg?.changed
+      (dlg) => dlg.args = { donationId, donorId: options?.donorId, campaignId: options?.campaignId }
     )
   }
 
   async selectEventDialog(availableEvents: any[], title?: string): Promise<any> {
     return await openDialog(
       (await import('../routes/modals/event-selection-modal/event-selection-modal.component')).EventSelectionModalComponent,
-      (dlg) => dlg.args = { availableEvents, title },
-      (dlg) => !!dlg?.selectedEvent
+      (dlg) => dlg.args = { availableEvents, title }
     );
   }
 
   async standingOrderDetailsDialog(standingOrderId: string, options?: { donorId?: string }): Promise<boolean> {
     return await openDialog(
       (await import('../routes/modals/standing-order-details-modal/standing-order-details-modal.component')).StandingOrderDetailsModalComponent,
-      (dlg) => dlg.args = { standingOrderId, donorId: options?.donorId },
-      (dlg) => !!(dlg?.changed || dlg?.shouldClose)
+      (dlg) => dlg.args = { standingOrderId, donorId: options?.donorId }
     )
   }
 
   async certificateDetailsDialog(certificateId?: string, options?: { donorId?: string; donationId?: string }): Promise<boolean> {
     return await openDialog(
       (await import('../routes/modals/certificate-details-modal/certificate-details-modal.component')).CertificateDetailsModalComponent,
-      (dlg) => dlg.args = { certificateId, donorId: options?.donorId, donationId: options?.donationId },
-      (dlg) => !!dlg?.changed
+      (dlg) => dlg.args = { certificateId, donorId: options?.donorId, donationId: options?.donationId }
     )
   }
 
   async reminderDetailsDialog(reminderId?: string, options?: { userId?: string; donorId?: string; donationId?: string }): Promise<boolean> {
     return await openDialog(
       (await import('../routes/modals/reminder-details-modal/reminder-details-modal.component')).ReminderDetailsModalComponent,
-      (dlg) => dlg.args = { reminderId, userId: options?.userId, donorId: options?.donorId, donationId: options?.donationId },
-      (dlg) => !!dlg?.changed
+      (dlg) => dlg.args = { reminderId, userId: options?.userId, donorId: options?.donorId, donationId: options?.donationId }
     )
   }
   private enhanceFieldOptionsAndDataControlOptions(
