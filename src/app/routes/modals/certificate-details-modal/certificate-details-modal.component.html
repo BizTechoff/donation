@@ -115,6 +115,18 @@
           </div>
         </div>
       </div>
+
+      <div class="attachments-section" *ngIf="certificate?.attachments && certificate.attachments.length > 0">
+        <h4>קבצים מצורפים</h4>
+        <ul class="attachments-list">
+          <li *ngFor="let attachment of certificate.attachments" class="attachment-item">
+            <a [href]="attachment.path" target="_blank" class="attachment-link">
+              {{ attachment.name }}
+            </a>
+            <span class="attachment-size">({{ (attachment.size / 1024).toFixed(2) }} KB)</span>
+          </li>
+        </ul>
+      </div>
     </div>
     <div class="modal-footer">
       <input type="file" #fileInput style="display: none" (change)="onFileSelected($event)" accept="image/*,.pdf">

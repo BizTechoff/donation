@@ -126,6 +126,9 @@
       <div class="grid-col actions">
         <button class="btn-icon btn-view" [title]="(i18n.terms$ | async)?.previewAction">👁</button>
         <button class="btn-icon btn-edit" [title]="(i18n.terms$ | async)?.editAction" (click)="openEditModal(certificate)">✏</button>
+        <button class="btn-icon btn-reminder" [title]="certificate.reminderId ? 'תזכורת' : 'צור תזכורת'" (click)="createReminder(certificate)">
+          {{ certificate.reminderId ? '🔔' : '🔔➕' }}
+        </button>
         <button class="btn-icon btn-print" [title]="(i18n.terms$ | async)?.printAction" (click)="updateCertificateStatus(certificate, 'printed')">🖨</button>
         <button class="btn-icon btn-download" [title]="(i18n.terms$ | async)?.downloadAction">⬇</button>
         <button class="btn-icon btn-delivered" [title]="(i18n.terms$ | async)?.markAsDelivered" (click)="updateCertificateStatus(certificate, 'delivered')">✅</button>

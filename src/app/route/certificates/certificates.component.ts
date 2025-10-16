@@ -4,6 +4,7 @@ import { Donor } from '../../../shared/entity/donor';
 import { repo } from 'remult';
 import { I18nService } from '../../i18n/i18n.service';
 import { UIToolsService } from '../../common/UIToolsService';
+import { ReminderDetailsModalComponent } from '../../routes/modals/reminder-details-modal/reminder-details-modal.component';
 
 @Component({
   selector: 'app-certificates',
@@ -25,7 +26,8 @@ export class CertificatesComponent implements OnInit {
     this.certificates = await repo(Certificate).find({
       include: {
         donor: true,
-        createdBy: true
+        createdBy: true,
+        reminder: true
       },
       orderBy: { createdDate: 'desc' }
     });
@@ -67,6 +69,23 @@ export class CertificatesComponent implements OnInit {
 
   getDonorName(certificate: Certificate): string {
     return certificate.donor?.fullName || this.i18n.terms.unknown;
+  }
+
+  async createReminder(certificate: Certificate) {
+    // Check if reminder already exists
+    const reminderId = certificate.reminderId || 'new';
+
+    const reminderSaved = await ReminderDetailsModalComponent.open({
+      reminderId: reminderId,
+      donorId: certificate.donorId
+    });
+
+    if (reminderSaved) {
+      await this.loadCertificates(); // Reload to get updated reminder
+      if (reminderId === 'new') {
+        this.ui.info('תזכורת נוצרה בהצלחה');
+      }
+    }
   }
 
 }

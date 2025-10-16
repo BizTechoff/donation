@@ -5,6 +5,7 @@ import { I18nService } from '../../i18n/i18n.service';
 import { ReminderDetailsModalComponent } from '../../routes/modals/reminder-details-modal/reminder-details-modal.component';
 import { GlobalFilterService } from '../../services/global-filter.service';
 import { Subscription } from 'rxjs';
+import { HDate, HebrewCalendar, ParshaEvent, Sedra } from '@hebcal/core';
 
 @Component({
   selector: 'app-reminders',
@@ -21,9 +22,19 @@ export class RemindersComponent implements OnInit, OnDestroy {
   donorRepo = remult.repo(Donor);
 
   loading = false;
-  showAddReminderModal = false;
-  editingReminder?: Reminder;
   activeTab: 'today' | 'week' | 'overdue' | 'all' = 'all';
+
+  // Parasha filter
+  fromParasha: string = '';
+  toParasha: string = '';
+
+  torahPortions = [
+    'בראשית', 'נח', 'לך לך', 'וירא', 'חיי שרה', 'תולדות', 'ויצא', 'וישלח', 'וישב', 'מקץ', 'ויגש', 'ויחי',
+    'שמות', 'וארא', 'בא', 'בשלח', 'יתרו', 'משפטים', 'תרומה', 'תצוה', 'כי תשא', 'ויקהל', 'פקודי',
+    'ויקרא', 'צו', 'שמיני', 'תזריע', 'מצורע', 'אחרי מות', 'קדושים', 'אמור', 'בהר', 'בחוקותי',
+    'במדבר', 'נשא', 'בהעלותך', 'שלח', 'קרח', 'חוקת', 'בלק', 'פנחס', 'מטות', 'מסעי',
+    'דברים', 'ואתחנן', 'עקב', 'ראה', 'שופטים', 'כי תצא', 'כי תבוא', 'נצבים', 'וילך', 'האזינו', 'וזאת הברכה'
+  ];
 
   private filterSubscription?: Subscription;
 
@@ -114,18 +125,6 @@ export class RemindersComponent implements OnInit, OnDestroy {
     }
   }
 
-  async saveReminder() {
-    if (!this.editingReminder) return;
-
-    try {
-      await this.editingReminder.save();
-      await this.loadReminders();
-      this.closeModal();
-    } catch (error) {
-      console.error('Error saving reminder:', error);
-    }
-  }
-
   async deleteReminder(reminder: Reminder) {
     const donorName = reminder.relatedDonor?.displayName || this.i18n.terms.unknown;
     if (confirm(`${this.i18n.terms.confirmDeleteDonor?.replace('{name}', reminder.title || '')}`)) {
@@ -154,11 +153,6 @@ export class RemindersComponent implements OnInit, OnDestroy {
     } catch (error) {
       console.error('Error snoozing reminder:', error);
     }
-  }
-
-  closeModal() {
-    this.showAddReminderModal = false;
-    this.editingReminder = undefined;
   }
 
   getDonorName(reminder: Reminder): string {
@@ -273,21 +267,151 @@ export class RemindersComponent implements OnInit, OnDestroy {
   }
 
   applyTabFilter() {
+    let filtered = [...this.reminders];
+
+    // Apply tab filter
     switch (this.activeTab) {
       case 'today':
-        this.filteredReminders = this.reminders.filter(r => r.isDueToday && !r.isCompleted);
+        filtered = filtered.filter(r => r.isDueToday && !r.isCompleted);
         break;
       case 'week':
-        this.filteredReminders = this.thisWeekReminders;
+        filtered = this.thisWeekReminders;
         break;
       case 'overdue':
-        this.filteredReminders = this.overdueReminders;
+        filtered = this.overdueReminders;
         break;
       case 'all':
       default:
-        this.filteredReminders = this.reminders;
+        // No additional filter
         break;
     }
+
+    // Apply parasha filter
+    if (this.fromParasha !== '' || this.toParasha !== '') {
+      filtered = this.filterByParasha(filtered);
+    }
+
+    this.filteredReminders = filtered;
+  }
+
+  applyParashaFilter() {
+    this.applyTabFilter();
+  }
+
+  /**
+   * Calculate parasha index for a date using Hebrew calendar
+   */
+  protected getParashaIndex(date: Date): number {
+    if (!date) return 0;
+
+    try {
+      // Get the Saturday of the week containing this date
+      const dayOfWeek = date.getDay();
+      let daysUntilSaturday = (6 - dayOfWeek) % 7;
+      if (daysUntilSaturday < 0) daysUntilSaturday += 7;
+
+      const saturday = new Date(date);
+      saturday.setDate(date.getDate() + daysUntilSaturday);
+
+      // Convert Saturday to Hebrew date
+      const hSaturday = new HDate(saturday);
+      const hyear = hSaturday.getFullYear();
+
+      // Create Sedra for that year
+      const sedra = new Sedra(hyear, false); // false = diaspora
+
+      // Get the parsha for that Saturday
+      const parsha = sedra.get(hSaturday);
+
+      console.log('Date:', date, 'Saturday:', saturday, 'Parsha:', parsha);
+
+      if (parsha && parsha.length > 0) {
+        // parsha is an array of parsha names (in English)
+        const parshaEnglish = parsha[0];
+
+        // Map English parsha names to Hebrew
+        const englishToHebrewMap: { [key: string]: string } = {
+          'Bereshit': 'בראשית',
+          'Noach': 'נח',
+          'Lech-Lecha': 'לך לך',
+          'Vayera': 'וירא',
+          'Chayei Sara': 'חיי שרה',
+          'Toldot': 'תולדות',
+          'Vayetzei': 'ויצא',
+          'Vayishlach': 'וישלח',
+          'Vayeshev': 'וישב',
+          'Miketz': 'מקץ',
+          'Vayigash': 'ויגש',
+          'Vayechi': 'ויחי',
+          'Shemot': 'שמות',
+          'Vaera': 'וארא',
+          'Bo': 'בא',
+          'Beshalach': 'בשלח',
+          'Yitro': 'יתרו',
+          'Mishpatim': 'משפטים',
+          'Terumah': 'תרומה',
+          'Tetzaveh': 'תצוה',
+          'Ki Tisa': 'כי תשא',
+          'Vayakhel': 'ויקהל',
+          'Pekudei': 'פקודי',
+          'Vayikra': 'ויקרא',
+          'Tzav': 'צו',
+          'Shmini': 'שמיני',
+          'Tazria': 'תזריע',
+          'Metzora': 'מצורע',
+          'Achrei Mot': 'אחרי מות',
+          'Kedoshim': 'קדושים',
+          'Emor': 'אמור',
+          'Behar': 'בהר',
+          'Bechukotai': 'בחוקותי',
+          'Bamidbar': 'במדבר',
+          'Nasso': 'נשא',
+          'Beha\'alotcha': 'בהעלותך',
+          'Sh\'lach': 'שלח',
+          'Korach': 'קרח',
+          'Chukat': 'חוקת',
+          'Balak': 'בלק',
+          'Pinchas': 'פנחס',
+          'Matot': 'מטות',
+          'Masei': 'מסעי',
+          'Devarim': 'דברים',
+          'Vaetchanan': 'ואתחנן',
+          'Eikev': 'עקב',
+          'Re\'eh': 'ראה',
+          'Shoftim': 'שופטים',
+          'Ki Teitzei': 'כי תצא',
+          'Ki Tavo': 'כי תבוא',
+          'Nitzavim': 'נצבים',
+          'Vayeilech': 'וילך',
+          'Ha\'Azinu': 'האזינו',
+          'Vezot Haberakhah': 'וזאת הברכה'
+        };
+
+        const hebrewName = englishToHebrewMap[parshaEnglish];
+        console.log('English:', parshaEnglish, 'Hebrew:', hebrewName);
+
+        if (hebrewName) {
+          const index = this.torahPortions.indexOf(hebrewName);
+          console.log('Index found:', index);
+          return index >= 0 ? index : 0;
+        }
+      }
+
+      return 0;
+    } catch (error) {
+      console.error('Error calculating parasha index:', error, date);
+      return 0;
+    }
+  }
+
+  private filterByParasha(reminders: Reminder[]): Reminder[] {
+    const fromIndex = this.fromParasha !== '' ? parseInt(this.fromParasha) : 0;
+    const toIndex = this.toParasha !== '' ? parseInt(this.toParasha) : 53;
+
+    return reminders.filter(reminder => {
+      const parashaIndex = this.getParashaIndex(reminder.dueDate);
+      return parashaIndex >= fromIndex && parashaIndex <= toIndex;
+    });
   }
 
 }

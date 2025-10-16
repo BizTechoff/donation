@@ -86,6 +86,22 @@
           <option value="jerusalem">{{ (i18n.terms$ | async)?.jerusalemRegion }}</option>
         </select>
       </div>
+
+      <div class="filter-group">
+        <label>מפרשה</label>
+        <select class="form-control" [(ngModel)]="fromParasha" (change)="applyParashaFilter()">
+          <option value="">בחר פרשה</option>
+          <option *ngFor="let parasha of torahPortions; let i = index" [value]="i">{{parasha}} ({{i}})</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>עד פרשה</label>
+        <select class="form-control" [(ngModel)]="toParasha" (change)="applyParashaFilter()">
+          <option value="">בחר פרשה</option>
+          <option *ngFor="let parasha of torahPortions; let i = index" [value]="i">{{parasha}} ({{i}})</option>
+        </select>
+      </div>
     </div>
   </div>
 
@@ -125,6 +141,7 @@
           
           <td class="date-col">
             <div class="date-display">
+              {{this.getParashaIndex(reminder.dueDate)}}
               <span class="reminder-date">{{reminder.dueDate | date:'dd/MM/yyyy'}}</span>
             </div>
           </td>
@@ -229,78 +246,5 @@
     <button class="btn-page">{{ (i18n.terms$ | async)?.previousPage }}</button>
     <span class="page-info">{{ (i18n.terms$ | async)?.pageOf?.replace('{current}', '1')?.replace('{total}', '12') }}</span>
     <button class="btn-page">{{ (i18n.terms$ | async)?.nextPage }}</button>
-  </div>
-</div>
-
-<!-- מודל הוספת תזכורת -->
-<div class="modal-overlay" *ngIf="showAddReminderModal">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h2>{{ (i18n.terms$ | async)?.addNewReminder }}</h2>
-      <button class="modal-close" (click)="closeModal()">&times;</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-grid">
-        <div class="form-group">
-          <label>{{ (i18n.terms$ | async)?.reminderTypeSelect }}</label>
-          <select class="form-control" [(ngModel)]="editingReminder!.type">
-            <option value="donation_followup">{{ (i18n.terms$ | async)?.donationFollowUp }}</option>
-            <option value="thank_you">{{ (i18n.terms$ | async)?.thankYouReminder }}</option>
-            <option value="birthday">{{ (i18n.terms$ | async)?.birthdayType }}</option>
-            <option value="memorial">{{ (i18n.terms$ | async)?.memorialType }}</option>
-            <option value="meeting">{{ (i18n.terms$ | async)?.meetingType }}</option>
-            <option value="phone_call">{{ (i18n.terms$ | async)?.phoneCallType }}</option>
-            <option value="email">{{ (i18n.terms$ | async)?.emailType }}</option>
-            <option value="general">{{ (i18n.terms$ | async)?.generalType }}</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>{{ (i18n.terms$ | async)?.donorSelectReminder }}</label>
-          <select class="form-control" [(ngModel)]="editingReminder!.relatedDonor">
-            <option value="">{{ (i18n.terms$ | async)?.selectDonorReminder }}</option>
-            <option *ngFor="let donor of donors" [value]="donor.id">{{donor.displayName}}</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>{{ (i18n.terms$ | async)?.reminderDateField }}</label>
-          <input type="date" class="form-control" [(ngModel)]="editingReminder!.dueDate">
-        </div>
-        <div class="form-group">
-          <label>{{ (i18n.terms$ | async)?.timeField }}</label>
-          <input type="time" class="form-control" [(ngModel)]="editingReminder!.dueTime">
-        </div>
-        <div class="form-group">
-          <label>{{ (i18n.terms$ | async)?.priorityField }}</label>
-          <select class="form-control" [(ngModel)]="editingReminder!.priority">
-            <option value="low">{{ (i18n.terms$ | async)?.lowPriority }}</option>
-            <option value="normal">{{ (i18n.terms$ | async)?.normalPriority }}</option>
-            <option value="high">{{ (i18n.terms$ | async)?.highPriority }}</option>
-            <option value="urgent">{{ (i18n.terms$ | async)?.urgentPriority }}</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>{{ (i18n.terms$ | async)?.repeatField }}</label>
-          <select class="form-control" [(ngModel)]="editingReminder!.frequency">
-            <option value="">{{ (i18n.terms$ | async)?.noRepeat }}</option>
-            <option value="daily">{{ (i18n.terms$ | async)?.dailyRepeat }}</option>
-            <option value="weekly">{{ (i18n.terms$ | async)?.weeklyRepeat }}</option>
-            <option value="monthly">{{ (i18n.terms$ | async)?.monthlyRepeat }}</option>
-            <option value="yearly">{{ (i18n.terms$ | async)?.yearlyRepeat }}</option>
-          </select>
-        </div>
-        <div class="form-group full-width">
-          <label>{{ (i18n.terms$ | async)?.reminderSubject }}</label>
-          <input type="text" class="form-control" [(ngModel)]="editingReminder!.title" [placeholder]="(i18n.terms$ | async)?.shortSubjectPlaceholder">
-        </div>
-        <div class="form-group full-width">
-          <label>{{ (i18n.terms$ | async)?.reminderNotes }}</label>
-          <textarea class="form-control" rows="4" [(ngModel)]="editingReminder!.description" [placeholder]="(i18n.terms$ | async)?.additionalDetailsPlaceholder"></textarea>
-        </div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" (click)="closeModal()">{{ (i18n.terms$ | async)?.cancel }}</button>
-      <button class="btn btn-primary" (click)="saveReminder()">{{ (i18n.terms$ | async)?.saveReminder }}</button>
-    </div>
   </div>
 </div>

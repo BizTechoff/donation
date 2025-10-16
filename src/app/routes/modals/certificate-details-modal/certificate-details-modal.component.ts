@@ -8,6 +8,7 @@ import { Donation } from '../../../../shared/entity/donation';
 import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
 import { SharedComponentsModule } from '../../../shared/shared-components.module';
+import { UIToolsService } from '../../../common/UIToolsService';
 
 export interface CertificateDetailsModalArgs {
   certificateId?: string; // 'new' for new certificate or certificate ID for editing
@@ -39,6 +40,7 @@ export class CertificateDetailsModalComponent implements OnInit {
 
   constructor(
     public i18n: I18nService,
+    private ui: UIToolsService,
     private cdr: ChangeDetectorRef,
     public dialogRef: MatDialogRef<CertificateDetailsModalComponent>
   ) {}
@@ -135,11 +137,13 @@ export class CertificateDetailsModalComponent implements OnInit {
 
     try {
       this.certificate.statusText = this.i18n.terms.draftStatusCert;
-      await this.certificate.save();
+      await this.certificateRepo.save(this.certificate);
       this.changed = true;
+      this.ui.info(this.isNewCertificate ? 'התעודה נוספה בהצלחה' : 'התעודה עודכנה בהצלחה');
       this.dialogRef.close(true);
     } catch (error) {
       console.error('Error saving certificate:', error);
+      this.ui.info(`שגיאה בשמירת התעודה: ${error}`);
     }
   }
 
@@ -159,8 +163,20 @@ export class CertificateDetailsModalComponent implements OnInit {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
       const file = input.files[0];
-      console.log('File selected:', file.name, file.type, file.size);
-      // TODO: Handle file upload - store in certificate or upload to server
+
+      // Add file to attachments array (path is placeholder until server upload is implemented)
+      if (!this.certificate.attachments) {
+        this.certificate.attachments = [];
+      }
+
+      this.certificate.attachments.push({
+        name: file.name,
+        path: '#', // TODO: Replace with actual upload URL when implemented
+        size: file.size
+      });
+
+      this.changed = true;
+      alert(`הקובץ "${file.name}" נוסף לרשימת הקבצים (העלאה לשרת - עדיין בפיתוח)`);
     }
   }
 

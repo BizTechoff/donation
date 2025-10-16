@@ -10,6 +10,7 @@ import {
 } from 'remult'
 import { User } from './user'
 import { Donor } from './donor'
+import { Reminder } from './reminder'
 import { Roles } from '../enum/roles'
 
 @Entity<Certificate>('certificates', {
@@ -51,7 +52,6 @@ export class Certificate extends IdEntity {
   donorId = ''
 
   @Fields.string({
-    validate: Validators.required,
     caption: 'שם המקבל/נהנה',
   })
   recipientName = ''
@@ -143,6 +143,25 @@ export class Certificate extends IdEntity {
     caption: 'נוצר על ידי ID',
   })
   createdById = ''
+
+  @Fields.json({
+    caption: 'קבצים מצורפים',
+  })
+  attachments: Array<{
+    name: string
+    path: string
+    size: number
+  }> = []
+
+  @Relations.toOne<Certificate, Reminder>(() => Reminder, {
+    caption: 'תזכורת',
+  })
+  reminder?: Reminder
+
+  @Fields.string({
+    caption: 'תזכורת ID',
+  })
+  reminderId = ''
 
   get displayName() {
     return `${this.typeText} - ${this.recipientName}`
