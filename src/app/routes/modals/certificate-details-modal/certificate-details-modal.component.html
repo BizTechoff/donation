@@ -132,6 +132,9 @@
       <input type="file" #fileInput style="display: none" (change)="onFileSelected($event)" accept="image/*,.pdf">
       <button class="btn btn-secondary" (click)="onClose()">{{ (i18n.terms$ | async)?.cancel }}</button>
       <button class="btn btn-success" (click)="fileInput.click()">העלה קובץ</button>
+      <button class="btn btn-info" (click)="createOrEditReminder()">
+        {{ certificate.reminderId ? 'תזכורת' : 'צור תזכורת' }}
+      </button>
       <button class="btn btn-primary" (click)="save()">שמור תעודה</button>
     </div>
   </div>

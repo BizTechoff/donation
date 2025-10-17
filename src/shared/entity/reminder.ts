@@ -46,7 +46,7 @@ export class Reminder extends IdEntity {
     caption: 'סוג תזכורת',
     validate: Validators.required,
   })
-  type: 'donation_followup' | 'thank_you' | 'receipt' | 'birthday' | 'holiday' | 'general' | 'meeting' | 'phone_call' = 'general'
+  type: 'donation_followup' | 'thank_you' | 'receipt' | 'birthday' | 'holiday' | 'general' | 'meeting' | 'phone_call' | 'dedication' | 'memorial' = 'general'
 
   @Fields.string({
     caption: 'עדיפות',
@@ -163,6 +163,11 @@ export class Reminder extends IdEntity {
   })
   recurringPattern: 'daily' | 'weekly' | 'monthly' | 'yearly' | 'none' = 'none'
 
+  @Fields.string({
+    caption: 'סוג חזרה שנתית',
+  })
+  yearlyRecurringType: 'date' | 'occasion' = 'date' // תאריך קבוע או מועד
+
   @Fields.number({
     caption: 'יום בשבוע (תזכורת שבועית)',
     allowNull: true
@@ -180,6 +185,11 @@ export class Reminder extends IdEntity {
     allowNull: true
   })
   recurringMonth?: number // 1-12
+
+  @Fields.string({
+    caption: 'זמן מיוחד (חג/אירוע)',
+  })
+  specialOccasion = '' // Holiday or special occasion name
 
   @Fields.date({
     caption: 'תזכורת הבאה',
@@ -218,6 +228,8 @@ export class Reminder extends IdEntity {
       case 'general': return 'כללי'
       case 'meeting': return 'פגישה'
       case 'phone_call': return 'שיחת טלפון'
+      case 'dedication': return 'נציב יום'
+      case 'memorial': return 'נציב זכרון'
       default: return this.type
     }
   }

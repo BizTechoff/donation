@@ -21,6 +21,9 @@ export interface ReminderDetailsModalArgs {
   userId?: string; // Optional user ID to assign
   donorId?: string; // Optional donor ID to link
   donationId?: string; // Optional donation ID to link
+  reminderType?: 'donation_followup' | 'thank_you' | 'receipt' | 'birthday' | 'holiday' | 'general' | 'meeting' | 'phone_call' | 'dedication' | 'memorial'; // Optional reminder type to initialize
+  reminderDate?: Date; // Optional date to initialize
+  isRecurringYearly?: boolean; // Optional flag for yearly recurring reminder
 }
 
 @Component({
@@ -72,6 +75,15 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
   // Day of month options (1-31)
   dayOfMonthOptions = Array.from({ length: 31 }, (_, i) => ({ value: i + 1, label: (i + 1).toString() }));
 
+  // Hebrew month options (1-13, including Adar I and Adar II for leap years)
+  hebrewMonthOptions: { value: number, label: string }[] = [];
+
+  // Hebrew day of month options (1-30)
+  hebrewDayOfMonthOptions = Array.from({ length: 30 }, (_, i) => ({ value: i + 1, label: (i + 1).toString() }));
+
+  // Special occasions (holidays and events)
+  specialOccasionOptions: { value: string, label: string }[] = [];
+
   private filterSubscription?: Subscription;
 
   constructor(
@@ -101,18 +113,28 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
         this.reminder = this.reminderRepo.create();
 
         // Set default values
-        this.reminder.type = 'donation_followup';
+        this.reminder.type = this.args.reminderType || 'donation_followup';
         this.reminder.priority = 'normal';
         this.reminder.alertMethod = 'popup';
         this.reminder.sendAlert = true;
         this.reminder.isActive = true;
         this.reminder.status = 'pending';
 
-        // Set due date to tomorrow by default
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        tomorrow.setHours(10, 0, 0, 0);
-        this.reminder.dueDate = tomorrow;
+        // Set due date from args or tomorrow by default
+        if (this.args.reminderDate) {
+          this.reminder.dueDate = this.args.reminderDate;
+        } else {
+          const tomorrow = new Date();
+          tomorrow.setDate(tomorrow.getDate() + 1);
+          tomorrow.setHours(10, 0, 0, 0);
+          this.reminder.dueDate = tomorrow;
+        }
+
+        // Set recurring pattern if specified
+        if (this.args.isRecurringYearly) {
+          this.reminder.isRecurring = true;
+          this.reminder.recurringPattern = 'yearly';
+        }
 
         // Load related donation if provided
         if (this.args.donationId) {
@@ -456,7 +478,9 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
       { value: 'holiday', label: terms.holiday },
       { value: 'general', label: terms.generalType },
       { value: 'meeting', label: terms.meetingType },
-      { value: 'phone_call', label: terms.phoneCallType }
+      { value: 'phone_call', label: terms.phoneCallType },
+      { value: 'dedication', label: 'נציב יום' },
+      { value: 'memorial', label: 'נציב זכרון' }
     ];
 
     this.priorityOptions = [
@@ -504,6 +528,54 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
       { value: 10, label: 'אוקטובר' },
       { value: 11, label: 'נובמבר' },
       { value: 12, label: 'דצמבר' }
+    ];
+
+    this.hebrewMonthOptions = [
+      { value: 1, label: 'תשרי' },
+      { value: 2, label: 'חשון' },
+      { value: 3, label: 'כסלו' },
+      { value: 4, label: 'טבת' },
+      { value: 5, label: 'שבט' },
+      { value: 6, label: 'אדר' },
+      { value: 7, label: 'אדר ב\'' },
+      { value: 8, label: 'נישן' },
+      { value: 9, label: 'אייר' },
+      { value: 10, label: 'סיוון' },
+      { value: 11, label: 'תמוז' },
+      { value: 12, label: 'אב' },
+      { value: 13, label: 'אלול' }
+    ];
+
+    this.specialOccasionOptions = [
+      { value: '', label: '-- בחר זמן מיוחד --' },
+      { value: 'ראש השנה', label: 'ראש השנה' },
+      { value: 'ראש השנה ב\'', label: 'ראש השנה ב\'' },
+      { value: 'צום גדליה', label: 'צום גדליה' },
+      { value: 'יום כיפור', label: 'יום כיפור' },
+      { value: 'סוכות', label: 'סוכות' },
+      { value: 'חוה"מ סוכות', label: 'חול המועד סוכות' },
+      { value: 'הוש"ר', label: 'הושענא רבה' },
+      { value: 'שמ"ע/שמח"ת', label: 'שמיני עצרת / שמחת תורה' },
+      { value: 'חנוכה', label: 'חנוכה' },
+      { value: 'צום עשרה בטבת', label: 'צום עשרה בטבת' },
+      { value: 'ט"ו בשבט', label: 'ט"ו בשבט' },
+      { value: 'תענית אסתר', label: 'תענית אסתר' },
+      { value: 'פורים', label: 'פורים' },
+      { value: 'שושן פורים', label: 'שושן פורים' },
+      { value: 'פסח', label: 'פסח' },
+      { value: 'חוה"מ פסח', label: 'חול המועד פסח' },
+      { value: 'שביעי פסח', label: 'שביעי של פסח' },
+      { value: 'יום השואה', label: 'יום השואה' },
+      { value: 'יום הזיכרון', label: 'יום הזיכרון' },
+      { value: 'יום העצמאות', label: 'יום העצמאות' },
+      { value: 'פסח שני', label: 'פסח שני' },
+      { value: 'ל"ג בעומר', label: 'ל"ג בעומר' },
+      { value: 'יום ירושלים', label: 'יום ירושלים' },
+      { value: 'שבועות', label: 'שבועות' },
+      { value: 'צום יז\' בתמוז', label: 'צום יז\' בתמוז' },
+      { value: 'תשעה באב', label: 'תשעה באב' },
+      { value: 'ט"ו באב', label: 'ט"ו באב' },
+      { value: 'ראש חודש', label: 'ראש חודש' }
     ];
   }
 

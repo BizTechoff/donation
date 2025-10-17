@@ -5,10 +5,12 @@ import { MatDialogRef } from '@angular/material/dialog';
 import { Certificate } from '../../../../shared/entity/certificate';
 import { Donor } from '../../../../shared/entity/donor';
 import { Donation } from '../../../../shared/entity/donation';
+import { Reminder } from '../../../../shared/entity/reminder';
 import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
 import { SharedComponentsModule } from '../../../shared/shared-components.module';
 import { UIToolsService } from '../../../common/UIToolsService';
+import { ReminderDetailsModalComponent } from '../reminder-details-modal/reminder-details-modal.component';
 
 export interface CertificateDetailsModalArgs {
   certificateId?: string; // 'new' for new certificate or certificate ID for editing
@@ -37,6 +39,7 @@ export class CertificateDetailsModalComponent implements OnInit {
   donorRepo = remult.repo(Donor);
   certificateRepo = remult.repo(Certificate);
   donationRepo = remult.repo(Donation);
+  reminderRepo = remult.repo(Reminder);
 
   constructor(
     public i18n: I18nService,
@@ -210,6 +213,63 @@ export class CertificateDetailsModalComponent implements OnInit {
       }
     } catch (error) {
       console.error('Error loading donation details:', error);
+    }
+  }
+
+  async createOrEditReminder() {
+    if (!this.certificate) return;
+
+    // Save certificate first if it's new
+    if (this.isNewCertificate || this.changed) {
+      if (!this.certificate.donorId) {
+        this.ui.info('יש לבחור תורם לפני יצירת תזכורת');
+        return;
+      }
+
+      try {
+        this.certificate.statusText = this.i18n.terms.draftStatusCert;
+        await this.certificateRepo.save(this.certificate);
+        this.changed = true;
+        this.isNewCertificate = false;
+      } catch (error) {
+        this.ui.info('שגיאה בשמירת התעודה');
+        return;
+      }
+    }
+
+    // Check if reminder already exists
+    const reminderId = this.certificate.reminderId || 'new';
+
+    // Prepare reminder args based on certificate type
+    let reminderType: 'dedication' | 'memorial' | undefined;
+    let isRecurringYearly = false;
+
+    if (this.certificate.type === 'dedication') {
+      reminderType = 'dedication';
+      isRecurringYearly = false; // One-time reminder
+    } else if (this.certificate.type === 'memorial') {
+      reminderType = 'memorial';
+      isRecurringYearly = true; // Yearly recurring reminder
+    }
+
+    const reminderSaved = await ReminderDetailsModalComponent.open({
+      reminderId: reminderId,
+      donorId: this.certificate.donorId,
+      reminderType: reminderType,
+      reminderDate: this.certificate.eventDate,
+      isRecurringYearly: isRecurringYearly
+    });
+
+    if (reminderSaved && reminderId === 'new') {
+      // Reload certificate to get the updated reminderId
+      const reloadedCert = await this.certificateRepo.findId(this.certificate.id, {
+        include: { reminder: true }
+      });
+      if (reloadedCert) {
+        this.certificate.reminderId = reloadedCert.reminderId;
+        this.certificate.reminder = reloadedCert.reminder;
+      }
+      this.ui.info('תזכורת נוצרה בהצלחה');
     }
   }
 }
