@@ -1,4 +1,4 @@
-import { Entity, Field, Fields, Relations, isBackend } from 'remult';
+import { Entity, Fields, Relations, isBackend } from 'remult';
 import { Country } from './country';
 
 @Entity('places', {
@@ -51,7 +51,7 @@ export class Place {
 
   @Fields.string({
     caption: 'עיר',
-    required: true
+    // required: true
   })
   city!: string;
 
@@ -64,12 +64,6 @@ export class Place {
     caption: 'מיקוד'
   })
   postcode?: string;
-
-  // Country as string for backward compatibility
-  @Fields.string({
-    caption: 'מדינה'
-  })
-  country?: string;
 
   // Country name field for storing original country name from Google
   @Fields.string({
@@ -86,9 +80,9 @@ export class Place {
 
   @Relations.toOne(() => Country, {
     field: 'countryId',
-    caption: 'מדינה (קשר)'
+    caption: 'מדינה'
   })
-  countryEntity?: Country;
+  country?: Country;
 
   @Fields.string({
     caption: 'קוד מדינה'
@@ -167,7 +161,7 @@ export class Place {
     if (this.city) parts.push(this.city);
 
     // Use country entity name if exists, otherwise use country string
-    const countryDisplay = this.countryEntity?.name || this.countryEntity?.nameEn || this.country || this.countryName;
+    const countryDisplay = this.country?.name //|| this.country?.nameEn || this.country || this.countryName;
     if (countryDisplay) parts.push(countryDisplay);
 
     return parts.filter(p => p).join(', ');

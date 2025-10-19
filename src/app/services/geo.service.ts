@@ -176,7 +176,8 @@ export class GeoService {
           ]
         },
         limit: 5,
-        orderBy: { updatedAt: 'desc' }
+        orderBy: { updatedAt: 'desc' },
+        include: { country: true }
       });
 
       return places.map(place => ({

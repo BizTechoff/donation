@@ -25,7 +25,7 @@ export interface AddressComponents {
   city?: string;
   state?: string;
   postcode?: string;
-  country?: string;
+  country?: Country;
   countryCode?: string;
   latitude?: number;
   longitude?: number;
@@ -94,7 +94,7 @@ export class OsmAddressInputComponent implements ControlValueAccessor, OnDestroy
     city: '',
     state: '',
     postcode: '',
-    country: '',
+    country: undefined,
     countryCode: '',
     placeName: ''
   };
@@ -190,7 +190,7 @@ export class OsmAddressInputComponent implements ControlValueAccessor, OnDestroy
       city: '',
       state: '',
       postcode: '',
-      country: '',
+      country: undefined,
       countryCode: '',
       latitude: undefined,
       longitude: undefined,
@@ -317,6 +317,22 @@ export class OsmAddressInputComponent implements ControlValueAccessor, OnDestroy
       });
 
       // Step 3: המרת הפרטים מהשרת לפורמט AddressComponents
+      const countryCode = placeDetails.countryCode || 'IL';
+
+      // Step 3.1: טעינת ישות Country מהמסד נתונים לפי קוד מדינה
+      let countryEntity: Country | undefined;
+      try {
+        countryEntity = await remult.repo(Country).findFirst({
+          code: countryCode
+        });
+
+        if (!countryEntity) {
+          console.warn(`Country with code ${countryCode} not found in database`);
+        }
+      } catch (error) {
+        console.error('Error loading country entity:', error);
+      }
+
       const addressComponents: AddressComponents = {
         fullAddress: suggestion.description,
         placeId: suggestion.place_id,  // שמירת ה-place_id למזהה חד-ערכי
@@ -326,8 +342,8 @@ export class OsmAddressInputComponent implements ControlValueAccessor, OnDestroy
         houseNumber: placeDetails.homenumber || '',
         city: placeDetails.cityname || '',
         state: placeDetails.state || '',  // מחוז מהשרת
-        country: placeDetails.country || 'ישראל',  // מדינה מהשרת או ברירת מחדל לישראל
-        countryCode: placeDetails.countryCode || 'IL', // קוד מדינה מהשרת או ברירת מחדל
+        country: countryEntity,  // ישות Country מהמסד נתונים
+        countryCode: countryCode, // קוד מדינה מהשרת או ברירת מחדל
         neighborhood: placeDetails.neighborhood || '',  // שכונה מהשרת
         postcode: placeDetails.postcode || ''  // מיקוד מהשרת
       };
@@ -364,7 +380,8 @@ export class OsmAddressInputComponent implements ControlValueAccessor, OnDestroy
           city: String(addressComponents.city || ''),
           state: addressComponents.state,
           postcode: addressComponents.postcode,
-          country: String(addressComponents.country || 'Unknown'),
+          countryId: addressComponents.country?.id,
+          country: addressComponents.country,
           countryCode: addressComponents.countryCode,
           latitude: addressComponents.latitude,
           longitude: addressComponents.longitude
@@ -376,10 +393,17 @@ export class OsmAddressInputComponent implements ControlValueAccessor, OnDestroy
           placeId: placeData.placeId,
           fullAddress: placeData.fullAddress,
           city: placeData.city,
-          country: placeData.country
+          countryId: placeData.countryId,
+          countryCode: placeData.countryCode
         });
         savedPlace = await Place.findOrCreate(placeData, remult.repo(Place));
         console.log('Place saved successfully with ID:', savedPlace.id);
+
+        // טעינה מחדש של ה-Place עם ה-country relation
+        savedPlace = await remult.repo(Place).findId(savedPlace.id, {
+          include: { country: true }
+        }) || savedPlace;
+        console.log('Place reloaded with country:', savedPlace.country);
 
         // הוספת ה-ID של המקום לכתובת
         addressComponents.placeRecordId = savedPlace.id;
@@ -510,8 +534,8 @@ export class OsmAddressInputComponent implements ControlValueAccessor, OnDestroy
 
     // Try to find the country in our database list
     const country = this.countries.find(c =>
-      c.name === this.addressDetails.country ||
-      c.nameEn === this.addressDetails.country ||
+      c.name === this.addressDetails.country?.name ||
+      c.nameEn === this.addressDetails.country?.nameEn ||
       c.code === this.addressDetails.countryCode
     );
 
@@ -520,6 +544,6 @@ export class OsmAddressInputComponent implements ControlValueAccessor, OnDestroy
     }
 
     // Fallback to the original country name from Google
-    return this.addressDetails.country;
+    return this.addressDetails.country.displayName;
   }
 }

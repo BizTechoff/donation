@@ -162,7 +162,7 @@ export class OrganizationDetailsModalComponent implements OnInit {
       houseNumber: this.organization.place.houseNumber || '',
       city: this.organization.place.city || '',
       state: this.organization.place.state || '',
-      country: this.organization.place.country || '',
+      country: this.organization.place.country ,
       countryCode: this.organization.place.countryCode || '',
       postcode: this.organization.place.postcode || '',
       neighborhood: this.organization.place.neighborhood || ''

@@ -162,7 +162,7 @@ export class BankDetailsModalComponent implements OnInit {
       houseNumber: this.bank.place.houseNumber || '',
       city: this.bank.place.city || '',
       state: this.bank.place.state || '',
-      country: this.bank.place.country || '',
+      country: this.bank.place.country,
       countryCode: this.bank.place.countryCode || '',
       postcode: this.bank.place.postcode || '',
       neighborhood: this.bank.place.neighborhood || ''
@@ -230,7 +230,7 @@ export class BankDetailsModalComponent implements OnInit {
         place.houseNumber = addressComponents.houseNumber || '';
         place.city = addressComponents.city || '';
         place.state = addressComponents.state || '';
-        place.country = addressComponents.country || '';
+        place.country = addressComponents.country;
         place.countryCode = addressComponents.countryCode || '';
         place.postcode = addressComponents.postcode || '';
         place.neighborhood = addressComponents.neighborhood || '';
@@ -244,7 +244,7 @@ export class BankDetailsModalComponent implements OnInit {
           houseNumber: addressComponents.houseNumber || '',
           city: addressComponents.city || '',
           state: addressComponents.state || '',
-          country: addressComponents.country || '',
+          country: addressComponents.country,
           countryCode: addressComponents.countryCode || '',
           postcode: addressComponents.postcode || '',
           neighborhood: addressComponents.neighborhood || ''

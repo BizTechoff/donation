@@ -328,6 +328,8 @@ export class DonorDetailsModalComponent implements OnInit {
   async onHomePlaceSelected(place: Place) {
     if (!this.donor) return;
 
+    console.log('onHomePlaceSelected', place?.id || 'NULL', place?.placeId || 'NULL')
+
     this.donor.homePlaceId = place?.id || '';
     this.donor.homePlace = place;
     this.changed = true;
@@ -807,7 +809,7 @@ export class DonorDetailsModalComponent implements OnInit {
       city: place.city || '',
       state: place.state || '',
       postcode: place.postcode || '',
-      country: place.country || '',
+      country: place.country! || '',
       countryCode: place.countryCode || '',
       latitude: place.latitude,
       longitude: place.longitude,
@@ -832,7 +834,7 @@ export class DonorDetailsModalComponent implements OnInit {
       city: place.city || '',
       state: place.state || '',
       postcode: place.postcode || '',
-      country: place.country || '',
+      country: place.country,
       countryCode: place.countryCode || '',
       latitude: place.latitude,
       longitude: place.longitude,
@@ -867,7 +869,7 @@ export class DonorDetailsModalComponent implements OnInit {
       city: company.location || '', // השדה location מכיל את העיר
       state: '',
       postcode: '',
-      country: '',
+      country: undefined,
       countryCode: '',
       latitude: undefined,
       longitude: undefined,

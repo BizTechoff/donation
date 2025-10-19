@@ -84,9 +84,7 @@ export class PlaceService {
       if (country) {
         // Found or created country - set the relationship
         placeData.countryId = country.id;
-        placeData.countryEntity = country;
-        // Also set country string for backward compatibility
-        placeData.country = country.name || country.nameEn;
+        placeData.country = country;
         // Update countryCode if it wasn't set but we have it from the country entity
         if (!placeData.countryCode && country.code) {
           placeData.countryCode = country.code;

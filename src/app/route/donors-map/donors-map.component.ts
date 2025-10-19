@@ -164,7 +164,7 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
             place.id = `demo-${index}`;
             place.fullAddress = israelCoords[index].name;
             place.city = israelCoords[index].name;
-            place.country = 'ישראל';
+            // place.country = 'ישראל';
             place.latitude = israelCoords[index].lat;
             place.longitude = israelCoords[index].lng;
             place.placeName = israelCoords[index].name;
@@ -549,7 +549,7 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
         const coords = await this.geocodingService.geocodeAddress(
           donor.fullAddress!,
           donor.homePlace?.city || '',
-          donor.homePlace?.country || ''
+          donor.homePlace?.country?.name || ''
         );
 
         if (coords && donor.homePlace) {
