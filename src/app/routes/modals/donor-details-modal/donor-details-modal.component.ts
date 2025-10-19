@@ -950,6 +950,13 @@ export class DonorDetailsModalComponent implements OnInit {
     if (country) {
       this.donor.countryId = country.id;
       this.donor.country = country;
+
+      // Auto-populate phone prefixes from country, but allow them to remain editable
+      if (country.phonePrefix) {
+        this.donor.homePhonePrefix = country.phonePrefix;
+        this.donor.mobilePhonePrefix = country.phonePrefix;
+      }
+
       console.log(`Updated country to: ${country.name} (${country.nameEn}) - ${country.phonePrefix}`);
       this.changed = true;
     } else {

@@ -262,9 +262,19 @@ export class Donor extends IdEntity {
   homePhone = ''
 
   @Fields.string({
+    caption: 'קידומת טלפון בית',
+  })
+  homePhonePrefix = ''
+
+  @Fields.string({
     caption: 'טלפון נייד',
   })
   mobilePhone = ''
+
+  @Fields.string({
+    caption: 'קידומת טלפון נייד',
+  })
+  mobilePhonePrefix = ''
 
   // Personal dates
   @Fields.date({

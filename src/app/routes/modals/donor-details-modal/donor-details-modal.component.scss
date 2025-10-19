@@ -356,6 +356,22 @@
     resize: vertical;
     min-height: 80px;
   }
+
+  .phone-input-group {
+    display: flex;
+    gap: 8px;
+    direction: rtl;
+
+    .phone-prefix {
+      width: 80px;
+      flex-shrink: 0;
+      text-align: center;
+    }
+
+    .phone-number {
+      flex: 1;
+    }
+  }
 }
 
 /* Checkbox Groups */

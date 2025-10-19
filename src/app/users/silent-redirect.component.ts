@@ -14,13 +14,16 @@ export class SilentRedirectComponent implements OnInit {
   ngOnInit(): void {
     // בדוק אם המשתמש מחובר
     if (remult.user) {
-      console.log('routeTo: ' + this.i18n.currentTerms.donorList  )
-      // משתמש מחובר - הפנה לרשימת תורמים
-      this.router.navigate([`/${this.i18n.currentTerms.donationsList}`]);
+      console.log('routeTo: ' + this.i18n.currentTerms.donorList, this.router.url)
+
+      if (!this.router.url || this.router.url === '/') {// משתמש מחובר - הפנה לרשימת תורמים
+        this.router.navigate([`/${this.i18n.currentTerms.donationsList}`]);
+      }
     } else {
-      console.log('routeTo: HOME'  )
+      console.log('routeTo: HOME')
       // משתמש לא מחובר - הפנה לדף הבית
       this.router.navigate([`/${this.i18n.currentTerms.home}`]);
     }
   }
 }
+
