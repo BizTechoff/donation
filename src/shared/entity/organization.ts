@@ -8,7 +8,7 @@ import {
   Relations,
 } from 'remult'
 import { Roles } from '../enum/roles'
-import { Country } from './country'
+import { Place } from './place'
 
 @Entity<Organization>('organizations', {
   allowApiCrud: Allow.authenticated,
@@ -32,25 +32,15 @@ export class Organization extends IdEntity {
   })
   name = ''
 
-  @Fields.string({
+  @Fields.string()
+  placeId?: string
+
+  @Relations.toOne(() => Place, {
+    field: "placeId",
     caption: 'כתובת',
+    defaultIncluded: true
   })
-  address = ''
-
-  @Fields.string({
-    caption: 'עיר',
-  })
-  city = ''
-
-  @Relations.toOne<Organization, Country>(() => Country, {
-    caption: 'מדינה',
-  })
-  country?: Country
-
-  @Fields.string({
-    caption: 'מדינה ID',
-  })
-  countryId = ''
+  place?: Place
 
   @Fields.string({
     caption: 'מטבע',

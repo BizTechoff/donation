@@ -112,13 +112,14 @@
       <!-- שורה רביעית: מדינה -->
       <div class="detail-row">
         <div class="detail-field full-width">
-          <label>מדינה</label>
+          <label>מדינה (מתעדכן אוטומטית מגוגל)</label>
           <input readonly
             type="text"
-            [(ngModel)]="addressDetails.country"
-            (change)="onDetailChange()"
+            [value]="getCountryDisplayName()"
             placeholder="מדינה"
             dir="rtl"
+            style="cursor: not-allowed; background-color: #f5f5f5;"
+            title="שדה זה מתעדכן אוטומטית מגוגל ולא ניתן לעריכה ידנית"
           >
         </div>
       </div>

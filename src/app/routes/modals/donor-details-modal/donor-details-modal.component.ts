@@ -7,8 +7,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { openDialog } from 'common-ui-elements';
 import { remult } from 'remult';
-import { CompanyInfo, Donation, Donor, DonorEvent, Event, Place, Contact } from '../../../../shared/entity';
-import { Country } from '../../../../shared/enum/country.enum';
+import { CompanyInfo, Donation, Donor, DonorEvent, Event, Place, Contact, Country, User } from '../../../../shared/entity';
 import { AddressComponents, OsmAddressInputComponent } from '../../../common/osm-address-input/osm-address-input.component';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
@@ -48,38 +47,21 @@ export class DonorDetailsModalComponent implements OnInit {
   donations: Donation[] = [];
   donorRepo = remult.repo(Donor);
   donationRepo = remult.repo(Donation);
-  countryOptions = [
-    Country.israel,
-    Country.usa,
-    Country.uk,
-    Country.scotland,
-    Country.france,
-    Country.belgium,
-    Country.switzerland,
-    Country.canada,
-    Country.australia,
-    Country.germany,
-    Country.netherlands,
-    Country.argentina,
-    Country.brazil,
-    Country.mexico,
-    Country.southAfrica,
-    Country.russia,
-    Country.ukraine,
-    Country.spain,
-    Country.italy,
-    Country.poland,
-    Country.austria
-  ];
+  countryRepo = remult.repo(Country);
+  countries: Country[] = [];
   eventRepo = remult.repo(Event);
   donorEventRepo = remult.repo(DonorEvent);
   contactRepo = remult.repo(Contact);
+  userRepo = remult.repo(User);
   loading = false;
   isNewDonor = false;
 
   // Contact related
   contacts: Contact[] = [];
   selectedContact?: Contact;
+
+  // Fundraisers (users with donator=true)
+  fundraisers: User[] = [];
 
   // Events system
   availableEvents: Event[] = [];
@@ -104,6 +86,7 @@ export class DonorDetailsModalComponent implements OnInit {
     await this.loadAvailableEvents();
     await this.loadCountries();
     await this.loadContacts();
+    await this.loadFundraisers();
     await this.initializeDonor();
     await this.loadAllDonors();
     this.setupFilterOptions();
@@ -121,8 +104,15 @@ export class DonorDetailsModalComponent implements OnInit {
   }
 
   private async loadCountries() {
-    // Country is a ValueListFieldType, not an entity
-    // Countries are already available as static properties
+    try {
+      this.countries = await this.countryRepo.find({
+        where: { isActive: true },
+        orderBy: { name: 'asc' }
+      });
+      console.log(`Loaded ${this.countries.length} countries from database`);
+    } catch (error) {
+      console.error('Error loading countries:', error);
+    }
   }
 
   private async loadContacts() {
@@ -135,8 +125,27 @@ export class DonorDetailsModalComponent implements OnInit {
     }
   }
 
+  private async loadFundraisers() {
+    try {
+      this.fundraisers = await this.userRepo.find({
+        where: { disabled: false, donator: true },
+        orderBy: { name: 'asc' }
+      });
+    } catch (error) {
+      console.error('Error loading fundraisers:', error);
+    }
+  }
+
   private async setDefaultCountry() {
-    // Default country is already set in the entity definition
+    if (!this.donor) return;
+
+    // Set default to Israel if available
+    const israelCountry = this.countries.find(c => c.code === 'IL' || c.name === 'ישראל');
+    if (israelCountry) {
+      this.donor.countryId = israelCountry.id;
+      this.donor.country = israelCountry;
+      console.log('Set default country to Israel');
+    }
   }
 
   private async initializeDonor() {
@@ -181,11 +190,6 @@ export class DonorDetailsModalComponent implements OnInit {
           await this.loadDonations();
           await this.loadDonorEvents();
           await this.loadDonorPlaces();
-
-          // Load primary contact if exists
-          if (this.donor.primaryContactId) {
-            this.selectedContact = await this.contactRepo.findId(this.donor.primaryContactId) || undefined;
-          }
 
           // Force change detection after loading places
           console.log('Forcing change detection...');
@@ -380,6 +384,11 @@ export class DonorDetailsModalComponent implements OnInit {
 
         this.changed = true;
         console.log('Home place saved and donor updated:', place);
+      }
+
+      // עדכון קידומת (country) בהתאם למדינה שנבחרה בכתובת
+      if (addressComponents.countryCode) {
+        this.updateCountryByCode(addressComponents.countryCode);
       }
     } catch (error) {
       console.error('Error saving home place:', error);
@@ -873,14 +882,6 @@ export class DonorDetailsModalComponent implements OnInit {
     console.log('Search term changed:', searchTerm);
   }
 
-  onContactChange() {
-    if (this.donor?.primaryContactId) {
-      this.selectedContact = this.contacts.find(c => c.id === this.donor!.primaryContactId);
-    } else {
-      this.selectedContact = undefined;
-    }
-    this.changed = true;
-  }
 
   onFiltersChanged(filters: ActiveFilter[]) {
     // Filters are applied by the navigation header component
@@ -1115,5 +1116,50 @@ export class DonorDetailsModalComponent implements OnInit {
     } else {
       return '-- בחר סיומת --';
     }
+  }
+
+  // Update country based on country code from address
+  private updateCountryByCode(countryCode: string) {
+    if (!this.donor || !countryCode) return;
+
+    // חיפוש מדינה לפי קוד
+    const country = this.countries.find(c => c.code?.toUpperCase() === countryCode.toUpperCase());
+
+    if (country) {
+      this.donor.countryId = country.id;
+      this.donor.country = country;
+      console.log(`Updated country to: ${country.name} (${country.nameEn}) - ${country.phonePrefix}`);
+      this.changed = true;
+    } else {
+      console.warn(`Country not found for code: ${countryCode}. Will be created automatically when place is saved.`);
+    }
+  }
+
+  // Circle options (חוג)
+  getCircleOptions(): { value: string; label: string }[] {
+    return [
+      { value: 'platinum', label: 'פלטינום' },
+      { value: 'gold', label: 'זהב' },
+      { value: 'silver', label: 'כסף' },
+      { value: 'regular', label: 'רגיל' }
+    ];
+  }
+
+  // Level options (רמה)
+  getLevelOptions(): { value: string; label: string; icon: string }[] {
+    return [
+      { value: 'quarter', label: 'רבע', icon: '🔸' },
+      { value: 'half', label: 'חצי', icon: '🔹' },
+      { value: 'full', label: 'שלם', icon: '⭕' },
+      { value: 'bronze_lords', label: 'אדני נחושת', icon: '🥉' },
+      { value: 'silver_stones', label: 'אבני כסף', icon: '🥈' },
+      { value: 'gold_pillars', label: 'עמודי זהב', icon: '🥇' },
+      { value: 'sapphire_diamond', label: 'ספיר ויהלום', icon: '💎' },
+      { value: 'platinum', label: 'פלטיניום', icon: '👑' },
+      { value: 'patron', label: 'פטרון', icon: '🏆' },
+      { value: 'torah_holder', label: 'מחזיק תורה', icon: '📜' },
+      { value: 'supreme_level_1', label: 'עץ חיים', icon: '🌳' },
+      { value: 'supreme_level_2', label: 'כתר תורה', icon: '👑' }
+    ];
   }
 }

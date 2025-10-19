@@ -383,6 +383,32 @@ export class DonationDetailsModalComponent implements OnInit {
   async saveDonation() {
     if (!this.donation) return;
 
+    // Validate required fields
+    if (!this.donation.donorId) {
+      this.ui.error('נא לבחור תורם');
+      return;
+    }
+
+    if (!this.donation.donationType) {
+      this.ui.error('נא לבחור סוג תרומה');
+      return;
+    }
+
+    if (!this.donation.amount || this.donation.amount <= 0) {
+      this.ui.error('נא להזין סכום תרומה חיובי');
+      return;
+    }
+
+    if (!this.donation.donationDate) {
+      this.ui.error('נא לבחור תאריך תרומה');
+      return;
+    }
+
+    if (!this.donation.donationMethodId) {
+      this.ui.error('נא לבחור אמצעי תשלום');
+      return;
+    }
+
     try {
       const wasNew = this.isNewDonation;
 

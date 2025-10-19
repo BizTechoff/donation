@@ -12,6 +12,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Subject, debounceTime, distinctUntilChanged, switchMap, of } from 'rxjs';
 import { GeoService } from '../../services/geo.service';
 import { Place } from '../../../shared/entity/place';
+import { Country } from '../../../shared/entity/country';
 import { remult } from 'remult';
 
 export interface AddressComponents {
@@ -82,6 +83,7 @@ export class OsmAddressInputComponent implements ControlValueAccessor, OnDestroy
   selectedPlaceId: string | null = null;
   hasSelectedAddress = false;
   showAddressDetails = false;
+  countries: Country[] = [];
   addressDetails: AddressComponents = {
     fullAddress: '',
     placeId: '',
@@ -102,6 +104,9 @@ export class OsmAddressInputComponent implements ControlValueAccessor, OnDestroy
   private justCleared = false; // דגל למניעת טעינה חוזרת מיד אחרי ניקוי
 
   constructor(private geoService: GeoService) {
+    // Load countries from database
+    this.loadCountries();
+
     // הגדרת debounce לחיפוש
     this.searchSubject.pipe(
       debounceTime(300),
@@ -127,6 +132,18 @@ export class OsmAddressInputComponent implements ControlValueAccessor, OnDestroy
 
   ngOnDestroy() {
     this.searchSubject.complete();
+  }
+
+  async loadCountries() {
+    try {
+      this.countries = await remult.repo(Country).find({
+        where: { isActive: true },
+        orderBy: { name: 'asc' }
+      });
+      console.log(`Loaded ${this.countries.length} countries for address input`);
+    } catch (error) {
+      console.error('Error loading countries:', error);
+    }
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -475,5 +492,23 @@ export class OsmAddressInputComponent implements ControlValueAccessor, OnDestroy
 
     // שליחת הכתובת המעודכנת להורה
     this.addressSelected.emit(this.addressDetails);
+  }
+
+  getCountryDisplayName(): string {
+    if (!this.addressDetails.country) return '';
+
+    // Try to find the country in our database list
+    const country = this.countries.find(c =>
+      c.name === this.addressDetails.country ||
+      c.nameEn === this.addressDetails.country ||
+      c.code === this.addressDetails.countryCode
+    );
+
+    if (country) {
+      return `${country.name} / ${country.nameEn}`;
+    }
+
+    // Fallback to the original country name from Google
+    return this.addressDetails.country;
   }
 }

@@ -86,11 +86,11 @@ export class RemindersComponent implements OnInit, OnDestroy {
     const filters = this.globalFilterService.currentFilters;
     let filtered = [...this.reminders];
 
-    // Apply country filter - filter by donor's country
-    if (filters.countryNames && filters.countryNames.length > 0) {
+    // Apply country filter - filter by donor's country ID
+    if (filters.countryIds && filters.countryIds.length > 0) {
       filtered = filtered.filter(reminder =>
-        reminder.relatedDonor?.country?.caption &&
-        filters.countryNames!.includes(reminder.relatedDonor.country.caption)
+        reminder.relatedDonor?.countryId &&
+        filters.countryIds!.includes(reminder.relatedDonor.countryId)
       );
     }
 

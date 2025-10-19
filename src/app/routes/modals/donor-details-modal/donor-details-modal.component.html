@@ -65,14 +65,24 @@
                 <option *ngFor="let suffix of getSuffixOptions()" [value]="suffix">{{suffix}}</option>
               </select>
             </div>
-            
-            <!-- שורה שנייה: כינוי, שם באנגלית -->
+
+            <!-- שורה שנייה: שדות באנגלית -->
             <div class="form-group">
               <div class="field-title">
-                <mat-icon class="field-icon">face</mat-icon>
-                <label>כינוי</label>
+                <mat-icon class="field-icon">military_tech</mat-icon>
+                <label>תואר באנגלית</label>
               </div>
-              <input type="text" class="form-control" [(ngModel)]="donor.nickname" placeholder="כינוי">
+              <select class="form-control" [(ngModel)]="donor.titleEnglish">
+                <option value="">-- Select Title --</option>
+                <option value="Family">Family</option>
+                <option value="Mr.">Mr.</option>
+                <option value="Mrs.">Mrs.</option>
+                <option value="Mr. & Mrs.">Mr. & Mrs.</option>
+                <option value="Rabbi">Rabbi</option>
+                <option value="Rabbi & Mrs.">Rabbi & Mrs.</option>
+                <option value="Dr.">Dr.</option>
+                <option value="Dr. & Mrs.">Dr. & Mrs.</option>
+              </select>
             </div>
             <div class="form-group">
               <div class="field-title">
@@ -88,6 +98,13 @@
               </div>
               <input type="text" class="form-control" [(ngModel)]="donor.lastNameEnglish" placeholder="Last Name">
             </div>
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">title</mat-icon>
+                <label>סיומת באנגלית</label>
+              </div>
+              <input type="text" class="form-control" [(ngModel)]="donor.suffixEnglish" placeholder="Suffix">
+            </div>
             
             <!-- שורה שלישית: דוא&quot;ל, טלפונים -->
             <div class="form-group">
@@ -102,9 +119,10 @@
                 <mat-icon class="field-icon">flag</mat-icon>
                 <label>קידומת בינלאומית</label>
               </div>
-              <select class="form-control" [(ngModel)]="donor.country">
-                <option *ngFor="let country of countryOptions" [ngValue]="country">
-                  {{ country.captionHebrew }} ({{ country.phonePrefix }})
+              <select class="form-control" [(ngModel)]="donor.countryId" (change)="onFieldChange()">
+                <option value="">-- בחר מדינה --</option>
+                <option *ngFor="let country of countries" [ngValue]="country.id">
+                  {{ country.name }} / {{ country.nameEn }} ({{ country.phonePrefix }})
                 </option>
               </select>
             </div>
@@ -123,17 +141,16 @@
               <input type="tel" class="form-control" [(ngModel)]="donor.additionalPhone" placeholder="טלפון נוסף" (ngModelChange)="onFieldChange()">
             </div>
 
-            <!-- Contact Person -->
+            <!-- Fundraiser (מתרים) -->
             <div class="form-group">
               <div class="field-title">
                 <mat-icon class="field-icon">person</mat-icon>
-                <label>איש קשר</label>
+                <label>מתרים</label>
               </div>
-              <select class="form-control" [(ngModel)]="donor.primaryContactId" (change)="onContactChange()">
-                <option value="">בחר איש קשר</option>
-                <option *ngFor="let contact of contacts" [value]="contact.id">
-                  {{ contact.firstName }} {{ contact.lastName }}
-                  <span *ngIf="contact.position"> - {{ contact.position }}</span>
+              <select class="form-control" [(ngModel)]="donor.fundraiserId" (change)="onFieldChange()">
+                <option value="">בחר מתרים</option>
+                <option *ngFor="let fundraiser of fundraisers" [value]="fundraiser.id">
+                  {{ fundraiser.name }}
                 </option>
               </select>
             </div>

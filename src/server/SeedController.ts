@@ -1,5 +1,5 @@
 import { BackendMethod, remult } from 'remult';
-import { seedCountries } from './seed-countries';
+import { seedCountries } from './seed/seed-countries';
 import { seedDatabase } from './seed';
 import { Roles } from '../shared/enum/roles';
 import { Country } from '../shared/entity/country';

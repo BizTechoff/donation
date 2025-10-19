@@ -160,7 +160,20 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
           this.dialogRef.close(false);
           return;
         }
-        // relatedDonor is already loaded from the include
+
+        // If reminder has a related donor, load fundraiser if exists
+        if (this.reminder.relatedDonorId && this.reminder.relatedDonor) {
+          // Load the full donor with fundraiser relation
+          const donorWithFundraiser = await this.donorRepo.findId(this.reminder.relatedDonorId, {
+            include: { fundraiser: true }
+          });
+
+          // If donor has a fundraiser and reminder doesn't have assignedTo yet, auto-fill it
+          if (donorWithFundraiser?.fundraiser && !this.reminder.assignedToId) {
+            this.reminder.assignedToId = donorWithFundraiser.fundraiser.id;
+            this.reminder.assignedTo = donorWithFundraiser.fundraiser;
+          }
+        }
       }
 
       // Set user assignment from args or current user as default
@@ -221,6 +234,17 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
         if (loadedDonation.donor) {
           this.reminder!.relatedDonorId = loadedDonation.donor.id;
           this.reminder!.relatedDonor = loadedDonation.donor;
+
+          // Load fundraiser from donor if exists
+          if (loadedDonation.donor.fundraiserId) {
+            const donorWithFundraiser = await this.donorRepo.findId(loadedDonation.donor.id, {
+              include: { fundraiser: true }
+            });
+            if (donorWithFundraiser?.fundraiser && !this.reminder!.assignedToId) {
+              this.reminder!.assignedToId = donorWithFundraiser.fundraiser.id;
+              this.reminder!.assignedTo = donorWithFundraiser.fundraiser;
+            }
+          }
         }
 
         // Set title based on donation
@@ -238,10 +262,18 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
 
   async loadDonor(donorId: string) {
     try {
-      const loadedDonor = await this.donorRepo.findId(donorId) || undefined;
+      const loadedDonor = await this.donorRepo.findId(donorId, {
+        include: { fundraiser: true }
+      }) || undefined;
       if (loadedDonor) {
         this.reminder!.relatedDonorId = loadedDonor.id;
         this.reminder!.relatedDonor = loadedDonor;
+
+        // Auto-fill fundraiser (assignedTo) from donor's fundraiser if exists
+        if (loadedDonor.fundraiser && !this.reminder!.assignedToId) {
+          this.reminder!.assignedToId = loadedDonor.fundraiser.id;
+          this.reminder!.assignedTo = loadedDonor.fundraiser;
+        }
       }
     } catch (error) {
       console.error('Error loading donor:', error);
@@ -384,13 +416,25 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
     this.filteredContacts = [...this.contacts]; // Initialize with all contacts
   }
 
-  onDonorSelectionChange(donorId: string) {
+  async onDonorSelectionChange(donorId: string) {
     if (donorId) {
       // Update the related donor
       const selectedDonor = this.donors.find(d => d.id === donorId);
       if (selectedDonor && this.reminder) {
         this.reminder.relatedDonorId = donorId;
         this.reminder.relatedDonor = selectedDonor;
+
+        // Auto-fill fundraiser (assignedTo) from donor's fundraiser if exists
+        if (selectedDonor.fundraiserId) {
+          // Load the full donor with fundraiser relation
+          const donorWithFundraiser = await this.donorRepo.findId(donorId, {
+            include: { fundraiser: true }
+          });
+          if (donorWithFundraiser?.fundraiser) {
+            this.reminder.assignedToId = donorWithFundraiser.fundraiser.id;
+            this.reminder.assignedTo = donorWithFundraiser.fundraiser;
+          }
+        }
       }
 
       // Filter donations to show only those of the selected donor
@@ -432,10 +476,10 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
   applyGlobalFiltersToLists() {
     const filters = this.globalFilterService.currentFilters;
 
-    // Filter donors by country
-    if (filters.countryNames && filters.countryNames.length > 0) {
+    // Filter donors by country ID
+    if (filters.countryIds && filters.countryIds.length > 0) {
       const filteredDonors = this.donors.filter(donor =>
-        donor.country?.caption && filters.countryNames!.includes(donor.country.caption)
+        donor.countryId && filters.countryIds!.includes(donor.countryId)
       );
 
       // Update filtered lists based on selected donor

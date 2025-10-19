@@ -15,7 +15,7 @@ import { Roles } from '../enum/roles'
 import { Place } from './place'
 import { User } from './user'
 import { Contact } from './contact'
-import { Country } from '../enum/country.enum'
+import { Country } from './country'
 
 export interface CompanyInfo {
   id: string
@@ -98,6 +98,16 @@ export class Donor extends IdEntity {
   wifeTitle = ''
 
   @Fields.string({
+    caption: 'תואר באנגלית',
+    allowNull: true,
+    includeInApi: true,
+    valueList: [
+      '', 'Family', 'Mr.', 'Mrs.', 'Mr. & Mrs.', 'Rabbi', 'Rabbi & Mrs.', 'Dr.', 'Dr. & Mrs.'
+    ]
+  })
+  titleEnglish = ''
+
+  @Fields.string({
     caption: 'שם פרטי באנגלית',
   })
   firstNameEnglish = ''
@@ -106,6 +116,11 @@ export class Donor extends IdEntity {
     caption: 'שם משפחה באנגלית',
   })
   lastNameEnglish = ''
+
+  @Fields.string({
+    caption: 'סיומת באנגלית',
+  })
+  suffixEnglish = ''
 
   @Fields.string({
     caption: 'תעודת זהות',
@@ -128,10 +143,17 @@ export class Donor extends IdEntity {
   })
   additionalPhone = ''
 
-  @Field(() => Country, {
-    caption: 'קידומת בינלאומית',
+  @Fields.string({
+    caption: 'מזהה מדינה',
   })
-  country = Country.israel
+  countryId?: string
+
+  @Relations.toOne(() => Country, {
+    field: 'countryId',
+    caption: 'קידומת בינלאומית',
+    defaultIncluded: true
+  })
+  country?: Country
 
   // כתובות
   // @Relations.toOne(() => Place, {
@@ -405,15 +427,15 @@ export class Donor extends IdEntity {
   })
   isActive = true
 
-  @Relations.toOne<Donor, Contact>(() => Contact, {
-    caption: 'איש קשר ראשי',
+  @Relations.toOne<Donor, User>(() => User, {
+    caption: 'מתרים',
   })
-  primaryContact?: Contact
+  fundraiser?: User
 
   @Fields.string({
-    caption: 'איש קשר ID',
+    caption: 'מתרים ID',
   })
-  primaryContactId = ''
+  fundraiserId = ''
 
   @Fields.date({
     allowApiUpdate: false,

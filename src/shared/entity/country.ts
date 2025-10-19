@@ -74,4 +74,15 @@ export class Country extends IdEntity {
   })
   updatedDate = new Date()
 
+  /**
+   * Getter for display name combining Hebrew and English names
+   * Usage: country.displayName // "ישראל / Israel"
+   */
+  get displayName(): string {
+    if (this.name && this.nameEn) {
+      return `${this.name} / ${this.nameEn}`;
+    }
+    return this.name || this.nameEn || this.code || '';
+  }
+
 }

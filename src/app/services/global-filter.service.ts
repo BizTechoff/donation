@@ -6,7 +6,7 @@ import { User } from '../../shared/entity/user';
 export interface GlobalFilters {
   campaignIds?: string[];
   donorTypeIds?: string[];
-  countryNames?: string[];
+  countryIds?: string[];
   dateFrom?: Date;
   dateTo?: Date;
   amountMin?: number;
@@ -127,9 +127,9 @@ export class GlobalFilterService {
       where.donorTypeId = { $in: filters.donorTypeIds };
     }
 
-    if (filters.countryNames && filters.countryNames.length > 0) {
-      // Note: This method is deprecated - use controllers instead
-      where.countryNames = { $in: filters.countryNames };
+    if (filters.countryIds && filters.countryIds.length > 0) {
+      // Filter by country IDs (UUID)
+      where.countryId = { $in: filters.countryIds };
     }
 
     if (filters.dateFrom || filters.dateTo) {

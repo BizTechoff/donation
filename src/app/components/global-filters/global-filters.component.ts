@@ -104,7 +104,7 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
     // Check if there are actual values, not just keys
     const hasValues =
       (this.currentFilters.campaignIds && this.currentFilters.campaignIds.length > 0) ||
-      (this.currentFilters.countryNames && this.currentFilters.countryNames.length > 0) ||
+      (this.currentFilters.countryIds && this.currentFilters.countryIds.length > 0) ||
       (this.currentFilters.dateFrom !== undefined && this.currentFilters.dateFrom !== null) ||
       (this.currentFilters.dateTo !== undefined && this.currentFilters.dateTo !== null) ||
       (this.currentFilters.amountMin !== undefined && this.currentFilters.amountMin !== null) ||
@@ -116,7 +116,7 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
   get activeFiltersCount(): number {
     let count = 0;
     if (this.currentFilters.campaignIds && this.currentFilters.campaignIds.length > 0) count += this.currentFilters.campaignIds.length;
-    if (this.currentFilters.countryNames && this.currentFilters.countryNames.length > 0) count += this.currentFilters.countryNames.length;
+    if (this.currentFilters.countryIds && this.currentFilters.countryIds.length > 0) count += this.currentFilters.countryIds.length;
     if (this.currentFilters.dateFrom) count++;
     if (this.currentFilters.dateTo) count++;
     if (this.currentFilters.amountMin !== undefined) count++;
@@ -129,9 +129,9 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
     return campaign?.name || campaignId;
   }
 
-  getCountryName(countryId: string): string {
+  getCountryDisplayName(countryId: string): string {
     const country = this.countries.find(c => c.id === countryId);
-    return country?.name || countryId;
+    return country?.displayName || countryId;
   }
   
   removeCampaignFilter(campaignId: string) {
@@ -140,10 +140,10 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
     this.updateFilter('campaignIds', updatedIds.length > 0 ? updatedIds : undefined);
   }
 
-  removeCountryFilter(countryName: string) {
-    const currentNames = this.currentFilters.countryNames || [];
-    const updatedNames = currentNames.filter(name => name !== countryName);
-    this.updateFilter('countryNames', updatedNames.length > 0 ? updatedNames : undefined);
+  removeCountryFilter(countryId: string) {
+    const currentIds = this.currentFilters.countryIds || [];
+    const updatedIds = currentIds.filter(id => id !== countryId);
+    this.updateFilter('countryIds', updatedIds.length > 0 ? updatedIds : undefined);
   }
   
   onDateFromChange(date: Date | null) {

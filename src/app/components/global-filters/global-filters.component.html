@@ -33,11 +33,11 @@
     <!-- Country Filter -->
     <mat-form-field appearance="outline" class="filter-field">
       <mat-label>{{ (i18n.terms$ | async)?.country }}</mat-label>
-      <mat-select [value]="currentFilters.countryNames || []"
-                  (valueChange)="updateFilter('countryNames', $event.length > 0 ? $event : undefined)"
+      <mat-select [value]="currentFilters.countryIds || []"
+                  (valueChange)="updateFilter('countryIds', $event.length > 0 ? $event : undefined)"
                   multiple>
-        <mat-option *ngFor="let country of countries" [value]="country.name">
-          {{ country.name }}
+        <mat-option *ngFor="let country of countries" [value]="country.id">
+          {{ country.displayName }}
         </mat-option>
       </mat-select>
     </mat-form-field>
@@ -99,10 +99,10 @@
           <mat-icon matChipRemove>cancel</mat-icon>
         </mat-chip>
 
-        <mat-chip *ngFor="let countryName of currentFilters.countryNames || []"
+        <mat-chip *ngFor="let countryId of currentFilters.countryIds || []"
                   [removable]="true"
-                  (removed)="removeCountryFilter(countryName)">
-          {{ (i18n.terms$ | async)?.country }}: {{ countryName }}
+                  (removed)="removeCountryFilter(countryId)">
+          {{ (i18n.terms$ | async)?.country }}: {{ getCountryDisplayName(countryId) }}
           <mat-icon matChipRemove>cancel</mat-icon>
         </mat-chip>
         

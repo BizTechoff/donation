@@ -122,16 +122,6 @@
               </select>
             </div>
 
-            <div class="form-group">
-              <div class="field-title">
-                <mat-icon class="field-icon">category</mat-icon>
-                <label>קטגוריה</label>
-              </div>
-              <input type="text" class="form-control" [(ngModel)]="campaign.category"
-                     [disabled]="!canEdit" placeholder="קטגוריה"
-                     (ngModelChange)="markAsChanged()">
-            </div>
-
             <div class="form-group full-width">
               <div class="field-title">
                 <mat-icon class="field-icon">place</mat-icon>

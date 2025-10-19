@@ -3,92 +3,94 @@ import { Place } from '../shared/entity/place';
 import { Country } from '../shared/entity/country';
 
 export class PlaceService {
+
   /**
-   * Find or create a Country based on the country name from Google Places
-   * Returns the Country entity if found, or undefined if not found
+   * Find or create a Country based on the country name and code from Google Places
+   * Automatically creates new countries if not found (trusting Google)
+   * Search is done purely based on the Country entity fields: name, nameEn, code
    */
-  static async findCountryByName(countryName: string | undefined): Promise<Country | undefined> {
-    if (!countryName) return undefined;
+  static async findOrCreateCountry(
+    countryName: string | undefined,
+    countryCode: string | undefined
+  ): Promise<Country | undefined> {
+    if (!countryName && !countryCode) return undefined;
 
     const countryRepo = remult.repo(Country);
 
-    // Search for country by Hebrew name
-    let country = await countryRepo.findFirst({ name: countryName });
-
-    if (country) return country;
-
-    // Search for country by English name
-    country = await countryRepo.findFirst({ nameEn: countryName });
-
-    if (country) return country;
-
-    // Try common variations
-    const countryMappings: { [key: string]: string[] } = {
-      'Israel': ['ישראל'],
-      'ישראל': ['Israel'],
-      'United States': ['ארצות הברית', 'אמריקה', 'USA', 'US'],
-      'USA': ['ארצות הברית', 'אמריקה', 'United States'],
-      'US': ['ארצות הברית', 'אמריקה', 'United States'],
-      'ארצות הברית': ['United States', 'USA', 'US'],
-      'אמריקה': ['United States', 'USA', 'US'],
-      'Australia': ['אוסטרליה'],
-      'אוסטרליה': ['Australia'],
-      'Canada': ['קנדה'],
-      'קנדה': ['Canada'],
-      'United Kingdom': ['בריטניה', 'אנגליה', 'UK', 'Britain', 'England'],
-      'UK': ['בריטניה', 'אנגליה', 'United Kingdom'],
-      'בריטניה': ['United Kingdom', 'UK', 'Britain', 'England'],
-      'אנגליה': ['United Kingdom', 'UK', 'Britain', 'England'],
-      'France': ['צרפת'],
-      'צרפת': ['France'],
-      'Germany': ['גרמניה'],
-      'גרמניה': ['Germany'],
-      'Italy': ['איטליה'],
-      'איטליה': ['Italy'],
-      'Spain': ['ספרד'],
-      'ספרד': ['Spain']
-    };
-
-    // Check if we have a mapping for this country name
-    if (countryMappings[countryName]) {
-      for (const altName of countryMappings[countryName]) {
-        // Try Hebrew name
-        country = await countryRepo.findFirst({ name: altName });
-        if (country) return country;
-
-        // Try English name
-        country = await countryRepo.findFirst({ nameEn: altName });
-        if (country) return country;
-      }
+    // Try to find by country code first (most reliable)
+    if (countryCode) {
+      const country = await countryRepo.findFirst({ code: countryCode.toUpperCase() });
+      if (country) return country;
     }
 
-    // Country not found - return undefined
-    // We don't create a new country because we don't have all required data (currency, etc.)
-    console.log(`Country not found in database: ${countryName}. Leaving country field empty.`);
+    // Search by country name (Hebrew or English)
+    if (countryName) {
+      // Try Hebrew name
+      let country = await countryRepo.findFirst({ name: countryName });
+      if (country) return country;
+
+      // Try English name
+      country = await countryRepo.findFirst({ nameEn: countryName });
+      if (country) return country;
+    }
+
+    // Country not found - create new country automatically with minimal data (trusting Google)
+    // Note: Currency and symbol should be added manually to seed-countries.ts for complete data
+    if (countryCode) {
+      const newCountry = await countryRepo.insert({
+        name: countryName || countryCode,
+        nameEn: countryName || countryCode,
+        code: countryCode.toUpperCase(),
+        phonePrefix: '', // Should be filled manually in seed-countries.ts
+        currency: 'USD', // Default, should be filled manually in seed-countries.ts
+        currencySymbol: '$', // Default, should be filled manually in seed-countries.ts
+        isActive: true
+      });
+
+      console.log(`⚠ New country created automatically with minimal data: ${newCountry.name} (${newCountry.nameEn}) - Code: ${newCountry.code}`);
+      console.log(`   Please add full country details to seed/seed-countries.ts`);
+      return newCountry;
+    }
+
+    // If we only have a name without code, create with minimal data
+    if (countryName) {
+      const newCountry = await countryRepo.insert({
+        name: countryName,
+        nameEn: countryName,
+        code: '',
+        phonePrefix: '',
+        currency: 'USD',
+        currencySymbol: '$',
+        isActive: true
+      });
+
+      console.log(`⚠ New country created with minimal data: ${newCountry.name}`);
+      console.log(`   Please add full country details to seed/seed-countries.ts`);
+      return newCountry;
+    }
+
     return undefined;
   }
 
   /**
    * Process place data from Google and set the country relationship
+   * Automatically creates new countries if not found (trusting Google)
    */
   static async processPlaceWithCountry(placeData: Partial<Place>): Promise<Partial<Place>> {
-    // If there's a country name in the place data, try to find it in the database
-    if (placeData.countryName) {
-      const country = await this.findCountryByName(placeData.countryName);
+    // If there's a country name or code in the place data, find or create the country
+    if (placeData.countryName || placeData.countryCode) {
+      const country = await this.findOrCreateCountry(placeData.countryName, placeData.countryCode);
 
       if (country) {
-        // Found country - set the relationship
+        // Found or created country - set the relationship
         placeData.countryId = country.id;
         placeData.countryEntity = country;
         // Also set country string for backward compatibility
         placeData.country = country.name || country.nameEn;
-      } else {
-        // Country not found - leave countryId empty but keep countryName for reference
-        placeData.countryId = undefined;
-        placeData.countryEntity = undefined;
-        // Keep country string as the original name for backward compatibility
-        placeData.country = placeData.countryName;
-        // Keep countryName for backward compatibility and reference
+        // Update countryCode if it wasn't set but we have it from the country entity
+        if (!placeData.countryCode && country.code) {
+          placeData.countryCode = country.code;
+        }
       }
     }
 
