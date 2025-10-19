@@ -245,6 +245,12 @@ export class Donor extends IdEntity {
   })
   familyConnectionNotes = ''
 
+  // Family relationships - array of donor IDs with relationship type
+  @Fields.json({
+    caption: 'קשרים משפחתיים'
+  })
+  familyRelationships: Array<{ donorId: string; relationshipType: string }> = []
+
   @Fields.string({
     caption: 'מצב משפחתי',
   })
@@ -418,9 +424,15 @@ export class Donor extends IdEntity {
 
   // Companies and Organizations fields
   @Fields.json({
-    caption: 'חברות ועמותות',
+    caption: 'חברות ועמותות (Legacy)',
   })
   companies: CompanyInfo[] = []
+
+  // Company IDs - for new company selection system
+  @Fields.json({
+    caption: 'מזהי חברות'
+  })
+  companyIds: string[] = []
 
   @Fields.boolean({
     caption: 'תורם פעיל',

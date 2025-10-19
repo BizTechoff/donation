@@ -71,11 +71,11 @@
                   </label>
                 </div>
 
-                <div class="campaign-type-option" [class.active]="campaign.campaignType === 'דינעער'">
+                <div class="campaign-type-option" [class.active]="campaign.campaignType === 'דינער'">
                   <label class="campaign-type-card">
                     <input type="radio"
                            name="campaignType"
-                           value="דינעער"
+                           value="דינער"
                            [(ngModel)]="campaign.campaignType"
                            [disabled]="!canEdit"
                            (ngModelChange)="markAsChanged()"
@@ -83,7 +83,7 @@
                     <div class="campaign-type-content">
                       <mat-icon class="campaign-type-icon">restaurant</mat-icon>
                       <div class="campaign-type-text">
-                        <span class="campaign-type-label">דינעער</span>
+                        <span class="campaign-type-label">דינער</span>
                         <span class="campaign-type-description">אירוע גיוס כספים חגיגי</span>
                       </div>
                     </div>
@@ -421,7 +421,7 @@
             <div class="form-group full-width">
               <div class="field-title">
                 <mat-icon class="field-icon">link</mat-icon>
-                <label>קישור להזמנה לדינעער</label>
+                <label>קישור להזמנה לדינער</label>
               </div>
               <input type="url" class="form-control" [(ngModel)]="campaign.websiteUrl"
                      [disabled]="!canEdit" placeholder="https://example.com"
@@ -431,7 +431,7 @@
             <div class="form-group full-width">
               <div class="field-title">
                 <mat-icon class="field-icon">image</mat-icon>
-                <label>קישור לספר ברכות של הדינעער</label>
+                <label>קישור לספר ברכות של הדינער</label>
               </div>
               <input type="url" class="form-control" [(ngModel)]="campaign.imageUrl"
                      [disabled]="!canEdit" placeholder="https://example.com/image.jpg"
@@ -502,7 +502,7 @@
 
         <button mat-raised-button
                 color="accent"
-                *ngIf="campaign.campaignType === 'דינעער'"
+                *ngIf="campaign.campaignType === 'דינער'"
                 (click)="openInvitedList()"
                 class="action-button invited-list-button">
           <mat-icon>list_alt</mat-icon>
@@ -511,7 +511,7 @@
 
         <button mat-raised-button
                 color="primary"
-                *ngIf="campaign.campaignType === 'דינעער'"
+                *ngIf="campaign.campaignType === 'דינער'"
                 (click)="openBlessingBook()"
                 class="action-button blessing-book-button">
           <mat-icon>menu_book</mat-icon>

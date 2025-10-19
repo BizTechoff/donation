@@ -1,0 +1,185 @@
+<!-- Company Details Modal -->
+<div class="modal-overlay" (click)="closeModal($event)">
+  <div class="modal-content company-details-modal" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+      <div class="header-content">
+        <div class="header-icon">
+          <mat-icon>{{isNew ? 'business' : 'business'}}</mat-icon>
+        </div>
+        <div class="header-text">
+          <h2>{{isNew ? 'חברה חדשה' : 'עריכת חברה'}}</h2>
+          <p class="header-subtitle" *ngIf="!isNew && company">
+            {{company.name}}
+          </p>
+        </div>
+      </div>
+      <button class="modal-close" (click)="closeModal()" matTooltip="סגור" [dir]="i18n.lang.RTL ? 'rtl' : 'ltr'">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-overlay" *ngIf="loading">
+      <div class="loading-spinner">טוען נתונים...</div>
+    </div>
+
+    <div class="modal-body">
+      <div class="details-grid" *ngIf="company && !loading">
+
+        <!-- פרטי חברה בסיסיים -->
+        <div class="section basic-info">
+          <h3>פרטי חברה בסיסיים</h3>
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <div class="field-title">
+                <mat-icon class="field-icon">business</mat-icon>
+                <label>שם החברה *</label>
+              </div>
+              <input type="text"
+                     class="form-control"
+                     [(ngModel)]="company.name"
+                     (ngModelChange)="onFieldChange()"
+                     placeholder="שם החברה"
+                     required>
+            </div>
+
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">tag</mat-icon>
+                <label>מספר חברה (ח"פ)</label>
+              </div>
+              <input type="text"
+                     class="form-control"
+                     [(ngModel)]="company.number"
+                     (ngModelChange)="onFieldChange()"
+                     placeholder="מספר חברה">
+            </div>
+          </div>
+        </div>
+
+        <!-- פרטי כתובת -->
+        <div class="section address-info">
+          <h3>
+            <mat-icon class="section-icon">location_on</mat-icon>
+            פרטי כתובת
+          </h3>
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <app-osm-address-input
+                label="כתובת החברה"
+                placeholder="הקלד כתובת..."
+                countryCode="il"
+                [initialAddress]="getAddressComponents()"
+                (placeSelected)="onPlaceSelected($event)">
+              </app-osm-address-input>
+            </div>
+          </div>
+        </div>
+
+        <!-- פרטי קשר -->
+        <div class="section contact-info">
+          <h3>
+            <mat-icon class="section-icon">contacts</mat-icon>
+            פרטי קשר
+          </h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">phone</mat-icon>
+                <label>טלפון</label>
+              </div>
+              <input type="tel"
+                     class="form-control"
+                     [(ngModel)]="company.phone"
+                     (ngModelChange)="onFieldChange()"
+                     placeholder="מספר טלפון">
+            </div>
+
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">email</mat-icon>
+                <label>אימייל</label>
+              </div>
+              <input type="email"
+                     class="form-control"
+                     [(ngModel)]="company.email"
+                     (ngModelChange)="onFieldChange()"
+                     placeholder="כתובת אימייל">
+            </div>
+
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">language</mat-icon>
+                <label>אתר אינטרנט</label>
+              </div>
+              <input type="url"
+                     class="form-control"
+                     [(ngModel)]="company.website"
+                     (ngModelChange)="onFieldChange()"
+                     placeholder="www.example.com">
+            </div>
+          </div>
+        </div>
+
+        <!-- אחר -->
+        <div class="section other-info">
+          <h3>
+            <mat-icon class="section-icon">note</mat-icon>
+            אחר
+          </h3>
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <div class="field-title">
+                <mat-icon class="field-icon">notes</mat-icon>
+                <label>הערות</label>
+              </div>
+              <textarea class="form-control"
+                        rows="4"
+                        [(ngModel)]="company.notes"
+                        (ngModelChange)="onFieldChange()"
+                        placeholder="הערות והשתהות נוספות"></textarea>
+            </div>
+
+            <div class="form-group full-width">
+              <div class="checkbox-wrapper">
+                <label class="checkbox-label">
+                  <input type="checkbox"
+                         [(ngModel)]="company.isActive"
+                         (ngModelChange)="onFieldChange()">
+                  <span class="checkbox-text">
+                    <mat-icon class="checkbox-icon">{{company.isActive ? 'check_circle' : 'cancel'}}</mat-icon>
+                    פעיל
+                  </span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <div class="footer-actions-left">
+        <!-- Empty for future actions -->
+      </div>
+      <div class="footer-actions-right">
+        <button mat-stroked-button
+                (click)="closeModal()"
+                class="cancel-button">
+          <mat-icon>close</mat-icon>
+          ביטול
+        </button>
+        <button mat-raised-button
+                color="primary"
+                (click)="save()"
+                class="save-button"
+                [disabled]="loading">
+          <mat-icon>save</mat-icon>
+          {{ isNew ? 'שמור חברה' : 'עדכן חברה' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

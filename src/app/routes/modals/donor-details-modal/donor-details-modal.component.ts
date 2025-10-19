@@ -63,6 +63,11 @@ export class DonorDetailsModalComponent implements OnInit {
   // Fundraisers (users with donator=true)
   fundraisers: User[] = [];
 
+  // Family relationships
+  allDonorsForFamily: Donor[] = [];
+  selectedFamilyRelationships: Array<{ donor: Donor; relationshipType: string; donorId: string }> = [];
+  newRelationshipType: string = '';
+
   // Events system
   availableEvents: Event[] = [];
   donorEvents: DonorEvent[] = [];
@@ -87,6 +92,7 @@ export class DonorDetailsModalComponent implements OnInit {
     await this.loadCountries();
     await this.loadContacts();
     await this.loadFundraisers();
+    await this.loadAllDonorsForFamily();
     await this.initializeDonor();
     await this.loadAllDonors();
     this.setupFilterOptions();
@@ -159,6 +165,7 @@ export class DonorDetailsModalComponent implements OnInit {
         this.donor = this.donorRepo.create();
         this.donor.isActive = true;
         this.donor.wantsUpdates = true;
+        this.donor.familyRelationships = [];
         this.donor.wantsTaxReceipts = true;
         this.donor.preferredLanguage = 'he';
         // Country will be set via homePlace
@@ -190,6 +197,7 @@ export class DonorDetailsModalComponent implements OnInit {
           await this.loadDonations();
           await this.loadDonorEvents();
           await this.loadDonorPlaces();
+          await this.loadSelectedFamilyRelationships();
 
           // Force change detection after loading places
           console.log('Forcing change detection...');
@@ -1019,5 +1027,144 @@ export class DonorDetailsModalComponent implements OnInit {
       { value: 'supreme_level_1', label: 'עץ חיים', icon: '🌳' },
       { value: 'supreme_level_2', label: 'כתר תורה', icon: '👑' }
     ];
+  }
+
+  // Family Relationships Functions
+  private async loadAllDonorsForFamily() {
+    try {
+      this.allDonorsForFamily = await this.donorRepo.find({
+        where: { isActive: true },
+        orderBy: { firstName: 'asc' }
+      });
+      console.log(`Loaded ${this.allDonorsForFamily.length} donors for family relationships`);
+    } catch (error) {
+      console.error('Error loading donors for family:', error);
+    }
+  }
+
+  async loadSelectedFamilyRelationships() {
+    if (!this.donor?.familyRelationships || this.donor.familyRelationships.length === 0) {
+      this.selectedFamilyRelationships = [];
+      return;
+    }
+
+    try {
+      this.selectedFamilyRelationships = [];
+      for (const relationship of this.donor.familyRelationships) {
+        const donor = await this.donorRepo.findId(relationship.donorId);
+        if (donor) {
+          this.selectedFamilyRelationships.push({
+            donor: donor,
+            relationshipType: relationship.relationshipType,
+            donorId: relationship.donorId
+          });
+        }
+      }
+      console.log('Loaded selected family relationships:', this.selectedFamilyRelationships);
+    } catch (error) {
+      console.error('Error loading selected family relationships:', error);
+    }
+  }
+
+  async onFamilyMemberSelect(event: any) {
+    const donorId = event.target.value;
+    event.target.value = ''; // Reset selection
+
+    if (!donorId || !this.newRelationshipType) return;
+
+    const donor = this.allDonorsForFamily.find(d => d.id === donorId);
+    if (!donor) return;
+
+    // Check if already exists
+    const exists = this.donor?.familyRelationships?.some(r => r.donorId === donorId);
+    if (exists) {
+      this.ui.info('תורם זה כבר ברשימת הקשרים המשפחתיים');
+      return;
+    }
+
+    // Add to donor's familyRelationships
+    if (!this.donor) return;
+    if (!this.donor.familyRelationships) {
+      this.donor.familyRelationships = [];
+    }
+
+    this.donor.familyRelationships.push({
+      donorId: donor.id,
+      relationshipType: this.newRelationshipType
+    });
+
+    // Add to selectedFamilyRelationships for display
+    this.selectedFamilyRelationships.push({
+      donor: donor,
+      relationshipType: this.newRelationshipType,
+      donorId: donor.id
+    });
+
+    console.log('Added family relationship:', { donor: donor.fullName, type: this.newRelationshipType });
+    this.changed = true;
+
+    // Reset relationship type
+    this.newRelationshipType = '';
+  }
+
+  removeFamilyRelationship(relationship: { donor: Donor; relationshipType: string; donorId: string }) {
+    if (!this.donor?.familyRelationships) return;
+
+    // Remove from donor's familyRelationships
+    const index = this.donor.familyRelationships.findIndex(r => r.donorId === relationship.donorId);
+    if (index > -1) {
+      this.donor.familyRelationships.splice(index, 1);
+    }
+
+    // Remove from selectedFamilyRelationships
+    const selectedIndex = this.selectedFamilyRelationships.findIndex(r => r.donorId === relationship.donorId);
+    if (selectedIndex > -1) {
+      this.selectedFamilyRelationships.splice(selectedIndex, 1);
+    }
+
+    console.log('Removed family relationship:', relationship.donor.fullName);
+    this.changed = true;
+  }
+
+  getAvailableDonorsForFamily(): Donor[] {
+    if (!this.donor) return this.allDonorsForFamily;
+
+    // Filter out current donor and already selected family members
+    return this.allDonorsForFamily.filter(donor => {
+      // Don't show current donor
+      if (donor.id === this.donor?.id) return false;
+
+      // Don't show already selected family members
+      const alreadySelected = this.donor?.familyRelationships?.some(r => r.donorId === donor.id);
+      return !alreadySelected;
+    });
+  }
+
+  async openFamilyMemberDetails(donor: Donor, event: MouseEvent) {
+    event.stopPropagation();
+    event.preventDefault();
+
+    try {
+      const dialogResult = await openDialog(
+        DonorDetailsModalComponent,
+        (modal: DonorDetailsModalComponent) => {
+          modal.args = { donorId: donor.id };
+        }
+      );
+
+      if (dialogResult) {
+        // Reload the family member if it was modified
+        const updatedDonor = await this.donorRepo.findId(donor.id);
+        if (updatedDonor) {
+          // Update in selectedFamilyRelationships
+          const index = this.selectedFamilyRelationships.findIndex(r => r.donorId === donor.id);
+          if (index > -1) {
+            this.selectedFamilyRelationships[index].donor = updatedDonor;
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error opening family member details:', error);
+    }
   }
 }

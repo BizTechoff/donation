@@ -185,7 +185,7 @@
                 <mat-icon class="address-type-icon">home</mat-icon>
                 <h4>כתובת מגורים</h4>
               </div>
-            {{this.donor && this.donor.homePlace  && this.donor.homePlace.id}}
+            <!-- {{this.donor && this.donor.homePlace  && this.donor.homePlace.id}} -->
               <app-osm-address-input
                 label="כתובת מגורים"
                 placeholder="הקלד כתובת מגורים..."
@@ -304,40 +304,75 @@
 
             <!-- Family Connections & Contact -->
             <div class="family-extended-info">
+
+              <!-- Family Relationships Section (new) -->
               <div class="family-group">
                 <h4 class="group-title">
                   <mat-icon>family_restroom</mat-icon>
-                  קשרים משפחתיים
+                  קשרים משפחתיים מתורמים אחרים
                 </h4>
-                <div class="form-grid">
-                  <div class="form-group full-width">
-                    <!-- <div class="field-title">
-                      <mat-icon class="field-icon">connect_without_contact</mat-icon>
-                      <label>סוג הקישור המשפחתי</label>
-                    </div> -->
-                    <input type="text" class="form-control" [(ngModel)]="donor.familyConnection" placeholder="אח של, דוד של, חבר של...">
-                  </div>
-                  <div class="form-group">
-                    <div class="field-title">
-                      <mat-icon class="field-icon">man</mat-icon>
-                      <label>שם האב</label>
+
+                <!-- Selected Family Relationships -->
+                <div class="family-relationships-selected" *ngIf="selectedFamilyRelationships.length > 0">
+                  <div class="selected-family-list">
+                    <div class="selected-family-member" *ngFor="let relationship of selectedFamilyRelationships">
+                      <span class="relationship-type-badge">{{ relationship.relationshipType }}</span>
+                      <span class="family-member-name clickable"
+                            (click)="openFamilyMemberDetails(relationship.donor, $event)"
+                            matTooltip="לחץ לפתיחת פרטי התורם"
+                            title="לחץ לפתיחת פרטי התורם">
+                        {{ relationship.donor.fullName }}
+                      </span>
+                      <button mat-icon-button
+                              class="remove-family-btn"
+                              (click)="removeFamilyRelationship(relationship)"
+                              matTooltip="הסר מהרשימה"
+                              type="button">
+                        <mat-icon>close</mat-icon>
+                      </button>
                     </div>
-                    <input type="text" class="form-control" [(ngModel)]="donor.fatherName" placeholder="שם האב">
                   </div>
-                  <div class="form-group" *ngIf="donor.maritalStatus === 'married'">
-                    <div class="field-title">
-                      <mat-icon class="field-icon">elderly</mat-icon>
-                      <label>שם החותן</label>
-                    </div>
-                    <input type="text" class="form-control" [(ngModel)]="donor.fatherInLawName" placeholder="שם החותן">
+                </div>
+
+                <!-- Add Family Relationship Controls -->
+                <div class="add-family-relationship">
+                  <div class="family-help-text" *ngIf="selectedFamilyRelationships.length === 0">
+                    <small>לא נבחרו קשרים משפחתיים</small>
                   </div>
-                  <!-- <div class="form-group full-width">
-                    <div class="field-title">
-                      <mat-icon class="field-icon">notes</mat-icon>
-                      <label>הערות נוספות</label>
-                    </div>
-                    <textarea class="form-control" [(ngModel)]="donor.familyConnectionNotes" placeholder="פרטים נוספים על הקשר" rows="2"></textarea>
-                  </div> -->
+
+                  <div class="add-family-controls">
+                    <!-- Relationship Type Selection -->
+                    <select class="form-control relationship-type-select"
+                            [(ngModel)]="newRelationshipType"
+                            style="flex: 0 0 120px;">
+                      <option value="" disabled>סוג קשר</option>
+                      <option value="אבא">אבא</option>
+                      <option value="אח">אח</option>
+                      <option value="דוד">דוד</option>
+                      <option value="סבא">סבא</option>
+                      <option value="בן">בן</option>
+                      <option value="נכד">נכד</option>
+                      <option value="אחות">אחות</option>
+                      <option value="דודה">דודה</option>
+                      <option value="סבתא">סבתא</option>
+                      <option value="בת">בת</option>
+                      <option value="נכדה">נכדה</option>
+                      <option value="חבר">חבר</option>
+                      <option value="אחר">אחר</option>
+                    </select>
+
+                    <!-- Donor Selection -->
+                    <select class="form-control donor-select"
+                            (change)="onFamilyMemberSelect($event)"
+                            value=""
+                            [disabled]="!newRelationshipType"
+                            style="flex: 1;">
+                      <option value="" disabled>{{ newRelationshipType ? 'בחר תורם' : 'בחר תחילה סוג קשר' }}</option>
+                      <option *ngFor="let donor of getAvailableDonorsForFamily()" [value]="donor.id">
+                        {{ donor.fullName }}
+                      </option>
+                    </select>
+                  </div>
                 </div>
               </div>
 

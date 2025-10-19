@@ -115,7 +115,7 @@
           <label>מדינה (מתעדכן אוטומטית מגוגל)</label>
           <input readonly
             type="text"
-            [value]="getCountryDisplayName()"
+            [value]="addressDetails.country?.displayName || ''"
             placeholder="מדינה"
             dir="rtl"
             style="cursor: not-allowed; background-color: #f5f5f5;"

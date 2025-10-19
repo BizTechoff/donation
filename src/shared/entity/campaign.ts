@@ -158,7 +158,7 @@ export class Campaign extends IdEntity {
   @Fields.string({
     caption: 'סוג קמפיין',
   })
-  campaignType: 'רגיל' | 'דינעער' | '' = 'רגיל'
+  campaignType: 'רגיל' | 'דינער' | '' = 'רגיל'
 
   @Fields.date({
     caption: 'תאריך התחלה עברי',

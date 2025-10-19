@@ -327,10 +327,25 @@ export class OsmAddressInputComponent implements ControlValueAccessor, OnDestroy
         });
 
         if (!countryEntity) {
-          console.warn(`Country with code ${countryCode} not found in database`);
+          console.warn(`Country with code ${countryCode} not found in database, creating new country...`);
+
+          // יצירת מדינה חדשה מהנתונים שמגיעים מגוגל
+          const countryName = placeDetails.country || countryCode;
+          countryEntity = await remult.repo(Country).insert({
+            name: countryName,
+            nameEn: countryName,
+            code: countryCode.toUpperCase(),
+            phonePrefix: '', // יש למלא ידנית
+            currency: 'USD', // ברירת מחדל - יש למלא ידנית
+            currencySymbol: '$', // ברירת מחדל - יש למלא ידנית
+            isActive: true
+          });
+
+          console.log(`✓ New country created: ${countryEntity.name} (${countryEntity.code})`);
+          console.log('⚠ Please update country details manually: phonePrefix, currency, currencySymbol');
         }
       } catch (error) {
-        console.error('Error loading country entity:', error);
+        console.error('Error loading/creating country entity:', error);
       }
 
       const addressComponents: AddressComponents = {

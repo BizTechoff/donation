@@ -220,7 +220,7 @@
           <label>סוג קמפיין</label>
           <select class="form-control" [(ngModel)]="editingCampaign!.campaignType" (change)="onCampaignTypeChange()">
             <option value="רגיל">רגיל</option>
-            <option value="דינעער">דינעער</option>
+            <option value="דינער">דינער</option>
           </select>
         </div>
         
@@ -309,7 +309,7 @@
     </div>
     <div class="modal-footer">
       <!-- Action buttons for dinner campaigns -->
-      <div class="action-buttons" *ngIf="editingCampaign?.campaignType === 'דינעער' && editingCampaign && !editingCampaign._.isNew()">
+      <div class="action-buttons" *ngIf="editingCampaign?.campaignType === 'דינער' && editingCampaign && !editingCampaign._.isNew()">
         <button class="btn btn-info" (click)="openBlessingsBook()" title="ספר ברכות">
           📖 ספר ברכות
         </button>

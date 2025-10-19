@@ -1570,3 +1570,124 @@
     margin-left: 8px;
   }
 }
+
+// Family Relationships Styling
+.family-relationships-selected {
+  margin-bottom: 16px;
+}
+
+.selected-family-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.selected-family-member {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 20px;
+  color: white;
+  font-size: 14px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+
+  &:hover {
+    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+    transform: translateY(-1px);
+  }
+
+  .relationship-type-badge {
+    background: rgba(255, 255, 255, 0.25);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .family-member-name {
+    font-weight: 500;
+    cursor: pointer;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  .remove-family-btn {
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    min-width: 24px;
+    line-height: 24px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    transition: all 0.2s ease;
+
+    mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+      line-height: 16px;
+      color: white;
+    }
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: rotate(90deg);
+    }
+  }
+}
+
+.add-family-relationship {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.family-help-text {
+  color: #6c757d;
+  font-style: italic;
+  text-align: center;
+  padding: 8px;
+  font-size: 13px;
+}
+
+.add-family-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+
+  .relationship-type-select {
+    flex: 0 0 120px;
+  }
+
+  .donor-select {
+    flex: 1;
+  }
+
+  select.form-control {
+    &:disabled {
+      background-color: #f5f5f5;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+  }
+}
+
+// RTL Support for family relationships
+[dir="rtl"] {
+  .selected-family-member {
+    .family-member-name {
+      margin-right: 0;
+      margin-left: auto;
+    }
+  }
+
+  .add-family-controls {
+    flex-direction: row-reverse;
+  }
+}
