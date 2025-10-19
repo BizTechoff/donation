@@ -325,138 +325,28 @@ export class DonorDetailsModalComponent implements OnInit {
     }
   }
 
-  async onHomeAddressSelected(addressComponents: AddressComponents) {
+  async onHomePlaceSelected(place: Place) {
     if (!this.donor) return;
 
-    console.log('Home address selected:', addressComponents);
-    console.log('PlaceId:', addressComponents.placeId);
-    console.log('FullAddress:', addressComponents.fullAddress);
+    this.donor.homePlaceId = place.id;
+    this.donor.homePlace = place;
+    this.changed = true;
 
-    try {
-      // בדיקה אם הכתובת ריקה (כתוצאה מניקוי)
-      if (!addressComponents.placeId && !addressComponents.fullAddress) {
-        console.log('Address is empty - clearing home place');
-        this.donor.homePlaceId = undefined;
-        this.donor.homePlace = undefined;
-        this.changed = true;
-        console.log('Home place cleared');
-        return;
-      }
-
-      // השתמש ב-Place שכבר נשמר או צור חדש אם צריך
-      if (addressComponents.placeRecordId) {
-        console.log(1)
-        // המקום כבר נשמר ברגע הבחירה
-        console.log('Using existing Place ID:', addressComponents.placeRecordId);
-        this.donor.homePlaceId = addressComponents.placeRecordId;
-
-        // טען את המקום מהשרת להצגה
-        const place = await remult.repo(Place).findId(addressComponents.placeRecordId);
-        if (place) {
-          this.donor.homePlace = place;
-        }
-
-        this.changed = true;
-        console.log('Home place ID assigned to donor:', addressComponents.placeRecordId);
-      } else if (addressComponents.placeId) {
-        console.log(2)
-        // fallback - אם מסיבה כלשהי לא נשמר, צור כעת
-        const placeData = {
-          placeId: addressComponents.placeId,
-          fullAddress: addressComponents.fullAddress,
-          placeName: addressComponents.placeName,
-          street: addressComponents.street,
-          houseNumber: addressComponents.houseNumber,
-          neighborhood: addressComponents.neighborhood,
-          city: addressComponents.city,
-          state: addressComponents.state,
-          postcode: addressComponents.postcode,
-          country: addressComponents.country,
-          countryCode: addressComponents.countryCode,
-          latitude: addressComponents.latitude,
-          longitude: addressComponents.longitude
-        };
-
-        console.log('Fallback: creating Place now:', placeData);
-        const place = await Place.findOrCreate(placeData, remult.repo(Place));
-        this.donor.homePlaceId = place.id;
-        this.donor.homePlace = place;
-
-        this.changed = true;
-        console.log('Home place saved and donor updated:', place);
-      }
-
-      // עדכון קידומת (country) בהתאם למדינה שנבחרה בכתובת
-      if (addressComponents.countryCode) {
-        this.updateCountryByCode(addressComponents.countryCode);
-      }
-    } catch (error) {
-      console.error('Error saving home place:', error);
+    // עדכון קידומת (country) בהתאם למדינה שנבחרה בכתובת
+    if (place.countryCode) {
+      this.updateCountryByCode(place.countryCode);
     }
 
     // Force UI update
     this.changeDetector.detectChanges();
   }
 
-  async onVacationAddressSelected(addressComponents: AddressComponents) {
+  async onVacationPlaceSelected(place: Place) {
     if (!this.donor) return;
 
-    console.log('Vacation address selected:', addressComponents);
-
-    try {
-      // בדיקה אם הכתובת ריקה (כתוצאה מניקוי)
-      if (!addressComponents.placeId && !addressComponents.fullAddress) {
-        console.log('Address is empty - clearing vacation place');
-        this.donor.vacationPlaceId = undefined;
-        this.donor.vacationPlace = undefined;
-        this.changed = true;
-        console.log('Vacation place cleared');
-        return;
-      }
-
-      // השתמש ב-Place שכבר נשמר או צור חדש אם צריך
-      if (addressComponents.placeRecordId) {
-        // המקום כבר נשמר ברגע הבחירה
-        console.log('Using existing Place ID:', addressComponents.placeRecordId);
-        this.donor.vacationPlaceId = addressComponents.placeRecordId;
-
-        // טען את המקום מהשרת להצגה
-        const place = await remult.repo(Place).findId(addressComponents.placeRecordId);
-        if (place) {
-          this.donor.vacationPlace = place;
-        }
-
-        this.changed = true;
-        console.log('Vacation place ID assigned to donor:', addressComponents.placeRecordId);
-      } else if (addressComponents.placeId) {
-        // fallback - אם מסיבה כלשהי לא נשמר, צור כעת
-        const placeData = {
-          placeId: addressComponents.placeId,
-          fullAddress: addressComponents.fullAddress,
-          placeName: addressComponents.placeName,
-          street: addressComponents.street,
-          houseNumber: addressComponents.houseNumber,
-          neighborhood: addressComponents.neighborhood,
-          city: addressComponents.city,
-          state: addressComponents.state,
-          postcode: addressComponents.postcode,
-          country: addressComponents.country,
-          countryCode: addressComponents.countryCode,
-          latitude: addressComponents.latitude,
-          longitude: addressComponents.longitude
-        };
-
-        console.log('Fallback: creating Place now:', placeData);
-        const place = await Place.findOrCreate(placeData, remult.repo(Place));
-        this.donor.vacationPlaceId = place.id;
-        this.donor.vacationPlace = place;
-
-        this.changed = true;
-        console.log('Vacation place saved and donor updated:', place);
-      }
-    } catch (error) {
-      console.error('Error saving vacation place:', error);
-    }
+    this.donor.vacationPlaceId = place.id;
+    this.donor.vacationPlace = place;
+    this.changed = true;
 
     // Force UI update
     this.changeDetector.detectChanges();
@@ -988,50 +878,16 @@ export class DonorDetailsModalComponent implements OnInit {
     return addressComponents;
   }
 
-  async onCompanyAddressSelected(company: CompanyInfo, addressComponents: AddressComponents) {
-    console.log('Company address selected:', addressComponents);
+  async onCompanyPlaceSelected(company: CompanyInfo, place: Place) {
+    company.placeRecordId = place.id;
+    company.placeId = place.placeId;
 
-    try {
-      // עדכון פרטי החברה עם הכתובת החדשה
-      if (addressComponents.placeRecordId) {
-        // המקום כבר נשמר ברגע הבחירה
-        console.log('Using existing Place ID for company:', addressComponents.placeRecordId);
-        company.placeRecordId = addressComponents.placeRecordId;
-        company.placeId = addressComponents.placeId;
-      } else if (addressComponents.placeId) {
-        // fallback - אם מסיבה כלשהי לא נשמר, צור כעת
-        const placeData = {
-          placeId: addressComponents.placeId,
-          fullAddress: addressComponents.fullAddress,
-          placeName: addressComponents.placeName,
-          street: addressComponents.street,
-          houseNumber: addressComponents.houseNumber,
-          neighborhood: addressComponents.neighborhood,
-          city: addressComponents.city,
-          state: addressComponents.state,
-          postcode: addressComponents.postcode,
-          country: addressComponents.country,
-          countryCode: addressComponents.countryCode,
-          latitude: addressComponents.latitude,
-          longitude: addressComponents.longitude
-        };
+    // עדכון השדות הישנים לתאימות לאחור
+    company.address = place.getDisplayAddress() || '';
+    company.neighborhood = place.neighborhood || '';
+    company.location = place.city || '';
 
-        console.log('Fallback: creating Place for company:', placeData);
-        const place = await Place.findOrCreate(placeData, remult.repo(Place));
-        company.placeRecordId = place.id;
-        company.placeId = place.placeId;
-      }
-
-      // עדכון השדות הישנים לתאימות לאחור
-      company.address = addressComponents.fullAddress || '';
-      company.neighborhood = addressComponents.neighborhood || '';
-      company.location = addressComponents.city || '';
-
-      this.changed = true;
-      console.log('Company address updated:', company);
-    } catch (error) {
-      console.error('Error saving company address:', error);
-    }
+    this.changed = true;
 
     // Force UI update
     this.changeDetector.detectChanges();

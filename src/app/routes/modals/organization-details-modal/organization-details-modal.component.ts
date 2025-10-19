@@ -169,46 +169,11 @@ export class OrganizationDetailsModalComponent implements OnInit {
     };
   }
 
-  async onAddressSelected(addressComponents: AddressComponents) {
+  async onPlaceSelected(place: Place) {
     if (!this.organization) return;
 
-    try {
-      // Check if place already exists
-      if (this.organization.placeId && this.organization.place) {
-        // Update existing place
-        const place = this.organization.place;
-        place.street = addressComponents.street || '';
-        place.houseNumber = addressComponents.houseNumber || '';
-        place.city = addressComponents.city || '';
-        place.state = addressComponents.state || '';
-        place.country = addressComponents.country || '';
-        place.countryCode = addressComponents.countryCode || '';
-        place.postcode = addressComponents.postcode || '';
-        place.neighborhood = addressComponents.neighborhood || '';
-
-        await remult.repo(Place).save(place);
-      } else {
-        // Create new place
-        const newPlace = this.placeRepo.create({
-          street: addressComponents.street || '',
-          houseNumber: addressComponents.houseNumber || '',
-          city: addressComponents.city || '',
-          state: addressComponents.state || '',
-          country: addressComponents.country || '',
-          countryCode: addressComponents.countryCode || '',
-          postcode: addressComponents.postcode || '',
-          neighborhood: addressComponents.neighborhood || ''
-        });
-
-        const savedPlace = await remult.repo(Place).save(newPlace);
-        this.organization.placeId = savedPlace.id;
-        this.organization.place = savedPlace;
-      }
-
-      this.onFieldChange();
-    } catch (error) {
-      console.error('Error saving address:', error);
-      this.ui.error('שגיאה בשמירת הכתובת');
-    }
+    this.organization.placeId = place.id;
+    this.organization.place = place;
+    this.onFieldChange();
   }
 }

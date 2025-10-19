@@ -26,6 +26,7 @@ import { Place } from './place'
   },
 })
 export class Bank extends IdEntity {
+  
   @Fields.string({
     validate: Validators.required,
     caption: 'שם הבנק',

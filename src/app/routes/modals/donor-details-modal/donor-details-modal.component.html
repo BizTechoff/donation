@@ -191,7 +191,7 @@
                 placeholder="הקלד כתובת מגורים..."
                 countryCode="il"
                 [initialAddress]="getHomeAddressComponents()"
-                (addressSelected)="onHomeAddressSelected($event)">
+                (placeSelected)="onHomePlaceSelected($event)">
               </app-osm-address-input>
             </div>
 
@@ -206,7 +206,7 @@
                 placeholder="הקלד כתובת נופש..."
                 countryCode="il"
                 [initialAddress]="getVacationAddressComponents()"
-                (addressSelected)="onVacationAddressSelected($event)">
+                (placeSelected)="onVacationPlaceSelected($event)">
               </app-osm-address-input>
             </div>
           </div>
@@ -488,7 +488,7 @@
                   placeholder="הקלד כתובת החברה/עמותה..."
                   countryCode="il"
                   [initialAddress]="getCompanyAddressComponents(company)"
-                  (addressSelected)="onCompanyAddressSelected(company, $event)">
+                  (placeSelected)="onCompanyPlaceSelected(company, $event)">
                 </app-osm-address-input>
               </div>
               <div class="form-group">

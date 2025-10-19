@@ -297,42 +297,15 @@ export class CampaignDetailsModalComponent implements OnInit {
     this.changed = true;
   }
 
-  async onEventLocationSelected(addressComponents: AddressComponents) {
+  async onEventPlaceSelected(place: Place) {
     if (!this.campaign) return;
 
-    console.log('Event location selected:', addressComponents);
+    this.campaign.eventLocationId = place.id;
+    this.campaign.eventLocation = place;
 
-    try {
-      // יצירת או עדכון מקום
-      if (addressComponents.placeId) {
-        const placeData = {
-          placeId: addressComponents.placeId,
-          fullAddress: addressComponents.fullAddress,
-          placeName: addressComponents.placeName,
-          street: addressComponents.street,
-          houseNumber: addressComponents.houseNumber,
-          neighborhood: addressComponents.neighborhood,
-          city: addressComponents.city,
-          state: addressComponents.state,
-          postcode: addressComponents.postcode,
-          country: addressComponents.country,
-          countryCode: addressComponents.countryCode,
-          latitude: addressComponents.latitude,
-          longitude: addressComponents.longitude
-        };
-
-        const place = await Place.findOrCreate(placeData, remult.repo(Place));
-        this.campaign.eventLocationId = place.id;
-        this.campaign.eventLocation = place;
-        console.log('Event location saved:', place);
-
-        // Auto-select currency based on location
-        if (addressComponents.countryCode) {
-          this.selectCurrencyByCountryCode(addressComponents.countryCode);
-        }
-      }
-    } catch (error) {
-      console.error('Error saving event location:', error);
+    // Auto-select currency based on location
+    if (place.countryCode) {
+      this.selectCurrencyByCountryCode(place.countryCode);
     }
 
     this.markAsChanged();

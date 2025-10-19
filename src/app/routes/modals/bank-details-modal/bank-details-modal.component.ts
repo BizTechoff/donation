@@ -1,16 +1,16 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDialogRef } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatDialogRef } from '@angular/material/dialog';
 import { remult } from 'remult';
 import { Bank, Place } from '../../../../shared/entity';
+import { AddressComponents, OsmAddressInputComponent } from '../../../common/osm-address-input/osm-address-input.component';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
 import { SharedComponentsModule } from '../../../shared/shared-components.module';
-import { AddressComponents, OsmAddressInputComponent } from '../../../common/osm-address-input/osm-address-input.component';
 
 export interface BankDetailsModalArgs {
   bankId?: string; // undefined for new bank, or bank ID for edit
@@ -59,7 +59,7 @@ export class BankDetailsModalComponent implements OnInit {
     private ui: UIToolsService,
     private cdr: ChangeDetectorRef,
     public dialogRef: MatDialogRef<BankDetailsModalComponent>
-  ) {}
+  ) { }
 
   async ngOnInit() {
     await this.initializeBank();
@@ -169,6 +169,55 @@ export class BankDetailsModalComponent implements OnInit {
     };
   }
 
+  async onPlaceSelected(place: Place) {
+    if (!this.bank) return;
+    
+    this.bank.placeId = place.id;
+    this.bank.place = place;
+    this.onFieldChange();
+
+    //     try {
+    //       // Check if place already exists
+    //       if (this.bank.placeId && this.bank.place) {
+    //         // Update existing place
+    //         const place = this.bank.place;
+    //         place.street = addressComponents.street || '';
+    //         place.houseNumber = addressComponents.houseNumber || '';
+    //         place.city = addressComponents.city || '';
+    //         place.state = addressComponents.state || '';
+    //         place.country = addressComponents.country || '';
+    //         place.countryCode = addressComponents.countryCode || '';
+    //         place.postcode = addressComponents.postcode || '';
+    //         place.neighborhood = addressComponents.neighborhood || '';
+    // console.log(11)
+    //         await remult.repo(Place).save(place);
+    //         console.log(110)
+    //       } else {
+    //         // Create new place
+    //         const newPlace = this.placeRepo.create({
+    //           street: addressComponents.street || '',
+    //           houseNumber: addressComponents.houseNumber || '',
+    //           city: addressComponents.city || '',
+    //           state: addressComponents.state || '',
+    //           country: addressComponents.country || '',
+    //           countryCode: addressComponents.countryCode || '',
+    //           postcode: addressComponents.postcode || '',
+    //           neighborhood: addressComponents.neighborhood || ''
+    //         });
+    // console.log(22)
+    //         const savedPlace = await remult.repo(Place).save(newPlace);
+    // console.log(220)
+    //         this.bank.placeId = savedPlace.id;
+    //         this.bank.place = savedPlace;
+    //       }
+
+    //       this.onFieldChange();
+    //     } catch (error) {
+    //       console.error('Error saving address:', error);
+    //       this.ui.error('שגיאה בשמירת הכתובת');
+    //     }
+  }
+
   async onAddressSelected(addressComponents: AddressComponents) {
     if (!this.bank) return;
 
@@ -185,8 +234,9 @@ export class BankDetailsModalComponent implements OnInit {
         place.countryCode = addressComponents.countryCode || '';
         place.postcode = addressComponents.postcode || '';
         place.neighborhood = addressComponents.neighborhood || '';
-
+        console.log(11)
         await remult.repo(Place).save(place);
+        console.log(110)
       } else {
         // Create new place
         const newPlace = this.placeRepo.create({
@@ -199,8 +249,9 @@ export class BankDetailsModalComponent implements OnInit {
           postcode: addressComponents.postcode || '',
           neighborhood: addressComponents.neighborhood || ''
         });
-
+        console.log(22)
         const savedPlace = await remult.repo(Place).save(newPlace);
+        console.log(220)
         this.bank.placeId = savedPlace.id;
         this.bank.place = savedPlace;
       }
@@ -211,4 +262,5 @@ export class BankDetailsModalComponent implements OnInit {
       this.ui.error('שגיאה בשמירת הכתובת');
     }
   }
+
 }
