@@ -151,9 +151,9 @@ export class Campaign extends IdEntity {
   isAnash = false
 
   @Fields.string({
-    caption: 'מעמד',
+    caption: 'חוג',
   })
-  status2 = '' // Additional status field
+  circle: 'platinum' | 'gold' | 'silver' | 'regular' | '' = ''
 
   @Fields.string({
     caption: 'סוג קמפיין',

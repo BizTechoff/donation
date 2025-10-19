@@ -309,43 +309,54 @@
 
             <div class="form-group full-width">
               <div class="field-title">
-                <mat-icon class="field-icon">stars</mat-icon>
-                <label>רמות - בחירה מרובה</label>
+                <mat-icon class="field-icon">group_work</mat-icon>
+                <label>חוג</label>
               </div>
               <div class="level-selection-grid">
-                <div class="level-option-container" *ngFor="let level of availableLevels">
-                  <div class="criteria-card-header">
-                    <span class="level-icon">{{level.icon}}</span>
-                    <span class="criteria-title">{{level.label}}</span>
-                  </div>
-                  <div class="criteria-options">
-                    <label class="option-label">
-                      <input type="checkbox"
-                             [checked]="isLevelSelected(level)"
-                             [disabled]="!canEdit || isLevelExcluded(level)"
-                             (change)="toggleLevel(level)">
-                      <span>כולל</span>
-                    </label>
-                    <label class="option-label exclude-option">
-                      <input type="checkbox"
-                             [checked]="isLevelExcluded(level)"
-                             [disabled]="!canEdit || isLevelSelected(level)"
-                             (change)="toggleExcludedLevel(level)">
-                      <span>ללא</span>
-                    </label>
-                  </div>
+                <div class="level-option" [class.active]="campaign.circle === 'platinum'">
+                  <label class="level-card">
+                    <input type="radio" name="campaignCircle" value="platinum" [(ngModel)]="campaign.circle"
+                           [disabled]="!canEdit" (ngModelChange)="markAsChanged()" class="level-radio">
+                    <div class="level-content">
+                      <span class="level-icon">👑</span>
+                      <span class="level-label">פלטינום</span>
+                    </div>
+                  </label>
+                </div>
+
+                <div class="level-option" [class.active]="campaign.circle === 'gold'">
+                  <label class="level-card">
+                    <input type="radio" name="campaignCircle" value="gold" [(ngModel)]="campaign.circle"
+                           [disabled]="!canEdit" (ngModelChange)="markAsChanged()" class="level-radio">
+                    <div class="level-content">
+                      <span class="level-icon">🥇</span>
+                      <span class="level-label">זהב</span>
+                    </div>
+                  </label>
+                </div>
+
+                <div class="level-option" [class.active]="campaign.circle === 'silver'">
+                  <label class="level-card">
+                    <input type="radio" name="campaignCircle" value="silver" [(ngModel)]="campaign.circle"
+                           [disabled]="!canEdit" (ngModelChange)="markAsChanged()" class="level-radio">
+                    <div class="level-content">
+                      <span class="level-icon">🥈</span>
+                      <span class="level-label">כסף</span>
+                    </div>
+                  </label>
+                </div>
+
+                <div class="level-option" [class.active]="campaign.circle === 'regular'">
+                  <label class="level-card">
+                    <input type="radio" name="campaignCircle" value="regular" [(ngModel)]="campaign.circle"
+                           [disabled]="!canEdit" (ngModelChange)="markAsChanged()" class="level-radio">
+                    <div class="level-content">
+                      <span class="level-icon">⭕</span>
+                      <span class="level-label">רגיל</span>
+                    </div>
+                  </label>
                 </div>
               </div>
-            </div>
-
-            <div class="form-group">
-              <div class="field-title">
-                <mat-icon class="field-icon">info</mat-icon>
-                <label>מעמד</label>
-              </div>
-              <input type="text" class="form-control" [(ngModel)]="campaign.status2"
-                     [disabled]="!canEdit" placeholder="מעמד נוסף"
-                     (ngModelChange)="markAsChanged()">
             </div>
 
             <div class="form-group age-range-container">

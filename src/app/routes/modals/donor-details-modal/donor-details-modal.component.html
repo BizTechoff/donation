@@ -350,6 +350,8 @@
                       <option value="אח">אח</option>
                       <option value="דוד">דוד</option>
                       <option value="סבא">סבא</option>
+                      <option value="חותן">חותן</option>
+                      <option value="חמו">חמו</option>
                       <option value="בן">בן</option>
                       <option value="נכד">נכד</option>
                       <option value="אחות">אחות</option>
@@ -463,228 +465,146 @@
 
         <!-- חברות ועמותות -->
         <div class="section company-organization">
-          <div class="section-header">
-            <h3>חברות ועמותות</h3>
-            <button class="btn btn-success btn-sm" (click)="addCompany()" title="הוסף חברה/עמותה">
-              + הוסף חברה/עמותה
-            </button>
+          <h3>
+            <mat-icon class="section-icon">business</mat-icon>
+            חברות ועמותות
+          </h3>
+
+          <!-- Selected Companies -->
+          <div class="companies-selected" *ngIf="selectedCompanies.length > 0">
+            <div class="selected-companies-list">
+              <div class="selected-company" *ngFor="let company of selectedCompanies">
+                <mat-icon class="company-icon">business</mat-icon>
+                <span class="company-name clickable"
+                      (click)="editCompany(company)"
+                      matTooltip="לחץ לעריכת החברה"
+                      title="לחץ לעריכת החברה">
+                  {{ company.name }}
+                </span>
+                <button mat-icon-button
+                        class="remove-company-btn"
+                        (click)="removeCompany(company)"
+                        matTooltip="הסר מהרשימה"
+                        type="button">
+                  <mat-icon>close</mat-icon>
+                </button>
+              </div>
+            </div>
           </div>
-          
-          <!-- Empty state message when no companies exist -->
-          <div *ngIf="!donor.companies || donor.companies.length === 0" class="empty-message">
-            <p>לא נמצאו חברות או עמותות לתורם זה. להוספת חברה/עמותה יש ללחוץ על הכפתור למעלה.</p>
-          </div>
-          
-          <!-- Companies list -->
-          <div *ngFor="let company of donor.companies; let i = index; trackBy: trackByCompanyId" class="company-item">
-            <div class="company-header">
-              <h4>חברה/עמותה {{i + 1}}</h4>
-              <button class="btn btn-danger btn-sm" (click)="removeCompany(i)" title="הסר חברה">
-                × הסר
+
+          <!-- Add Company Controls -->
+          <div class="add-company-section">
+            <div class="company-help-text" *ngIf="selectedCompanies.length === 0">
+              <small>לא נבחרו חברות או עמותות</small>
+            </div>
+
+            <div class="add-company-controls">
+              <select class="form-control company-select"
+                      [(ngModel)]="selectedCompanyIdForEdit"
+                      style="flex: 1;">
+                <option value="">בחר חברה/עמותה</option>
+                <option *ngFor="let company of companies" [value]="company.id">
+                  {{ company.name }}
+                </option>
+              </select>
+
+              <button mat-stroked-button
+                      type="button"
+                      (click)="addSelectedCompany()"
+                      class="add-company-btn"
+                      matTooltip="הוסף חברה לתורם"
+                      [disabled]="!selectedCompanyIdForEdit"
+                      style="white-space: nowrap;">
+                <mat-icon>add</mat-icon>
+                הוסף
+              </button>
+
+              <button mat-stroked-button
+                      type="button"
+                      (click)="editSelectedCompany()"
+                      class="edit-company-btn"
+                      matTooltip="ערוך חברה"
+                      [disabled]="!selectedCompanyIdForEdit"
+                      style="white-space: nowrap;">
+                <mat-icon>edit</mat-icon>
+                ערוך
+              </button>
+
+              <button mat-stroked-button
+                      type="button"
+                      (click)="addNewCompany()"
+                      class="add-new-company-btn"
+                      matTooltip="הוסף חברה חדשה"
+                      style="white-space: nowrap;">
+                <mat-icon>add</mat-icon>
+                הוסף חברה חדשה
               </button>
             </div>
-            
-            <div class="form-grid">
-              <div class="form-group">
-                <div class="field-title">
-                  <mat-icon class="field-icon">business</mat-icon>
-                  <label>שם החברה/עמותה</label>
-                </div>
-                <input type="text" class="form-control" [(ngModel)]="company.name" placeholder="שם החברה או העמותה">
-              </div>
-              <div class="form-group">
-                <div class="field-title">
-                  <mat-icon class="field-icon">numbers</mat-icon>
-                  <label>מספר חברה/עמותה</label>
-                </div>
-                <input type="text" class="form-control" [(ngModel)]="company.number" placeholder="מספר רישום">
-              </div>
-              <div class="form-group">
-                <div class="field-title">
-                  <mat-icon class="field-icon">work</mat-icon>
-                  <label>תפקיד</label>
-                </div>
-                <input type="text" class="form-control" [(ngModel)]="company.role" placeholder="תפקיד בחברה/עמותה">
-              </div>
-              <div class="form-group">
-                <div class="field-title">
-                  <mat-icon class="field-icon">language</mat-icon>
-                  <label>אתר אינטרנט</label>
-                </div>
-                <input type="text" class="form-control" [(ngModel)]="company.website" placeholder="כתובת אתר האינטרנט">
-              </div>
-            </div>
-            
-            <h5>כתובת החברה/עמותה</h5>
-            <div class="form-grid">
-              <div class="form-group full-width">
-                <app-osm-address-input
-                  label="כתובת החברה/עמותה"
-                  placeholder="הקלד כתובת החברה/עמותה..."
-                  countryCode="il"
-                  [initialAddress]="getCompanyAddressComponents(company)"
-                  (placeSelected)="onCompanyPlaceSelected(company, $event)">
-                </app-osm-address-input>
-              </div>
-              <div class="form-group">
-                <div class="field-title">
-                  <mat-icon class="field-icon">phone_in_talk</mat-icon>
-                  <label>טלפון</label>
-                </div>
-                <input type="tel" class="form-control" [(ngModel)]="company.phone" placeholder="טלפון החברה/עמותה">
-              </div>
-              <div class="form-group">
-                <div class="field-title">
-                  <mat-icon class="field-icon">alternate_email</mat-icon>
-                  <label>דוא"ל</label>
-                </div>
-                <input type="email" class="form-control" [(ngModel)]="company.email" placeholder="דוא״ל החברה/עמותה">
-              </div>
+          </div>
+
+          <!-- Legacy Companies (read-only display) -->
+          <div *ngIf="donor.companies && donor.companies.length > 0" class="legacy-companies-section">
+            <h5 style="color: #999; font-size: 14px;">חברות ישנות (לתצוגה בלבד)</h5>
+            <div *ngFor="let company of donor.companies; let i = index" class="legacy-company-item">
+              <small>{{ company.name }} - {{ company.role }}</small>
             </div>
           </div>
         </div>
 
-        <!-- קטגוריות ורמות -->
+        <!-- קטגוריות וחוגים -->
         <div class="section categories-levels">
-          <h3>קטגוריות ורמות</h3>
-          
-          <!-- Donor Level Card -->
+          <h3>קטגוריות וחוגים</h3>
+
+          <!-- Donor Circle Card -->
           <div class="info-card donor-level-card">
             <div class="form-grid">
               <div class="form-group full-width">
                 <div class="field-title">
-                  <mat-icon class="field-icon">star</mat-icon>
-                  <label>{{ (i18n.terms$ | async)?.level }}</label>
+                  <mat-icon class="field-icon">group_work</mat-icon>
+                  <label>{{ (i18n.terms$ | async)?.circle }}</label>
                 </div>
                 <div class="level-selection-grid">
-                  <div class="level-option" [class.active]="donor.level === 'quarter'">
+                  <div class="level-option" [class.active]="donor.circle === 'platinum'">
                     <label class="level-card">
-                      <input type="radio" name="donorLevel" value="quarter" [(ngModel)]="donor.level" class="level-radio">
+                      <input type="radio" name="donorCircle" value="platinum" [(ngModel)]="donor.circle" class="level-radio">
                       <div class="level-content">
-                        <span class="level-icon">🔸</span>
-                        <span class="level-label">רבע</span>
+                        <span class="level-icon">👑</span>
+                        <span class="level-label">פלטינום</span>
                       </div>
                     </label>
                   </div>
-                  
-                  <div class="level-option" [class.active]="donor.level === 'half'">
+
+                  <div class="level-option" [class.active]="donor.circle === 'gold'">
                     <label class="level-card">
-                      <input type="radio" name="donorLevel" value="half" [(ngModel)]="donor.level" class="level-radio">
-                      <div class="level-content">
-                        <span class="level-icon">🔹</span>
-                        <span class="level-label">חצי</span>
-                      </div>
-                    </label>
-                  </div>
-                  
-                  <div class="level-option" [class.active]="donor.level === 'full'">
-                    <label class="level-card">
-                      <input type="radio" name="donorLevel" value="full" [(ngModel)]="donor.level" class="level-radio">
-                      <div class="level-content">
-                        <span class="level-icon">⭕</span>
-                        <span class="level-label">שלם</span>
-                      </div>
-                    </label>
-                  </div>
-                  
-                  <div class="level-option" [class.active]="donor.level === 'bronze_lords'">
-                    <label class="level-card">
-                      <input type="radio" name="donorLevel" value="bronze_lords" [(ngModel)]="donor.level" class="level-radio">
-                      <div class="level-content">
-                        <span class="level-icon">🥉</span>
-                        <span class="level-label">אדני נחושת</span>
-                      </div>
-                    </label>
-                  </div>
-                  
-                  <div class="level-option" [class.active]="donor.level === 'silver_stones'">
-                    <label class="level-card">
-                      <input type="radio" name="donorLevel" value="silver_stones" [(ngModel)]="donor.level" class="level-radio">
-                      <div class="level-content">
-                        <span class="level-icon">🥈</span>
-                        <span class="level-label">אבני כסף</span>
-                      </div>
-                    </label>
-                  </div>
-                  
-                  <div class="level-option" [class.active]="donor.level === 'gold_pillars'">
-                    <label class="level-card">
-                      <input type="radio" name="donorLevel" value="gold_pillars" [(ngModel)]="donor.level" class="level-radio">
+                      <input type="radio" name="donorCircle" value="gold" [(ngModel)]="donor.circle" class="level-radio">
                       <div class="level-content">
                         <span class="level-icon">🥇</span>
-                        <span class="level-label">עמודי זהב</span>
+                        <span class="level-label">זהב</span>
                       </div>
                     </label>
                   </div>
-                  
-                  <div class="level-option" [class.active]="donor.level === 'sapphire_diamond'">
+
+                  <div class="level-option" [class.active]="donor.circle === 'silver'">
                     <label class="level-card">
-                      <input type="radio" name="donorLevel" value="sapphire_diamond" [(ngModel)]="donor.level" class="level-radio">
+                      <input type="radio" name="donorCircle" value="silver" [(ngModel)]="donor.circle" class="level-radio">
                       <div class="level-content">
-                        <span class="level-icon">💎</span>
-                        <span class="level-label">ספיר ויהלום</span>
+                        <span class="level-icon">🥈</span>
+                        <span class="level-label">כסף</span>
                       </div>
                     </label>
                   </div>
-                  
-                  <div class="level-option" [class.active]="donor.level === 'platinum'">
+
+                  <div class="level-option" [class.active]="donor.circle === 'regular'">
                     <label class="level-card">
-                      <input type="radio" name="donorLevel" value="platinum" [(ngModel)]="donor.level" class="level-radio">
+                      <input type="radio" name="donorCircle" value="regular" [(ngModel)]="donor.circle" class="level-radio">
                       <div class="level-content">
-                        <span class="level-icon">👑</span>
-                        <span class="level-label">פלטיניום</span>
-                      </div>
-                    </label>
-                  </div>
-                  
-                  <div class="level-option" [class.active]="donor.level === 'patron'">
-                    <label class="level-card">
-                      <input type="radio" name="donorLevel" value="patron" [(ngModel)]="donor.level" class="level-radio">
-                      <div class="level-content">
-                        <span class="level-icon">🏆</span>
-                        <span class="level-label">פטרון</span>
-                      </div>
-                    </label>
-                  </div>
-                  
-                  <div class="level-option" [class.active]="donor.level === 'torah_holder'">
-                    <label class="level-card">
-                      <input type="radio" name="donorLevel" value="torah_holder" [(ngModel)]="donor.level" class="level-radio">
-                      <div class="level-content">
-                        <span class="level-icon">📜</span>
-                        <span class="level-label">מחזיק תורה</span>
-                      </div>
-                    </label>
-                  </div>
-                  
-                  <div class="level-option" [class.active]="donor.level === 'supreme_level_1'">
-                    <label class="level-card">
-                      <input type="radio" name="donorLevel" value="supreme_level_1" [(ngModel)]="donor.level" class="level-radio">
-                      <div class="level-content">
-                        <span class="level-icon">🌳</span>
-                        <span class="level-label">עץ חיים</span>
-                      </div>
-                    </label>
-                  </div>
-                  
-                  <div class="level-option" [class.active]="donor.level === 'supreme_level_2'">
-                    <label class="level-card">
-                      <input type="radio" name="donorLevel" value="supreme_level_2" [(ngModel)]="donor.level" class="level-radio">
-                      <div class="level-content">
-                        <span class="level-icon">👑</span>
-                        <span class="level-label">כתר תורה</span>
+                        <span class="level-icon">⭕</span>
+                        <span class="level-label">רגיל</span>
                       </div>
                     </label>
                   </div>
                 </div>
               </div>
-              <!-- <div class="form-group">
-                <div class="field-title">
-                  <mat-icon class="field-icon">group_work</mat-icon>
-                  <label>{{ (i18n.terms$ | async)?.circle }}</label>
-                </div>
-                <input type="text" class="form-control" [(ngModel)]="donor.circle" [placeholder]="(i18n.terms$ | async)?.circle">
-              </div> -->
               <div class="form-group full-width">
                 <div class="field-title">
                   <mat-icon class="field-icon">translate</mat-icon>

@@ -26,7 +26,7 @@
       </div>
       
       <div class="filter-group">
-        <label>{{ (i18n.terms$ | async)?.level }}</label>
+        <label>{{ (i18n.terms$ | async)?.circle }}</label>
         <select class="form-control">
           <option value="">{{ (i18n.terms$ | async)?.all }}</option>
           <option value="platinum">{{ (i18n.terms$ | async)?.platinum }}</option>
@@ -65,7 +65,7 @@
       <div class="grid-col">{{ (i18n.terms$ | async)?.address }}</div>
       <div class="grid-col">{{ (i18n.terms$ | async)?.phone }}</div>
       <div class="grid-col">{{ (i18n.terms$ | async)?.email }}</div>
-      <div class="grid-col">{{ (i18n.terms$ | async)?.level }}</div>
+      <div class="grid-col">{{ (i18n.terms$ | async)?.circle }}</div>
       <div class="grid-col">{{ (i18n.terms$ | async)?.totalDonationsHeader }}</div>
       <div class="grid-col">{{ (i18n.terms$ | async)?.lastDonation }}</div>
       <div class="grid-col">{{ (i18n.terms$ | async)?.actions }}</div>

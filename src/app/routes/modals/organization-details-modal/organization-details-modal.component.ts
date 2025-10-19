@@ -115,7 +115,13 @@ export class OrganizationDetailsModalComponent implements OnInit {
 
     try {
       this.loading = true;
-      await this.organization.save();
+
+      // Use remult.repo for saving in app context
+      if (this.isNew) {
+        await this.organizationRepo.insert(this.organization);
+      } else {
+        await this.organizationRepo.save(this.organization);
+      }
 
       this.ui.info(this.isNew ? 'העמותה נוספה בהצלחה' : 'העמותה עודכנה בהצלחה');
 

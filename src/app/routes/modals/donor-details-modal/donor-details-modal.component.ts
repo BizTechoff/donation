@@ -7,13 +7,14 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { openDialog } from 'common-ui-elements';
 import { remult } from 'remult';
-import { CompanyInfo, Donation, Donor, DonorEvent, Event, Place, Contact, Country, User } from '../../../../shared/entity';
+import { CompanyInfo, Donation, Donor, DonorEvent, Event, Place, Contact, Country, User, Company } from '../../../../shared/entity';
 import { AddressComponents, OsmAddressInputComponent } from '../../../common/osm-address-input/osm-address-input.component';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
 import { ActiveFilter, FilterOption, ModalNavigationHeaderComponent, NavigationRecord } from '../../../shared/modal-navigation-header/modal-navigation-header.component';
 import { SharedComponentsModule } from '../../../shared/shared-components.module';
 import { DonorDonationsModalArgs, DonorDonationsModalComponent } from '../donor-donations-modal/donor-donations-modal.component';
+import { CompanyDetailsModalArgs, CompanyDetailsModalComponent } from '../company-details-modal/company-details-modal.component';
 
 export interface DonorDetailsModalArgs {
   donorId: string; // Can be 'new' for new donor or donor ID
@@ -68,6 +69,12 @@ export class DonorDetailsModalComponent implements OnInit {
   selectedFamilyRelationships: Array<{ donor: Donor; relationshipType: string; donorId: string }> = [];
   newRelationshipType: string = '';
 
+  // Companies
+  companies: Company[] = [];
+  selectedCompanies: Company[] = [];
+  selectedCompanyIdForEdit: string = '';
+  companyRepo = remult.repo(Company);
+
   // Events system
   availableEvents: Event[] = [];
   donorEvents: DonorEvent[] = [];
@@ -93,6 +100,7 @@ export class DonorDetailsModalComponent implements OnInit {
     await this.loadContacts();
     await this.loadFundraisers();
     await this.loadAllDonorsForFamily();
+    await this.loadCompanies();
     await this.initializeDonor();
     await this.loadAllDonors();
     this.setupFilterOptions();
@@ -166,6 +174,7 @@ export class DonorDetailsModalComponent implements OnInit {
         this.donor.isActive = true;
         this.donor.wantsUpdates = true;
         this.donor.familyRelationships = [];
+        this.donor.companyIds = [];
         this.donor.wantsTaxReceipts = true;
         this.donor.preferredLanguage = 'he';
         // Country will be set via homePlace
@@ -198,6 +207,7 @@ export class DonorDetailsModalComponent implements OnInit {
           await this.loadDonorEvents();
           await this.loadDonorPlaces();
           await this.loadSelectedFamilyRelationships();
+          await this.loadSelectedCompanies();
 
           // Force change detection after loading places
           console.log('Forcing change detection...');
@@ -559,45 +569,6 @@ export class DonorDetailsModalComponent implements OnInit {
 
 
   // Company management methods
-  addCompany() {
-    if (!this.donor) return;
-
-    if (!this.donor.companies) {
-      this.donor.companies = [];
-    }
-
-    const newCompany: CompanyInfo = {
-      id: this.generateCompanyId(),
-      name: '',
-      number: '',
-      role: '',
-      address: '',
-      neighborhood: '',
-      location: '',
-      phone: '',
-      email: '',
-      website: ''
-    };
-
-    this.donor.companies.push(newCompany);
-  }
-
-  removeCompany(index: number) {
-    if (!this.donor || !this.donor.companies) return;
-
-    if (confirm('האם אתה בטוח שברצונך להסיר חברה זו?')) {
-      this.donor.companies.splice(index, 1);
-    }
-  }
-
-  private generateCompanyId(): string {
-    return 'company_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-  }
-
-  trackByCompanyId(index: number, company: CompanyInfo): string {
-    return company.id;
-  }
-
   onOtherConnectionChange() {
     // Clear relationship fields if "קשר אחר" is unchecked
     if (this.donor && !this.donor.isOtherConnection) {
@@ -888,21 +859,6 @@ export class DonorDetailsModalComponent implements OnInit {
     return addressComponents;
   }
 
-  async onCompanyPlaceSelected(company: CompanyInfo, place: Place) {
-    company.placeRecordId = place?.id || '';
-    company.placeId = place?.placeId || '';
-
-    // עדכון השדות הישנים לתאימות לאחור
-    company.address = place?.getDisplayAddress() || '';
-    company.neighborhood = place?.neighborhood || '';
-    company.location = place?.city || '';
-
-    this.changed = true;
-
-    // Force UI update
-    this.changeDetector.detectChanges();
-  }
-
   // Title options based on platform language
   getTitleOptions(): string[] {
     if (this.i18n.lang.language === 'en') {
@@ -1027,6 +983,164 @@ export class DonorDetailsModalComponent implements OnInit {
       { value: 'supreme_level_1', label: 'עץ חיים', icon: '🌳' },
       { value: 'supreme_level_2', label: 'כתר תורה', icon: '👑' }
     ];
+  }
+
+  // Company Management Functions
+  private async loadCompanies() {
+    try {
+      this.companies = await this.companyRepo.find({
+        where: { isActive: true },
+        orderBy: { name: 'asc' }
+      });
+      console.log(`Loaded ${this.companies.length} companies`);
+    } catch (error) {
+      console.error('Error loading companies:', error);
+    }
+  }
+
+  async loadSelectedCompanies() {
+    if (!this.donor?.companyIds || this.donor.companyIds.length === 0) {
+      this.selectedCompanies = [];
+      return;
+    }
+
+    try {
+      this.selectedCompanies = [];
+      for (const companyId of this.donor.companyIds) {
+        const company = await this.companyRepo.findId(companyId);
+        if (company) {
+          this.selectedCompanies.push(company);
+        }
+      }
+      console.log('Loaded selected companies:', this.selectedCompanies);
+    } catch (error) {
+      console.error('Error loading selected companies:', error);
+    }
+  }
+
+  async addSelectedCompany() {
+    if (!this.selectedCompanyIdForEdit || !this.donor) return;
+
+    const company = this.companies.find(c => c.id === this.selectedCompanyIdForEdit);
+    if (!company) return;
+
+    // Check if already exists
+    if (this.donor.companyIds?.includes(this.selectedCompanyIdForEdit)) {
+      this.ui.info('חברה זו כבר נבחרה');
+      return;
+    }
+
+    // Add to donor's companyIds
+    if (!this.donor.companyIds) {
+      this.donor.companyIds = [];
+    }
+
+    this.donor.companyIds.push(this.selectedCompanyIdForEdit);
+    this.selectedCompanies.push(company);
+
+    console.log('Added company:', company.name);
+    this.changed = true;
+    this.selectedCompanyIdForEdit = ''; // Reset selection
+  }
+
+  async editSelectedCompany() {
+    if (!this.selectedCompanyIdForEdit) return;
+
+    const company = this.companies.find(c => c.id === this.selectedCompanyIdForEdit);
+    if (!company) return;
+
+    try {
+      const dialogResult = await openDialog(
+        CompanyDetailsModalComponent,
+        (modal: CompanyDetailsModalComponent) => {
+          modal.args = { companyId: company.id };
+        }
+      );
+
+      if (dialogResult) {
+        // Reload the company
+        const updatedCompany = await this.companyRepo.findId(company.id);
+        if (updatedCompany) {
+          // Update in selectedCompanies if it's already there
+          const index = this.selectedCompanies.findIndex(c => c.id === company.id);
+          if (index > -1) {
+            this.selectedCompanies[index] = updatedCompany;
+          }
+        }
+        await this.loadCompanies();
+      }
+    } catch (error) {
+      console.error('Error editing company:', error);
+    }
+  }
+
+  async addNewCompany() {
+    try {
+      const dialogResult = await openDialog(
+        CompanyDetailsModalComponent,
+        (modal: CompanyDetailsModalComponent) => {
+          modal.args = { companyId: undefined };
+        }
+      );
+
+      if (dialogResult) {
+        // Reload companies list
+        await this.loadCompanies();
+      }
+    } catch (error) {
+      console.error('Error opening company modal:', error);
+    }
+  }
+
+  async editCompany(company: Company) {
+    try {
+      const dialogResult = await openDialog(
+        CompanyDetailsModalComponent,
+        (modal: CompanyDetailsModalComponent) => {
+          modal.args = { companyId: company.id };
+        }
+      );
+
+      if (dialogResult) {
+        // Reload the company
+        const updatedCompany = await this.companyRepo.findId(company.id);
+        if (updatedCompany) {
+          const index = this.selectedCompanies.findIndex(c => c.id === company.id);
+          if (index > -1) {
+            this.selectedCompanies[index] = updatedCompany;
+          }
+        }
+        await this.loadCompanies();
+      }
+    } catch (error) {
+      console.error('Error editing company:', error);
+    }
+  }
+
+  removeCompany(company: Company) {
+    if (!this.donor?.companyIds) return;
+
+    // Remove from donor's companyIds
+    const index = this.donor.companyIds.indexOf(company.id);
+    if (index > -1) {
+      this.donor.companyIds.splice(index, 1);
+    }
+
+    // Remove from selectedCompanies
+    const selectedIndex = this.selectedCompanies.findIndex(c => c.id === company.id);
+    if (selectedIndex > -1) {
+      this.selectedCompanies.splice(selectedIndex, 1);
+    }
+
+    console.log('Removed company:', company.name);
+    this.changed = true;
+  }
+
+  getAvailableCompaniesForSelection(): Company[] {
+    if (!this.donor || !this.donor.companyIds) {
+      return this.companies;
+    }
+    return this.companies.filter(company => !this.donor!.companyIds!.includes(company.id));
   }
 
   // Family Relationships Functions

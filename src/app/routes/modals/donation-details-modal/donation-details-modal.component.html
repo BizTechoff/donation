@@ -268,7 +268,7 @@
 
         <!-- Payment Details Section -->
         <div class="section payment-details-section"
-          *ngIf="selectedPaymentMethod && selectedPaymentMethod.type !== 'cash'">
+          *ngIf="selectedPaymentMethod && selectedPaymentMethod.type !== 'cash' && donation.donationType !== 'commitment'">
           <!-- Check Payment Details -->
           <div class="payment-details" *ngIf="isCheckPayment">
             <div class="payment-details-header">

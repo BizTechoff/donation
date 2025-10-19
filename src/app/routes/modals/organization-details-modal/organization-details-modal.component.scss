@@ -10,11 +10,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1050;
+  z-index: 2000;
   animation: fadeIn 0.3s ease-out;
   cursor: pointer;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+  pointer-events: auto;
 }
 
 @keyframes fadeIn {
@@ -37,6 +38,8 @@
   animation: slideIn 0.3s ease-out;
   overflow: hidden;
   cursor: default;
+  pointer-events: auto;
+  z-index: 2001;
 }
 
 @keyframes slideIn {
@@ -189,6 +192,10 @@
   padding: 32px;
   background: #fafbfc;
   min-height: 0;
+  position: relative;
+  z-index: 1;
+  pointer-events: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Sections */
@@ -356,9 +363,9 @@
   align-items: center;
   gap: 16px;
   border-radius: 0 0 16px 16px;
-  position: sticky;
-  bottom: 0;
-  z-index: 100;
+  flex-shrink: 0;
+  z-index: 10;
+  pointer-events: auto;
 }
 
 .footer-actions-left,

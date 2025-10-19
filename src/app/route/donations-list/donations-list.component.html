@@ -92,7 +92,7 @@
       <div class="grid-col">{{ (i18n.terms$ | async)?.methodColumn }}</div>
       <div class="grid-col">{{ (i18n.terms$ | async)?.productColumn }}</div>
       <div class="grid-col">{{ (i18n.terms$ | async)?.fundraiserColumn }}</div>
-      <div class="grid-col">{{ (i18n.terms$ | async)?.thankYouLetterColumn }}</div>
+      <!-- <div class="grid-col">{{ (i18n.terms$ | async)?.thankYouLetterColumn }}</div> -->
       <div class="grid-col">{{ (i18n.terms$ | async)?.proofColumn }}</div>
       <div class="grid-col">{{ (i18n.terms$ | async)?.actionsColumn }}</div>
     </div>
@@ -116,11 +116,11 @@
       </div>
       <div class="grid-col">{{ getCampaignName(donation) }}</div>
       <div class="grid-col">{{ donation.createdBy?.name || (i18n.terms$ | async)?.createdByUnknown }}</div>
-      <div class="grid-col">
+      <!-- <div class="grid-col">
         <span class="status-badge" [class]="'status-' + donation.status">
           {{ getStatusText(donation.status) }}
         </span>
-      </div>
+      </div> -->
       <div class="grid-col">
         <span class="proof-indicator" [class]="donation.receiptIssued ? 'has-proof' : 'no-proof'">
           {{donation.receiptIssued ? '✓' : '✗'}}
