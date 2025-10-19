@@ -300,11 +300,11 @@ export class CampaignDetailsModalComponent implements OnInit {
   async onEventPlaceSelected(place: Place) {
     if (!this.campaign) return;
 
-    this.campaign.eventLocationId = place.id;
+    this.campaign.eventLocationId = place?.id || '';
     this.campaign.eventLocation = place;
 
     // Auto-select currency based on location
-    if (place.countryCode) {
+    if (place?.countryCode) {
       this.selectCurrencyByCountryCode(place.countryCode);
     }
 

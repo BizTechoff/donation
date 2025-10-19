@@ -171,8 +171,8 @@ export class BankDetailsModalComponent implements OnInit {
 
   async onPlaceSelected(place: Place) {
     if (!this.bank) return;
-    
-    this.bank.placeId = place.id;
+
+    this.bank.placeId = place?.id || '';
     this.bank.place = place;
     this.onFieldChange();
 

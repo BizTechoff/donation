@@ -172,7 +172,7 @@ export class OrganizationDetailsModalComponent implements OnInit {
   async onPlaceSelected(place: Place) {
     if (!this.organization) return;
 
-    this.organization.placeId = place.id;
+    this.organization.placeId = place?.id || '';
     this.organization.place = place;
     this.onFieldChange();
   }

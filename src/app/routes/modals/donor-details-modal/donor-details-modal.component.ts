@@ -328,12 +328,12 @@ export class DonorDetailsModalComponent implements OnInit {
   async onHomePlaceSelected(place: Place) {
     if (!this.donor) return;
 
-    this.donor.homePlaceId = place.id;
+    this.donor.homePlaceId = place?.id || '';
     this.donor.homePlace = place;
     this.changed = true;
 
     // עדכון קידומת (country) בהתאם למדינה שנבחרה בכתובת
-    if (place.countryCode) {
+    if (place?.countryCode) {
       this.updateCountryByCode(place.countryCode);
     }
 
@@ -344,7 +344,7 @@ export class DonorDetailsModalComponent implements OnInit {
   async onVacationPlaceSelected(place: Place) {
     if (!this.donor) return;
 
-    this.donor.vacationPlaceId = place.id;
+    this.donor.vacationPlaceId = place?.id || '';
     this.donor.vacationPlace = place;
     this.changed = true;
 
@@ -879,13 +879,13 @@ export class DonorDetailsModalComponent implements OnInit {
   }
 
   async onCompanyPlaceSelected(company: CompanyInfo, place: Place) {
-    company.placeRecordId = place.id;
-    company.placeId = place.placeId;
+    company.placeRecordId = place?.id || '';
+    company.placeId = place?.placeId || '';
 
     // עדכון השדות הישנים לתאימות לאחור
-    company.address = place.getDisplayAddress() || '';
-    company.neighborhood = place.neighborhood || '';
-    company.location = place.city || '';
+    company.address = place?.getDisplayAddress() || '';
+    company.neighborhood = place?.neighborhood || '';
+    company.location = place?.city || '';
 
     this.changed = true;
 
