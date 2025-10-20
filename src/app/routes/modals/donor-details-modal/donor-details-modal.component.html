@@ -167,9 +167,9 @@
                 <mat-icon class="address-type-icon">home</mat-icon>
                 <h4>כתובת מגורים</h4>
               </div>
-              <!-- {{this.donor && this.donor.homePlace  && this.donor.homePlace.id}} -->
+              <!-- Direct binding to Place entity -->
               <app-osm-address-input label="כתובת מגורים" placeholder="הקלד כתובת מגורים..." countryCode="il"
-                [initialAddress]="getHomeAddressComponents()" (placeSelected)="onHomePlaceSelected($event)">
+                [(place)]="donor.homePlace" (placeChange)="onHomePlaceSelected($event)">
               </app-osm-address-input>
             </div>
 
@@ -180,7 +180,7 @@
                 <h4>כתובת נופש</h4>
               </div>
               <app-osm-address-input label="כתובת נופש" placeholder="הקלד כתובת נופש..." countryCode="il"
-                [initialAddress]="getVacationAddressComponents()" (placeSelected)="onVacationPlaceSelected($event)">
+                [(place)]="donor.vacationPlace" (placeChange)="onVacationPlaceSelected($event)">
               </app-osm-address-input>
             </div>
           </div>

@@ -231,7 +231,13 @@ export class DonorDetailsModalComponent implements OnInit {
       } else {
         this.isNewDonor = false;
         console.log('Loading existing donor with ID:', this.args.donorId);
-        this.donor = await this.donorRepo.findId(this.args.donorId, { useCache: false }) || undefined;
+        this.donor = await this.donorRepo.findId(this.args.donorId, {
+          useCache: false,
+          include: {
+            homePlace: { include: { country: true } },
+            vacationPlace: { include: { country: true } }
+          }
+        }) || undefined;
 
         if (this.donor) {
           console.log('Donor loaded:', {
@@ -303,7 +309,9 @@ export class DonorDetailsModalComponent implements OnInit {
       // Load home place if homePlaceId exists
       if (this.donor.homePlaceId) {
         console.log('Attempting to load home place with ID:', this.donor.homePlaceId);
-        const homePlace = await remult.repo(Place).findId(this.donor.homePlaceId);
+        const homePlace = await remult.repo(Place).findId(this.donor.homePlaceId, {
+          include: { country: true }
+        });
         if (homePlace) {
           this.donor.homePlace = homePlace;
           console.log('Loaded home place successfully:', homePlace);
@@ -317,7 +325,9 @@ export class DonorDetailsModalComponent implements OnInit {
       // Load vacation place if vacationPlaceId exists
       if (this.donor.vacationPlaceId) {
         console.log('Attempting to load vacation place with ID:', this.donor.vacationPlaceId);
-        const vacationPlace = await remult.repo(Place).findId(this.donor.vacationPlaceId);
+        const vacationPlace = await remult.repo(Place).findId(this.donor.vacationPlaceId, {
+          include: { country: true }
+        });
         if (vacationPlace) {
           this.donor.vacationPlace = vacationPlace;
           console.log('Loaded vacation place successfully:', vacationPlace);
@@ -334,7 +344,9 @@ export class DonorDetailsModalComponent implements OnInit {
           if (company.placeRecordId) {
             console.log('Attempting to load company place with ID:', company.placeRecordId);
             try {
-              const companyPlace = await remult.repo(Place).findId(company.placeRecordId);
+              const companyPlace = await remult.repo(Place).findId(company.placeRecordId, {
+                include: { country: true }
+              });
               if (companyPlace) {
                 // עדכן את השדות של החברה עם המידע מה-Place
                 company.address = companyPlace.fullAddress || company.address;
@@ -388,7 +400,7 @@ export class DonorDetailsModalComponent implements OnInit {
     }
   }
 
-  async onHomePlaceSelected(place: Place) {
+  async onHomePlaceSelected(place: Place | undefined) {
     if (!this.donor) return;
 
     console.log('onHomePlaceSelected', place?.id || 'NULL', place?.placeId || 'NULL')
@@ -398,15 +410,15 @@ export class DonorDetailsModalComponent implements OnInit {
     this.changed = true;
 
     // עדכון קידומת (country) בהתאם למדינה שנבחרה בכתובת
-    if (place?.countryCode) {
-      this.updateCountryByCode(place.countryCode);
+    if (place?.country?.code) {
+      this.updateCountryByCode(place.country.code);
     }
 
     // Force UI update
     this.changeDetector.detectChanges();
   }
 
-  async onVacationPlaceSelected(place: Place) {
+  async onVacationPlaceSelected(place: Place | undefined) {
     if (!this.donor) return;
 
     this.donor.vacationPlaceId = place?.id || '';
@@ -834,7 +846,7 @@ export class DonorDetailsModalComponent implements OnInit {
       state: place.state || '',
       postcode: place.postcode || '',
       country: place.country! || '',
-      countryCode: place.countryCode || '',
+      countryCode: place.country?.code || '',
       latitude: place.latitude,
       longitude: place.longitude,
       placeName: place.placeName || ''
@@ -859,7 +871,7 @@ export class DonorDetailsModalComponent implements OnInit {
       state: place.state || '',
       postcode: place.postcode || '',
       country: place.country,
-      countryCode: place.countryCode || '',
+      countryCode: place.country?.code || '',
       latitude: place.latitude,
       longitude: place.longitude,
       placeName: place.placeName || ''

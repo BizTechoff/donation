@@ -14,7 +14,7 @@ import { SharedComponentsModule } from '../../../shared/shared-components.module
 import { DONOR_LEVELS_ARRAY, DonorLevel } from '../../../../shared/enum/donor-levels';
 import { CampaignBlessingBookModalComponent, CampaignBlessingBookModalArgs } from '../campaign-blessing-book-modal/campaign-blessing-book-modal.component';
 import { openDialog } from 'common-ui-elements';
-import { OsmAddressInputComponent, AddressComponents } from '../../../common/osm-address-input/osm-address-input.component';
+import { OsmAddressInputComponent } from '../../../common/osm-address-input/osm-address-input.component';
 
 export interface CampaignDetailsModalArgs {
   campaignId: string; // Can be 'new' for new campaign or campaign ID
@@ -93,7 +93,11 @@ export class CampaignDetailsModalComponent implements OnInit {
         this.originalCampaignData = JSON.stringify(this.campaign);
       } else {
         this.isNewCampaign = false;
-        const foundCampaign = await this.campaignRepo.findId(this.args.campaignId);
+        const foundCampaign = await this.campaignRepo.findId(this.args.campaignId, {
+          include: {
+            eventLocation: { include: { country: true } }
+          }
+        });
         if (foundCampaign) {
           this.campaign = foundCampaign;
           this.originalCampaignData = JSON.stringify(this.campaign);
@@ -297,15 +301,15 @@ export class CampaignDetailsModalComponent implements OnInit {
     this.changed = true;
   }
 
-  async onEventPlaceSelected(place: Place) {
+  async onEventPlaceSelected(place: Place | undefined) {
     if (!this.campaign) return;
 
     this.campaign.eventLocationId = place?.id || '';
     this.campaign.eventLocation = place;
 
     // Auto-select currency based on location
-    if (place?.countryCode) {
-      this.selectCurrencyByCountryCode(place.countryCode);
+    if (place?.country?.code) {
+      this.selectCurrencyByCountryCode(place.country.code);
     }
 
     this.markAsChanged();
@@ -676,7 +680,12 @@ export class CampaignDetailsModalComponent implements OnInit {
     if (!this.campaign?.id) return;
 
     try {
-      const reloaded = await this.campaignRepo.findId(this.campaign.id, { useCache: false });
+      const reloaded = await this.campaignRepo.findId(this.campaign.id, {
+        useCache: false,
+        include: {
+          eventLocation: { include: { country: true } }
+        }
+      });
       if (reloaded) {
         this.campaign = reloaded;
         this.originalCampaignData = JSON.stringify(this.campaign);

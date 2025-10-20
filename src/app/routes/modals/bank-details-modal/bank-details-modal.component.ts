@@ -80,7 +80,7 @@ export class BankDetailsModalComponent implements OnInit {
         this.isNew = false;
         this.bank = await this.bankRepo.findId(this.args.bankId, {
           useCache: false,
-          include: { place: true }
+          include: { place: { include: { country: true } } }
         }) || undefined;
 
         if (this.bank) {
@@ -163,13 +163,13 @@ export class BankDetailsModalComponent implements OnInit {
       city: this.bank.place.city || '',
       state: this.bank.place.state || '',
       country: this.bank.place.country,
-      countryCode: this.bank.place.countryCode || '',
+      countryCode: this.bank.place.country?.code || '',
       postcode: this.bank.place.postcode || '',
       neighborhood: this.bank.place.neighborhood || ''
     };
   }
 
-  async onPlaceSelected(place: Place) {
+  async onPlaceSelected(place: Place | undefined) {
     if (!this.bank) return;
 
     this.bank.placeId = place?.id || '';
@@ -231,7 +231,6 @@ export class BankDetailsModalComponent implements OnInit {
         place.city = addressComponents.city || '';
         place.state = addressComponents.state || '';
         place.country = addressComponents.country;
-        place.countryCode = addressComponents.countryCode || '';
         place.postcode = addressComponents.postcode || '';
         place.neighborhood = addressComponents.neighborhood || '';
         console.log(11)
@@ -245,7 +244,6 @@ export class BankDetailsModalComponent implements OnInit {
           city: addressComponents.city || '',
           state: addressComponents.state || '',
           country: addressComponents.country,
-          countryCode: addressComponents.countryCode || '',
           postcode: addressComponents.postcode || '',
           neighborhood: addressComponents.neighborhood || ''
         });

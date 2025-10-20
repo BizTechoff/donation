@@ -35,7 +35,7 @@
   </div>
 
   <!-- פרטי הכתובת המורחבים -->
-  <div class="address-details-section" *ngIf="hasSelectedAddress && showAddressDetails" [@slideDown]>
+  <div class="address-details-section" *ngIf="hasSelectedAddress && showAddressDetails && place" [@slideDown]>
     <div class="details-grid">
       <!-- שורה ראשונה: רחוב ומספר בית -->
       <div class="detail-row">
@@ -43,7 +43,7 @@
           <label>רחוב</label>
           <input
             type="text"
-            [(ngModel)]="addressDetails.street"
+            [(ngModel)]="place.street"
             (change)="onDetailChange()"
             placeholder="שם רחוב"
             dir="rtl"
@@ -53,7 +53,7 @@
           <label>מס׳</label>
           <input
             type="text"
-            [(ngModel)]="addressDetails.houseNumber"
+            [(ngModel)]="place.houseNumber"
             (change)="onDetailChange()"
             placeholder="מספר"
             dir="rtl"
@@ -67,7 +67,7 @@
           <label>שכונה</label>
           <input
             type="text"
-            [(ngModel)]="addressDetails.neighborhood"
+            [(ngModel)]="place.neighborhood"
             (change)="onDetailChange()"
             placeholder="שכונה"
             dir="rtl"
@@ -77,7 +77,7 @@
           <label>עיר</label>
           <input
             type="text"
-            [(ngModel)]="addressDetails.city"
+            [(ngModel)]="place.city"
             (change)="onDetailChange()"
             placeholder="עיר"
             dir="rtl"
@@ -91,7 +91,7 @@
           <label>מחוז</label>
           <input
             type="text"
-            [(ngModel)]="addressDetails.state"
+            [(ngModel)]="place.state"
             (change)="onDetailChange()"
             placeholder="מחוז"
             dir="rtl"
@@ -101,7 +101,7 @@
           <label>מיקוד</label>
           <input
             type="text"
-            [(ngModel)]="addressDetails.postcode"
+            [(ngModel)]="place.postcode"
             (change)="onDetailChange()"
             placeholder="מיקוד"
             dir="rtl"
@@ -115,7 +115,7 @@
           <label>מדינה (מתעדכן אוטומטית מגוגל)</label>
           <input readonly
             type="text"
-            [value]="addressDetails.country?.displayName || ''"
+            [value]="getCountryDisplayName()"
             placeholder="מדינה"
             dir="rtl"
             style="cursor: not-allowed; background-color: #f5f5f5;"
@@ -125,13 +125,13 @@
       </div>
 
       <!-- שורה רביעית: שם המקום (אם יש) -->
-      <div class="detail-row" *ngIf="addressDetails.placeName">
+      <div class="detail-row" *ngIf="place.placeName">
         <div class="detail-field full-width">
           <label>שם המקום</label>
           <div style="display: flex; gap: 10px; align-items: center;">
             <input
               type="text"
-              [(ngModel)]="addressDetails.placeName"
+              [(ngModel)]="place.placeName"
               (change)="onDetailChange()"
               placeholder="שם המקום"
               dir="rtl"
@@ -140,7 +140,7 @@
             <button
               mat-stroked-button
               type="button"
-              (click)="clearAddress(true); $event.stopPropagation(); $event.preventDefault()"
+              (click)="clearAddress(); $event.stopPropagation(); $event.preventDefault()"
               class="clear-address-btn"
               matTooltip="נקה כתובת"
               style="white-space: nowrap;">

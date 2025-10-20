@@ -132,7 +132,8 @@
                 placeholder="הקלד מיקום האירוע..."
                 countryCode="il"
                 [disabled]="!canEdit"
-                (placeSelected)="onEventPlaceSelected($event)">
+                [(place)]="campaign.eventLocation"
+                (placeChange)="onEventPlaceSelected($event)">
               </app-osm-address-input>
             </div>
 

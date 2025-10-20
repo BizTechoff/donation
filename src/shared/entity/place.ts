@@ -65,13 +65,6 @@ export class Place {
   })
   postcode?: string;
 
-  // Country name field for storing original country name from Google
-  @Fields.string({
-    caption: 'שם מדינה מקורי',
-    includeInApi: false
-  })
-  countryName?: string;
-
   // Country relationship
   @Fields.string({
     caption: 'מזהה מדינה'
@@ -83,11 +76,6 @@ export class Place {
     caption: 'מדינה'
   })
   country?: Country;
-
-  @Fields.string({
-    caption: 'קוד מדינה'
-  })
-  countryCode?: string;
 
   @Fields.number({
     caption: 'קו רוחב'
@@ -114,21 +102,12 @@ export class Place {
       throw new Error('Place ID is required');
     }
 
-    // Process country information if we're on the backend
-    if (isBackend()) {
-      // Import PlaceService only on backend to avoid circular dependencies
-      const { PlaceService } = await import('../../server/place-service');
-
-      // If countryName exists but countryId doesn't, try to find the country
-      if (placeData.countryName && !placeData.countryId) {
-        const processedData = await PlaceService.processPlaceWithCountry(placeData);
-        placeData = processedData;
-      }
-    }
-
     console.log('Searching for existing place with placeId:', placeData.placeId);
-    // Try to find existing place by placeId
-    let place = await repo.findFirst({ placeId: placeData.placeId });
+    // Try to find existing place by placeId (with country relation)
+    let place = await repo.findFirst(
+      { placeId: placeData.placeId },
+      { include: { country: true } }
+    );
 
     if (!place) {
       console.log('Place not found, creating new place');
@@ -136,6 +115,12 @@ export class Place {
         // Create new place
         place = await repo.insert(placeData);
         console.log('New place created successfully:', place);
+
+        // Reload with country relation
+        if (place.id) {
+          place = await repo.findId(place.id, { include: { country: true } }) || place;
+          console.log('Place reloaded with country relation:', place.country);
+        }
       } catch (error) {
         console.error('Error creating new place:', error);
         throw error;
@@ -145,6 +130,12 @@ export class Place {
       // Update existing place with new data
       Object.assign(place, placeData);
       await repo.save(place);
+
+      // Reload with country relation to ensure it's fresh
+      if (place.id) {
+        place = await repo.findId(place.id, { include: { country: true } }) || place;
+        console.log('Place reloaded after update with country relation:', place.country);
+      }
       console.log('Place updated successfully');
     }
 

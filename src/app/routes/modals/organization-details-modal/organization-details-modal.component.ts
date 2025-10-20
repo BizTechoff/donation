@@ -80,7 +80,7 @@ export class OrganizationDetailsModalComponent implements OnInit {
         this.isNew = false;
         this.organization = await this.organizationRepo.findId(this.args.organizationId, {
           useCache: false,
-          include: { place: true }
+          include: { place: { include: { country: true } } }
         }) || undefined;
 
         if (this.organization) {
@@ -169,13 +169,13 @@ export class OrganizationDetailsModalComponent implements OnInit {
       city: this.organization.place.city || '',
       state: this.organization.place.state || '',
       country: this.organization.place.country ,
-      countryCode: this.organization.place.countryCode || '',
+      countryCode: this.organization.place.country?.code || '',
       postcode: this.organization.place.postcode || '',
       neighborhood: this.organization.place.neighborhood || ''
     };
   }
 
-  async onPlaceSelected(place: Place) {
+  async onPlaceSelected(place: Place | undefined) {
     if (!this.organization) return;
 
     this.organization.placeId = place?.id || '';

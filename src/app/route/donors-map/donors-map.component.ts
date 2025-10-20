@@ -174,7 +174,7 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
             place.neighborhood = '';
             place.state = '';
             place.postcode = '';
-            place.countryCode = 'IL';
+            // Set country to Israel - find or default
             donor.homePlace = place;
           } else {
             // Update existing homePlace with demo coordinates

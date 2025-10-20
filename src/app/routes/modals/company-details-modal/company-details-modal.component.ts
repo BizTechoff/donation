@@ -69,7 +69,7 @@ export class CompanyDetailsModalComponent implements OnInit {
         this.isNew = false;
         this.company = await this.companyRepo.findId(this.args.companyId, {
           useCache: false,
-          include: { place: true }
+          include: { place: { include: { country: true } } }
         }) || undefined;
 
         if (this.company) {
@@ -152,13 +152,13 @@ export class CompanyDetailsModalComponent implements OnInit {
       city: this.company.place.city || '',
       state: this.company.place.state || '',
       country: this.company.place.country,
-      countryCode: this.company.place.countryCode || '',
+      countryCode: this.company.place.country?.code || '',
       postcode: this.company.place.postcode || '',
       neighborhood: this.company.place.neighborhood || ''
     };
   }
 
-  async onPlaceSelected(place: Place) {
+  async onPlaceSelected(place: Place | undefined) {
     if (!this.company) return;
 
     this.company.placeId = place?.id || '';

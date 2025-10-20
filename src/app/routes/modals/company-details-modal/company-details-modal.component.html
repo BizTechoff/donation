@@ -70,8 +70,8 @@
                 label="כתובת החברה"
                 placeholder="הקלד כתובת..."
                 countryCode="il"
-                [initialAddress]="getAddressComponents()"
-                (placeSelected)="onPlaceSelected($event)">
+                [(place)]="company.place"
+                (placeChange)="onPlaceSelected($event)">
               </app-osm-address-input>
             </div>
           </div>

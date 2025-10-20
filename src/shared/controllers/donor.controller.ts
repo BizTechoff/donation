@@ -11,8 +11,8 @@ export class DonorController {
     return await remult.repo(Donor).find({
       orderBy: { lastName: 'asc' as 'asc' },
       include: {
-        homePlace: true,
-        vacationPlace: true
+        homePlace: { include: { country: true } },
+        vacationPlace: { include: { country: true } }
       }
     });
   }
@@ -23,8 +23,8 @@ export class DonorController {
       where: { isActive: true },
       orderBy: { lastName: 'asc' as 'asc' },
       include: {
-        homePlace: true,
-        vacationPlace: true
+        homePlace: { include: { country: true } },
+        vacationPlace: { include: { country: true } }
       }
     });
   }
@@ -58,8 +58,8 @@ export class DonorController {
         },
         orderBy: { lastName: 'asc' as 'asc' },
         include: {
-          homePlace: true,
-          vacationPlace: true
+          homePlace: { include: { country: true } },
+          vacationPlace: { include: { country: true } }
         }
       });
 
@@ -71,8 +71,8 @@ export class DonorController {
       where: whereClause,
       orderBy: { lastName: 'asc' as 'asc' },
       include: {
-        homePlace: true,
-        vacationPlace: true
+        homePlace: { include: { country: true } },
+        vacationPlace: { include: { country: true } }
       }
     });
   }
@@ -81,8 +81,8 @@ export class DonorController {
   static async findById(id: string): Promise<Donor | null> {
     const donor = await remult.repo(Donor).findId(id, {
       include: {
-        homePlace: true,
-        vacationPlace: true
+        homePlace: { include: { country: true } },
+        vacationPlace: { include: { country: true } }
       }
     });
     return donor || null;

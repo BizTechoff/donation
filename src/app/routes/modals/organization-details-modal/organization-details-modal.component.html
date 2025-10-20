@@ -96,8 +96,8 @@
                 label="כתובת העמותה"
                 placeholder="הקלד כתובת..."
                 countryCode="il"
-                [initialAddress]="getAddressComponents()"
-                (placeSelected)="onPlaceSelected($event)">
+                [(place)]="organization.place"
+                (placeChange)="onPlaceSelected($event)">
               </app-osm-address-input>
             </div>
           </div>
