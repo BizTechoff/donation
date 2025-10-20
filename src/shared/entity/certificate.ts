@@ -42,6 +42,7 @@ export class Certificate extends IdEntity {
 
   @Relations.toOne<Certificate, Donor>(() => Donor, {
     caption: 'תורם',
+    field: 'donorId'
   })
   donor?: Donor
 
@@ -136,6 +137,7 @@ export class Certificate extends IdEntity {
 
   @Relations.toOne<Certificate, User>(() => User, {
     caption: 'נוצר על ידי',
+    field: 'createdById'
   })
   createdBy?: User
 
@@ -155,6 +157,7 @@ export class Certificate extends IdEntity {
 
   @Relations.toOne<Certificate, Reminder>(() => Reminder, {
     caption: 'תזכורת',
+    field: 'reminderId'
   })
   reminder?: Reminder
 

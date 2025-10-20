@@ -10,6 +10,40 @@ export class HebrewDateService {
     'אדר א\'', 'אדר ב\'', 'ניסן', 'אייר', 'סיון', 'תמוז', 'אב', 'אלול'
   ];
 
+  // Map from hebcal month numbers to our internal numbering (1-13)
+  private hebcalToInternalMonth: { [key: number]: number } = {
+    [months.TISHREI]: 1,   // תשרי
+    [months.CHESHVAN]: 2,  // חשון
+    [months.KISLEV]: 3,    // כסלו
+    [months.TEVET]: 4,     // טבת
+    [months.SHVAT]: 5,     // שבט
+    [months.ADAR_I]: 6,    // אדר / אדר א'
+    [months.ADAR_II]: 7,   // אדר ב'
+    [months.NISAN]: 8,     // ניסן
+    [months.IYYAR]: 9,     // אייר
+    [months.SIVAN]: 10,    // סיון
+    [months.TAMUZ]: 11,    // תמוז
+    [months.AV]: 12,       // אב
+    [months.ELUL]: 13      // אלול
+  };
+
+  // Map from our internal numbering (1-13) to hebcal month numbers
+  private internalToHebcalMonth: { [key: number]: number } = {
+    1: months.TISHREI,
+    2: months.CHESHVAN,
+    3: months.KISLEV,
+    4: months.TEVET,
+    5: months.SHVAT,
+    6: months.ADAR_I,
+    7: months.ADAR_II,
+    8: months.NISAN,
+    9: months.IYYAR,
+    10: months.SIVAN,
+    11: months.TAMUZ,
+    12: months.AV,
+    13: months.ELUL
+  };
+
   private hebrewNumbers = [
     '', 'א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח', 'ט',
     'י', 'יא', 'יב', 'יג', 'יד', 'טו', 'טז', 'יז', 'יח', 'יט',
@@ -23,20 +57,24 @@ export class HebrewDateService {
   convertGregorianToHebrew(date: Date): { day: number; month: number; year: number; formatted: string } {
     const hDate = new HDate(date);
     const day = hDate.getDate();
-    const month = hDate.getMonth();
+    const hebcalMonth = hDate.getMonth(); // This is the hebcal month number (ELUL=6, etc.)
     const year = hDate.getFullYear();
-    
-    const monthName = this.getHebrewMonthName(month, hDate.isLeapYear());
+
+    const monthName = this.getHebrewMonthName(hebcalMonth, hDate.isLeapYear());
     const dayStr = this.hebrewNumbers[day] || day.toString();
     const yearStr = this.formatHebrewYear(year);
-    
+
     const formatted = `${dayStr} ${monthName} ${yearStr}`;
-    
-    return { day, month, year, formatted };
+
+    // Convert hebcal month number to our internal numbering (1-13)
+    const internalMonth = this.hebcalToInternalMonth[hebcalMonth];
+    return { day, month: internalMonth, year, formatted };
   }
 
   convertHebrewToGregorian(day: number, month: number, year: number): Date {
-    const hDate = new HDate(day, month, year);
+    // Convert from our internal numbering (1-13) to hebcal month numbers
+    const hebcalMonth = this.internalToHebcalMonth[month];
+    const hDate = new HDate(day, hebcalMonth, year);
     return hDate.greg();
   }
 

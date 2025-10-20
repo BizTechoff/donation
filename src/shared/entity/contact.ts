@@ -66,7 +66,8 @@ export class Contact extends IdEntity {
   address = ''
 
   @Relations.toOne<Contact, Donor>(() => Donor, {
-    caption: 'תורם משויך'
+    caption: 'תורם משויך',
+    field: 'donorId'
   })
   donor?: Donor
 

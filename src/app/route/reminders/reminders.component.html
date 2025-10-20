@@ -129,7 +129,7 @@
           <th>{{ (i18n.terms$ | async)?.donorHeader }}</th>
           <th>{{ (i18n.terms$ | async)?.subjectHeader }}</th>
           <th>{{ (i18n.terms$ | async)?.priorityHeader }}</th>
-          <th>{{ (i18n.terms$ | async)?.statusHeaderReminder }}</th>
+          <!-- <th>{{ (i18n.terms$ | async)?.statusHeaderReminder }}</th> -->
           <th>{{ (i18n.terms$ | async)?.actionsHeaderReminder }}</th>
         </tr>
       </thead>
@@ -168,9 +168,9 @@
             <span class="priority-badge" [class]="getPriorityBadgeClass(reminder.priority)">{{getPriorityText(reminder.priority)}}</span>
           </td>
           
-          <td class="status-col">
+          <!-- <td class="status-col">
             <span class="status-badge" [class]="getStatusBadgeClass(reminder.status)">{{reminder.statusText}}</span>
-          </td>
+          </td> -->
           
           <td class="actions">
             <button class="btn-icon btn-complete" [title]="(i18n.terms$ | async)?.markAsCompleted" *ngIf="!reminder.isCompleted" (click)="completeReminder(reminder)">✅</button>

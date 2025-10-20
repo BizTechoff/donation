@@ -111,6 +111,7 @@ export class Campaign extends IdEntity {
 
   @Relations.toOne<Campaign, User>(() => User, {
     caption: 'נוצר על ידי',
+    field: 'createdById'
   })
   createdBy?: User
 
@@ -121,6 +122,7 @@ export class Campaign extends IdEntity {
 
   @Relations.toOne<Campaign, User>(() => User, {
     caption: 'אחראי קמפיין',
+    field: 'managerId'
   })
   manager?: User
 

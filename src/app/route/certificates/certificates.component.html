@@ -95,7 +95,7 @@
       <div class="grid-col">{{ (i18n.terms$ | async)?.amountEvent }}</div>
       <div class="grid-col">{{ (i18n.terms$ | async)?.eventDate }}</div>
       <div class="grid-col">{{ (i18n.terms$ | async)?.specialText }}</div>
-      <div class="grid-col">{{ (i18n.terms$ | async)?.statusHeaderCert }}</div>
+      <!-- <div class="grid-col">{{ (i18n.terms$ | async)?.statusHeaderCert }}</div> -->
       <div class="grid-col">{{ (i18n.terms$ | async)?.actionsHeaderCert }}</div>
     </div>
 
@@ -120,18 +120,18 @@
       <div class="grid-col text-col">
         <span class="special-text">{{certificate.specialText | slice:0:30}}<span *ngIf="certificate && certificate.specialText&& certificate.specialText.length > 30">...</span></span>
       </div>
-      <div class="grid-col status-col">
+      <!-- <div class="grid-col status-col">
         <span class="status-badge status-{{certificate.status}}">{{certificate.statusText}}</span>
-      </div>
+      </div> -->
       <div class="grid-col actions">
         <button class="btn-icon btn-view" [title]="(i18n.terms$ | async)?.previewAction">👁</button>
         <button class="btn-icon btn-edit" [title]="(i18n.terms$ | async)?.editAction" (click)="openEditModal(certificate)">✏</button>
         <button class="btn-icon btn-reminder" [title]="certificate.reminderId ? 'תזכורת' : 'צור תזכורת'" (click)="createReminder(certificate)">
           {{ certificate.reminderId ? '🔔' : '🔔➕' }}
         </button>
-        <button class="btn-icon btn-print" [title]="(i18n.terms$ | async)?.printAction" (click)="updateCertificateStatus(certificate, 'printed')">🖨</button>
+        <!-- <button class="btn-icon btn-print" [title]="(i18n.terms$ | async)?.printAction" (click)="updateCertificateStatus(certificate, 'printed')">🖨</button>
         <button class="btn-icon btn-download" [title]="(i18n.terms$ | async)?.downloadAction">⬇</button>
-        <button class="btn-icon btn-delivered" [title]="(i18n.terms$ | async)?.markAsDelivered" (click)="updateCertificateStatus(certificate, 'delivered')">✅</button>
+        <button class="btn-icon btn-delivered" [title]="(i18n.terms$ | async)?.markAsDelivered" (click)="updateCertificateStatus(certificate, 'delivered')">✅</button> -->
       </div>
     </div>
   </div>

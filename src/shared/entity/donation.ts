@@ -45,6 +45,7 @@ export class Donation extends IdEntity {
 
   @Relations.toOne<Donation, Donor>(() => Donor, {
     caption: 'תורם',
+    field: 'donorId'
   })
   donor?: Donor
 
@@ -56,6 +57,7 @@ export class Donation extends IdEntity {
 
   @Relations.toOne<Donation, Campaign>(() => Campaign, {
     caption: 'קמפיין',
+    field: 'campaignId'
   })
   campaign?: Campaign
 
@@ -66,6 +68,7 @@ export class Donation extends IdEntity {
 
   @Relations.toOne<Donation, DonationMethod>(() => DonationMethod, {
     caption: 'אמצעי תשלום',
+    field: 'donationMethodId'
   })
   donationMethod?: DonationMethod
 
@@ -161,6 +164,7 @@ export class Donation extends IdEntity {
 
   @Relations.toOne<Donation, User>(() => User, {
     caption: 'נוצר על ידי',
+    field: 'createdById'
   })
   createdBy?: User
 
@@ -279,6 +283,7 @@ export class Donation extends IdEntity {
 
   @Relations.toOne<Donation, Organization>(() => Organization, {
     caption: 'עמותה',
+    field: 'organizationId'
   })
   organization?: Organization
 
@@ -289,6 +294,7 @@ export class Donation extends IdEntity {
 
   @Relations.toOne<Donation, Bank>(() => Bank, {
     caption: 'בנק',
+    field: 'bankId'
   })
   bank?: Bank
 

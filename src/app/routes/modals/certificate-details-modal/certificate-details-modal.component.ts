@@ -257,7 +257,8 @@ export class CertificateDetailsModalComponent implements OnInit {
       donorId: this.certificate.donorId,
       reminderType: reminderType,
       reminderDate: this.certificate.eventDate,
-      isRecurringYearly: isRecurringYearly
+      isRecurringYearly: isRecurringYearly,
+      certificateId: this.certificate.id
     });
 
     if (reminderSaved && reminderId === 'new') {

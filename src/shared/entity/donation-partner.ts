@@ -29,6 +29,7 @@ import { Roles } from '../enum/roles'
 export class DonationPartner extends IdEntity {
   @Relations.toOne<DonationPartner, Donation>(() => Donation, {
     caption: 'תרומה',
+    field: 'donationId'
   })
   donation?: Donation
 
@@ -40,6 +41,7 @@ export class DonationPartner extends IdEntity {
 
   @Relations.toOne<DonationPartner, Donor>(() => Donor, {
     caption: 'שותף תורם',
+    field: 'partnerId'
   })
   partner?: Donor
 

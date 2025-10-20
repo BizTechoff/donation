@@ -255,28 +255,56 @@
                 <!-- Spouse Information - Show only if married -->
                 <div *ngIf="donor.maritalStatus === 'married'" class="spouse-info">
                   <div class="form-grid">
-                    <div class="form-group">
-                      <div class="field-title">
-                        <mat-icon class="field-icon">person_outline</mat-icon>
-                        <label>תואר בן/בת הזוג</label>
+                    
+                    <div class="form-row">
+                      <!-- שורה ראשונה: תארים עברית ואנגלית -->
+                      <div class="form-group">
+                        <div class="field-title">
+                          <mat-icon class="field-icon">person_outline</mat-icon>
+                          <label>תואר בן/בת הזוג</label>
+                        </div>
+                        <select class="form-control" [(ngModel)]="donor.wifeTitle">
+                          <option value="">{{ getTitlePlaceholder() }}</option>
+                          <option *ngFor="let title of getTitleOptions()" [value]="title">{{title}}</option>
+                        </select>
                       </div>
-                      <input type="text" class="form-control" [(ngModel)]="donor.wifeTitle" placeholder="תואר">
-                    </div>
-                    <div class="form-group">
-                      <div class="field-title">
-                        <mat-icon class="field-icon">people</mat-icon>
-                        <label>שם בן/בת הזוג</label>
+                      <div class="form-group">
+                        <div class="field-title">
+                          <mat-icon class="field-icon">person_outline</mat-icon>
+                          <label>תואר באנגלית בן/בת זוג</label>
+                        </div>
+                        <select class="form-control" [(ngModel)]="donor.wifeTitleEnglish">
+                          <option value="">-- Select Title --</option>
+                          <option value="Mr.">Mr.</option>
+                          <option value="Mrs.">Mrs.</option>
+                          <option value="Ms.">Ms.</option>
+                          <option value="Dr.">Dr.</option>
+                          <option value="Rabbi">Rabbi</option>
+                          <option value="Rebbetzin">Rebbetzin</option>
+                        </select>
                       </div>
-                      <input type="text" class="form-control" [(ngModel)]="donor.wifeName" placeholder="שם מלא">
                     </div>
-                    <div class="form-group">
-                      <div class="field-title">
-                        <mat-icon class="field-icon">partner_exchange</mat-icon>
-                        <label>{{ (i18n.terms$ | async)?.spouseName }}</label>
+
+
+                    <div class="form-row">
+                      <!-- שורה שנייה: שמות עברית ואנגלית -->
+                      <div class="form-group">
+                        <div class="field-title">
+                          <mat-icon class="field-icon">people</mat-icon>
+                          <label>שם בן/בת הזוג</label>
+                        </div>
+                        <input type="text" class="form-control" [(ngModel)]="donor.wifeName" placeholder="שם מלא">
                       </div>
-                      <input type="text" class="form-control" [(ngModel)]="donor.spouseName"
-                        [placeholder]="(i18n.terms$ | async)?.spouseName">
+                      <div class="form-group">
+                        <div class="field-title">
+                          <mat-icon class="field-icon">people</mat-icon>
+                          <label>שם באנגלית בן/בת זוג</label>
+                        </div>
+                        <input type="text" class="form-control" [(ngModel)]="donor.wifeNameEnglish"
+                          placeholder="Full Name">
+                      </div>
                     </div>
+
                   </div>
                 </div>
               </div>
@@ -361,10 +389,15 @@
                         <label>{{ (i18n.terms$ | async)?.homePhone }}</label>
                       </div>
                       <div class="phone-input-group">
-                        <input type="text" class="form-control phone-prefix" [(ngModel)]="donor.homePhonePrefix"
-                          placeholder="קידומת">
+                        <select class="form-control phone-prefix" [(ngModel)]="donor.homePhonePrefix"
+                          (change)="onFieldChange()">
+                          <option [value]="null">קידומת</option>
+                          <option *ngFor="let prefix of phonePrefixOptions" [value]="prefix.value">
+                            {{ prefix.label }}
+                          </option>
+                        </select>
                         <input type="tel" class="form-control phone-number" [(ngModel)]="donor.homePhone"
-                          [placeholder]="(i18n.terms$ | async)?.homePhone">
+                          [placeholder]="(i18n.terms$ | async)?.homePhone" (ngModelChange)="onFieldChange()">
                       </div>
                     </div>
                     <div class="form-group">
@@ -373,10 +406,15 @@
                         <label>{{ (i18n.terms$ | async)?.mobilePhone }}</label>
                       </div>
                       <div class="phone-input-group">
-                        <input type="text" class="form-control phone-prefix" [(ngModel)]="donor.mobilePhonePrefix"
-                          placeholder="קידומת">
+                        <select class="form-control phone-prefix" [(ngModel)]="donor.mobilePhonePrefix"
+                          (change)="onFieldChange()">
+                          <option [value]="null">קידומת</option>
+                          <option *ngFor="let prefix of phonePrefixOptions" [value]="prefix.value">
+                            {{ prefix.label }}
+                          </option>
+                        </select>
                         <input type="tel" class="form-control phone-number" [(ngModel)]="donor.mobilePhone"
-                          [placeholder]="(i18n.terms$ | async)?.mobilePhone">
+                          [placeholder]="(i18n.terms$ | async)?.mobilePhone" (ngModelChange)="onFieldChange()">
                       </div>
                     </div>
                     <!-- שורה שלישית: דוא&quot;ל, טלפונים -->
@@ -462,67 +500,85 @@
 
           <!-- חברות ועמותות -->
           <div class="section company-organization">
-            <h3>
-              <mat-icon class="section-icon">business</mat-icon>
-              חברות ועמותות
-            </h3>
+            <div class="section-header">
+              <h3>
+                <mat-icon class="section-icon">business</mat-icon>
+                חברות ועמותות
+              </h3>
+            </div>
 
-            <!-- Selected Companies -->
-            <div class="companies-selected" *ngIf="selectedCompanies.length > 0">
-              <div class="selected-companies-list">
-                <div class="selected-company" *ngFor="let company of selectedCompanies">
-                  <mat-icon class="company-icon">business</mat-icon>
-                  <span class="company-name clickable" (click)="editCompany(company)" matTooltip="לחץ לעריכת החברה"
-                    title="לחץ לעריכת החברה">
-                    {{ company.name }}
-                  </span>
-                  <button mat-icon-button class="remove-company-btn" (click)="removeCompany(company)"
-                    matTooltip="הסר מהרשימה" type="button">
-                    <mat-icon>close</mat-icon>
+            <div class="company-content">
+              <!-- Selected Companies -->
+              <div class="companies-selected" *ngIf="selectedCompanies.length > 0">
+                <h4 class="subsection-title">חברות מקושרות</h4>
+                <div class="selected-companies-grid">
+                  <div class="selected-company-card" *ngFor="let company of selectedCompanies">
+                    <div class="company-card-content">
+                      <div class="company-info" (click)="editCompany(company)" matTooltip="לחץ לעריכת החברה">
+                        <mat-icon class="company-icon">business</mat-icon>
+                        <span class="company-name">{{ company.name }}</span>
+                      </div>
+                      <button mat-icon-button class="remove-company-btn" (click)="removeCompany(company)"
+                        matTooltip="הסר מהרשימה" type="button">
+                        <mat-icon>close</mat-icon>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="company-help-text" *ngIf="selectedCompanies.length === 0">
+                <mat-icon>info_outline</mat-icon>
+                <span>לא נבחרו חברות או עמותות</span>
+              </div>
+
+              <!-- Add Company Controls -->
+              <div class="add-company-section">
+                <div class="form-group full-width">
+                  <label class="control-label">
+                    <mat-icon class="label-icon">search</mat-icon>
+                    בחר חברה קיימת
+                  </label>
+                  <select class="form-control company-select" [(ngModel)]="selectedCompanyIdForEdit">
+                    <option value="">בחר חברה/עמותה</option>
+                    <option *ngFor="let company of companies" [value]="company.id">
+                      {{ company.name }}
+                    </option>
+                  </select>
+                </div>
+
+                <div class="company-action-buttons">
+                  <button mat-raised-button color="primary" type="button" (click)="addSelectedCompany()"
+                    [disabled]="!selectedCompanyIdForEdit">
+                    <mat-icon>add</mat-icon>
+                    הוסף חברה
+                  </button>
+
+                  <button mat-stroked-button type="button" (click)="editSelectedCompany()"
+                    [disabled]="!selectedCompanyIdForEdit">
+                    <mat-icon>edit</mat-icon>
+                    ערוך חברה
+                  </button>
+
+                  <button mat-stroked-button color="accent" type="button" (click)="addNewCompany()">
+                    <mat-icon>add_business</mat-icon>
+                    הוסף חברה חדשה
                   </button>
                 </div>
               </div>
-            </div>
 
-            <!-- Add Company Controls -->
-            <div class="add-company-section">
-              <div class="company-help-text" *ngIf="selectedCompanies.length === 0">
-                <small>לא נבחרו חברות או עמותות</small>
-              </div>
-
-              <div class="add-company-controls">
-                <select class="form-control company-select" [(ngModel)]="selectedCompanyIdForEdit" style="flex: 1;">
-                  <option value="">בחר חברה/עמותה</option>
-                  <option *ngFor="let company of companies" [value]="company.id">
-                    {{ company.name }}
-                  </option>
-                </select>
-
-                <button mat-stroked-button type="button" (click)="addSelectedCompany()" class="add-company-btn"
-                  matTooltip="הוסף חברה לתורם" [disabled]="!selectedCompanyIdForEdit" style="white-space: nowrap;">
-                  <mat-icon>add</mat-icon>
-                  הוסף
-                </button>
-
-                <button mat-stroked-button type="button" (click)="editSelectedCompany()" class="edit-company-btn"
-                  matTooltip="ערוך חברה" [disabled]="!selectedCompanyIdForEdit" style="white-space: nowrap;">
-                  <mat-icon>edit</mat-icon>
-                  ערוך
-                </button>
-
-                <button mat-stroked-button type="button" (click)="addNewCompany()" class="add-new-company-btn"
-                  matTooltip="הוסף חברה חדשה" style="white-space: nowrap;">
-                  <mat-icon>add</mat-icon>
-                  הוסף חברה חדשה
-                </button>
-              </div>
-            </div>
-
-            <!-- Legacy Companies (read-only display) -->
-            <div *ngIf="donor.companies && donor.companies.length > 0" class="legacy-companies-section">
-              <h5 style="color: #999; font-size: 14px;">חברות ישנות (לתצוגה בלבד)</h5>
-              <div *ngFor="let company of donor.companies; let i = index" class="legacy-company-item">
-                <small>{{ company.name }} - {{ company.role }}</small>
+              <!-- Legacy Companies (read-only display) -->
+              <div *ngIf="donor.companies && donor.companies.length > 0" class="legacy-companies-section">
+                <h5 class="legacy-title">
+                  <mat-icon>history</mat-icon>
+                  חברות ישנות (לתצוגה בלבד)
+                </h5>
+                <div class="legacy-companies-list">
+                  <div *ngFor="let company of donor.companies" class="legacy-company-item">
+                    <mat-icon class="legacy-icon">business_center</mat-icon>
+                    <span>{{ company.name }} - {{ company.role }}</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

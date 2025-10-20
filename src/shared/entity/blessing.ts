@@ -80,6 +80,7 @@ export class Blessing extends IdEntity {
 
   @Relations.toOne<Blessing, Campaign>(() => Campaign, {
     caption: 'קמפיין',
+    field: 'campaignId'
   })
   campaign?: Campaign
 
@@ -90,6 +91,7 @@ export class Blessing extends IdEntity {
 
   @Relations.toOne<Blessing, Donor>(() => Donor, {
     caption: 'תורם',
+    field: 'donorId'
   })
   donor?: Donor
 

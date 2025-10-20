@@ -137,6 +137,7 @@ export class DonationMethod extends IdEntity {
 
   @Relations.toOne<DonationMethod, User>(() => User, {
     caption: 'נוצר על ידי',
+    field: 'createdById'
   })
   createdBy?: User
 

@@ -51,6 +51,7 @@ export class DonationFile extends IdEntity {
 
   @Relations.toOne<DonationFile, Donation>(() => Donation, {
     caption: 'תרומה',
+    field: 'donationId'
   })
   donation?: Donation
 
@@ -84,6 +85,7 @@ export class DonationFile extends IdEntity {
 
   @Relations.toOne<DonationFile, User>(() => User, {
     caption: 'הועלה על ידי',
+    field: 'uploadedById'
   })
   uploadedBy?: User
 

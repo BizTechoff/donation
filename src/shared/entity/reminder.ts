@@ -62,6 +62,7 @@ export class Reminder extends IdEntity {
 
   @Relations.toOne<Reminder, Donor>(() => Donor, {
     caption: 'תורם קשור',
+    field: 'relatedDonorId'
   })
   relatedDonor?: Donor
 
@@ -72,6 +73,7 @@ export class Reminder extends IdEntity {
 
   @Relations.toOne<Reminder, Donation>(() => Donation, {
     caption: 'תרומה קשורה',
+    field: 'relatedDonationId'
   })
   relatedDonation?: Donation
 
@@ -82,6 +84,7 @@ export class Reminder extends IdEntity {
 
   @Relations.toOne<Reminder, Contact>(() => Contact, {
     caption: 'איש קשר קשור',
+    field: 'relatedContactId'
   })
   relatedContact?: Contact
 
@@ -125,6 +128,7 @@ export class Reminder extends IdEntity {
 
   @Relations.toOne<Reminder, User>(() => User, {
     caption: 'שיוך למשתמש',
+    field: 'assignedToId'
   })
   assignedTo?: User
 
@@ -210,6 +214,7 @@ export class Reminder extends IdEntity {
 
   @Relations.toOne<Reminder, User>(() => User, {
     caption: 'נוצר על ידי',
+    field: 'createdById'
   })
   createdBy?: User
 

@@ -1,26 +1,28 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { MatDialogRef } from '@angular/material/dialog';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatDialogRef } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { openDialog } from 'common-ui-elements';
 import { remult } from 'remult';
-import { Donation, Donor, Reminder, User, Contact } from '../../../../shared/entity';
+import { Subscription } from 'rxjs';
+import { Certificate, Contact, Donation, Donor, Reminder, User } from '../../../../shared/entity';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
-import { SharedComponentsModule } from '../../../shared/shared-components.module';
 import { GlobalFilterService } from '../../../services/global-filter.service';
-import { Subscription } from 'rxjs';
+import { HebrewDateService } from '../../../services/hebrew-date.service';
+import { SharedComponentsModule } from '../../../shared/shared-components.module';
 
 export interface ReminderDetailsModalArgs {
   reminderId?: string; // 'new' for new reminder or reminder ID for editing
   userId?: string; // Optional user ID to assign
   donorId?: string; // Optional donor ID to link
   donationId?: string; // Optional donation ID to link
+  certificateId?: string; // Optional certificate ID to link
   reminderType?: 'donation_followup' | 'thank_you' | 'receipt' | 'birthday' | 'holiday' | 'general' | 'meeting' | 'phone_call' | 'dedication' | 'memorial'; // Optional reminder type to initialize
   reminderDate?: Date; // Optional date to initialize
   isRecurringYearly?: boolean; // Optional flag for yearly recurring reminder
@@ -53,6 +55,7 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
   donationRepo = remult.repo(Donation);
   userRepo = remult.repo(User);
   contactRepo = remult.repo(Contact);
+  certificateRepo = remult.repo(Certificate);
 
   loading = false;
   isNewReminder = false;
@@ -78,8 +81,8 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
   // Hebrew month options (1-13, including Adar I and Adar II for leap years)
   hebrewMonthOptions: { value: number, label: string }[] = [];
 
-  // Hebrew day of month options (1-30)
-  hebrewDayOfMonthOptions = Array.from({ length: 30 }, (_, i) => ({ value: i + 1, label: (i + 1).toString() }));
+  // Hebrew day of month options (1-30) with Hebrew letters
+  hebrewDayOfMonthOptions: { value: number, label: string }[] = [];
 
   // Special occasions (holidays and events)
   specialOccasionOptions: { value: string, label: string }[] = [];
@@ -90,6 +93,7 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
     public i18n: I18nService,
     private ui: UIToolsService,
     private globalFilterService: GlobalFilterService,
+    private hebrewDateService: HebrewDateService,
     private cdr: ChangeDetectorRef,
     public dialogRef: MatDialogRef<ReminderDetailsModalComponent>
   ) { }
@@ -134,6 +138,10 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
         if (this.args.isRecurringYearly) {
           this.reminder.isRecurring = true;
           this.reminder.recurringPattern = 'yearly';
+          const hebDate = this.hebrewDateService.convertGregorianToHebrew(this.reminder.dueDate)
+          // console.log('this.reminder.dueDate',this.reminder.dueDate, 'hebDate',hebDate)
+          this.reminder.recurringMonth = hebDate.month
+          this.reminder.recurringDayOfMonth = hebDate.day
         }
 
         // Load related donation if provided
@@ -144,6 +152,11 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
         // Load related donor if provided
         if (this.args.donorId) {
           await this.loadDonor(this.args.donorId);
+        }
+
+        // Load related certificate if provided
+        if (this.args.certificateId) {
+          await this.loadCertificate(this.args.certificateId);
         }
       } else {
         // Edit existing reminder
@@ -168,8 +181,8 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
             include: { fundraiser: true }
           });
 
-          // If donor has a fundraiser and reminder doesn't have assignedTo yet, auto-fill it
-          if (donorWithFundraiser?.fundraiser && !this.reminder.assignedToId) {
+          // If donor has a fundraiser, auto-fill it (always override if donor has fundraiser)
+          if (donorWithFundraiser?.fundraiser) {
             this.reminder.assignedToId = donorWithFundraiser.fundraiser.id;
             this.reminder.assignedTo = donorWithFundraiser.fundraiser;
           }
@@ -235,12 +248,12 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
           this.reminder!.relatedDonorId = loadedDonation.donor.id;
           this.reminder!.relatedDonor = loadedDonation.donor;
 
-          // Load fundraiser from donor if exists
+          // Load fundraiser from donor if exists (always override)
           if (loadedDonation.donor.fundraiserId) {
             const donorWithFundraiser = await this.donorRepo.findId(loadedDonation.donor.id, {
               include: { fundraiser: true }
             });
-            if (donorWithFundraiser?.fundraiser && !this.reminder!.assignedToId) {
+            if (donorWithFundraiser?.fundraiser) {
               this.reminder!.assignedToId = donorWithFundraiser.fundraiser.id;
               this.reminder!.assignedTo = donorWithFundraiser.fundraiser;
             }
@@ -268,16 +281,127 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
       if (loadedDonor) {
         this.reminder!.relatedDonorId = loadedDonor.id;
         this.reminder!.relatedDonor = loadedDonor;
+        console.log('loadedDonor.relatedDonor',loadedDonor.firstName)
 
-        // Auto-fill fundraiser (assignedTo) from donor's fundraiser if exists
-        if (loadedDonor.fundraiser && !this.reminder!.assignedToId) {
+        // Auto-fill fundraiser (assignedTo) from donor's fundraiser if exists (always override)
+        if (loadedDonor.fundraiser) {
           this.reminder!.assignedToId = loadedDonor.fundraiser.id;
           this.reminder!.assignedTo = loadedDonor.fundraiser;
+          console.log('loadedDonor.fundraiser',loadedDonor.fundraiser.name)
+        }
+
+        // Set title and description based on donor and reminder type
+        if (!this.reminder!.title || this.reminder!.title === '') {
+          const donorName = loadedDonor.fullName || `${loadedDonor.firstName} ${loadedDonor.lastName}`;
+
+          switch (this.reminder!.type) {
+            case 'birthday':
+              this.reminder!.title = `יום הולדת - ${donorName}`;
+              break;
+            case 'dedication':
+              this.reminder!.title = `נציב יום - ${donorName}`;
+              break;
+            case 'memorial':
+              this.reminder!.title = `נציב זכרון - ${donorName}`;
+              break;
+            case 'thank_you':
+              this.reminder!.title = `מכתב תודה - ${donorName}`;
+              break;
+            case 'phone_call':
+              this.reminder!.title = `שיחת טלפון - ${donorName}`;
+              break;
+            case 'meeting':
+              this.reminder!.title = `פגישה - ${donorName}`;
+              break;
+            default:
+              this.reminder!.title = `תזכורת - ${donorName}`;
+          }
+        }
+
+        // Set description with donor details
+        if (!this.reminder!.description || this.reminder!.description === '') {
+          const descriptionParts: string[] = [];
+
+          if (loadedDonor.phone) {
+            descriptionParts.push(`טלפון: ${loadedDonor.phone}`);
+          }
+          if (loadedDonor.email) {
+            descriptionParts.push(`דוא"ל: ${loadedDonor.email}`);
+          }
+
+          this.reminder!.description = descriptionParts.join('\n');
         }
       }
     } catch (error) {
       console.error('Error loading donor:', error);
       this.ui.error('שגיאה בטעינת פרטי התורם');
+    }
+  }
+
+  async loadCertificate(certificateId: string) {
+    try {
+      const loadedCertificate = await this.certificateRepo.findId(certificateId, {
+        include: { donor: true }
+      }) || undefined;
+
+      if (loadedCertificate) {
+        console.log('loadCertificate')
+        // Link to donor if exists
+        if (loadedCertificate.donor) {
+          this.reminder!.relatedDonorId = loadedCertificate.donor.id;
+          this.reminder!.relatedDonor = loadedCertificate.donor;
+
+          // Load fundraiser from donor if exists
+          if (loadedCertificate.donor.fundraiserId) {
+            const donorWithFundraiser = await this.donorRepo.findId(loadedCertificate.donor.id, {
+              include: { fundraiser: true }
+            });
+            if (donorWithFundraiser?.fundraiser) {
+              this.reminder!.assignedToId = donorWithFundraiser.fundraiser.id;
+              this.reminder!.assignedTo = donorWithFundraiser.fundraiser;
+            }
+          }
+        }
+
+        console.log('this.reminder!.title',this.reminder!.title,'this.reminder!.description',this.reminder!.description)
+        console.log('loadedCertificate.typeText',loadedCertificate.typeText,'loadedCertificate.mainTitle',loadedCertificate.mainTitle,'loadedCertificate.mainText',loadedCertificate.mainText)
+
+        // Set title and description based on certificate
+        if (!this.reminder!.title || this.reminder!.title === '') {
+          const certificateType = loadedCertificate.typeText || this.getCertificateTypeLabel(loadedCertificate.type);
+          const donorName = loadedCertificate.donor?.fullName || 'תורם';
+          this.reminder!.title = `תעודה - ${certificateType} - ${donorName}`;
+        }
+
+        
+        // Set description with certificate details
+          const descriptionParts: string[] = this.reminder!.description.split('\n');
+
+          // Add main title (כותרת)
+          if (loadedCertificate.mainTitle) {
+            descriptionParts.push(`סיבה: ${loadedCertificate.mainTitle}`);
+          }
+
+          // Add main text (תקציר)
+          if (loadedCertificate.mainText) {
+            descriptionParts.push(`תקציר: ${loadedCertificate.mainText}`);
+          }
+
+          this.reminder!.description = descriptionParts.join('\n');
+      }
+    } catch (error) {
+      console.error('Error loading certificate:', error);
+      this.ui.error('שגיאה בטעינת פרטי התעודה');
+    }
+  }
+
+  getCertificateTypeLabel(type: string): string {
+    switch (type) {
+      case 'donation': return 'תעודת תרומה';
+      case 'memorial': return 'תעודת זיכרון';
+      case 'dedication': return 'תעודת הקדשה';
+      case 'appreciation': return 'תעודת הוקרה';
+      default: return 'תעודה';
     }
   }
 
@@ -582,13 +706,19 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
       { value: 5, label: 'שבט' },
       { value: 6, label: 'אדר' },
       { value: 7, label: 'אדר ב\'' },
-      { value: 8, label: 'נישן' },
+      { value: 8, label: 'ניסן' },
       { value: 9, label: 'אייר' },
-      { value: 10, label: 'סיוון' },
+      { value: 10, label: 'סיון' },
       { value: 11, label: 'תמוז' },
       { value: 12, label: 'אב' },
       { value: 13, label: 'אלול' }
     ];
+
+    // Initialize Hebrew day of month options with Hebrew letters
+    this.hebrewDayOfMonthOptions = Array.from({ length: 30 }, (_, i) => ({
+      value: i + 1,
+      label: this.hebrewDateService.getHebrewDayString(i + 1)
+    }));
 
     this.specialOccasionOptions = [
       { value: '', label: '-- בחר זמן מיוחד --' },

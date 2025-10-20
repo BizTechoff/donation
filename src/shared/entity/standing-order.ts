@@ -43,6 +43,7 @@ export class StandingOrder extends IdEntity {
 
   @Relations.toOne<StandingOrder, Donor>(() => Donor, {
     caption: 'תורם',
+    field: 'donorId'
   })
   donor?: Donor
 
@@ -54,6 +55,7 @@ export class StandingOrder extends IdEntity {
 
   @Relations.toOne<StandingOrder, Campaign>(() => Campaign, {
     caption: 'קמפיין',
+    field: 'campaignId'
   })
   campaign?: Campaign
 
@@ -64,6 +66,7 @@ export class StandingOrder extends IdEntity {
 
   @Relations.toOne<StandingOrder, DonationMethod>(() => DonationMethod, {
     caption: 'אמצעי תשלום',
+    field: 'donationMethodId'
   })
   donationMethod?: DonationMethod
 
@@ -208,12 +211,13 @@ export class StandingOrder extends IdEntity {
 
   // Fundraiser
   @Relations.toOne<StandingOrder, User>(() => User, {
-    caption: 'גייס',
+    caption: 'מתרים',
+    field: 'fundraiserId'
   })
   fundraiser?: User
 
   @Fields.string({
-    caption: 'גייס ID',
+    caption: 'מתרים ID',
   })
   fundraiserId = ''
 
@@ -249,6 +253,7 @@ export class StandingOrder extends IdEntity {
 
   @Relations.toOne<StandingOrder, User>(() => User, {
     caption: 'נוצר על ידי',
+    field: 'createdById'
   })
   createdBy?: User
 

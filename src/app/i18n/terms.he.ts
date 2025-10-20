@@ -782,7 +782,7 @@ export const termsHe = {
   actionsHeaderReminder: 'פעולות',
   markAsCompleted: 'סמן כהושלם',
   editReminder: 'עריכה',
-  snoozeReminder: 'דחה תזכורת',
+  snoozeReminder: 'דחה תזכורת בשעה',
   deleteReminder: 'מחק',
   
   // Quick Reminders Section

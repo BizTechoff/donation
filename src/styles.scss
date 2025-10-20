@@ -149,3 +149,57 @@ th {
 .address-container {
   z-index: 100 !important;
 }
+
+// Fix nested modals z-index
+// Angular Material should handle this automatically, but sometimes needs explicit configuration
+.cdk-overlay-container {
+  .cdk-overlay-backdrop {
+    &.cdk-overlay-backdrop-showing {
+      opacity: 0.32;
+    }
+  }
+
+  // Ensure each subsequent modal has a higher z-index
+  .cdk-overlay-pane {
+    z-index: 1000;
+
+    &:nth-of-type(2) {
+      z-index: 1001 !important;
+
+      .mat-mdc-dialog-container {
+        z-index: 1001 !important;
+      }
+    }
+
+    &:nth-of-type(3) {
+      z-index: 1002 !important;
+
+      .mat-mdc-dialog-container {
+        z-index: 1002 !important;
+      }
+    }
+
+    &:nth-of-type(4) {
+      z-index: 1003 !important;
+
+      .mat-mdc-dialog-container {
+        z-index: 1003 !important;
+      }
+    }
+  }
+}
+
+// Ensure backdrop for nested modals is positioned correctly
+.cdk-overlay-backdrop {
+  &:nth-of-type(2) {
+    z-index: 1000 !important;
+  }
+
+  &:nth-of-type(3) {
+    z-index: 1001 !important;
+  }
+
+  &:nth-of-type(4) {
+    z-index: 1002 !important;
+  }
+}

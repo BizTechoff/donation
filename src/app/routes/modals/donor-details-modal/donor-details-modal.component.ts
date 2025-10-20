@@ -75,6 +75,9 @@ export class DonorDetailsModalComponent implements OnInit {
   selectedCompanyIdForEdit: string = '';
   companyRepo = remult.repo(Company);
 
+  // Phone prefix options (built once after loading countries)
+  phonePrefixOptions: { value: string; label: string }[] = [];
+
   // Events system
   availableEvents: Event[] = [];
   donorEvents: DonorEvent[] = [];
@@ -124,9 +127,51 @@ export class DonorDetailsModalComponent implements OnInit {
         orderBy: { name: 'asc' }
       });
       console.log(`Loaded ${this.countries.length} countries from database`);
+
+      // Build phone prefix options after loading countries
+      this.buildPhonePrefixOptions();
     } catch (error) {
       console.error('Error loading countries:', error);
     }
+  }
+
+  private buildPhonePrefixOptions() {
+    if (this.countries.length === 0) {
+      this.phonePrefixOptions = [];
+      return;
+    }
+
+    // Create a unique list of phone prefixes from countries
+    const prefixMap = new Map<string, { name: string; nameEn: string }>();
+
+    this.countries.forEach(country => {
+      if (country.phonePrefix && country.phonePrefix.trim() !== '') {
+        if (!prefixMap.has(country.phonePrefix)) {
+          prefixMap.set(country.phonePrefix, {
+            name: country.name,
+            nameEn: country.nameEn || ''
+          });
+        }
+      }
+    });
+
+    // Convert to array and sort by phone prefix
+    this.phonePrefixOptions = Array.from(prefixMap.entries())
+      .sort((a, b) => {
+        // Sort by numeric value if possible
+        const aNum = parseInt(a[0].replace(/[^0-9]/g, ''));
+        const bNum = parseInt(b[0].replace(/[^0-9]/g, ''));
+        if (!isNaN(aNum) && !isNaN(bNum)) {
+          return aNum - bNum;
+        }
+        return a[0].localeCompare(b[0]);
+      })
+      .map(([prefix, country]) => ({
+        value: prefix,
+        label: `${prefix} (${country.name}${country.nameEn ? ' / ' + country.nameEn : ''})`
+      }));
+
+    console.log(`Built ${this.phonePrefixOptions.length} phone prefix options`);
   }
 
   private async loadContacts() {
@@ -963,6 +1008,7 @@ export class DonorDetailsModalComponent implements OnInit {
       console.warn(`Country not found for code: ${countryCode}. Will be created automatically when place is saved.`);
     }
   }
+
 
   // Circle options (חוג)
   getCircleOptions(): { value: string; label: string }[] {

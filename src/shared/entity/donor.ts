@@ -98,6 +98,16 @@ export class Donor extends IdEntity {
   wifeTitle = ''
 
   @Fields.string({
+    caption: 'תואר באנגלית בן/בת זוג',
+  })
+  wifeTitleEnglish = ''
+
+  @Fields.string({
+    caption: 'שם באנגלית בן/בת זוג',
+  })
+  wifeNameEnglish = ''
+
+  @Fields.string({
     caption: 'תואר באנגלית',
     allowNull: true,
     includeInApi: true,
@@ -220,11 +230,6 @@ export class Donor extends IdEntity {
   donorType: 'אחר' | 'קבוע' | 'זמני' = 'אחר'
 
   // Additional personal fields
-  @Fields.string({
-    caption: 'שם בעל/אשה',
-  })
-  spouseName = ''
-
   @Fields.string({
     caption: 'שם האב',
   })
@@ -451,6 +456,7 @@ export class Donor extends IdEntity {
 
   @Relations.toOne<Donor, User>(() => User, {
     caption: 'מתרים',
+    field: 'fundraiserId'
   })
   fundraiser?: User
 
@@ -473,6 +479,7 @@ export class Donor extends IdEntity {
 
   @Relations.toOne<Donor, User>(() => User, {
     caption: 'נוצר על ידי',
+    field: 'createdById'
   })
   createdBy?: User
 
