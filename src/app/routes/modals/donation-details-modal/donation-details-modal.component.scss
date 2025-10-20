@@ -12,7 +12,6 @@
   justify-content: center;
   z-index: 1050;
   animation: fadeIn 0.3s ease-out;
-  cursor: pointer;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
@@ -1171,5 +1170,62 @@
       background: #667eea;
       border-radius: 2px;
     }
+  }
+}
+
+// Input with edit icon button
+.input-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+
+  .form-control {
+    flex: 1;
+  }
+
+  .edit-icon-btn {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    transition: all 0.3s ease;
+    opacity: 0.3;
+    color: #999;
+
+    &.active {
+      opacity: 1;
+      color: #2196F3;
+
+      &:hover {
+        background-color: #e3f2fd;
+        transform: scale(1.1);
+      }
+
+      mat-icon {
+        animation: pulse 2s infinite;
+      }
+    }
+
+    &:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+      color: #999;
+    }
+
+    mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
   }
 }

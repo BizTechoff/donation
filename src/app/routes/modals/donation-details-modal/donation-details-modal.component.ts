@@ -14,6 +14,7 @@ import { ReminderDetailsModalComponent } from '../reminder-details-modal/reminde
 import { openDialog } from 'common-ui-elements';
 import { OrganizationDetailsModalComponent } from '../organization-details-modal/organization-details-modal.component';
 import { BankDetailsModalComponent } from '../bank-details-modal/bank-details-modal.component';
+import { DonorDetailsModalComponent } from '../donor-details-modal/donor-details-modal.component';
 
 export interface DonationDetailsModalArgs {
   donationId: string; // Can be 'new' for new donation or donation ID
@@ -577,11 +578,18 @@ export class DonationDetailsModalComponent implements OnInit {
   async loadSelectedDonor() {
     if (this.donation?.donorId) {
       try {
-        this.selectedDonor = await this.donorRepo.findId(this.donation.donorId) || undefined;
+        this.selectedDonor = await this.donorRepo.findId(this.donation.donorId, {
+          include: { fundraiser: true }
+        }) || undefined;
 
         // Auto-update currency for new donations when loading existing donor
         if (this.isNewDonation && this.selectedDonor) {
           await this.updateCurrencyBasedOnCountry(this.selectedDonor);
+
+          // Auto-fill fundraiser if donor has one and donation doesn't have fundraiser yet
+          if (this.selectedDonor.fundraiser && !this.donation.fundraiserId) {
+            this.donation.fundraiserId = this.selectedDonor.fundraiser.id;
+          }
         }
       } catch (error) {
         console.error('Error loading selected donor:', error);
@@ -879,11 +887,19 @@ export class DonationDetailsModalComponent implements OnInit {
     }
 
     try {
-      // Load the selected donor
-      this.selectedDonor = await this.donorRepo.findId(donorId) || undefined;
+      // Load the selected donor with fundraiser relation
+      this.selectedDonor = await this.donorRepo.findId(donorId, {
+        include: { fundraiser: true }
+      }) || undefined;
 
       if (this.selectedDonor) {
+        // Update currency based on country
         await this.updateCurrencyBasedOnCountry(this.selectedDonor);
+
+        // Auto-fill fundraiser if donor has one
+        if (this.selectedDonor.fundraiser) {
+          this.donation.fundraiserId = this.selectedDonor.fundraiser.id;
+        }
       }
     } catch (error) {
       console.error('Error in onDonorChange:', error);
@@ -1093,6 +1109,34 @@ export class DonationDetailsModalComponent implements OnInit {
     } catch (error) {
       console.error('Error editing organization:', error);
       this.ui.error('שגיאה בעריכת העמותה');
+    }
+  }
+
+  async openDonorDetails() {
+    if (!this.donation?.donorId) return;
+
+    try {
+      // Open donor details modal
+      const result = await openDialog(DonorDetailsModalComponent, (dlg) => {
+        dlg.args = { donorId: this.donation.donorId };
+      });
+
+      // If the modal closed with changes (donor was updated)
+      if (result) {
+        // Refresh donors list
+        this.donors = await this.donorRepo.find({
+          orderBy: { lastName: 'asc', firstName: 'asc' },
+          limit: 1000
+        });
+
+        // Reload the selected donor
+        await this.loadSelectedDonor();
+
+        this.ui.info('התורם עודכן בהצלחה');
+      }
+    } catch (error) {
+      console.error('Error opening donor details:', error);
+      this.ui.error('שגיאה בפתיחת פרטי התורם');
     }
   }
 }

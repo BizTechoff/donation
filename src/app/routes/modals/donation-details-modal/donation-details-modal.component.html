@@ -1,5 +1,5 @@
 <!-- Donation Details Modal -->
-<div class="modal-overlay">
+<div class="modal-overlay" (click)="closeModal($event)">
   <div class="modal-content donation-details-modal" (click)="$event.stopPropagation()">
 
     <!-- Modal Header with gradient and icon -->
@@ -36,15 +36,26 @@
           <div class="form-grid">
             <div class="form-group">
               <div class="field-title">
-                <mat-icon class="field-icon">person</mat-icon>
+                <button mat-icon-button
+                        class="edit-icon-btn"
+                        [class.active]="donation.donorId"
+                        [disabled]="!donation.donorId"
+                        (click)="openDonorDetails()"
+                        matTooltip="פתח פרטי תורם"
+                        type="button">
+                  <mat-icon class="field-icon">person</mat-icon>
+                </button>
                 <label>תורם *</label>
               </div>
-              <select class="form-control" [(ngModel)]="donation.donorId" (ngModelChange)="onDonorChange($event)">
-                <option value="">בחר תורם</option>
-                <option *ngFor="let donor of donors" [value]="donor.id">
-                  {{ getDonorDisplayName(donor) }}
-                </option>
-              </select>
+              <div class="input-with-icon">
+                <select class="form-control" [(ngModel)]="donation.donorId" (ngModelChange)="onDonorChange($event)">
+                  <option value="">בחר תורם</option>
+                  <option *ngFor="let donor of donors" [value]="donor.id">
+                    {{ getDonorDisplayName(donor) }}
+                  </option>
+                </select>
+                
+              </div>
             </div>
 
             <div class="form-group">
