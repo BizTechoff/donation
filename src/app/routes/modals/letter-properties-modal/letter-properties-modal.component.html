@@ -1,0 +1,185 @@
+<!-- Letter Properties Modal -->
+<div class="modal-content letter-properties-modal">
+
+  <!-- Modal Header -->
+  <div class="modal-header">
+    <div class="header-content">
+      <div class="header-icon">
+        <mat-icon>description</mat-icon>
+      </div>
+      <div class="header-text">
+        <h2>הגדרות מכתב</h2>
+        <p class="header-subtitle">בחר סוג מכתב, שורות פתיחה וסיום</p>
+      </div>
+    </div>
+    <button class="modal-close" (click)="closeModal()" matTooltip="סגור" [dir]="'rtl'">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-overlay" *ngIf="loading">
+    <div class="loading-spinner">מכין מכתב...</div>
+  </div>
+
+  <div class="modal-body">
+
+    <!-- Section 1: Letter Type Selection -->
+    <div class="section letter-type-section">
+      <h3>סוג מכתב</h3>
+      <div class="letter-types-grid">
+        <div class="letter-type-card" *ngFor="let type of letterTypes" [class.selected]="selectedLetterType === type"
+          (click)="selectLetterType(type)">
+          <div class="card-icon">
+            <mat-icon>mail</mat-icon>
+          </div>
+          <div class="card-content">
+            <h4>{{ type.caption }}</h4>
+            <p>{{ type.fields.length }} שדות</p>
+          </div>
+          <div class="card-check" *ngIf="selectedLetterType === type">
+            <mat-icon>check_circle</mat-icon>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 2: Prefix Lines (Opening) -->
+    <div class="section prefix-section">
+      <h3>שורות פתיחה למכתב</h3>
+
+      <!-- Selected Prefix Lines -->
+      <div class="selected-lines" *ngIf="selectedPrefixLines.length > 0">
+        <div class="selected-line" *ngFor="let line of selectedPrefixLines; let i = index">
+          <div class="line-order">{{ i + 1 }}</div>
+          <div class="line-text">{{ line }}</div>
+          <div class="line-actions">
+            <button mat-icon-button (click)="movePrefixLineUp(i)" [disabled]="i === 0" matTooltip="הזז למעלה">
+              <mat-icon>arrow_upward</mat-icon>
+            </button>
+            <button mat-icon-button (click)="movePrefixLineDown(i)" [disabled]="i === selectedPrefixLines.length - 1"
+              matTooltip="הזז למטה">
+              <mat-icon>arrow_downward</mat-icon>
+            </button>
+            <button mat-icon-button (click)="removePrefixLine(i)" matTooltip="הסר">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Available Suffix Lines -->
+      <div class="available-lines">
+        <h4>ברכות סיום זמינות:</h4>
+        <div class="available-line" *ngFor="let line of availablePrefixLines"
+          [class.disabled]="availablePrefixLines.includes(line)" (click)="addPrefixLine(line)">
+          <mat-icon>add_circle_outline</mat-icon>
+          <span>{{ line }}</span>
+        </div>
+      </div>
+
+      <!-- Add Custom Prefix Line -->
+      <div class="add-line-section">
+        <div class="add-line-input">
+          <input type="text" class="form-control" [(ngModel)]="customPrefixLine"
+            placeholder="הכנס שורת פתיחה מותאמת אישית..." (keyup.enter)="addCustomPrefixLine()">
+          <button mat-raised-button color="primary" (click)="addCustomPrefixLine()"
+            [disabled]="!customPrefixLine.trim()">
+            <mat-icon>add</mat-icon>
+            הוסף שורה
+          </button>
+        </div>
+      </div>
+
+      <div class="help-text" *ngIf="selectedPrefixLines.length === 0">
+        <mat-icon>info</mat-icon>
+        <span>לא נבחרו שורות פתיחה. המכתב יתחיל ישירות בתוכן.</span>
+      </div>
+    </div>
+
+    <!-- Section 3: Letter Fields (Display Only) -->
+    <div class="section fields-section" *ngIf="selectedLetterType">
+      <h3>שדות המכתב</h3>
+      <div class="fields-info">
+        <mat-icon>info</mat-icon>
+        <p>השדות הבאים ימולאו אוטומטית מנתוני התרומה:</p>
+      </div>
+      <div class="fields-grid">
+        <div class="field-chip" *ngFor="let field of selectedLetterType.fields">
+          <mat-icon>text_fields</mat-icon>
+          <span>{{ field }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 4: Suffix Lines (Closing) -->
+    <div class="section suffix-section">
+      <h3>שורות סיום למכתב</h3>
+
+      <!-- Selected Suffix Lines -->
+      <div class="selected-lines" *ngIf="selectedSuffixLines.length > 0">
+        <div class="selected-line" *ngFor="let line of selectedSuffixLines; let i = index">
+          <div class="line-order">{{ i + 1 }}</div>
+          <div class="line-text">{{ line }}</div>
+          <div class="line-actions">
+            <button mat-icon-button (click)="moveSuffixLineUp(i)" [disabled]="i === 0" matTooltip="הזז למעלה">
+              <mat-icon>arrow_upward</mat-icon>
+            </button>
+            <button mat-icon-button (click)="moveSuffixLineDown(i)" [disabled]="i === selectedSuffixLines.length - 1"
+              matTooltip="הזז למטה">
+              <mat-icon>arrow_downward</mat-icon>
+            </button>
+            <button mat-icon-button (click)="removeSuffixLine(i)" matTooltip="הסר">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Available Suffix Lines -->
+      <div class="available-lines">
+        <h4>ברכות סיום זמינות:</h4>
+        <div class="available-line" *ngFor="let line of availableSuffixLines"
+          [class.disabled]="selectedSuffixLines.includes(line)" (click)="addSuffixLine(line)">
+          <mat-icon>add_circle_outline</mat-icon>
+          <span>{{ line }}</span>
+        </div>
+      </div>
+
+      <!-- Add Custom Suffix Line -->
+      <div class="add-line-section">
+        <div class="add-line-input">
+          <input type="text" class="form-control" [(ngModel)]="customSuffixLine"
+            placeholder="הכנס ברכת סיום מותאמת אישית..." (keyup.enter)="addCustomSuffixLine()">
+          <button mat-raised-button color="primary" (click)="addCustomSuffixLine()"
+            [disabled]="!customSuffixLine.trim()">
+            <mat-icon>add</mat-icon>
+            הוסף ברכה
+          </button>
+        </div>
+      </div>
+
+      <div class="help-text" *ngIf="selectedSuffixLines.length === 0">
+        <mat-icon>info</mat-icon>
+        <span>לא נבחרו ברכות סיום. המכתב יסתיים ללא ברכה.</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Modal Footer -->
+  <div class="modal-footer">
+    <div class="footer-actions-left"></div>
+    <div class="footer-actions-right">
+      <button mat-stroked-button (click)="closeModal()" class="cancel-button">
+        <mat-icon>close</mat-icon>
+        ביטול
+      </button>
+      <button mat-raised-button color="primary" (click)="generateLetter()" class="generate-button"
+        [disabled]="loading || !selectedLetterType">
+        <mat-icon>print</mat-icon>
+        הפק מכתב
+      </button>
+    </div>
+  </div>
+</div>

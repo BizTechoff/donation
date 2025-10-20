@@ -7,6 +7,7 @@ import sslRedirect from 'heroku-ssl-redirect'
 import path from 'path'
 import { api } from './api'
 import { getPlace, getPlaces } from './geo'
+import './docx'
 
 async function startup() {
   const app = express()

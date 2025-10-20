@@ -20,6 +20,7 @@ import { Reminder } from '../shared/entity/reminder'
 import { StandingOrder } from '../shared/entity/standing-order'
 import { User } from '../shared/entity/user'
 import { SeedController } from './SeedController'
+import { LetterController } from '../shared/controllers/letter.controller'
 
 export const entities = [
   User, Donor, Donation, Campaign, DonationMethod, StandingOrder, Reminder,
@@ -27,7 +28,7 @@ export const entities = [
   DonationFile, Contact, Bank, Organization, Company]
 export const api = remultExpress({
   admin: true,
-  controllers: [SignInController, UpdatePasswordController, SeedController, DonorController],
+  controllers: [SignInController, UpdatePasswordController, SeedController, DonorController, LetterController],
   entities,
   getUser,
   dataProvider: async () => {

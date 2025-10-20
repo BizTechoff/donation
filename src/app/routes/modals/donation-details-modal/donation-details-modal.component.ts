@@ -1,20 +1,22 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogRef } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { Donation, Donor, Campaign, DonationMethod, User, DonationPartner, DonationFile, Country, Organization, Bank } from '../../../../shared/entity';
-import { remult } from 'remult';
-import { I18nService } from '../../../i18n/i18n.service';
-import { UIToolsService } from '../../../common/UIToolsService';
-import { SharedComponentsModule } from '../../../shared/shared-components.module';
-import { ReminderDetailsModalComponent } from '../reminder-details-modal/reminder-details-modal.component';
 import { openDialog } from 'common-ui-elements';
-import { OrganizationDetailsModalComponent } from '../organization-details-modal/organization-details-modal.component';
+import { remult } from 'remult';
+import { Bank, Campaign, Country, Donation, DonationFile, DonationMethod, DonationPartner, Donor, Organization, User } from '../../../../shared/entity';
+import { Letter } from '../../../../shared/enum/letter';
+import { UIToolsService } from '../../../common/UIToolsService';
+import { I18nService } from '../../../i18n/i18n.service';
+import { LetterService } from '../../../services/letter.service';
+import { SharedComponentsModule } from '../../../shared/shared-components.module';
 import { BankDetailsModalComponent } from '../bank-details-modal/bank-details-modal.component';
 import { DonorDetailsModalComponent } from '../donor-details-modal/donor-details-modal.component';
+import { OrganizationDetailsModalComponent } from '../organization-details-modal/organization-details-modal.component';
+import { ReminderDetailsModalComponent } from '../reminder-details-modal/reminder-details-modal.component';
 
 export interface DonationDetailsModalArgs {
   donationId: string; // Can be 'new' for new donation or donation ID
@@ -61,7 +63,7 @@ export class DonationDetailsModalComponent implements OnInit {
   countryRepo = remult.repo(Country);
   organizationRepo = remult.repo(Organization);
   bankRepo = remult.repo(Bank);
-  
+
   loading = false;
   isNewDonation = false;
   selectedDonor?: Donor;
@@ -198,8 +200,9 @@ export class DonationDetailsModalComponent implements OnInit {
     public i18n: I18nService,
     private ui: UIToolsService,
     private cdr: ChangeDetectorRef,
+    private letter: LetterService,
     public dialogRef: MatDialogRef<DonationDetailsModalComponent>
-  ) {}
+  ) { }
 
   async ngOnInit() {
     await this.initializeDonation();
@@ -208,7 +211,7 @@ export class DonationDetailsModalComponent implements OnInit {
 
   private async initializeDonation() {
     if (!this.args?.donationId) return;
-    
+
     this.loading = true;
     try {
       if (this.args.donationId === 'new') {
@@ -382,32 +385,32 @@ export class DonationDetailsModalComponent implements OnInit {
   }
 
   async saveDonation() {
-    if (!this.donation) return;
+    if (!this.donation) return false;
 
     // Validate required fields
     if (!this.donation.donorId) {
       this.ui.error('נא לבחור תורם');
-      return;
+      return false;
     }
 
     if (!this.donation.donationType) {
       this.ui.error('נא לבחור סוג תרומה');
-      return;
+      return false;
     }
 
     if (!this.donation.amount || this.donation.amount <= 0) {
       this.ui.error('נא להזין סכום תרומה חיובי');
-      return;
+      return false;
     }
 
     if (!this.donation.donationDate) {
       this.ui.error('נא לבחור תאריך תרומה');
-      return;
+      return false;
     }
 
     if (!this.donation.donationMethodId) {
       this.ui.error('נא לבחור אמצעי תשלום');
-      return;
+      return false;
     }
 
     try {
@@ -418,9 +421,11 @@ export class DonationDetailsModalComponent implements OnInit {
 
       this.changed = wasNew || this.hasChanges();
       this.dialogRef.close(this.changed);
+      return true
     } catch (error) {
       console.error('Error saving donation:', error);
       this.ui.error('שגיאה בשמירת התרומה');
+      return false
     }
   }
 
@@ -618,13 +623,21 @@ export class DonationDetailsModalComponent implements OnInit {
       console.log('Saving donation before printing letter...');
       await this.saveDonation();
 
-      // Then open letter properties selection
+      // Then open letter properties modal
       console.log('Opening letter properties selection for donation:', this.donation.id);
-      // TODO: Implement letter properties dialog
-      alert('פתיחת מאפייני מכתב תבוצע בהמשך');
+      const { LetterPropertiesModalComponent } = await import('../letter-properties-modal/letter-properties-modal.component');
+      const result = await openDialog(LetterPropertiesModalComponent, (dlg) => {
+        dlg.args = {
+          donationId: this.donation.id
+        };
+      });
+
+      if (result) {
+        console.log('Letter generated successfully:', result);
+      }
     } catch (error) {
       console.error('Error printing letter:', error);
-      alert('שגיאה בהדפסת מכתב');
+      this.ui.error('שגיאה בהפקת מכתב');
     }
   }
 
@@ -693,47 +706,47 @@ export class DonationDetailsModalComponent implements OnInit {
   // Getter methods for template conditionals
   get isCheckPayment(): boolean {
     return this.selectedPaymentMethod?.type === 'check' ||
-           this.selectedPaymentMethod?.name === 'צק' ||
-           this.selectedPaymentMethod?.name?.includes('צ\'ק') || false;
+      this.selectedPaymentMethod?.name === 'צק' ||
+      this.selectedPaymentMethod?.name?.includes('צ\'ק') || false;
   }
 
   get isTransferPayment(): boolean {
     return this.selectedPaymentMethod?.type === 'bank_transfer' ||
-           this.selectedPaymentMethod?.name === 'העברה' ||
-           this.selectedPaymentMethod?.name?.includes('העברה') || false;
+      this.selectedPaymentMethod?.name === 'העברה' ||
+      this.selectedPaymentMethod?.name?.includes('העברה') || false;
   }
 
   get isOrganizationPayment(): boolean {
     return this.selectedPaymentMethod?.name === 'עמותה' ||
-           this.selectedPaymentMethod?.name?.includes('עמותה') ||
-           this.selectedPaymentMethod?.name?.includes('ארגון') || false;
+      this.selectedPaymentMethod?.name?.includes('עמותה') ||
+      this.selectedPaymentMethod?.name?.includes('ארגון') || false;
   }
 
   get isCreditCardPayment(): boolean {
     return this.selectedPaymentMethod?.type === 'credit_card' ||
-           this.selectedPaymentMethod?.name === 'כרטיס אשראי' ||
-           this.selectedPaymentMethod?.name?.includes('כרטיס') ||
-           this.selectedPaymentMethod?.name?.includes('אשראי') || false;
+      this.selectedPaymentMethod?.name === 'כרטיס אשראי' ||
+      this.selectedPaymentMethod?.name?.includes('כרטיס') ||
+      this.selectedPaymentMethod?.name?.includes('אשראי') || false;
   }
 
   get isStandingOrderPayment(): boolean {
     return this.selectedPaymentMethod?.name === 'הוק' ||
-           this.selectedPaymentMethod?.name?.includes('הוראת קבע') ||
-           this.selectedPaymentMethod?.name?.includes('הו"ק') || false;
+      this.selectedPaymentMethod?.name?.includes('הוראת קבע') ||
+      this.selectedPaymentMethod?.name?.includes('הו"ק') || false;
   }
 
   get isCashPayment(): boolean {
     return this.selectedPaymentMethod?.type === 'cash' ||
-           this.selectedPaymentMethod?.name === 'מזומן' ||
-           this.selectedPaymentMethod?.name?.includes('מזומן') || false;
+      this.selectedPaymentMethod?.name === 'מזומן' ||
+      this.selectedPaymentMethod?.name?.includes('מזומן') || false;
   }
 
   get isOnlinePayment(): boolean {
     return this.selectedPaymentMethod?.isOnline ||
-           this.selectedPaymentMethod?.name === 'תשלום מקוון' ||
-           this.selectedPaymentMethod?.name === 'PayPal' ||
-           this.selectedPaymentMethod?.name === 'Stripe' ||
-           this.selectedPaymentMethod?.name?.includes('מקוון') || false;
+      this.selectedPaymentMethod?.name === 'תשלום מקוון' ||
+      this.selectedPaymentMethod?.name === 'PayPal' ||
+      this.selectedPaymentMethod?.name === 'Stripe' ||
+      this.selectedPaymentMethod?.name?.includes('מקוון') || false;
   }
 
   getDaysOfMonth(): number[] {
@@ -917,16 +930,16 @@ export class DonationDetailsModalComponent implements OnInit {
 
         // Country-based currency update disabled
         // if (country?.code) {
-          // Map country code to currency
-          // const currency = this.countryCurrencyMap[country.code];
-          // if (currency) {
-          //   this.donation.currency = currency;
-          //   console.log(`Updated currency to ${currency} based on country ${country.name} (${country.code})`);
-          // } else {
-          //   // Default to ILS if no mapping found
-          //   this.donation.currency = 'ILS';
-          //   console.log(`No currency mapping found for country ${country.code}, defaulting to ILS`);
-          // }
+        // Map country code to currency
+        // const currency = this.countryCurrencyMap[country.code];
+        // if (currency) {
+        //   this.donation.currency = currency;
+        //   console.log(`Updated currency to ${currency} based on country ${country.name} (${country.code})`);
+        // } else {
+        //   // Default to ILS if no mapping found
+        //   this.donation.currency = 'ILS';
+        //   console.log(`No currency mapping found for country ${country.code}, defaulting to ILS`);
+        // }
         // Default to ILS
         this.donation.currency = 'ILS';
       } else {

@@ -35,6 +35,7 @@ export class Letter {
         'donor_suffix',
         'donation_amount',
         'donation_currency_symbol',
+        'donation_reason',
         'letter_suffix'
     ])
     constructor(public caption = '', public fields = [] as string[]) {

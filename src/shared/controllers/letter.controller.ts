@@ -1,3 +1,4 @@
+import { HDate } from '@hebcal/core';
 import { Allow, BackendMethod, Controller, remult } from 'remult';
 import { Donation } from '../entity';
 import { Letter } from '../enum/letter';
@@ -9,7 +10,9 @@ export class LetterController {
   @BackendMethod({ allowed: Allow.authenticated })
   static async createLetter(donationId = '', type = Letter.ty_normal, prefix = [] as string[], suffix = [] as string[]): Promise<DocxCreateResponse> {
 
-    const donation = await remult.repo(Donation).findId(donationId)
+    const donation = await remult.repo(Donation).findId(
+      donationId,
+      { include: { donor: true } })
     if (!donation) throw 'NO donation for id: ' + donationId
 
     const contents = [] as DocxContentControl[]
@@ -31,8 +34,8 @@ export class LetterController {
   private static getValue(donation: Donation, type: Letter, field = '') {
     switch (field) {
       case 'letter_heb_date': {
-        return 'תאריך עברי'
-        // return getHebrewDate(new Date())
+        const hDate = new HDate(new Date());
+        return hDate.renderGematriya();
       }
       case 'donor_eng_title': {
         return donation.donor?.titleEnglish
@@ -52,8 +55,6 @@ export class LetterController {
       case 'donor_country': {
         return donation.donor?.homePlace?.country?.name
       }
-      // case 'letter_prefix': {
-      // }
       case 'donor_title': {
         return donation.donor?.title
       }
@@ -69,13 +70,20 @@ export class LetterController {
       case 'donation_amount': {
         return donation.amount + ''
       }
+      case 'donation_reason': {
+        return donation.reason
+      }
       case 'donation_currency_symbol': {
-        return 'סמל מטבע'
-        // return getCurrencySymbol(donation.currency)
+        const currencySymbols: Record<string, string> = {
+          'ILS': '₪',
+          'USD': '$',
+          'EUR': '€',
+          'GBP': '£',
+          'JPY': '¥'
+        };
+        return currencySymbols[donation.currency || 'ILS'] || donation.currency || '₪';
       }
       default: return ''// throw 'no-field-name: ' + field
-      // case 'letter_suffix': {
-      // }
     }
   }
 

@@ -16,7 +16,7 @@ LetterController.createLetterDelegate = async (type = Letter.ty_normal, contents
 
 export const createLetterDocX = async (type = Letter.ty_normal, contents = [] as DocxContentControl[]) => {
 
-    var result: DocxCreateResponse = { success: false, url: '', error: '' }
+    var result: DocxCreateResponse = { success: false, url: '', error: '', fileName: '' }
 
     if (!contents) {
         contents = [] as DocxContentControl[]
@@ -87,7 +87,7 @@ export const createLetterDocX = async (type = Letter.ty_normal, contents = [] as
     result.error = ''; // Clear any previous errors
 
     // Store filename in a custom property for client-side download
-    (result as any).fileName = fileName;
+    result.fileName = fileName;
 
     return result
 }

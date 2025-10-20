@@ -36,15 +36,7 @@
           <div class="form-grid">
             <div class="form-group">
               <div class="field-title">
-                <button mat-icon-button
-                        class="edit-icon-btn"
-                        [class.active]="donation.donorId"
-                        [disabled]="!donation.donorId"
-                        (click)="openDonorDetails()"
-                        matTooltip="פתח פרטי תורם"
-                        type="button">
-                  <mat-icon class="field-icon">person</mat-icon>
-                </button>
+                <mat-icon class="field-icon">person</mat-icon>
                 <label>תורם *</label>
               </div>
               <div class="input-with-icon">
@@ -54,7 +46,15 @@
                     {{ getDonorDisplayName(donor) }}
                   </option>
                 </select>
-                
+                <button mat-icon-button
+                        class="edit-icon-btn"
+                        [class.active]="donation.donorId"
+                        [disabled]="!donation.donorId"
+                        (click)="openDonorDetails()"
+                        matTooltip="פתח פרטי תורם"
+                        type="button">
+                  <mat-icon>person</mat-icon>
+                </button>
               </div>
             </div>
 
@@ -87,7 +87,7 @@
                       <mat-icon class="donation-type-icon">payments</mat-icon>
                       <div class="donation-type-text">
                         <span class="donation-type-label">תרומה מלאה</span>
-                        <span class="donation-type-description">תשלום מלא ומיידי</span>
+                        <!-- <span class="donation-type-description">תשלום מלא ומיידי</span> -->
                       </div>
                     </div>
                   </label>
@@ -101,7 +101,7 @@
                       <mat-icon class="donation-type-icon">handshake</mat-icon>
                       <div class="donation-type-text">
                         <span class="donation-type-label">התחייבות</span>
-                        <span class="donation-type-description">הבטחה לתשלום בעתיד</span>
+                        <!-- <span class="donation-type-description">הבטחה לתשלום בעתיד</span> -->
                       </div>
                     </div>
                   </label>
@@ -868,7 +868,7 @@
         <!-- Additional Actions -->
         <button mat-stroked-button class="action-button print-letter-btn" (click)="printLetter()" title="הדפס מכתב">
           <mat-icon>print</mat-icon>
-          הדפס מכתב
+          הפקת מכתב
         </button>
 
         <button mat-stroked-button class="action-button add-reminder-btn" (click)="addReminder()" title="הוסף תזכורת">
