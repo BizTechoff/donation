@@ -26,7 +26,7 @@
       mat-icon-button
       class="toggle-details-btn"
       (click)="toggleAddressDetails()"
-      [matTooltip]="showAddressDetails ? 'הסתר פרטי כתובת' : 'הצג פרטי כתובת'"
+      [matTooltip]="showAddressDetails ? ((i18n.terms$ | async)?.hideAddressDetails || 'הסתר פרטי כתובת') : ((i18n.terms$ | async)?.showAddressDetails || 'הצג פרטי כתובת')"
       type="button">
       <mat-icon>{{ showAddressDetails ? 'expand_less' : 'expand_more' }}</mat-icon>
     </button>
@@ -40,22 +40,22 @@
       <!-- שורה ראשונה: רחוב ומספר בית -->
       <div class="detail-row">
         <div class="detail-field">
-          <label>רחוב</label>
+          <label>{{ (i18n.terms$ | async)?.street || 'רחוב' }}</label>
           <input
             type="text"
             [(ngModel)]="place.street"
             (change)="onDetailChange()"
-            placeholder="שם רחוב"
+            [placeholder]="(i18n.terms$ | async)?.streetName || 'שם רחוב'"
             dir="rtl"
           >
         </div>
         <div class="detail-field small">
-          <label>מס׳</label>
+          <label>{{ (i18n.terms$ | async)?.houseNumber || 'מס׳' }}</label>
           <input
             type="text"
             [(ngModel)]="place.houseNumber"
             (change)="onDetailChange()"
-            placeholder="מספר"
+            [placeholder]="(i18n.terms$ | async)?.houseNumber || 'מספר'"
             dir="rtl"
           >
         </div>
@@ -64,22 +64,22 @@
       <!-- שורה שנייה: שכונה ועיר -->
       <div class="detail-row">
         <div class="detail-field">
-          <label>שכונה</label>
+          <label>{{ (i18n.terms$ | async)?.neighborhood || 'שכונה' }}</label>
           <input
             type="text"
             [(ngModel)]="place.neighborhood"
             (change)="onDetailChange()"
-            placeholder="שכונה"
+            [placeholder]="(i18n.terms$ | async)?.neighborhood || 'שכונה'"
             dir="rtl"
           >
         </div>
         <div class="detail-field">
-          <label>עיר</label>
+          <label>{{ (i18n.terms$ | async)?.city || 'עיר' }}</label>
           <input
             type="text"
             [(ngModel)]="place.city"
             (change)="onDetailChange()"
-            placeholder="עיר"
+            [placeholder]="(i18n.terms$ | async)?.city || 'עיר'"
             dir="rtl"
           >
         </div>
@@ -88,22 +88,22 @@
       <!-- שורה שלישית: מחוז ומיקוד -->
       <div class="detail-row">
         <div class="detail-field">
-          <label>מחוז</label>
+          <label>{{ (i18n.terms$ | async)?.state || 'מחוז' }}</label>
           <input
             type="text"
             [(ngModel)]="place.state"
             (change)="onDetailChange()"
-            placeholder="מחוז"
+            [placeholder]="(i18n.terms$ | async)?.state || 'מחוז'"
             dir="rtl"
           >
         </div>
         <div class="detail-field small">
-          <label>מיקוד</label>
+          <label>{{ (i18n.terms$ | async)?.postcode || 'מיקוד' }}</label>
           <input
             type="text"
             [(ngModel)]="place.postcode"
             (change)="onDetailChange()"
-            placeholder="מיקוד"
+            [placeholder]="(i18n.terms$ | async)?.postcode || 'מיקוד'"
             dir="rtl"
           >
         </div>
@@ -112,14 +112,14 @@
       <!-- שורה רביעית: מדינה -->
       <div class="detail-row">
         <div class="detail-field full-width">
-          <label>מדינה (מתעדכן אוטומטית מגוגל)</label>
+          <label>{{ (i18n.terms$ | async)?.countryAutoUpdated || 'מדינה (מתעדכן אוטומטית מגוגל)' }}</label>
           <input readonly
             type="text"
             [value]="getCountryDisplayName()"
-            placeholder="מדינה"
+            [placeholder]="(i18n.terms$ | async)?.country || 'מדינה'"
             dir="rtl"
             style="cursor: not-allowed; background-color: #f5f5f5;"
-            title="שדה זה מתעדכן אוטומטית מגוגל ולא ניתן לעריכה ידנית"
+            [title]="(i18n.terms$ | async)?.countryAutoUpdateNote || 'שדה זה מתעדכן אוטומטית מגוגל ולא ניתן לעריכה ידנית'"
           >
         </div>
       </div>
@@ -127,13 +127,13 @@
       <!-- שורה רביעית: שם המקום (אם יש) -->
       <div class="detail-row" *ngIf="place.placeName">
         <div class="detail-field full-width">
-          <label>שם המקום</label>
+          <label>{{ (i18n.terms$ | async)?.placeName || 'שם המקום' }}</label>
           <div style="display: flex; gap: 10px; align-items: center;">
             <input
               type="text"
               [(ngModel)]="place.placeName"
               (change)="onDetailChange()"
-              placeholder="שם המקום"
+              [placeholder]="(i18n.terms$ | async)?.placeName || 'שם המקום'"
               dir="rtl"
               style="flex: 1;"
             >
@@ -142,10 +142,10 @@
               type="button"
               (click)="clearAddress(); $event.stopPropagation(); $event.preventDefault()"
               class="clear-address-btn"
-              matTooltip="נקה כתובת"
+              [matTooltip]="(i18n.terms$ | async)?.clearAddress || 'נקה כתובת'"
               style="white-space: nowrap;">
               <mat-icon>clear</mat-icon>
-              נקה כתובת
+              {{ (i18n.terms$ | async)?.clearAddress || 'נקה כתובת' }}
             </button>
           </div>
         </div>
@@ -172,7 +172,7 @@
           <mat-icon
             class="location-icon"
             [class.saved-place]="suggestion.isFromDatabase"
-            [matTooltip]="suggestion.isFromDatabase ? 'מקום שמור במערכת' : 'מקום חדש מגוגל'">
+            [matTooltip]="suggestion.isFromDatabase ? ((i18n.terms$ | async)?.savedPlace || 'מקום שמור במערכת') : ((i18n.terms$ | async)?.newPlace || 'מקום חדש מגוגל')">
             {{ suggestion.isFromDatabase ? 'bookmark' : 'place' }}
           </mat-icon>
           <span class="address-text">{{ getDisplayAddress(suggestion) }}</span>
@@ -180,7 +180,7 @@
           <mat-icon
             *ngIf="suggestion.isFromDatabase"
             class="saved-indicator"
-            matTooltip="נשמר במערכת">
+            [matTooltip]="(i18n.terms$ | async)?.savedInSystem || 'נשמר במערכת'">
             star
           </mat-icon>
         </div>
@@ -201,7 +201,7 @@
     <mat-option *ngIf="!isLoading && suggestions.length === 0 && searchValue.length >= 3" disabled>
       <div class="no-results">
         <mat-icon>search_off</mat-icon>
-        <span>לא נמצאו תוצאות</span>
+        <span>{{ (i18n.terms$ | async)?.noResults || 'לא נמצאו תוצאות' }}</span>
       </div>
     </mat-option>
   </mat-autocomplete>

@@ -788,6 +788,18 @@ export class DonationDetailsModalComponent implements OnInit {
     ];
   }
 
+  getPaymentMethodDisplayName(method: DonationMethod): string {
+    const typeLabels: { [key: string]: string } = {
+      cash: this.i18n.terms.cash,
+      check: this.i18n.terms.check,
+      credit_card: this.i18n.terms.credit_card,
+      bank_transfer: this.i18n.terms.bank_transfer,
+      standing_order: this.i18n.terms.standingOrder,
+      association: this.i18n.terms.organizationStandingOrder
+    };
+    return typeLabels[method.type] || method.name;
+  }
+
   onUnlimitedPaymentsChange() {
     if (this.donation.unlimitedPayments) {
       // When unlimited is selected, clear the number of payments
@@ -1166,5 +1178,13 @@ export class DonationDetailsModalComponent implements OnInit {
       console.error('Error opening donor details:', error);
       this.ui.error('שגיאה בפתיחת פרטי התורם');
     }
+  }
+
+  /**
+   * Get currency name based on currency code
+   */
+  getCurrencyName(code: string): string {
+    const key = `currency${code}` as keyof typeof this.i18n.terms;
+    return this.i18n.terms[key] as string || code;
   }
 }

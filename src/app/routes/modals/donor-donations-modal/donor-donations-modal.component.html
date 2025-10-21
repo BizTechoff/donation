@@ -54,7 +54,7 @@
             <select class="filter-select" [(ngModel)]="filterMethod">
               <option value="">כל אמצעי התשלום</option>
               <option *ngFor="let method of donationMethods" [value]="method.id">
-                {{method.name}}
+                {{getPaymentMethodDisplayName(method)}}
               </option>
             </select>
           </div>

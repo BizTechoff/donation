@@ -37,7 +37,7 @@
             <div class="form-group">
               <div class="field-title">
                 <mat-icon class="field-icon">military_tech</mat-icon>
-                <label>תואר</label>
+                <label>{{ (i18n.terms$ | async)?.title }}</label>
               </div>
               <select class="form-control" [(ngModel)]="donor.title">
                 <option value="">{{ getTitlePlaceholder() }}</option>
@@ -63,7 +63,7 @@
             <div class="form-group">
               <div class="field-title">
                 <mat-icon class="field-icon">title</mat-icon>
-                <label>סיומת</label>
+                <label>{{ (i18n.terms$ | async)?.suffix }}</label>
               </div>
               <select class="form-control" [(ngModel)]="donor.suffix">
                 <option value="">{{ getSuffixPlaceholder() }}</option>
@@ -75,7 +75,7 @@
             <div class="form-group">
               <div class="field-title">
                 <mat-icon class="field-icon">military_tech</mat-icon>
-                <label>תואר באנגלית</label>
+                <label>{{ (i18n.terms$ | async)?.titleEnglish }}</label>
               </div>
               <select class="form-control" [(ngModel)]="donor.titleEnglish">
                 <option value="">-- Select Title --</option>
@@ -92,21 +92,21 @@
             <div class="form-group">
               <div class="field-title">
                 <mat-icon class="field-icon">language</mat-icon>
-                <label>שם פרטי באנגלית</label>
+                <label>{{ (i18n.terms$ | async)?.firstNameEnglish }}</label>
               </div>
               <input type="text" class="form-control" [(ngModel)]="donor.firstNameEnglish" placeholder="First Name">
             </div>
             <div class="form-group">
               <div class="field-title">
                 <mat-icon class="field-icon">translate</mat-icon>
-                <label>שם משפחה באנגלית</label>
+                <label>{{ (i18n.terms$ | async)?.lastNameEnglish }}</label>
               </div>
               <input type="text" class="form-control" [(ngModel)]="donor.lastNameEnglish" placeholder="Last Name">
             </div>
             <div class="form-group">
               <div class="field-title">
                 <mat-icon class="field-icon">title</mat-icon>
-                <label>סיומת באנגלית</label>
+                <label>{{ (i18n.terms$ | async)?.suffixEnglish }}</label>
               </div>
               <input type="text" class="form-control" [(ngModel)]="donor.suffixEnglish" placeholder="Suffix">
             </div>
@@ -142,10 +142,10 @@
             <div class="form-group">
               <div class="field-title">
                 <mat-icon class="field-icon">person</mat-icon>
-                <label>מתרים</label>
+                <label>{{ (i18n.terms$ | async)?.fundraiser }}</label>
               </div>
               <select class="form-control" [(ngModel)]="donor.fundraiserId" (change)="onFieldChange()">
-                <option value="">בחר מתרים</option>
+                <option value="">{{ (i18n.terms$ | async)?.selectFundraiser }}</option>
                 <option *ngFor="let fundraiser of fundraisers" [value]="fundraiser.id">
                   {{ fundraiser.name }}
                 </option>
@@ -159,7 +159,7 @@
         <div class="section addresses-section">
           <h3>
             <mat-icon class="section-icon">location_on</mat-icon>
-            כתובות
+            {{ (i18n.terms$ | async)?.addresses }}
           </h3>
 
           <div class="addresses-grid">
@@ -167,10 +167,10 @@
             <div class="address-item">
               <div class="address-header">
                 <mat-icon class="address-type-icon">home</mat-icon>
-                <h4>כתובת מגורים</h4>
+                <h4>{{ (i18n.terms$ | async)?.homeAddress }}</h4>
               </div>
               <!-- Direct binding to Place entity -->
-              <app-osm-address-input label="כתובת מגורים" placeholder="הקלד כתובת מגורים..." countryCode="il"
+              <app-osm-address-input [label]="(i18n.terms$ | async)?.homeAddress || 'כתובת מגורים'" [placeholder]="(i18n.terms$ | async)?.enterHomeAddress || 'הקלד כתובת מגורים...'" countryCode="il"
                 [(place)]="donor.homePlace" (placeChange)="onHomePlaceSelected($event)">
               </app-osm-address-input>
             </div>
@@ -179,9 +179,9 @@
             <div class="address-item">
               <div class="address-header">
                 <mat-icon class="address-type-icon">beach_access</mat-icon>
-                <h4>כתובת נופש</h4>
+                <h4>{{ (i18n.terms$ | async)?.vacationAddress }}</h4>
               </div>
-              <app-osm-address-input label="כתובת נופש" placeholder="הקלד כתובת נופש..." countryCode="il"
+              <app-osm-address-input [label]="(i18n.terms$ | async)?.vacationAddress || 'כתובת נופש'" [placeholder]="(i18n.terms$ | async)?.enterVacationAddress || 'הקלד כתובת נופש...'" countryCode="il"
                 [(place)]="donor.vacationPlace" (placeChange)="onVacationPlaceSelected($event)">
               </app-osm-address-input>
             </div>
@@ -198,7 +198,7 @@
               <div class="family-group">
                 <h4 class="group-title">
                   <mat-icon>favorite</mat-icon>
-                  מצב משפחתי
+                  {{ (i18n.terms$ | async)?.maritalStatus }}
                 </h4>
                 <div class="form-grid">
                   <div class="form-group">
@@ -213,7 +213,7 @@
                             class="marital-status-radio">
                           <div class="marital-status-content">
                             <span class="marital-status-icon">💒</span>
-                            <span class="marital-status-label">נשוי/ה</span>
+                            <span class="marital-status-label">{{ (i18n.terms$ | async)?.married }}</span>
                           </div>
                         </label>
                       </div>
@@ -224,7 +224,7 @@
                             class="marital-status-radio">
                           <div class="marital-status-content">
                             <span class="marital-status-icon">👤</span>
-                            <span class="marital-status-label">רווק/ה</span>
+                            <span class="marital-status-label">{{ (i18n.terms$ | async)?.single }}</span>
                           </div>
                         </label>
                       </div>
@@ -235,7 +235,7 @@
                             class="marital-status-radio">
                           <div class="marital-status-content">
                             <span class="marital-status-icon">🕊️</span>
-                            <span class="marital-status-label">אלמן/ה</span>
+                            <span class="marital-status-label">{{ (i18n.terms$ | async)?.widowed }}</span>
                           </div>
                         </label>
                       </div>
@@ -246,7 +246,7 @@
                             class="marital-status-radio">
                           <div class="marital-status-content">
                             <span class="marital-status-icon">💔</span>
-                            <span class="marital-status-label">גרוש/ה</span>
+                            <span class="marital-status-label">{{ (i18n.terms$ | async)?.divorced }}</span>
                           </div>
                         </label>
                       </div>
@@ -273,7 +273,7 @@
                       <div class="form-group">
                         <div class="field-title">
                           <mat-icon class="field-icon">person_outline</mat-icon>
-                          <label>תואר באנגלית בן/בת זוג</label>
+                          <label>{{ (i18n.terms$ | async)?.spouseTitleEnglish }}</label>
                         </div>
                         <select class="form-control" [(ngModel)]="donor.wifeTitleEnglish">
                           <option value="">-- Select Title --</option>
@@ -318,7 +318,7 @@
                 <div class="family-group">
                   <h4 class="group-title">
                     <mat-icon>family_restroom</mat-icon>
-                    קשרים משפחתיים עם תורמים אחרים
+                    {{ (i18n.terms$ | async)?.familyRelationships }}
                   </h4>
 
                   <!-- Selected Family Relationships -->
@@ -342,7 +342,7 @@
                   <!-- Add Family Relationship Controls -->
                   <div class="add-family-relationship">
                     <div class="family-help-text" *ngIf="selectedFamilyRelationships.length === 0">
-                      <small>לא נבחרו קשרים משפחתיים</small>
+                      <small>{{ (i18n.terms$ | async)?.noFamilyRelationships }}</small>
                     </div>
 
                     <div class="add-family-controls">
@@ -382,7 +382,7 @@
                 <div class="family-group">
                   <h4 class="group-title">
                     <mat-icon>phone</mat-icon>
-                    פרטי התקשרות
+                    {{ (i18n.terms$ | async)?.contactDetails }}
                   </h4>
                   <div class="form-grid">
                     <div class="form-group">
@@ -505,7 +505,7 @@
             <div class="section-header">
               <h3>
                 <mat-icon class="section-icon">business</mat-icon>
-                חברות ועמותות
+                {{ (i18n.terms$ | async)?.companiesAndOrganizations }}
               </h3>
             </div>
 
@@ -531,7 +531,7 @@
 
               <div class="company-help-text" *ngIf="selectedCompanies.length === 0">
                 <mat-icon>info_outline</mat-icon>
-                <span>לא נבחרו חברות או עמותות</span>
+                <span>{{ (i18n.terms$ | async)?.noCompaniesSelected }}</span>
               </div>
 
               <!-- Add Company Controls -->
@@ -539,10 +539,10 @@
                 <div class="form-group full-width">
                   <label class="control-label">
                     <mat-icon class="label-icon">search</mat-icon>
-                    בחר חברה קיימת
+                    {{ (i18n.terms$ | async)?.selectExistingCompany }}
                   </label>
                   <select class="form-control company-select" [(ngModel)]="selectedCompanyIdForEdit">
-                    <option value="">בחר חברה/עמותה</option>
+                    <option value="">{{ (i18n.terms$ | async)?.selectCompanyOrganization }}</option>
                     <option *ngFor="let company of companies" [value]="company.id">
                       {{ company.name }}
                     </option>
@@ -553,18 +553,18 @@
                   <button mat-raised-button color="primary" type="button" (click)="addSelectedCompany()"
                     [disabled]="!selectedCompanyIdForEdit">
                     <mat-icon>add</mat-icon>
-                    הוסף חברה
+                    {{ (i18n.terms$ | async)?.addCompany }}
                   </button>
 
                   <button mat-stroked-button type="button" (click)="editSelectedCompany()"
                     [disabled]="!selectedCompanyIdForEdit">
                     <mat-icon>edit</mat-icon>
-                    ערוך חברה
+                    {{ (i18n.terms$ | async)?.editCompany }}
                   </button>
 
                   <button mat-stroked-button color="accent" type="button" (click)="addNewCompany()">
                     <mat-icon>add_business</mat-icon>
-                    הוסף חברה חדשה
+                    {{ (i18n.terms$ | async)?.addNewCompany }}
                   </button>
                 </div>
               </div>
@@ -573,7 +573,7 @@
               <div *ngIf="donor.companies && donor.companies.length > 0" class="legacy-companies-section">
                 <h5 class="legacy-title">
                   <mat-icon>history</mat-icon>
-                  חברות ישנות (לתצוגה בלבד)
+                  {{ (i18n.terms$ | async)?.legacyCompanies }}
                 </h5>
                 <div class="legacy-companies-list">
                   <div *ngFor="let company of donor.companies" class="legacy-company-item">
@@ -587,7 +587,7 @@
 
           <!-- קטגוריות וחוגים -->
           <div class="section categories-levels">
-            <h3>קטגוריות וחוגים</h3>
+            <h3>{{ (i18n.terms$ | async)?.categoriesAndCircles }}</h3>
 
             <!-- Donor Circle Card -->
             <div class="info-card donor-level-card">
@@ -604,7 +604,7 @@
                           class="level-radio">
                         <div class="level-content">
                           <span class="level-icon">👑</span>
-                          <span class="level-label">פלטינום</span>
+                          <span class="level-label">{{ (i18n.terms$ | async)?.platinum }}</span>
                         </div>
                       </label>
                     </div>
@@ -615,7 +615,7 @@
                           class="level-radio">
                         <div class="level-content">
                           <span class="level-icon">🥇</span>
-                          <span class="level-label">זהב</span>
+                          <span class="level-label">{{ (i18n.terms$ | async)?.gold }}</span>
                         </div>
                       </label>
                     </div>
@@ -690,7 +690,7 @@
             <div class="info-card donor-type-card">
               <div class="card-header">
                 <mat-icon class="card-icon">group</mat-icon>
-                <h4>אפיון תורם</h4>
+                <h4>{{ (i18n.terms$ | async)?.donorCharacterization }}</h4>
               </div>
               <div class="donor-type-grid">
                 <div class="type-option" [class.active]="donor.isAnash">
@@ -698,7 +698,7 @@
                     <input type="checkbox" [(ngModel)]="donor.isAnash" class="type-checkbox">
                     <div class="type-content">
                       <mat-icon class="type-icon">synagogue</mat-icon>
-                      <span class="type-label">אנ"ש</span>
+                      <span class="type-label">{{ (i18n.terms$ | async)?.anash }}</span>
                       <!-- <small class="type-desc">חברי הקהילה</small> -->
                     </div>
                   </label>
@@ -709,7 +709,7 @@
                     <input type="checkbox" [(ngModel)]="donor.isAlumni" class="type-checkbox">
                     <div class="type-content">
                       <mat-icon class="type-icon">school</mat-icon>
-                      <span class="type-label">בוגר</span>
+                      <span class="type-label">{{ (i18n.terms$ | async)?.alumni }}</span>
                       <!-- <small class="type-desc">בוגרי המוסד</small> -->
                     </div>
                   </label>
@@ -721,7 +721,7 @@
                       class="type-checkbox">
                     <div class="type-content">
                       <mat-icon class="type-icon">people_alt</mat-icon>
-                      <span class="type-label">קשר אחר</span>
+                      <span class="type-label">{{ (i18n.terms$ | async)?.otherConnection }}</span>
                       <!-- <small class="type-desc">קשר משפחתי או חברי</small> -->
                     </div>
                   </label>
@@ -848,7 +848,7 @@
                     <div class="method-content">
                       <mat-icon class="method-icon">phone</mat-icon>
                       <span class="method-label">{{ (i18n.terms$ | async)?.phoneContact }}</span>
-                      <small class="method-desc">שיחת טלפון</small>
+                      <!-- <small class="method-desc">שיחת טלפון</small> -->
                     </div>
                   </label>
                 </div>
@@ -859,7 +859,7 @@
                     <div class="method-content">
                       <mat-icon class="method-icon">email</mat-icon>
                       <span class="method-label">{{ (i18n.terms$ | async)?.emailContact }}</span>
-                      <small class="method-desc">הודעת דוא"ל</small>
+                      <!-- <small class="method-desc">הודעת דוא"ל</small> -->
                     </div>
                   </label>
                 </div>
@@ -870,7 +870,7 @@
                     <div class="method-content">
                       <mat-icon class="method-icon">sms</mat-icon>
                       <span class="method-label">{{ (i18n.terms$ | async)?.smsContact }}</span>
-                      <small class="method-desc">הודעת טקסט</small>
+                      <!-- <small class="method-desc">הודעת טקסט</small> -->
                     </div>
                   </label>
                 </div>
@@ -881,7 +881,7 @@
                     <div class="method-content">
                       <mat-icon class="method-icon">home</mat-icon>
                       <span class="method-label">{{ (i18n.terms$ | async)?.homeVisit }}</span>
-                      <small class="method-desc">ביקור בבית</small>
+                      <!-- <small class="method-desc">ביקור בבית</small> -->
                     </div>
                   </label>
                 </div>
@@ -892,7 +892,7 @@
                     <div class="method-content">
                       <mat-icon class="method-icon">business</mat-icon>
                       <span class="method-label">{{ (i18n.terms$ | async)?.officeVisit }}</span>
-                      <small class="method-desc">ביקור במשרד</small>
+                      <!-- <small class="method-desc">ביקור במשרד</small> -->
                     </div>
                   </label>
                 </div>
@@ -903,7 +903,7 @@
             <div class="info-card contact-style-card">
               <div class="card-header">
                 <mat-icon class="card-icon">psychology</mat-icon>
-                <h4>אופן יצירת הקשר</h4>
+                <h4>{{ (i18n.terms$ | async)?.contactMethod }}</h4>
               </div>
               <div class="contact-style-grid">
                 <div class="contact-style" [class.active]="donor.requirePhoneCoordination">
@@ -911,8 +911,8 @@
                     <input type="checkbox" [(ngModel)]="donor.requirePhoneCoordination" class="style-checkbox">
                     <div class="style-content">
                       <mat-icon class="style-icon">phone_callback</mat-icon>
-                      <span class="style-label">בתיאום טלפוני</span>
-                      <small class="style-desc">תיאום מראש</small>
+                      <span class="style-label">{{ (i18n.terms$ | async)?.phoneCoordination }}</span>
+                      <!-- <small class="style-desc">{{ (i18n.terms$ | async)?.priorCoordination }}</small> -->
                     </div>
                   </label>
                 </div>
@@ -922,8 +922,8 @@
                     <input type="checkbox" [(ngModel)]="donor.preferSpecialTimes" class="style-checkbox">
                     <div class="style-content">
                       <mat-icon class="style-icon">celebration</mat-icon>
-                      <span class="style-label">בזמנים מיוחדים</span>
-                      <small class="style-desc">פסח/סוכות</small>
+                      <span class="style-label">{{ (i18n.terms$ | async)?.specialTimes }}</span>
+                      <!-- <small class="style-desc">{{ (i18n.terms$ | async)?.holidayTimes }}</small> -->
                     </div>
                   </label>
                 </div>
@@ -933,8 +933,8 @@
                     <input type="checkbox" [(ngModel)]="donor.preferPublicReception" class="style-checkbox">
                     <div class="style-content">
                       <mat-icon class="style-icon">groups</mat-icon>
-                      <span class="style-label">קבלה כללית</span>
-                      <small class="style-desc">קבלת קהל</small>
+                      <span class="style-label">{{ (i18n.terms$ | async)?.publicReception }}</span>
+                      <!-- <small class="style-desc">{{ (i18n.terms$ | async)?.publicReceptionDesc }}</small> -->
                     </div>
                   </label>
                 </div>
@@ -945,7 +945,7 @@
             <div class="info-card additional-prefs-card">
               <div class="card-header">
                 <mat-icon class="card-icon">tune</mat-icon>
-                <h4>העדפות נוספות</h4>
+                <h4>{{ (i18n.terms$ | async)?.additionalPreferences }}</h4>
               </div>
               <div class="additional-prefs-grid">
                 <div class="pref-option" [class.active]="donor.emailOnlyCorrespondence">
@@ -953,8 +953,8 @@
                     <input type="checkbox" [(ngModel)]="donor.emailOnlyCorrespondence" class="pref-checkbox">
                     <div class="pref-content">
                       <mat-icon class="pref-icon">email</mat-icon>
-                      <span class="pref-label">דוא"ל בלבד</span>
-                      <small class="pref-desc">שליחת מכתבים באימייל</small>
+                      <span class="pref-label">{{ (i18n.terms$ | async)?.emailOnly }}</span>
+                      <!-- <small class="pref-desc">{{ (i18n.terms$ | async)?.sendLettersByEmail }}</small> -->
                     </div>
                   </label>
                 </div>
@@ -964,8 +964,8 @@
                     <input type="checkbox" [(ngModel)]="donor.autoAddToLocationEvents" class="pref-checkbox">
                     <div class="pref-content">
                       <mat-icon class="pref-icon">location_on</mat-icon>
-                      <span class="pref-label">אירועים אוטומטי</span>
-                      <small class="pref-desc">הוספה לפי מיקום</small>
+                      <span class="pref-label">{{ (i18n.terms$ | async)?.automaticEvents }}</span>
+                      <!-- <small class="pref-desc">{{ (i18n.terms$ | async)?.addByLocation }}</small> -->
                     </div>
                   </label>
                 </div>
@@ -976,13 +976,13 @@
             <div class="info-card reception-card">
               <div class="card-header">
                 <mat-icon class="card-icon">schedule</mat-icon>
-                <h4>שעות קבלה</h4>
+                <h4>{{ (i18n.terms$ | async)?.receptionHours }}</h4>
               </div>
               <div class="form-group">
-                <div class="field-title">
+                <!-- <div class="field-title">
                   <mat-icon class="field-icon">access_time</mat-icon>
                   <label>{{ (i18n.terms$ | async)?.receptionHours }}</label>
-                </div>
+                </div> -->
                 <input type="text" class="form-control modern-input" [(ngModel)]="donor.receptionHours"
                   placeholder="לדוגמה: 09:00-17:00 או בשעות הערב">
               </div>
@@ -996,30 +996,26 @@
             <!-- Interests Card -->
             <div class="info-card interests-card">
               <div class="card-header">
-                <mat-icon class="card-icon">interests</mat-icon>
-                <h4>תחומי עניין</h4>
+                <!-- <mat-icon class="card-icon">interests</mat-icon> -->
+                <!-- <h4>{{ (i18n.terms$ | async)?.areasOfInterest }}</h4> -->
               </div>
               <div class="form-grid">
                 <div class="form-group full-width">
                   <div class="field-title">
                     <mat-icon class="field-icon">interests</mat-icon>
-                    <label>ריגושים ונושאים מעניינים</label>
+                    <label>{{ (i18n.terms$ | async)?.interestingTopics }}</label>
                   </div>
                   <textarea class="form-control interests-textarea" [(ngModel)]="donor.interests"
-                    placeholder="נושאים שמעניינים את התורם: תורה, חסידות, חינוך, קהילה..." rows="3"></textarea>
+                    [placeholder]="(i18n.terms$ | async)?.interestingTopicsPlaceholder || 'נושאים שמעניינים את התורם: תורה, חסידות, חינוך, קהילה...'" rows="3"></textarea>
                 </div>
                 <div class="form-group full-width">
                   <div class="field-title">
                     <mat-icon class="field-icon">sports_soccer</mat-icon>
-                    <label>תחביבים ופעילויות</label>
+                    <label>{{ (i18n.terms$ | async)?.hobbiesAndActivities }}</label>
                   </div>
                   <textarea class="form-control hobbies-textarea" [(ngModel)]="donor.hobbies"
-                    placeholder="תחביבים ופעילויות פנאי: ספורט, מוסיקה, קריאה, נסיעות..." rows="3"></textarea>
+                    [placeholder]="(i18n.terms$ | async)?.hobbiesPlaceholder || 'תחביבים ופעילויות פנאי: ספורט, מוסיקה, קריאה, נסיעות...'" rows="3"></textarea>
                 </div>
-              </div>
-            </div>
-          </div>
-          <div class="form-grid">
             <div class="form-group full-width">
               <div class="field-title">
                 <mat-icon class="field-icon">note</mat-icon>
@@ -1027,6 +1023,8 @@
               </div>
               <textarea class="form-control" rows="4" [(ngModel)]="donor.notes"
                 [placeholder]="(i18n.terms$ | async)?.enterNotesPlaceholder"></textarea>
+            </div>
+              </div>
             </div>
           </div>
         </div>
@@ -1036,14 +1034,14 @@
     <div class="modal-footer" *ngIf="!loading">
       <div class="footer-actions-left">
         <!-- Quick Actions -->
-        <button mat-stroked-button class="quick-action-btn" *ngIf="!isNewDonor" (click)="openGifts()" title="מתנות">
+        <button mat-stroked-button class="quick-action-btn" *ngIf="!isNewDonor" (click)="openGifts()" [title]="(i18n.terms$ | async)?.gifts || 'מתנות'">
           <mat-icon>redeem</mat-icon>
-          מתנות
+          {{ (i18n.terms$ | async)?.gifts }}
         </button>
         <button mat-stroked-button class="quick-action-btn" *ngIf="!isNewDonor" (click)="openDonations()"
-          title="תרומות">
+          [title]="(i18n.terms$ | async)?.donations || 'תרומות'">
           <mat-icon>attach_money</mat-icon>
-          תרומות
+          {{ (i18n.terms$ | async)?.donations }}
         </button>
         <!-- <button mat-stroked-button
               class="quick-action-btn"

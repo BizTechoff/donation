@@ -32,15 +32,17 @@ export class OrganizationDetailsModalComponent implements OnInit {
   loading = false;
   isNew = false;
 
-  // Currency options
-  currencyOptions = [
-    { value: 'ILS', label: '₪ - שקל ישראלי (ILS)' },
-    { value: 'USD', label: '$ - דולר אמריקאי (USD)' },
-    { value: 'EUR', label: '€ - יורו (EUR)' },
-    { value: 'GBP', label: '£ - לירה שטרלינג (GBP)' },
-    { value: 'CAD', label: 'C$ - דולר קנדי (CAD)' },
-    { value: 'AUD', label: 'A$ - דולר אוסטרלי (AUD)' }
-  ];
+  // Currency options - dynamically generated from terms
+  get currencyOptions() {
+    return [
+      { value: 'ILS', label: this.i18n.terms.currencyILS },
+      { value: 'USD', label: this.i18n.terms.currencyUSD },
+      { value: 'EUR', label: this.i18n.terms.currencyEUR },
+      { value: 'GBP', label: this.i18n.terms.currencyGBP },
+      { value: 'CAD', label: this.i18n.terms.currencyCAD },
+      { value: 'AUD', label: this.i18n.terms.currencyAUD }
+    ];
+  }
 
   constructor(
     public i18n: I18nService,

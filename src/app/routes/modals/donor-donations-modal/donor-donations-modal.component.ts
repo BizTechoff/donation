@@ -43,7 +43,7 @@ export class DonorDonationsModalComponent implements OnInit {
   filterStatus = '';
 
   // Table configuration
-  displayedColumns: string[] = ['donationDate', 'amount', 'currency', 'campaign', 'method', 'status', 'actions'];
+  displayedColumns: string[] = ['donationDate', 'amount', 'currency', 'campaign', 'method', 'actions'];
 
   // Totals
   totalAmount = 0;
@@ -245,6 +245,18 @@ export class DonorDonationsModalComponent implements OnInit {
   exportToExcel() {
     // TODO: Implement Excel export
     this.ui.info('ייצוא לאקסל יבוצע בהמשך');
+  }
+
+  getPaymentMethodDisplayName(method: DonationMethod): string {
+    const typeLabels: { [key: string]: string } = {
+      cash: this.i18n.terms.cash,
+      check: this.i18n.terms.check,
+      credit_card: this.i18n.terms.credit_card,
+      bank_transfer: this.i18n.terms.bank_transfer,
+      standing_order: this.i18n.terms.standingOrder,
+      association: this.i18n.terms.other
+    };
+    return typeLabels[method.type] || method.name;
   }
 
   closeModal() {

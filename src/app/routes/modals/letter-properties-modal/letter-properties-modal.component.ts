@@ -6,6 +6,7 @@ import { remult } from 'remult';
 import { Donation } from '../../../../shared/entity';
 import { Letter } from '../../../../shared/enum/letter';
 import { UIToolsService } from '../../../common/UIToolsService';
+import { I18nService } from '../../../i18n/i18n.service';
 import { LetterService } from '../../../services/letter.service';
 
 export interface LetterPropertiesModalArgs {
@@ -67,6 +68,7 @@ export class LetterPropertiesModalComponent implements OnInit {
   fieldValues: FieldValue[] = [];
 
   constructor(
+    public i18n: I18nService,
     private letterService: LetterService,
     private ui: UIToolsService,
     public dialogRef: MatDialogRef<LetterPropertiesModalComponent>

@@ -730,7 +730,7 @@ export class DonorDetailsModalComponent implements OnInit {
         type: 'select',
         options: [
           { value: 'he', label: 'עברית' },
-          { value: 'en', label: 'אנגלית' },
+          { value: 'en', label: 'English' },
           { value: 'yi', label: 'יידיש' }
         ]
       },
@@ -1020,10 +1020,10 @@ export class DonorDetailsModalComponent implements OnInit {
   // Circle options (חוג)
   getCircleOptions(): { value: string; label: string }[] {
     return [
-      { value: 'platinum', label: 'פלטינום' },
-      { value: 'gold', label: 'זהב' },
-      { value: 'silver', label: 'כסף' },
-      { value: 'regular', label: 'רגיל' }
+      { value: 'platinum', label: this.i18n.terms.platinum },
+      { value: 'gold', label: this.i18n.terms.gold },
+      { value: 'silver', label: this.i18n.terms.silver },
+      { value: 'regular', label: this.i18n.terms.regular }
     ];
   }
 

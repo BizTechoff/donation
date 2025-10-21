@@ -14,6 +14,7 @@ import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { Country } from '../../../shared/entity/country';
 import { Place } from '../../../shared/entity/place';
 import { GeoService } from '../../services/geo.service';
+import { I18nService } from '../../i18n/i18n.service';
 
 // Legacy interface - kept for backward compatibility but deprecated
 // Use Place entity directly instead
@@ -73,7 +74,10 @@ export class OsmAddressInputComponent implements ControlValueAccessor, OnDestroy
   private onTouched = () => { };
   private justCleared = false; // דגל למניעת טעינה חוזרת מיד אחרי ניקוי
 
-  constructor(private geoService: GeoService) {
+  constructor(
+    private geoService: GeoService,
+    public i18n: I18nService
+  ) {
     // Load countries from database
     this.loadCountries();
 
