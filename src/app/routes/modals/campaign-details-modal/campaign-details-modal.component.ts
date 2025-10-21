@@ -265,11 +265,8 @@ export class CampaignDetailsModalComponent implements OnInit {
   }
 
   onManagerChange() {
-    if (this.selectedManager) {
-      this.campaign.managerId = this.selectedManager.id;
-    } else {
-      this.campaign.managerId = '';
-    }
+    // The campaign.managerId is already updated by ngModel binding
+    // Just mark as changed
     this.markAsChanged();
   }
 
