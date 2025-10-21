@@ -8,20 +8,20 @@
           <mat-icon>{{isNew ? 'business_center' : 'business'}}</mat-icon>
         </div>
         <div class="header-text">
-          <h2>{{isNew ? 'עמותה חדשה' : 'עריכת עמותה'}}</h2>
+          <h2>{{isNew ? ((i18n.terms$ | async)?.newOrganization || 'עמותה חדשה') : ((i18n.terms$ | async)?.editOrganization || 'עריכת עמותה')}}</h2>
           <p class="header-subtitle" *ngIf="!isNew && organization">
             {{organization.name}}
           </p>
         </div>
       </div>
-      <button class="modal-close" (click)="closeModal()" matTooltip="סגור" [dir]="i18n.lang.RTL ? 'rtl' : 'ltr'">
+      <button class="modal-close" (click)="closeModal()" [matTooltip]="(i18n.terms$ | async)?.close || 'סגור'" [dir]="i18n.lang.RTL ? 'rtl' : 'ltr'">
         <mat-icon>close</mat-icon>
       </button>
     </div>
 
     <!-- Loading State -->
     <div class="loading-overlay" *ngIf="loading">
-      <div class="loading-spinner">טוען נתונים...</div>
+      <div class="loading-spinner">{{ (i18n.terms$ | async)?.loadingData || 'טוען נתונים...' }}</div>
     </div>
 
     <div class="modal-body">
@@ -29,49 +29,49 @@
 
         <!-- פרטי עמותה בסיסיים -->
         <div class="section basic-info">
-          <h3>פרטי עמותה בסיסיים</h3>
+          <h3>{{ (i18n.terms$ | async)?.basicOrganizationDetails || 'פרטי עמותה בסיסיים' }}</h3>
           <div class="form-grid">
             <div class="form-group full-width">
               <div class="field-title">
                 <mat-icon class="field-icon">business</mat-icon>
-                <label>שם העמותה *</label>
+                <label>{{ (i18n.terms$ | async)?.organizationName || 'שם העמותה' }} *</label>
               </div>
               <input type="text"
                      class="form-control"
                      [(ngModel)]="organization.name"
                      (ngModelChange)="onFieldChange()"
-                     placeholder="שם העמותה"
+                     [placeholder]="(i18n.terms$ | async)?.organizationName || 'שם העמותה'"
                      required>
             </div>
 
             <div class="form-group">
               <div class="field-title">
                 <mat-icon class="field-icon">badge</mat-icon>
-                <label>מספר עמותה (ח"פ)</label>
+                <label>{{ (i18n.terms$ | async)?.organizationNumber || 'מספר עמותה (ח"פ)' }}</label>
               </div>
               <input type="text"
                      class="form-control"
                      [(ngModel)]="organization.registrationNumber"
                      (ngModelChange)="onFieldChange()"
-                     placeholder="מספר רישום">
+                     [placeholder]="(i18n.terms$ | async)?.registrationNumber || 'מספר רישום'">
             </div>
 
             <div class="form-group">
               <div class="field-title">
                 <mat-icon class="field-icon">account_balance</mat-icon>
-                <label>מספר חשבון</label>
+                <label>{{ (i18n.terms$ | async)?.accountNumber || 'מספר חשבון' }}</label>
               </div>
               <input type="text"
                      class="form-control"
                      [(ngModel)]="organization.accountNumber"
                      (ngModelChange)="onFieldChange()"
-                     placeholder="מספר חשבון בנק">
+                     [placeholder]="(i18n.terms$ | async)?.accountNumberPlaceholder || 'מספר חשבון בנק'">
             </div>
 
             <div class="form-group">
               <div class="field-title">
                 <mat-icon class="field-icon">attach_money</mat-icon>
-                <label>מטבע</label>
+                <label>{{ (i18n.terms$ | async)?.currency || 'מטבע' }}</label>
               </div>
               <select class="form-control"
                       [(ngModel)]="organization.currency"
@@ -88,13 +88,13 @@
         <div class="section address-info">
           <h3>
             <mat-icon class="section-icon">location_on</mat-icon>
-            פרטי כתובת
+            {{ (i18n.terms$ | async)?.addressDetails || 'פרטי כתובת' }}
           </h3>
           <div class="form-grid">
             <div class="form-group full-width">
               <app-osm-address-input
-                label="כתובת העמותה"
-                placeholder="הקלד כתובת..."
+                [label]="(i18n.terms$ | async)?.organizationAddress || 'כתובת העמותה'"
+                [placeholder]="(i18n.terms$ | async)?.enterAddress || 'הקלד כתובת...'"
                 countryCode="il"
                 [(place)]="organization.place"
                 (placeChange)="onPlaceSelected($event)">
@@ -107,31 +107,31 @@
         <div class="section contact-info">
           <h3>
             <mat-icon class="section-icon">contacts</mat-icon>
-            פרטי קשר
+            {{ (i18n.terms$ | async)?.contactDetails || 'פרטי קשר' }}
           </h3>
           <div class="form-grid">
             <div class="form-group">
               <div class="field-title">
                 <mat-icon class="field-icon">phone</mat-icon>
-                <label>טלפון</label>
+                <label>{{ (i18n.terms$ | async)?.phone || 'טלפון' }}</label>
               </div>
               <input type="tel"
                      class="form-control"
                      [(ngModel)]="organization.phone"
                      (ngModelChange)="onFieldChange()"
-                     placeholder="מספר טלפון">
+                     [placeholder]="(i18n.terms$ | async)?.phoneNumber || 'מספר טלפון'">
             </div>
 
             <div class="form-group">
               <div class="field-title">
                 <mat-icon class="field-icon">email</mat-icon>
-                <label>אימייל</label>
+                <label>{{ (i18n.terms$ | async)?.email || 'אימייל' }}</label>
               </div>
               <input type="email"
                      class="form-control"
                      [(ngModel)]="organization.email"
                      (ngModelChange)="onFieldChange()"
-                     placeholder="כתובת דואר אלקטרוני">
+                     [placeholder]="(i18n.terms$ | async)?.emailAddress || 'כתובת דואר אלקטרוני'">
             </div>
           </div>
         </div>
@@ -140,19 +140,19 @@
         <div class="section other-info">
           <h3>
             <mat-icon class="section-icon">note</mat-icon>
-            אחר
+            {{ (i18n.terms$ | async)?.other || 'אחר' }}
           </h3>
           <div class="form-grid">
             <div class="form-group full-width">
               <div class="field-title">
                 <mat-icon class="field-icon">notes</mat-icon>
-                <label>הערות</label>
+                <label>{{ (i18n.terms$ | async)?.notes || 'הערות' }}</label>
               </div>
               <textarea class="form-control"
                         rows="4"
                         [(ngModel)]="organization.notes"
                         (ngModelChange)="onFieldChange()"
-                        placeholder="הערות והשתהות נוספות"></textarea>
+                        [placeholder]="(i18n.terms$ | async)?.additionalNotes || 'הערות והשתהות נוספות'"></textarea>
             </div>
 
             <div class="form-group full-width">
@@ -163,7 +163,7 @@
                          (ngModelChange)="onFieldChange()">
                   <span class="checkbox-text">
                     <mat-icon class="checkbox-icon">{{organization.isActive ? 'check_circle' : 'cancel'}}</mat-icon>
-                    פעיל
+                    {{ (i18n.terms$ | async)?.active || 'פעיל' }}
                   </span>
                 </label>
               </div>
@@ -183,7 +183,7 @@
                 (click)="closeModal()"
                 class="cancel-button">
           <mat-icon>close</mat-icon>
-          ביטול
+          {{ (i18n.terms$ | async)?.cancel || 'ביטול' }}
         </button>
         <button mat-raised-button
                 color="primary"
@@ -191,7 +191,7 @@
                 class="save-button"
                 [disabled]="loading">
           <mat-icon>save</mat-icon>
-          {{ isNew ? 'שמור עמותה' : 'עדכן עמותה' }}
+          {{ isNew ? ((i18n.terms$ | async)?.saveOrganization || 'שמור עמותה') : ((i18n.terms$ | async)?.updateOrganization || 'עדכן עמותה') }}
         </button>
       </div>
     </div>

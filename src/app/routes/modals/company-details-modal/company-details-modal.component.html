@@ -8,20 +8,20 @@
           <mat-icon>{{isNew ? 'business' : 'business'}}</mat-icon>
         </div>
         <div class="header-text">
-          <h2>{{isNew ? 'חברה חדשה' : 'עריכת חברה'}}</h2>
+          <h2>{{isNew ? ((i18n.terms$ | async)?.newCompany || 'חברה חדשה') : ((i18n.terms$ | async)?.editCompany || 'עריכת חברה')}}</h2>
           <p class="header-subtitle" *ngIf="!isNew && company">
             {{company.name}}
           </p>
         </div>
       </div>
-      <button class="modal-close" (click)="closeModal()" matTooltip="סגור" [dir]="i18n.lang.RTL ? 'rtl' : 'ltr'">
+      <button class="modal-close" (click)="closeModal()" [matTooltip]="(i18n.terms$ | async)?.close || 'סגור'" [dir]="i18n.lang.RTL ? 'rtl' : 'ltr'">
         <mat-icon>close</mat-icon>
       </button>
     </div>
 
     <!-- Loading State -->
     <div class="loading-overlay" *ngIf="loading">
-      <div class="loading-spinner">טוען נתונים...</div>
+      <div class="loading-spinner">{{ (i18n.terms$ | async)?.loadingData || 'טוען נתונים...' }}</div>
     </div>
 
     <div class="modal-body">
@@ -29,31 +29,31 @@
 
         <!-- פרטי חברה בסיסיים -->
         <div class="section basic-info">
-          <h3>פרטי חברה בסיסיים</h3>
+          <h3>{{ (i18n.terms$ | async)?.basicCompanyDetails || 'פרטי חברה בסיסיים' }}</h3>
           <div class="form-grid">
             <div class="form-group full-width">
               <div class="field-title">
                 <mat-icon class="field-icon">business</mat-icon>
-                <label>שם החברה *</label>
+                <label>{{ (i18n.terms$ | async)?.companyName || 'שם החברה' }} *</label>
               </div>
               <input type="text"
                      class="form-control"
                      [(ngModel)]="company.name"
                      (ngModelChange)="onFieldChange()"
-                     placeholder="שם החברה"
+                     [placeholder]="(i18n.terms$ | async)?.companyName || 'שם החברה'"
                      required>
             </div>
 
             <div class="form-group">
               <div class="field-title">
                 <mat-icon class="field-icon">tag</mat-icon>
-                <label>מספר חברה (ח"פ)</label>
+                <label>{{ (i18n.terms$ | async)?.companyNumber || 'מספר חברה (ח"פ)' }}</label>
               </div>
               <input type="text"
                      class="form-control"
                      [(ngModel)]="company.number"
                      (ngModelChange)="onFieldChange()"
-                     placeholder="מספר חברה">
+                     [placeholder]="(i18n.terms$ | async)?.companyNumber || 'מספר חברה'">
             </div>
           </div>
         </div>
@@ -62,13 +62,13 @@
         <div class="section address-info">
           <h3>
             <mat-icon class="section-icon">location_on</mat-icon>
-            פרטי כתובת
+            {{ (i18n.terms$ | async)?.addressDetails || 'פרטי כתובת' }}
           </h3>
           <div class="form-grid">
             <div class="form-group full-width">
               <app-osm-address-input
-                label="כתובת החברה"
-                placeholder="הקלד כתובת..."
+                [label]="(i18n.terms$ | async)?.companyAddress || 'כתובת החברה'"
+                [placeholder]="(i18n.terms$ | async)?.enterAddress || 'הקלד כתובת...'"
                 countryCode="il"
                 [(place)]="company.place"
                 (placeChange)="onPlaceSelected($event)">
@@ -81,43 +81,43 @@
         <div class="section contact-info">
           <h3>
             <mat-icon class="section-icon">contacts</mat-icon>
-            פרטי קשר
+            {{ (i18n.terms$ | async)?.contactDetails || 'פרטי קשר' }}
           </h3>
           <div class="form-grid">
             <div class="form-group">
               <div class="field-title">
                 <mat-icon class="field-icon">phone</mat-icon>
-                <label>טלפון</label>
+                <label>{{ (i18n.terms$ | async)?.phone || 'טלפון' }}</label>
               </div>
               <input type="tel"
                      class="form-control"
                      [(ngModel)]="company.phone"
                      (ngModelChange)="onFieldChange()"
-                     placeholder="מספר טלפון">
+                     [placeholder]="(i18n.terms$ | async)?.phoneNumber || 'מספר טלפון'">
             </div>
 
             <div class="form-group">
               <div class="field-title">
                 <mat-icon class="field-icon">email</mat-icon>
-                <label>אימייל</label>
+                <label>{{ (i18n.terms$ | async)?.email || 'אימייל' }}</label>
               </div>
               <input type="email"
                      class="form-control"
                      [(ngModel)]="company.email"
                      (ngModelChange)="onFieldChange()"
-                     placeholder="כתובת אימייל">
+                     [placeholder]="(i18n.terms$ | async)?.emailAddress || 'כתובת אימייל'">
             </div>
 
             <div class="form-group">
               <div class="field-title">
                 <mat-icon class="field-icon">language</mat-icon>
-                <label>אתר אינטרנט</label>
+                <label>{{ (i18n.terms$ | async)?.website || 'אתר אינטרנט' }}</label>
               </div>
               <input type="url"
                      class="form-control"
                      [(ngModel)]="company.website"
                      (ngModelChange)="onFieldChange()"
-                     placeholder="www.example.com">
+                     [placeholder]="(i18n.terms$ | async)?.websitePlaceholder || 'www.example.com'">
             </div>
           </div>
         </div>
@@ -126,19 +126,19 @@
         <div class="section other-info">
           <h3>
             <mat-icon class="section-icon">note</mat-icon>
-            אחר
+            {{ (i18n.terms$ | async)?.other || 'אחר' }}
           </h3>
           <div class="form-grid">
             <div class="form-group full-width">
               <div class="field-title">
                 <mat-icon class="field-icon">notes</mat-icon>
-                <label>הערות</label>
+                <label>{{ (i18n.terms$ | async)?.notes || 'הערות' }}</label>
               </div>
               <textarea class="form-control"
                         rows="4"
                         [(ngModel)]="company.notes"
                         (ngModelChange)="onFieldChange()"
-                        placeholder="הערות והשתהות נוספות"></textarea>
+                        [placeholder]="(i18n.terms$ | async)?.additionalNotes || 'הערות והשתהות נוספות'"></textarea>
             </div>
 
             <div class="form-group full-width">
@@ -149,7 +149,7 @@
                          (ngModelChange)="onFieldChange()">
                   <span class="checkbox-text">
                     <mat-icon class="checkbox-icon">{{company.isActive ? 'check_circle' : 'cancel'}}</mat-icon>
-                    פעיל
+                    {{ (i18n.terms$ | async)?.active || 'פעיל' }}
                   </span>
                 </label>
               </div>
@@ -169,7 +169,7 @@
                 (click)="closeModal()"
                 class="cancel-button">
           <mat-icon>close</mat-icon>
-          ביטול
+          {{ (i18n.terms$ | async)?.cancel || 'ביטול' }}
         </button>
         <button mat-raised-button
                 color="primary"
@@ -177,7 +177,7 @@
                 class="save-button"
                 [disabled]="loading">
           <mat-icon>save</mat-icon>
-          {{ isNew ? 'שמור חברה' : 'עדכן חברה' }}
+          {{ isNew ? ((i18n.terms$ | async)?.saveCompany || 'שמור חברה') : ((i18n.terms$ | async)?.updateCompany || 'עדכן חברה') }}
         </button>
       </div>
     </div>
