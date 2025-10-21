@@ -2,11 +2,15 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { remult } from 'remult';
 import { Reminder, Donor } from '../../../shared/entity';
 import { I18nService } from '../../i18n/i18n.service';
-import { ReminderDetailsModalComponent } from '../../routes/modals/reminder-details-modal/reminder-details-modal.component';
+import { UIToolsService } from '../../common/UIToolsService';
 import { GlobalFilterService } from '../../services/global-filter.service';
 import { Subscription } from 'rxjs';
 import { HDate, HebrewCalendar, ParshaEvent, Sedra } from '@hebcal/core';
+import { DialogConfig } from '../../common-ui-elements';
 
+@DialogConfig({
+  hasBackdrop: true
+})
 @Component({
   selector: 'app-reminders',
   templateUrl: './reminders.component.html',
@@ -40,6 +44,7 @@ export class RemindersComponent implements OnInit, OnDestroy {
 
   constructor(
     public i18n: I18nService,
+    private ui: UIToolsService,
     private globalFilterService: GlobalFilterService
   ) { }
 
@@ -106,9 +111,7 @@ export class RemindersComponent implements OnInit, OnDestroy {
   }
 
   async createReminder() {
-    const reminderCreated = await ReminderDetailsModalComponent.open({
-      reminderId: 'new'
-    });
+    const reminderCreated = await this.ui.reminderDetailsDialog('new');
 
     if (reminderCreated) {
       await this.loadData(); // Refresh the list
@@ -116,9 +119,7 @@ export class RemindersComponent implements OnInit, OnDestroy {
   }
 
   async editReminder(reminder: Reminder) {
-    const reminderEdited = await ReminderDetailsModalComponent.open({
-      reminderId: reminder.id
-    });
+    const reminderEdited = await this.ui.reminderDetailsDialog(reminder.id);
 
     if (reminderEdited) {
       await this.loadData(); // Refresh the list

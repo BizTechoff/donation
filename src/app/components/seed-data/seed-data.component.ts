@@ -1,23 +1,11 @@
 import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { SeedController } from '../../../server/SeedController';
 
 @Component({
   selector: 'app-seed-data',
   templateUrl: './seed-data.component.html',
-  styleUrls: ['./seed-data.component.scss'],
-  standalone: true,
-  imports: [
-    CommonModule,
-    MatButtonModule,
-    MatIconModule,
-    MatProgressSpinnerModule,
-    MatSnackBarModule
-  ]
+  styleUrls: ['./seed-data.component.scss']
 })
 export class SeedDataComponent {
   loading = false;

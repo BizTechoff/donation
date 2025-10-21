@@ -1,18 +1,12 @@
-import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, NO_ERRORS_SCHEMA, OnInit } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
-import { MatIconModule } from '@angular/material/icon';
-import { MatTooltipModule } from '@angular/material/tooltip';
-import { openDialog } from 'common-ui-elements';
+import { openDialog, DialogConfig } from 'common-ui-elements';
 import { remult } from 'remult';
 import { CompanyInfo, Donation, Donor, DonorEvent, Event, Place, Contact, Country, User, Company } from '../../../../shared/entity';
-import { AddressComponents, OsmAddressInputComponent } from '../../../common/osm-address-input/osm-address-input.component';
+import { AddressComponents } from '../../../common/osm-address-input/osm-address-input.component';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
-import { ActiveFilter, FilterOption, ModalNavigationHeaderComponent, NavigationRecord } from '../../../shared/modal-navigation-header/modal-navigation-header.component';
-import { SharedComponentsModule } from '../../../shared/shared-components.module';
+import { ActiveFilter, FilterOption, NavigationRecord } from '../../../shared/modal-navigation-header/modal-navigation-header.component';
 import { DonorDonationsModalArgs, DonorDonationsModalComponent } from '../donor-donations-modal/donor-donations-modal.component';
 import { CompanyDetailsModalArgs, CompanyDetailsModalComponent } from '../company-details-modal/company-details-modal.component';
 
@@ -22,22 +16,16 @@ export interface DonorDetailsModalArgs {
 
 // PersonalEvent interface is no longer needed - using DonorEvent entity instead
 
+@DialogConfig({
+  hasBackdrop: true,
+  maxWidth: '80vw',
+  maxHeight: '80vh',
+  panelClass: 'donor-details-dialog-panel'
+})
 @Component({
   selector: 'app-donor-details-modal',
   templateUrl: './donor-details-modal.component.html',
-  styleUrls: ['./donor-details-modal.component.scss'],
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    MatButtonModule,
-    MatIconModule,
-    MatTooltipModule,
-    ModalNavigationHeaderComponent,
-    SharedComponentsModule,
-    OsmAddressInputComponent
-  ],
-  schemas: [NO_ERRORS_SCHEMA]
+  styleUrls: ['./donor-details-modal.component.scss']
 })
 export class DonorDetailsModalComponent implements OnInit {
   args!: DonorDetailsModalArgs;
@@ -94,17 +82,24 @@ export class DonorDetailsModalComponent implements OnInit {
     public i18n: I18nService,
     private ui: UIToolsService,
     private changeDetector: ChangeDetectorRef,
-    public dialogRef: MatDialogRef<DonorDetailsModalComponent>
+    public dialogRef: MatDialogRef<any>
   ) { }
 
   async ngOnInit() {
-    await this.loadAvailableEvents();
-    await this.loadCountries();
-    await this.loadContacts();
-    await this.loadFundraisers();
-    await this.loadAllDonorsForFamily();
-    await this.loadCompanies();
+    // Load all independent data in parallel for faster loading
+    await Promise.all([
+      this.loadAvailableEvents(),
+      this.loadCountries(),
+      this.loadContacts(),
+      this.loadFundraisers(),
+      this.loadAllDonorsForFamily(),
+      this.loadCompanies()
+    ]);
+
+    // Initialize donor after basic data is loaded
     await this.initializeDonor();
+
+    // Load additional donor list and setup filters
     await this.loadAllDonors();
     this.setupFilterOptions();
   }

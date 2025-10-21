@@ -6,6 +6,7 @@ export * from './src/angular/common-ui-elements.module' //V
 export { BusyService } from './src/angular/wait/busy-service'
 export * from './src/angular/navigate-to-component-route-service'
 export { SelectValueDialogComponent } from './src/angular/add-filter-dialog/add-filter-dialog.component'
+export { DialogConfig } from './src/angular/DialogConfig'
 
 export * from './src/angular/data-control/data-control2.component'
 export * from './src/angular/data-control/data-control3.component'

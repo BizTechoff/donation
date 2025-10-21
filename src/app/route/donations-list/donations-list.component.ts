@@ -1,43 +1,67 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { remult } from 'remult';
 import { Donation, Donor, Campaign, DonationMethod } from '../../../shared/entity';
 import { I18nService } from '../../i18n/i18n.service';
 import { UIToolsService } from '../../common/UIToolsService';
+import { GlobalFilterService } from '../../services/global-filter.service';
+import { Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 @Component({
   selector: 'app-donations-list',
   templateUrl: './donations-list.component.html',
   styleUrls: ['./donations-list.component.scss']
 })
-export class DonationsListComponent implements OnInit {
-  
+export class DonationsListComponent implements OnInit, OnDestroy {
+
   donations: Donation[] = [];
   donors: Donor[] = [];
   campaigns: Campaign[] = [];
   donationMethods: DonationMethod[] = [];
-  
+
   donationRepo = remult.repo(Donation);
   donorRepo = remult.repo(Donor);
   campaignRepo = remult.repo(Campaign);
   donationMethodRepo = remult.repo(DonationMethod);
-  
+
   loading = false;
   showAddDonationModal = false;
   editingDonation?: Donation;
   today = new Date().toISOString().split('T')[0];
-  
+
   completedDonationsCountCache = 0;
-  
+
   // תצוגה מקדימה ונתונים נוספים
   showPreview = false;
   hebrewDate = '';
   fundraiserName = '';
 
-  constructor(public i18n: I18nService, private ui: UIToolsService, private route: ActivatedRoute) {}
+  // חיפוש תורם
+  donorSearchText = '';
+  private donorSearchSubject = new Subject<string>();
+
+  constructor(
+    public i18n: I18nService,
+    private ui: UIToolsService,
+    private route: ActivatedRoute,
+    private globalFilterService: GlobalFilterService
+  ) {}
 
   async ngOnInit() {
+    // הגדרת debounce לחיפוש תורם
+    this.donorSearchSubject.pipe(
+      debounceTime(300),
+      distinctUntilChanged()
+    ).subscribe(searchText => {
+      this.filterDonationsByDonorName(searchText);
+    });
+
     await this.loadData();
+  }
+
+  ngOnDestroy() {
+    this.donorSearchSubject.complete();
   }
 
   async loadData() {
@@ -274,5 +298,82 @@ export class DonationsListComponent implements OnInit {
 
   get completedDonationsCount(): number {
     return this.completedDonationsCountCache;
+  }
+
+  // תרומות מסוננות - רק עם קמפיין
+  get donationsWithCampaign(): Donation[] {
+    return this.donations.filter(donation => donation.campaignId);
+  }
+
+  // רשימת תורמים מסוננת לפי פילטר גלובלי
+  get filteredDonors(): Donor[] {
+    const globalFilters = this.globalFilterService.currentFilters;
+
+    // אם אין פילטרים גלובליים, החזר את כל התורמים
+    if (!globalFilters.countryIds || globalFilters.countryIds.length === 0) {
+      return this.donors;
+    }
+
+    // סנן תורמים לפי מדינה
+    return this.donors.filter(donor =>
+      donor.countryId && globalFilters.countryIds!.includes(donor.countryId)
+    );
+  }
+
+  // מטפל בשינוי בשדה חיפוש תורם
+  onDonorSearchChange(searchText: string) {
+    this.donorSearchSubject.next(searchText);
+  }
+
+  // מסנן תרומות לפי שם תורם
+  async filterDonationsByDonorName(searchText: string) {
+    if (!searchText || searchText.trim().length === 0) {
+      // אם אין טקסט חיפוש, טען את כל התרומות
+      await this.loadDonations();
+      return;
+    }
+
+    const searchLower = searchText.toLowerCase().trim();
+
+    // שלב 1: מצא תורמים מתאימים
+    const matchingDonors = await this.donorRepo.find({
+      where: {
+        $or: [
+          { firstName: { $contains: searchLower } },
+          { lastName: { $contains: searchLower } },
+          { firstNameEnglish: { $contains: searchLower } },
+          { lastNameEnglish: { $contains: searchLower } }
+        ]
+      }
+    });
+
+    // אם לא נמצאו תורמים, החזר רשימה רקה
+    if (matchingDonors.length === 0) {
+      this.donations = [];
+      this.completedDonationsCountCache = 0;
+      return;
+    }
+
+    // שלב 2: מצא תרומות של התורמים המתאימים
+    const donorIds = matchingDonors.map(d => d.id);
+
+    const query: any = {
+      orderBy: { donationDate: 'desc' },
+      include: {
+        donor: true,
+        campaign: true,
+        donationMethod: true,
+        createdBy: true
+      },
+      where: {
+        donorId: { $in: donorIds }
+      }
+    };
+
+    // החל פילטר גלובלי אם קיים
+    const filteredQuery = this.globalFilterService.applyFiltersToQuery(query);
+
+    this.donations = await this.donationRepo.find(filteredQuery);
+    this.completedDonationsCountCache = this.donations.filter(d => d.status === 'completed').length;
   }
 }

@@ -1,40 +1,25 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
 import { MatDialogRef } from '@angular/material/dialog';
-import { MatIconModule } from '@angular/material/icon';
-import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { Campaign, User, Place } from '../../../../shared/entity';
 import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
 import { UIToolsService } from '../../../common/UIToolsService';
-import { SharedComponentsModule } from '../../../shared/shared-components.module';
 import { DONOR_LEVELS_ARRAY, DonorLevel } from '../../../../shared/enum/donor-levels';
 import { CampaignBlessingBookModalComponent, CampaignBlessingBookModalArgs } from '../campaign-blessing-book-modal/campaign-blessing-book-modal.component';
-import { openDialog } from 'common-ui-elements';
-import { OsmAddressInputComponent } from '../../../common/osm-address-input/osm-address-input.component';
+import { openDialog, DialogConfig } from 'common-ui-elements';
 
 export interface CampaignDetailsModalArgs {
   campaignId: string; // Can be 'new' for new campaign or campaign ID
 }
 
+@DialogConfig({
+  hasBackdrop: true
+})
 @Component({
   selector: 'app-campaign-details-modal',
   templateUrl: './campaign-details-modal.component.html',
-  styleUrls: ['./campaign-details-modal.component.scss'],
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    MatButtonModule,
-    MatIconModule,
-    MatTooltipModule,
-    MatSnackBarModule,
-    SharedComponentsModule,
-    OsmAddressInputComponent
-  ]
+  styleUrls: ['./campaign-details-modal.component.scss']
 })
 export class CampaignDetailsModalComponent implements OnInit {
   args!: CampaignDetailsModalArgs;

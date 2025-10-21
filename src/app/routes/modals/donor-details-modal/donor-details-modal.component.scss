@@ -27,19 +27,20 @@
   max-width: 1200px;
   height: 90vh;
   max-height: 90vh;
+  margin: auto;
   background: white;
   border-radius: 16px;
   box-shadow: 0 24px 48px rgba(0, 0, 0, 0.2);
   display: flex;
   flex-direction: column;
   position: relative;
-  animation: slideIn 0.3s ease-out;
   overflow: hidden;
   cursor: default;
+  box-sizing: border-box;
 
   // Adjust for navigation header
   app-modal-navigation-header {
-    border-radius: 16px 16px 0 0;
+    border-radius: 0;
     margin-bottom: 0;
     position: relative;
     z-index: 1000;
@@ -69,6 +70,8 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   position: relative;
   overflow: hidden;
+  flex-shrink: 0;
+  min-height: auto;
 }
 
 .modal-header::before {
@@ -157,29 +160,25 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(255, 255, 255, 0.9);
+  background: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10;
+  z-index: 1000;
   border-radius: 16px;
 }
 
 .loading-spinner {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 12px;
-  font-size: 16px;
-  color: #666;
-  
-  &::before {
-    content: '';
-    width: 24px;
-    height: 24px;
-    border: 3px solid #e0e0e0;
-    border-top: 3px solid #667eea;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
+  gap: 24px;
+
+  p {
+    font-size: 16px;
+    color: #667eea;
+    font-weight: 500;
+    margin: 0;
   }
 }
 
@@ -198,6 +197,20 @@
   min-height: 0;
   position: relative;
   z-index: 1;
+  // Ensure scrollbar appears only on body
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background: #555;
+  }
 }
 
 /* Sections */
@@ -471,8 +484,8 @@
   align-items: center;
   gap: 16px;
   border-radius: 0 0 16px 16px;
-  position: sticky;
-  bottom: 0;
+  flex-shrink: 0;
+  min-height: auto;
   z-index: 100;
   
   .footer-divider {

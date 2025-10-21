@@ -1,35 +1,23 @@
-import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
 import { MatDialogRef } from '@angular/material/dialog';
-import { MatIconModule } from '@angular/material/icon';
-import { MatTooltipModule } from '@angular/material/tooltip';
+import { DialogConfig } from 'common-ui-elements';
 import { remult } from 'remult';
 import { Bank, Place } from '../../../../shared/entity';
-import { AddressComponents, OsmAddressInputComponent } from '../../../common/osm-address-input/osm-address-input.component';
+import { AddressComponents } from '../../../common/osm-address-input/osm-address-input.component';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
-import { SharedComponentsModule } from '../../../shared/shared-components.module';
 
 export interface BankDetailsModalArgs {
   bankId?: string; // undefined for new bank, or bank ID for edit
 }
 
+@DialogConfig({
+  hasBackdrop: true
+})
 @Component({
   selector: 'app-bank-details-modal',
   templateUrl: './bank-details-modal.component.html',
-  styleUrls: ['./bank-details-modal.component.scss'],
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    MatButtonModule,
-    MatIconModule,
-    MatTooltipModule,
-    SharedComponentsModule,
-    OsmAddressInputComponent
-  ]
+  styleUrls: ['./bank-details-modal.component.scss']
 })
 export class BankDetailsModalComponent implements OnInit {
   args!: BankDetailsModalArgs;

@@ -14,7 +14,7 @@ export class SilentRedirectComponent implements OnInit {
   ngOnInit(): void {
     // בדוק אם המשתמש מחובר
     if (remult.user) {
-      console.log('routeTo: ' + this.i18n.currentTerms.donorList, this.router.url)
+      console.log('routeTo: ' + this.i18n.currentTerms.donationsList, this.router.url)
 
       if (!this.router.url || this.router.url === '/') {// משתמש מחובר - הפנה לרשימת תורמים
         this.router.navigate([`/${this.i18n.currentTerms.donationsList}`]);

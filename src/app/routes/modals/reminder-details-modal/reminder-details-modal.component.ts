@@ -1,13 +1,6 @@
-import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
-import { MatNativeDateModule } from '@angular/material/core';
-import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatDialogRef } from '@angular/material/dialog';
-import { MatIconModule } from '@angular/material/icon';
-import { MatTooltipModule } from '@angular/material/tooltip';
-import { openDialog } from 'common-ui-elements';
+import { DialogConfig, openDialog } from 'common-ui-elements';
 import { remult } from 'remult';
 import { Subscription } from 'rxjs';
 import { Certificate, Contact, Donation, Donor, Reminder, User } from '../../../../shared/entity';
@@ -15,7 +8,6 @@ import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
 import { GlobalFilterService } from '../../../services/global-filter.service';
 import { HebrewDateService } from '../../../services/hebrew-date.service';
-import { SharedComponentsModule } from '../../../shared/shared-components.module';
 
 export interface ReminderDetailsModalArgs {
   reminderId?: string; // 'new' for new reminder or reminder ID for editing
@@ -28,21 +20,15 @@ export interface ReminderDetailsModalArgs {
   isRecurringYearly?: boolean; // Optional flag for yearly recurring reminder
 }
 
+@DialogConfig({
+  hasBackdrop: true,
+  maxWidth: '80vw',
+  maxHeight: '80vh'
+})
 @Component({
   selector: 'app-reminder-details-modal',
   templateUrl: './reminder-details-modal.component.html',
-  styleUrls: ['./reminder-details-modal.component.scss'],
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    MatButtonModule,
-    MatIconModule,
-    MatTooltipModule,
-    MatDatepickerModule,
-    MatNativeDateModule,
-    SharedComponentsModule
-  ]
+  styleUrls: ['./reminder-details-modal.component.scss']
 })
 export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
   args!: ReminderDetailsModalArgs;

@@ -1,5 +1,5 @@
 <!-- Letter Properties Modal -->
-<div class="modal-content letter-properties-modal">
+<div class="letter-properties-modal">
 
   <!-- Modal Header -->
   <div class="modal-header">
@@ -70,9 +70,9 @@
 
       <!-- Available Suffix Lines -->
       <div class="available-lines">
-        <h4>ברכות סיום זמינות:</h4>
+        <h4>ברכות פתיחה זמינות:</h4>
         <div class="available-line" *ngFor="let line of availablePrefixLines"
-          [class.disabled]="availablePrefixLines.includes(line)" (click)="addPrefixLine(line)">
+          [class.disabled]="selectedPrefixLines.includes(line)" (click)="addPrefixLine(line)">
           <mat-icon>add_circle_outline</mat-icon>
           <span>{{ line }}</span>
         </div>
@@ -98,16 +98,16 @@
     </div>
 
     <!-- Section 3: Letter Fields (Display Only) -->
-    <div class="section fields-section" *ngIf="selectedLetterType">
+    <div class="section fields-section" *ngIf="selectedLetterType && fieldValues.length > 0">
       <h3>שדות המכתב</h3>
       <div class="fields-info">
         <mat-icon>info</mat-icon>
         <p>השדות הבאים ימולאו אוטומטית מנתוני התרומה:</p>
       </div>
-      <div class="fields-grid">
-        <div class="field-chip" *ngFor="let field of selectedLetterType.fields">
-          <mat-icon>text_fields</mat-icon>
-          <span>{{ field }}</span>
+      <div class="fields-list">
+        <div class="field-item" *ngFor="let fieldValue of fieldValues">
+          <div class="field-name">{{ fieldValue.displayName }}:</div>
+          <div class="field-value">{{ fieldValue.value }}</div>
         </div>
       </div>
     </div>
@@ -181,5 +181,4 @@
         הפק מכתב
       </button>
     </div>
-  </div>
 </div>

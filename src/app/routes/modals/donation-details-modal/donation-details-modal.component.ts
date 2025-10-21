@@ -1,18 +1,12 @@
-import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
 import { MatDialogRef } from '@angular/material/dialog';
-import { MatIconModule } from '@angular/material/icon';
-import { MatTooltipModule } from '@angular/material/tooltip';
-import { openDialog } from 'common-ui-elements';
+import { DialogConfig, openDialog } from 'common-ui-elements';
 import { remult } from 'remult';
 import { Bank, Campaign, Country, Donation, DonationFile, DonationMethod, DonationPartner, Donor, Organization, User } from '../../../../shared/entity';
 import { Letter } from '../../../../shared/enum/letter';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
 import { LetterService } from '../../../services/letter.service';
-import { SharedComponentsModule } from '../../../shared/shared-components.module';
 import { BankDetailsModalComponent } from '../bank-details-modal/bank-details-modal.component';
 import { DonorDetailsModalComponent } from '../donor-details-modal/donor-details-modal.component';
 import { OrganizationDetailsModalComponent } from '../organization-details-modal/organization-details-modal.component';
@@ -24,19 +18,15 @@ export interface DonationDetailsModalArgs {
   campaignId?: string; // Optional campaign ID for pre-selecting campaign in new donations
 }
 
+@DialogConfig({
+  hasBackdrop: true,
+  maxWidth: '80vw',
+  maxHeight: '80vh'
+})
 @Component({
   selector: 'app-donation-details-modal',
   templateUrl: './donation-details-modal.component.html',
-  styleUrls: ['./donation-details-modal.component.scss'],
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    MatButtonModule,
-    MatIconModule,
-    MatTooltipModule,
-    SharedComponentsModule
-  ]
+  styleUrls: ['./donation-details-modal.component.scss']
 })
 export class DonationDetailsModalComponent implements OnInit {
   args!: DonationDetailsModalArgs;
@@ -619,18 +609,52 @@ export class DonationDetailsModalComponent implements OnInit {
     if (!this.donation) return;
 
     try {
-      // First save the donation data
+      // Validate required fields before saving
+      if (!this.donation.donorId) {
+        this.ui.error('נא לבחור תורם');
+        return;
+      }
+
+      if (!this.donation.donationType) {
+        this.ui.error('נא לבחור סוג תרומה');
+        return;
+      }
+
+      if (!this.donation.amount || this.donation.amount <= 0) {
+        this.ui.error('נא להזין סכום תרומה חיובי');
+        return;
+      }
+
+      if (!this.donation.donationDate) {
+        this.ui.error('נא לבחור תאריך תרומה');
+        return;
+      }
+
+      if (!this.donation.donationMethodId) {
+        this.ui.error('נא לבחור אמצעי תשלום');
+        return;
+      }
+
+      // Save the donation WITHOUT closing the modal
       console.log('Saving donation before printing letter...');
-      await this.saveDonation();
+      const wasNew = this.isNewDonation;
+
+      // Use remult.repo() for saving in the app (client side)
+      await this.donationRepo.save(this.donation);
+
+      this.changed = wasNew || this.hasChanges();
+
+      // Update the original data to reflect the saved state
+      this.originalDonationData = JSON.stringify(this.donation);
+
+      // If it was new, it's not new anymore
+      if (this.isNewDonation) {
+        this.isNewDonation = false;
+      }
 
       // Then open letter properties modal
       console.log('Opening letter properties selection for donation:', this.donation.id);
-      const { LetterPropertiesModalComponent } = await import('../letter-properties-modal/letter-properties-modal.component');
-      const result = await openDialog(LetterPropertiesModalComponent, (dlg) => {
-        dlg.args = {
-          donationId: this.donation.id
-        };
-      });
+      const result = await this.ui.letterPropertiesDialog(this.donation.id);
 
       if (result) {
         console.log('Letter generated successfully:', result);
@@ -645,8 +669,7 @@ export class DonationDetailsModalComponent implements OnInit {
     if (!this.donation) return;
 
     try {
-      const reminderCreated = await ReminderDetailsModalComponent.open({
-        reminderId: 'new',
+      const reminderCreated = await this.ui.reminderDetailsDialog('new', {
         donationId: this.donation.id
       });
 
@@ -996,9 +1019,7 @@ export class DonationDetailsModalComponent implements OnInit {
   async addNewOrganization() {
     try {
       // Open organization details modal for new organization
-      const result = await openDialog(OrganizationDetailsModalComponent, (dlg) => {
-        dlg.args = { organizationId: undefined }; // undefined = new organization
-      });
+      const result = await this.ui.organizationDetailsDialog(undefined);
 
       // If the modal closed with changes (organization was saved)
       if (result) {
@@ -1031,9 +1052,7 @@ export class DonationDetailsModalComponent implements OnInit {
   async addNewBank() {
     try {
       // Open bank details modal for new bank
-      const result = await openDialog(BankDetailsModalComponent, (dlg) => {
-        dlg.args = { bankId: undefined }; // undefined = new bank
-      });
+      const result = await this.ui.bankDetailsDialog(undefined);
 
       // If the modal closed with changes (bank was saved)
       if (result) {
@@ -1071,9 +1090,7 @@ export class DonationDetailsModalComponent implements OnInit {
 
     try {
       // Open bank details modal for editing existing bank
-      const result = await openDialog(BankDetailsModalComponent, (dlg) => {
-        dlg.args = { bankId: this.donation.bankId }; // Pass bank ID for editing
-      });
+      const result = await this.ui.bankDetailsDialog(this.donation.bankId);
 
       // If the modal closed with changes (bank was updated)
       if (result) {
@@ -1102,9 +1119,7 @@ export class DonationDetailsModalComponent implements OnInit {
 
     try {
       // Open organization details modal for editing existing organization
-      const result = await openDialog(OrganizationDetailsModalComponent, (dlg) => {
-        dlg.args = { organizationId: this.donation.organizationId }; // Pass organization ID for editing
-      });
+      const result = await this.ui.organizationDetailsDialog(this.donation.organizationId);
 
       // If the modal closed with changes (organization was updated)
       if (result) {

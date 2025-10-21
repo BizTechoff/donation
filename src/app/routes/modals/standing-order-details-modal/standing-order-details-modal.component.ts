@@ -1,10 +1,6 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialogRef } from '@angular/material/dialog';
+import { DialogConfig } from 'common-ui-elements';
 import { StandingOrder, Donor, Campaign, DonationMethod, User } from '../../../../shared/entity';
 import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
@@ -15,18 +11,13 @@ export interface StandingOrderDetailsModalArgs {
   donorId?: string; // Optional donor ID for pre-selecting donor in new standing orders
 }
 
+@DialogConfig({
+  hasBackdrop: true
+})
 @Component({
   selector: 'app-standing-order-details-modal',
   templateUrl: './standing-order-details-modal.component.html',
-  styleUrls: ['./standing-order-details-modal.component.scss'],
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    MatButtonModule,
-    MatIconModule,
-    MatTooltipModule
-  ]
+  styleUrls: ['./standing-order-details-modal.component.scss']
 })
 export class StandingOrderDetailsModalComponent implements OnInit {
   args!: StandingOrderDetailsModalArgs;

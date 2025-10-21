@@ -1,35 +1,23 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialogRef } from '@angular/material/dialog';
+import { DialogConfig } from 'common-ui-elements';
 import { remult } from 'remult';
 import { Organization, Place } from '../../../../shared/entity';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
-import { SharedComponentsModule } from '../../../shared/shared-components.module';
-import { AddressComponents, OsmAddressInputComponent } from '../../../common/osm-address-input/osm-address-input.component';
+import { AddressComponents } from '../../../common/osm-address-input/osm-address-input.component';
 
 export interface OrganizationDetailsModalArgs {
   organizationId?: string; // undefined for new organization, or organization ID for edit
 }
 
+@DialogConfig({
+  hasBackdrop: true
+})
 @Component({
   selector: 'app-organization-details-modal',
   templateUrl: './organization-details-modal.component.html',
-  styleUrls: ['./organization-details-modal.component.scss'],
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    MatButtonModule,
-    MatIconModule,
-    MatTooltipModule,
-    SharedComponentsModule,
-    OsmAddressInputComponent
-  ]
+  styleUrls: ['./organization-details-modal.component.scss']
 })
 export class OrganizationDetailsModalComponent implements OnInit {
   args!: OrganizationDetailsModalArgs;

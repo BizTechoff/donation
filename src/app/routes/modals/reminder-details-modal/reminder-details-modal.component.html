@@ -1,6 +1,4 @@
-<div class="modal-overlay" (click)="closeModal($event)">
-  <div class="modal-content reminder-details-modal" [attr.dir]="(i18n.terms$ | async)?.RTL ? 'rtl' : 'ltr'"
-    (click)="$event.stopPropagation()">
+<div class="reminder-details-modal" [attr.dir]="(i18n.terms$ | async)?.RTL ? 'rtl' : 'ltr'">
     <div class="modal-header">
       <h2>{{ isNewReminder ? (i18n.terms$ | async)?.newReminder : (i18n.terms$ | async)?.editReminderTitle }}</h2>
       <button mat-icon-button class="close-button" (click)="cancel()">
@@ -297,5 +295,4 @@
         {{ isNewReminder ? (i18n.terms$ | async)?.createReminder : (i18n.terms$ | async)?.saveChanges }}
       </button>
     </div>
-  </div>
 </div>

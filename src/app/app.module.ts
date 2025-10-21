@@ -21,6 +21,11 @@ import { MatDatepickerModule } from '@angular/material/datepicker'
 import { MatNativeDateModule } from '@angular/material/core'
 import { MatChipsModule } from '@angular/material/chips'
 import { MatTooltipModule } from '@angular/material/tooltip'
+import { MatAutocompleteModule } from '@angular/material/autocomplete'
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner'
+import { MatTableModule } from '@angular/material/table'
+import { MatSortModule } from '@angular/material/sort'
+import { MatPaginatorModule } from '@angular/material/paginator'
 import { CommonUIElementsModule } from 'common-ui-elements'
 import { UsersComponent } from './users/users.component'
 import { YesNoQuestionComponent } from './common/yes-no-question/yes-no-question.component'
@@ -53,6 +58,22 @@ import { HebrewDateService } from './services/hebrew-date.service'
 import { GlobalFiltersComponent } from './components/global-filters/global-filters.component'
 import { QuickActionsComponent } from './components/quick-actions/quick-actions.component'
 import { SeedDataComponent } from './components/seed-data/seed-data.component'
+import { EventSelectionModalComponent } from './routes/modals/event-selection-modal/event-selection-modal.component'
+import { OsmAddressInputComponent } from './common/osm-address-input/osm-address-input.component'
+import { LetterPropertiesModalComponent } from './routes/modals/letter-properties-modal/letter-properties-modal.component'
+import { ReminderDetailsModalComponent } from './routes/modals/reminder-details-modal/reminder-details-modal.component'
+import { DonationDetailsModalComponent } from './routes/modals/donation-details-modal/donation-details-modal.component'
+import { CampaignDetailsModalComponent } from './routes/modals/campaign-details-modal/campaign-details-modal.component'
+import { StandingOrderDetailsModalComponent } from './routes/modals/standing-order-details-modal/standing-order-details-modal.component'
+import { CertificateDetailsModalComponent } from './routes/modals/certificate-details-modal/certificate-details-modal.component'
+import { OrganizationDetailsModalComponent } from './routes/modals/organization-details-modal/organization-details-modal.component'
+import { BankDetailsModalComponent } from './routes/modals/bank-details-modal/bank-details-modal.component'
+import { CompanyDetailsModalComponent } from './routes/modals/company-details-modal/company-details-modal.component'
+import { DonorDonationsModalComponent } from './routes/modals/donor-donations-modal/donor-donations-modal.component'
+import { CampaignDonorsModalComponent } from './routes/modals/campaign-donors-modal/campaign-donors-modal.component'
+import { CampaignBlessingBookModalComponent } from './routes/modals/campaign-blessing-book-modal/campaign-blessing-book-modal.component'
+import { ToggleSwitchComponent } from './shared/toggle-switch/toggle-switch.component'
+import { UserDetailsComponent } from './route/user-details/user-details.component'
 
 @NgModule({
   declarations: [
@@ -76,13 +97,33 @@ import { SeedDataComponent } from './components/seed-data/seed-data.component'
     RemindersComponent,
     ReportsComponent,
     LanguageSwitcherComponent,
-    DonorsMapComponent
+    DonorsMapComponent,
+    EventSelectionModalComponent,
+    DonorDetailsModalComponent,
+    LetterPropertiesModalComponent,
+    ReminderDetailsModalComponent,
+    DonationDetailsModalComponent,
+    CampaignDetailsModalComponent,
+    StandingOrderDetailsModalComponent,
+    CertificateDetailsModalComponent,
+    OrganizationDetailsModalComponent,
+    BankDetailsModalComponent,
+    CompanyDetailsModalComponent,
+    DonorDonationsModalComponent,
+    CampaignDonorsModalComponent,
+    CampaignBlessingBookModalComponent,
+    ModalNavigationHeaderComponent,
+    GlobalFiltersComponent,
+    QuickActionsComponent,
+    SeedDataComponent,
+    ToggleSwitchComponent,
+    UserDetailsComponent,
+    OsmAddressInputComponent
   ],
   imports: [
     BrowserModule,
     CommonModule,
     SharedComponentsModule,
-    ModalNavigationHeaderComponent,
     AppRoutingModule,
     FormsModule,
     MatSidenavModule,
@@ -102,10 +143,12 @@ import { SeedDataComponent } from './components/seed-data/seed-data.component'
     MatNativeDateModule,
     MatChipsModule,
     MatTooltipModule,
-    CommonUIElementsModule,
-    GlobalFiltersComponent,
-    QuickActionsComponent,
-    SeedDataComponent,
+    MatAutocompleteModule,
+    MatProgressSpinnerModule,
+    MatTableModule,
+    MatSortModule,
+    MatPaginatorModule,
+    CommonUIElementsModule
   ],
   providers: [
     UIToolsService,

@@ -151,55 +151,101 @@ th {
 }
 
 // Fix nested modals z-index
-// Angular Material should handle this automatically, but sometimes needs explicit configuration
+// Angular Material creates elements in this order: backdrop, pane, backdrop, pane
+// We need: backdrop1(999) < pane1(1000) < backdrop2(1001) < pane2(1002)
+.cdk-overlay-backdrop {
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(3px);
+  transition: opacity 0.3s ease-in-out;
+
+  &.cdk-overlay-backdrop-showing {
+    opacity: 1;
+  }
+}
+
+// The issue is that Angular creates backdrop and pane together
+// So we need to target them differently - by their container position
 .cdk-overlay-container {
-  .cdk-overlay-backdrop {
-    &.cdk-overlay-backdrop-showing {
-      opacity: 0.32;
+  // First dialog layer
+  > .cdk-overlay-backdrop:nth-child(1) {
+    z-index: 999 !important;
+  }
+
+  > .cdk-global-overlay-wrapper:nth-child(2) {
+    z-index: 1000 !important;
+
+    .cdk-overlay-pane {
+      z-index: 1000 !important;
     }
   }
 
-  // Ensure each subsequent modal has a higher z-index
-  .cdk-overlay-pane {
-    z-index: 1000;
+  // Second dialog layer (nested modal)
+  > .cdk-overlay-backdrop:nth-child(3) {
+    z-index: 1001 !important;
+  }
 
-    &:nth-of-type(2) {
-      z-index: 1001 !important;
+  > .cdk-global-overlay-wrapper:nth-child(4) {
+    z-index: 1002 !important;
 
-      .mat-mdc-dialog-container {
-        z-index: 1001 !important;
-      }
-    }
-
-    &:nth-of-type(3) {
+    .cdk-overlay-pane {
       z-index: 1002 !important;
-
-      .mat-mdc-dialog-container {
-        z-index: 1002 !important;
-      }
     }
+  }
 
-    &:nth-of-type(4) {
-      z-index: 1003 !important;
+  // Third dialog layer
+  > .cdk-overlay-backdrop:nth-child(5) {
+    z-index: 1003 !important;
+  }
 
-      .mat-mdc-dialog-container {
-        z-index: 1003 !important;
-      }
+  > .cdk-global-overlay-wrapper:nth-child(6) {
+    z-index: 1004 !important;
+
+    .cdk-overlay-pane {
+      z-index: 1004 !important;
+    }
+  }
+
+  // Fourth dialog layer
+  > .cdk-overlay-backdrop:nth-child(7) {
+    z-index: 1005 !important;
+  }
+
+  > .cdk-global-overlay-wrapper:nth-child(8) {
+    z-index: 1006 !important;
+
+    .cdk-overlay-pane {
+      z-index: 1006 !important;
     }
   }
 }
 
-// Ensure backdrop for nested modals is positioned correctly
-.cdk-overlay-backdrop {
-  &:nth-of-type(2) {
-    z-index: 1000 !important;
-  }
+// Fix for nested modals - ensure nested modal is always on top and clickable
+.nested-modal-panel {
+  z-index: 9999 !important;
+}
 
-  &:nth-of-type(3) {
-    z-index: 1001 !important;
-  }
+// Force donor details modal to full width
+.cdk-overlay-pane:has(.donor-details-modal) {
+  max-width: auto !important;
+  width: auto !important;
+  animation: donorModalFadeIn 0.2s ease-out;
 
-  &:nth-of-type(4) {
-    z-index: 1002 !important;
+  .mat-mdc-dialog-container,
+  .mat-dialog-container {
+    max-width: none !important;
+    width: auto !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+}
+
+@keyframes donorModalFadeIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
   }
 }

@@ -200,21 +200,29 @@
 }
 
 .date-col {
-  flex-direction: column;
-  align-items: flex-start !important;
-  
+  width: 100%;
+
   .date-display {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: nowrap;
+    width: 100%;
+
     .hebrew-date {
-      display: block;
       font-weight: 600;
       color: #2c3e50;
       font-size: 13px;
+      white-space: nowrap;
+      flex: 1;
     }
-    
+
     .secular-date {
-      display: block;
       color: #7f8c8d;
       font-size: 12px;
+      white-space: nowrap;
+      flex: 1;
     }
   }
 }
@@ -551,52 +559,69 @@
 
 @media (max-width: 768px) {
   .donations-container {
-    padding: 15px;
+    padding: 10px;
   }
 
   .page-header {
     flex-direction: column;
-    gap: 15px;
+    gap: 12px;
     align-items: stretch;
 
     h1 {
-      font-size: 1.5rem;
+      font-size: 1.4rem;
       text-align: center;
     }
 
     .add-donation-btn {
       width: 100%;
+      padding: 14px 20px;
+      font-size: 15px;
     }
   }
 
   .filters-section {
-    padding: 15px;
+    padding: 12px;
 
     .filter-row {
       grid-template-columns: 1fr;
-      gap: 12px;
+      gap: 10px;
+    }
+
+    .filter-group {
+      label {
+        font-size: 13px;
+        margin-bottom: 4px;
+      }
+
+      .form-control {
+        padding: 10px 8px;
+        font-size: 14px;
+      }
     }
   }
 
   .summary-cards {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 15px;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
 
     .summary-card {
-      padding: 15px;
+      padding: 12px;
+      gap: 10px;
 
       .card-icon {
-        font-size: 1.5rem;
-        padding: 10px;
+        font-size: 1.3rem;
+        padding: 8px;
       }
 
       .card-content {
         h3 {
-          font-size: 12px;
+          font-size: 11px;
+          line-height: 1.3;
+          margin-bottom: 4px;
         }
 
         .amount, .count {
-          font-size: 1.2rem;
+          font-size: 1.1rem;
         }
       }
     }
@@ -609,43 +634,87 @@
 
     .grid-row {
       grid-template-columns: 1fr;
-      padding: 15px;
-      margin-bottom: 15px;
+      padding: 12px;
+      margin-bottom: 12px;
       border: 1px solid #e0e0e0;
-      border-radius: 8px;
+      border-radius: 10px;
       background: white;
-      gap: 10px;
+      gap: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 
       &:hover {
         background-color: #fafafa;
+        box-shadow: 0 3px 12px rgba(0,0,0,0.12);
       }
 
       .grid-col {
         border: none;
-        padding: 8px 0;
+        padding: 6px 0;
         display: flex;
-        flex-direction: column;
-        align-items: flex-start;
+        flex-direction: row;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
 
         &.date-col {
+          background: #f8f9fa;
+          padding: 10px;
+          border-radius: 6px;
+          margin-bottom: 4px;
+          flex-direction: column;
+          align-items: flex-start;
+
           .date-display {
+            width: 100%;
+
             .hebrew-date {
               font-size: 15px;
+              font-weight: 700;
             }
+
+            .secular-date {
+              font-size: 12px;
+            }
+          }
+        }
+
+        &.donor-col {
+          font-size: 15px;
+          margin-bottom: 6px;
+
+          strong {
+            color: #2c3e50;
+          }
+        }
+
+        &.amount-col {
+          .amount {
+            font-size: 16px;
+            font-weight: 700;
           }
         }
 
         &.actions {
           flex-direction: row;
-          justify-content: flex-start;
-          flex-wrap: wrap;
-          gap: 10px;
-          margin-top: 10px;
+          justify-content: space-between;
+          flex-wrap: nowrap;
+          gap: 4px;
+          margin-top: 8px;
           padding-top: 10px;
           border-top: 1px solid #ecf0f1;
 
           .btn-icon {
-            flex: 0 0 auto;
+            flex: 1;
+            min-width: 0;
+            padding: 8px 4px;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            &:disabled {
+              opacity: 0.4;
+            }
           }
         }
 
@@ -653,45 +722,77 @@
         &:nth-child(2)::before { content: 'תורם: '; }
         &:nth-child(3)::before { content: 'סכום: '; }
         &:nth-child(4)::before { content: 'מטבע: '; }
-        &:nth-child(5)::before { content: 'אמצעי תשלום: '; }
+        &:nth-child(5)::before { content: 'תשלום: '; }
         &:nth-child(6)::before { content: 'מוצר: '; }
         &:nth-child(7)::before { content: 'מגייס: '; }
-        &:nth-child(8)::before { content: 'מכתב תודה: '; }
-        &:nth-child(9)::before { content: 'אסמכתא: '; }
+        &:nth-child(8)::before { content: 'קבלה: '; }
 
         &::before {
-          font-weight: 600;
+          font-weight: 700;
           color: #7f8c8d;
-          font-size: 13px;
-          margin-bottom: 3px;
+          font-size: 12px;
+          white-space: nowrap;
+          min-width: 65px;
         }
-      }
 
-      .donor-col {
-        strong {
-          font-size: 15px;
+        // הסתרת שדות פחות חשובים במובייל
+        &:nth-child(4), // מטבע
+        &:nth-child(7) { // מגייס
+          display: none;
         }
       }
     }
   }
 
   .pagination {
-    flex-direction: column;
-    gap: 12px;
+    flex-direction: row;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
 
     .btn-page {
-      width: 100%;
-      max-width: 200px;
+      flex: 1;
+      min-width: 100px;
+      max-width: 150px;
+      padding: 10px 16px;
+    }
+
+    .page-info {
+      flex-basis: 100%;
+      text-align: center;
+      order: -1;
+      margin-bottom: 8px;
     }
   }
 
   .modal-overlay .modal-content {
     width: 95%;
-    margin: 20px;
+    margin: 10px;
 
     .modal-body {
+      padding: 15px;
+
       .form-grid {
         grid-template-columns: 1fr;
+        gap: 15px;
+      }
+    }
+
+    .modal-header {
+      padding: 15px;
+
+      h2 {
+        font-size: 1.2rem;
+      }
+    }
+
+    .modal-footer {
+      padding: 15px;
+      flex-wrap: wrap;
+
+      .btn {
+        flex: 1;
+        min-width: 120px;
       }
     }
   }
@@ -701,16 +802,19 @@
       .preview-row {
         flex-direction: column;
         align-items: flex-start;
-        gap: 5px;
+        gap: 4px;
+        padding: 6px 0;
 
         strong {
           min-width: auto;
           text-align: right;
+          font-size: 12px;
         }
 
         span {
           text-align: right;
           padding-right: 0;
+          font-size: 13px;
         }
       }
     }
@@ -719,30 +823,37 @@
 
 @media (max-width: 480px) {
   .donations-container {
-    padding: 10px;
+    padding: 8px;
   }
 
   .page-header {
+    gap: 10px;
+
     h1 {
-      font-size: 1.3rem;
+      font-size: 1.25rem;
     }
 
     .add-donation-btn {
-      padding: 10px 20px;
-      font-size: 13px;
+      padding: 12px 18px;
+      font-size: 14px;
     }
   }
 
   .filters-section {
-    padding: 12px;
+    padding: 10px;
+
+    .filter-row {
+      gap: 8px;
+    }
 
     .filter-group {
       label {
-        font-size: 13px;
+        font-size: 12px;
+        margin-bottom: 3px;
       }
 
       .form-control {
-        padding: 8px;
+        padding: 9px 7px;
         font-size: 13px;
       }
     }
@@ -750,46 +861,81 @@
 
   .summary-cards {
     grid-template-columns: 1fr;
+    gap: 8px;
 
     .summary-card {
       flex-direction: row;
       justify-content: flex-start;
+      padding: 10px;
+
+      .card-icon {
+        font-size: 1.4rem;
+        padding: 10px;
+      }
+
+      .card-content {
+        h3 {
+          font-size: 12px;
+        }
+
+        .amount, .count {
+          font-size: 1.15rem;
+        }
+      }
     }
   }
 
   .donations-grid {
     .grid-row {
-      padding: 12px;
+      padding: 10px;
+      margin-bottom: 10px;
+      gap: 6px;
 
       .grid-col {
         font-size: 13px;
+        padding: 5px 0;
 
         &::before {
-          font-size: 12px;
+          font-size: 11px;
+          min-width: 60px;
+        }
+
+        &.date-col {
+          padding: 8px;
+
+          .date-display {
+            .hebrew-date {
+              font-size: 14px;
+            }
+
+            .secular-date {
+              font-size: 11px;
+            }
+          }
+        }
+
+        &.donor-col {
+          font-size: 14px;
+
+          strong {
+            font-weight: 700;
+          }
+        }
+
+        &.amount-col {
+          .amount {
+            font-size: 15px;
+          }
         }
 
         &.actions {
+          gap: 3px;
+          padding-top: 8px;
+          margin-top: 6px;
+
           .btn-icon {
-            font-size: 13px;
-            padding: 3px;
-          }
-        }
-      }
-
-      .donor-col {
-        strong {
-          font-size: 14px;
-        }
-      }
-
-      .date-col {
-        .date-display {
-          .hebrew-date {
-            font-size: 14px;
-          }
-
-          .secular-date {
-            font-size: 11px;
+            padding: 7px 3px;
+            font-size: 15px;
           }
         }
       }
@@ -797,13 +943,47 @@
   }
 
   .pagination {
+    gap: 8px;
+
     .btn-page {
-      padding: 8px 16px;
+      padding: 9px 14px;
       font-size: 13px;
+      min-width: 90px;
     }
 
     .page-info {
-      font-size: 13px;
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+  }
+
+  .modal-overlay .modal-content {
+    width: 98%;
+    margin: 5px;
+
+    .modal-header {
+      padding: 12px;
+
+      h2 {
+        font-size: 1.1rem;
+      }
+    }
+
+    .modal-body {
+      padding: 12px;
+
+      .form-grid {
+        gap: 12px;
+      }
+    }
+
+    .modal-footer {
+      padding: 12px;
+
+      .btn {
+        padding: 10px 20px;
+        font-size: 13px;
+      }
     }
   }
 }

@@ -1,13 +1,4 @@
 import { Component, Input, Output, EventEmitter, OnInit, OnDestroy } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatSelectModule } from '@angular/material/select';
-import { MatChipsModule } from '@angular/material/chips';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 
 export interface NavigationRecord {
@@ -36,19 +27,7 @@ export interface ActiveFilter {
 @Component({
   selector: 'app-modal-navigation-header',
   templateUrl: './modal-navigation-header.component.html',
-  styleUrls: ['./modal-navigation-header.component.scss'],
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    MatButtonModule,
-    MatIconModule,
-    MatInputModule,
-    MatFormFieldModule,
-    MatSelectModule,
-    MatChipsModule,
-    MatTooltipModule
-  ]
+  styleUrls: ['./modal-navigation-header.component.scss']
 })
 export class ModalNavigationHeaderComponent implements OnInit, OnDestroy {
   @Input() title: string = '';

@@ -1,35 +1,23 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialogRef } from '@angular/material/dialog';
+import { DialogConfig } from 'common-ui-elements';
 import { Campaign, Donor } from '../../../../shared/entity';
 import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
 import { UIToolsService } from '../../../common/UIToolsService';
-import { SharedComponentsModule } from '../../../shared/shared-components.module';
 
 export interface CampaignDonorsModalArgs {
   campaignId: string;
 }
 
+@DialogConfig({
+  hasBackdrop: true
+})
 @Component({
   selector: 'app-campaign-donors-modal',
   templateUrl: './campaign-donors-modal.component.html',
-  styleUrls: ['./campaign-donors-modal.component.scss'],
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    MatButtonModule,
-    MatIconModule,
-    MatTooltipModule,
-    MatSnackBarModule,
-    SharedComponentsModule
-  ]
+  styleUrls: ['./campaign-donors-modal.component.scss']
 })
 export class CampaignDonorsModalComponent implements OnInit {
   args!: CampaignDonorsModalArgs;

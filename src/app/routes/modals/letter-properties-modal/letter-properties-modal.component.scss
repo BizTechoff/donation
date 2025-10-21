@@ -11,6 +11,7 @@
   flex-direction: column;
   overflow: hidden;
   box-sizing: border-box;
+  cursor: default;
 }
 
 /* Modal Header */
@@ -257,7 +258,7 @@
 /* Letter Type Cards */
 .letter-types-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 12px;
   margin-top: 16px;
 }
@@ -566,6 +567,45 @@
       width: 16px;
       height: 16px;
       color: #667eea;
+    }
+  }
+
+  .fields-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .field-item {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 10px 14px;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.02));
+    border: 1px solid rgba(102, 126, 234, 0.2);
+    border-radius: 8px;
+    transition: all 0.3s ease;
+
+    &:hover {
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.08), rgba(118, 75, 162, 0.04));
+      border-color: rgba(102, 126, 234, 0.4);
+      transform: translateX(-2px);
+    }
+
+    .field-name {
+      flex-shrink: 0;
+      font-weight: 600;
+      font-size: 13px;
+      color: #667eea;
+      min-width: 140px;
+    }
+
+    .field-value {
+      flex: 1;
+      font-size: 14px;
+      color: #2c3e50;
+      font-weight: 500;
+      word-break: break-word;
     }
   }
 }

@@ -8,54 +8,50 @@
     <div class="filter-row">
       <div class="filter-group">
         <label>{{ (i18n.terms$ | async)?.certificateType }}</label>
-        <select class="form-control">
+        <select class="form-control" [(ngModel)]="filterCertificateType" (ngModelChange)="filterCertificates()">
           <option value="">{{ (i18n.terms$ | async)?.everything }}</option>
-          <option value="donation">{{ (i18n.terms$ | async)?.donationCertificate }}</option>
           <option value="memorial">{{ (i18n.terms$ | async)?.memorialCertificate }}</option>
-          <option value="dedication">{{ (i18n.terms$ | async)?.dedication }}</option>
-          <option value="appreciation">{{ (i18n.terms$ | async)?.appreciation }}</option>
+          <option value="memorialDay">{{ (i18n.terms$ | async)?.memorialDay }}</option>
         </select>
       </div>
-      
+
       <div class="filter-group">
         <label>{{ (i18n.terms$ | async)?.dateFromFilter }}</label>
-        <input type="date" class="form-control">
+        <input type="date" class="form-control" [(ngModel)]="filterDateFrom" (ngModelChange)="filterCertificates()">
       </div>
 
       <div class="filter-group">
         <label>{{ (i18n.terms$ | async)?.dateToFilter }}</label>
-        <input type="date" class="form-control">
+        <input type="date" class="form-control" [(ngModel)]="filterDateTo" (ngModelChange)="filterCertificates()">
       </div>
 
       <div class="filter-group">
         <label>{{ (i18n.terms$ | async)?.donorSearch }}</label>
-        <input type="text" class="form-control" [placeholder]="(i18n.terms$ | async)?.donorNamePlaceholder">
+        <input type="text" class="form-control"
+               [placeholder]="(i18n.terms$ | async)?.donorNamePlaceholder"
+               [(ngModel)]="donorSearchText"
+               (ngModelChange)="onDonorSearchChange($event)">
       </div>
 
       <div class="filter-group">
-        <label>{{ (i18n.terms$ | async)?.statusFilterCert }}</label>
-        <select class="form-control">
+        <label>{{ (i18n.terms$ | async)?.fromParasha }}</label>
+        <select class="form-control" [(ngModel)]="filterFromParasha" (ngModelChange)="onFromParashaChange()">
           <option value="">{{ (i18n.terms$ | async)?.everything }}</option>
-          <option value="draft">{{ (i18n.terms$ | async)?.draftStatusCert }}</option>
-          <option value="ready">{{ (i18n.terms$ | async)?.readyForPrint }}</option>
-          <option value="printed">{{ (i18n.terms$ | async)?.printedStatus }}</option>
-          <option value="delivered">{{ (i18n.terms$ | async)?.deliveredStatus }}</option>
+          <option *ngFor="let parasha of parashotList" [value]="parasha">{{ parasha }}</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>{{ (i18n.terms$ | async)?.toParasha }}</label>
+        <select class="form-control" [(ngModel)]="filterToParasha" (ngModelChange)="onToParashaChange()">
+          <option value="">{{ (i18n.terms$ | async)?.everything }}</option>
+          <option *ngFor="let parasha of parashotList" [value]="parasha">{{ parasha }}</option>
         </select>
       </div>
     </div>
   </div>
 
   <div class="certificate-types">
-    <div class="type-card donation-cert">
-      <div class="card-icon">📜</div>
-      <h3>{{ (i18n.terms$ | async)?.donationCertificatesCard }}</h3>
-      <p>{{ (i18n.terms$ | async)?.donationCertDescription }}</p>
-      <div class="stats">
-        <span class="count">45</span>
-        <span class="label">{{ (i18n.terms$ | async)?.certificatesThisYear }}</span>
-      </div>
-    </div>
-    
     <div class="type-card memorial-cert">
       <div class="card-icon">🕯️</div>
       <h3>{{ (i18n.terms$ | async)?.memorialCertificatesCard }}</h3>
@@ -65,24 +61,14 @@
         <span class="label">{{ (i18n.terms$ | async)?.activeMemorials }}</span>
       </div>
     </div>
-    
-    <div class="type-card dedication-cert">
-      <div class="card-icon">🏛️</div>
-      <h3>{{ (i18n.terms$ | async)?.dedicationsCard }}</h3>
-      <p>{{ (i18n.terms$ | async)?.dedicationsDescription }}</p>
+
+    <div class="type-card memorial-cert">
+      <div class="card-icon">📅</div>
+      <h3>{{ (i18n.terms$ | async)?.memorialDay }}</h3>
+      <p>ניצבים ליום מיוחד</p>
       <div class="stats">
-        <span class="count">12</span>
-        <span class="label">{{ (i18n.terms$ | async)?.dedicationsThisYear }}</span>
-      </div>
-    </div>
-    
-    <div class="type-card appreciation-cert">
-      <div class="card-icon">🏆</div>
-      <h3>{{ (i18n.terms$ | async)?.appreciationCertificatesCard }}</h3>
-      <p>{{ (i18n.terms$ | async)?.appreciationDescription }}</p>
-      <div class="stats">
-        <span class="count">18</span>
-        <span class="label">{{ (i18n.terms$ | async)?.appreciationThisYear }}</span>
+        <span class="count">15</span>
+        <span class="label">ניצבים פעילים</span>
       </div>
     </div>
   </div>

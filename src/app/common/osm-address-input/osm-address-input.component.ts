@@ -38,18 +38,6 @@ export interface AddressComponents {
   selector: 'app-osm-address-input',
   templateUrl: './osm-address-input.component.html',
   styleUrls: ['./osm-address-input.component.scss'],
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatAutocompleteModule,
-    MatIconModule,
-    MatButtonModule,
-    MatTooltipModule,
-    MatProgressSpinnerModule
-  ],
   animations: [
     trigger('slideDown', [
       transition(':enter', [
@@ -60,13 +48,6 @@ export interface AddressComponents {
         animate('200ms ease-in', style({ opacity: 0, transform: 'translateY(-10px)' }))
       ])
     ])
-  ],
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => OsmAddressInputComponent),
-      multi: true
-    }
   ]
 })
 export class OsmAddressInputComponent implements ControlValueAccessor, OnDestroy, OnChanges {

@@ -22,16 +22,7 @@ export interface DonationDetailsModalArgs {
 @Component({
   selector: 'app-donation-details-modal',
   templateUrl: './donation-details-modal.component.html',
-  styleUrls: ['./donation-details-modal.component.scss'],
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    MatButtonModule,
-    MatIconModule,
-    MatTooltipModule,
-    ModalNavigationHeaderComponent
-  ]
+  styleUrls: ['./donation-details-modal.component.scss']
 })
 export class DonationDetailsModalComponent implements OnInit {
   args!: DonationDetailsModalArgs;

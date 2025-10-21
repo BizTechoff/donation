@@ -1,21 +1,11 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { MatTableModule } from '@angular/material/table';
-import { MatSortModule } from '@angular/material/sort';
-import { MatPaginatorModule } from '@angular/material/paginator';
-import { MatSelectModule } from '@angular/material/select';
-import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialogRef } from '@angular/material/dialog';
+import { DialogConfig } from 'common-ui-elements';
 import { Donation, Donor, Campaign, Blessing } from '../../../../shared/entity';
 import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
 import { UIToolsService } from '../../../common/UIToolsService';
-import { SharedComponentsModule } from '../../../shared/shared-components.module';
 
 export interface CampaignBlessingBookModalArgs {
   campaignId: string;
@@ -30,25 +20,13 @@ export interface DonorBlessing {
   totalDonated: number;
 }
 
+@DialogConfig({
+  hasBackdrop: true
+})
 @Component({
   selector: 'app-campaign-blessing-book-modal',
   templateUrl: './campaign-blessing-book-modal.component.html',
-  styleUrls: ['./campaign-blessing-book-modal.component.scss'],
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    MatButtonModule,
-    MatIconModule,
-    MatTooltipModule,
-    MatSnackBarModule,
-    MatTableModule,
-    MatSortModule,
-    MatPaginatorModule,
-    MatSelectModule,
-    MatFormFieldModule,
-    SharedComponentsModule
-  ]
+  styleUrls: ['./campaign-blessing-book-modal.component.scss']
 })
 export class CampaignBlessingBookModalComponent implements OnInit {
   args!: CampaignBlessingBookModalArgs;

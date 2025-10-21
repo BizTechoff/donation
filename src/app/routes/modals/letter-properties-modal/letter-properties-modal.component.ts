@@ -1,13 +1,12 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
 import { MatDialogRef } from '@angular/material/dialog';
-import { MatIconModule } from '@angular/material/icon';
-import { MatTooltipModule } from '@angular/material/tooltip';
+import { DialogConfig } from 'common-ui-elements';
 import { Letter } from '../../../../shared/enum/letter';
 import { LetterService } from '../../../services/letter.service';
 import { UIToolsService } from '../../../common/UIToolsService';
+import { remult } from 'remult';
+import { Donation } from '../../../../shared/entity';
+import { HDate } from '@hebcal/core';
 
 export interface LetterPropertiesModalArgs {
   donationId: string;
@@ -19,18 +18,21 @@ export interface LetterPropertiesResult {
   suffix: string[];
 }
 
+export interface FieldValue {
+  fieldName: string;
+  displayName: string;
+  value: string;
+}
+
+@DialogConfig({
+  hasBackdrop: true,
+  maxWidth: '80vw',
+  maxHeight: '80vh'
+})
 @Component({
   selector: 'app-letter-properties-modal',
   templateUrl: './letter-properties-modal.component.html',
-  styleUrls: ['./letter-properties-modal.component.scss'],
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    MatButtonModule,
-    MatIconModule,
-    MatTooltipModule
-  ]
+  styleUrls: ['./letter-properties-modal.component.scss']
 })
 export class LetterPropertiesModalComponent implements OnInit {
   args!: LetterPropertiesModalArgs;
@@ -60,6 +62,10 @@ export class LetterPropertiesModalComponent implements OnInit {
 
   loading = false;
 
+  // Donation data
+  donation?: Donation;
+  fieldValues: FieldValue[] = [];
+
   constructor(
     private letterService: LetterService,
     private ui: UIToolsService,
@@ -68,6 +74,28 @@ export class LetterPropertiesModalComponent implements OnInit {
 
   async ngOnInit() {
     this.loadLetterTypes();
+    await this.loadDonation();
+  }
+
+  async loadDonation() {
+    if (!this.args?.donationId) return;
+
+    try {
+      this.loading = true;
+      const donationRepo = remult.repo(Donation);
+      this.donation = await donationRepo.findId(this.args.donationId, {
+        include: { donor: true, campaign: true }
+      }) || undefined;
+
+      if (this.donation) {
+        this.updateFieldValues();
+      }
+    } catch (error) {
+      console.error('Error loading donation:', error);
+      this.ui.error('שגיאה בטעינת נתוני התרומה');
+    } finally {
+      this.loading = false;
+    }
   }
 
   loadLetterTypes() {
@@ -75,11 +103,96 @@ export class LetterPropertiesModalComponent implements OnInit {
     // Select first type by default
     if (this.letterTypes.length > 0) {
       this.selectedLetterType = this.letterTypes[0];
+      this.updateFieldValues();
     }
   }
 
   selectLetterType(type: Letter) {
     this.selectedLetterType = type;
+    this.updateFieldValues();
+  }
+
+  updateFieldValues() {
+    if (!this.selectedLetterType || !this.donation) {
+      this.fieldValues = [];
+      return;
+    }
+
+    this.fieldValues = this.selectedLetterType.fields
+      .filter(field => field !== 'letter_prefix' && field !== 'letter_suffix')
+      .map(field => ({
+        fieldName: field,
+        displayName: this.getFieldDisplayName(field),
+        value: this.getFieldValue(field)
+      }))
+      .filter(fv => fv.value.trim().length > 0);
+  }
+
+  getFieldDisplayName(field: string): string {
+    const fieldNames: Record<string, string> = {
+      'letter_heb_date': 'תאריך עברי',
+      'donor_eng_title': 'תואר באנגלית',
+      'donor_eng_first_name': 'שם פרטי באנגלית',
+      'donor_eng_last_name': 'שם משפחה באנגלית',
+      'donor_eng_suffix': 'סיומת באנגלית',
+      'donor_home_address': 'כתובת',
+      'donor_country': 'מדינה',
+      'donor_title': 'תואר',
+      'donor_first_name': 'שם פרטי',
+      'donor_last_name': 'שם משפחה',
+      'donor_suffix': 'סיומת',
+      'donation_amount': 'סכום תרומה',
+      'donation_currency_symbol': 'סמל מטבע',
+      'donation_reason': 'סיבת התרומה'
+    };
+    return fieldNames[field] || field;
+  }
+
+  getFieldValue(field: string): string {
+    if (!this.donation) return '';
+
+    switch (field) {
+      case 'letter_heb_date': {
+        const hDate = new HDate(new Date());
+        return hDate.renderGematriya();
+      }
+      case 'donor_eng_title':
+        return this.donation.donor?.titleEnglish || '';
+      case 'donor_eng_first_name':
+        return this.donation.donor?.firstNameEnglish || '';
+      case 'donor_eng_last_name':
+        return this.donation.donor?.lastNameEnglish || '';
+      case 'donor_eng_suffix':
+        return this.donation.donor?.suffixEnglish || '';
+      case 'donor_home_address':
+        return this.donation.donor?.homePlace?.fullAddress || '';
+      case 'donor_country':
+        return this.donation.donor?.homePlace?.country?.name || '';
+      case 'donor_title':
+        return this.donation.donor?.title || '';
+      case 'donor_first_name':
+        return this.donation.donor?.firstName || '';
+      case 'donor_last_name':
+        return this.donation.donor?.lastName || '';
+      case 'donor_suffix':
+        return this.donation.donor?.suffix || '';
+      case 'donation_amount':
+        return this.donation.amount.toString();
+      case 'donation_reason':
+        return this.donation.reason || '';
+      case 'donation_currency_symbol': {
+        const currencySymbols: Record<string, string> = {
+          'ILS': '₪',
+          'USD': '$',
+          'EUR': '€',
+          'GBP': '£',
+          'JPY': '¥'
+        };
+        return currencySymbols[this.donation.currency || 'ILS'] || this.donation.currency || '₪';
+      }
+      default:
+        return '';
+    }
   }
 
   // Prefix management

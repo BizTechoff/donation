@@ -1,6 +1,5 @@
 <!-- Donor Details Modal -->
-<div class="modal-overlay" (click)="closeModal($event)">
-  <div class="modal-content donor-details-modal" (click)="$event.stopPropagation()">
+<div class="donor-details-modal">
 
     <div class="modal-header">
       <div class="header-content">
@@ -22,11 +21,14 @@
 
     <!-- Loading State -->
     <div class="loading-overlay" *ngIf="loading">
-      <div class="loading-spinner">{{ (i18n.terms$ | async)?.loadingData }}</div>
+      <div class="loading-spinner">
+        <mat-spinner diameter="60"></mat-spinner>
+        <p>{{ (i18n.terms$ | async)?.loadingData }}</p>
+      </div>
     </div>
 
-    <div class="modal-body">
-      <div class="details-grid" *ngIf="donor && !loading">
+    <div class="modal-body" *ngIf="!loading">
+      <div class="details-grid" *ngIf="donor">
         <!-- פרטים אישיים -->
         <div class="section personal-details">
           <h3>{{ (i18n.terms$ | async)?.personalDetails }}</h3>
@@ -1029,56 +1031,56 @@
           </div>
         </div>
       </div>
-      <div class="modal-footer">
-        <div class="footer-actions-left">
-          <!-- Quick Actions -->
-          <button mat-stroked-button class="quick-action-btn" *ngIf="!isNewDonor" (click)="openGifts()" title="מתנות">
-            <mat-icon>redeem</mat-icon>
-            מתנות
-          </button>
-          <button mat-stroked-button class="quick-action-btn" *ngIf="!isNewDonor" (click)="openDonations()"
-            title="תרומות">
-            <mat-icon>attach_money</mat-icon>
-            תרומות
-          </button>
-          <!-- <button mat-stroked-button 
-                class="quick-action-btn" 
-                *ngIf="!isNewDonor"
-                (click)="openReceipts()" 
-                title="הוצאת קבלות">
-          <mat-icon>receipt_long</mat-icon>
-          הו"ק
-        </button> -->
+    </div>
 
-          <!-- Divider -->
-          <div class="footer-divider" *ngIf="!isNewDonor"></div>
+    <div class="modal-footer" *ngIf="!loading">
+      <div class="footer-actions-left">
+        <!-- Quick Actions -->
+        <button mat-stroked-button class="quick-action-btn" *ngIf="!isNewDonor" (click)="openGifts()" title="מתנות">
+          <mat-icon>redeem</mat-icon>
+          מתנות
+        </button>
+        <button mat-stroked-button class="quick-action-btn" *ngIf="!isNewDonor" (click)="openDonations()"
+          title="תרומות">
+          <mat-icon>attach_money</mat-icon>
+          תרומות
+        </button>
+        <!-- <button mat-stroked-button
+              class="quick-action-btn"
+              *ngIf="!isNewDonor"
+              (click)="openReceipts()"
+              title="הוצאת קבלות">
+        <mat-icon>receipt_long</mat-icon>
+        הו"ק
+      </button> -->
 
-          <!-- Admin Actions -->
-          <button mat-stroked-button color="warn" *ngIf="!isNewDonor && donor?.isActive" (click)="deactivateDonor()"
-            class="action-button">
-            <mat-icon>block</mat-icon>
-            {{ (i18n.terms$ | async)?.deactivate }}
-          </button>
-          <button mat-stroked-button color="primary" *ngIf="!isNewDonor && !donor?.isActive" (click)="activateDonor()"
-            class="action-button">
-            <mat-icon>check_circle</mat-icon>
-            {{ (i18n.terms$ | async)?.activate }}
-          </button>
-          <button mat-stroked-button color="warn" *ngIf="!isNewDonor" (click)="deleteDonor()" class="action-button">
-            <mat-icon>delete</mat-icon>
-            {{ (i18n.terms$ | async)?.delete }}
-          </button>
-        </div>
-        <div class="footer-actions-right">
-          <button mat-stroked-button (click)="closeModal()" class="cancel-button">
-            <mat-icon>close</mat-icon>
-            {{ (i18n.terms$ | async)?.cancel }}
-          </button>
-          <button mat-raised-button color="primary" (click)="saveDonor()" class="save-button" [disabled]="loading">
-            <mat-icon>save</mat-icon>
-            {{ (i18n.terms$ | async)?.saveDonor }}
-          </button>
-        </div>
+        <!-- Divider -->
+        <div class="footer-divider" *ngIf="!isNewDonor"></div>
+
+        <!-- Admin Actions -->
+        <button mat-stroked-button color="warn" *ngIf="!isNewDonor && donor?.isActive" (click)="deactivateDonor()"
+          class="action-button">
+          <mat-icon>block</mat-icon>
+          {{ (i18n.terms$ | async)?.deactivate }}
+        </button>
+        <button mat-stroked-button color="primary" *ngIf="!isNewDonor && !donor?.isActive" (click)="activateDonor()"
+          class="action-button">
+          <mat-icon>check_circle</mat-icon>
+          {{ (i18n.terms$ | async)?.activate }}
+        </button>
+        <button mat-stroked-button color="warn" *ngIf="!isNewDonor" (click)="deleteDonor()" class="action-button">
+          <mat-icon>delete</mat-icon>
+          {{ (i18n.terms$ | async)?.delete }}
+        </button>
+      </div>
+      <div class="footer-actions-right">
+        <button mat-stroked-button (click)="closeModal()" class="cancel-button">
+          <mat-icon>close</mat-icon>
+          {{ (i18n.terms$ | async)?.cancel }}
+        </button>
+        <button mat-raised-button color="primary" (click)="saveDonor()" class="save-button" [disabled]="loading">
+          <mat-icon>save</mat-icon>
+          {{ (i18n.terms$ | async)?.saveDonor }}
+        </button>
       </div>
     </div>
-  </div>

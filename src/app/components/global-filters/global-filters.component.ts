@@ -1,16 +1,4 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatMenuModule } from '@angular/material/menu';
-import { MatSelectModule } from '@angular/material/select';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatInputModule } from '@angular/material/input';
-import { MatChipsModule } from '@angular/material/chips';
-import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { remult } from 'remult';
 import { Subscription } from 'rxjs';
 import { GlobalFilterService, GlobalFilters } from '../../services/global-filter.service';
@@ -21,22 +9,7 @@ import { I18nService } from '../../i18n/i18n.service';
 @Component({
   selector: 'app-global-filters',
   templateUrl: './global-filters.component.html',
-  styleUrls: ['./global-filters.component.scss'],
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    MatButtonModule,
-    MatIconModule,
-    MatMenuModule,
-    MatSelectModule,
-    MatFormFieldModule,
-    MatDatepickerModule,
-    MatInputModule,
-    MatChipsModule,
-    MatCheckboxModule,
-    MatTooltipModule
-  ]
+  styleUrls: ['./global-filters.component.scss']
 })
 export class GlobalFiltersComponent implements OnInit, OnDestroy {
   

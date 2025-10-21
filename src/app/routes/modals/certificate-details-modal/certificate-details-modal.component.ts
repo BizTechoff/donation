@@ -1,14 +1,12 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { MatDialogRef } from '@angular/material/dialog';
+import { DialogConfig } from 'common-ui-elements';
 import { Certificate } from '../../../../shared/entity/certificate';
 import { Donor } from '../../../../shared/entity/donor';
 import { Donation } from '../../../../shared/entity/donation';
 import { Reminder } from '../../../../shared/entity/reminder';
 import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
-import { SharedComponentsModule } from '../../../shared/shared-components.module';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { ReminderDetailsModalComponent } from '../reminder-details-modal/reminder-details-modal.component';
 
@@ -18,13 +16,13 @@ export interface CertificateDetailsModalArgs {
   donationId?: string; // Optional donation ID to link
 }
 
+@DialogConfig({
+  hasBackdrop: true
+})
 @Component({
   selector: 'app-certificate-details-modal',
-  standalone: true,
-  imports: [CommonModule, FormsModule, SharedComponentsModule],
   templateUrl: './certificate-details-modal.component.html',
-  styleUrl: './certificate-details-modal.component.scss'
-})
+  styleUrl: './certificate-details-modal.component.scss'})
 export class CertificateDetailsModalComponent implements OnInit {
   args!: CertificateDetailsModalArgs;
   changed = false;
@@ -252,8 +250,7 @@ export class CertificateDetailsModalComponent implements OnInit {
       isRecurringYearly = true; // Yearly recurring reminder
     }
 
-    const reminderSaved = await ReminderDetailsModalComponent.open({
-      reminderId: reminderId,
+    const reminderSaved = await this.ui.reminderDetailsDialog(reminderId, {
       donorId: this.certificate.donorId,
       reminderType: reminderType,
       reminderDate: this.certificate.eventDate,

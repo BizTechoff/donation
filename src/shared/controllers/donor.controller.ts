@@ -31,7 +31,7 @@ export class DonorController {
 
   @BackendMethod({ allowed: Allow.authenticated })
   static async findFiltered(filters: GlobalFilters): Promise<Donor[]> {
-    console.log('DonorController.findFiltered called with filters:', filters);
+    // console.log('DonorController.findFiltered called with filters:', filters);
     let whereClause: any = { isActive: true };
 
     // Apply country filter by country ID

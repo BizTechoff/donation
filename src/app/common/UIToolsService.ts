@@ -146,12 +146,72 @@ export class UIToolsService implements UITools {
     )
   }
 
-  async reminderDetailsDialog(reminderId?: string, options?: { userId?: string; donorId?: string; donationId?: string }): Promise<boolean> {
+  async reminderDetailsDialog(reminderId?: string, options?: {
+    userId?: string;
+    donorId?: string;
+    donationId?: string;
+    certificateId?: string;
+    reminderType?: 'donation_followup' | 'thank_you' | 'receipt' | 'birthday' | 'holiday' | 'general' | 'meeting' | 'phone_call' | 'dedication' | 'memorial';
+    reminderDate?: Date;
+    isRecurringYearly?: boolean;
+  }): Promise<boolean> {
     return await openDialog(
       (await import('../routes/modals/reminder-details-modal/reminder-details-modal.component')).ReminderDetailsModalComponent,
-      (dlg) => dlg.args = { reminderId, userId: options?.userId, donorId: options?.donorId, donationId: options?.donationId }
+      (dlg) => dlg.args = {
+        reminderId,
+        userId: options?.userId,
+        donorId: options?.donorId,
+        donationId: options?.donationId,
+        certificateId: options?.certificateId,
+        reminderType: options?.reminderType,
+        reminderDate: options?.reminderDate,
+        isRecurringYearly: options?.isRecurringYearly
+      }
     )
   }
+
+  async letterPropertiesDialog(donationId: string): Promise<any> {
+    return await openDialog(
+      (await import('../routes/modals/letter-properties-modal/letter-properties-modal.component')).LetterPropertiesModalComponent,
+      (dlg) => dlg.args = { donationId }
+    )
+  }
+
+  async bankDetailsDialog(bankId?: string): Promise<boolean> {
+    return await openDialog(
+      (await import('../routes/modals/bank-details-modal/bank-details-modal.component')).BankDetailsModalComponent,
+      (dlg) => dlg.args = { bankId }
+    )
+  }
+
+  async companyDetailsDialog(companyId?: string): Promise<boolean> {
+    return await openDialog(
+      (await import('../routes/modals/company-details-modal/company-details-modal.component')).CompanyDetailsModalComponent,
+      (dlg) => dlg.args = { companyId }
+    )
+  }
+
+  async organizationDetailsDialog(organizationId?: string): Promise<boolean> {
+    return await openDialog(
+      (await import('../routes/modals/organization-details-modal/organization-details-modal.component')).OrganizationDetailsModalComponent,
+      (dlg) => dlg.args = { organizationId }
+    )
+  }
+
+  async donorDonationsDialog(donorId: string, donationType: 'donations' | 'gifts' | 'receipts', donorName?: string): Promise<void> {
+    return await openDialog(
+      (await import('../routes/modals/donor-donations-modal/donor-donations-modal.component')).DonorDonationsModalComponent,
+      (dlg) => dlg.args = { donorId, donationType, donorName }
+    )
+  }
+
+  async campaignBlessingBookDialog(campaignId: string, campaignName?: string): Promise<void> {
+    return await openDialog(
+      (await import('../routes/modals/campaign-blessing-book-modal/campaign-blessing-book-modal.component')).CampaignBlessingBookModalComponent,
+      (dlg) => dlg.args = { campaignId, campaignName }
+    )
+  }
+
   private enhanceFieldOptionsAndDataControlOptions(
     commonUIPlugin: CommonUIElementsPluginsService
   ) {
