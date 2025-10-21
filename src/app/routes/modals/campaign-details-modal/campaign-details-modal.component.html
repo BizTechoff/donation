@@ -9,7 +9,7 @@
           <mat-icon>{{isNewCampaign ? 'add_circle' : 'campaign'}}</mat-icon>
         </div>
         <div class="header-text">
-          <h2>{{isNewCampaign ? 'יצירת קמפיין חדש' : 'פרטי קמפיין'}}</h2>
+          <h2>{{isNewCampaign ? (i18n.terms$ | async)?.createNewCampaignTitle : (i18n.terms$ | async)?.campaignDetailsTitle}}</h2>
           <p class="header-subtitle" *ngIf="!isNewCampaign && campaign">
             {{campaign.name}}
           </p>
@@ -30,7 +30,7 @@
 
         <!-- Status Display -->
         <div class="section status-section" *ngIf="!isNewCampaign">
-          <h3>סטטוס קמפיין</h3>
+          <h3>{{ (i18n.terms$ | async)?.campaignStatusSection }}</h3>
           <div class="status-display">
             <div class="status-badge" [class.draft]="isDraft" [class.active]="isActive"
                  [class.completed]="isCompleted" [class.cancelled]="isCancelled">
@@ -48,7 +48,7 @@
 
         <!-- סוג קמפיין -->
         <div class="section campaign-type-section">
-          <h3>סוג קמפיין</h3>
+          <h3>{{ (i18n.terms$ | async)?.campaignTypeSection }}</h3>
           <div class="form-grid">
             <div class="form-group full-width">
               <div class="campaign-type-selector">
@@ -64,7 +64,7 @@
                     <div class="campaign-type-content">
                       <mat-icon class="campaign-type-icon">campaign</mat-icon>
                       <div class="campaign-type-text">
-                        <span class="campaign-type-label">קמפיין רגיל</span>
+                        <span class="campaign-type-label">{{ (i18n.terms$ | async)?.regularCampaignType }}</span>
                         <!-- <span class="campaign-type-description">קמפיין גיוס כספים סטנדרטי</span> -->
                       </div>
                     </div>
@@ -83,7 +83,7 @@
                     <div class="campaign-type-content">
                       <mat-icon class="campaign-type-icon">restaurant</mat-icon>
                       <div class="campaign-type-text">
-                        <span class="campaign-type-label">דינער</span>
+                        <span class="campaign-type-label">{{ (i18n.terms$ | async)?.dinnerCampaignType }}</span>
                         <!-- <span class="campaign-type-description">אירוע גיוס כספים חגיגי</span> -->
                       </div>
                     </div>
@@ -96,7 +96,7 @@
 
         <!-- Basic Campaign Information -->
         <div class="section basic-details">
-          <h3>פרטי קמפיין בסיסיים</h3>
+          <h3>{{ (i18n.terms$ | async)?.basicCampaignInfoSection }}</h3>
           <div class="form-grid">
             <div class="form-group">
               <div class="field-title">
@@ -151,7 +151,7 @@
 
         <!-- Financial Information -->
         <div class="section financial-details">
-          <h3>מידע כספי</h3>
+          <h3>{{ (i18n.terms$ | async)?.financialInfoSection }}</h3>
           <div class="form-grid">
             <div class="form-group">
               <div class="field-title">
@@ -211,7 +211,7 @@
 
         <!-- Dates Information -->
         <div class="section dates-details">
-          <h3>תאריכים</h3>
+          <h3>{{ (i18n.terms$ | async)?.datesSection }}</h3>
           <div class="form-grid">
             <div class="form-group">
               <div class="field-title">
@@ -245,13 +245,13 @@
 
         <!-- Management Information -->
         <div class="section management-details">
-          <h3>מוזמנים</h3>
+          <h3>{{ (i18n.terms$ | async)?.inviteesSection }}</h3>
           <div class="form-grid">
 
             <div class="form-group full-width">
               <div class="field-title">
                 <mat-icon class="field-icon">group_work</mat-icon>
-                <label>קריטריונים כלליים</label>
+                <label>{{ (i18n.terms$ | async)?.generalCriteriaLabel }}</label>
               </div>
               <div class="criteria-selection-grid">
                 <!-- אנ"ש criteria with include/exclude options -->
@@ -311,7 +311,7 @@
             <div class="form-group full-width">
               <div class="field-title">
                 <mat-icon class="field-icon">group_work</mat-icon>
-                <label>חוג</label>
+                <label>{{ (i18n.terms$ | async)?.categoryField }}</label>
               </div>
               <div class="level-selection-grid">
                 <div class="level-option" [class.active]="campaign.circle === 'platinum'">
@@ -320,7 +320,7 @@
                            [disabled]="!canEdit" (ngModelChange)="markAsChanged()" class="level-radio">
                     <div class="level-content">
                       <span class="level-icon">👑</span>
-                      <span class="level-label">פלטינום</span>
+                      <span class="level-label">{{ (i18n.terms$ | async)?.circlePlatinum }}</span>
                     </div>
                   </label>
                 </div>
@@ -331,7 +331,7 @@
                            [disabled]="!canEdit" (ngModelChange)="markAsChanged()" class="level-radio">
                     <div class="level-content">
                       <span class="level-icon">🥇</span>
-                      <span class="level-label">זהב</span>
+                      <span class="level-label">{{ (i18n.terms$ | async)?.circleGold }}</span>
                     </div>
                   </label>
                 </div>
@@ -342,7 +342,7 @@
                            [disabled]="!canEdit" (ngModelChange)="markAsChanged()" class="level-radio">
                     <div class="level-content">
                       <span class="level-icon">🥈</span>
-                      <span class="level-label">כסף</span>
+                      <span class="level-label">{{ (i18n.terms$ | async)?.circleSilver }}</span>
                     </div>
                   </label>
                 </div>
@@ -353,7 +353,7 @@
                            [disabled]="!canEdit" (ngModelChange)="markAsChanged()" class="level-radio">
                     <div class="level-content">
                       <span class="level-icon">⭕</span>
-                      <span class="level-label">רגיל</span>
+                      <span class="level-label">{{ (i18n.terms$ | async)?.circleRegular }}</span>
                     </div>
                   </label>
                 </div>
@@ -418,7 +418,7 @@
 
         <!-- Settings -->
         <div class="section settings-details">
-          <h3>הגדרות</h3>
+          <h3>{{ (i18n.terms$ | async)?.settingsSection }}</h3>
           <div class="form-grid">
 
             <!-- <div class="form-group checkbox-group">
@@ -433,7 +433,7 @@
             <div class="form-group full-width">
               <div class="field-title">
                 <mat-icon class="field-icon">link</mat-icon>
-                <label>קישור להזמנה לדינער</label>
+                <label>{{ (i18n.terms$ | async)?.dinnerInvitationLinkLabel }}</label>
               </div>
               <input type="url" class="form-control" [(ngModel)]="campaign.websiteUrl"
                      [disabled]="!canEdit" placeholder="https://example.com"
@@ -443,7 +443,7 @@
             <div class="form-group full-width">
               <div class="field-title">
                 <mat-icon class="field-icon">image</mat-icon>
-                <label>קישור לספר ברכות של הדינער</label>
+                <label>{{ (i18n.terms$ | async)?.dinnerBlessingBookLinkLabel }}</label>
               </div>
               <input type="url" class="form-control" [(ngModel)]="campaign.imageUrl"
                      [disabled]="!canEdit" placeholder="https://example.com/image.jpg"
@@ -518,7 +518,7 @@
                 (click)="openInvitedList()"
                 class="action-button invited-list-button">
           <mat-icon>list_alt</mat-icon>
-          רשימת מוזמנים
+          {{ (i18n.terms$ | async)?.invitedListButton }}
         </button>
 
         <button mat-raised-button

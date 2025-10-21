@@ -68,7 +68,7 @@
                [placeholder]="(i18n.terms$ | async)?.categoryPlaceholder">
       </div>
 
-      <div class="filter-group">
+      <!-- <div class="filter-group">
         <label>{{ (i18n.terms$ | async)?.activeInactive }}</label>
         <select class="form-control" 
                 [(ngModel)]="filterActive" 
@@ -77,7 +77,7 @@
           <option value="true">{{ (i18n.terms$ | async)?.activeStatus }}</option>
           <option value="false">{{ (i18n.terms$ | async)?.inactiveStatus }}</option>
         </select>
-      </div>
+      </div> -->
 
       <div class="filter-actions">
         <button class="btn btn-secondary" (click)="clearFilters()">{{ (i18n.terms$ | async)?.clearFilters }}</button>
@@ -102,7 +102,7 @@
           <th>{{ (i18n.terms$ | async)?.progressPercentage }}</th>
           <th>{{ (i18n.terms$ | async)?.startDate }}</th>
           <th>{{ (i18n.terms$ | async)?.endDate }}</th>
-          <th>{{ (i18n.terms$ | async)?.status }}</th>
+          <!-- <th>{{ (i18n.terms$ | async)?.status }}</th> -->
           <th>{{ (i18n.terms$ | async)?.responsible }}</th>
           <th>{{ (i18n.terms$ | async)?.actions }}</th>
         </tr>
@@ -132,11 +132,11 @@
           </td>
           <td>{{formatDate(campaign.startDate)}}</td>
           <td>{{formatDate(campaign.endDate)}}</td>
-          <td>
+          <!-- <td>
             <span class="status-badge" [class]="getStatusBadgeClass(campaign.status)">
               {{getStatusText(campaign.status)}}
             </span>
-          </td>
+          </td> -->
           <td>{{campaign.manager?.name || ((i18n.terms$ | async)?.notSpecified)}}</td>
           <td class="actions">
             <button class="btn-icon btn-view" [title]="(i18n.terms$ | async)?.viewDetails" (click)="editCampaign(campaign)">👁</button>
@@ -210,13 +210,13 @@
         </div>
         
         <div class="form-group">
-          <label>חוג</label>
+          <label>{{ (i18n.terms$ | async)?.categoryField }}</label>
           <select class="form-control" [(ngModel)]="editingCampaign!.circle">
-            <option value="">בחר חוג</option>
-            <option value="platinum">פלטינום</option>
-            <option value="gold">זהב</option>
-            <option value="silver">כסף</option>
-            <option value="regular">רגיל</option>
+            <option value="">{{ (i18n.terms$ | async)?.selectCircle }}</option>
+            <option value="platinum">{{ (i18n.terms$ | async)?.circlePlatinum }}</option>
+            <option value="gold">{{ (i18n.terms$ | async)?.circleGold }}</option>
+            <option value="silver">{{ (i18n.terms$ | async)?.circleSilver }}</option>
+            <option value="regular">{{ (i18n.terms$ | async)?.circleRegular }}</option>
           </select>
         </div>
         
@@ -252,7 +252,7 @@
           </app-modern-dual-date-picker>
         </div>
         
-        <div class="form-group">
+        <!-- <div class="form-group">
           <label>{{ (i18n.terms$ | async)?.status }}</label>
           <select class="form-control" [(ngModel)]="editingCampaign!.status">
             <option value="draft">{{ (i18n.terms$ | async)?.draft }}</option>
@@ -260,7 +260,7 @@
             <option value="completed">{{ (i18n.terms$ | async)?.completedStatus }}</option>
             <option value="cancelled">{{ (i18n.terms$ | async)?.cancelledStatus }}</option>
           </select>
-        </div>
+        </div> -->
         
         <div class="form-group">
           <label>{{ (i18n.terms$ | async)?.campaignManager }}</label>

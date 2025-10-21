@@ -78,7 +78,7 @@ export class Campaign extends IdEntity {
   isPublic = true
 
   @Fields.string({
-    caption: 'קטגוריה',
+    caption: 'חוג',
   })
   category = ''
 
