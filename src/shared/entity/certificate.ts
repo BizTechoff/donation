@@ -33,7 +33,7 @@ export class Certificate extends IdEntity {
     validate: Validators.required,
     caption: 'סוג תעודה',
   })
-  type: 'donation' | 'memorial' | 'dedication' | 'appreciation' = 'donation'
+  type: 'donation' | 'memorial' | 'memorialDay' | 'appreciation' = 'donation'
 
   @Fields.string({
     caption: 'טקסט סוג התעודה',

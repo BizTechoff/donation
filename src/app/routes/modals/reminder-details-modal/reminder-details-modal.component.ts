@@ -15,7 +15,7 @@ export interface ReminderDetailsModalArgs {
   donorId?: string; // Optional donor ID to link
   donationId?: string; // Optional donation ID to link
   certificateId?: string; // Optional certificate ID to link
-  reminderType?: 'donation_followup' | 'thank_you' | 'receipt' | 'birthday' | 'holiday' | 'general' | 'meeting' | 'phone_call' | 'dedication' | 'memorial'; // Optional reminder type to initialize
+  reminderType?: 'donation_followup' | 'thank_you' | 'receipt' | 'birthday' | 'holiday' | 'general' | 'meeting' | 'phone_call' | 'memorialDay' | 'memorial'; // Optional reminder type to initialize
   reminderDate?: Date; // Optional date to initialize
   isRecurringYearly?: boolean; // Optional flag for yearly recurring reminder
 }
@@ -284,7 +284,7 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
             case 'birthday':
               this.reminder!.title = `יום הולדת - ${donorName}`;
               break;
-            case 'dedication':
+            case 'memorialDay':
               this.reminder!.title = `נציב יום - ${donorName}`;
               break;
             case 'memorial':
@@ -385,7 +385,7 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
     switch (type) {
       case 'donation': return 'תעודת תרומה';
       case 'memorial': return 'תעודת זיכרון';
-      case 'dedication': return 'תעודת הקדשה';
+      case 'memorialDay': return 'תעודת הקדשה';
       case 'appreciation': return 'תעודת הוקרה';
       default: return 'תעודה';
     }
@@ -633,7 +633,7 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
       { value: 'general', label: terms.generalType },
       { value: 'meeting', label: terms.meetingType },
       { value: 'phone_call', label: terms.phoneCallType },
-      { value: 'dedication', label: 'נציב יום' },
+      { value: 'memorialDay', label: 'נציב יום' },
       { value: 'memorial', label: 'נציב זכרון' }
     ];
 

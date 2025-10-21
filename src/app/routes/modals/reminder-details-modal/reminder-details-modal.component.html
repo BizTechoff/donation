@@ -1,7 +1,20 @@
-<div class="reminder-details-modal" [attr.dir]="(i18n.terms$ | async)?.RTL ? 'rtl' : 'ltr'">
+<!-- Reminder Details Modal -->
+<div class="reminder-details-modal">
+
     <div class="modal-header">
-      <h2>{{ isNewReminder ? (i18n.terms$ | async)?.newReminder : (i18n.terms$ | async)?.editReminderTitle }}</h2>
-      <button mat-icon-button class="close-button" (click)="cancel()">
+      <div class="header-content">
+        <div class="header-icon">
+          <mat-icon>{{isNewReminder ? 'notifications_add' : 'notifications'}}</mat-icon>
+        </div>
+        <div class="header-text">
+          <h2>{{ isNewReminder ? (i18n.terms$ | async)?.newReminder : (i18n.terms$ | async)?.editReminderTitle }}</h2>
+          <p class="header-subtitle" *ngIf="!isNewReminder && reminder">
+            {{reminder.title}}
+          </p>
+        </div>
+      </div>
+      <button class="modal-close" (click)="cancel()" matTooltip="{{(i18n.terms$ | async)?.close}}"
+        [dir]="i18n.lang.RTL ? 'rtl' : 'ltr'">
         <mat-icon>close</mat-icon>
       </button>
     </div>

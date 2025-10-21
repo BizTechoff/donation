@@ -110,9 +110,9 @@ export class CertificateDetailsModalComponent implements OnInit {
         this.certificate.typeText = this.i18n.terms.memorialCertificate;
         this.certificate.mainTitle = this.i18n.terms.memorialCertificate;
         break;
-      case 'dedication':
-        this.certificate.typeText = this.i18n.terms.dedication;
-        this.certificate.mainTitle = this.i18n.terms.dedication;
+      case 'memorialDay':
+        this.certificate.typeText = this.i18n.terms.memorialDay;
+        this.certificate.mainTitle = this.i18n.terms.memorialDay;
         break;
       case 'appreciation':
         this.certificate.typeText = this.i18n.terms.appreciation;
@@ -239,11 +239,11 @@ export class CertificateDetailsModalComponent implements OnInit {
     const reminderId = this.certificate.reminderId || 'new';
 
     // Prepare reminder args based on certificate type
-    let reminderType: 'dedication' | 'memorial' | undefined;
+    let reminderType: 'memorialDay' | 'memorial' | undefined;
     let isRecurringYearly = false;
 
-    if (this.certificate.type === 'dedication') {
-      reminderType = 'dedication';
+    if (this.certificate.type === 'memorialDay') {
+      reminderType = 'memorialDay';
       isRecurringYearly = false; // One-time reminder
     } else if (this.certificate.type === 'memorial') {
       reminderType = 'memorial';

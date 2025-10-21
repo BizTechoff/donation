@@ -13,8 +13,8 @@
               <label>{{ (i18n.terms$ | async)?.certificateTypeSelect }}</label>
               <div class="certificate-type-cards">
                 <div class="type-card"
-                     [class.selected]="certificate!.type === 'dedication'"
-                     (click)="certificate!.type = 'dedication'; onCertificateTypeChange()">
+                     [class.selected]="certificate!.type === 'memorialDay'"
+                     (click)="certificate!.type = 'memorialDay'; onCertificateTypeChange()">
                   <div class="type-card-icon">📜</div>
                   <div class="type-card-title">נציב יום</div>
                 </div>

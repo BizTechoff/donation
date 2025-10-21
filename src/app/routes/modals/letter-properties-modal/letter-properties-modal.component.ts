@@ -1,12 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
+import { HDate } from '@hebcal/core';
 import { DialogConfig } from 'common-ui-elements';
-import { Letter } from '../../../../shared/enum/letter';
-import { LetterService } from '../../../services/letter.service';
-import { UIToolsService } from '../../../common/UIToolsService';
 import { remult } from 'remult';
 import { Donation } from '../../../../shared/entity';
-import { HDate } from '@hebcal/core';
+import { Letter } from '../../../../shared/enum/letter';
+import { UIToolsService } from '../../../common/UIToolsService';
+import { LetterService } from '../../../services/letter.service';
 
 export interface LetterPropertiesModalArgs {
   donationId: string;
@@ -70,7 +70,7 @@ export class LetterPropertiesModalComponent implements OnInit {
     private letterService: LetterService,
     private ui: UIToolsService,
     public dialogRef: MatDialogRef<LetterPropertiesModalComponent>
-  ) {}
+  ) { }
 
   async ngOnInit() {
     this.loadLetterTypes();
@@ -84,9 +84,9 @@ export class LetterPropertiesModalComponent implements OnInit {
       this.loading = true;
       const donationRepo = remult.repo(Donation);
       this.donation = await donationRepo.findId(this.args.donationId, {
-        include: { donor: true, campaign: true }
+        include: { donor: { include: { homePlace: { include: { country: true } } } }, campaign: true }
       }) || undefined;
-
+      // console.log(this.donation?.donor?.homePlace?.country?.name)
       if (this.donation) {
         this.updateFieldValues();
       }
@@ -150,36 +150,74 @@ export class LetterPropertiesModalComponent implements OnInit {
 
   getFieldValue(field: string): string {
     if (!this.donation) return '';
+    var result = ''
 
     switch (field) {
       case 'letter_heb_date': {
         const hDate = new HDate(new Date());
-        return hDate.renderGematriya();
+        result = hDate.renderGematriya();
+        break
       }
       case 'donor_eng_title':
-        return this.donation.donor?.titleEnglish || '';
+        {
+          result = this.donation.donor?.titleEnglish || '';
+          break
+        }
       case 'donor_eng_first_name':
-        return this.donation.donor?.firstNameEnglish || '';
+        {
+          result = this.donation.donor?.firstNameEnglish || '';
+          break
+        }
       case 'donor_eng_last_name':
-        return this.donation.donor?.lastNameEnglish || '';
+        {
+          result = this.donation.donor?.lastNameEnglish || '';
+          break
+        }
       case 'donor_eng_suffix':
-        return this.donation.donor?.suffixEnglish || '';
+        {
+          result = this.donation.donor?.suffixEnglish || '';
+          break
+        }
       case 'donor_home_address':
-        return this.donation.donor?.homePlace?.fullAddress || '';
+        {
+          result = this.donation.donor?.homePlace?.fullAddress || '';
+          break
+        }
       case 'donor_country':
-        return this.donation.donor?.homePlace?.country?.name || '';
+        {
+          result = this.donation.donor?.homePlace?.country?.nameEn || '';
+          break
+        }
       case 'donor_title':
-        return this.donation.donor?.title || '';
+        {
+          result = this.donation.donor?.title || '';
+          break
+        }
       case 'donor_first_name':
-        return this.donation.donor?.firstName || '';
+        {
+          result = this.donation.donor?.firstName || '';
+          break
+        }
       case 'donor_last_name':
-        return this.donation.donor?.lastName || '';
+        {
+          result = this.donation.donor?.lastName || '';
+          break
+        }
       case 'donor_suffix':
-        return this.donation.donor?.suffix || '';
+        {
+          result = this.donation.donor?.suffix || '';
+          break
+        }
       case 'donation_amount':
-        return this.donation.amount.toString();
+        {
+          result = this.donation.amount.toString();
+          break
+        }
       case 'donation_reason':
-        return this.donation.reason || '';
+        {
+          result = this.donation.reason || '';
+          break
+        }
       case 'donation_currency_symbol': {
         const currencySymbols: Record<string, string> = {
           'ILS': '₪',
@@ -188,11 +226,15 @@ export class LetterPropertiesModalComponent implements OnInit {
           'GBP': '£',
           'JPY': '¥'
         };
-        return currencySymbols[this.donation.currency || 'ILS'] || this.donation.currency || '₪';
+        {
+          result = currencySymbols[this.donation.currency || 'ILS'] || this.donation.currency || '₪';
+          break
+        }
       }
-      default:
-        return '';
     }
+    console.log(field, result)
+
+    return result
   }
 
   // Prefix management

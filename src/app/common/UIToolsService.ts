@@ -151,7 +151,7 @@ export class UIToolsService implements UITools {
     donorId?: string;
     donationId?: string;
     certificateId?: string;
-    reminderType?: 'donation_followup' | 'thank_you' | 'receipt' | 'birthday' | 'holiday' | 'general' | 'meeting' | 'phone_call' | 'dedication' | 'memorial';
+    reminderType?: 'donation_followup' | 'thank_you' | 'receipt' | 'birthday' | 'holiday' | 'general' | 'meeting' | 'phone_call' | 'memorialDay' | 'memorial';
     reminderDate?: Date;
     isRecurringYearly?: boolean;
   }): Promise<boolean> {

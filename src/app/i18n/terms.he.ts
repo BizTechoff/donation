@@ -35,7 +35,7 @@ export const termsHe = {
   donorDetails: 'פרטי תורם',
   donationsList: 'רשימת תרומות',
   standingOrders: 'הוראות קבע',
-  certificates: 'תעודות וניצבים',
+  certificates: 'תעודות ונציבים',
   reminders: 'תזכורות',
   donorsMap: 'מפת תורמים',
   campaigns: 'קמפיינים',
@@ -577,12 +577,12 @@ export const termsHe = {
   saveCampaign: 'שמור קמפיין',
 
   // Certificates Page - From certificates.component.html
-  certificatesAndMemorials: 'תעודות וניצבים',
+  certificatesAndMemorials: 'תעודות ונציבים',
   createNewCertificate: 'יצירת תעודה חדשה',
   certificateType: 'סוג תעודה',
   donationCertificate: 'תעודת תרומה',
-  memorialCertificate: 'ניצב זיכרון',
-  memorialDay: 'ניצב יום',
+  memorialCertificate: 'נציב זיכרון',
+  memorialDay: 'נציב יום',
   dedication: 'הקדשה',
   appreciation: 'הוקרה',
   dateFromFilter: 'תאריך מ-',
@@ -613,7 +613,7 @@ export const termsHe = {
   // Certificate Grid Headers
   creationDate: 'תאריך יצירה',
   certificateTypeHeader: 'סוג תעודה',
-  donorRecipient: 'תורם/נהנה',
+  donorRecipient: 'תורם',
   amountEvent: 'סכום/אירוע',
   eventDate: 'תאריך אירוע',
   specialText: 'טקסט מיוחד',

@@ -12,7 +12,7 @@ export class LetterController {
 
     const donation = await remult.repo(Donation).findId(
       donationId,
-      { include: { donor: true } })
+      { include: { donor: { include: { homePlace: { include: { country: true } } } }, campaign: true } })
     if (!donation) throw 'NO donation for id: ' + donationId
 
     const contents = [] as DocxContentControl[]
@@ -31,48 +31,76 @@ export class LetterController {
     return await LetterController.createLetterDelegate(type, contents)
   }
 
-  private static getValue(donation: Donation, type: Letter, field = '') {
+  static getValue(donation:Donation, type: Letter, field: string): string {
+    if (!donation) return '';
+    var result = ''
+
     switch (field) {
       case 'letter_heb_date': {
         const hDate = new HDate(new Date());
-        return hDate.renderGematriya();
+        result = hDate.renderGematriya();
+        break
       }
-      case 'donor_eng_title': {
-        return donation.donor?.titleEnglish
-      }
-      case 'donor_eng_first_name': {
-        return donation.donor?.firstNameEnglish
-      }
-      case 'donor_eng_last_name': {
-        return donation.donor?.lastNameEnglish
-      }
-      case 'donor_eng_suffix': {
-        return donation.donor?.suffixEnglish
-      }
-      case 'donor_home_address': {
-        return donation.donor?.homePlace?.fullAddress
-      }
-      case 'donor_country': {
-        return donation.donor?.homePlace?.country?.name
-      }
-      case 'donor_title': {
-        return donation.donor?.title
-      }
-      case 'donor_first_name': {
-        return donation.donor?.firstName
-      }
-      case 'donor_last_name': {
-        return donation.donor?.lastName
-      }
-      case 'donor_suffix': {
-        return donation.donor?.suffix
-      }
-      case 'donation_amount': {
-        return donation.amount + ''
-      }
-      case 'donation_reason': {
-        return donation.reason
-      }
+      case 'donor_eng_title':
+        {
+          result = donation.donor?.titleEnglish || '';
+          break
+        }
+      case 'donor_eng_first_name':
+        {
+          result = donation.donor?.firstNameEnglish || '';
+          break
+        }
+      case 'donor_eng_last_name':
+        {
+          result = donation.donor?.lastNameEnglish || '';
+          break
+        }
+      case 'donor_eng_suffix':
+        {
+          result = donation.donor?.suffixEnglish || '';
+          break
+        }
+      case 'donor_home_address':
+        {
+          result = donation.donor?.homePlace?.fullAddress || '';
+          break
+        }
+      case 'donor_country':
+        {
+          result = donation.donor?.homePlace?.country?.nameEn || '';
+          break
+        }
+      case 'donor_title':
+        {
+          result = donation.donor?.title || '';
+          break
+        }
+      case 'donor_first_name':
+        {
+          result = donation.donor?.firstName || '';
+          break
+        }
+      case 'donor_last_name':
+        {
+          result = donation.donor?.lastName || '';
+          break
+        }
+      case 'donor_suffix':
+        {
+          result = donation.donor?.suffix || '';
+          break
+        }
+      case 'donation_amount':
+        {
+          result = donation.amount.toString();
+          break
+        }
+      case 'donation_reason':
+        {
+          result = donation.reason || '';
+          break
+        }
       case 'donation_currency_symbol': {
         const currencySymbols: Record<string, string> = {
           'ILS': '₪',
@@ -81,10 +109,15 @@ export class LetterController {
           'GBP': '£',
           'JPY': '¥'
         };
-        return currencySymbols[donation.currency || 'ILS'] || donation.currency || '₪';
+        {
+          result = currencySymbols[donation.currency || 'ILS'] || donation.currency || '₪';
+          break
+        }
       }
-      default: return ''// throw 'no-field-name: ' + field
     }
+    console.log(field, result)
+
+    return result
   }
 
   static createLetterDelegate: (type: Letter, contents: DocxContentControl[]) => Promise<DocxCreateResponse>

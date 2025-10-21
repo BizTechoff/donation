@@ -65,46 +65,46 @@
     <div class="type-card memorial-cert">
       <div class="card-icon">📅</div>
       <h3>{{ (i18n.terms$ | async)?.memorialDay }}</h3>
-      <p>ניצבים ליום מיוחד</p>
+      <p>נציבים ליום מיוחד</p>
       <div class="stats">
         <span class="count">15</span>
-        <span class="label">ניצבים פעילים</span>
+        <span class="label">נציבים פעילים</span>
       </div>
     </div>
   </div>
 
   <div class="certificates-grid">
     <div class="grid-header">
-      <div class="grid-col">{{ (i18n.terms$ | async)?.creationDate }}</div>
-      <div class="grid-col">{{ (i18n.terms$ | async)?.certificateTypeHeader }}</div>
       <div class="grid-col">{{ (i18n.terms$ | async)?.donorRecipient }}</div>
-      <div class="grid-col">{{ (i18n.terms$ | async)?.amountEvent }}</div>
+      <div class="grid-col">{{ (i18n.terms$ | async)?.certificateTypeHeader }}</div>
+      <!-- <div class="grid-col">{{ (i18n.terms$ | async)?.creationDate }}</div> -->
       <div class="grid-col">{{ (i18n.terms$ | async)?.eventDate }}</div>
-      <div class="grid-col">{{ (i18n.terms$ | async)?.specialText }}</div>
+      <div class="grid-col">{{ (i18n.terms$ | async)?.amountEvent }}</div>
+      <div class="grid-col">{{ (i18n.terms$ | async)?.mainText }}</div>
       <!-- <div class="grid-col">{{ (i18n.terms$ | async)?.statusHeaderCert }}</div> -->
       <div class="grid-col">{{ (i18n.terms$ | async)?.actionsHeaderCert }}</div>
     </div>
 
     <div class="grid-row" *ngFor="let certificate of certificates">
-      <div class="grid-col date-col">
-        <span class="creation-date">{{certificate.createdDate | date:'dd/MM/yyyy'}}</span>
+      <div class="grid-col recipient-col">
+        <strong>{{certificate.recipientName}}</strong>
+        <small *ngIf="certificate.donor">{{getDonorName(certificate)}}</small>
       </div>
       <div class="grid-col type-col">
         <span class="cert-type-badge type-{{certificate.type}}">{{certificate.typeText}}</span>
       </div>
-      <div class="grid-col recipient-col">
-        <strong>{{certificate.recipientName}}</strong>
-        <small *ngIf="certificate.donor">{{ (i18n.terms$ | async)?.donorLabel }}: {{getDonorName(certificate)}}</small>
+      <!-- <div class="grid-col date-col">
+        <span class="creation-date">{{certificate.createdDate | date:'dd/MM/yyyy'}}</span>
+      </div> -->
+      <div class="grid-col">
+        <span class="event-date">{{certificate.eventDate | date:'dd/MM/yyyy'}}</span>
       </div>
       <div class="grid-col amount-col">
         <span class="amount" *ngIf="certificate.amount">₪{{certificate.amount | number}}</span>
         <span class="event" *ngIf="certificate.eventName">{{ (i18n.terms$ | async)?.eventNameDisplay }}: {{certificate.eventName}}</span>
       </div>
-      <div class="grid-col">
-        <span class="event-date">{{certificate.eventDate | date:'dd/MM/yyyy'}}</span>
-      </div>
       <div class="grid-col text-col">
-        <span class="special-text">{{certificate.specialText | slice:0:30}}<span *ngIf="certificate && certificate.specialText&& certificate.specialText.length > 30">...</span></span>
+        <span class="special-text">{{certificate.mainText | slice:0:30}}<span *ngIf="certificate && certificate.mainText&& certificate.mainText.length > 30">...</span></span>
       </div>
       <!-- <div class="grid-col status-col">
         <span class="status-badge status-{{certificate.status}}">{{certificate.statusText}}</span>

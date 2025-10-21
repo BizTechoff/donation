@@ -460,7 +460,7 @@ export async function seedDatabase() {
         statusText: 'טיוטה'
       },
       {
-        type: 'dedication' as const,
+        type: 'memorialDay' as const,
         typeText: 'הקדשה',
         recipientName: 'לכבוד יום הולדת 60 של שרה לוי',
         amount: 2500,
@@ -513,8 +513,8 @@ export async function seedDatabase() {
         statusText: 'מוכן להדפסה'
       },
       {
-        type: 'dedication' as const,
-        typeText: 'הקדשה',
+        type: 'memorialDay' as const,
+        typeText: 'נציב יום',
         recipientName: 'לכבוד חתונת יוסף ומרים',
         eventName: 'חתונה',
         eventDate: new Date('2024-03-20'),

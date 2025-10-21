@@ -585,7 +585,7 @@ export const termsEn = {
   donationCertificate: 'Donation Certificate',
   memorialCertificate: 'Memorial Certificate',
   memorialDay: 'Memorial Day',
-  dedication: 'Dedication',
+  dedication: 'memorialDay',
   appreciation: 'Appreciation',
   dateFromFilter: 'Date From',
   dateToFilter: 'Date To',
