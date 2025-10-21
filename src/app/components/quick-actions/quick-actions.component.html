@@ -16,6 +16,17 @@
     <!-- Quick Action Items -->
     <div class="quick-actions-grid">
       
+      <!-- New Donor -->
+      <button mat-stroked-button 
+              class="quick-action-item" 
+              (click)="createNewDonor()"
+              matTooltip="{{ (i18n.terms$ | async)?.newDonor }}">
+        <div class="action-content">
+          <mat-icon [class]="'action-icon donor-icon'">{{ getActionIcon('donor') }}</mat-icon>
+          <span class="action-label">{{ (i18n.terms$ | async)?.newDonor }}</span>
+        </div>
+      </button>
+      
       <!-- New Donation -->
       <button mat-stroked-button 
               class="quick-action-item" 
@@ -27,14 +38,13 @@
         </div>
       </button>
       
-      <!-- New Donor -->
       <button mat-stroked-button 
               class="quick-action-item" 
-              (click)="createNewDonor()"
-              matTooltip="{{ (i18n.terms$ | async)?.newDonor }}">
+              (click)="createNewCertificate()"
+              matTooltip="{{ (i18n.terms$ | async)?.newCertificate }}">
         <div class="action-content">
-          <mat-icon [class]="'action-icon donor-icon'">{{ getActionIcon('donor') }}</mat-icon>
-          <span class="action-label">{{ (i18n.terms$ | async)?.newDonor }}</span>
+          <mat-icon [class]="'action-icon certificate-icon'">{{ getActionIcon('certificate') }}</mat-icon>
+          <span class="action-label">{{ (i18n.terms$ | async)?.newCertificate }}</span>
         </div>
       </button>
       
@@ -61,15 +71,6 @@
       </button> -->
       
       <!-- New Certificate -->
-      <button mat-stroked-button 
-              class="quick-action-item" 
-              (click)="createNewCertificate()"
-              matTooltip="{{ (i18n.terms$ | async)?.newCertificate }}">
-        <div class="action-content">
-          <mat-icon [class]="'action-icon certificate-icon'">{{ getActionIcon('certificate') }}</mat-icon>
-          <span class="action-label">{{ (i18n.terms$ | async)?.newCertificate }}</span>
-        </div>
-      </button>
       
       <!-- Blessings Book -->
       <!-- <button mat-stroked-button 
