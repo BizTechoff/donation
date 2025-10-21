@@ -1313,5 +1313,11 @@ export const termsEn = {
   registrationNumber: 'Registration Number',
   organizationAddress: 'Organization Address',
   saveOrganization: 'Save Organization',
-  updateOrganization: 'Update Organization'
+  updateOrganization: 'Update Organization',
+
+  // Map Click to Create Donor
+  createNewDonorAtLocationQuestion: 'Would you like to create a new donor at this location:\n{address}?',
+  addressNotFoundForLocation: 'No address found for this location',
+  errorGettingAddress: 'Error getting address',
+  errorCreatingDonor: 'Error creating donor'
 }

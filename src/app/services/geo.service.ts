@@ -223,4 +223,30 @@ export class GeoService {
       return [];
     }
   }
+
+  /**
+   * Reverse geocode coordinates to get address
+   * @param latitude - Latitude coordinate
+   * @param longitude - Longitude coordinate
+   * @returns Promise with place details
+   */
+  async reverseGeocode(latitude: number, longitude: number): Promise<any> {
+    const url = ''; // 'http://localhost:3007'
+    const lang = this.getUserLanguage();
+
+    try {
+      const response = await fetch(`${url}/api/geo/reverse-geocode?key=${encodeURIComponent(this.key)}&lat=${latitude}&lng=${longitude}&lang=${lang}`);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('Reverse Geocode Result:', data);
+      return data;
+    } catch (error) {
+      console.error('Error in reverse geocoding:', error);
+      throw error;
+    }
+  }
 }

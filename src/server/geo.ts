@@ -28,119 +28,205 @@ export const getPlace = async (req: Request, res: Response, next: NextFunction) 
     const { key, lang } = req.query;
     if (key === process.env['SERVER_API_KEY']!) {
         const { placeId } = req.query;
-        // console.log('getPlace: placeId: ', placeId);
-
-        if (placeId && placeId.length) {
-            const langParam = getLanguageParam(lang as string);
-            const url = `${process.env['GOOGLE_GEO_API_URL_PLACE']}?place_id=${placeId}&key=${process.env['GOOGLE_GEO_API_KEY']}${langParam}`;
-
-            try {
-                const response = await fetch(url, {
-                    method: 'GET',
-                    headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json; charset=UTF-8',
-                        'Cache-Control': 'no-store'
-                    }
-                });
-
-                if (response.ok) {
-                    const json = await response.json();
-                    if (json?.status === 'OK' && json?.result) {
-                        const { geometry, address_components, name } = json.result;
-
-                        // Extract place name
-                        if (name) {
-                            result.name = name;
-                        }
-
-                        // Extract latitude and longitude
-                        if (geometry?.location) {
-                            result.x = geometry.location.lng; // Longitude
-                            result.y = geometry.location.lat; // Latitude
-                        }
-
-                        // Extract address components
-                        if (address_components && Array.isArray(address_components)) {
-                            console.log('Processing address_components from Google:');
-
-                            address_components.forEach(component => {
-                                console.log(`  Component: ${component.long_name} (${component.short_name}), Types: ${component.types.join(', ')}`);
-
-                                if (component.types.includes('route')) {
-                                    result.streetname = component.long_name; // Street Name
-                                }
-                                if (component.types.includes('street_number')) {
-                                    result.homenumber = component.long_name; // Home Number
-                                }
-                                if (component.types.includes('locality')) {
-                                    result.cityname = component.long_name; // City Name
-                                }
-                                // מיקוד - חיפוש מורחב
-                                if (component.types.includes('postal_code') ||
-                                    component.types.includes('postal_code_prefix') ||
-                                    component.types.includes('postal_code_suffix')) {
-                                    result.postcode = component.long_name; // Postal Code
-                                    console.log(`    -> Found postal code: ${component.long_name}`);
-                                }
-                                // שכונה - חיפוש מורחב
-                                if (component.types.includes('neighborhood') ||
-                                    component.types.includes('sublocality') ||
-                                    component.types.includes('sublocality_level_1') ||
-                                    component.types.includes('sublocality_level_2') ||
-                                    component.types.includes('sublocality_level_3') ||
-                                    component.types.includes('sublocality_level_4') ||
-                                    component.types.includes('sublocality_level_5')) {
-                                    // אם אין שכונה עדיין, או אם זה neighborhood ספציפי
-                                    if (!result.neighborhood || component.types.includes('neighborhood')) {
-                                        result.neighborhood = component.long_name; // Neighborhood
-                                        console.log(`    -> Found neighborhood: ${component.long_name}`);
-                                    }
-                                }
-                                // שמירת administrative_area_level_2 כשכונה אם עדיין אין
-                                if (!result.neighborhood && component.types.includes('administrative_area_level_2')) {
-                                    result.neighborhood = component.long_name;
-                                    console.log(`    -> Using admin_area_2 as neighborhood: ${component.long_name}`);
-                                }
-                                // מחוז/מדינה
-                                if (component.types.includes('administrative_area_level_1')) {
-                                    result.state = component.long_name; // State/Province name
-                                    console.log(`    -> Found state: ${component.long_name}`);
-                                }
-                                // מדינה וקוד מדינה
-                                if (component.types.includes('country')) {
-                                    result.country = component.long_name; // Country name for backward compatibility
-                                    result.countryName = component.long_name; // Country name (will be mapped to countryId later)
-                                    result.countryCode = component.short_name; // Country code
-                                    console.log(`    -> Found country: ${component.long_name} (${component.short_name})`);
-                                }
-                            });
-
-                            console.log('Final extracted data:', JSON.stringify(result));
-                        }
-
-                        // result.area = AreaType.getAreaContains({ x: result.x, y: result.y });
-
-                        result.valid = true;
-                        // console.log('place.json: ' + JSON.stringify(json));
-                    } else {
-                        console.warn('Invalid API response status or missing details');
-                    }
-                } else {
-                    console.error(`Error fetching place details: ${response.status} ${response.statusText}`);
-                }
-            } catch (error) {
-                console.error('Error during fetch:', error);
-            }
-        } else {
-            console.warn('Missing or invalid placeId');
-        }
+        result = await doGetPlace(placeId + '', lang + '')
     } else {
         console.warn('Invalid API key');
     }
 
     // console.log('getPlace-result', result);
     return res.status(200).json(result);
+};
+
+export const doGetPlace = async (place_id = '', lang = '') => {
+    let result: placeDto = {} as placeDto
+
+    // console.log('getPlace: placeId: ', placeId);
+
+    if (place_id && place_id.length) {
+        const langParam = getLanguageParam(lang as string);
+        const url = `${process.env['GOOGLE_GEO_API_URL_PLACE']}?place_id=${place_id}&key=${process.env['GOOGLE_GEO_API_KEY']}${langParam}`;
+
+        try {
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json; charset=UTF-8',
+                    'Cache-Control': 'no-store'
+                }
+            });
+
+            if (response.ok) {
+                const json = await response.json();
+                if (json?.status === 'OK' && json?.result) {
+                    const { geometry, address_components, name } = json.result;
+
+                    // Extract place name
+                    if (name) {
+                        result.name = name;
+                    }
+
+                    // Extract latitude and longitude
+                    if (geometry?.location) {
+                        result.x = geometry.location.lng; // Longitude
+                        result.y = geometry.location.lat; // Latitude
+                    }
+
+                    // Extract address components
+                    if (address_components && Array.isArray(address_components)) {
+                        console.log('Processing address_components from Google:');
+
+                        address_components.forEach(component => {
+                            console.log(`  Component: ${component.long_name} (${component.short_name}), Types: ${component.types.join(', ')}`);
+
+                            if (component.types.includes('route')) {
+                                result.streetname = component.long_name; // Street Name
+                            }
+                            if (component.types.includes('street_number')) {
+                                result.homenumber = component.long_name; // Home Number
+                            }
+                            if (component.types.includes('locality')) {
+                                result.cityname = component.long_name; // City Name
+                            }
+                            // מיקוד - חיפוש מורחב
+                            if (component.types.includes('postal_code') ||
+                                component.types.includes('postal_code_prefix') ||
+                                component.types.includes('postal_code_suffix')) {
+                                result.postcode = component.long_name; // Postal Code
+                                console.log(`    -> Found postal code: ${component.long_name}`);
+                            }
+                            // שכונה - חיפוש מורחב
+                            if (component.types.includes('neighborhood') ||
+                                component.types.includes('sublocality') ||
+                                component.types.includes('sublocality_level_1') ||
+                                component.types.includes('sublocality_level_2') ||
+                                component.types.includes('sublocality_level_3') ||
+                                component.types.includes('sublocality_level_4') ||
+                                component.types.includes('sublocality_level_5')) {
+                                // אם אין שכונה עדיין, או אם זה neighborhood ספציפי
+                                if (!result.neighborhood || component.types.includes('neighborhood')) {
+                                    result.neighborhood = component.long_name; // Neighborhood
+                                    console.log(`    -> Found neighborhood: ${component.long_name}`);
+                                }
+                            }
+                            // שמירת administrative_area_level_2 כשכונה אם עדיין אין
+                            if (!result.neighborhood && component.types.includes('administrative_area_level_2')) {
+                                result.neighborhood = component.long_name;
+                                console.log(`    -> Using admin_area_2 as neighborhood: ${component.long_name}`);
+                            }
+                            // מחוז/מדינה
+                            if (component.types.includes('administrative_area_level_1')) {
+                                result.state = component.long_name; // State/Province name
+                                console.log(`    -> Found state: ${component.long_name}`);
+                            }
+                            // מדינה וקוד מדינה
+                            if (component.types.includes('country')) {
+                                result.country = component.long_name; // Country name for backward compatibility
+                                result.countryName = component.long_name; // Country name (will be mapped to countryId later)
+                                result.countryCode = component.short_name; // Country code
+                                console.log(`    -> Found country: ${component.long_name} (${component.short_name})`);
+                            }
+                        });
+
+                        console.log('Final extracted data:', JSON.stringify(result));
+                    }
+
+                    // result.area = AreaType.getAreaContains({ x: result.x, y: result.y });
+
+                    result.valid = true;
+                    // console.log('place.json: ' + JSON.stringify(json));
+                } else {
+                    console.warn('Invalid API response status or missing details');
+                }
+            } else {
+                console.error(`Error fetching place details: ${response.status} ${response.statusText}`);
+            }
+        } catch (error) {
+            console.error('Error during fetch:', error);
+        }
+    } else {
+        console.warn('Missing or invalid placeId');
+    }
+
+    return result
+}
+
+export const reverseGeocode = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    console.debug('reverseGeocode called at ' + new Date().toString());
+
+    const { key, lang, lat, lng } = req.query;
+
+    if (key !== process.env['SERVER_API_KEY']!) {
+        console.warn('Invalid API key for reverse geocode');
+        res.status(401).json({ error: 'Unauthorized' });
+        return;
+    }
+
+    if (!lat || !lng) {
+        console.warn('Missing lat or lng parameters');
+        res.status(400).json({ error: 'Latitude and longitude are required' });
+        return;
+    }
+
+    try {
+        const langParam = getLanguageParam(lang as string);
+
+        // Step 1: Use Geocoding API to get place_id from coordinates
+        const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${process.env['GOOGLE_GEO_API_KEY']}${langParam}`;
+        console.log('Reverse geocode URL:', geocodeUrl);
+
+        const geocodeResponse = await fetch(geocodeUrl, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json; charset=UTF-8',
+                'Cache-Control': 'no-store'
+            }
+        });
+
+        if (!geocodeResponse.ok) {
+            console.error(`Reverse geocode failed with status ${geocodeResponse.status}`);
+            res.status(geocodeResponse.status).json({ error: 'Failed to reverse geocode' });
+            return;
+        }
+
+        const geocodeData = await geocodeResponse.json();
+        console.log('Geocode data status:', geocodeData.status);
+
+        if (geocodeData.status === 'OK' && geocodeData.results && geocodeData.results.length > 0) {
+            const geocodeResult = geocodeData.results[0];
+            const placeId = geocodeResult.place_id;
+
+            console.log('Got place_id:', placeId);
+            const result = await doGetPlace(placeId)
+
+            const address = [];
+
+            if (result.streetname) address.push(result.streetname);
+            if (result.homenumber) address.push(result.homenumber);
+            if (result.neighborhood) address.push(result.neighborhood);
+            if (result.cityname) address.push(result.cityname);
+
+            // Use country entity name if exists, otherwise use country string
+            const countryDisplay = result.country //|| this.country?.nameEn || this.country || this.countryName;
+            if (countryDisplay) address.push(countryDisplay);
+
+            const formattedAddress = address.filter(p => p).join(', ');
+
+            res.status(200).json({
+                success: true,
+                placeId: placeId,
+                formattedAddress: formattedAddress,
+                placeDto: result
+            });
+        } else {
+            console.warn('No results from reverse geocode, status:', geocodeData.status);
+            res.status(404).json({ error: 'No address found for these coordinates' });
+        }
+    } catch (error) {
+        console.error('Error in reverse geocode:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
 };
 
 export const getPlaces = async (req: Request, res: Response, next: NextFunction): Promise<void> => {

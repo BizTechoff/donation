@@ -1311,5 +1311,11 @@ export const termsHe = {
   registrationNumber: 'מספר רישום',
   organizationAddress: 'כתובת העמותה',
   saveOrganization: 'שמור עמותה',
-  updateOrganization: 'עדכן עמותה'
+  updateOrganization: 'עדכן עמותה',
+
+  // Map Click to Create Donor
+  createNewDonorAtLocationQuestion: 'האם לפתוח תורם חדש במיקום:\n{address}?',
+  addressNotFoundForLocation: 'לא נמצאה כתובת למיקום זה',
+  errorGettingAddress: 'שגיאה בקבלת כתובת',
+  errorCreatingDonor: 'שגיאה ביצירת תורם'
 }

@@ -11,6 +11,8 @@ import { I18nService } from '../../i18n/i18n.service';
 import { UIToolsService } from '../../common/UIToolsService';
 import { DonorService } from '../../services/donor.service';
 import { GlobalFilterService } from '../../services/global-filter.service';
+import { GeoService } from '../../services/geo.service';
+import { Country } from '../../../shared/entity/country';
 
 // Fix for default markers in Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -55,7 +57,8 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     private router: Router,
     private ui: UIToolsService,
     private donorService: DonorService,
-    private filterService: GlobalFilterService
+    private filterService: GlobalFilterService,
+    private geoService: GeoService
   ) {}
 
   // סטטיסטיקות
@@ -360,6 +363,11 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
       // יצירת שכבת סימנים
       this.markersLayer = L.layerGroup().addTo(this.map);
 
+      // הוספת אירוע click למפה
+      this.map.on('click', async (e: L.LeafletMouseEvent) => {
+        await this.onMapClick(e);
+      });
+
       console.log('Map initialized successfully');
 
       // Force map to redraw after a short delay
@@ -596,6 +604,116 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
       await this.loadDonations();
       this.calculateDonorStats();
       this.addMarkersToMap();
+    }
+  }
+
+  async onMapClick(e: L.LeafletMouseEvent) {
+    const { lat, lng } = e.latlng;
+    console.log('Map clicked at:', lat, lng);
+
+    try {
+      // הצגת אינדיקטור טעינה
+      this.loading = true;
+
+      // בצע reverse geocoding
+      const result = await this.geoService.reverseGeocode(lat, lng);
+
+      this.loading = false;
+
+      if (result && result.success) {
+        // הצג דיאלוג אישור עם הכתובת
+        const message = this.i18n.terms.createNewDonorAtLocationQuestion
+          .replace('{address}', result.formattedAddress);
+
+        const shouldCreate = await this.ui.yesNoQuestion(message);
+
+        if (shouldCreate) {
+          // פתיחת דיאלוג תורם חדש עם הכתובת
+          await this.createNewDonorWithAddress(result, lat, lng);
+        }
+      } else {
+        this.ui.error(this.i18n.terms.addressNotFoundForLocation);
+      }
+    } catch (error) {
+      console.error('Error in map click handler:', error);
+      this.loading = false;
+      this.ui.error(this.i18n.terms.errorGettingAddress);
+    }
+  }
+
+  async createNewDonorWithAddress(geocodeResult: any, lat: number, lng: number) {
+    try {
+      // השתמש ב-placeDto שמגיע מהשרת
+      const placeDto = geocodeResult.placeDto;
+
+      if (!placeDto || !placeDto.valid) {
+        this.ui.error(this.i18n.terms.errorGettingAddress);
+        return;
+      }
+
+      // קבלת קוד מדינה
+      const countryCode = placeDto.countryCode || 'IL';
+
+      // טעינת ישות Country מהמסד נתונים
+      let countryEntity: Country | undefined;
+      try {
+        countryEntity = await remult.repo(Country).findFirst({
+          code: countryCode
+        });
+
+        if (!countryEntity) {
+          console.warn(`Country with code ${countryCode} not found, creating new...`);
+          const countryName = placeDto.countryName || placeDto.country || countryCode;
+          countryEntity = await remult.repo(Country).insert({
+            name: countryName,
+            nameEn: countryName,
+            code: countryCode.toUpperCase(),
+            phonePrefix: '',
+            currency: 'USD',
+            currencySymbol: '$',
+            isActive: true
+          });
+        }
+      } catch (error) {
+        console.error('Error loading/creating country:', error);
+      }
+
+      // יצירת Place מ-placeDto
+      const placeData: Partial<Place> = {
+        placeId: geocodeResult.placeId,
+        fullAddress: geocodeResult.formattedAddress,
+        placeName: placeDto.name || '',
+        street: placeDto.streetname || '',
+        houseNumber: placeDto.homenumber ? String(placeDto.homenumber) : '',
+        neighborhood: placeDto.neighborhood || '',
+        city: placeDto.cityname || '',
+        state: placeDto.state || '',
+        postcode: placeDto.postcode || '',
+        countryId: countryEntity?.id,
+        latitude: placeDto.y,
+        longitude: placeDto.x
+      };
+
+      console.log('Creating Place from map click:', placeData);
+
+      const savedPlace = await Place.findOrCreate(placeData, remult.repo(Place));
+
+      // טעינה מחדש של Place עם country relation
+      const place = await remult.repo(Place).findId(savedPlace.id, {
+        include: { country: true }
+      });
+
+      // פתיחת דיאלוג תורם חדש עם המקום
+      const changed = await this.ui.donorDetailsDialog('new', { initialPlace: place || savedPlace });
+
+      if (changed) {
+        // רענן את המפה
+        await this.loadData();
+        this.addMarkersToMap();
+      }
+    } catch (error) {
+      console.error('Error creating donor with address:', error);
+      this.ui.error(this.i18n.terms.errorCreatingDonor);
     }
   }
 

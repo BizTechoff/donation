@@ -6,7 +6,7 @@ import helmet from 'helmet'
 import sslRedirect from 'heroku-ssl-redirect'
 import path from 'path'
 import { api } from './api'
-import { getPlace, getPlaces } from './geo'
+import { getPlace, getPlaces, reverseGeocode } from './geo'
 import './docx'
 
 async function startup() {
@@ -29,6 +29,7 @@ async function startup() {
   app.use(api)
   app.use('/api/geo/places', getPlaces)
   app.use('/api/geo/place-details', getPlace)
+  app.use('/api/geo/reverse-geocode', reverseGeocode)
 
   let dist = path.resolve('dist/donation/browser')
   if (!fs.existsSync(dist)) {

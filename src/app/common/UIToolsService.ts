@@ -97,10 +97,10 @@ export class UIToolsService implements UITools {
     await openDialog(SelectValueDialogComponent, (x) => x.args(args))
   }
 
-  async donorDetailsDialog(donorId: string): Promise<boolean> {
+  async donorDetailsDialog(donorId: string, options?: { initialPlace?: any }): Promise<boolean> {
     return await openDialog(
       (await import('../routes/modals/donor-details-modal/donor-details-modal.component')).DonorDetailsModalComponent,
-      (dlg) => dlg.args = { donorId }
+      (dlg) => dlg.args = { donorId, initialPlace: options?.initialPlace }
     )
   }
 

@@ -12,6 +12,7 @@ import { CompanyDetailsModalArgs, CompanyDetailsModalComponent } from '../compan
 
 export interface DonorDetailsModalArgs {
   donorId: string; // Can be 'new' for new donor or donor ID
+  initialPlace?: Place; // Optional Place to pre-fill for new donors
 }
 
 // PersonalEvent interface is no longer needed - using DonorEvent entity instead
@@ -222,6 +223,14 @@ export class DonorDetailsModalComponent implements OnInit {
 
         // Set default Israel country if available
         await this.setDefaultCountry();
+
+        // If initial place is provided, set it
+        if (this.args.initialPlace) {
+          this.donor.homePlace = this.args.initialPlace;
+          this.donor.homePlaceId = this.args.initialPlace.id;
+          console.log('Set initial place for new donor:', this.args.initialPlace);
+        }
+
         this.originalDonorData = JSON.stringify(this.donor);
       } else {
         this.isNewDonor = false;
