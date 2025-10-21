@@ -57,7 +57,26 @@ export class DonationsListComponent implements OnInit, OnDestroy {
       this.filterDonationsByDonorName(searchText);
     });
 
+    // Set CSS variables for mobile labels
+    this.updateMobileLabels();
+
+    // Listen for language changes
+    this.i18n.terms$.subscribe(() => {
+      this.updateMobileLabels();
+    });
+
     await this.loadData();
+  }
+
+  private updateMobileLabels() {
+    const root = document.documentElement;
+    root.style.setProperty('--label-donor', `'${this.i18n.terms.donor}: '`);
+    root.style.setProperty('--label-amount', `'${this.i18n.terms.amount}: '`);
+    root.style.setProperty('--label-currency', `'${this.i18n.terms.currency}: '`);
+    root.style.setProperty('--label-payment', `'${this.i18n.terms.paymentMethod}: '`);
+    root.style.setProperty('--label-campaign', `'${this.i18n.terms.campaign}: '`);
+    root.style.setProperty('--label-fundraiser', `'${this.i18n.terms.fundraiser}: '`);
+    root.style.setProperty('--label-receipt', `'${this.i18n.terms.receipt}: '`);
   }
 
   ngOnDestroy() {
@@ -234,7 +253,18 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   getSelectedMethodName(): string {
     if (!this.editingDonation?.donationMethodId) return this.i18n.currentTerms.notSpecified || '';
     const method = this.donationMethods.find(m => m.id === this.editingDonation!.donationMethodId);
-    return method?.name || this.i18n.currentTerms.notSpecified || '';
+    if (!method) return this.i18n.currentTerms.notSpecified || '';
+
+    const typeLabels: { [key: string]: string } = {
+      cash: this.i18n.terms.cash,
+      check: this.i18n.terms.check,
+      credit_card: this.i18n.terms.credit_card,
+      bank_transfer: this.i18n.terms.bank_transfer,
+      standing_order: this.i18n.terms.standingOrder,
+      association: this.i18n.terms.other
+    };
+
+    return typeLabels[method.type] || method.name;
   }
 
   getSelectedCampaignName(): string {
@@ -284,7 +314,18 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   }
 
   getMethodName(donation: Donation): string {
-    return donation.donationMethod?.name || this.i18n.currentTerms.notSpecified || '';
+    if (!donation.donationMethod) return this.i18n.currentTerms.notSpecified || '';
+
+    const typeLabels: { [key: string]: string } = {
+      cash: this.i18n.terms.cash,
+      check: this.i18n.terms.check,
+      credit_card: this.i18n.terms.credit_card,
+      bank_transfer: this.i18n.terms.bank_transfer,
+      standing_order: this.i18n.terms.standingOrder,
+      association: this.i18n.terms.other
+    };
+
+    return typeLabels[donation.donationMethod.type] || donation.donationMethod.name;
   }
 
   getStatusText(status: string): string {

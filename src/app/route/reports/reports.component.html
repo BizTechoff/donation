@@ -339,14 +339,14 @@
         <div class="summary-card">
           <div class="summary-icon">💰</div>
           <div class="summary-content">
-            <h3>סה"כ תרומות</h3>
+            <h3>{{ (i18n.terms$ | async)?.totalDonationsCount }}</h3>
             <div class="summary-number">{{donationReportData.length}}</div>
           </div>
         </div>
         <div class="summary-card">
           <div class="summary-icon">💵</div>
           <div class="summary-content">
-            <h3>סה"כ סכום</h3>
+            <h3>{{ (i18n.terms$ | async)?.totalAmountSum }}</h3>
             <div class="summary-number">{{formatCurrency(getTotalDonationAmount())}}</div>
           </div>
         </div>
@@ -409,7 +409,7 @@
         <div class="summary-card">
           <div class="summary-icon">💸</div>
           <div class="summary-content">
-            <h3>סה"כ חוב</h3>
+            <h3>{{ (i18n.terms$ | async)?.totalDebt }}</h3>
             <div class="summary-number">{{formatCurrency(getPaymentStatusSummary().totalDebt)}}</div>
           </div>
         </div>
@@ -525,7 +525,7 @@
             <tr *ngFor="let blessing of blessingReportData">
               <td>{{blessing.donorName}}</td>
               <td>
-                <span class="blessing-type" [class]="'blessing-' + (blessing.blessingType === 'מוכנה' ? 'ready' : blessing.blessingType === 'מותאמת אישית' ? 'custom' : 'none')">
+                <span class="blessing-type" [class]="'blessing-' + (blessing.blessingType === ((i18n.terms$ | async)?.preMadeBlessings) ? 'ready' : blessing.blessingType === ((i18n.terms$ | async)?.customBlessings) ? 'custom' : 'none')">
                   {{blessing.blessingType}}
                 </span>
               </td>

@@ -677,13 +677,13 @@
           margin-bottom: 5px;
         }
 
-        &:nth-child(1)::before { content: 'מספר: '; }
-        &:nth-child(2)::before { content: 'תאריך: '; }
-        &:nth-child(3)::before { content: 'נמען: '; }
-        &:nth-child(4)::before { content: 'תורם: '; }
-        &:nth-child(5)::before { content: 'סוג: '; }
-        &:nth-child(6)::before { content: 'אירוע/סכום: '; }
-        &:nth-child(7)::before { content: 'סטטוס: '; }
+        &:nth-child(1)::before { content: var(--label-number, 'מספר: '); }
+        &:nth-child(2)::before { content: var(--label-date, 'תאריך: '); }
+        &:nth-child(3)::before { content: var(--label-recipient, 'נמען: '); }
+        &:nth-child(4)::before { content: var(--label-donor, 'תורם: '); }
+        &:nth-child(5)::before { content: var(--label-type, 'סוג: '); }
+        &:nth-child(6)::before { content: var(--label-event-amount, 'אירוע/סכום: '); }
+        &:nth-child(7)::before { content: var(--label-status, 'סטטוס: '); }
 
         &.actions {
           border-top: 1px solid #ecf0f1;

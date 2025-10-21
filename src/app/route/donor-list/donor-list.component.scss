@@ -302,12 +302,12 @@
         }
 
         &:nth-child(1)::before { content: ''; }
-        &:nth-child(2)::before { content: 'כתובת: '; }
-        &:nth-child(3)::before { content: 'טלפון: '; }
-        &:nth-child(4)::before { content: 'דוא"ל: '; }
-        &:nth-child(5)::before { content: 'חוג: '; }
-        &:nth-child(6)::before { content: 'סה"כ תרומות: '; }
-        &:nth-child(7)::before { content: 'תרומה אחרונה: '; }
+        &:nth-child(2)::before { content: var(--label-address, 'כתובת: '); }
+        &:nth-child(3)::before { content: var(--label-phone, 'טלפון: '); }
+        &:nth-child(4)::before { content: var(--label-email, 'דוא"ל: '); }
+        &:nth-child(5)::before { content: var(--label-category, 'חוג: '); }
+        &:nth-child(6)::before { content: var(--label-total-donations, 'סה"כ תרומות: '); }
+        &:nth-child(7)::before { content: var(--label-last-donation, 'תרומה אחרונה: '); }
 
         &::before {
           font-weight: 600;

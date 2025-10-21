@@ -49,7 +49,26 @@ export class CertificatesComponent implements OnInit, OnDestroy {
       this.filterCertificates();
     });
 
+    // Set CSS variables for mobile labels
+    this.updateMobileLabels();
+
+    // Listen for language changes
+    this.i18n.terms$.subscribe(() => {
+      this.updateMobileLabels();
+    });
+
     await this.loadCertificates();
+  }
+
+  private updateMobileLabels() {
+    const root = document.documentElement;
+    root.style.setProperty('--label-number', `'${this.i18n.currentLanguage === 'he' ? 'מספר' : 'Number'}: '`);
+    root.style.setProperty('--label-date', `'${this.i18n.terms.date}: '`);
+    root.style.setProperty('--label-recipient', `'${this.i18n.currentLanguage === 'he' ? 'נמען' : 'Recipient'}: '`);
+    root.style.setProperty('--label-donor', `'${this.i18n.terms.donor}: '`);
+    root.style.setProperty('--label-type', `'${this.i18n.currentLanguage === 'he' ? 'סוג' : 'Type'}: '`);
+    root.style.setProperty('--label-event-amount', `'${this.i18n.currentLanguage === 'he' ? 'אירוע/סכום' : 'Event/Amount'}: '`);
+    root.style.setProperty('--label-status', `'${this.i18n.terms.status}: '`);
   }
 
   ngOnDestroy() {

@@ -38,9 +38,28 @@ export class DonorListComponent implements OnInit, OnDestroy {
         this.loadDonors();
       })
     );
+
+    // Set CSS variables for mobile labels
+    this.updateMobileLabels();
+
+    // Listen for language changes
+    this.i18n.terms$.subscribe(() => {
+      this.updateMobileLabels();
+    });
+
     await this.loadDonors();
     await this.loadAllDonors();
     this.setupFilterOptions();
+  }
+
+  private updateMobileLabels() {
+    const root = document.documentElement;
+    root.style.setProperty('--label-address', `'${this.i18n.terms.address}: '`);
+    root.style.setProperty('--label-phone', `'${this.i18n.terms.phone}: '`);
+    root.style.setProperty('--label-email', `'${this.i18n.terms.email}: '`);
+    root.style.setProperty('--label-category', `'${this.i18n.terms.category}: '`);
+    root.style.setProperty('--label-total-donations', `'${this.i18n.terms.totalDonations}: '`);
+    root.style.setProperty('--label-last-donation', `'${this.i18n.terms.lastDonation}: '`);
   }
 
   ngOnDestroy() {

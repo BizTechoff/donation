@@ -10,6 +10,7 @@ import {
 } from 'remult'
 import { User } from './user'
 import { Roles } from '../enum/roles'
+import { getCurrentTerms } from '../entity-captions'
 
 @Entity<DonationMethod>('donation_methods', {
   allowApiCrud: Allow.authenticated,
@@ -41,6 +42,18 @@ export class DonationMethod extends IdEntity {
   @Fields.string({
     caption: 'סוג',
     validate: Validators.required,
+    displayValue: (entity, value) => {
+      const terms = getCurrentTerms()
+      const typeLabels = {
+        cash: terms.cash,
+        check: terms.check,
+        credit_card: terms.credit_card,
+        bank_transfer: terms.bank_transfer,
+        standing_order: terms.standingOrder,
+        association: terms.other
+      }
+      return typeLabels[value as keyof typeof typeLabels] || value
+    }
   })
   type: 'cash' | 'check' | 'credit_card' | 'bank_transfer' | 'standing_order' | 'association' = 'cash'
 
