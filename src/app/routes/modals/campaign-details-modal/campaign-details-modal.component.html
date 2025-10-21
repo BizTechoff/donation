@@ -15,14 +15,14 @@
           </p>
         </div>
       </div>
-      <button class="modal-close" (click)="closeModal()" matTooltip="סגור" [dir]="'rtl'">
+      <button class="modal-close" (click)="closeModal()" [matTooltip]="(i18n.terms$ | async)?.closeButton" [dir]="'rtl'">
         <mat-icon>close</mat-icon>
       </button>
     </div>
 
     <!-- Loading State -->
     <div class="loading-overlay" *ngIf="loading">
-      <div class="loading-spinner">טוען נתונים...</div>
+      <div class="loading-spinner">{{ (i18n.terms$ | async)?.loadingData }}</div>
     </div>
 
     <div class="modal-body">
@@ -35,7 +35,7 @@
             <div class="status-badge" [class.draft]="isDraft" [class.active]="isActive"
                  [class.completed]="isCompleted" [class.cancelled]="isCancelled">
               <mat-icon>{{isDraft ? 'edit' : isActive ? 'play_circle' : isCompleted ? 'check_circle' : 'cancel'}}</mat-icon>
-              <span>{{isDraft ? 'טיוטה' : isActive ? 'פעיל' : isCompleted ? 'הושלם' : 'בוטל'}}</span>
+              <span>{{isDraft ? (i18n.terms$ | async)?.draftStatusBadge : isActive ? (i18n.terms$ | async)?.activeStatusBadge : isCompleted ? (i18n.terms$ | async)?.completedStatusBadge : (i18n.terms$ | async)?.cancelledStatusBadge}}</span>
             </div>
             <div class="progress-info" *ngIf="campaign.targetAmount > 0">
               <div class="progress-bar">
@@ -101,21 +101,21 @@
             <div class="form-group">
               <div class="field-title">
                 <mat-icon class="field-icon">title</mat-icon>
-                <label>שם הקמפיין *</label>
+                <label>{{ (i18n.terms$ | async)?.campaignNameLabel }}</label>
               </div>
               <input type="text" class="form-control" [(ngModel)]="campaign.name"
-                     [disabled]="!canEdit" placeholder="הכנס שם קמפיין"
+                     [disabled]="!canEdit" [placeholder]="(i18n.terms$ | async)?.campaignNamePlaceholder"
                      (ngModelChange)="markAsChanged()">
             </div>
-            
+
             <div class="form-group">
               <div class="field-title">
                 <mat-icon class="field-icon">supervisor_account</mat-icon>
-                <label>אחראי קמפיין</label>
+                <label>{{ (i18n.terms$ | async)?.campaignManagerLabel }}</label>
               </div>
               <select class="form-control" [(ngModel)]="campaign.managerId"
                       [disabled]="!canEdit" (ngModelChange)="onManagerChange()">
-                <option value="">בחר אחראי</option>
+                <option value="">{{ (i18n.terms$ | async)?.selectManagerPlaceholder }}</option>
                 <option *ngFor="let user of users" [value]="user.id">
                   {{ getUserDisplayName(user) }}
                 </option>
@@ -125,11 +125,11 @@
             <div class="form-group full-width">
               <div class="field-title">
                 <mat-icon class="field-icon">place</mat-icon>
-                <label>מיקום האירוע</label>
+                <label>{{ (i18n.terms$ | async)?.eventLocationLabel }}</label>
               </div>
               <app-osm-address-input
-                label="מיקום האירוע"
-                placeholder="הקלד מיקום האירוע..."
+                [label]="(i18n.terms$ | async)?.eventLocationLabel || 'מיקום האירוע'"
+                [placeholder]="(i18n.terms$ | async)?.eventLocationPlaceholder || 'הקלד מיקום האירוע...'"
                 countryCode="il"
                 [disabled]="!canEdit"
                 [(place)]="campaign.eventLocation"
@@ -140,10 +140,10 @@
             <div class="form-group full-width">
               <div class="field-title">
                 <mat-icon class="field-icon">description</mat-icon>
-                <label>תיאור</label>
+                <label>{{ (i18n.terms$ | async)?.descriptionLabel }}</label>
               </div>
               <textarea class="form-control" [(ngModel)]="campaign.description"
-                        [disabled]="!canEdit" placeholder="תיאור הקמפיין" rows="3"
+                        [disabled]="!canEdit" [placeholder]="(i18n.terms$ | async)?.descriptionPlaceholder" rows="3"
                         (ngModelChange)="markAsChanged()"></textarea>
             </div>
           </div>
@@ -156,52 +156,52 @@
             <div class="form-group">
               <div class="field-title">
                 <mat-icon class="field-icon">attach_money</mat-icon>
-                <label>יעד כספי</label>
+                <label>{{ (i18n.terms$ | async)?.targetAmountLabel }}</label>
               </div>
               <input type="number" class="form-control" [(ngModel)]="campaign.targetAmount"
-                     [disabled]="!canEdit" placeholder="יעד כספי" min="0" step="0.01"
+                     [disabled]="!canEdit" [placeholder]="(i18n.terms$ | async)?.targetAmountPlaceholder" min="0" step="0.01"
                      (ngModelChange)="markAsChanged()">
             </div>
 
             <div class="form-group">
               <div class="field-title">
                 <mat-icon class="field-icon">monetization_on</mat-icon>
-                <label>מטבע</label>
+                <label>{{ (i18n.terms$ | async)?.currencyLabel }}</label>
               </div>
               <select class="form-control" [(ngModel)]="campaign.currency"
                       [disabled]="!canEdit" (ngModelChange)="markAsChanged()">
-                <option value="ILS">שקל ישראלי (₪)</option>
-                <option value="USD">דולר אמריקני ($)</option>
-                <option value="EUR">יורו (€)</option>
-                <option value="GBP">פאונד בריטי (£)</option>
-                <option value="CAD">דולר קנדי (C$)</option>
-                <option value="AUD">דולר אוסטרלי (A$)</option>
+                <option value="ILS">{{ (i18n.terms$ | async)?.shekelILS }}</option>
+                <option value="USD">{{ (i18n.terms$ | async)?.dollarUSD }}</option>
+                <option value="EUR">{{ (i18n.terms$ | async)?.euroEUR }}</option>
+                <option value="GBP">{{ (i18n.terms$ | async)?.poundGBP }}</option>
+                <option value="CAD">{{ (i18n.terms$ | async)?.dollarCAD }}</option>
+                <option value="AUD">{{ (i18n.terms$ | async)?.dollarAUD }}</option>
               </select>
             </div>
 
             <div class="form-group">
               <div class="field-title">
                 <mat-icon class="field-icon">payment</mat-icon>
-                <label>תרומה סטנדרטית</label>
+                <label>{{ (i18n.terms$ | async)?.standardDonationLabel }}</label>
               </div>
               <input type="number" class="form-control" [(ngModel)]="campaign.defaultDonationAmount"
-                     [disabled]="!canEdit" placeholder="סכום ברירת מחדל" min="0" step="1"
+                     [disabled]="!canEdit" [placeholder]="(i18n.terms$ | async)?.standardDonationPlaceholder" min="0" step="1"
                      (ngModelChange)="markAsChanged()">
             </div>
 
             <div class="form-group" *ngIf="!isNewCampaign">
               <div class="field-title">
                 <mat-icon class="field-icon">savings</mat-icon>
-                <label>סכום שנאסף</label>
+                <label>{{ (i18n.terms$ | async)?.raisedAmountLabel }}</label>
               </div>
               <input type="number" class="form-control" [value]="campaign.raisedAmount"
-                     disabled placeholder="סכום שנאסף" step="0.01">
+                     disabled [placeholder]="(i18n.terms$ | async)?.raisedAmountPlaceholder" step="0.01">
             </div>
 
             <div class="form-group" *ngIf="!isNewCampaign">
               <div class="field-title">
                 <mat-icon class="field-icon">trending_up</mat-icon>
-                <label>אחוז השלמה</label>
+                <label>{{ (i18n.terms$ | async)?.completionPercentageLabel }}</label>
               </div>
               <input type="text" class="form-control" [value]="campaign.progressPercentage + '%'"
                      disabled>
@@ -216,7 +216,7 @@
             <div class="form-group">
               <div class="field-title">
                 <mat-icon class="field-icon">event</mat-icon>
-                <label>תאריך התחלה *</label>
+                <label>{{ (i18n.terms$ | async)?.startDateLabel }}</label>
               </div>
               <app-modern-dual-date-picker
                 [(ngModel)]="campaign.startDate"
@@ -230,7 +230,7 @@
             <div class="form-group">
               <div class="field-title">
                 <mat-icon class="field-icon">event_available</mat-icon>
-                <label>תאריך סיום</label>
+                <label>{{ (i18n.terms$ | async)?.endDateLabel }}</label>
               </div>
               <app-modern-dual-date-picker
                 [(ngModel)]="campaign.endDate"
@@ -258,7 +258,7 @@
                 <div class="criteria-option-container">
                   <div class="criteria-card-header">
                     <mat-icon class="criteria-icon">groups</mat-icon>
-                    <span class="criteria-title">אנ"ש</span>
+                    <span class="criteria-title">{{ (i18n.terms$ | async)?.anashCriteria }}</span>
                   </div>
                   <div class="criteria-options">
                     <label class="option-label">
@@ -284,7 +284,7 @@
                 <div class="criteria-option-container">
                   <div class="criteria-card-header">
                     <mat-icon class="criteria-icon">location_on</mat-icon>
-                    <span class="criteria-title">תושבי המדינה</span>
+                    <span class="criteria-title">{{ (i18n.terms$ | async)?.sameCountryCriteria }}</span>
                   </div>
                   <div class="criteria-options">
                     <label class="option-label">
@@ -363,16 +363,16 @@
             <div class="form-group age-range-container">
               <div class="field-title">
                 <mat-icon class="field-icon">cake</mat-icon>
-                <label>טווח גילאים</label>
+                <label>{{ (i18n.terms$ | async)?.ageRangeLabel }}</label>
               </div>
               <div class="age-range-inputs">
                 <input type="number" class="form-control" [(ngModel)]="campaign.minAge"
-                       [disabled]="!canEdit" placeholder="מ-"
+                       [disabled]="!canEdit" [placeholder]="(i18n.terms$ | async)?.ageFromPlaceholder"
                        min="0" max="120"
                        (ngModelChange)="markAsChanged()">
                 <span class="age-separator">-</span>
                 <input type="number" class="form-control" [(ngModel)]="campaign.maxAge"
-                       [disabled]="!canEdit" placeholder="עד"
+                       [disabled]="!canEdit" [placeholder]="(i18n.terms$ | async)?.ageToPlaceholder"
                        min="0" max="120"
                        (ngModelChange)="markAsChanged()">
               </div>
@@ -381,24 +381,24 @@
             <!-- <div class="form-group">
               <div class="field-title">
                 <mat-icon class="field-icon">group</mat-icon>
-                <label>חוג</label>
+                <label>{{ (i18n.terms$ | async)?.socialCircleLabel }}</label>
               </div>
               <input type="text" class="form-control" [(ngModel)]="campaign.socialCircle"
-                     [disabled]="!canEdit" placeholder="שם החוג"
+                     [disabled]="!canEdit" [placeholder]="(i18n.terms$ | async)?.socialCirclePlaceholder"
                      (ngModelChange)="markAsChanged()">
             </div> -->
 
             <div class="form-group full-width">
               <div class="field-title">
                 <mat-icon class="field-icon">people</mat-icon>
-                <label>פעילים ואנשי קשר</label>
+                <label>{{ (i18n.terms$ | async)?.activistsAndContactsLabel }}</label>
               </div>
               <div class="criteria-selection-grid">
                 <div class="criteria-option">
                   <button type="button" class="criteria-card action-card" (click)="openActivists()">
                     <div class="criteria-content">
                       <mat-icon class="criteria-icon">volunteer_activism</mat-icon>
-                      <span class="criteria-label">פעילים</span>
+                      <span class="criteria-label">{{ (i18n.terms$ | async)?.activistsLabel }}</span>
                     </div>
                   </button>
                 </div>
@@ -407,7 +407,7 @@
                   <button type="button" class="criteria-card action-card" (click)="openContacts()">
                     <div class="criteria-content">
                       <mat-icon class="criteria-icon">contacts</mat-icon>
-                      <span class="criteria-label">אנשי קשר</span>
+                      <span class="criteria-label">{{ (i18n.terms$ | async)?.contactsLabel }}</span>
                     </div>
                   </button>
                 </div>
@@ -426,7 +426,7 @@
                 <input type="checkbox" [(ngModel)]="campaign.isPublic"
                        [disabled]="!canEdit" (ngModelChange)="markAsChanged()">
                 <mat-icon class="checkbox-icon">{{campaign.isPublic ? 'check_box' : 'check_box_outline_blank'}}</mat-icon>
-                <span>מוצג באתר</span>
+                <span>{{ (i18n.terms$ | async)?.displayOnWebsiteLabel }}</span>
               </label>
             </div> -->
 
@@ -453,10 +453,10 @@
             <!-- <div class="form-group full-width">
               <div class="field-title">
                 <mat-icon class="field-icon">notes</mat-icon>
-                <label>הערות פנימיות</label>
+                <label>{{ (i18n.terms$ | async)?.internalNotesLabel }}</label>
               </div>
               <textarea class="form-control" [(ngModel)]="campaign.internalNotes"
-                        [disabled]="!canEdit" placeholder="הערות פנימיות" rows="3"
+                        [disabled]="!canEdit" [placeholder]="(i18n.terms$ | async)?.internalNotesPlaceholder" rows="3"
                         (ngModelChange)="markAsChanged()"></textarea>
             </div> -->
           </div>
@@ -478,7 +478,7 @@
                 <mat-icon class="switch-icon">{{campaign.isActive ? 'light_mode' : 'dark_mode'}}</mat-icon>
               </span>
             </span>
-            <span class="switch-label">{{campaign.isActive ? 'קמפיין פעיל' : 'קמפיין כבוי'}}</span>
+            <span class="switch-label">{{campaign.isActive ? (i18n.terms$ | async)?.campaignActiveLabel : (i18n.terms$ | async)?.campaignInactiveLabel}}</span>
           </label>
         </div>
 
@@ -489,7 +489,7 @@
                 [disabled]="loading"
                 class="action-button">
           <mat-icon>play_circle</mat-icon>
-          הפעל קמפיין
+          {{ (i18n.terms$ | async)?.activateCampaignButton }}
         </button>
 
         <button mat-raised-button color="accent"
@@ -498,7 +498,7 @@
                 [disabled]="loading"
                 class="action-button">
           <mat-icon>check_circle</mat-icon>
-          סמן כהושלם
+          {{ (i18n.terms$ | async)?.markAsCompletedButton }}
         </button>
       </div>
 
@@ -509,7 +509,7 @@
                 (click)="openNewDonation()"
                 class="action-button new-donation-button">
           <mat-icon>add_circle</mat-icon>
-          תרומה חדשה
+          {{ (i18n.terms$ | async)?.newDonationButton }}
         </button>
 
         <button mat-raised-button
@@ -527,7 +527,7 @@
                 (click)="openBlessingBook()"
                 class="action-button blessing-book-button">
           <mat-icon>menu_book</mat-icon>
-          ספר ברכות
+          {{ (i18n.terms$ | async)?.blessingBookButton }}
         </button>
 
         <button mat-stroked-button
@@ -536,14 +536,14 @@
                 (click)="deleteCampaign()"
                 class="action-button">
           <mat-icon>delete</mat-icon>
-          מחק קמפיין
+          {{ (i18n.terms$ | async)?.deleteCampaignButton }}
         </button>
 
         <button mat-stroked-button
                 (click)="closeModal()"
                 class="cancel-button">
           <mat-icon>close</mat-icon>
-          ביטול
+          {{ (i18n.terms$ | async)?.cancelButton }}
         </button>
         <button mat-raised-button
                 color="primary"
@@ -551,7 +551,7 @@
                 class="save-button"
                 [disabled]="loading">
           <mat-icon>save</mat-icon>
-          שמור קמפיין
+          {{ (i18n.terms$ | async)?.saveCampaignButton }}
         </button>
       </div>
     </div>
