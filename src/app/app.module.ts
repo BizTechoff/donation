@@ -64,6 +64,7 @@ import { LetterPropertiesModalComponent } from './routes/modals/letter-propertie
 import { ReminderDetailsModalComponent } from './routes/modals/reminder-details-modal/reminder-details-modal.component'
 import { DonationDetailsModalComponent } from './routes/modals/donation-details-modal/donation-details-modal.component'
 import { CampaignDetailsModalComponent } from './routes/modals/campaign-details-modal/campaign-details-modal.component'
+import { CampaignInvitedListModalComponent } from './routes/modals/campaign-invited-list-modal/campaign-invited-list-modal.component'
 import { StandingOrderDetailsModalComponent } from './routes/modals/standing-order-details-modal/standing-order-details-modal.component'
 import { CertificateDetailsModalComponent } from './routes/modals/certificate-details-modal/certificate-details-modal.component'
 import { OrganizationDetailsModalComponent } from './routes/modals/organization-details-modal/organization-details-modal.component'
@@ -104,6 +105,7 @@ import { UserDetailsComponent } from './route/user-details/user-details.componen
     ReminderDetailsModalComponent,
     DonationDetailsModalComponent,
     CampaignDetailsModalComponent,
+    CampaignInvitedListModalComponent,
     StandingOrderDetailsModalComponent,
     CertificateDetailsModalComponent,
     OrganizationDetailsModalComponent,

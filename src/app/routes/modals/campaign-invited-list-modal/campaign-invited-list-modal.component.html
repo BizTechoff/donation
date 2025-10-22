@@ -1,0 +1,230 @@
+<!-- Campaign Invited List Modal -->
+<div *ngIf="!loading || campaign" class="modal-overlay" (click)="closeModal($event)">
+  <div class="modal-content invited-list-modal" (click)="$event.stopPropagation()">
+
+    <!-- Modal Header - Fixed, Non-scrolling -->
+    <div class="modal-header">
+      <div class="header-content">
+        <div class="header-icon">
+          <mat-icon>people</mat-icon>
+        </div>
+        <div class="header-text">
+          <h2>{{ (i18n.terms$ | async)?.inviteesSection }}</h2>
+          <p class="header-subtitle" *ngIf="campaign">
+            {{campaign.name}} - {{invitedDonors.length}} {{ (i18n.terms$ | async)?.invitees }}
+          </p>
+        </div>
+      </div>
+      <button class="modal-close" (click)="closeModal()" [matTooltip]="(i18n.terms$ | async)?.closeButton" [dir]="'rtl'">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <!-- Filters Section - Fixed, Non-scrolling -->
+    <div class="filters-section" *ngIf="campaign">
+      <div class="section-title">
+        <mat-icon>filter_list</mat-icon>
+        <h3>{{ (i18n.terms$ | async)?.generalCriteriaLabel }}</h3>
+      </div>
+
+      <div class="filters-grid">
+        <!-- אנ"ש criteria with include/exclude options -->
+        <div class="filter-item">
+          <div class="filter-header">
+            <mat-icon class="filter-icon">groups</mat-icon>
+            <span class="filter-label">{{ (i18n.terms$ | async)?.anashCriteria }}</span>
+          </div>
+          <div class="filter-options">
+            <label class="option-checkbox">
+              <input type="checkbox" [(ngModel)]="campaign.isAnash"
+                     [disabled]="!canEdit || campaign.excludeAnash"
+                     (ngModelChange)="onAnashIncludeChange()">
+              <span class="checkbox-label include">✓ כולל</span>
+            </label>
+            <label class="option-checkbox">
+              <input type="checkbox" [(ngModel)]="campaign.excludeAnash"
+                     [disabled]="!canEdit || campaign.isAnash"
+                     (ngModelChange)="onAnashExcludeChange()">
+              <span class="checkbox-label exclude">✗ לא כולל</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- תושבי המדינה criteria with include/exclude options -->
+        <div class="filter-item">
+          <div class="filter-header">
+            <mat-icon class="filter-icon">location_on</mat-icon>
+            <span class="filter-label">{{ (i18n.terms$ | async)?.sameCountryCriteria }}</span>
+          </div>
+          <div class="filter-options">
+            <label class="option-checkbox">
+              <input type="checkbox" [(ngModel)]="campaign.sameCountryOnly"
+                     [disabled]="!canEdit || campaign.excludeSameCountry"
+                     (ngModelChange)="onSameCountryIncludeChange()">
+              <span class="checkbox-label include">✓ כולל</span>
+            </label>
+            <label class="option-checkbox">
+              <input type="checkbox" [(ngModel)]="campaign.excludeSameCountry"
+                     [disabled]="!canEdit || campaign.sameCountryOnly"
+                     (ngModelChange)="onSameCountryExcludeChange()">
+              <span class="checkbox-label exclude">✗ לא כולל</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Circle Filter -->
+        <div class="filter-item">
+          <div class="filter-header">
+            <mat-icon class="filter-icon">group_work</mat-icon>
+            <span class="filter-label">{{ (i18n.terms$ | async)?.categoryField }}</span>
+          </div>
+          <div class="circle-options">
+            <div class="circle-option"
+                 [class.active]="campaign.circle === 'platinum'"
+                 [class.disabled]="!canEdit"
+                 (click)="toggleCircle('platinum')">
+              <span class="circle-icon">👑</span>
+              <span class="circle-label">{{ (i18n.terms$ | async)?.circlePlatinum }}</span>
+            </div>
+            <div class="circle-option"
+                 [class.active]="campaign.circle === 'gold'"
+                 [class.disabled]="!canEdit"
+                 (click)="toggleCircle('gold')">
+              <span class="circle-icon">🥇</span>
+              <span class="circle-label">{{ (i18n.terms$ | async)?.circleGold }}</span>
+            </div>
+            <div class="circle-option"
+                 [class.active]="campaign.circle === 'silver'"
+                 [class.disabled]="!canEdit"
+                 (click)="toggleCircle('silver')">
+              <span class="circle-icon">🥈</span>
+              <span class="circle-label">{{ (i18n.terms$ | async)?.circleSilver }}</span>
+            </div>
+            <div class="circle-option"
+                 [class.active]="campaign.circle === 'regular'"
+                 [class.disabled]="!canEdit"
+                 (click)="toggleCircle('regular')">
+              <span class="circle-icon">⭕</span>
+              <span class="circle-label">{{ (i18n.terms$ | async)?.circleRegular }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Age Range Filter -->
+        <div class="filter-item age-filter">
+          <div class="filter-header">
+            <mat-icon class="filter-icon">cake</mat-icon>
+            <span class="filter-label">{{ (i18n.terms$ | async)?.ageRangeLabel }}</span>
+          </div>
+          <div class="age-inputs">
+            <input type="number" class="age-input" [(ngModel)]="campaign.minAge"
+                   [disabled]="!canEdit" [placeholder]="(i18n.terms$ | async)?.ageFromPlaceholder"
+                   min="0" max="120"
+                   (ngModelChange)="markAsChanged()">
+            <span class="age-separator">-</span>
+            <input type="number" class="age-input" [(ngModel)]="campaign.maxAge"
+                   [disabled]="!canEdit" [placeholder]="(i18n.terms$ | async)?.ageToPlaceholder"
+                   min="0" max="120"
+                   (ngModelChange)="markAsChanged()">
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-overlay" *ngIf="loading && !campaign">
+      <div class="loading-spinner">
+        <mat-icon class="spinner">refresh</mat-icon>
+        <p>{{ (i18n.terms$ | async)?.loadingData }}</p>
+      </div>
+    </div>
+
+    <!-- Modal Body - Scrollable Table -->
+    <div class="modal-body">
+      <div class="table-container" *ngIf="campaign && !loading">
+        <table class="donors-table">
+          <thead>
+            <tr>
+              <th>{{ (i18n.terms$ | async)?.name }}</th>
+              <th>{{ (i18n.terms$ | async)?.phone }}</th>
+              <th>{{ (i18n.terms$ | async)?.email }}</th>
+              <th>{{ (i18n.terms$ | async)?.level }}</th>
+              <th>{{ (i18n.terms$ | async)?.city }}</th>
+              <th>{{ (i18n.terms$ | async)?.actions }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let donor of invitedDonors" class="donor-row">
+              <td class="donor-name">
+                <strong>{{getDonorDisplayName(donor)}}</strong>
+              </td>
+              <td>{{getDonorPhone(donor)}}</td>
+              <td>{{getDonorEmail(donor)}}</td>
+              <td>
+                <span class="level-badge">{{getDonorLevel(donor)}}</span>
+              </td>
+              <td>{{donor.homePlace?.city || '-'}}</td>
+              <td class="actions">
+                <button mat-icon-button
+                        [matTooltip]="(i18n.terms$ | async)?.donorDetails"
+                        [dir]="'rtl'"
+                        (click)="openDonorDetails(donor)">
+                  <mat-icon>info</mat-icon>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Empty State -->
+        <div class="empty-state" *ngIf="invitedDonors.length === 0">
+          <mat-icon>people_outline</mat-icon>
+          <p>{{ (i18n.terms$ | async)?.noInviteesFound }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Footer - Fixed, Non-scrolling -->
+    <div class="modal-footer">
+      <!-- Save Filters Button -->
+      <div class="filters-actions">
+        <button mat-raised-button color="primary" (click)="saveCampaign()" [disabled]="loading">
+          <mat-icon>save</mat-icon>
+          {{ (i18n.terms$ | async)?.saveCampaignButton }}
+        </button>
+      </div>
+      
+      <div class="footer-stats">
+        <span class="stat-item">
+          <mat-icon>people</mat-icon>
+          {{ (i18n.terms$ | async)?.totalInvitees }}: {{invitedDonors.length}}
+        </span>
+      </div>
+
+      <div class="footer-actions">
+        <button mat-raised-button
+                color="accent"
+                (click)="exportToExcel()"
+                [disabled]="loading || invitedDonors.length === 0">
+          <mat-icon>file_download</mat-icon>
+          {{ (i18n.terms$ | async)?.exportToExcel }}
+        </button>
+
+        <button mat-raised-button
+                color="primary"
+                (click)="sendInvitations()"
+                [disabled]="loading || invitedDonors.length === 0">
+          <mat-icon>send</mat-icon>
+          {{ (i18n.terms$ | async)?.sendInvitations }}
+        </button>
+
+        <button mat-stroked-button
+                (click)="closeModal()">
+          <mat-icon>close</mat-icon>
+          {{ (i18n.terms$ | async)?.closeButton }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

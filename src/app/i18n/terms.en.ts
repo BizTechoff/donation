@@ -227,6 +227,7 @@ export const termsEn = {
   addCampaign: 'Add Campaign',
   newDonor: 'New Donor',
   newDonation: 'New Donation',
+  donationDetails: 'Donation Details',
   newCampaign: 'New Campaign',
   print: 'Print',
 
@@ -646,7 +647,7 @@ export const termsEn = {
   blessingBookButton: 'Blessing Book',
   deleteCampaignButton: 'Delete Campaign',
   cancelButton: 'Cancel',
-  saveCampaignButton: 'Save Campaign',
+  saveCampaignButton: 'Save Invitees',
 
   // Certificates Page - From certificates.component.html
   certificatesAndMemorials: 'Certificates and Memorials',
@@ -1148,7 +1149,7 @@ export const termsEn = {
   createReminderButton: 'Create Reminder',
 
   // Donation Details Modal - Additional Terms
-  donorAndPaymentDetails: 'Donor and Payment Details',
+  donorAndPaymentDetails: 'Donor Details',
   openDonorDetails: 'Open Donor Details',
   noCampaignOption: 'No Campaign',
   donationType: 'Donation Type',
@@ -1289,7 +1290,7 @@ export const termsEn = {
   additionalPreferences: 'Additional Preferences',
 
   // Family & Company Relations
-  familyRelationships: 'Family Relationships with Other Donors',
+  familyRelationships: 'Family Relationships To Donor',
   noFamilyRelationships: 'No family relationships selected',
   selectExistingCompany: 'Select Existing Company',
   selectCompanyOrganization: 'Select Company/Organization',
@@ -1389,5 +1390,62 @@ export const termsEn = {
   createNewDonorAtLocationQuestion: 'Would you like to create a new donor at this location:\n{address}?',
   addressNotFoundForLocation: 'No address found for this location',
   errorGettingAddress: 'Error getting address',
-  errorCreatingDonor: 'Error creating donor'
+  errorCreatingDonor: 'Error creating donor',
+
+  // Modern Dual Date Picker
+  selectHebrewDate: 'Select Hebrew Date',
+  selectGregorianDate: 'Select Gregorian Date',
+  hebrewShort: 'Hebrew',
+  gregorianShort: 'Gregorian',
+  currentMonth: 'Current Month',
+  goToCurrentMonth: 'Click to go to current month',
+  showHolidays: 'Show Holidays',
+  clearDate: 'Clear Date',
+
+  // Hebrew Days of Week (Short)
+  hebrewSunday: 'Su',
+  hebrewMonday: 'Mo',
+  hebrewTuesday: 'Tu',
+  hebrewWednesday: 'We',
+  hebrewThursday: 'Th',
+  hebrewFriday: 'Fr',
+  hebrewSaturday: 'Sa',
+
+  // Gregorian Days of Week (Short)
+  gregorianSunday: 'Su',
+  gregorianMonday: 'Mo',
+  gregorianTuesday: 'Tu',
+  gregorianWednesday: 'We',
+  gregorianThursday: 'Th',
+  gregorianFriday: 'Fr',
+  gregorianSaturday: 'Sa',
+
+  // Gregorian Months
+  january: 'January',
+  february: 'February',
+  march: 'March',
+  april: 'April',
+  may: 'May',
+  june: 'June',
+  july: 'July',
+  august: 'August',
+  september: 'September',
+  october: 'October',
+  november: 'November',
+  december: 'December',
+
+  // Campaign Invited List Modal
+  exportToExcel: 'Export to Excel',
+  sendInvitations: 'Send Invitations',
+  totalInvitees: 'Total Invitees',
+  noInviteesFound: 'No invitees found matching the criteria',
+  invitees: 'Invitees',
+
+  // Certificate Details Modal
+  certificateContentSummary: 'Certificate Content Summary',
+  certificateContentSummaryPlaceholder: 'Certificate content summary',
+  attachedFiles: 'Attached Files',
+  uploadFileButton: 'Upload File',
+  reminderButton: 'Reminder',
+  saveCertificateButton: 'Save Certificate'
 }

@@ -2,6 +2,7 @@ import { Component, ElementRef, EventEmitter, forwardRef, Input, OnDestroy, OnIn
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { months } from '@hebcal/core';
 import { HebrewDateService } from '../../services/hebrew-date.service';
+import { I18nService } from '../../i18n/i18n.service';
 
 @Component({
   selector: 'app-modern-dual-date-picker',
@@ -53,11 +54,10 @@ export class ModernDualDatePickerComponent implements OnInit, OnDestroy, Control
   gregorianDaysInMonth: (number | null)[][] = [];
   gregorianYearsList: number[] = [];
 
-  // Days of week labels
-  hebrewDaysOfWeek = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'];
-  gregorianDaysOfWeek = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
-  gregorianMonths = ['January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'];
+  // Days of week labels - will be initialized from i18n
+  hebrewDaysOfWeek: string[] = [];
+  gregorianDaysOfWeek: string[] = [];
+  gregorianMonths: string[] = [];
 
   pastYearInterval = 100
   futureYearInterval = 13
@@ -68,14 +68,60 @@ export class ModernDualDatePickerComponent implements OnInit, OnDestroy, Control
   // Static property to track all instances for global popup management
   private static allInstances: Set<ModernDualDatePickerComponent> = new Set();
 
-  constructor(private hebrewDateService: HebrewDateService) {
+  constructor(
+    private hebrewDateService: HebrewDateService,
+    public i18n: I18nService
+  ) {
     // Add this instance to the global set
     ModernDualDatePickerComponent.allInstances.add(this);
   }
 
   ngOnInit() {
+    this.initializeI18nLabels();
     this.initializeCalendars();
     this.setupClickOutsideListener();
+  }
+
+  initializeI18nLabels() {
+    // Subscribe to language changes
+    this.i18n.terms$.subscribe(terms => {
+      if (terms) {
+        this.hebrewDaysOfWeek = [
+          terms.hebrewSunday,
+          terms.hebrewMonday,
+          terms.hebrewTuesday,
+          terms.hebrewWednesday,
+          terms.hebrewThursday,
+          terms.hebrewFriday,
+          terms.hebrewSaturday
+        ];
+
+        this.gregorianDaysOfWeek = [
+          terms.gregorianSunday,
+          terms.gregorianMonday,
+          terms.gregorianTuesday,
+          terms.gregorianWednesday,
+          terms.gregorianThursday,
+          terms.gregorianFriday,
+          terms.gregorianSaturday
+        ];
+
+        this.gregorianMonths = [
+          terms.january,
+          terms.february,
+          terms.march,
+          terms.april,
+          terms.may,
+          terms.june,
+          terms.july,
+          terms.august,
+          terms.september,
+          terms.october,
+          terms.november,
+          terms.december
+        ];
+      }
+    });
   }
 
   initializeCalendars() {
@@ -112,10 +158,17 @@ export class ModernDualDatePickerComponent implements OnInit, OnDestroy, Control
       // Find the component's root element
       const componentElement = target.closest('app-modern-dual-date-picker');
 
-      // If we clicked inside this component, don't close
+      // If we clicked inside this component (including the wrapper and separator), don't close
       if (componentElement) return;
 
-      // Close popups if we clicked outside
+      // Check if click is inside any calendar popup (including parallel popups)
+      const calendarPopup = target.closest('.calendar-popup');
+      const parallelContainer = target.closest('.parallel-popups-container');
+
+      // If we clicked inside any calendar popup or parallel container, don't close
+      if (calendarPopup || parallelContainer) return;
+
+      // Close popups if we clicked outside (lost focus)
       if (this.showHebrewPopup || this.showGregorianPopup) {
         this.showHebrewPopup = false;
         this.showGregorianPopup = false;

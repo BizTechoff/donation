@@ -227,6 +227,7 @@ export const termsHe = {
   addCampaign: 'הוסף קמפיין',
   newDonor: 'תורם חדש',
   newDonation: 'תרומה חדשה',
+  donationDetails: 'פרטי תרומה',
   newCampaign: 'קמפיין חדש',
   print: 'הדפס',
 
@@ -644,7 +645,7 @@ export const termsHe = {
   blessingBookButton: 'ספר ברכות',
   deleteCampaignButton: 'מחק קמפיין',
   cancelButton: 'ביטול',
-  saveCampaignButton: 'שמור קמפיין',
+  saveCampaignButton: 'שמור מוזמנים',
 
   // Certificates Page - From certificates.component.html
   certificatesAndMemorials: 'תעודות ונציבים',
@@ -1146,7 +1147,7 @@ export const termsHe = {
   createReminderButton: 'צור תזכורת',
 
   // Donation Details Modal - Additional Terms
-  donorAndPaymentDetails: 'פרטי תורם ותשלום',
+  donorAndPaymentDetails: 'פרטי תורם',
   openDonorDetails: 'פתח פרטי תורם',
   noCampaignOption: 'ללא קמפיין',
   donationType: 'סוג תרומה',
@@ -1287,7 +1288,7 @@ export const termsHe = {
   additionalPreferences: 'העדפות נוספות',
 
   // Family & Company Relations
-  familyRelationships: 'קשרים משפחתיים עם תורמים אחרים',
+  familyRelationships: 'קשרים משפחתיים לתורם',
   noFamilyRelationships: 'לא נבחרו קשרים משפחתיים',
   selectExistingCompany: 'בחר חברה קיימת',
   selectCompanyOrganization: 'בחר חברה/עמותה',
@@ -1387,5 +1388,62 @@ export const termsHe = {
   createNewDonorAtLocationQuestion: 'האם לפתוח תורם חדש במיקום:\n{address}?',
   addressNotFoundForLocation: 'לא נמצאה כתובת למיקום זה',
   errorGettingAddress: 'שגיאה בקבלת כתובת',
-  errorCreatingDonor: 'שגיאה ביצירת תורם'
+  errorCreatingDonor: 'שגיאה ביצירת תורם',
+
+  // Modern Dual Date Picker
+  selectHebrewDate: 'בחר תאריך עברי',
+  selectGregorianDate: 'בחר תאריך לועזי',
+  hebrewShort: 'עברי',
+  gregorianShort: 'לועזי',
+  currentMonth: 'החודש הנוכחי',
+  goToCurrentMonth: 'לחץ למעבר לחודש הנוכחי',
+  showHolidays: 'הצג חגים',
+  clearDate: 'נקה תאריך',
+
+  // Hebrew Days of Week (Short)
+  hebrewSunday: 'א׳',
+  hebrewMonday: 'ב׳',
+  hebrewTuesday: 'ג׳',
+  hebrewWednesday: 'ד׳',
+  hebrewThursday: 'ה׳',
+  hebrewFriday: 'ו׳',
+  hebrewSaturday: 'ש׳',
+
+  // Gregorian Days of Week (Short)
+  gregorianSunday: 'א׳',
+  gregorianMonday: 'ב׳',
+  gregorianTuesday: 'ג׳',
+  gregorianWednesday: 'ד׳',
+  gregorianThursday: 'ה׳',
+  gregorianFriday: 'ו׳',
+  gregorianSaturday: 'ש׳',
+
+  // Gregorian Months
+  january: 'ינואר',
+  february: 'פברואר',
+  march: 'מרץ',
+  april: 'אפריל',
+  may: 'מאי',
+  june: 'יוני',
+  july: 'יולי',
+  august: 'אוגוסט',
+  september: 'ספטמבר',
+  october: 'אוקטובר',
+  november: 'נובמבר',
+  december: 'דצמבר',
+
+  // Campaign Invited List Modal
+  exportToExcel: 'ייצוא לאקסל',
+  sendInvitations: 'שלח הזמנות',
+  totalInvitees: 'סה"כ מוזמנים',
+  noInviteesFound: 'לא נמצאו מוזמנים התואמים את הקריטריונים',
+  invitees: 'מוזמנים',
+
+  // Certificate Details Modal
+  certificateContentSummary: 'תקציר תוכן התעודה',
+  certificateContentSummaryPlaceholder: 'תקציר תוכן התעודה',
+  attachedFiles: 'קבצים מצורפים',
+  uploadFileButton: 'העלה קובץ',
+  reminderButton: 'תזכורת',
+  saveCertificateButton: 'שמור תעודה'
 }

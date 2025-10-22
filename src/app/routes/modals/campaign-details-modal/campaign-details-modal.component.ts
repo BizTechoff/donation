@@ -7,6 +7,7 @@ import { I18nService } from '../../../i18n/i18n.service';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { DONOR_LEVELS_ARRAY, DonorLevel } from '../../../../shared/enum/donor-levels';
 import { CampaignBlessingBookModalComponent, CampaignBlessingBookModalArgs } from '../campaign-blessing-book-modal/campaign-blessing-book-modal.component';
+import { CampaignInvitedListModalComponent, CampaignInvitedListModalArgs } from '../campaign-invited-list-modal/campaign-invited-list-modal.component';
 import { openDialog, DialogConfig } from 'common-ui-elements';
 
 export interface CampaignDetailsModalArgs {
@@ -509,36 +510,6 @@ export class CampaignDetailsModalComponent implements OnInit {
     this.markAsChanged();
   }
 
-  // Methods for אנ"ש include/exclude
-  onAnashIncludeChange() {
-    if (this.campaign.isAnash && this.campaign.excludeAnash) {
-      this.campaign.excludeAnash = false;
-    }
-    this.markAsChanged();
-  }
-
-  onAnashExcludeChange() {
-    if (this.campaign.excludeAnash && this.campaign.isAnash) {
-      this.campaign.isAnash = false;
-    }
-    this.markAsChanged();
-  }
-
-  // Methods for same country include/exclude
-  onSameCountryIncludeChange() {
-    if (this.campaign.sameCountryOnly && this.campaign.excludeSameCountry) {
-      this.campaign.excludeSameCountry = false;
-    }
-    this.markAsChanged();
-  }
-
-  onSameCountryExcludeChange() {
-    if (this.campaign.excludeSameCountry && this.campaign.sameCountryOnly) {
-      this.campaign.sameCountryOnly = false;
-    }
-    this.markAsChanged();
-  }
-
   // Toggle campaign active status with confirmation
   toggleCampaignActive() {
     if (this.campaign.isActive) {
@@ -551,18 +522,6 @@ export class CampaignDetailsModalComponent implements OnInit {
       }
     }
     this.markAsChanged();
-  }
-
-  // Open activists related to campaign
-  openActivists() {
-    // TODO: Implement navigation to activists with campaign filter
-    console.log('Opening activists for campaign:', this.campaign.id);
-  }
-
-  // Open contacts related to campaign
-  openContacts() {
-    // TODO: Implement navigation to contacts with campaign filter
-    console.log('Opening contacts for campaign:', this.campaign.id);
   }
 
   // Open blessing book modal - save campaign first if needed
@@ -636,8 +595,12 @@ export class CampaignDetailsModalComponent implements OnInit {
         this.isNewCampaign = false;
       }
 
-      // Now open the invited list modal with the campaign ID
-      const result = await this.ui.campaignDonorsDialog(this.campaign.id);
+      // Open the new invited list modal
+      const args: CampaignInvitedListModalArgs = {
+        campaignId: this.campaign.id
+      };
+
+      const result = await openDialog(CampaignInvitedListModalComponent, (dlg) => dlg.args = args);
 
       if (result) {
         // Refresh campaign data if needed

@@ -2,19 +2,21 @@
   <label class="field-label" *ngIf="label && !compact">{{ label }}</label>
   
   <div class="date-inputs-container">
-    <!-- Hebrew Date Input -->
-    <div class="date-input-group" *ngIf="!showOnlyGregorian">
-      <div class="date-input hebrew-trigger" (click)="toggleHebrewPopup($event)" [class.disabled]="disabled" [class.has-popup-open]="showHebrewPopup">
-        <span class="date-value" [class.placeholder]="!hebrewDateDisplay">
-          {{ hebrewDateDisplay || (compact ? 'עברי' : 'בחר תאריך עברי') }}
-        </span>
-        <svg class="calendar-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-          <line x1="16" y1="2" x2="16" y2="6"></line>
-          <line x1="8" y1="2" x2="8" y2="6"></line>
-          <line x1="3" y1="10" x2="21" y2="10"></line>
-        </svg>
-      </div>
+    <!-- Date triggers wrapper with unified background -->
+    <div class="date-triggers-wrapper">
+      <!-- Hebrew Date Input -->
+      <div class="date-input-group" *ngIf="!showOnlyGregorian">
+        <div class="date-input hebrew-trigger" (click)="toggleHebrewPopup($event)" [class.disabled]="disabled" [class.has-popup-open]="showHebrewPopup">
+          <span class="date-value" [class.placeholder]="!hebrewDateDisplay">
+            {{ hebrewDateDisplay || (compact ? ((i18n.terms$ | async)?.hebrewShort) : ((i18n.terms$ | async)?.selectHebrewDate)) }}
+          </span>
+          <svg class="calendar-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+        </div>
       
       <!-- Hebrew Calendar Popup (Single Mode Only) -->
       <div class="calendar-popup hebrew-popup" 
@@ -36,10 +38,10 @@
             </select>
           </div>
           
-          <div class="today-button" 
-               (click)="goToToday()" 
+          <div class="today-button"
+               (click)="goToToday()"
                [class.clickable]="!isCurrentMonth()"
-               [title]="isCurrentMonth() ? 'החודש הנוכחי' : 'לחץ למעבר לחודש הנוכחי'">
+               [title]="isCurrentMonth() ? ((i18n.terms$ | async)?.currentMonth) : ((i18n.terms$ | async)?.goToCurrentMonth)">
             📅
           </div>
           
@@ -50,7 +52,7 @@
         <div *ngIf="false" class="holidays-toggle">
           <label class="toggle-label">
             <input type="checkbox" [(ngModel)]="isCalendarJewEnabled" class="toggle-checkbox">
-            <span class="toggle-text">הצג חגים</span>
+            <span class="toggle-text">{{ (i18n.terms$ | async)?.showHolidays }}</span>
           </label>
         </div>
         
@@ -76,13 +78,15 @@
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Gregorian Date Input -->
-    <div class="date-input-group" *ngIf="!showOnlyHebrew">
-      <div class="date-input gregorian-trigger" (click)="toggleGregorianPopup($event)" [class.disabled]="disabled" [class.has-popup-open]="showGregorianPopup">
+      <!-- Separator DIV (20px) -->
+      <div class="date-separator" *ngIf="!showOnlyHebrew && !showOnlyGregorian"></div>
+
+      <!-- Gregorian Date Input -->
+      <div class="date-input-group" *ngIf="!showOnlyHebrew">
+        <div class="date-input gregorian-trigger" (click)="toggleGregorianPopup($event)" [class.disabled]="disabled" [class.has-popup-open]="showGregorianPopup">
         <span class="date-value" [class.placeholder]="!gregorianDateDisplay">
-          {{ gregorianDateDisplay || (compact ? 'לועזי' : 'בחר תאריך לועזי') }}
+          {{ gregorianDateDisplay || (compact ? ((i18n.terms$ | async)?.gregorianShort) : ((i18n.terms$ | async)?.selectGregorianDate)) }}
         </span>
         <svg class="calendar-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
@@ -134,9 +138,10 @@
         </div>
       </div>
     </div>
+    </div>
 
     <!-- Parallel Popups Container -->
-    <div class="parallel-popups-container" 
+    <div class="parallel-popups-container"
          *ngIf="calendar_open_heb_and_eng_parallel && showGregorianPopup && showHebrewPopup">
       
       <!-- Hebrew Calendar in Parallel Mode (Right Side) -->
@@ -158,10 +163,10 @@
             </select>
           </div>
           
-          <div class="today-button" 
-               (click)="goToToday()" 
+          <div class="today-button"
+               (click)="goToToday()"
                [class.clickable]="!isCurrentMonth()"
-               [title]="isCurrentMonth() ? 'החודש הנוכחי' : 'לחץ למעבר לחודש הנוכחי'">
+               [title]="isCurrentMonth() ? ((i18n.terms$ | async)?.currentMonth) : ((i18n.terms$ | async)?.goToCurrentMonth)">
             📅
           </div>
           
@@ -171,7 +176,7 @@
         <div *ngIf="false" class="holidays-toggle">
           <label class="toggle-label">
             <input type="checkbox" [(ngModel)]="isCalendarJewEnabled" class="toggle-checkbox">
-            <span class="toggle-text">הצג חגים</span>
+            <span class="toggle-text">{{ (i18n.terms$ | async)?.showHolidays }}</span>
           </label>
         </div>
         
@@ -241,7 +246,7 @@
     </div>
 
     <!-- Clear Button -->
-    <button class="clear-button" *ngIf="currentDate && !disabled" (click)="clearDate()" title="Clear date">
+    <button class="clear-button" *ngIf="currentDate && !disabled" (click)="clearDate()" [title]="(i18n.terms$ | async)?.clearDate">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <line x1="18" y1="6" x2="6" y2="18"></line>
         <line x1="6" y1="6" x2="18" y2="18"></line>
