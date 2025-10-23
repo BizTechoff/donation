@@ -335,7 +335,7 @@
 .form-group {
   display: flex;
   flex-direction: column;
-  
+
   &.full-width {
     grid-column: 1 / -1;
   }
@@ -757,7 +757,7 @@
 // Marital Status Selection Grid
 .marital-status-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 12px;
   margin-top: 8px;
 }
@@ -930,33 +930,41 @@
     width: 95vw;
     max-height: 95vh;
   }
-  
+
   .modal-header {
     padding: 16px 20px;
-    
+
     .header-text h2 {
       font-size: 20px;
     }
   }
-  
+
   .modal-body {
     padding: 20px;
   }
-  
+
   .modal-footer {
     padding: 16px 20px;
     flex-direction: column-reverse;
     gap: 12px;
-    
+
     .footer-actions-left,
     .footer-actions-right {
       width: 100%;
       justify-content: center;
     }
   }
-  
+
   .form-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
+  }
+
+  .marital-status-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .family-info-grid {
+    grid-template-columns: 1fr !important;
   }
 }
 
@@ -1549,7 +1557,7 @@
   grid-template-columns: 1fr 1fr;
   gap: 24px;
   margin-top: 16px;
-  
+
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
     gap: 16px;
@@ -1563,12 +1571,31 @@
   gap: 20px;
 }
 
+.personal-dates-section {
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+
+    h4 {
+      margin: 0;
+    }
+  }
+
+  .dates-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+}
+
 .family-group {
   background: white;
   border: 1px solid #e0e0e0;
   border-radius: 12px;
   padding: 20px;
-  
+
   .group-title {
     display: flex;
     align-items: center;
@@ -1577,7 +1604,7 @@
     font-size: 16px;
     font-weight: 600;
     color: #333;
-    
+
     mat-icon {
       color: #667eea;
       font-size: 20px;
@@ -1585,7 +1612,7 @@
       height: 20px;
     }
   }
-  
+
   .spouse-info {
     margin-top: 16px;
     padding-top: 16px;
@@ -1700,13 +1727,16 @@
   display: flex;
   gap: 10px;
   align-items: center;
+  flex-wrap: wrap;
 
   .relationship-type-select {
     flex: 0 0 120px;
+    min-width: 100px;
   }
 
   .donor-select {
     flex: 1;
+    min-width: 150px;
   }
 
   select.form-control {
@@ -1714,6 +1744,16 @@
       background-color: #f5f5f5;
       cursor: not-allowed;
       opacity: 0.6;
+    }
+  }
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+
+    .relationship-type-select,
+    .donor-select {
+      flex: 1 1 100%;
+      width: 100%;
     }
   }
 }

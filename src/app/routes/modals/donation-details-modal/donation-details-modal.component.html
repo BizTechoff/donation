@@ -8,7 +8,7 @@
           <mat-icon>{{isNewDonation ? 'add_circle' : 'attach_money'}}</mat-icon>
         </div>
         <div class="header-text">
-          <h2>{{isNewDonation ? i18n.terms.newDonation : i18n.terms.donorDetails}}</h2>
+          <h2>{{isNewDonation ? i18n.terms.newDonation : i18n.terms.donationDetails}}</h2>
           <p class="header-subtitle" *ngIf="!isNewDonation && donation">
             {{getDonorDisplayName(selectedDonor)}}
           </p>
@@ -253,7 +253,7 @@
                     <div class="payment-method-content">
                       <mat-icon class="payment-method-icon">payment</mat-icon>
                       <div class="payment-method-text">
-                        <span class="payment-method-label">{{ getPaymentMethodDisplayName(method) }}</span>
+                        <span class="payment-method-label">{{ method.name }}</span>
                       </div>
                     </div>
                   </label>

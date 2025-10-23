@@ -303,6 +303,15 @@ export class Donation extends IdEntity {
   })
   bankId = ''
 
+  @Fields.json({
+    caption: 'קבצים מצורפים',
+  })
+  attachments: Array<{
+    name: string
+    path: string
+    size: number
+  }> = []
+
   @BackendMethod({ allowed: [Roles.admin] })
   async issueReceipt() {
     if (!this.receiptIssued) {

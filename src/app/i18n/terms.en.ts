@@ -147,8 +147,15 @@ export const termsEn = {
   comparison: 'Comparison',
 
   // Donor Management
-  firstName: 'First Name',
-  lastName: 'Last Name',
+  title: 'תואר',
+  suffix: 'סיומת',
+  titleEnglish: 'Title',
+  firstNameEnglish: 'First Name',
+  lastNameEnglish: 'Last Name',
+  suffixEnglish: 'Suffix',
+  firstName: 'שם פרטי',
+  lastName: 'שם משפחה',
+  
   fullName: 'Full Name',
   idNumber: 'ID Number',
   idNumberShort: 'ID#',
@@ -647,7 +654,7 @@ export const termsEn = {
   blessingBookButton: 'Blessing Book',
   deleteCampaignButton: 'Delete Campaign',
   cancelButton: 'Cancel',
-  saveCampaignButton: 'Save Invitees',
+  saveCampaignButton: 'Save Campaign',
 
   // Certificates Page - From certificates.component.html
   certificatesAndMemorials: 'Certificates and Memorials',
@@ -878,6 +885,12 @@ export const termsEn = {
   newReminder: 'New Reminder',
   editReminderTitle: 'Edit Reminder',
   reminderTypeSelect: 'Reminder Type',
+  yearlyReminderType: 'Yearly Reminder Type',
+  fixedDate: 'Fixed Date',
+  occasion: 'Occasion (Special Time)',
+  specialOccasion: 'Special Time (Holiday/Event)',
+  hebrewMonth: 'Hebrew Month',
+  hebrewDayOfMonth: 'Hebrew Day of Month',
   donationFollowUp: 'Donation Follow-up',
   thankYouReminder: 'Thank You',
   receipt: 'Receipt',
@@ -1271,12 +1284,6 @@ export const termsEn = {
   currencyNZD: 'New Zealand Dollar (NZ$)',
 
   // Donor Details Modal - Missing Fields
-  title: 'Title',
-  suffix: 'Suffix',
-  titleEnglish: 'Title (English)',
-  firstNameEnglish: 'First Name (English)',
-  lastNameEnglish: 'Last Name (English)',
-  suffixEnglish: 'Suffix (English)',
   addresses: 'Addresses',
   homeAddress: 'Home Address',
   enterHomeAddress: 'Enter home address...',
@@ -1437,9 +1444,12 @@ export const termsEn = {
   // Campaign Invited List Modal
   exportToExcel: 'Export to Excel',
   sendInvitations: 'Send Invitations',
-  totalInvitees: 'Total Invitees',
+  totalInvitees: 'Total Donors',
   noInviteesFound: 'No invitees found matching the criteria',
   invitees: 'Invitees',
+  deselectAll: 'Deselect All',
+  selectedInvitees: 'Selected Invitees',
+  showAllDonors: 'Show also donors who did not pass the filter',
 
   // Certificate Details Modal
   certificateContentSummary: 'Certificate Content Summary',
@@ -1447,5 +1457,33 @@ export const termsEn = {
   attachedFiles: 'Attached Files',
   uploadFileButton: 'Upload File',
   reminderButton: 'Reminder',
-  saveCertificateButton: 'Save Certificate'
+  saveCertificateButton: 'Save Certificate',
+
+  // Blessing Book Modal
+  blessingBookTitle: 'Blessing Book',
+  blessingsReceived: 'Blessings Received',
+  pendingBlessings: 'Pending',
+  blessingsSent: 'Blessings Sent',
+  blessingSearchPlaceholder: 'Search donor, phone, email or blessing',
+  statusPending: 'Pending',
+  statusReceived: 'Received',
+  statusSent: 'Sent',
+  statusNone: 'None',
+  allLevels: 'All Levels',
+  donorName: 'Donor Name',
+  blessingStatus: 'Blessing Status',
+  blessingText: 'Blessing Text',
+  addBlessing: 'Add Blessing',
+  editBlessing: 'Edit Blessing',
+  markAsSent: 'Mark as Sent',
+  sent: 'Sent',
+  noDonorsToShow: 'No Donors to Show',
+  noDonorsDescription: 'No donors found for this campaign or based on selected filters',
+  blessingCollectionProgress: 'Blessing Collection Progress',
+  levelQuarter: 'Quarter',
+  levelHalf: 'Half',
+  levelFull: 'Full',
+  levelBronze: 'Bronze',
+  levelSilver: 'Silver',
+  levelGold: 'Gold'
 }

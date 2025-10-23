@@ -148,8 +148,15 @@ export const termsHe = {
   comparison: 'השוואה',
 
   // Donor Management
+  title: 'תואר',
+  suffix: 'סיומת',
+  titleEnglish: 'Title',
+  firstNameEnglish: 'First Name',
+  lastNameEnglish: 'Last Name',
+  suffixEnglish: 'Suffix',
   firstName: 'שם פרטי',
   lastName: 'שם משפחה',
+
   fullName: 'שם מלא',
   idNumber: 'תעודת זהות',
   idNumberShort: 'ת.ז',
@@ -645,7 +652,7 @@ export const termsHe = {
   blessingBookButton: 'ספר ברכות',
   deleteCampaignButton: 'מחק קמפיין',
   cancelButton: 'ביטול',
-  saveCampaignButton: 'שמור מוזמנים',
+  saveCampaignButton: 'שמור קמפיין',
 
   // Certificates Page - From certificates.component.html
   certificatesAndMemorials: 'תעודות ונציבים',
@@ -876,6 +883,12 @@ export const termsHe = {
   newReminder: 'תזכורת חדשה',
   editReminderTitle: 'עריכת תזכורת',
   reminderTypeSelect: 'סוג תזכורת',
+  yearlyReminderType: 'סוג תזכורת שנתית',
+  fixedDate: 'תאריך קבוע',
+  occasion: 'מועד (זמן מיוחד)',
+  specialOccasion: 'זמן מיוחד (חג/אירוע)',
+  hebrewMonth: 'חודש עברי',
+  hebrewDayOfMonth: 'יום בחודש עברי',
   donationFollowUp: 'מעקב תרומה',
   thankYouReminder: 'תודה',
   receipt: 'קבלה',
@@ -1269,12 +1282,6 @@ export const termsHe = {
   currencyNZD: 'דולר ניו זילנדי (NZ$)',
 
   // Donor Details Modal - Missing Fields
-  title: 'תואר',
-  suffix: 'סיומת',
-  titleEnglish: 'תואר באנגלית',
-  firstNameEnglish: 'שם פרטי באנגלית',
-  lastNameEnglish: 'שם משפחה באנגלית',
-  suffixEnglish: 'סיומת באנגלית',
   addresses: 'כתובות',
   homeAddress: 'כתובת מגורים',
   enterHomeAddress: 'הקלד כתובת מגורים...',
@@ -1435,9 +1442,12 @@ export const termsHe = {
   // Campaign Invited List Modal
   exportToExcel: 'ייצוא לאקסל',
   sendInvitations: 'שלח הזמנות',
-  totalInvitees: 'סה"כ מוזמנים',
+  totalInvitees: 'סה"כ תורמים',
   noInviteesFound: 'לא נמצאו מוזמנים התואמים את הקריטריונים',
   invitees: 'מוזמנים',
+  deselectAll: 'בטל בחירה',
+  selectedInvitees: 'מוזמנים נבחרים',
+  showAllDonors: 'הצג גם תורמים שלא עברו את הפילטור',
 
   // Certificate Details Modal
   certificateContentSummary: 'תקציר תוכן התעודה',
@@ -1445,5 +1455,33 @@ export const termsHe = {
   attachedFiles: 'קבצים מצורפים',
   uploadFileButton: 'העלה קובץ',
   reminderButton: 'תזכורת',
-  saveCertificateButton: 'שמור תעודה'
+  saveCertificateButton: 'שמור תעודה',
+
+  // Blessing Book Modal
+  blessingBookTitle: 'ספר ברכות',
+  blessingsReceived: 'ברכות התקבלו',
+  pendingBlessings: 'ממתינות',
+  blessingsSent: 'ברכות נשלחו',
+  blessingSearchPlaceholder: 'חיפוש תורם, טלפון, אימייל או ברכה',
+  statusPending: 'ממתין',
+  statusReceived: 'התקבל',
+  statusSent: 'נשלח',
+  statusNone: 'ללא',
+  allLevels: 'כל הרמות',
+  donorName: 'שם התורם',
+  blessingStatus: 'מצב ברכה',
+  blessingText: 'נוסח הברכה',
+  addBlessing: 'הוסף ברכה',
+  editBlessing: 'עריכת ברכה',
+  markAsSent: 'סמן כנשלח',
+  sent: 'נשלח',
+  noDonorsToShow: 'אין תורמים להצגה',
+  noDonorsDescription: 'לא נמצאו תורמים עבור הקמפיין הזה או לפי הפילטרים שנבחרו',
+  blessingCollectionProgress: 'התקדמות איסוף ברכות',
+  levelQuarter: 'רבע',
+  levelHalf: 'חצי',
+  levelFull: 'מלא',
+  levelBronze: 'ברונזה',
+  levelSilver: 'כסף',
+  levelGold: 'זהב'
 }

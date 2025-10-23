@@ -1,6 +1,9 @@
 import { config } from "dotenv";
 import { NextFunction, Request, Response } from "express";
 
+
+S3Controller.generateUploadURLDelegate = async (action: string, fileName: string, fileType: string, bucketKey: string) => await doGenerateSignedURL(action, fileName, fileType, bucketKey)
+
 config()
 
 const s3Client = async () => {

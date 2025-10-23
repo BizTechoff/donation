@@ -347,8 +347,7 @@
 
                     <div class="add-family-controls">
                       <!-- Relationship Type Selection -->
-                      <select class="form-control relationship-type-select" [(ngModel)]="newRelationshipType"
-                        style="flex: 0 0 120px;">
+                      <select class="form-control relationship-type-select" [(ngModel)]="newRelationshipType">
                         <option value="" disabled>סוג קשר</option>
                         <option value="אבא">אבא</option>
                         <option value="אח">אח</option>
@@ -369,7 +368,7 @@
 
                       <!-- Donor Selection -->
                       <select class="form-control donor-select" (change)="onFamilyMemberSelect($event)" value=""
-                        [disabled]="!newRelationshipType" style="flex: 1;">
+                        [disabled]="!newRelationshipType">
                         <option value="" disabled>{{ newRelationshipType ? 'בחר תורם' : 'בחר תחילה סוג קשר' }}</option>
                         <option *ngFor="let donor of getAvailableDonorsForFamily()" [value]="donor.id">
                           {{ donor.fullName }}
@@ -715,21 +714,20 @@
                   </label>
                 </div>
 
-                <div class="type-option" [class.active]="donor.isOtherConnection">
+                <!-- <div class="type-option" [class.active]="donor.isOtherConnection">
                   <label class="type-card">
                     <input type="checkbox" [(ngModel)]="donor.isOtherConnection" (change)="onOtherConnectionChange()"
                       class="type-checkbox">
                     <div class="type-content">
                       <mat-icon class="type-icon">people_alt</mat-icon>
                       <span class="type-label">{{ (i18n.terms$ | async)?.otherConnection }}</span>
-                      <!-- <small class="type-desc">קשר משפחתי או חברי</small> -->
                     </div>
                   </label>
-                </div>
+                </div> -->
               </div>
 
               <!-- Show relationship fields only when "קשר אחר" is checked -->
-              <div class="relationship-details" *ngIf="donor.isOtherConnection">
+              <!-- <div class="relationship-details" *ngIf="donor.isOtherConnection">
                 <div class="form-grid">
                   <div class="form-group">
                     <div class="field-title">
@@ -748,7 +746,7 @@
                       placeholder="שם האדם שהתורם קשור אליו">
                   </div>
                 </div>
-              </div>
+              </div> -->
             </div>
           </div>
 

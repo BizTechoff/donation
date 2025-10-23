@@ -9,13 +9,15 @@
           <mat-icon>{{isNewCampaign ? 'add_circle' : 'campaign'}}</mat-icon>
         </div>
         <div class="header-text">
-          <h2>{{isNewCampaign ? (i18n.terms$ | async)?.createNewCampaignTitle : (i18n.terms$ | async)?.campaignDetailsTitle}}</h2>
+          <h2>{{isNewCampaign ? (i18n.terms$ | async)?.createNewCampaignTitle : (i18n.terms$ |
+            async)?.campaignDetailsTitle}}</h2>
           <p class="header-subtitle" *ngIf="!isNewCampaign && campaign">
             {{campaign.name}}
           </p>
         </div>
       </div>
-      <button class="modal-close" (click)="closeModal()" [matTooltip]="(i18n.terms$ | async)?.closeButton" [dir]="'rtl'">
+      <button class="modal-close" (click)="closeModal()" [matTooltip]="(i18n.terms$ | async)?.closeButton"
+        [dir]="'rtl'">
         <mat-icon>close</mat-icon>
       </button>
     </div>
@@ -32,16 +34,20 @@
         <div class="section status-section" *ngIf="!isNewCampaign">
           <h3>{{ (i18n.terms$ | async)?.campaignStatusSection }}</h3>
           <div class="status-display">
-            <div class="status-badge" [class.draft]="isDraft" [class.active]="isActive"
-                 [class.completed]="isCompleted" [class.cancelled]="isCancelled">
-              <mat-icon>{{isDraft ? 'edit' : isActive ? 'play_circle' : isCompleted ? 'check_circle' : 'cancel'}}</mat-icon>
-              <span>{{isDraft ? (i18n.terms$ | async)?.draftStatusBadge : isActive ? (i18n.terms$ | async)?.activeStatusBadge : isCompleted ? (i18n.terms$ | async)?.completedStatusBadge : (i18n.terms$ | async)?.cancelledStatusBadge}}</span>
-            </div>
+            <!-- <div class="status-badge" [class.draft]="isDraft" [class.active]="isActive" [class.completed]="isCompleted"
+              [class.cancelled]="isCancelled">
+              <mat-icon>{{isDraft ? 'edit' : isActive ? 'play_circle' : isCompleted ? 'check_circle' :
+                'cancel'}}</mat-icon>
+              <span>{{isDraft ? (i18n.terms$ | async)?.draftStatusBadge : isActive ? (i18n.terms$ |
+                async)?.activeStatusBadge : isCompleted ? (i18n.terms$ | async)?.completedStatusBadge : (i18n.terms$ |
+                async)?.cancelledStatusBadge}}</span>
+            </div> -->
             <div class="progress-info" *ngIf="campaign.targetAmount > 0">
               <div class="progress-bar">
                 <div class="progress-fill" [style.width.%]="campaign.progressPercentage"></div>
               </div>
-              <span class="progress-text">{{campaign.progressPercentage}}% ({{campaign.raisedAmount}} / {{campaign.targetAmount}} {{campaign.currency}})</span>
+              <span class="progress-text">{{campaign.progressPercentage}}% ({{campaign.raisedAmount}} /
+                {{campaign.targetAmount}} {{campaign.currency}})</span>
             </div>
           </div>
         </div>
@@ -54,13 +60,8 @@
               <div class="campaign-type-selector">
                 <div class="campaign-type-option" [class.active]="campaign.campaignType === 'רגיל'">
                   <label class="campaign-type-card">
-                    <input type="radio"
-                           name="campaignType"
-                           value="רגיל"
-                           [(ngModel)]="campaign.campaignType"
-                           [disabled]="!canEdit"
-                           (ngModelChange)="markAsChanged()"
-                           class="campaign-type-radio">
+                    <input type="radio" name="campaignType" value="רגיל" [(ngModel)]="campaign.campaignType"
+                      [disabled]="!canEdit" (ngModelChange)="markAsChanged()" class="campaign-type-radio">
                     <div class="campaign-type-content">
                       <mat-icon class="campaign-type-icon">campaign</mat-icon>
                       <div class="campaign-type-text">
@@ -73,13 +74,8 @@
 
                 <div class="campaign-type-option" [class.active]="campaign.campaignType === 'דינער'">
                   <label class="campaign-type-card">
-                    <input type="radio"
-                           name="campaignType"
-                           value="דינער"
-                           [(ngModel)]="campaign.campaignType"
-                           [disabled]="!canEdit"
-                           (ngModelChange)="markAsChanged()"
-                           class="campaign-type-radio">
+                    <input type="radio" name="campaignType" value="דינער" [(ngModel)]="campaign.campaignType"
+                      [disabled]="!canEdit" (ngModelChange)="markAsChanged()" class="campaign-type-radio">
                     <div class="campaign-type-content">
                       <mat-icon class="campaign-type-icon">restaurant</mat-icon>
                       <div class="campaign-type-text">
@@ -98,54 +94,42 @@
         <div class="section basic-details">
           <h3>{{ (i18n.terms$ | async)?.basicCampaignInfoSection }}</h3>
           <div class="form-grid">
+
             <div class="form-group">
               <div class="field-title">
                 <mat-icon class="field-icon">title</mat-icon>
                 <label>{{ (i18n.terms$ | async)?.campaignNameLabel }}</label>
               </div>
-              <input type="text" class="form-control" [(ngModel)]="campaign.name"
-                     [disabled]="!canEdit" [placeholder]="(i18n.terms$ | async)?.campaignNamePlaceholder"
-                     (ngModelChange)="markAsChanged()">
+              <input type="text" class="form-control" [(ngModel)]="campaign.name" [disabled]="!canEdit"
+                [placeholder]="(i18n.terms$ | async)?.campaignNamePlaceholder" (ngModelChange)="markAsChanged()">
             </div>
 
             <div class="form-group">
               <div class="field-title">
-                <mat-icon class="field-icon">supervisor_account</mat-icon>
-                <label>{{ (i18n.terms$ | async)?.campaignManagerLabel }}</label>
-              </div>
-              <select class="form-control" [(ngModel)]="campaign.managerId"
-                      [disabled]="!canEdit" (ngModelChange)="onManagerChange()">
-                <option value="">{{ (i18n.terms$ | async)?.selectManagerPlaceholder }}</option>
-                <option *ngFor="let user of users" [value]="user.id">
-                  {{ getUserDisplayName(user) }}
-                </option>
-              </select>
-            </div>
-
-            <div class="form-group full-width">
-              <div class="field-title">
                 <mat-icon class="field-icon">place</mat-icon>
                 <label>{{ (i18n.terms$ | async)?.eventLocationLabel }}</label>
               </div>
-              <app-osm-address-input
-                [label]="(i18n.terms$ | async)?.eventLocationLabel || 'מיקום האירוע'"
+              <app-osm-address-input [label]="(i18n.terms$ | async)?.eventLocationLabel || 'מיקום האירוע'"
                 [placeholder]="(i18n.terms$ | async)?.eventLocationPlaceholder || 'הקלד מיקום האירוע...'"
-                countryCode="il"
-                [disabled]="!canEdit"
-                [(place)]="campaign.eventLocation"
+                countryCode="il" [disabled]="!canEdit" [(place)]="campaign.eventLocation"
                 (placeChange)="onEventPlaceSelected($event)">
               </app-osm-address-input>
             </div>
 
+          </div>
+
+            <h4></h4>
+          <div class="form-grid">
             <div class="form-group full-width">
               <div class="field-title">
                 <mat-icon class="field-icon">description</mat-icon>
                 <label>{{ (i18n.terms$ | async)?.descriptionLabel }}</label>
               </div>
-              <textarea class="form-control" [(ngModel)]="campaign.description"
-                        [disabled]="!canEdit" [placeholder]="(i18n.terms$ | async)?.descriptionPlaceholder" rows="3"
-                        (ngModelChange)="markAsChanged()"></textarea>
+              <textarea class="form-control" [(ngModel)]="campaign.description" [disabled]="!canEdit"
+                [placeholder]="(i18n.terms$ | async)?.descriptionPlaceholder" rows="3"
+                (ngModelChange)="markAsChanged()"></textarea>
             </div>
+
           </div>
         </div>
 
@@ -158,9 +142,9 @@
                 <mat-icon class="field-icon">attach_money</mat-icon>
                 <label>{{ (i18n.terms$ | async)?.targetAmountLabel }}</label>
               </div>
-              <input type="number" class="form-control" [(ngModel)]="campaign.targetAmount"
-                     [disabled]="!canEdit" [placeholder]="(i18n.terms$ | async)?.targetAmountPlaceholder" min="0" step="0.01"
-                     (ngModelChange)="markAsChanged()">
+              <input type="number" class="form-control" [(ngModel)]="campaign.targetAmount" [disabled]="!canEdit"
+                [placeholder]="(i18n.terms$ | async)?.targetAmountPlaceholder" min="0" step="0.01"
+                (ngModelChange)="markAsChanged()">
             </div>
 
             <div class="form-group">
@@ -168,8 +152,8 @@
                 <mat-icon class="field-icon">monetization_on</mat-icon>
                 <label>{{ (i18n.terms$ | async)?.currencyLabel }}</label>
               </div>
-              <select class="form-control" [(ngModel)]="campaign.currency"
-                      [disabled]="!canEdit" (ngModelChange)="markAsChanged()">
+              <select class="form-control" [(ngModel)]="campaign.currency" [disabled]="!canEdit"
+                (ngModelChange)="markAsChanged()">
                 <option value="ILS">{{ (i18n.terms$ | async)?.shekelILS }}</option>
                 <option value="USD">{{ (i18n.terms$ | async)?.dollarUSD }}</option>
                 <option value="EUR">{{ (i18n.terms$ | async)?.euroEUR }}</option>
@@ -185,17 +169,17 @@
                 <label>{{ (i18n.terms$ | async)?.standardDonationLabel }}</label>
               </div>
               <input type="number" class="form-control" [(ngModel)]="campaign.defaultDonationAmount"
-                     [disabled]="!canEdit" [placeholder]="(i18n.terms$ | async)?.standardDonationPlaceholder" min="0" step="1"
-                     (ngModelChange)="markAsChanged()">
+                [disabled]="!canEdit" [placeholder]="(i18n.terms$ | async)?.standardDonationPlaceholder" min="0"
+                step="1" (ngModelChange)="markAsChanged()">
             </div>
 
-            <div class="form-group" *ngIf="!isNewCampaign">
+            <!-- <div class="form-group" *ngIf="!isNewCampaign">
               <div class="field-title">
                 <mat-icon class="field-icon">savings</mat-icon>
                 <label>{{ (i18n.terms$ | async)?.raisedAmountLabel }}</label>
               </div>
-              <input type="number" class="form-control" [value]="campaign.raisedAmount"
-                     disabled [placeholder]="(i18n.terms$ | async)?.raisedAmountPlaceholder" step="0.01">
+              <input type="number" class="form-control" [value]="campaign.raisedAmount" disabled
+                [placeholder]="(i18n.terms$ | async)?.raisedAmountPlaceholder" step="0.01">
             </div>
 
             <div class="form-group" *ngIf="!isNewCampaign">
@@ -203,9 +187,9 @@
                 <mat-icon class="field-icon">trending_up</mat-icon>
                 <label>{{ (i18n.terms$ | async)?.completionPercentageLabel }}</label>
               </div>
-              <input type="text" class="form-control" [value]="campaign.progressPercentage + '%'"
-                     disabled>
-            </div>
+              <input type="text" class="form-control" [value]="campaign.progressPercentage + '%'" disabled>
+            </div> -->
+
           </div>
         </div>
 
@@ -218,12 +202,8 @@
                 <mat-icon class="field-icon">event</mat-icon>
                 <label>{{ (i18n.terms$ | async)?.startDateLabel }}</label>
               </div>
-              <app-modern-dual-date-picker
-                [(ngModel)]="campaign.startDate"
-                [disabled]="!canEdit"
-                [compact]="false"
-                [calendar_open_heb_and_eng_parallel]="true"
-                (dateChange)="markAsChanged()">
+              <app-modern-dual-date-picker [(ngModel)]="campaign.startDate" [disabled]="!canEdit" [compact]="false"
+                [calendar_open_heb_and_eng_parallel]="true" (dateChange)="markAsChanged()">
               </app-modern-dual-date-picker>
             </div>
 
@@ -232,12 +212,8 @@
                 <mat-icon class="field-icon">event_available</mat-icon>
                 <label>{{ (i18n.terms$ | async)?.endDateLabel }}</label>
               </div>
-              <app-modern-dual-date-picker
-                [(ngModel)]="campaign.endDate"
-                [disabled]="!canEdit"
-                [compact]="false"
-                [calendar_open_heb_and_eng_parallel]="true"
-                (dateChange)="markAsChanged()">
+              <app-modern-dual-date-picker [(ngModel)]="campaign.endDate" [disabled]="!canEdit" [compact]="false"
+                [calendar_open_heb_and_eng_parallel]="true" (dateChange)="markAsChanged()">
               </app-modern-dual-date-picker>
             </div>
           </div>
@@ -262,9 +238,8 @@
                 <mat-icon class="field-icon">link</mat-icon>
                 <label>{{ (i18n.terms$ | async)?.dinnerInvitationLinkLabel }}</label>
               </div>
-              <input type="url" class="form-control" [(ngModel)]="campaign.websiteUrl"
-                     [disabled]="!canEdit" placeholder="https://example.com"
-                     (ngModelChange)="markAsChanged()">
+              <input type="url" class="form-control" [(ngModel)]="campaign.websiteUrl" [disabled]="!canEdit"
+                placeholder="https://example.com" (ngModelChange)="markAsChanged()">
             </div>
 
             <div class="form-group full-width">
@@ -272,9 +247,8 @@
                 <mat-icon class="field-icon">image</mat-icon>
                 <label>{{ (i18n.terms$ | async)?.dinnerBlessingBookLinkLabel }}</label>
               </div>
-              <input type="url" class="form-control" [(ngModel)]="campaign.imageUrl"
-                     [disabled]="!canEdit" placeholder="https://example.com/image.jpg"
-                     (ngModelChange)="markAsChanged()">
+              <input type="url" class="form-control" [(ngModel)]="campaign.imageUrl" [disabled]="!canEdit"
+                placeholder="https://example.com/image.jpg" (ngModelChange)="markAsChanged()">
             </div>
 
             <!-- <div class="form-group full-width">
@@ -294,89 +268,43 @@
 
     <!-- Modal Footer -->
     <div class="modal-footer">
-      <div class="footer-actions-left">
-        <!-- Campaign Status Toggle - Light Switch Style -->
-        <div class="light-switch-container">
-          <label class="light-switch" [class.active]="campaign.isActive">
-            <input type="checkbox" [(ngModel)]="campaign.isActive"
-                   [disabled]="!canEdit" (ngModelChange)="toggleCampaignActive()">
-            <span class="switch-slider">
-              <span class="switch-handle">
-                <mat-icon class="switch-icon">{{campaign.isActive ? 'light_mode' : 'dark_mode'}}</mat-icon>
-              </span>
-            </span>
-            <span class="switch-label">{{campaign.isActive ? (i18n.terms$ | async)?.campaignActiveLabel : (i18n.terms$ | async)?.campaignInactiveLabel}}</span>
-          </label>
-        </div>
-
-        <!-- Campaign Action Buttons -->
-        <button mat-raised-button color="primary"
-                *ngIf="canActivate"
-                (click)="activateCampaign()"
-                [disabled]="loading"
-                class="action-button">
-          <mat-icon>play_circle</mat-icon>
-          {{ (i18n.terms$ | async)?.activateCampaignButton }}
-        </button>
-
-        <button mat-raised-button color="accent"
-                *ngIf="canComplete"
-                (click)="completeCampaign()"
-                [disabled]="loading"
-                class="action-button">
-          <mat-icon>check_circle</mat-icon>
-          {{ (i18n.terms$ | async)?.markAsCompletedButton }}
-        </button>
-      </div>
+      
 
       <div class="footer-actions-right">
-        <button mat-raised-button
-                color="primary"
-                *ngIf="!isNewCampaign"
-                (click)="openNewDonation()"
-                class="action-button new-donation-button">
+        <button mat-raised-button color="primary" *ngIf="!isNewCampaign" (click)="openNewDonation()"
+          class="action-button new-donation-button">
           <mat-icon>add_circle</mat-icon>
           {{ (i18n.terms$ | async)?.newDonationButton }}
         </button>
 
-        <button mat-raised-button
-                color="accent"
-                *ngIf="campaign.campaignType === 'דינער'"
-                (click)="openInvitedList()"
-                class="action-button invited-list-button">
+        <div class="footer-divider" *ngIf="!isNewCampaign"></div>
+
+        <button mat-raised-button color="accent" *ngIf="campaign.campaignType === 'דינער'" (click)="openInvitedList()"
+          class="action-button invited-list-button">
           <mat-icon>list_alt</mat-icon>
           {{ (i18n.terms$ | async)?.invitedListButton }}
         </button>
 
-        <button mat-raised-button
-                color="primary"
-                *ngIf="campaign.campaignType === 'דינער'"
-                (click)="openBlessingBook()"
-                class="action-button blessing-book-button">
+        <button mat-raised-button color="primary" *ngIf="campaign.campaignType === 'דינער'" (click)="openBlessingBook()"
+          class="action-button blessing-book-button">
           <mat-icon>menu_book</mat-icon>
           {{ (i18n.terms$ | async)?.blessingBookButton }}
         </button>
+        <!-- <div class="footer-divider" *ngIf="!isNewCampaign"></div> -->
+      </div>
 
-        <button mat-stroked-button
-                color="warn"
-                *ngIf="!isNewCampaign"
-                (click)="deleteCampaign()"
-                class="action-button">
+
+      <div class="footer-actions-right">
+        <!-- <button mat-stroked-button color="warn" *ngIf="!isNewCampaign" (click)="deleteCampaign()" class="action-button">
           <mat-icon>delete</mat-icon>
           {{ (i18n.terms$ | async)?.deleteCampaignButton }}
-        </button>
+        </button> -->
 
-        <button mat-stroked-button
-                (click)="closeModal()"
-                class="cancel-button">
+        <button mat-stroked-button (click)="closeModal()" class="cancel-button">
           <mat-icon>close</mat-icon>
           {{ (i18n.terms$ | async)?.cancelButton }}
         </button>
-        <button mat-raised-button
-                color="primary"
-                (click)="saveCampaign()"
-                class="save-button"
-                [disabled]="loading">
+        <button mat-raised-button color="primary" (click)="saveCampaign()" class="save-button" [disabled]="loading">
           <mat-icon>save</mat-icon>
           {{ (i18n.terms$ | async)?.saveCampaignButton }}
         </button>

@@ -220,6 +220,11 @@ export class Campaign extends IdEntity {
   })
   excludedLevels: string[] = []
 
+  @Fields.json({
+    caption: 'מוזמנים שנבחרו',
+  })
+  invitedDonorIds: string[] = []
+
   get progressPercentage() {
     if (this.targetAmount === 0) return 0
     return Math.min(100, Math.round((this.raisedAmount / this.targetAmount) * 100))

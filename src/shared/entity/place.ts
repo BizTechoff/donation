@@ -1,9 +1,9 @@
-import { Entity, Fields, Relations, isBackend } from 'remult';
+import { Allow, Entity, Fields, Relations, isBackend } from 'remult';
 import { Country } from './country';
 
 @Entity('places', {
   caption: 'מקומות',
-  allowApiCrud: true
+  allowApiCrud: Allow.authenticated
 })
 export class Place {
   @Fields.uuid()

@@ -115,7 +115,7 @@
         <span class="method-badge method-{{donation.donationMethod?.type}}">{{ getMethodName(donation) }}</span>
       </div>
       <div class="grid-col">{{ getCampaignName(donation) }}</div>
-      <div class="grid-col">{{ donation.createdBy?.name || (i18n.terms$ | async)?.createdByUnknown }}</div>
+      <div class="grid-col">{{ donation.fundraiserId || (i18n.terms$ | async)?.createdByUnknown }}</div>
       <!-- <div class="grid-col">
         <span class="status-badge" [class]="'status-' + donation.status">
           {{ getStatusText(donation.status) }}

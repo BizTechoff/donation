@@ -128,6 +128,23 @@
                    (ngModelChange)="markAsChanged()">
           </div>
         </div>
+
+        <!-- Show All Donors Toggle - disabled when no filters are active -->
+        <!-- <div class="filter-item show-all-toggle" [class.disabled]="!hasActiveFilters">
+          <div class="filter-header">
+            <mat-icon class="filter-icon">visibility</mat-icon>
+            <span class="filter-label">{{ (i18n.terms$ | async)?.showAllDonors }}</span>
+          </div>
+          <div class="toggle-switch">
+            <label class="switch">
+              <input type="checkbox"
+                     [(ngModel)]="showAllDonors"
+                     [disabled]="!hasActiveFilters"
+                     (ngModelChange)="loadInvitedDonors()">
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div> -->
       </div>
 
     </div>
@@ -146,17 +163,27 @@
         <table class="donors-table">
           <thead>
             <tr>
+              <th class="checkbox-column">
+                <input type="checkbox"
+                       [checked]="isAllSelected()"
+                       (change)="toggleAllSelection()">
+              </th>
               <th>{{ (i18n.terms$ | async)?.name }}</th>
               <th>{{ (i18n.terms$ | async)?.phone }}</th>
               <th>{{ (i18n.terms$ | async)?.email }}</th>
               <th>{{ (i18n.terms$ | async)?.level }}</th>
               <th>{{ (i18n.terms$ | async)?.city }}</th>
-              <th>{{ (i18n.terms$ | async)?.actions }}</th>
+              <!-- <th>{{ (i18n.terms$ | async)?.actions }}</th> -->
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let donor of invitedDonors" class="donor-row">
-              <td class="donor-name">
+              <td class="checkbox-column">
+                <input type="checkbox"
+                       [checked]="isSelected(donor.id)"
+                       (change)="toggleSelection(donor.id)">
+              </td>
+              <td class="donor-name clickable" (click)="openDonorDetails(donor)">
                 <strong>{{getDonorDisplayName(donor)}}</strong>
               </td>
               <td>{{getDonorPhone(donor)}}</td>
@@ -165,14 +192,14 @@
                 <span class="level-badge">{{getDonorLevel(donor)}}</span>
               </td>
               <td>{{donor.homePlace?.city || '-'}}</td>
-              <td class="actions">
+              <!-- <td class="actions">
                 <button mat-icon-button
                         [matTooltip]="(i18n.terms$ | async)?.donorDetails"
                         [dir]="'rtl'"
                         (click)="openDonorDetails(donor)">
                   <mat-icon>info</mat-icon>
                 </button>
-              </td>
+              </td> -->
             </tr>
           </tbody>
         </table>
@@ -187,22 +214,33 @@
 
     <!-- Modal Footer - Fixed, Non-scrolling -->
     <div class="modal-footer">
-      <!-- Save Filters Button -->
-      <div class="filters-actions">
-        <button mat-raised-button color="primary" (click)="saveCampaign()" [disabled]="loading">
-          <mat-icon>save</mat-icon>
-          {{ (i18n.terms$ | async)?.saveCampaignButton }}
+      <!-- Selection Actions -->
+      <div class="selection-actions">
+        <button mat-stroked-button (click)="selectAll()" [disabled]="loading || invitedDonors.length === 0">
+          <mat-icon>check_box</mat-icon>
+          {{ (i18n.terms$ | async)?.selectAll }}
+        </button>
+        <button mat-stroked-button (click)="deselectAll()" [disabled]="loading || selectedCount === 0">
+          <mat-icon>check_box_outline_blank</mat-icon>
+          {{ (i18n.terms$ | async)?.deselectAll }}
         </button>
       </div>
-      
+
       <div class="footer-stats">
         <span class="stat-item">
           <mat-icon>people</mat-icon>
           {{ (i18n.terms$ | async)?.totalInvitees }}: {{invitedDonors.length}}
         </span>
+        <span class="stat-item" *ngIf="selectedCount > 0">
+          <mat-icon>check_circle</mat-icon>
+          {{ (i18n.terms$ | async)?.selectedInvitees }}: {{selectedCount}}
+        </span>
       </div>
 
-      <div class="footer-actions">
+      
+
+      <!-- Save Filters Button -->
+      <div class="filters-actions">
         <button mat-raised-button
                 color="accent"
                 (click)="exportToExcel()"
@@ -210,14 +248,21 @@
           <mat-icon>file_download</mat-icon>
           {{ (i18n.terms$ | async)?.exportToExcel }}
         </button>
+      </div>
 
-        <button mat-raised-button
+      <div class="footer-actions">
+        <button mat-raised-button color="primary" (click)="saveCampaign()" [disabled]="loading">
+          <mat-icon>save</mat-icon>
+          {{ (i18n.terms$ | async)?.saveCampaignButton }}
+        </button>
+
+        <!-- <button mat-raised-button
                 color="primary"
                 (click)="sendInvitations()"
                 [disabled]="loading || invitedDonors.length === 0">
           <mat-icon>send</mat-icon>
           {{ (i18n.terms$ | async)?.sendInvitations }}
-        </button>
+        </button> -->
 
         <button mat-stroked-button
                 (click)="closeModal()">

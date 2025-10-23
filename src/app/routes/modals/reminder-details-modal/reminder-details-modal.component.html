@@ -191,15 +191,15 @@
             <!-- Yearly recurring options - Selection between date and occasion -->
             <div class="form-row" *ngIf="reminder.isRecurring && reminder.recurringPattern === 'yearly'">
               <div class="form-group full-width">
-                <label>סוג תזכורת שנתית</label>
+                <label>{{ i18n.terms.yearlyReminderType }}</label>
                 <div class="radio-group">
                   <label class="radio-option">
                     <input type="radio" [(ngModel)]="reminder.yearlyRecurringType" value="date" name="yearlyType">
-                    <span>תאריך קבוע</span>
+                    <span>{{ i18n.terms.fixedDate }}</span>
                   </label>
                   <label class="radio-option">
                     <input type="radio" [(ngModel)]="reminder.yearlyRecurringType" value="occasion" name="yearlyType">
-                    <span>מועד (זמן מיוחד)</span>
+                    <span>{{ i18n.terms.occasion }}</span>
                   </label>
                 </div>
               </div>
@@ -208,7 +208,7 @@
             <!-- Date option - Hebrew month and day -->
             <div class="form-row" *ngIf="reminder.isRecurring && reminder.recurringPattern === 'yearly' && reminder.yearlyRecurringType === 'date'">
               <div class="form-group">
-                <label>חודש עברי</label>
+                <label>{{ i18n.terms.hebrewMonth }}</label>
                 <select class="form-control" [(ngModel)]="reminder.recurringMonth">
                   <option value="">בחר חודש</option>
                   <option *ngFor="let month of hebrewMonthOptions" [value]="month.value">
@@ -221,7 +221,7 @@
             <div class="form-row"
               *ngIf="reminder.isRecurring && reminder.recurringPattern === 'yearly' && reminder.yearlyRecurringType === 'date' && reminder.recurringMonth">
               <div class="form-group">
-                <label>יום בחודש עברי</label>
+                <label>{{ i18n.terms.hebrewDayOfMonth }}</label>
                 <select class="form-control" [(ngModel)]="reminder.recurringDayOfMonth">
                   <option value="">בחר יום</option>
                   <option *ngFor="let day of hebrewDayOfMonthOptions" [value]="day.value">
@@ -234,7 +234,7 @@
             <!-- Occasion option - Special occasions -->
             <div class="form-row" *ngIf="reminder.isRecurring && reminder.recurringPattern === 'yearly' && reminder.yearlyRecurringType === 'occasion'">
               <div class="form-group full-width">
-                <label>זמן מיוחד (חג/אירוע)</label>
+                <label>{{ i18n.terms.specialOccasion }}</label>
                 <select class="form-control" [(ngModel)]="reminder.specialOccasion">
                   <option *ngFor="let occasion of specialOccasionOptions" [value]="occasion.value">
                     {{ occasion.label }}

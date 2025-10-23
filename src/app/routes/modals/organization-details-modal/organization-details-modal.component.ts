@@ -12,7 +12,10 @@ export interface OrganizationDetailsModalArgs {
 }
 
 @DialogConfig({
-  hasBackdrop: true
+  hasBackdrop: true,
+  maxWidth: '80vw',
+  maxHeight: '80vh',
+  panelClass: 'organization-details-dialog-panel'
 })
 @Component({
   selector: 'app-organization-details-modal',
@@ -125,24 +128,13 @@ export class OrganizationDetailsModalComponent implements OnInit {
     }
   }
 
-  closeModal(event?: MouseEvent) {
-    // If clicking on overlay, close modal
-    if (event && event.target === event.currentTarget) {
-      if (this.hasChanges()) {
-        if (!confirm('יש לך שינויים שלא נשמרו. האם אתה בטוח שברצונך לסגור?')) {
-          return;
-        }
+  closeModal() {
+    if (this.hasChanges()) {
+      if (!confirm('יש לך שינויים שלא נשמרו. האם אתה בטוח שברצונך לסגור?')) {
+        return;
       }
-      this.dialogRef.close(this.changed);
-    } else if (!event) {
-      // Direct close button click
-      if (this.hasChanges()) {
-        if (!confirm('יש לך שינויים שלא נשמרו. האם אתה בטוח שברצונך לסגור?')) {
-          return;
-        }
-      }
-      this.dialogRef.close(this.changed);
     }
+    this.dialogRef.close(this.changed);
   }
 
   onFieldChange() {

@@ -313,6 +313,12 @@
     width: 100%;
     background: white;
 
+    thead {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
     th {
       background: #f8f9ff;
       color: #333;
@@ -320,6 +326,9 @@
       border-bottom: 2px solid #e1e5f2;
       text-align: right;
       padding: 1rem 0.75rem;
+      position: sticky;
+      top: 0;
+      z-index: 10;
     }
 
     td {

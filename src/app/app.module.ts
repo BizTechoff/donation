@@ -42,7 +42,6 @@ import { InputImageComponent } from './common/input-image/input-image.component'
 import { DemoDataControlAndDataAreaComponent } from './demo-data-control-and-data-area/demo-data-control-and-data-area.component'
 import { HomeComponent } from './route/home/home.component'
 import { DonorListComponent } from './route/donor-list/donor-list.component'
-import { DonorDetailsComponent } from './route/donor-details/donor-details.component'
 import { DonationsListComponent } from './route/donations-list/donations-list.component'
 import { ModalNavigationHeaderComponent } from './shared/modal-navigation-header/modal-navigation-header.component'
 import { CampaignsListComponent } from './route/campaigns-list/campaigns-list.component'
@@ -90,7 +89,6 @@ import { UserDetailsComponent } from './route/user-details/user-details.componen
     InputImageComponent,
     DemoDataControlAndDataAreaComponent,
     DonorListComponent,
-    DonorDetailsComponent,
     DonationsListComponent,
     CampaignsListComponent,
     StandingOrdersComponent,

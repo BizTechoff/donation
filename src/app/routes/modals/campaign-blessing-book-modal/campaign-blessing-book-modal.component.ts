@@ -47,7 +47,7 @@ export class CampaignBlessingBookModalComponent implements OnInit {
   filterLevel = '';
 
   // Table configuration
-  displayedColumns: string[] = ['donorName', 'phone', 'email', 'totalAmount', 'blessingStatus', 'blessingText', 'actions'];
+  displayedColumns: string[] = ['donorName', 'phone', 'email', 'totalAmount', 'blessingStatus', 'blessingText'];
 
   // Statistics
   totalDonors = 0;
@@ -68,7 +68,8 @@ export class CampaignBlessingBookModalComponent implements OnInit {
   }
 
   get modalTitle(): string {
-    return `ספר ברכות - ${this.campaign?.name || this.args.campaignName || ''}`;
+    const blessingBook = this.i18n.currentTerms?.blessingBookTitle || 'ספר ברכות';
+    return `${blessingBook} - ${this.campaign?.name || this.args.campaignName || ''}`;
   }
 
   async loadData() {
@@ -77,50 +78,122 @@ export class CampaignBlessingBookModalComponent implements OnInit {
       // Load campaign
       this.campaign = await this.campaignRepo.findId(this.args.campaignId) || undefined;
 
-      // Load campaign donations with donors
-      const donations = await this.donationRepo.find({
-        where: { campaignId: this.args.campaignId },
-        include: {
-          donor: true
-        }
-      });
+      // If campaign has invited donors, show only those
+      if (this.campaign?.invitedDonorIds && this.campaign.invitedDonorIds.length > 0) {
+        // Load only invited donors
+        const invitedDonors = await this.donorRepo.find({
+          where: {
+            id: { $in: this.campaign.invitedDonorIds }
+          }
+        });
 
-      // Load existing blessings for this campaign
-      const blessings = await this.blessingRepo.find({
-        where: { campaignId: this.args.campaignId }
-      });
+        // Load campaign donations for invited donors, ordered by date descending
+        const donations = await this.donationRepo.find({
+          where: {
+            campaignId: this.args.campaignId,
+            donorId: { $in: this.campaign.invitedDonorIds }
+          },
+          include: {
+            donor: true
+          },
+          orderBy: {
+            donationDate: 'desc'
+          }
+        });
 
-      // Group by donor and create DonorBlessing objects
-      const donorMap = new Map<string, DonorBlessing>();
+        // Load existing blessings for invited donors
+        const blessings = await this.blessingRepo.find({
+          where: {
+            campaignId: this.args.campaignId,
+            donorId: { $in: this.campaign.invitedDonorIds }
+          }
+        });
 
-      for (const donation of donations) {
-        if (!donation.donor) continue;
+        // Group by donor and create DonorBlessing objects
+        const donorMap = new Map<string, DonorBlessing>();
 
-        const donorId = donation.donorId;
-        if (!donorMap.has(donorId)) {
-          donorMap.set(donorId, {
-            donor: donation.donor,
-            donation: donation,
+        // First, create entries for all invited donors (even without donations)
+        for (const donor of invitedDonors) {
+          donorMap.set(donor.id, {
+            donor: donor,
+            donation: undefined,
             blessing: undefined,
             blessingStatus: 'none',
             totalDonated: 0
           });
         }
 
-        const donorBlessing = donorMap.get(donorId)!;
-        donorBlessing.totalDonated += donation.amount;
-      }
+        // Add donation information - keep only the latest donation per donor
+        for (const donation of donations) {
+          if (!donation.donor) continue;
 
-      // Add blessing information
-      for (const blessing of blessings) {
-        const donorBlessing = donorMap.get(blessing.donorId);
-        if (donorBlessing) {
-          donorBlessing.blessing = blessing;
-          donorBlessing.blessingStatus = this.getBlessingStatus(blessing);
+          const donorId = donation.donorId;
+          const donorBlessing = donorMap.get(donorId);
+
+          if (donorBlessing && !donorBlessing.donation) {
+            // This is the latest donation for this donor (due to orderBy desc)
+            donorBlessing.donation = donation;
+            donorBlessing.totalDonated = donation.amount;
+          }
         }
+
+        // Add blessing information
+        for (const blessing of blessings) {
+          const donorBlessing = donorMap.get(blessing.donorId);
+          if (donorBlessing) {
+            donorBlessing.blessing = blessing;
+            donorBlessing.blessingStatus = this.getBlessingStatus(blessing);
+          }
+        }
+
+        this.donorBlessings = Array.from(donorMap.values());
+      } else {
+        // Original behavior: show donors with donations
+        const donations = await this.donationRepo.find({
+          where: { campaignId: this.args.campaignId },
+          include: {
+            donor: true
+          }
+        });
+
+        // Load existing blessings for this campaign
+        const blessings = await this.blessingRepo.find({
+          where: { campaignId: this.args.campaignId }
+        });
+
+        // Group by donor and create DonorBlessing objects
+        const donorMap = new Map<string, DonorBlessing>();
+
+        for (const donation of donations) {
+          if (!donation.donor) continue;
+
+          const donorId = donation.donorId;
+          if (!donorMap.has(donorId)) {
+            donorMap.set(donorId, {
+              donor: donation.donor,
+              donation: donation,
+              blessing: undefined,
+              blessingStatus: 'none',
+              totalDonated: 0
+            });
+          }
+
+          const donorBlessing = donorMap.get(donorId)!;
+          donorBlessing.totalDonated += donation.amount;
+        }
+
+        // Add blessing information
+        for (const blessing of blessings) {
+          const donorBlessing = donorMap.get(blessing.donorId);
+          if (donorBlessing) {
+            donorBlessing.blessing = blessing;
+            donorBlessing.blessingStatus = this.getBlessingStatus(blessing);
+          }
+        }
+
+        this.donorBlessings = Array.from(donorMap.values());
       }
 
-      this.donorBlessings = Array.from(donorMap.values());
       this.calculateStatistics();
 
     } catch (error) {
@@ -170,11 +243,14 @@ export class CampaignBlessingBookModalComponent implements OnInit {
   }
 
   getStatusText(status: string): string {
+    const terms = this.i18n.currentTerms;
+    if (!terms) return status;
+
     switch (status) {
-      case 'pending': return 'ממתין';
-      case 'sent': return 'נשלח';
-      case 'received': return 'התקבל';
-      case 'none': return 'ללא';
+      case 'pending': return terms.statusPending || 'ממתין';
+      case 'sent': return terms.statusSent || 'נשלח';
+      case 'received': return terms.statusReceived || 'התקבל';
+      case 'none': return terms.statusNone || 'ללא';
       default: return status;
     }
   }
@@ -257,6 +333,27 @@ export class CampaignBlessingBookModalComponent implements OnInit {
 
   async openDonorDetails(donor: Donor) {
     await this.ui.donorDetailsDialog(donor.id);
+  }
+
+  async openDonationDetails(donation: Donation) {
+    const result = await this.ui.donationDetailsDialog(donation.id);
+    if (result) {
+      // Reload data to reflect any changes
+      await this.loadData();
+    }
+  }
+
+  async createDonation(donorBlessing: DonorBlessing) {
+    // Create new donation for this donor and campaign
+    const result = await this.ui.donationDetailsDialog('new', {
+      donorId: donorBlessing.donor.id,
+      campaignId: this.args.campaignId
+    });
+
+    if (result) {
+      // Reload data to show the new donation
+      await this.loadData();
+    }
   }
 
   async exportToExcel() {

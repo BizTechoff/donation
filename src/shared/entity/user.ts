@@ -1,4 +1,5 @@
 import {
+  Allow,
   BackendMethod,
   Entity,
   Fields,
@@ -12,7 +13,7 @@ import { Roles } from '../enum/roles'
 
 
 @Entity<User>('users', {
-  allowApiCrud: true,
+  allowApiCrud: Allow.authenticated,
   defaultOrderBy: { admin: 'desc', secretary: 'desc', donator: 'desc', name: 'asc' },
   // allowApiRead: Allow.authenticated,
   // allowApiUpdate: Allow.authenticated,

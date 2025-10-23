@@ -28,6 +28,12 @@ export class CampaignInvitedListModalComponent implements OnInit {
   donorRepo = remult.repo(Donor);
   loading = false;
 
+  // Selection management
+  selectedDonors: Set<string> = new Set();
+
+  // Show all donors toggle (bypass filters)
+  // showAllDonors = false;
+
   // Filter stats
   totalDonors = 0;
   filteredByAnash = 0;
@@ -47,6 +53,10 @@ export class CampaignInvitedListModalComponent implements OnInit {
   async ngOnInit() {
     await this.loadCampaign();
     await this.loadInvitedDonors();
+    // Load previously saved invited donors
+    if (this.campaign?.invitedDonorIds) {
+      this.selectedDonors = new Set(this.campaign.invitedDonorIds);
+    }
   }
 
   async loadCampaign() {
@@ -82,57 +92,10 @@ export class CampaignInvitedListModalComponent implements OnInit {
 
     this.loading = true;
     try {
-      // Build where clause for filtering
-      let where: any = {};
-
-      // 1. Filter by Anash
-      if (this.campaign.isAnash) {
-        where.anash = true;
-      }
-
-      // Exclude Anash if specified
-      if (this.campaign.excludeAnash) {
-        where.anash = false;
-      }
-
-      // 2. Filter by circle
-      if (this.campaign.circle) {
-        where.circle = this.campaign.circle;
-      }
-
-      // 3. Filter by same country
-      if (this.campaign.sameCountryOnly && this.campaign.eventLocation?.country) {
-        where.country = this.campaign.eventLocation.country.code;
-      }
-
-      // Exclude same country if specified
-      if (this.campaign.excludeSameCountry && this.campaign.eventLocation?.country) {
-        where.country = { $ne: this.campaign.eventLocation.country.code };
-      }
-
-      // Get initial results
-      let donors = await this.donorRepo.find({ where });
-      this.totalDonors = donors.length;
-
-      // 4. Filter by age range (client-side as it might require calculation)
-      if (this.campaign.minAge || this.campaign.maxAge) {
-        donors = donors.filter((donor: Donor) => {
-          if (!donor.birthDate) return true; // Include if no birth date
-
-          const age = this.calculateAge(donor.birthDate);
-
-          if (this.campaign.minAge && age < this.campaign.minAge) return false;
-          if (this.campaign.maxAge && age > this.campaign.maxAge) return false;
-
-          return true;
-        });
-        this.filteredByAge = this.totalDonors - donors.length;
-      }
-
-      this.invitedDonors = donors;
-
-      // Update stats
-      this.updateFilterStats();
+      // Load all donors in the system
+      const allDonors = await this.donorRepo.find({});
+      this.invitedDonors = allDonors;
+      this.totalDonors = allDonors.length;
 
     } catch (error: any) {
       console.error('Error loading invited donors:', error);
@@ -184,6 +147,19 @@ export class CampaignInvitedListModalComponent implements OnInit {
 
   get canEdit(): boolean {
     return this.campaign?.status === 'draft' || this.campaign?.status === 'active';
+  }
+
+  get hasActiveFilters(): boolean {
+    if (!this.campaign) return false;
+    return !!(
+      this.campaign.isAnash ||
+      this.campaign.excludeAnash ||
+      this.campaign.circle ||
+      this.campaign.sameCountryOnly ||
+      this.campaign.excludeSameCountry ||
+      this.campaign.minAge ||
+      this.campaign.maxAge
+    );
   }
 
   markAsChanged() {
@@ -251,6 +227,8 @@ export class CampaignInvitedListModalComponent implements OnInit {
 
     try {
       this.loading = true;
+      // Save selected donors to campaign
+      this.campaign.invitedDonorIds = Array.from(this.selectedDonors);
       await remult.repo(Campaign).update(this.campaign.id, this.campaign);
       this.snackBar.open('הקמפיין נשמר בהצלחה', 'סגור', { duration: 3000 });
       await this.loadInvitedDonors();
@@ -276,5 +254,42 @@ export class CampaignInvitedListModalComponent implements OnInit {
 
   getDonorLevel(donor: Donor): string {
     return donor.level || '-';
+  }
+
+  // Selection management methods
+  isSelected(donorId: string): boolean {
+    return this.selectedDonors.has(donorId);
+  }
+
+  toggleSelection(donorId: string) {
+    if (this.selectedDonors.has(donorId)) {
+      this.selectedDonors.delete(donorId);
+    } else {
+      this.selectedDonors.add(donorId);
+    }
+  }
+
+  isAllSelected(): boolean {
+    return this.invitedDonors.length > 0 && this.selectedDonors.size === this.invitedDonors.length;
+  }
+
+  toggleAllSelection() {
+    if (this.isAllSelected()) {
+      this.selectedDonors.clear();
+    } else {
+      this.invitedDonors.forEach(donor => this.selectedDonors.add(donor.id));
+    }
+  }
+
+  selectAll() {
+    this.invitedDonors.forEach(donor => this.selectedDonors.add(donor.id));
+  }
+
+  deselectAll() {
+    this.selectedDonors.clear();
+  }
+
+  get selectedCount(): number {
+    return this.selectedDonors.size;
   }
 }

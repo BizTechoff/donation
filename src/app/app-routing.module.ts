@@ -7,7 +7,6 @@ import { CertificatesComponent } from './route/certificates/certificates.compone
 import { CampaignsListComponent } from './route/campaigns-list/campaigns-list.component'
 import { DonationsListComponent } from './route/donations-list/donations-list.component'
 import { ReportsComponent } from './route/reports/reports.component'
-import { DonorDetailsComponent } from './route/donor-details/donor-details.component'
 import { DonorListComponent } from './route/donor-list/donor-list.component'
 import { DonorsMapComponent } from './route/donors-map/donors-map.component'
 import { HomeComponent } from './route/home/home.component'
@@ -27,11 +26,11 @@ const routes: Routes = [
   // { path: terms.donorDetails, component: DonorDetailsComponent, canActivate: [AuthenticatedGuard], data: { name: 'donorDetails' } },
   { path: terms.donorList, component: DonorListComponent, canActivate: [AuthenticatedGuard], data: { name: 'donorList' } },
   { path: terms.donationsList, component: DonationsListComponent, canActivate: [AuthenticatedGuard], data: { name: 'donationsList' } },
-  { path: terms.campaigns, component: CampaignsListComponent, canActivate: [AuthenticatedGuard], data: { name: 'campaigns' } },
   // { path: terms.standingOrders, component: StandingOrdersComponent, canActivate: [AuthenticatedGuard], data: { name: 'standingOrders' } },
   { path: terms.certificates, component: CertificatesComponent, canActivate: [AuthenticatedGuard], data: { name: 'certificates' } },
   { path: terms.reminders, component: RemindersComponent, canActivate: [AuthenticatedGuard], data: { name: 'reminders' } },
   { path: terms.donorsMap, component: DonorsMapComponent, canActivate: [AuthenticatedGuard], data: { name: 'donorsMap' } },
+  { path: terms.campaigns, component: CampaignsListComponent, canActivate: [AuthenticatedGuard], data: { name: 'campaigns' } },
   { path: terms.reports, component: ReportsComponent, canActivate: [AdminGuard], data: { name: 'reports' } },
   { path: terms.userAccounts, component: UsersComponent, canActivate: [AdminGuard], data: { name: 'userAccounts' } },
   { path: 'seed-data', component: SeedDataComponent, canActivate: [AdminGuard], data: { name: 'seedData' } },
