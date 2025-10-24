@@ -7,26 +7,23 @@ import {
   Relations,
 } from 'remult'
 import { Donor } from './donor'
-import { Event } from './event'
 
-@Entity<DonorEvent>('donor_events', {
+@Entity<DonorNote>('donor_notes', {
   allowApiCrud: Allow.authenticated,
   allowApiRead: Allow.authenticated,
   allowApiUpdate: Allow.authenticated,
   allowApiDelete: Allow.authenticated,
   allowApiInsert: Allow.authenticated,
-  saving: async (donorEvent) => {
+  saving: async (donorNote) => {
     if (isBackend()) {
-      if (donorEvent._.isNew()) {
-        donorEvent.createdDate = new Date()
+      if (donorNote._.isNew()) {
+        donorNote.createdDate = new Date()
       }
-      donorEvent.updatedDate = new Date()
+      donorNote.updatedDate = new Date()
     }
   },
 })
-export class DonorEvent extends IdEntity {
-
-
+export class DonorNote extends IdEntity {
   @Fields.string({ caption: 'מזהה תורם' })
   donorId?: string;
 
@@ -37,27 +34,16 @@ export class DonorEvent extends IdEntity {
   })
   donor?: Donor;
 
-  @Fields.string({ caption: 'מזהה אירוע' })
-  eventId?: string;
-
-  @Relations.toOne(() => Event, {
-    field: "eventId",
-    caption: 'אירוע',
-    defaultIncluded: true
+  @Fields.string({
+    caption: 'סוג הערה',
+    allowNull: false,
   })
-  event?: Event;
+  noteType = '' // סוג ההערה מהרשימה
 
-  @Fields.dateOnly({
-    caption: 'תאריך',
-    allowNull: true,
+  @Fields.string({
+    caption: 'תוכן ההערה',
   })
-  date?: Date
-
-  // @Fields.string({
-  //   caption: 'הערות',
-  //   allowNull: true,
-  // })
-  // notes = ''
+  content?: string
 
   @Fields.boolean({
     caption: 'פעיל',
@@ -73,5 +59,4 @@ export class DonorEvent extends IdEntity {
     caption: 'תאריך עדכון',
   })
   updatedDate = new Date()
-
 }

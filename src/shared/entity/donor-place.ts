@@ -7,26 +7,24 @@ import {
   Relations,
 } from 'remult'
 import { Donor } from './donor'
-import { Event } from './event'
+import { Place } from './place'
 
-@Entity<DonorEvent>('donor_events', {
+@Entity<DonorPlace>('donor_places', {
   allowApiCrud: Allow.authenticated,
   allowApiRead: Allow.authenticated,
   allowApiUpdate: Allow.authenticated,
   allowApiDelete: Allow.authenticated,
   allowApiInsert: Allow.authenticated,
-  saving: async (donorEvent) => {
+  saving: async (donorPlace) => {
     if (isBackend()) {
-      if (donorEvent._.isNew()) {
-        donorEvent.createdDate = new Date()
+      if (donorPlace._.isNew()) {
+        donorPlace.createdDate = new Date()
       }
-      donorEvent.updatedDate = new Date()
+      donorPlace.updatedDate = new Date()
     }
   },
 })
-export class DonorEvent extends IdEntity {
-
-
+export class DonorPlace extends IdEntity {
   @Fields.string({ caption: 'מזהה תורם' })
   donorId?: string;
 
@@ -37,27 +35,26 @@ export class DonorEvent extends IdEntity {
   })
   donor?: Donor;
 
-  @Fields.string({ caption: 'מזהה אירוע' })
-  eventId?: string;
+  @Fields.string({ caption: 'מזהה מיקום' })
+  placeId?: string;
 
-  @Relations.toOne(() => Event, {
-    field: "eventId",
-    caption: 'אירוע',
+  @Relations.toOne(() => Place, {
+    field: "placeId",
+    caption: 'מיקום',
     defaultIncluded: true
   })
-  event?: Event;
+  place?: Place;
 
-  @Fields.dateOnly({
-    caption: 'תאריך',
-    allowNull: true,
+  @Fields.string({
+    caption: 'תיאור הכתובת',
+    allowNull: false,
   })
-  date?: Date
+  description = '' // e.g., "בית", "עבודה", "קיץ", "הורים"
 
-  // @Fields.string({
-  //   caption: 'הערות',
-  //   allowNull: true,
-  // })
-  // notes = ''
+  @Fields.boolean({
+    caption: 'כתובת ראשית',
+  })
+  isPrimary = false
 
   @Fields.boolean({
     caption: 'פעיל',
@@ -73,5 +70,4 @@ export class DonorEvent extends IdEntity {
     caption: 'תאריך עדכון',
   })
   updatedDate = new Date()
-
 }

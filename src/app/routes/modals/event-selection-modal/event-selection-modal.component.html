@@ -20,10 +20,10 @@
             <mat-icon>clear</mat-icon>
           </button>
         </div>
-        <button class="btn btn-success add-new-btn" (click)="toggleCreateNewEvent()">
+        <!-- <button class="btn btn-success add-new-btn" (click)="toggleCreateNewEvent()">
           <mat-icon>{{ showCreateNewEvent ? 'close' : 'add' }}</mat-icon>
           {{ showCreateNewEvent ? 'ביטול' : 'יצירת אירוע חדש' }}
-        </button>
+        </button> -->
       </div>
 
       <!-- Create New Event Section -->
@@ -54,7 +54,12 @@
       <!-- Events Table -->
       <div class="events-table-section" *ngIf="!showCreateNewEvent">
         <div class="events-by-category" *ngFor="let category of getEventCategories()">
-          <h4 class="category-title">{{ category }}</h4>
+          <div class="category-header">
+            <h4 class="category-title">{{ category }}</h4>
+            <button class="add-category-event-btn" (click)="createNewEventForCategory(category)" title="הוסף אירוע חדש לקטגוריה זו">
+              <mat-icon>add</mat-icon>
+            </button>
+          </div>
           <div class="events-list">
             <div class="event-item"
                  *ngFor="let event of getEventsByCategory(category)"

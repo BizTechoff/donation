@@ -250,16 +250,15 @@ export class Donor extends IdEntity {
   })
   familyConnectionNotes = ''
 
-  // Family relationships - array of donor IDs with relationship type
-  @Fields.json({
-    caption: 'קשרים משפחתיים'
-  })
-  familyRelationships: Array<{ donorId: string; relationshipType: string }> = []
-
   @Fields.string({
     caption: 'מצב משפחתי',
   })
-  maritalStatus: 'married' | 'single' | 'widowed' | 'divorced' | '' = ''
+  maritalStatus: 'married' | 'single' | 'widowed' | 'divorced' = 'married'
+
+  @Fields.string({
+    caption: 'מגדר',
+  })
+  gender: 'male' | 'female' | '' = 'male'
 
   @Fields.string({
     caption: 'טלפון בית',
@@ -307,6 +306,11 @@ export class Donor extends IdEntity {
     caption: 'חוג',
   })
   circle = ''
+
+  @Fields.json({
+    caption: 'חוגים',
+  })
+  circleIds?: string[] // Array of Circle IDs
 
   // Donor characterization fields
   @Fields.boolean({

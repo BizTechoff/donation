@@ -58,6 +58,8 @@ import { GlobalFiltersComponent } from './components/global-filters/global-filte
 import { QuickActionsComponent } from './components/quick-actions/quick-actions.component'
 import { SeedDataComponent } from './components/seed-data/seed-data.component'
 import { EventSelectionModalComponent } from './routes/modals/event-selection-modal/event-selection-modal.component'
+import { NotesSelectionModalComponent } from './routes/modals/notes-selection-modal/notes-selection-modal.component'
+import { CircleSelectionModalComponent } from './routes/modals/circle-selection-modal/circle-selection-modal.component'
 import { OsmAddressInputComponent } from './common/osm-address-input/osm-address-input.component'
 import { LetterPropertiesModalComponent } from './routes/modals/letter-properties-modal/letter-properties-modal.component'
 import { ReminderDetailsModalComponent } from './routes/modals/reminder-details-modal/reminder-details-modal.component'
@@ -69,6 +71,7 @@ import { CertificateDetailsModalComponent } from './routes/modals/certificate-de
 import { OrganizationDetailsModalComponent } from './routes/modals/organization-details-modal/organization-details-modal.component'
 import { BankDetailsModalComponent } from './routes/modals/bank-details-modal/bank-details-modal.component'
 import { CompanyDetailsModalComponent } from './routes/modals/company-details-modal/company-details-modal.component'
+import { CircleDetailsModalComponent } from './routes/modals/circle-details-modal/circle-details-modal.component'
 import { DonorDonationsModalComponent } from './routes/modals/donor-donations-modal/donor-donations-modal.component'
 import { CampaignDonorsModalComponent } from './routes/modals/campaign-donors-modal/campaign-donors-modal.component'
 import { CampaignBlessingBookModalComponent } from './routes/modals/campaign-blessing-book-modal/campaign-blessing-book-modal.component'
@@ -98,6 +101,8 @@ import { UserDetailsComponent } from './route/user-details/user-details.componen
     LanguageSwitcherComponent,
     DonorsMapComponent,
     EventSelectionModalComponent,
+    NotesSelectionModalComponent,
+    CircleSelectionModalComponent,
     DonorDetailsModalComponent,
     LetterPropertiesModalComponent,
     ReminderDetailsModalComponent,
@@ -109,6 +114,7 @@ import { UserDetailsComponent } from './route/user-details/user-details.componen
     OrganizationDetailsModalComponent,
     BankDetailsModalComponent,
     CompanyDetailsModalComponent,
+    CircleDetailsModalComponent,
     DonorDonationsModalComponent,
     CampaignDonorsModalComponent,
     CampaignBlessingBookModalComponent,

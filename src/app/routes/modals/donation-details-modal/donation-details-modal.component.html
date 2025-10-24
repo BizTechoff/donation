@@ -72,6 +72,41 @@
           </div>
         </div>
 
+        <!-- פרטי משלם -->
+        <div class="section payer-section" *ngIf="selectedDonor">
+          <h3>{{i18n.terms.payer}}</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">account_balance_wallet</mat-icon>
+                <label>{{i18n.terms.payer}}</label>
+              </div>
+              <select class="form-control" [(ngModel)]="donation.payerCompanyId" (ngModelChange)="onPayerChange($event)">
+                <option [value]="null">{{selectedDonor.firstName}} {{selectedDonor.lastName}} ({{i18n.terms.personalPayer}})</option>
+                <option *ngFor="let company of payerCompanies" [value]="company.id">
+                  {{company.name}}
+                </option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">person</mat-icon>
+                <label>{{i18n.terms.payerName}}</label>
+              </div>
+              <input type="text" class="form-control" [(ngModel)]="donation.payerName" readonly>
+            </div>
+
+            <div class="form-group full-width">
+              <div class="field-title">
+                <mat-icon class="field-icon">location_on</mat-icon>
+                <label>{{i18n.terms.payerAddress}}</label>
+              </div>
+              <textarea class="form-control" [(ngModel)]="donation.payerAddress" rows="2"></textarea>
+            </div>
+          </div>
+        </div>
+
         <!-- סוג תרומה -->
         <div class="section donation-type-section">
           <h3>{{i18n.terms.donationType}}</h3>

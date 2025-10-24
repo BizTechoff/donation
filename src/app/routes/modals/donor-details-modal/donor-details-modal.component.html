@@ -1,117 +1,157 @@
 <!-- Donor Details Modal -->
 <div class="donor-details-modal">
 
-    <div class="modal-header">
-      <div class="header-content">
-        <div class="header-icon">
-          <mat-icon>{{isNewDonor ? 'person_add' : 'person'}}</mat-icon>
-        </div>
-        <div class="header-text">
-          <h2>{{isNewDonor ? ((i18n.terms$ | async)?.addNewDonor) : ((i18n.terms$ | async)?.donorDetails)}}</h2>
-          <p class="header-subtitle" *ngIf="!isNewDonor && donor">
-            {{donor.displayName}}
-          </p>
-        </div>
+  <div class="modal-header">
+    <div class="header-content">
+      <div class="header-icon">
+        <mat-icon>{{isNewDonor ? 'person_add' : 'person'}}</mat-icon>
       </div>
-      <button class="modal-close" (click)="closeModal()" matTooltip="{{(i18n.terms$ | async)?.close}}"
-        [dir]="i18n.lang.RTL ? 'rtl' : 'ltr'">
-        <mat-icon>close</mat-icon>
-      </button>
-    </div>
-
-    <!-- Loading State -->
-    <div class="loading-overlay" *ngIf="loading">
-      <div class="loading-spinner">
-        <mat-spinner diameter="60"></mat-spinner>
-        <p>{{ (i18n.terms$ | async)?.loadingData }}</p>
+      <div class="header-text">
+        <h2>{{isNewDonor ? ((i18n.terms$ | async)?.addNewDonor) : ((i18n.terms$ | async)?.donorDetails)}}</h2>
+        <p class="header-subtitle" *ngIf="!isNewDonor && donor">
+          {{donor.displayName}}
+        </p>
       </div>
     </div>
+    <button class="modal-close" (click)="closeModal()" matTooltip="{{(i18n.terms$ | async)?.close}}"
+      [dir]="i18n.lang.RTL ? 'rtl' : 'ltr'">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
 
-    <div class="modal-body" *ngIf="!loading">
-      <div class="details-grid" *ngIf="donor">
-        <!-- פרטים אישיים -->
-        <div class="section personal-details">
-          <h3>{{ (i18n.terms$ | async)?.personalDetails }}</h3>
-          <div class="form-grid">
-            <!-- שורה ראשונה: תואר, שם פרטי, שם משפחה, סיומת -->
-            <div class="form-group">
-              <div class="field-title">
-                <mat-icon class="field-icon">military_tech</mat-icon>
-                <label>{{ (i18n.terms$ | async)?.title }}</label>
-              </div>
-              <select class="form-control" [(ngModel)]="donor.title">
-                <option value="">{{ getTitlePlaceholder() }}</option>
-                <option *ngFor="let title of getTitleOptions()" [value]="title">{{title}}</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <div class="field-title">
-                <mat-icon class="field-icon">person</mat-icon>
-                <label>{{ (i18n.terms$ | async)?.firstName }} *</label>
-              </div>
-              <input type="text" class="form-control" [(ngModel)]="donor.firstName"
-                [placeholder]="(i18n.terms$ | async)?.firstName">
-            </div>
-            <div class="form-group">
-              <div class="field-title">
-                <mat-icon class="field-icon">badge</mat-icon>
-                <label>{{ (i18n.terms$ | async)?.lastName }} *</label>
-              </div>
-              <input type="text" class="form-control" [(ngModel)]="donor.lastName"
-                [placeholder]="(i18n.terms$ | async)?.lastName">
-            </div>
-            <div class="form-group">
-              <div class="field-title">
-                <mat-icon class="field-icon">title</mat-icon>
-                <label>{{ (i18n.terms$ | async)?.suffix }}</label>
-              </div>
-              <select class="form-control" [(ngModel)]="donor.suffix">
-                <option value="">{{ getSuffixPlaceholder() }}</option>
-                <option *ngFor="let suffix of getSuffixOptions()" [value]="suffix">{{suffix}}</option>
-              </select>
-            </div>
+  <!-- Section Navigation -->
+  <div class="section-navigation" *ngIf="!loading && !isNewDonor">
+    <button class="nav-btn" (click)="scrollToSection('section-personal')" title="פרטים אישיים">
+      <mat-icon>person</mat-icon>
+      <span>פרטים</span>
+    </button>
+    <button class="nav-btn" (click)="scrollToSection('section-addresses')" title="כתובות">
+      <mat-icon>location_on</mat-icon>
+      <span>כתובות</span>
+    </button>
+    <button class="nav-btn" (click)="scrollToSection('section-contacts')" title="יצירת קשר">
+      <mat-icon>contact_phone</mat-icon>
+      <span>יצירת קשר</span>
+    </button>
+    <button class="nav-btn" (click)="scrollToSection('section-family')" title="משפחה">
+      <mat-icon>family_restroom</mat-icon>
+      <span>משפחה</span>
+    </button>
+    <button class="nav-btn" (click)="scrollToSection('section-events')" title="אירועים">
+      <mat-icon>event</mat-icon>
+      <span>אירועים</span>
+    </button>
+    <button class="nav-btn" (click)="scrollToSection('section-companies')" title="חברות">
+      <mat-icon>business</mat-icon>
+      <span>חברות</span>
+    </button>
+    <button class="nav-btn" (click)="scrollToSection('section-categories')" title="קטגוריות">
+      <mat-icon>label</mat-icon>
+      <span>קטגוריות</span>
+    </button>
+    <button class="nav-btn" (click)="scrollToSection('section-preferences')" title="העדפות">
+      <mat-icon>settings</mat-icon>
+      <span>העדפות</span>
+    </button>
+    <button class="nav-btn" (click)="scrollToSection('section-notes')" title="הערות">
+      <mat-icon>note</mat-icon>
+      <span>הערות</span>
+    </button>
+  </div>
 
-            <!-- שורה שנייה: שדות באנגלית -->
-            <div class="form-group">
-              <div class="field-title">
-                <mat-icon class="field-icon">military_tech</mat-icon>
-                <label>{{ (i18n.terms$ | async)?.titleEnglish }}</label>
-              </div>
-              <select class="form-control" [(ngModel)]="donor.titleEnglish">
-                <option value="">-- Select Title --</option>
-                <option value="Family">Family</option>
-                <option value="Mr.">Mr.</option>
-                <option value="Mrs.">Mrs.</option>
-                <option value="Mr. & Mrs.">Mr. & Mrs.</option>
-                <option value="Rabbi">Rabbi</option>
-                <option value="Rabbi & Mrs.">Rabbi & Mrs.</option>
-                <option value="Dr.">Dr.</option>
-                <option value="Dr. & Mrs.">Dr. & Mrs.</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <div class="field-title">
-                <mat-icon class="field-icon">language</mat-icon>
-                <label>{{ (i18n.terms$ | async)?.firstNameEnglish }}</label>
-              </div>
-              <input type="text" class="form-control" [(ngModel)]="donor.firstNameEnglish" placeholder="First Name">
-            </div>
-            <div class="form-group">
-              <div class="field-title">
-                <mat-icon class="field-icon">translate</mat-icon>
-                <label>{{ (i18n.terms$ | async)?.lastNameEnglish }}</label>
-              </div>
-              <input type="text" class="form-control" [(ngModel)]="donor.lastNameEnglish" placeholder="Last Name">
-            </div>
-            <div class="form-group">
-              <div class="field-title">
-                <mat-icon class="field-icon">title</mat-icon>
-                <label>{{ (i18n.terms$ | async)?.suffixEnglish }}</label>
-              </div>
-              <input type="text" class="form-control" [(ngModel)]="donor.suffixEnglish" placeholder="Suffix">
-            </div>
+  <!-- Loading State -->
+  <div class="loading-overlay" *ngIf="loading">
+    <div class="loading-spinner">
+      <mat-spinner diameter="60"></mat-spinner>
+      <p>{{ (i18n.terms$ | async)?.loadingData }}</p>
+    </div>
+  </div>
 
-            <!-- <div class="form-group">
+  <div class="modal-body" *ngIf="!loading">
+    <div class="details-grid" *ngIf="donor">
+      <!-- פרטים אישיים -->
+      <div id="section-personal" class="section personal-details">
+        <h3>{{ (i18n.terms$ | async)?.personalDetails }}</h3>
+        <div class="form-grid">
+          <!-- שורה ראשונה: תואר, שם פרטי, שם משפחה, סיומת -->
+          <div class="form-group">
+            <div class="field-title">
+              <mat-icon class="field-icon">military_tech</mat-icon>
+              <label>{{ (i18n.terms$ | async)?.title }}</label>
+            </div>
+            <select class="form-control" [(ngModel)]="donor.title">
+              <option value="">{{ getTitlePlaceholder() }}</option>
+              <option *ngFor="let title of getTitleOptions()" [value]="title">{{title}}</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <div class="field-title">
+              <mat-icon class="field-icon">person</mat-icon>
+              <label>{{ (i18n.terms$ | async)?.firstName }} *</label>
+            </div>
+            <input type="text" class="form-control" [(ngModel)]="donor.firstName"
+              [placeholder]="(i18n.terms$ | async)?.firstName">
+          </div>
+          <div class="form-group">
+            <div class="field-title">
+              <mat-icon class="field-icon">badge</mat-icon>
+              <label>{{ (i18n.terms$ | async)?.lastName }} *</label>
+            </div>
+            <input type="text" class="form-control" [(ngModel)]="donor.lastName"
+              [placeholder]="(i18n.terms$ | async)?.lastName">
+          </div>
+          <div class="form-group">
+            <div class="field-title">
+              <mat-icon class="field-icon">title</mat-icon>
+              <label>{{ (i18n.terms$ | async)?.suffix }}</label>
+            </div>
+            <select class="form-control" [(ngModel)]="donor.suffix">
+              <option value="">{{ getSuffixPlaceholder() }}</option>
+              <option *ngFor="let suffix of getSuffixOptions()" [value]="suffix">{{suffix}}</option>
+            </select>
+          </div>
+
+          <!-- שורה שנייה: שדות באנגלית -->
+          <div class="form-group">
+            <div class="field-title">
+              <mat-icon class="field-icon">military_tech</mat-icon>
+              <label>{{ (i18n.terms$ | async)?.titleEnglish }}</label>
+            </div>
+            <select class="form-control" [(ngModel)]="donor.titleEnglish">
+              <option value="">-- Select Title --</option>
+              <option value="Family">Family</option>
+              <option value="Mr.">Mr.</option>
+              <option value="Mrs.">Mrs.</option>
+              <option value="Mr. & Mrs.">Mr. & Mrs.</option>
+              <option value="Rabbi">Rabbi</option>
+              <option value="Rabbi & Mrs.">Rabbi & Mrs.</option>
+              <option value="Dr.">Dr.</option>
+              <option value="Dr. & Mrs.">Dr. & Mrs.</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <div class="field-title">
+              <mat-icon class="field-icon">language</mat-icon>
+              <label>{{ (i18n.terms$ | async)?.firstNameEnglish }}</label>
+            </div>
+            <input type="text" class="form-control" [(ngModel)]="donor.firstNameEnglish" placeholder="First Name">
+          </div>
+          <div class="form-group">
+            <div class="field-title">
+              <mat-icon class="field-icon">translate</mat-icon>
+              <label>{{ (i18n.terms$ | async)?.lastNameEnglish }}</label>
+            </div>
+            <input type="text" class="form-control" [(ngModel)]="donor.lastNameEnglish" placeholder="Last Name">
+          </div>
+          <div class="form-group">
+            <div class="field-title">
+              <mat-icon class="field-icon">title</mat-icon>
+              <label>{{ (i18n.terms$ | async)?.suffixEnglish }}</label>
+            </div>
+            <input type="text" class="form-control" [(ngModel)]="donor.suffixEnglish" placeholder="Suffix">
+          </div>
+
+          <!-- <div class="form-group">
               <div class="field-title">
                 <mat-icon class="field-icon">flag</mat-icon>
                 <label>קידומת בינלאומית</label>
@@ -138,583 +178,588 @@
               <input type="tel" class="form-control" [(ngModel)]="donor.additionalPhone" placeholder="טלפון נוסף" (ngModelChange)="onFieldChange()">
             </div> -->
 
-            <!-- Fundraiser (מתרים) -->
-            <div class="form-group">
-              <div class="field-title">
-                <mat-icon class="field-icon">person</mat-icon>
-                <label>{{ (i18n.terms$ | async)?.fundraiser }}</label>
-              </div>
-              <select class="form-control" [(ngModel)]="donor.fundraiserId" (change)="onFieldChange()">
-                <option value="">{{ (i18n.terms$ | async)?.selectFundraiser }}</option>
-                <option *ngFor="let fundraiser of fundraisers" [value]="fundraiser.id">
-                  {{ fundraiser.name }}
-                </option>
-              </select>
+          <!-- Gender (מגדר) -->
+          <div class="form-group">
+            <div class="field-title">
+              <mat-icon class="field-icon">wc</mat-icon>
+              <label>{{ (i18n.terms$ | async)?.gender }}</label>
             </div>
+            <select class="form-control" [(ngModel)]="donor.gender" (change)="onFieldChange()">
+              <option value="male">{{ (i18n.terms$ | async)?.male }}</option>
+              <option value="female">{{ (i18n.terms$ | async)?.female }}</option>
+            </select>
+          </div>
 
+          <!-- Fundraiser (מתרים) -->
+          <div class="form-group">
+            <div class="field-title">
+              <mat-icon class="field-icon">person</mat-icon>
+              <label>{{ (i18n.terms$ | async)?.fundraiser }}</label>
+            </div>
+            <select class="form-control" [(ngModel)]="donor.fundraiserId" (change)="onFieldChange()">
+              <option value="">{{ (i18n.terms$ | async)?.selectFundraiser }}</option>
+              <option *ngFor="let fundraiser of fundraisers" [value]="fundraiser.id">
+                {{ fundraiser.name }}
+              </option>
+            </select>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- כתובות -->
+      <div id="section-addresses" class="section addresses-section">
+        <h3>
+          <mat-icon class="section-icon">location_on</mat-icon>
+          {{ (i18n.terms$ | async)?.addresses }}
+          <button class="add-btn" (click)="addNewPlace()" title="הוסף כתובת חדשה">
+            <mat-icon>add</mat-icon>
+          </button>
+        </h3>
+
+        <div class="addresses-grid">
+          <!-- Dynamic Donor Places -->
+          <div class="address-item place-item" *ngFor="let donorPlace of donorPlaces">
+            <div class="address-header">
+              <mat-icon class="address-type-icon">place</mat-icon>
+              <h4>{{ donorPlace.description }}</h4>
+              <button class="remove-address-btn" (click)="removeDonorPlace(donorPlace)" title="הסר כתובת">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+            <app-osm-address-input
+              [label]="donorPlace.description"
+              [placeholder]="'הקלד כתובת ' + donorPlace.description + '...'"
+              countryCode="il"
+              [(place)]="donorPlace.place"
+              (placeChange)="onDonorPlaceSelected(donorPlace, $event)">
+            </app-osm-address-input>
           </div>
         </div>
+      </div>
 
-        <!-- כתובות -->
-        <div class="section addresses-section">
-          <h3>
-            <mat-icon class="section-icon">location_on</mat-icon>
-            {{ (i18n.terms$ | async)?.addresses }}
-          </h3>
+      <!-- Contact Details -->
+      <div id="section-contacts" class="section contact-details-section">
+        <h3>
+          <mat-icon class="section-icon">contact_phone</mat-icon>
+          פרטי קשר
+        </h3>
 
-          <div class="addresses-grid">
-            <!-- כתובת מגורים -->
-            <div class="address-item">
-              <div class="address-header">
-                <mat-icon class="address-type-icon">home</mat-icon>
-                <h4>{{ (i18n.terms$ | async)?.homeAddress }}</h4>
-              </div>
-              <!-- Direct binding to Place entity -->
-              <app-osm-address-input [label]="(i18n.terms$ | async)?.homeAddress || 'כתובת מגורים'" [placeholder]="(i18n.terms$ | async)?.enterHomeAddress || 'הקלד כתובת מגורים...'" countryCode="il"
-                [(place)]="donor.homePlace" (placeChange)="onHomePlaceSelected($event)">
-              </app-osm-address-input>
+        <div class="contacts-container">
+          <!-- Phones Section -->
+          <div class="contact-type-section">
+            <div class="contact-type-header">
+              <mat-icon class="contact-type-icon">phone</mat-icon>
+              <h4>טלפונים</h4>
+              <button class="add-btn" (click)="addNewContact('phone')" title="הוסף טלפון">
+                <mat-icon>add</mat-icon>
+              </button>
             </div>
 
-            <!-- כתובת נופש -->
-            <div class="address-item">
-              <div class="address-header">
-                <mat-icon class="address-type-icon">beach_access</mat-icon>
-                <h4>{{ (i18n.terms$ | async)?.vacationAddress }}</h4>
+            <div class="contact-items-list">
+              <div class="contact-item" *ngFor="let donorContact of getPhoneContacts()">
+                <!-- <div class="contact-item-header">
+                  <span class="contact-description">{{ donorContact.description || 'טלפון' }}</span>
+                  <button class="remove-contact-btn" (click)="removeDonorContact(donorContact)" title="הסר">
+                    <mat-icon>close</mat-icon>
+                  </button>
+                </div> -->
+                <div class="contact-fields phone-fields">
+                  <button class="remove-contact-btn" (click)="removeDonorContact(donorContact)" title="הסר">
+                    <mat-icon>close</mat-icon>
+                  </button>
+                  <div class="form-group phone-prefix">
+                    <div class="field-title">
+                      <mat-icon class="field-icon">flag</mat-icon>
+                      <label>קידומת</label>
+                    </div>
+                    <select class="form-control" [(ngModel)]="donorContact.prefix"
+                            (ngModelChange)="onContactChange(donorContact)">
+                      <option [value]="null">---</option>
+                      <option *ngFor="let prefix of phonePrefixOptions" [value]="prefix.value">
+                        {{ prefix.label }}
+                      </option>
+                    </select>
+                  </div>
+                  <div class="form-group phone-number">
+                    <div class="field-title">
+                      <mat-icon class="field-icon">phone</mat-icon>
+                      <label>מספר</label>
+                    </div>
+                    <input type="tel" class="form-control" [(ngModel)]="donorContact.phoneNumber"
+                           (ngModelChange)="onContactChange(donorContact)"
+                           placeholder="מספר טלפון">
+                  </div>
+                  <div class="form-group phone-description">
+                    <div class="field-title">
+                      <mat-icon class="field-icon">description</mat-icon>
+                      <label>תיאור</label>
+                    </div>
+                    <input type="text" class="form-control" [(ngModel)]="donorContact.description"
+                           (ngModelChange)="onContactChange(donorContact)"
+                           placeholder="למשל: בית, עבודה...">
+                  </div>
+                </div>
               </div>
-              <app-osm-address-input [label]="(i18n.terms$ | async)?.vacationAddress || 'כתובת נופש'" [placeholder]="(i18n.terms$ | async)?.enterVacationAddress || 'הקלד כתובת נופש...'" countryCode="il"
-                [(place)]="donor.vacationPlace" (placeChange)="onVacationPlaceSelected($event)">
-              </app-osm-address-input>
+            </div>
+          </div>
+
+          <!-- Emails Section -->
+          <div class="contact-type-section">
+            <div class="contact-type-header">
+              <mat-icon class="contact-type-icon">email</mat-icon>
+              <h4>אימיילים</h4>
+              <button class="add-btn" (click)="addNewContact('email')" title="הוסף אימייל">
+                <mat-icon>add</mat-icon>
+              </button>
+            </div>
+
+            <div class="contact-items-list">
+              <div class="contact-item" *ngFor="let donorContact of getEmailContacts()">
+                <!-- <div class="contact-item-header">
+                  <span class="contact-description">{{ donorContact.description || 'אימייל' }}</span>
+                  <button class="remove-contact-btn" (click)="removeDonorContact(donorContact)" title="הסר">
+                    <mat-icon>close</mat-icon>
+                  </button>
+                </div> -->
+                <div class="contact-fields email-fields">
+                  <button class="remove-contact-btn" (click)="removeDonorContact(donorContact)" title="הסר">
+                    <mat-icon>close</mat-icon>
+                  </button>
+                  <div class="form-group email-address">
+                    <div class="field-title">
+                      <mat-icon class="field-icon">email</mat-icon>
+                      <label>כתובת אימייל</label>
+                    </div>
+                    <input type="email" class="form-control" [(ngModel)]="donorContact.email"
+                           (ngModelChange)="onContactChange(donorContact)"
+                           placeholder="example@email.com">
+                  </div>
+                  <div class="form-group email-description">
+                    <div class="field-title">
+                      <mat-icon class="field-icon">description</mat-icon>
+                      <label>תיאור</label>
+                    </div>
+                    <input type="text" class="form-control" [(ngModel)]="donorContact.description"
+                           (ngModelChange)="onContactChange(donorContact)"
+                           placeholder="למשל: אישי, עבודה...">
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
+      </div>
 
-        <!-- מידע משפחתי -->
-        <div class="section family-info">
-          <h3>{{ (i18n.terms$ | async)?.familyInformation }}</h3>
+      <!-- מידע משפחתי -->
+      <div id="section-family" class="section family-info">
+        <h3>{{ (i18n.terms$ | async)?.familyInformation }}</h3>
 
-          <div class="family-info-grid">
-            <!-- Basic Family Information -->
-            <div class="family-basic-info">
-              <div class="family-group">
-                <h4 class="group-title">
-                  <mat-icon>favorite</mat-icon>
-                  {{ (i18n.terms$ | async)?.maritalStatus }}
-                </h4>
-                <div class="form-grid">
-                  <div class="form-group">
-                    <!-- <div class="field-title">
+        <div class="family-info-grid">
+          <!-- Basic Family Information -->
+          <div class="family-basic-info">
+            <div class="family-group">
+              <h4 class="group-title">
+                <mat-icon>favorite</mat-icon>
+                {{ (i18n.terms$ | async)?.maritalStatus }}
+              </h4>
+              <div class="form-grid">
+                <div class="form-group">
+                  <!-- <div class="field-title">
                       <mat-icon class="field-icon">favorite</mat-icon>
                       <label>{{ (i18n.terms$ | async)?.maritalStatus }}</label>
                     </div> -->
-                    <div class="marital-status-grid">
-                      <div class="marital-status-option" [class.active]="donor.maritalStatus === 'married'">
-                        <label class="marital-status-card">
-                          <input type="radio" name="maritalStatus" value="married" [(ngModel)]="donor.maritalStatus"
-                            class="marital-status-radio">
-                          <div class="marital-status-content">
-                            <span class="marital-status-icon">💒</span>
-                            <span class="marital-status-label">{{ (i18n.terms$ | async)?.married }}</span>
-                          </div>
-                        </label>
-                      </div>
-
-                      <div class="marital-status-option" [class.active]="donor.maritalStatus === 'single'">
-                        <label class="marital-status-card">
-                          <input type="radio" name="maritalStatus" value="single" [(ngModel)]="donor.maritalStatus"
-                            class="marital-status-radio">
-                          <div class="marital-status-content">
-                            <span class="marital-status-icon">👤</span>
-                            <span class="marital-status-label">{{ (i18n.terms$ | async)?.single }}</span>
-                          </div>
-                        </label>
-                      </div>
-
-                      <div class="marital-status-option" [class.active]="donor.maritalStatus === 'widowed'">
-                        <label class="marital-status-card">
-                          <input type="radio" name="maritalStatus" value="widowed" [(ngModel)]="donor.maritalStatus"
-                            class="marital-status-radio">
-                          <div class="marital-status-content">
-                            <span class="marital-status-icon">🕊️</span>
-                            <span class="marital-status-label">{{ (i18n.terms$ | async)?.widowed }}</span>
-                          </div>
-                        </label>
-                      </div>
-
-                      <div class="marital-status-option" [class.active]="donor.maritalStatus === 'divorced'">
-                        <label class="marital-status-card">
-                          <input type="radio" name="maritalStatus" value="divorced" [(ngModel)]="donor.maritalStatus"
-                            class="marital-status-radio">
-                          <div class="marital-status-content">
-                            <span class="marital-status-icon">💔</span>
-                            <span class="marital-status-label">{{ (i18n.terms$ | async)?.divorced }}</span>
-                          </div>
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Spouse Information - Show only if married -->
-                <div *ngIf="donor.maritalStatus === 'married'" class="spouse-info">
-                  <div class="form-grid">
-                    
-                    <div class="form-row">
-                      <!-- שורה ראשונה: תארים עברית ואנגלית -->
-                      <div class="form-group">
-                        <div class="field-title">
-                          <mat-icon class="field-icon">person_outline</mat-icon>
-                          <label>תואר בן/בת הזוג</label>
+                  <div class="marital-status-grid">
+                    <div class="marital-status-option" [class.active]="donor.maritalStatus === 'married'">
+                      <label class="marital-status-card">
+                        <input type="radio" name="maritalStatus" value="married" [(ngModel)]="donor.maritalStatus"
+                          class="marital-status-radio">
+                        <div class="marital-status-content">
+                          <span class="marital-status-icon">💒</span>
+                          <span class="marital-status-label">{{ (i18n.terms$ | async)?.married }}</span>
                         </div>
-                        <select class="form-control" [(ngModel)]="donor.wifeTitle">
-                          <option value="">{{ getTitlePlaceholder() }}</option>
-                          <option *ngFor="let title of getTitleOptions()" [value]="title">{{title}}</option>
-                        </select>
-                      </div>
-                      <div class="form-group">
-                        <div class="field-title">
-                          <mat-icon class="field-icon">person_outline</mat-icon>
-                          <label>{{ (i18n.terms$ | async)?.spouseTitleEnglish }}</label>
-                        </div>
-                        <select class="form-control" [(ngModel)]="donor.wifeTitleEnglish">
-                          <option value="">-- Select Title --</option>
-                          <option value="Mr.">Mr.</option>
-                          <option value="Mrs.">Mrs.</option>
-                          <option value="Ms.">Ms.</option>
-                          <option value="Dr.">Dr.</option>
-                          <option value="Rabbi">Rabbi</option>
-                          <option value="Rebbetzin">Rebbetzin</option>
-                        </select>
-                      </div>
+                      </label>
                     </div>
 
-
-                    <div class="form-row">
-                      <!-- שורה שנייה: שמות עברית ואנגלית -->
-                      <div class="form-group">
-                        <div class="field-title">
-                          <mat-icon class="field-icon">people</mat-icon>
-                          <label>שם בן/בת הזוג</label>
+                    <div class="marital-status-option" [class.active]="donor.maritalStatus === 'single'">
+                      <label class="marital-status-card">
+                        <input type="radio" name="maritalStatus" value="single" [(ngModel)]="donor.maritalStatus"
+                          class="marital-status-radio">
+                        <div class="marital-status-content">
+                          <span class="marital-status-icon">👤</span>
+                          <span class="marital-status-label">{{ (i18n.terms$ | async)?.single }}</span>
                         </div>
-                        <input type="text" class="form-control" [(ngModel)]="donor.wifeName" placeholder="שם מלא">
-                      </div>
-                      <div class="form-group">
-                        <div class="field-title">
-                          <mat-icon class="field-icon">people</mat-icon>
-                          <label>שם באנגלית בן/בת זוג</label>
-                        </div>
-                        <input type="text" class="form-control" [(ngModel)]="donor.wifeNameEnglish"
-                          placeholder="Full Name">
-                      </div>
+                      </label>
                     </div>
 
+                    <div class="marital-status-option" [class.active]="donor.maritalStatus === 'widowed'">
+                      <label class="marital-status-card">
+                        <input type="radio" name="maritalStatus" value="widowed" [(ngModel)]="donor.maritalStatus"
+                          class="marital-status-radio">
+                        <div class="marital-status-content">
+                          <span class="marital-status-icon">🕊️</span>
+                          <span class="marital-status-label">{{ (i18n.terms$ | async)?.widowed }}</span>
+                        </div>
+                      </label>
+                    </div>
+
+                    <div class="marital-status-option" [class.active]="donor.maritalStatus === 'divorced'">
+                      <label class="marital-status-card">
+                        <input type="radio" name="maritalStatus" value="divorced" [(ngModel)]="donor.maritalStatus"
+                          class="marital-status-radio">
+                        <div class="marital-status-content">
+                          <span class="marital-status-icon">💔</span>
+                          <span class="marital-status-label">{{ (i18n.terms$ | async)?.divorced }}</span>
+                        </div>
+                      </label>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <!-- Family Connections & Contact -->
-              <div class="family-extended-info">
+              <!-- Spouse Information - Show only if married -->
+              <div *ngIf="donor.maritalStatus === 'married'" class="spouse-info">
+                <div class="form-grid">
 
-                <!-- Family Relationships Section (new) -->
-                <div class="family-group">
-                  <h4 class="group-title">
-                    <mat-icon>family_restroom</mat-icon>
-                    {{ (i18n.terms$ | async)?.familyRelationships }}
-                  </h4>
-
-                  <!-- Selected Family Relationships -->
-                  <div class="family-relationships-selected" *ngIf="selectedFamilyRelationships.length > 0">
-                    <div class="selected-family-list">
-                      <div class="selected-family-member" *ngFor="let relationship of selectedFamilyRelationships">
-                        <span class="relationship-type-badge">{{ relationship.relationshipType }}</span>
-                        <span class="family-member-name clickable"
-                          (click)="openFamilyMemberDetails(relationship.donor, $event)"
-                          matTooltip="לחץ לפתיחת פרטי התורם" title="לחץ לפתיחת פרטי התורם">
-                          {{ relationship.donor.fullName }}
-                        </span>
-                        <button mat-icon-button class="remove-family-btn"
-                          (click)="removeFamilyRelationship(relationship)" matTooltip="הסר מהרשימה" type="button">
-                          <mat-icon>close</mat-icon>
-                        </button>
+                  <div class="form-row">
+                    <!-- שורה ראשונה: תארים עברית ואנגלית -->
+                    <div class="form-group">
+                      <div class="field-title">
+                        <mat-icon class="field-icon">person_outline</mat-icon>
+                        <label>תואר בן/בת הזוג</label>
                       </div>
-                    </div>
-                  </div>
-
-                  <!-- Add Family Relationship Controls -->
-                  <div class="add-family-relationship">
-                    <div class="family-help-text" *ngIf="selectedFamilyRelationships.length === 0">
-                      <small>{{ (i18n.terms$ | async)?.noFamilyRelationships }}</small>
-                    </div>
-
-                    <div class="add-family-controls">
-                      <!-- Relationship Type Selection -->
-                      <select class="form-control relationship-type-select" [(ngModel)]="newRelationshipType">
-                        <option value="" disabled>סוג קשר</option>
-                        <option value="אבא">אבא</option>
-                        <option value="אח">אח</option>
-                        <option value="דוד">דוד</option>
-                        <option value="סבא">סבא</option>
-                        <option value="חותן">חותן</option>
-                        <option value="חמו">חמו</option>
-                        <option value="בן">בן</option>
-                        <option value="נכד">נכד</option>
-                        <option value="אחות">אחות</option>
-                        <option value="דודה">דודה</option>
-                        <option value="סבתא">סבתא</option>
-                        <option value="בת">בת</option>
-                        <option value="נכדה">נכדה</option>
-                        <option value="חבר">חבר</option>
-                        <option value="אחר">אחר</option>
+                      <select class="form-control" [(ngModel)]="donor.wifeTitle">
+                        <option value="">{{ getTitlePlaceholder() }}</option>
+                        <option *ngFor="let title of getTitleOptions()" [value]="title">{{title}}</option>
                       </select>
-
-                      <!-- Donor Selection -->
-                      <select class="form-control donor-select" (change)="onFamilyMemberSelect($event)" value=""
-                        [disabled]="!newRelationshipType">
-                        <option value="" disabled>{{ newRelationshipType ? 'בחר תורם' : 'בחר תחילה סוג קשר' }}</option>
-                        <option *ngFor="let donor of getAvailableDonorsForFamily()" [value]="donor.id">
-                          {{ donor.fullName }}
-                        </option>
+                    </div>
+                    <div class="form-group">
+                      <div class="field-title">
+                        <mat-icon class="field-icon">person_outline</mat-icon>
+                        <label>{{ (i18n.terms$ | async)?.spouseTitleEnglish }}</label>
+                      </div>
+                      <select class="form-control" [(ngModel)]="donor.wifeTitleEnglish">
+                        <option value="">-- Select Title --</option>
+                        <option value="Mr.">Mr.</option>
+                        <option value="Mrs.">Mrs.</option>
+                        <option value="Ms.">Ms.</option>
+                        <option value="Dr.">Dr.</option>
+                        <option value="Rabbi">Rabbi</option>
+                        <option value="Rebbetzin">Rebbetzin</option>
                       </select>
                     </div>
                   </div>
-                </div>
 
-                <div class="family-group">
-                  <h4 class="group-title">
-                    <mat-icon>phone</mat-icon>
-                    {{ (i18n.terms$ | async)?.contactDetails }}
-                  </h4>
-                  <div class="form-grid">
+
+                  <div class="form-row">
+                    <!-- שורה שנייה: שמות עברית ואנגלית -->
                     <div class="form-group">
                       <div class="field-title">
-                        <mat-icon class="field-icon">home_phone</mat-icon>
-                        <label>{{ (i18n.terms$ | async)?.homePhone }}</label>
+                        <mat-icon class="field-icon">people</mat-icon>
+                        <label>שם בן/בת הזוג</label>
                       </div>
-                      <div class="phone-input-group">
-                        <select class="form-control phone-prefix" [(ngModel)]="donor.homePhonePrefix"
-                          (change)="onFieldChange()">
-                          <option [value]="null">קידומת</option>
-                          <option *ngFor="let prefix of phonePrefixOptions" [value]="prefix.value">
-                            {{ prefix.label }}
-                          </option>
-                        </select>
-                        <input type="tel" class="form-control phone-number" [(ngModel)]="donor.homePhone"
-                          [placeholder]="(i18n.terms$ | async)?.homePhone" (ngModelChange)="onFieldChange()">
-                      </div>
+                      <input type="text" class="form-control" [(ngModel)]="donor.wifeName" placeholder="שם מלא">
                     </div>
                     <div class="form-group">
                       <div class="field-title">
-                        <mat-icon class="field-icon">smartphone</mat-icon>
-                        <label>{{ (i18n.terms$ | async)?.mobilePhone }}</label>
+                        <mat-icon class="field-icon">people</mat-icon>
+                        <label>שם באנגלית בן/בת זוג</label>
                       </div>
-                      <div class="phone-input-group">
-                        <select class="form-control phone-prefix" [(ngModel)]="donor.mobilePhonePrefix"
-                          (change)="onFieldChange()">
-                          <option [value]="null">קידומת</option>
-                          <option *ngFor="let prefix of phonePrefixOptions" [value]="prefix.value">
-                            {{ prefix.label }}
-                          </option>
-                        </select>
-                        <input type="tel" class="form-control phone-number" [(ngModel)]="donor.mobilePhone"
-                          [placeholder]="(i18n.terms$ | async)?.mobilePhone" (ngModelChange)="onFieldChange()">
-                      </div>
-                    </div>
-                    <!-- שורה שלישית: דוא&quot;ל, טלפונים -->
-                    <div class="form-group">
-                      <div class="field-title">
-                        <mat-icon class="field-icon">email</mat-icon>
-                        <label>{{ (i18n.terms$ | async)?.email }}</label>
-                      </div>
-                      <input type="email" class="form-control" [(ngModel)]="donor.email"
-                        [placeholder]="(i18n.terms$ | async)?.email">
+                      <input type="text" class="form-control" [(ngModel)]="donor.wifeNameEnglish"
+                        placeholder="Full Name">
                     </div>
                   </div>
+
                 </div>
               </div>
             </div>
 
-            <!-- תאריכים אישיים -->
-            <div class="personal-dates-section">
-              <div class="section-header">
-                <h4>{{ (i18n.terms$ | async)?.personalDates || 'תאריכים אישיים' }}</h4>
-                <button #addDateBtn class="mat-fab-mini" (click)="openAddDateDialog($event)"
-                  title="הוסף תאריך מותאם אישית">
-                  <span class="fab-icon">+</span>
-                </button>
-              </div>
+            <!-- Family Connections & Contact -->
+            <div class="family-extended-info">
 
-              <div class="dates-container" [class.scrollable]="(customPersonalDates.length + 3) > 5">
+              <!-- Family Relationships Section (new) -->
+              <div class="family-group">
+                <h4 class="group-title">
+                  <mat-icon>family_restroom</mat-icon>
+                  {{ (i18n.terms$ | async)?.familyRelationships }}
+                </h4>
 
-
-
-                <!-- Birth Date -->
-                <div class="form-group half-full-width">
-                  <div class="field-title">
-                    <mat-icon class="field-icon">cake</mat-icon>
-                    <label>{{ (i18n.terms$ | async)?.birthDate || 'תאריך לידה' }}</label>
-                  </div>
-                  <app-modern-dual-date-picker name="birthDate" [(ngModel)]="donor.birthDate" [label]="''"
-                    [calendar_open_heb_and_eng_parallel]="true">
-                  </app-modern-dual-date-picker>
-                </div>
-
-                <!-- Empty state message when no personal events exist -->
-                <!-- <div *ngIf="donorEvents.length === 0 && customPersonalDates.length === 0" class="empty-events-message">
-                <p>לא נמצאו אירועים אישיים לתורם זה, להוספת אירוע יש ללחוץ על +</p>
-              </div> -->
-
-                <!-- Donor Events displayed with dual-date pickers -->
-                <div *ngFor="let donorEvent of donorEvents; trackBy: trackDonorEventById"
-                  class="form-group full-width custom-date-item">
-                  <div class="event-header">
-                    <label>{{donorEvent.event?.description || 'אירוע'}}</label>
-                    <button *ngIf="!donorEvent.event?.isRequired" class="remove-date-btn"
-                      (click)="removeDonorEvent(donorEvent)" title="הסר אירוע">
-                      ×
-                    </button>
-                  </div>
-                  <div class="date-picker-container">
-                    <app-modern-dual-date-picker [name]="'donorEvent_' + donorEvent.id"
-                      [(ngModel)]="donorEvent.hebrewDate" [label]="''" [compact]="true"
-                      [calendar_open_heb_and_eng_parallel]="true"
-                      (ngModelChange)="onDonorEventDateChange(donorEvent, $event)">
-                    </app-modern-dual-date-picker>
-                  </div>
-                </div>
-
-                <!-- Custom Dates -->
-                <div class="form-group full-width custom-date-item"
-                  *ngFor="let customDate of customPersonalDates; let i = index">
-                  <label>{{customDate.name}}</label>
-                  <div class="date-picker-container">
-                    <app-modern-dual-date-picker [name]="'customDate_' + i" [(ngModel)]="customDate.date" [label]="''"
-                      [compact]="true" [calendar_open_heb_and_eng_parallel]="true">
-                    </app-modern-dual-date-picker>
-                    <button class="remove-date-btn" (click)="removeCustomDate(i)" title="הסר תאריך">
-                      ×
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-          </div>
-
-          <!-- חברות ועמותות -->
-          <div class="section company-organization">
-            <div class="section-header">
-              <h3>
-                <mat-icon class="section-icon">business</mat-icon>
-                {{ (i18n.terms$ | async)?.companiesAndOrganizations }}
-              </h3>
-            </div>
-
-            <div class="company-content">
-              <!-- Selected Companies -->
-              <div class="companies-selected" *ngIf="selectedCompanies.length > 0">
-                <h4 class="subsection-title">חברות מקושרות</h4>
-                <div class="selected-companies-grid">
-                  <div class="selected-company-card" *ngFor="let company of selectedCompanies">
-                    <div class="company-card-content">
-                      <div class="company-info" (click)="editCompany(company)" matTooltip="לחץ לעריכת החברה">
-                        <mat-icon class="company-icon">business</mat-icon>
-                        <span class="company-name">{{ company.name }}</span>
-                      </div>
-                      <button mat-icon-button class="remove-company-btn" (click)="removeCompany(company)"
+                <!-- Selected Family Relationships -->
+                <div class="family-relationships-selected" *ngIf="selectedFamilyRelationships.length > 0">
+                  <div class="selected-family-list">
+                    <div class="selected-family-member" *ngFor="let relationship of selectedFamilyRelationships">
+                      <span class="relationship-type-badge">{{ relationship.relationshipType }}</span>
+                      <span class="family-member-name clickable"
+                        (click)="openFamilyMemberDetails(relationship.donor, $event)" matTooltip="לחץ לפתיחת פרטי התורם"
+                        title="לחץ לפתיחת פרטי התורם">
+                        {{ relationship.donor.fullName }}
+                      </span>
+                      <button mat-icon-button class="remove-family-btn" (click)="removeFamilyRelationship(relationship)"
                         matTooltip="הסר מהרשימה" type="button">
                         <mat-icon>close</mat-icon>
                       </button>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <div class="company-help-text" *ngIf="selectedCompanies.length === 0">
-                <mat-icon>info_outline</mat-icon>
-                <span>{{ (i18n.terms$ | async)?.noCompaniesSelected }}</span>
-              </div>
+                <!-- Add Family Relationship Controls -->
+                <div class="add-family-relationship">
+                  <div class="family-help-text" *ngIf="selectedFamilyRelationships.length === 0">
+                    <small>{{ (i18n.terms$ | async)?.noFamilyRelationships }}</small>
+                  </div>
 
-              <!-- Add Company Controls -->
-              <div class="add-company-section">
-                <div class="form-group full-width">
-                  <label class="control-label">
-                    <mat-icon class="label-icon">search</mat-icon>
-                    {{ (i18n.terms$ | async)?.selectExistingCompany }}
-                  </label>
-                  <select class="form-control company-select" [(ngModel)]="selectedCompanyIdForEdit">
-                    <option value="">{{ (i18n.terms$ | async)?.selectCompanyOrganization }}</option>
-                    <option *ngFor="let company of companies" [value]="company.id">
-                      {{ company.name }}
-                    </option>
-                  </select>
-                </div>
+                  <div class="add-family-controls">
+                    <!-- Relationship Type Selection -->
+                    <select class="form-control relationship-type-select" [(ngModel)]="newRelationshipType">
+                      <option value="" disabled>סוג קשר</option>
+                      <option value="אבא">אבא</option>
+                      <option value="אח">אח</option>
+                      <option value="דוד">דוד</option>
+                      <option value="סבא">סבא</option>
+                      <option value="חותן">חותן</option>
+                      <option value="חמו">חמו</option>
+                      <option value="בן">בן</option>
+                      <option value="נכד">נכד</option>
+                      <option value="אחות">אחות</option>
+                      <option value="דודה">דודה</option>
+                      <option value="סבתא">סבתא</option>
+                      <option value="בת">בת</option>
+                      <option value="נכדה">נכדה</option>
+                      <option value="חבר">חבר</option>
+                      <option value="אחר">אחר</option>
+                    </select>
 
-                <div class="company-action-buttons">
-                  <button mat-raised-button color="primary" type="button" (click)="addSelectedCompany()"
-                    [disabled]="!selectedCompanyIdForEdit">
-                    <mat-icon>add</mat-icon>
-                    {{ (i18n.terms$ | async)?.addCompany }}
-                  </button>
-
-                  <button mat-stroked-button type="button" (click)="editSelectedCompany()"
-                    [disabled]="!selectedCompanyIdForEdit">
-                    <mat-icon>edit</mat-icon>
-                    {{ (i18n.terms$ | async)?.editCompany }}
-                  </button>
-
-                  <button mat-stroked-button color="accent" type="button" (click)="addNewCompany()">
-                    <mat-icon>add_business</mat-icon>
-                    {{ (i18n.terms$ | async)?.addNewCompany }}
-                  </button>
+                    <!-- Donor Selection -->
+                    <select class="form-control donor-select" (change)="onFamilyMemberSelect($event)" value=""
+                      [disabled]="!newRelationshipType">
+                      <option value="" disabled>{{ newRelationshipType ? 'בחר תורם' : 'בחר תחילה סוג קשר' }}</option>
+                      <option *ngFor="let donor of getAvailableDonorsForFamily()" [value]="donor.id">
+                        {{ donor.fullName }}
+                      </option>
+                    </select>
+                  </div>
                 </div>
               </div>
 
-              <!-- Legacy Companies (read-only display) -->
-              <div *ngIf="donor.companies && donor.companies.length > 0" class="legacy-companies-section">
-                <h5 class="legacy-title">
-                  <mat-icon>history</mat-icon>
-                  {{ (i18n.terms$ | async)?.legacyCompanies }}
-                </h5>
-                <div class="legacy-companies-list">
-                  <div *ngFor="let company of donor.companies" class="legacy-company-item">
-                    <mat-icon class="legacy-icon">business_center</mat-icon>
-                    <span>{{ company.name }} - {{ company.role }}</span>
+            </div>
+          </div>
+
+          <!-- תאריכים אישיים -->
+          <div id="section-events" class="personal-dates-section">
+            <div class="section-header">
+              <h4>{{ (i18n.terms$ | async)?.personalDates || 'תאריכים אישיים' }}</h4>
+              <button class="add-btn" (click)="openAddDateDialog($event)"
+                title="הוסף תאריך מותאם אישית">
+                <mat-icon>add</mat-icon>
+              </button>
+            </div>
+
+            <div class="dates-container" [class.scrollable]="(customPersonalDates.length + 3) > 5">
+
+              <!-- Empty state message when no personal events exist -->
+              <div *ngIf="donorEvents.length === 0 && customPersonalDates.length === 0" class="empty-events-message">
+                <p>לא נמצאו אירועים אישיים לתורם זה, להוספת אירוע יש ללחוץ על +</p>
+              </div>
+
+              <!-- Donor Events displayed in single row -->
+              <div *ngFor="let donorEvent of donorEvents; trackBy: trackDonorEventById"
+                class="personal-date-row">
+                <span class="date-label">{{donorEvent.event?.description || 'אירוע'}}</span>
+                <div class="date-picker-inline">
+                  <app-modern-dual-date-picker [name]="'donorEvent_' + donorEvent.id"
+                    [(ngModel)]="donorEvent.date" [label]="''" [compact]="true"
+                    [calendar_open_heb_and_eng_parallel]="true"
+                    (ngModelChange)="onDonorEventDateChange(donorEvent, $event)">
+                  </app-modern-dual-date-picker>
+                </div>
+                <button class="remove-date-btn" (click)="removeDonorEvent(donorEvent)" title="הסר אירוע">
+                  <mat-icon>close</mat-icon>
+                </button>
+              </div>
+
+              <!-- Custom Dates -->
+              <div *ngFor="let customDate of customPersonalDates; let i = index"
+                   class="personal-date-row">
+                <span class="date-label">{{customDate.name}}</span>
+                <div class="date-picker-inline">
+                  <app-modern-dual-date-picker [name]="'customDate_' + i"
+                    [(ngModel)]="customDate.date" [label]="''" [compact]="true"
+                    [calendar_open_heb_and_eng_parallel]="true">
+                  </app-modern-dual-date-picker>
+                </div>
+                <button class="remove-date-btn" (click)="removeCustomDate(i)" title="הסר תאריך">
+                  <mat-icon>close</mat-icon>
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- חברות ועמותות -->
+      <div id="section-companies" class="section companies-section">
+        <h3>
+          <mat-icon class="section-icon">business</mat-icon>
+          {{ (i18n.terms$ | async)?.companiesAndOrganizations }}
+          <button class="add-btn" (click)="addNewCompany()" title="הוסף חברה חדשה">
+            <mat-icon>add</mat-icon>
+          </button>
+        </h3>
+
+        <!-- Companies Table -->
+        <div class="companies-table" *ngIf="selectedCompanies.length > 0">
+          <div class="company-row" *ngFor="let company of selectedCompanies">
+            <div class="company-name-cell">
+              <span class="company-name clickable" (click)="editCompany(company)" matTooltip="לחץ לעריכת החברה">
+                <mat-icon class="company-icon">business</mat-icon>
+                {{ company.name }}
+              </span>
+            </div>
+            <div class="company-actions-cell">
+              <button class="remove-company-btn" (click)="removeCompany(company)" title="הסר חברה">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty state -->
+        <div class="empty-companies" *ngIf="selectedCompanies.length === 0">
+          <p>לא הוגדרו חברות. לחץ על + להוספה.</p>
+        </div>
+
+        <!-- Legacy Companies (read-only display) -->
+        <div *ngIf="donor.companies && donor.companies.length > 0" class="legacy-companies-section">
+          <h5 class="legacy-title">
+            <mat-icon>history</mat-icon>
+            {{ (i18n.terms$ | async)?.legacyCompanies }}
+          </h5>
+          <div class="legacy-companies-list">
+            <div *ngFor="let company of donor.companies" class="legacy-company-item">
+              <mat-icon class="legacy-icon">business_center</mat-icon>
+              <span>{{ company.name }} - {{ company.role }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- קטגוריות וחוגים -->
+      <div id="section-categories" class="section categories-levels">
+        <h3>
+          {{ (i18n.terms$ | async)?.categoriesAndCircles }}
+        </h3>
+
+        <!-- Circles Section -->
+        <div class="circles-section">
+          <div class="section-header">
+            <h4>
+              <mat-icon class="section-icon">group_work</mat-icon>
+              חוגים
+            </h4>
+            <button class="add-btn" (click)="addNewCircle()" title="הוסף חוג חדש">
+              <mat-icon>add</mat-icon>
+            </button>
+          </div>
+
+          <!-- Circles Tags -->
+          <div class="circles-tags" *ngIf="selectedCircles.length > 0">
+            <span
+              *ngFor="let circle of selectedCircles"
+              class="circle-tag"
+              [style.background-color]="circle.color || '#667eea'"
+              [style.color]="'white'"
+              (click)="editCircle(circle)">
+              <mat-icon *ngIf="circle.icon">{{ circle.icon }}</mat-icon>
+              {{ circle.name }}
+              <button class="remove-tag-btn" (click)="removeCircle(circle, $event)" title="הסר חוג">
+                <mat-icon>close</mat-icon>
+              </button>
+            </span>
+          </div>
+
+          <!-- Empty state -->
+          <div class="empty-circles" *ngIf="selectedCircles.length === 0">
+            <p>לא הוגדרו חוגים. לחץ על + להוספה.</p>
+          </div>
+        </div>
+
+        <!-- Donor Level Card -->
+        <div class="info-card donor-level-card">
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <div class="field-title">
+                <mat-icon class="field-icon">translate</mat-icon>
+                <label>{{ (i18n.terms$ | async)?.preferredLanguage }}</label>
+                </div>
+                <div class="language-selection-grid">
+                  <div class="language-option" [class.active]="donor.preferredLanguage === 'he'">
+                    <label class="language-card">
+                      <input type="radio" name="donorLanguage" value="he" [(ngModel)]="donor.preferredLanguage"
+                        class="language-radio">
+                      <div class="language-content">
+                        <!-- <span class="language-icon">🇮🇱</span> -->
+                        <span class="language-label">{{ (i18n.terms$ | async)?.hebrew }}</span>
+                      </div>
+                    </label>
+                  </div>
+
+                  <div class="language-option" [class.active]="donor.preferredLanguage === 'en'">
+                    <label class="language-card">
+                      <input type="radio" name="donorLanguage" value="en" [(ngModel)]="donor.preferredLanguage"
+                        class="language-radio">
+                      <div class="language-content">
+                        <!-- <span class="language-icon">🇺🇸</span> -->
+                        <span class="language-label">{{ (i18n.terms$ | async)?.english }}</span>
+                      </div>
+                    </label>
+                  </div>
+
+                  <div class="language-option" [class.active]="donor.preferredLanguage === 'yi'">
+                    <label class="language-card">
+                      <input type="radio" name="donorLanguage" value="yi" [(ngModel)]="donor.preferredLanguage"
+                        class="language-radio">
+                      <div class="language-content">
+                        <!-- <span class="language-icon">✡️</span> -->
+                        <span class="language-label">{{ (i18n.terms$ | async)?.yiddish }}</span>
+                      </div>
+                    </label>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- קטגוריות וחוגים -->
-          <div class="section categories-levels">
-            <h3>{{ (i18n.terms$ | async)?.categoriesAndCircles }}</h3>
-
-            <!-- Donor Circle Card -->
-            <div class="info-card donor-level-card">
-              <div class="form-grid">
-                <div class="form-group full-width">
-                  <div class="field-title">
-                    <mat-icon class="field-icon">group_work</mat-icon>
-                    <label>{{ (i18n.terms$ | async)?.circle }}</label>
-                  </div>
-                  <div class="level-selection-grid">
-                    <div class="level-option" [class.active]="donor.circle === 'platinum'">
-                      <label class="level-card">
-                        <input type="radio" name="donorCircle" value="platinum" [(ngModel)]="donor.circle"
-                          class="level-radio">
-                        <div class="level-content">
-                          <span class="level-icon">👑</span>
-                          <span class="level-label">{{ (i18n.terms$ | async)?.platinum }}</span>
-                        </div>
-                      </label>
-                    </div>
-
-                    <div class="level-option" [class.active]="donor.circle === 'gold'">
-                      <label class="level-card">
-                        <input type="radio" name="donorCircle" value="gold" [(ngModel)]="donor.circle"
-                          class="level-radio">
-                        <div class="level-content">
-                          <span class="level-icon">🥇</span>
-                          <span class="level-label">{{ (i18n.terms$ | async)?.gold }}</span>
-                        </div>
-                      </label>
-                    </div>
-
-                    <div class="level-option" [class.active]="donor.circle === 'silver'">
-                      <label class="level-card">
-                        <input type="radio" name="donorCircle" value="silver" [(ngModel)]="donor.circle"
-                          class="level-radio">
-                        <div class="level-content">
-                          <span class="level-icon">🥈</span>
-                          <span class="level-label">כסף</span>
-                        </div>
-                      </label>
-                    </div>
-
-                    <div class="level-option" [class.active]="donor.circle === 'regular'">
-                      <label class="level-card">
-                        <input type="radio" name="donorCircle" value="regular" [(ngModel)]="donor.circle"
-                          class="level-radio">
-                        <div class="level-content">
-                          <span class="level-icon">⭕</span>
-                          <span class="level-label">רגיל</span>
-                        </div>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-                <div class="form-group full-width">
-                  <div class="field-title">
-                    <mat-icon class="field-icon">translate</mat-icon>
-                    <label>{{ (i18n.terms$ | async)?.preferredLanguage }}</label>
-                  </div>
-                  <div class="language-selection-grid">
-                    <div class="language-option" [class.active]="donor.preferredLanguage === 'he'">
-                      <label class="language-card">
-                        <input type="radio" name="donorLanguage" value="he" [(ngModel)]="donor.preferredLanguage"
-                          class="language-radio">
-                        <div class="language-content">
-                          <!-- <span class="language-icon">🇮🇱</span> -->
-                          <span class="language-label">{{ (i18n.terms$ | async)?.hebrew }}</span>
-                        </div>
-                      </label>
-                    </div>
-
-                    <div class="language-option" [class.active]="donor.preferredLanguage === 'en'">
-                      <label class="language-card">
-                        <input type="radio" name="donorLanguage" value="en" [(ngModel)]="donor.preferredLanguage"
-                          class="language-radio">
-                        <div class="language-content">
-                          <!-- <span class="language-icon">🇺🇸</span> -->
-                          <span class="language-label">{{ (i18n.terms$ | async)?.english }}</span>
-                        </div>
-                      </label>
-                    </div>
-
-                    <div class="language-option" [class.active]="donor.preferredLanguage === 'yi'">
-                      <label class="language-card">
-                        <input type="radio" name="donorLanguage" value="yi" [(ngModel)]="donor.preferredLanguage"
-                          class="language-radio">
-                        <div class="language-content">
-                          <!-- <span class="language-icon">✡️</span> -->
-                          <span class="language-label">{{ (i18n.terms$ | async)?.yiddish }}</span>
-                        </div>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-              </div>
+          <!-- Donor Type Card -->
+          <div class="info-card donor-type-card">
+            <div class="card-header">
+              <mat-icon class="card-icon">group</mat-icon>
+              <h4>{{ (i18n.terms$ | async)?.donorCharacterization }}</h4>
             </div>
-
-            <!-- Donor Type Card -->
-            <div class="info-card donor-type-card">
-              <div class="card-header">
-                <mat-icon class="card-icon">group</mat-icon>
-                <h4>{{ (i18n.terms$ | async)?.donorCharacterization }}</h4>
+            <div class="donor-type-grid">
+              <div class="type-option" [class.active]="donor.isAnash">
+                <label class="type-card">
+                  <input type="checkbox" [(ngModel)]="donor.isAnash" class="type-checkbox">
+                  <div class="type-content">
+                    <mat-icon class="type-icon">synagogue</mat-icon>
+                    <span class="type-label">{{ (i18n.terms$ | async)?.anash }}</span>
+                    <!-- <small class="type-desc">חברי הקהילה</small> -->
+                  </div>
+                </label>
               </div>
-              <div class="donor-type-grid">
-                <div class="type-option" [class.active]="donor.isAnash">
-                  <label class="type-card">
-                    <input type="checkbox" [(ngModel)]="donor.isAnash" class="type-checkbox">
-                    <div class="type-content">
-                      <mat-icon class="type-icon">synagogue</mat-icon>
-                      <span class="type-label">{{ (i18n.terms$ | async)?.anash }}</span>
-                      <!-- <small class="type-desc">חברי הקהילה</small> -->
-                    </div>
-                  </label>
-                </div>
 
-                <div class="type-option" [class.active]="donor.isAlumni">
-                  <label class="type-card">
-                    <input type="checkbox" [(ngModel)]="donor.isAlumni" class="type-checkbox">
-                    <div class="type-content">
-                      <mat-icon class="type-icon">school</mat-icon>
-                      <span class="type-label">{{ (i18n.terms$ | async)?.alumni }}</span>
-                      <!-- <small class="type-desc">בוגרי המוסד</small> -->
-                    </div>
-                  </label>
-                </div>
+              <div class="type-option" [class.active]="donor.isAlumni">
+                <label class="type-card">
+                  <input type="checkbox" [(ngModel)]="donor.isAlumni" class="type-checkbox">
+                  <div class="type-content">
+                    <mat-icon class="type-icon">school</mat-icon>
+                    <span class="type-label">{{ (i18n.terms$ | async)?.alumni }}</span>
+                    <!-- <small class="type-desc">בוגרי המוסד</small> -->
+                  </div>
+                </label>
+              </div>
 
-                <!-- <div class="type-option" [class.active]="donor.isOtherConnection">
+              <!-- <div class="type-option" [class.active]="donor.isOtherConnection">
                   <label class="type-card">
                     <input type="checkbox" [(ngModel)]="donor.isOtherConnection" (change)="onOtherConnectionChange()"
                       class="type-checkbox">
@@ -724,10 +769,10 @@
                     </div>
                   </label>
                 </div> -->
-              </div>
+            </div>
 
-              <!-- Show relationship fields only when "קשר אחר" is checked -->
-              <!-- <div class="relationship-details" *ngIf="donor.isOtherConnection">
+            <!-- Show relationship fields only when "קשר אחר" is checked -->
+            <!-- <div class="relationship-details" *ngIf="donor.isOtherConnection">
                 <div class="form-grid">
                   <div class="form-group">
                     <div class="field-title">
@@ -747,301 +792,337 @@
                   </div>
                 </div>
               </div> -->
-            </div>
           </div>
+        </div>
 
-          <!-- העדפות יצירת קשר -->
-          <div class="section contact-preferences">
-            <h3>{{ (i18n.terms$ | async)?.contactPreferences }}</h3>
+        <!-- העדפות יצירת קשר -->
+        <div id="section-preferences" class="section contact-preferences">
+          <h3>{{ (i18n.terms$ | async)?.contactPreferences }}</h3>
 
-            <!-- Preferred Days Card -->
-            <div class="info-card days-card">
-              <div class="card-header">
-                <mat-icon class="card-icon">calendar_month</mat-icon>
-                <h4>{{ (i18n.terms$ | async)?.preferredDays }}</h4>
-              </div>
-              <div class="days-grid">
-                <div class="day-option" [class.active]="donor.sundayAvailable">
-                  <label class="day-card">
-                    <input type="checkbox" [(ngModel)]="donor.sundayAvailable" class="day-checkbox">
-                    <div class="day-content">
-                      <span class="day-name">{{ (i18n.terms$ | async)?.sunday }}</span>
-                      <div class="day-indicator"></div>
-                    </div>
-                  </label>
-                </div>
-
-                <div class="day-option" [class.active]="donor.mondayAvailable">
-                  <label class="day-card">
-                    <input type="checkbox" [(ngModel)]="donor.mondayAvailable" class="day-checkbox">
-                    <div class="day-content">
-                      <span class="day-name">{{ (i18n.terms$ | async)?.monday }}</span>
-                      <div class="day-indicator"></div>
-                    </div>
-                  </label>
-                </div>
-
-                <div class="day-option" [class.active]="donor.tuesdayAvailable">
-                  <label class="day-card">
-                    <input type="checkbox" [(ngModel)]="donor.tuesdayAvailable" class="day-checkbox">
-                    <div class="day-content">
-                      <span class="day-name">{{ (i18n.terms$ | async)?.tuesday }}</span>
-                      <div class="day-indicator"></div>
-                    </div>
-                  </label>
-                </div>
-
-                <div class="day-option" [class.active]="donor.wednesdayAvailable">
-                  <label class="day-card">
-                    <input type="checkbox" [(ngModel)]="donor.wednesdayAvailable" class="day-checkbox">
-                    <div class="day-content">
-                      <span class="day-name">{{ (i18n.terms$ | async)?.wednesday }}</span>
-                      <div class="day-indicator"></div>
-                    </div>
-                  </label>
-                </div>
-
-                <div class="day-option" [class.active]="donor.thursdayAvailable">
-                  <label class="day-card">
-                    <input type="checkbox" [(ngModel)]="donor.thursdayAvailable" class="day-checkbox">
-                    <div class="day-content">
-                      <span class="day-name">{{ (i18n.terms$ | async)?.thursday }}</span>
-                      <div class="day-indicator"></div>
-                    </div>
-                  </label>
-                </div>
-
-                <div class="day-option" [class.active]="donor.fridayAvailable">
-                  <label class="day-card">
-                    <input type="checkbox" [(ngModel)]="donor.fridayAvailable" class="day-checkbox">
-                    <div class="day-content">
-                      <span class="day-name">{{ (i18n.terms$ | async)?.friday }}</span>
-                      <div class="day-indicator"></div>
-                    </div>
-                  </label>
-                </div>
-
-                <div class="day-option" [class.active]="donor.saturdayAvailable">
-                  <label class="day-card">
-                    <input type="checkbox" [(ngModel)]="donor.saturdayAvailable" class="day-checkbox">
-                    <div class="day-content">
-                      <span class="day-name">{{ (i18n.terms$ | async)?.saturday }}</span>
-                      <div class="day-indicator"></div>
-                    </div>
-                  </label>
-                </div>
-              </div>
+          <!-- Preferred Days Card -->
+          <div class="info-card days-card">
+            <div class="card-header">
+              <mat-icon class="card-icon">calendar_month</mat-icon>
+              <h4>{{ (i18n.terms$ | async)?.preferredDays }}</h4>
             </div>
-
-            <!-- Contact Methods Card -->
-            <div class="info-card contact-methods-card">
-              <div class="card-header">
-                <mat-icon class="card-icon">contact_phone</mat-icon>
-                <h4>{{ (i18n.terms$ | async)?.preferredContactMethods }}</h4>
+            <div class="days-grid">
+              <div class="day-option" [class.active]="donor.sundayAvailable">
+                <label class="day-card">
+                  <input type="checkbox" [(ngModel)]="donor.sundayAvailable" class="day-checkbox">
+                  <div class="day-content">
+                    <span class="day-name">{{ (i18n.terms$ | async)?.sunday }}</span>
+                    <div class="day-indicator"></div>
+                  </div>
+                </label>
               </div>
-              <div class="contact-methods-grid">
-                <div class="contact-method" [class.active]="donor.preferPhone">
-                  <label class="method-card">
-                    <input type="checkbox" [(ngModel)]="donor.preferPhone" class="method-checkbox">
-                    <div class="method-content">
-                      <mat-icon class="method-icon">phone</mat-icon>
-                      <span class="method-label">{{ (i18n.terms$ | async)?.phoneContact }}</span>
-                      <!-- <small class="method-desc">שיחת טלפון</small> -->
-                    </div>
-                  </label>
-                </div>
 
-                <div class="contact-method" [class.active]="donor.preferEmail">
-                  <label class="method-card">
-                    <input type="checkbox" [(ngModel)]="donor.preferEmail" class="method-checkbox">
-                    <div class="method-content">
-                      <mat-icon class="method-icon">email</mat-icon>
-                      <span class="method-label">{{ (i18n.terms$ | async)?.emailContact }}</span>
-                      <!-- <small class="method-desc">הודעת דוא"ל</small> -->
-                    </div>
-                  </label>
-                </div>
-
-                <div class="contact-method" [class.active]="donor.preferSMS">
-                  <label class="method-card">
-                    <input type="checkbox" [(ngModel)]="donor.preferSMS" class="method-checkbox">
-                    <div class="method-content">
-                      <mat-icon class="method-icon">sms</mat-icon>
-                      <span class="method-label">{{ (i18n.terms$ | async)?.smsContact }}</span>
-                      <!-- <small class="method-desc">הודעת טקסט</small> -->
-                    </div>
-                  </label>
-                </div>
-
-                <div class="contact-method" [class.active]="donor.preferHomeVisit">
-                  <label class="method-card">
-                    <input type="checkbox" [(ngModel)]="donor.preferHomeVisit" class="method-checkbox">
-                    <div class="method-content">
-                      <mat-icon class="method-icon">home</mat-icon>
-                      <span class="method-label">{{ (i18n.terms$ | async)?.homeVisit }}</span>
-                      <!-- <small class="method-desc">ביקור בבית</small> -->
-                    </div>
-                  </label>
-                </div>
-
-                <div class="contact-method" [class.active]="donor.preferOfficeVisit">
-                  <label class="method-card">
-                    <input type="checkbox" [(ngModel)]="donor.preferOfficeVisit" class="method-checkbox">
-                    <div class="method-content">
-                      <mat-icon class="method-icon">business</mat-icon>
-                      <span class="method-label">{{ (i18n.terms$ | async)?.officeVisit }}</span>
-                      <!-- <small class="method-desc">ביקור במשרד</small> -->
-                    </div>
-                  </label>
-                </div>
+              <div class="day-option" [class.active]="donor.mondayAvailable">
+                <label class="day-card">
+                  <input type="checkbox" [(ngModel)]="donor.mondayAvailable" class="day-checkbox">
+                  <div class="day-content">
+                    <span class="day-name">{{ (i18n.terms$ | async)?.monday }}</span>
+                    <div class="day-indicator"></div>
+                  </div>
+                </label>
               </div>
-            </div>
 
-            <!-- Contact Style Card -->
-            <div class="info-card contact-style-card">
-              <div class="card-header">
-                <mat-icon class="card-icon">psychology</mat-icon>
-                <h4>{{ (i18n.terms$ | async)?.contactMethod }}</h4>
+              <div class="day-option" [class.active]="donor.tuesdayAvailable">
+                <label class="day-card">
+                  <input type="checkbox" [(ngModel)]="donor.tuesdayAvailable" class="day-checkbox">
+                  <div class="day-content">
+                    <span class="day-name">{{ (i18n.terms$ | async)?.tuesday }}</span>
+                    <div class="day-indicator"></div>
+                  </div>
+                </label>
               </div>
-              <div class="contact-style-grid">
-                <div class="contact-style" [class.active]="donor.requirePhoneCoordination">
-                  <label class="style-card">
-                    <input type="checkbox" [(ngModel)]="donor.requirePhoneCoordination" class="style-checkbox">
-                    <div class="style-content">
-                      <mat-icon class="style-icon">phone_callback</mat-icon>
-                      <span class="style-label">{{ (i18n.terms$ | async)?.phoneCoordination }}</span>
-                      <!-- <small class="style-desc">{{ (i18n.terms$ | async)?.priorCoordination }}</small> -->
-                    </div>
-                  </label>
-                </div>
 
-                <div class="contact-style" [class.active]="donor.preferSpecialTimes">
-                  <label class="style-card">
-                    <input type="checkbox" [(ngModel)]="donor.preferSpecialTimes" class="style-checkbox">
-                    <div class="style-content">
-                      <mat-icon class="style-icon">celebration</mat-icon>
-                      <span class="style-label">{{ (i18n.terms$ | async)?.specialTimes }}</span>
-                      <!-- <small class="style-desc">{{ (i18n.terms$ | async)?.holidayTimes }}</small> -->
-                    </div>
-                  </label>
-                </div>
-
-                <div class="contact-style" [class.active]="donor.preferPublicReception">
-                  <label class="style-card">
-                    <input type="checkbox" [(ngModel)]="donor.preferPublicReception" class="style-checkbox">
-                    <div class="style-content">
-                      <mat-icon class="style-icon">groups</mat-icon>
-                      <span class="style-label">{{ (i18n.terms$ | async)?.publicReception }}</span>
-                      <!-- <small class="style-desc">{{ (i18n.terms$ | async)?.publicReceptionDesc }}</small> -->
-                    </div>
-                  </label>
-                </div>
+              <div class="day-option" [class.active]="donor.wednesdayAvailable">
+                <label class="day-card">
+                  <input type="checkbox" [(ngModel)]="donor.wednesdayAvailable" class="day-checkbox">
+                  <div class="day-content">
+                    <span class="day-name">{{ (i18n.terms$ | async)?.wednesday }}</span>
+                    <div class="day-indicator"></div>
+                  </div>
+                </label>
               </div>
-            </div>
 
-            <!-- Additional Preferences Card -->
-            <div class="info-card additional-prefs-card">
-              <div class="card-header">
-                <mat-icon class="card-icon">tune</mat-icon>
-                <h4>{{ (i18n.terms$ | async)?.additionalPreferences }}</h4>
+              <div class="day-option" [class.active]="donor.thursdayAvailable">
+                <label class="day-card">
+                  <input type="checkbox" [(ngModel)]="donor.thursdayAvailable" class="day-checkbox">
+                  <div class="day-content">
+                    <span class="day-name">{{ (i18n.terms$ | async)?.thursday }}</span>
+                    <div class="day-indicator"></div>
+                  </div>
+                </label>
               </div>
-              <div class="additional-prefs-grid">
-                <div class="pref-option" [class.active]="donor.emailOnlyCorrespondence">
-                  <label class="pref-card">
-                    <input type="checkbox" [(ngModel)]="donor.emailOnlyCorrespondence" class="pref-checkbox">
-                    <div class="pref-content">
-                      <mat-icon class="pref-icon">email</mat-icon>
-                      <span class="pref-label">{{ (i18n.terms$ | async)?.emailOnly }}</span>
-                      <!-- <small class="pref-desc">{{ (i18n.terms$ | async)?.sendLettersByEmail }}</small> -->
-                    </div>
-                  </label>
-                </div>
 
-                <div class="pref-option" [class.active]="donor.autoAddToLocationEvents">
-                  <label class="pref-card">
-                    <input type="checkbox" [(ngModel)]="donor.autoAddToLocationEvents" class="pref-checkbox">
-                    <div class="pref-content">
-                      <mat-icon class="pref-icon">location_on</mat-icon>
-                      <span class="pref-label">{{ (i18n.terms$ | async)?.automaticEvents }}</span>
-                      <!-- <small class="pref-desc">{{ (i18n.terms$ | async)?.addByLocation }}</small> -->
-                    </div>
-                  </label>
-                </div>
+              <div class="day-option" [class.active]="donor.fridayAvailable">
+                <label class="day-card">
+                  <input type="checkbox" [(ngModel)]="donor.fridayAvailable" class="day-checkbox">
+                  <div class="day-content">
+                    <span class="day-name">{{ (i18n.terms$ | async)?.friday }}</span>
+                    <div class="day-indicator"></div>
+                  </div>
+                </label>
               </div>
-            </div>
 
-            <!-- Reception Hours Card -->
-            <div class="info-card reception-card">
-              <div class="card-header">
-                <mat-icon class="card-icon">schedule</mat-icon>
-                <h4>{{ (i18n.terms$ | async)?.receptionHours }}</h4>
-              </div>
-              <div class="form-group">
-                <!-- <div class="field-title">
-                  <mat-icon class="field-icon">access_time</mat-icon>
-                  <label>{{ (i18n.terms$ | async)?.receptionHours }}</label>
-                </div> -->
-                <input type="text" class="form-control modern-input" [(ngModel)]="donor.receptionHours"
-                  placeholder="לדוגמה: 09:00-17:00 או בשעות הערב">
+              <div class="day-option" [class.active]="donor.saturdayAvailable">
+                <label class="day-card">
+                  <input type="checkbox" [(ngModel)]="donor.saturdayAvailable" class="day-checkbox">
+                  <div class="day-content">
+                    <span class="day-name">{{ (i18n.terms$ | async)?.saturday }}</span>
+                    <div class="day-indicator"></div>
+                  </div>
+                </label>
               </div>
             </div>
           </div>
 
-          <!-- העדפות כלליות -->
-          <div class="section preferences">
-            <h3>{{ (i18n.terms$ | async)?.notes }}</h3>
+          <!-- Contact Methods Card -->
+          <div class="info-card contact-methods-card">
+            <div class="card-header">
+              <mat-icon class="card-icon">contact_phone</mat-icon>
+              <h4>{{ (i18n.terms$ | async)?.preferredContactMethods }}</h4>
+            </div>
+            <div class="contact-methods-grid">
+              <div class="contact-method" [class.active]="donor.preferPhone">
+                <label class="method-card">
+                  <input type="checkbox" [(ngModel)]="donor.preferPhone" class="method-checkbox">
+                  <div class="method-content">
+                    <mat-icon class="method-icon">phone</mat-icon>
+                    <span class="method-label">{{ (i18n.terms$ | async)?.phoneContact }}</span>
+                    <!-- <small class="method-desc">שיחת טלפון</small> -->
+                  </div>
+                </label>
+              </div>
 
-            <!-- Interests Card -->
-            <div class="info-card interests-card">
-              <div class="card-header">
-                <!-- <mat-icon class="card-icon">interests</mat-icon> -->
-                <!-- <h4>{{ (i18n.terms$ | async)?.areasOfInterest }}</h4> -->
-              </div>
-              <div class="form-grid">
-                <div class="form-group full-width">
-                  <div class="field-title">
-                    <mat-icon class="field-icon">interests</mat-icon>
-                    <label>{{ (i18n.terms$ | async)?.interestingTopics }}</label>
+              <div class="contact-method" [class.active]="donor.preferEmail">
+                <label class="method-card">
+                  <input type="checkbox" [(ngModel)]="donor.preferEmail" class="method-checkbox">
+                  <div class="method-content">
+                    <mat-icon class="method-icon">email</mat-icon>
+                    <span class="method-label">{{ (i18n.terms$ | async)?.emailContact }}</span>
+                    <!-- <small class="method-desc">הודעת דוא"ל</small> -->
                   </div>
-                  <textarea class="form-control interests-textarea" [(ngModel)]="donor.interests"
-                    [placeholder]="(i18n.terms$ | async)?.interestingTopicsPlaceholder || 'נושאים שמעניינים את התורם: תורה, חסידות, חינוך, קהילה...'" rows="3"></textarea>
-                </div>
-                <div class="form-group full-width">
-                  <div class="field-title">
-                    <mat-icon class="field-icon">sports_soccer</mat-icon>
-                    <label>{{ (i18n.terms$ | async)?.hobbiesAndActivities }}</label>
+                </label>
+              </div>
+
+              <div class="contact-method" [class.active]="donor.preferSMS">
+                <label class="method-card">
+                  <input type="checkbox" [(ngModel)]="donor.preferSMS" class="method-checkbox">
+                  <div class="method-content">
+                    <mat-icon class="method-icon">sms</mat-icon>
+                    <span class="method-label">{{ (i18n.terms$ | async)?.smsContact }}</span>
+                    <!-- <small class="method-desc">הודעת טקסט</small> -->
                   </div>
-                  <textarea class="form-control hobbies-textarea" [(ngModel)]="donor.hobbies"
-                    [placeholder]="(i18n.terms$ | async)?.hobbiesPlaceholder || 'תחביבים ופעילויות פנאי: ספורט, מוסיקה, קריאה, נסיעות...'" rows="3"></textarea>
+                </label>
+              </div>
+
+              <div class="contact-method" [class.active]="donor.preferHomeVisit">
+                <label class="method-card">
+                  <input type="checkbox" [(ngModel)]="donor.preferHomeVisit" class="method-checkbox">
+                  <div class="method-content">
+                    <mat-icon class="method-icon">home</mat-icon>
+                    <span class="method-label">{{ (i18n.terms$ | async)?.homeVisit }}</span>
+                    <!-- <small class="method-desc">ביקור בבית</small> -->
+                  </div>
+                </label>
+              </div>
+
+              <div class="contact-method" [class.active]="donor.preferOfficeVisit">
+                <label class="method-card">
+                  <input type="checkbox" [(ngModel)]="donor.preferOfficeVisit" class="method-checkbox">
+                  <div class="method-content">
+                    <mat-icon class="method-icon">business</mat-icon>
+                    <span class="method-label">{{ (i18n.terms$ | async)?.officeVisit }}</span>
+                    <!-- <small class="method-desc">ביקור במשרד</small> -->
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Contact Style Card -->
+          <div class="info-card contact-style-card">
+            <div class="card-header">
+              <mat-icon class="card-icon">psychology</mat-icon>
+              <h4>{{ (i18n.terms$ | async)?.contactMethod }}</h4>
+            </div>
+            <div class="contact-style-grid">
+              <div class="contact-style" [class.active]="donor.requirePhoneCoordination">
+                <label class="style-card">
+                  <input type="checkbox" [(ngModel)]="donor.requirePhoneCoordination" class="style-checkbox">
+                  <div class="style-content">
+                    <mat-icon class="style-icon">phone_callback</mat-icon>
+                    <span class="style-label">{{ (i18n.terms$ | async)?.phoneCoordination }}</span>
+                    <!-- <small class="style-desc">{{ (i18n.terms$ | async)?.priorCoordination }}</small> -->
+                  </div>
+                </label>
+              </div>
+
+              <div class="contact-style" [class.active]="donor.preferSpecialTimes">
+                <label class="style-card">
+                  <input type="checkbox" [(ngModel)]="donor.preferSpecialTimes" class="style-checkbox">
+                  <div class="style-content">
+                    <mat-icon class="style-icon">celebration</mat-icon>
+                    <span class="style-label">{{ (i18n.terms$ | async)?.specialTimes }}</span>
+                    <!-- <small class="style-desc">{{ (i18n.terms$ | async)?.holidayTimes }}</small> -->
+                  </div>
+                </label>
+              </div>
+
+              <div class="contact-style" [class.active]="donor.preferPublicReception">
+                <label class="style-card">
+                  <input type="checkbox" [(ngModel)]="donor.preferPublicReception" class="style-checkbox">
+                  <div class="style-content">
+                    <mat-icon class="style-icon">groups</mat-icon>
+                    <span class="style-label">{{ (i18n.terms$ | async)?.publicReception }}</span>
+                    <!-- <small class="style-desc">{{ (i18n.terms$ | async)?.publicReceptionDesc }}</small> -->
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Additional Preferences Card -->
+          <div class="info-card additional-prefs-card">
+            <div class="card-header">
+              <mat-icon class="card-icon">tune</mat-icon>
+              <h4>{{ (i18n.terms$ | async)?.additionalPreferences }}</h4>
+            </div>
+            <div class="additional-prefs-grid">
+              <div class="pref-option" [class.active]="donor.emailOnlyCorrespondence">
+                <label class="pref-card">
+                  <input type="checkbox" [(ngModel)]="donor.emailOnlyCorrespondence" class="pref-checkbox">
+                  <div class="pref-content">
+                    <mat-icon class="pref-icon">email</mat-icon>
+                    <span class="pref-label">{{ (i18n.terms$ | async)?.emailOnly }}</span>
+                    <!-- <small class="pref-desc">{{ (i18n.terms$ | async)?.sendLettersByEmail }}</small> -->
+                  </div>
+                </label>
+              </div>
+
+              <div class="pref-option" [class.active]="donor.autoAddToLocationEvents">
+                <label class="pref-card">
+                  <input type="checkbox" [(ngModel)]="donor.autoAddToLocationEvents" class="pref-checkbox">
+                  <div class="pref-content">
+                    <mat-icon class="pref-icon">location_on</mat-icon>
+                    <span class="pref-label">{{ (i18n.terms$ | async)?.automaticEvents }}</span>
+                    <!-- <small class="pref-desc">{{ (i18n.terms$ | async)?.addByLocation }}</small> -->
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Reception Hours Card -->
+          <div class="info-card reception-card">
+            <div class="card-header">
+              <mat-icon class="card-icon">schedule</mat-icon>
+              <h4>{{ (i18n.terms$ | async)?.receptionHours }}</h4>
+              <button class="add-btn" (click)="addNewReceptionHour()" title="הוסף טווח שעות">
+                <mat-icon>add</mat-icon>
+              </button>
+            </div>
+
+            <!-- Reception Hours List -->
+            <div class="reception-hours-list" *ngIf="donorReceptionHours.length > 0">
+              <div class="reception-hour-item" *ngFor="let receptionHour of donorReceptionHours">
+                <button class="remove-btn" (click)="removeDonorReceptionHour(receptionHour)" title="הסר">
+                  <mat-icon>close</mat-icon>
+                </button>
+                <div class="reception-hour-row">
+                  <div class="time-field">
+                    <label>משעה</label>
+                    <input
+                      type="time"
+                      class="time-input"
+                      [(ngModel)]="receptionHour.startTime"
+                      (ngModelChange)="onReceptionHourChange(receptionHour)">
+                  </div>
+                  <mat-icon class="separator-icon">arrow_back</mat-icon>
+                  <div class="time-field">
+                    <label>עד שעה</label>
+                    <input
+                      type="time"
+                      class="time-input"
+                      [(ngModel)]="receptionHour.endTime"
+                      (ngModelChange)="onReceptionHourChange(receptionHour)">
+                  </div>
+                  <div class="description-field">
+                    <label>תיאור</label>
+                    <input
+                      type="text"
+                      class="description-input"
+                      [(ngModel)]="receptionHour.description"
+                      (ngModelChange)="onReceptionHourChange(receptionHour)"
+                      placeholder="תיאור (אופציונלי)">
+                  </div>
                 </div>
-            <div class="form-group full-width">
-              <div class="field-title">
-                <mat-icon class="field-icon">note</mat-icon>
-                <label>{{ (i18n.terms$ | async)?.generalNotes }}</label>
-              </div>
-              <textarea class="form-control" rows="4" [(ngModel)]="donor.notes"
-                [placeholder]="(i18n.terms$ | async)?.enterNotesPlaceholder"></textarea>
-            </div>
               </div>
             </div>
+
+            <!-- Empty state -->
+            <div class="empty-reception-hours" *ngIf="donorReceptionHours.length === 0">
+              <p>לא הוגדרו טווחי שעות קבלה. לחץ על + להוספה.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- הערות -->
+        <div id="section-notes" class="section notes-section">
+          <h3>
+            <mat-icon class="section-icon">note</mat-icon>
+            {{ (i18n.terms$ | async)?.notes }}
+            <button class="add-btn" (click)="addNewNote()" title="הוסף הערה חדשה">
+              <mat-icon>add</mat-icon>
+            </button>
+          </h3>
+
+          <!-- Notes Table -->
+          <div class="notes-table" *ngIf="donorNotes.length > 0">
+            <div class="note-row" *ngFor="let donorNote of donorNotes">
+              <div class="note-type-cell">
+                <span class="note-type-label">{{ donorNote.noteType }}</span>
+              </div>
+              <div class="note-content-cell">
+                <button class="remove-note-btn" (click)="removeDonorNote(donorNote)" title="הסר הערה">
+                  <mat-icon>close</mat-icon>
+                </button>
+                <textarea
+                  class="form-control note-textarea"
+                  rows="1"
+                  [(ngModel)]="donorNote.content"
+                  (ngModelChange)="onNoteChange(donorNote)"
+                  [placeholder]="'הזן ' + donorNote.noteType + '...'">
+                </textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- Empty state -->
+          <div class="empty-notes" *ngIf="donorNotes.length === 0">
+            <p>לא הוגדרו הערות. לחץ על + להוספה.</p>
           </div>
         </div>
       </div>
     </div>
+  </div>
 
-    <div class="modal-footer" *ngIf="!loading">
-      <div class="footer-actions-left">
-        <!-- Quick Actions -->
-        <button mat-stroked-button class="quick-action-btn" *ngIf="!isNewDonor" (click)="openGifts()" [title]="(i18n.terms$ | async)?.gifts || 'מתנות'">
-          <mat-icon>redeem</mat-icon>
-          {{ (i18n.terms$ | async)?.gifts }}
-        </button>
-        <button mat-stroked-button class="quick-action-btn" *ngIf="!isNewDonor" (click)="openDonations()"
-          [title]="(i18n.terms$ | async)?.donations || 'תרומות'">
-          <mat-icon>attach_money</mat-icon>
-          {{ (i18n.terms$ | async)?.donations }}
-        </button>
-        <!-- <button mat-stroked-button
+  <div class="modal-footer" *ngIf="!loading">
+    <div class="footer-actions-left">
+      <!-- Quick Actions -->
+      <button mat-stroked-button class="quick-action-btn" *ngIf="!isNewDonor" (click)="openGifts()"
+        [title]="(i18n.terms$ | async)?.gifts || 'מתנות'">
+        <mat-icon>redeem</mat-icon>
+        {{ (i18n.terms$ | async)?.gifts }}
+      </button>
+      <button mat-stroked-button class="quick-action-btn" *ngIf="!isNewDonor" (click)="openDonations()"
+        [title]="(i18n.terms$ | async)?.donations || 'תרומות'">
+        <mat-icon>attach_money</mat-icon>
+        {{ (i18n.terms$ | async)?.donations }}
+      </button>
+      <!-- <button mat-stroked-button
               class="quick-action-btn"
               *ngIf="!isNewDonor"
               (click)="openReceipts()"
@@ -1050,33 +1131,33 @@
         הו"ק
       </button> -->
 
-        <!-- Divider -->
-        <div class="footer-divider" *ngIf="!isNewDonor"></div>
+      <!-- Divider -->
+      <div class="footer-divider" *ngIf="!isNewDonor"></div>
 
-        <!-- Admin Actions -->
-        <button mat-stroked-button color="warn" *ngIf="!isNewDonor && donor?.isActive" (click)="deactivateDonor()"
-          class="action-button">
-          <mat-icon>block</mat-icon>
-          {{ (i18n.terms$ | async)?.deactivate }}
-        </button>
-        <button mat-stroked-button color="primary" *ngIf="!isNewDonor && !donor?.isActive" (click)="activateDonor()"
-          class="action-button">
-          <mat-icon>check_circle</mat-icon>
-          {{ (i18n.terms$ | async)?.activate }}
-        </button>
-        <button mat-stroked-button color="warn" *ngIf="!isNewDonor" (click)="deleteDonor()" class="action-button">
-          <mat-icon>delete</mat-icon>
-          {{ (i18n.terms$ | async)?.delete }}
-        </button>
-      </div>
-      <div class="footer-actions-right">
-        <button mat-stroked-button (click)="closeModal()" class="cancel-button">
-          <mat-icon>close</mat-icon>
-          {{ (i18n.terms$ | async)?.cancel }}
-        </button>
-        <button mat-raised-button color="primary" (click)="saveDonor()" class="save-button" [disabled]="loading">
-          <mat-icon>save</mat-icon>
-          {{ (i18n.terms$ | async)?.saveDonor }}
-        </button>
-      </div>
+      <!-- Admin Actions -->
+      <button mat-stroked-button color="warn" *ngIf="!isNewDonor && donor?.isActive" (click)="deactivateDonor()"
+        class="action-button">
+        <mat-icon>block</mat-icon>
+        {{ (i18n.terms$ | async)?.deactivate }}
+      </button>
+      <button mat-stroked-button color="primary" *ngIf="!isNewDonor && !donor?.isActive" (click)="activateDonor()"
+        class="action-button">
+        <mat-icon>check_circle</mat-icon>
+        {{ (i18n.terms$ | async)?.activate }}
+      </button>
+      <button mat-stroked-button color="warn" *ngIf="!isNewDonor" (click)="deleteDonor()" class="action-button">
+        <mat-icon>delete</mat-icon>
+        {{ (i18n.terms$ | async)?.delete }}
+      </button>
     </div>
+    <div class="footer-actions-right">
+      <button mat-stroked-button (click)="closeModal()" class="cancel-button">
+        <mat-icon>close</mat-icon>
+        {{ (i18n.terms$ | async)?.cancel }}
+      </button>
+      <button mat-raised-button color="primary" (click)="saveDonor()" class="save-button" [disabled]="loading">
+        <mat-icon>save</mat-icon>
+        {{ (i18n.terms$ | async)?.saveDonor }}
+      </button>
+    </div>
+  </div>

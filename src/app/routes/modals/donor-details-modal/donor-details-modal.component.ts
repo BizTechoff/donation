@@ -1,14 +1,18 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
-import { openDialog, DialogConfig } from 'common-ui-elements';
+import { DialogConfig, openDialog } from 'common-ui-elements';
 import { remult } from 'remult';
-import { CompanyInfo, Donation, Donor, DonorEvent, Event, Place, Contact, Country, User, Company } from '../../../../shared/entity';
+import { Circle, Company, CompanyInfo, Contact, Country, Donation, Donor, DonorAddress, DonorContact, DonorEvent, DonorNote, DonorPlace, DonorReceptionHour, DonorRelation, Event, Place, User } from '../../../../shared/entity';
+import { getReverseRelationship } from '../../../../shared/utils/relationship-utils';
 import { AddressComponents } from '../../../common/osm-address-input/osm-address-input.component';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
 import { ActiveFilter, FilterOption, NavigationRecord } from '../../../shared/modal-navigation-header/modal-navigation-header.component';
+import { CompanyDetailsModalComponent } from '../company-details-modal/company-details-modal.component';
+import { CircleDetailsModalComponent } from '../circle-details-modal/circle-details-modal.component';
+import { CircleSelectionModalComponent } from '../circle-selection-modal/circle-selection-modal.component';
 import { DonorDonationsModalArgs, DonorDonationsModalComponent } from '../donor-donations-modal/donor-donations-modal.component';
-import { CompanyDetailsModalArgs, CompanyDetailsModalComponent } from '../company-details-modal/company-details-modal.component';
+import { NotesSelectionModalArgs, NotesSelectionModalComponent } from '../notes-selection-modal/notes-selection-modal.component';
 
 export interface DonorDetailsModalArgs {
   donorId: string; // Can be 'new' for new donor or donor ID
@@ -41,8 +45,19 @@ export class DonorDetailsModalComponent implements OnInit {
   countries: Country[] = [];
   eventRepo = remult.repo(Event);
   donorEventRepo = remult.repo(DonorEvent);
+  donorAddressRepo = remult.repo(DonorAddress);
+  donorAddresses: DonorAddress[] = [];
+  donorContactRepo = remult.repo(DonorContact);
+  donorContacts: DonorContact[] = [];
+  donorPlaceRepo = remult.repo(DonorPlace);
+  donorPlaces: DonorPlace[] = [];
+  donorNoteRepo = remult.repo(DonorNote);
+  donorNotes: DonorNote[] = [];
+  donorReceptionHourRepo = remult.repo(DonorReceptionHour);
+  donorReceptionHours: DonorReceptionHour[] = [];
   contactRepo = remult.repo(Contact);
   userRepo = remult.repo(User);
+  donorRelationRepo = remult.repo(DonorRelation);
   loading = false;
   isNewDonor = false;
 
@@ -55,7 +70,13 @@ export class DonorDetailsModalComponent implements OnInit {
 
   // Family relationships
   allDonorsForFamily: Donor[] = [];
-  selectedFamilyRelationships: Array<{ donor: Donor; relationshipType: string; donorId: string }> = [];
+  selectedFamilyRelationships: Array<{
+    donor: Donor;
+    relationshipType: string;
+    donorId: string;
+    relationId: string; // ID of the DonorRelation record
+    isReverse: boolean; // האם הקשר הזה מוצג בהיפוך (donor2->donor1)
+  }> = [];
   newRelationshipType: string = '';
 
   // Companies
@@ -64,8 +85,27 @@ export class DonorDetailsModalComponent implements OnInit {
   selectedCompanyIdForEdit: string = '';
   companyRepo = remult.repo(Company);
 
+  // Circles
+  circles: Circle[] = [];
+  selectedCircles: Circle[] = [];
+  circleRepo = remult.repo(Circle);
+
   // Phone prefix options (built once after loading countries)
   phonePrefixOptions: { value: string; label: string }[] = [];
+
+  // Note types
+  noteTypes = [
+    'הערות',
+    'הקשר לישיבה',
+    'זיהוי אישי',
+    'מקורבים',
+    'סדרי עדיפויות',
+    'פרוייקט חיים',
+    'קטגורית תורן',
+    'ריגושים',
+    'שייכות מגזרית',
+    'תחביבים אישיים'
+  ];
 
   // Events system
   availableEvents: Event[] = [];
@@ -94,7 +134,8 @@ export class DonorDetailsModalComponent implements OnInit {
       this.loadContacts(),
       this.loadFundraisers(),
       this.loadAllDonorsForFamily(),
-      this.loadCompanies()
+      this.loadCompanies(),
+      this.loadCircles()
     ]);
 
     // Initialize donor after basic data is loaded
@@ -203,6 +244,58 @@ export class DonorDetailsModalComponent implements OnInit {
     }
   }
 
+  private async createDefaultBirthDateEvent() {
+    // Find the "יום הולדת" event
+    const birthDateEvent = this.availableEvents.find(e => e.description === 'יום הולדת');
+
+    if (birthDateEvent) {
+      // Create a new DonorEvent (not saved to DB yet, just in memory)
+      const donorEvent = this.donorEventRepo.create({
+        donorId: '', // Will be set when donor is saved
+        eventId: birthDateEvent.id,
+        date: undefined,
+        isActive: true
+      });
+
+      // Set the event relation manually
+      donorEvent.event = birthDateEvent;
+
+      // Add to the donorEvents array
+      this.donorEvents.push(donorEvent);
+
+      console.log('Created default birth date event for new donor');
+    } else {
+      console.warn('Birth date event not found in available events');
+    }
+  }
+
+  private createDefaultContacts() {
+    // Create default empty phone contact
+    const phoneContact = this.donorContactRepo.create({
+      donorId: '', // Will be set when donor is saved
+      type: 'phone',
+      phoneNumber: '',
+      prefix: '+972',
+      description: '',
+      isPrimary: true,
+      isActive: true
+    });
+    this.donorContacts.push(phoneContact);
+
+    // Create default empty email contact
+    const emailContact = this.donorContactRepo.create({
+      donorId: '', // Will be set when donor is saved
+      type: 'email',
+      email: '',
+      description: '',
+      isPrimary: true,
+      isActive: true
+    });
+    this.donorContacts.push(emailContact);
+
+    console.log('Created default contacts for new donor');
+  }
+
   private async initializeDonor() {
     if (!this.args?.donorId) return;
 
@@ -214,7 +307,6 @@ export class DonorDetailsModalComponent implements OnInit {
         this.donor = this.donorRepo.create();
         this.donor.isActive = true;
         this.donor.wantsUpdates = true;
-        this.donor.familyRelationships = [];
         this.donor.companyIds = [];
         this.donor.wantsTaxReceipts = true;
         this.donor.preferredLanguage = 'he';
@@ -230,6 +322,12 @@ export class DonorDetailsModalComponent implements OnInit {
           this.donor.homePlaceId = this.args.initialPlace.id;
           console.log('Set initial place for new donor:', this.args.initialPlace);
         }
+
+        // Create default birth date event for new donor
+        await this.createDefaultBirthDateEvent();
+
+        // Create default empty phone and email contacts for new donor
+        this.createDefaultContacts();
 
         this.originalDonorData = JSON.stringify(this.donor);
       } else {
@@ -260,9 +358,15 @@ export class DonorDetailsModalComponent implements OnInit {
           console.log('Starting to load related data...');
           await this.loadDonations();
           await this.loadDonorEvents();
+          await this.loadDonorAddresses();
+          await this.loadDonorContacts();
+          await this.loadDynamicDonorPlaces();
+          await this.loadDonorNotes();
+          await this.loadDonorReceptionHours();
           await this.loadDonorPlaces();
           await this.loadSelectedFamilyRelationships();
           await this.loadSelectedCompanies();
+          await this.loadSelectedCircles();
 
           // Force change detection after loading places
           console.log('Forcing change detection...');
@@ -297,6 +401,81 @@ export class DonorDetailsModalComponent implements OnInit {
       }
     } catch (error) {
       console.error('Error loading donor events:', error);
+    }
+  }
+
+  private async loadDonorAddresses() {
+    if (!this.donor?.id) return;
+
+    try {
+      this.donorAddresses = await this.donorAddressRepo.find({
+        where: { donorId: this.donor.id, isActive: true }
+      });
+
+      // Manually load the place details for each donor address
+      for (const donorAddress of this.donorAddresses) {
+        if (donorAddress.placeId) {
+          const foundPlace = await remult.repo(Place).findId(donorAddress.placeId, {
+            include: { country: true }
+          });
+          donorAddress.place = foundPlace || undefined;
+        }
+      }
+    } catch (error) {
+      console.error('Error loading donor addresses:', error);
+    }
+  }
+
+  private async loadDonorContacts() {
+    if (!this.donor?.id) return;
+
+    try {
+      this.donorContacts = await this.donorContactRepo.find({
+        where: { donorId: this.donor.id, isActive: true }
+      });
+    } catch (error) {
+      console.error('Error loading donor contacts:', error);
+    }
+  }
+
+  private async loadDynamicDonorPlaces() {
+    if (!this.donor?.id) return;
+
+    try {
+      this.donorPlaces = await this.donorPlaceRepo.find({
+        where: { donorId: this.donor.id, isActive: true },
+        include: { place: { include: { country: true } } }
+      });
+      console.log(`Loaded ${this.donorPlaces.length} donor places`);
+    } catch (error) {
+      console.error('Error loading donor places:', error);
+    }
+  }
+
+  private async loadDonorNotes() {
+    if (!this.donor?.id) return;
+
+    try {
+      this.donorNotes = await this.donorNoteRepo.find({
+        where: { donorId: this.donor.id, isActive: true }
+      });
+      console.log(`Loaded ${this.donorNotes.length} donor notes`);
+    } catch (error) {
+      console.error('Error loading donor notes:', error);
+    }
+  }
+
+  private async loadDonorReceptionHours() {
+    if (!this.donor?.id) return;
+
+    try {
+      this.donorReceptionHours = await this.donorReceptionHourRepo.find({
+        where: { donorId: this.donor.id, isActive: true },
+        orderBy: { sortOrder: 'asc' }
+      });
+      console.log(`Loaded ${this.donorReceptionHours.length} donor reception hours`);
+    } catch (error) {
+      console.error('Error loading donor reception hours:', error);
     }
   }
 
@@ -390,12 +569,120 @@ export class DonorDetailsModalComponent implements OnInit {
     return JSON.stringify(this.donor) !== this.originalDonorData;
   }
 
+  private validateReceptionHours(): { valid: boolean; error?: string } {
+    // Check each reception hour for validity
+    for (const receptionHour of this.donorReceptionHours) {
+      if (!receptionHour.startTime || !receptionHour.endTime) {
+        return {
+          valid: false,
+          error: 'כל שעות הקבלה חייבות לכלול שעת התחלה ושעת סיום'
+        };
+      }
+
+      // Convert times to comparable format (HH:MM)
+      const start = receptionHour.startTime;
+      const end = receptionHour.endTime;
+
+      // Check if start time is before end time
+      if (start >= end) {
+        return {
+          valid: false,
+          error: `שעת הקבלה ${start} - ${end} אינה תקינה. שעת ההתחלה חייבת להיות לפני שעת הסיום.`
+        };
+      }
+    }
+
+    // Check for overlaps between reception hours
+    for (let i = 0; i < this.donorReceptionHours.length; i++) {
+      const hour1 = this.donorReceptionHours[i];
+
+      for (let j = i + 1; j < this.donorReceptionHours.length; j++) {
+        const hour2 = this.donorReceptionHours[j];
+
+        // Check if times overlap
+        const start1 = hour1.startTime;
+        const end1 = hour1.endTime;
+        const start2 = hour2.startTime;
+        const end2 = hour2.endTime;
+
+        // Two time ranges overlap if: start1 < end2 AND start2 < end1
+        if (start1 < end2 && start2 < end1) {
+          return {
+            valid: false,
+            error: `קיימת חפיפה בין שעות הקבלה: ${start1}-${end1} ו-${start2}-${end2}`
+          };
+        }
+      }
+    }
+
+    return { valid: true };
+  }
+
   async saveDonor() {
     if (!this.donor) return;
 
     try {
+      // Validate reception hours before saving
+      const validationResult = this.validateReceptionHours();
+      if (!validationResult.valid) {
+        this.ui.error(validationResult.error || 'שגיאה בשעות הקבלה');
+        return;
+      }
+
       const wasNew = this.isNewDonor;
       await this.donorRepo.save(this.donor);
+
+      // Save donor events (new and existing)
+      if (this.donor.id) {
+        for (const donorEvent of this.donorEvents) {
+          // Only save events that don't have an ID (new events)
+          if (!donorEvent.id) {
+            donorEvent.donorId = this.donor.id;
+            await this.donorEventRepo.save(donorEvent);
+            console.log('Saved new donor event:', donorEvent.event?.description);
+          }
+        }
+
+        for (const donorAddress of this.donorAddresses) {
+          if (!donorAddress.id) {
+            donorAddress.donorId = this.donor.id;
+            await this.donorAddressRepo.save(donorAddress);
+            console.log('Saved new donor address:', donorAddress.addressName);
+          }
+        }
+
+        for (const donorContact of this.donorContacts) {
+          if (!donorContact.id) {
+            donorContact.donorId = this.donor.id;
+            await this.donorContactRepo.save(donorContact);
+            console.log('Saved new donor contact:', donorContact.type, donorContact.prefix);
+          }
+        }
+
+        for (const donorPlace of this.donorPlaces) {
+          if (!donorPlace.id) {
+            donorPlace.donorId = this.donor.id;
+            await this.donorPlaceRepo.save(donorPlace);
+            console.log('Saved new donor place:', donorPlace.description);
+          }
+        }
+
+        for (const donorNote of this.donorNotes) {
+          if (!donorNote.id) {
+            donorNote.donorId = this.donor.id;
+            await this.donorNoteRepo.save(donorNote);
+            console.log('Saved new donor note:', donorNote.noteType);
+          }
+        }
+
+        for (const receptionHour of this.donorReceptionHours) {
+          if (!receptionHour.id) {
+            receptionHour.donorId = this.donor.id;
+            await this.donorReceptionHourRepo.save(receptionHour);
+            console.log('Saved new reception hour:', receptionHour.startTime, '-', receptionHour.endTime);
+          }
+        }
+      }
 
       this.changed = wasNew || this.hasChanges();
       this.dialogRef.close(this.changed);
@@ -428,6 +715,24 @@ export class DonorDetailsModalComponent implements OnInit {
     this.donor.vacationPlaceId = place?.id || '';
     this.donor.vacationPlace = place;
     this.changed = true;
+
+    // Force UI update
+    this.changeDetector.detectChanges();
+  }
+
+  async onDonorAddressPlaceSelected(donorAddress: DonorAddress, place: Place | undefined) {
+    donorAddress.placeId = place?.id || '';
+    donorAddress.place = place;
+    this.changed = true;
+
+    // If this is an existing address, save it immediately
+    if (donorAddress.id) {
+      try {
+        await this.donorAddressRepo.save(donorAddress);
+      } catch (error) {
+        console.error('Error saving donor address:', error);
+      }
+    }
 
     // Force UI update
     this.changeDetector.detectChanges();
@@ -547,8 +852,7 @@ export class DonorDetailsModalComponent implements OnInit {
       const donorEvent = this.donorEventRepo.create({
         donorId: this.donor.id,
         eventId: event.id,
-        hebrewDate: undefined,
-        gregorianDate: undefined,
+        date: undefined,
         isActive: true
       });
 
@@ -576,7 +880,9 @@ export class DonorDetailsModalComponent implements OnInit {
 
     if (confirm('האם אתה בטוח שברצונך להסיר את האירוע?')) {
       try {
-        await donorEvent.delete();
+        if (!donorEvent.isNew()) {
+          await donorEvent.delete();
+        }
 
         // Remove from local array instead of reloading
         const index = this.donorEvents.findIndex(de => de.id === donorEvent.id);
@@ -594,14 +900,418 @@ export class DonorDetailsModalComponent implements OnInit {
 
   async onDonorEventDateChange(donorEvent: DonorEvent, value: Date | null) {
     try {
-      // Update both Hebrew and Gregorian dates with the same value
-      donorEvent.hebrewDate = value || undefined;
-      donorEvent.gregorianDate = value || undefined;
+      donorEvent.date = value || undefined;
       await this.donorEventRepo.save(donorEvent);
       this.changed = true;
     } catch (error) {
       console.error('Error updating event date:', error);
     }
+  }
+
+  async addNewAddress() {
+    const addressName = prompt('הזן שם לכתובת (למשל: בית, עבודה, קיץ):');
+    if (!addressName || addressName.trim() === '') return;
+
+    try {
+      const newAddress = this.donorAddressRepo.create({
+        donorId: this.donor?.id || '',
+        placeId: '',
+        addressName: addressName.trim(),
+        isPrimary: this.donorAddresses.length === 0, // First address is primary by default
+        isActive: true
+      });
+
+      this.donorAddresses.push(newAddress);
+      this.changed = true;
+    } catch (error) {
+      console.error('Error adding address:', error);
+      alert('שגיאה בהוספת הכתובת');
+    }
+  }
+
+  async removeDonorAddress(donorAddress: DonorAddress) {
+    if (confirm('האם אתה בטוח שברצונך להסיר את הכתובת?')) {
+      try {
+        if (!donorAddress.isNew()) {
+          await this.donorAddressRepo.delete(donorAddress);
+        }
+
+        // Remove from local array
+        const index = this.donorAddresses.findIndex(da => da.id === donorAddress.id);
+        if (index > -1) {
+          this.donorAddresses.splice(index, 1);
+        }
+
+        this.changed = true;
+      } catch (error) {
+        console.error('Error removing address:', error);
+        alert('שגיאה בהסרת הכתובת');
+      }
+    }
+  }
+
+  async addNewContact(type: 'phone' | 'email') {
+    try {
+      const newContact = this.donorContactRepo.create({
+        donorId: this.donor?.id || '',
+        type: type,
+        phoneNumber: type === 'phone' ? '' : undefined,
+        email: type === 'email' ? '' : undefined,
+        prefix: type === 'phone' ? '+972' : undefined,
+        isPrimary: this.donorContacts.filter(c => c.type === type).length === 0,
+        isActive: true
+      });
+
+      // If this is an existing donor, save the contact immediately
+      if (this.donor?.id && !this.isNewDonor) {
+        await this.donorContactRepo.save(newContact);
+        console.log('Saved new contact immediately:', type, newContact.prefix);
+      }
+
+      this.donorContacts.push(newContact);
+      this.changed = true;
+    } catch (error) {
+      console.error('Error adding contact:', error);
+      alert('שגיאה בהוספת איש הקשר');
+    }
+  }
+
+  async removeDonorContact(donorContact: DonorContact) {
+    if (confirm('האם אתה בטוח שברצונך להסיר את איש הקשר?')) {
+      try {
+        if (!donorContact.isNew()) {
+          await this.donorContactRepo.delete(donorContact);
+        }
+
+        // Remove from local array
+        const index = this.donorContacts.findIndex(dc => dc.id === donorContact.id);
+        if (index > -1) {
+          this.donorContacts.splice(index, 1);
+        }
+
+        this.changed = true;
+      } catch (error) {
+        console.error('Error removing contact:', error);
+        alert('שגיאה בהסרת איש הקשר');
+      }
+    }
+  }
+
+  async onContactChange(donorContact: DonorContact) {
+    this.changed = true;
+
+    // If this is an existing contact, save it immediately
+    if (donorContact.id) {
+      try {
+        await this.donorContactRepo.save(donorContact);
+      } catch (error) {
+        console.error('Error saving donor contact:', error);
+      }
+    }
+  }
+
+  getPhoneContacts(): DonorContact[] {
+    return this.donorContacts.filter(c => c.type === 'phone');
+  }
+
+  getEmailContacts(): DonorContact[] {
+    return this.donorContacts.filter(c => c.type === 'email');
+  }
+
+  // DonorPlace methods
+  async addNewPlace() {
+    const description = prompt('הזן תיאור לכתובת (לדוגמה: בית, עבודה, הורים):');
+
+    if (!description || description.trim() === '') {
+      return;
+    }
+
+    try {
+      const newPlace = this.donorPlaceRepo.create({
+        donorId: this.donor?.id || '',
+        description: description.trim(),
+        isPrimary: this.donorPlaces.length === 0,
+        isActive: true
+      });
+
+      // If this is an existing donor, save the place immediately
+      if (this.donor?.id && !this.isNewDonor) {
+        await this.donorPlaceRepo.save(newPlace);
+        console.log('Saved new place immediately:', description);
+      }
+
+      this.donorPlaces.push(newPlace);
+      this.changed = true;
+    } catch (error) {
+      console.error('Error adding place:', error);
+      alert('שגיאה בהוספת כתובת');
+    }
+  }
+
+  async removeDonorPlace(donorPlace: DonorPlace) {
+    if (confirm('האם אתה בטוח שברצונך להסיר את הכתובת?')) {
+      try {
+        if (!donorPlace.isNew()) {
+          await this.donorPlaceRepo.delete(donorPlace);
+        }
+
+        // Remove from local array
+        const index = this.donorPlaces.findIndex(dp => dp.id === donorPlace.id);
+        if (index > -1) {
+          this.donorPlaces.splice(index, 1);
+        }
+
+        this.changed = true;
+      } catch (error) {
+        console.error('Error removing place:', error);
+        alert('שגיאה בהסרת כתובת');
+      }
+    }
+  }
+
+  async onDonorPlaceSelected(donorPlace: DonorPlace, place: Place | undefined) {
+    donorPlace.placeId = place?.id || '';
+    donorPlace.place = place;
+    this.changed = true;
+
+    // If this is a home address, auto-populate phone prefixes from country
+    const homeAddressDescriptions = ['מגורים', 'בית', 'מגורים ראשי', 'כתובת ראשית', 'home'];
+    const isHomeAddress = donorPlace.description &&
+                          homeAddressDescriptions.some(desc =>
+                            donorPlace.description.toLowerCase().includes(desc.toLowerCase())
+                          );
+
+    if (isHomeAddress && place?.country?.phonePrefix) {
+      // Update all phone contacts with the country's phone prefix
+      const phonePrefix = place.country.phonePrefix;
+      const phoneContacts = this.donorContacts.filter(c => c.type === 'phone');
+
+      for (const contact of phoneContacts) {
+        // Only update if prefix is empty or default
+        if (!contact.prefix || contact.prefix === '+972') {
+          contact.prefix = phonePrefix;
+
+          // If contact already exists, save it
+          if (contact.id) {
+            try {
+              await this.donorContactRepo.save(contact);
+            } catch (error) {
+              console.error('Error updating contact prefix:', error);
+            }
+          }
+        }
+      }
+
+      console.log(`Updated phone prefixes to ${phonePrefix} for home address`);
+    }
+
+    // If this is an existing place, save it immediately
+    if (donorPlace.id) {
+      try {
+        await this.donorPlaceRepo.save(donorPlace);
+        console.log('Saved donor place:', donorPlace.description);
+      } catch (error) {
+        console.error('Error saving donor place:', error);
+      }
+    }
+
+    // Force UI update
+    this.changeDetector.detectChanges();
+  }
+
+  // DonorNote methods
+  async addNewNote() {
+    try {
+      // Open notes selection modal
+      const args: NotesSelectionModalArgs = {
+        noteTypes: this.noteTypes,
+        title: 'בחר סוג הערה'
+      };
+
+      const result: any = await openDialog(
+        NotesSelectionModalComponent,
+        (modal: NotesSelectionModalComponent) => {
+          modal.args = args;
+        }
+      );
+
+      if (!result) {
+        return;
+      }
+
+      // Update noteTypes if they were modified
+      if (result.updatedNoteTypes) {
+        this.noteTypes = result.updatedNoteTypes;
+      }
+
+      // Create new note with selected type
+      const newNote = this.donorNoteRepo.create({
+        donorId: this.donor?.id || '',
+        noteType: result.noteType,
+        content: '',
+        isActive: true
+      });
+
+      // If this is an existing donor, save the note immediately
+      if (this.donor?.id && !this.isNewDonor) {
+        await this.donorNoteRepo.save(newNote);
+        console.log('Saved new note immediately:', result.noteType);
+      }
+
+      this.donorNotes.push(newNote);
+      this.changed = true;
+    } catch (error) {
+      console.error('Error adding note:', error);
+      alert('שגיאה בהוספת הערה');
+    }
+  }
+
+  async removeDonorNote(donorNote: DonorNote) {
+    if (confirm('האם אתה בטוח שברצונך להסיר את ההערה?')) {
+      try {
+        if (!donorNote.isNew()) {
+          await this.donorNoteRepo.delete(donorNote);
+        }
+
+        // Remove from local array
+        const index = this.donorNotes.findIndex(dn => dn.id === donorNote.id);
+        if (index > -1) {
+          this.donorNotes.splice(index, 1);
+        }
+
+        this.changed = true;
+      } catch (error) {
+        console.error('Error removing note:', error);
+        alert('שגיאה בהסרת הערה');
+      }
+    }
+  }
+
+  async onNoteChange(donorNote: DonorNote) {
+    this.changed = true;
+
+    // If this is an existing note, save it immediately
+    if (donorNote.id) {
+      try {
+        await this.donorNoteRepo.save(donorNote);
+        console.log('Saved donor note:', donorNote.noteType);
+      } catch (error) {
+        console.error('Error saving donor note:', error);
+      }
+    }
+  }
+
+  // DonorReceptionHour methods
+  async addNewReceptionHour() {
+    try {
+      const newReceptionHour = this.donorReceptionHourRepo.create({
+        donorId: this.donor?.id || '',
+        startTime: '09:00',
+        endTime: '17:00',
+        description: '',
+        sortOrder: this.donorReceptionHours.length,
+        isActive: true
+      });
+
+      // If this is an existing donor, save the reception hour immediately
+      if (this.donor?.id && !this.isNewDonor) {
+        // Validate before saving
+        const validationError = this.validateReceptionHour(newReceptionHour);
+        if (validationError) {
+          alert(validationError);
+          return;
+        }
+
+        await this.donorReceptionHourRepo.save(newReceptionHour);
+        console.log('Saved new reception hour immediately');
+      }
+
+      this.donorReceptionHours.push(newReceptionHour);
+      this.sortReceptionHours();
+      this.changed = true;
+    } catch (error) {
+      console.error('Error adding reception hour:', error);
+      alert('שגיאה בהוספת טווח שעות');
+    }
+  }
+
+  async removeDonorReceptionHour(receptionHour: DonorReceptionHour) {
+    if (confirm('האם אתה בטוח שברצונך להסיר את טווח השעות?')) {
+      try {
+        if (!receptionHour.isNew()) {
+          await this.donorReceptionHourRepo.delete(receptionHour);
+        }
+
+        // Remove from local array
+        const index = this.donorReceptionHours.findIndex(rh => rh.id === receptionHour.id);
+        if (index > -1) {
+          this.donorReceptionHours.splice(index, 1);
+        }
+
+        this.changed = true;
+      } catch (error) {
+        console.error('Error removing reception hour:', error);
+        alert('שגיאה בהסרת טווח שעות');
+      }
+    }
+  }
+
+  async onReceptionHourChange(receptionHour: DonorReceptionHour) {
+    // Validate the time range
+    const validationError = this.validateReceptionHour(receptionHour);
+    if (validationError) {
+      alert(validationError);
+      return;
+    }
+
+    this.sortReceptionHours();
+    this.changed = true;
+
+    // If this is an existing reception hour, save it immediately
+    if (receptionHour.id) {
+      try {
+        await this.donorReceptionHourRepo.save(receptionHour);
+        console.log('Saved donor reception hour');
+      } catch (error) {
+        console.error('Error saving donor reception hour:', error);
+      }
+    }
+  }
+
+  // Validation function for reception hours
+  validateReceptionHour(receptionHour: DonorReceptionHour): string | null {
+    // Check if startTime < endTime
+    if (receptionHour.startTime >= receptionHour.endTime) {
+      return 'שעת הסיום חייבת להיות גדולה משעת ההתחלה';
+    }
+
+    // Check for overlaps with other reception hours
+    for (const other of this.donorReceptionHours) {
+      if (other.id === receptionHour.id) continue;
+
+      // Check if there's an overlap
+      if (
+        (receptionHour.startTime >= other.startTime && receptionHour.startTime < other.endTime) ||
+        (receptionHour.endTime > other.startTime && receptionHour.endTime <= other.endTime) ||
+        (receptionHour.startTime <= other.startTime && receptionHour.endTime >= other.endTime)
+      ) {
+        return `קיימת חפיפה עם טווח שעות אחר (${other.startTime} - ${other.endTime})`;
+      }
+    }
+
+    return null;
+  }
+
+  // Sort reception hours chronologically
+  sortReceptionHours() {
+    this.donorReceptionHours.sort((a, b) => {
+      return a.startTime.localeCompare(b.startTime);
+    });
+
+    // Update sortOrder after sorting
+    this.donorReceptionHours.forEach((rh, index) => {
+      rh.sortOrder = index;
+    });
   }
 
   getAvailableEvents() {
@@ -1144,20 +1854,66 @@ export class DonorDetailsModalComponent implements OnInit {
   }
 
   async addNewCompany() {
+    if (!this.donor) return;
+
     try {
-      const dialogResult = await openDialog(
-        CompanyDetailsModalComponent,
-        (modal: CompanyDetailsModalComponent) => {
-          modal.args = { companyId: undefined };
-        }
+      // Show options: create new or select existing
+      const action = await this.ui.yesNoQuestion(
+        'האם ברצונך ליצור חברה חדשה (כן) או לבחור מחברה קיימת (לא)?'
       );
 
-      if (dialogResult) {
-        // Reload companies list
-        await this.loadCompanies();
+      if (action) {
+        // Create new company
+        const dialogResult = await openDialog(
+          CompanyDetailsModalComponent,
+          (modal: CompanyDetailsModalComponent) => {
+            modal.args = { companyId: undefined };
+          }
+        );
+
+        if (dialogResult) {
+          // Reload companies list
+          await this.loadCompanies();
+        }
+      } else {
+        // Select existing company
+        const availableCompanies = this.companies.filter(
+          c => !this.donor!.companyIds?.includes(c.id)
+        );
+
+        if (availableCompanies.length === 0) {
+          this.ui.info('כל החברות כבר נבחרו');
+          return;
+        }
+
+        // Build options list for user to select from
+        const companiesList = availableCompanies.map((c, i) => `${i + 1}. ${c.name}`).join('\n');
+        const selectedIndexStr = prompt(
+          `בחר חברה לפי מספר:\n${companiesList}\n\nהזן מספר (1-${availableCompanies.length}):`,
+          '1'
+        );
+
+        if (selectedIndexStr) {
+          const selectedIndex = parseInt(selectedIndexStr) - 1;
+
+          if (selectedIndex >= 0 && selectedIndex < availableCompanies.length) {
+            const selectedCompany = availableCompanies[selectedIndex];
+
+            // Add to donor's companyIds
+            if (!this.donor.companyIds) {
+              this.donor.companyIds = [];
+            }
+            this.donor.companyIds.push(selectedCompany.id);
+            this.selectedCompanies.push(selectedCompany);
+            this.changed = true;
+            console.log('Added existing company:', selectedCompany.name);
+          } else {
+            this.ui.info('מספר לא תקין');
+          }
+        }
       }
     } catch (error) {
-      console.error('Error opening company modal:', error);
+      console.error('Error in addNewCompany:', error);
     }
   }
 
@@ -1212,6 +1968,138 @@ export class DonorDetailsModalComponent implements OnInit {
     return this.companies.filter(company => !this.donor!.companyIds!.includes(company.id));
   }
 
+  // Circle Management Functions
+  private async loadCircles() {
+    try {
+      this.circles = await this.circleRepo.find({
+        where: { isActive: true },
+        orderBy: { sortOrder: 'asc', name: 'asc' }
+      });
+      console.log('Loaded circles:', this.circles.length);
+    } catch (error) {
+      console.error('Error loading circles:', error);
+    }
+  }
+
+  async loadSelectedCircles() {
+    if (!this.donor?.circleIds || this.donor.circleIds.length === 0) {
+      this.selectedCircles = [];
+      return;
+    }
+
+    try {
+      this.selectedCircles = [];
+      for (const circleId of this.donor.circleIds) {
+        const circle = await this.circleRepo.findId(circleId);
+        if (circle) {
+          this.selectedCircles.push(circle);
+        }
+      }
+      console.log('Loaded selected circles:', this.selectedCircles);
+    } catch (error) {
+      console.error('Error loading selected circles:', error);
+    }
+  }
+
+  async addNewCircle() {
+    if (!this.donor) return;
+
+    try {
+      // Get available circles (not already selected)
+      const availableCircles = this.circles.filter(
+        c => !this.donor!.circleIds?.includes(c.id)
+      );
+
+      // Open circle selection modal
+      const dialogResult = await openDialog(
+        CircleSelectionModalComponent,
+        (modal: CircleSelectionModalComponent) => {
+          modal.args = {
+            availableCircles: availableCircles,
+            title: 'בחר חוג או צור חדש'
+          };
+        }
+      );
+
+      if (dialogResult) {
+        let circleToAdd: Circle | undefined;
+
+        // Check if it's a new circle that was created
+        if (typeof dialogResult === 'object' && 'newCircle' in dialogResult) {
+          // Reload circles list to include the new circle
+          await this.loadCircles();
+          circleToAdd = (dialogResult as any).newCircle;
+        } else if (dialogResult instanceof Circle) {
+          // An existing circle was selected
+          circleToAdd = dialogResult;
+        }
+
+        // Add the circle to donor's circleIds
+        if (circleToAdd && !this.donor.circleIds?.includes(circleToAdd.id)) {
+          if (!this.donor.circleIds) {
+            this.donor.circleIds = [];
+          }
+          this.donor.circleIds.push(circleToAdd.id);
+          this.selectedCircles.push(circleToAdd);
+          this.changed = true;
+          console.log('Added circle:', circleToAdd.name);
+        }
+      }
+    } catch (error) {
+      console.error('Error in addNewCircle:', error);
+    }
+  }
+
+  async editCircle(circle: Circle) {
+    try {
+      const dialogResult = await openDialog(
+        CircleDetailsModalComponent,
+        (modal: CircleDetailsModalComponent) => {
+          modal.args = { circleId: circle.id };
+        }
+      );
+
+      if (dialogResult) {
+        // Reload the circle
+        const updatedCircle = await this.circleRepo.findId(circle.id);
+        if (updatedCircle) {
+          const index = this.selectedCircles.findIndex(c => c.id === circle.id);
+          if (index > -1) {
+            this.selectedCircles[index] = updatedCircle;
+          }
+        }
+        await this.loadCircles();
+      }
+    } catch (error) {
+      console.error('Error editing circle:', error);
+    }
+  }
+
+  removeCircle(circle: Circle, event?: MouseEvent) {
+    if (event) {
+      event.stopPropagation(); // Prevent triggering edit on tag click
+    }
+
+    if (!this.donor) return;
+
+    // Remove from donor's circleIds
+    if (this.donor.circleIds) {
+      const index = this.donor.circleIds.indexOf(circle.id);
+      if (index > -1) {
+        this.donor.circleIds.splice(index, 1);
+      }
+    }
+
+    // Remove from selectedCircles
+    const selectedIndex = this.selectedCircles.findIndex(c => c.id === circle.id);
+    if (selectedIndex > -1) {
+      this.selectedCircles.splice(selectedIndex, 1);
+    }
+
+    console.log('Removed circle:', circle.name);
+    this.changed = true;
+  }
+
   // Family Relationships Functions
   private async loadAllDonorsForFamily() {
     try {
@@ -1226,23 +2114,58 @@ export class DonorDetailsModalComponent implements OnInit {
   }
 
   async loadSelectedFamilyRelationships() {
-    if (!this.donor?.familyRelationships || this.donor.familyRelationships.length === 0) {
+    if (!this.donor?.id) {
       this.selectedFamilyRelationships = [];
       return;
     }
 
     try {
       this.selectedFamilyRelationships = [];
-      for (const relationship of this.donor.familyRelationships) {
-        const donor = await this.donorRepo.findId(relationship.donorId);
-        if (donor) {
+
+      // טען את כל הקשרים שבהם התורם הנוכחי מופיע או כ-donor1 או כ-donor2
+      const relations = await this.donorRelationRepo.find({
+        where: {
+          $or: [
+            { donor1Id: this.donor.id },
+            { donor2Id: this.donor.id }
+          ]
+        },
+        include: {
+          donor1: true,
+          donor2: true
+        }
+      });
+
+      for (const relation of relations) {
+        let relatedDonor: Donor | undefined;
+        let relationshipType: string = '';
+        let isReverse = false;
+
+        // אם התורם הנוכחי הוא donor1, אזי הקשר הוא ישיר
+        if (relation.donor1Id === this.donor.id) {
+          relatedDonor = relation.donor2;
+          // קבל את הקשר ההפוך
+          relationshipType = getReverseRelationship(relation.relationshipType, relatedDonor?.gender as 'male' | 'female' | undefined);
+          isReverse = false;
+        }
+        // אם התורם הנוכחי הוא donor2, אזי הקשר הוא הפוך
+        else if (relation.donor2Id === this.donor.id) {
+          relatedDonor = relation.donor1;
+          relationshipType = relation.relationshipType;
+          isReverse = true;
+        }
+
+        if (relatedDonor && relationshipType) {
           this.selectedFamilyRelationships.push({
-            donor: donor,
-            relationshipType: relationship.relationshipType,
-            donorId: relationship.donorId
+            donor: relatedDonor,
+            relationshipType: relationshipType,
+            donorId: relatedDonor.id,
+            relationId: relation.id,
+            isReverse: isReverse
           });
         }
       }
+
       console.log('Loaded selected family relationships:', this.selectedFamilyRelationships);
     } catch (error) {
       console.error('Error loading selected family relationships:', error);
@@ -1253,60 +2176,72 @@ export class DonorDetailsModalComponent implements OnInit {
     const donorId = event.target.value;
     event.target.value = ''; // Reset selection
 
-    if (!donorId || !this.newRelationshipType) return;
+    if (!donorId || !this.newRelationshipType || !this.donor?.id) return;
 
-    const donor = this.allDonorsForFamily.find(d => d.id === donorId);
-    if (!donor) return;
+    const selectedDonor = this.allDonorsForFamily.find(d => d.id === donorId);
+    if (!selectedDonor) return;
 
     // Check if already exists
-    const exists = this.donor?.familyRelationships?.some(r => r.donorId === donorId);
+    const exists = this.selectedFamilyRelationships.some(r => r.donorId === donorId);
     if (exists) {
       this.ui.info('תורם זה כבר ברשימת הקשרים המשפחתיים');
       return;
     }
 
-    // Add to donor's familyRelationships
-    if (!this.donor) return;
-    if (!this.donor.familyRelationships) {
-      this.donor.familyRelationships = [];
+    try {
+      // צור רשומת DonorRelation חדשה
+      const newRelation = this.donorRelationRepo.create({
+        donor1Id: this.donor.id,
+        donor2Id: selectedDonor.id,
+        relationshipType: this.newRelationshipType
+      });
+
+      await this.donorRelationRepo.save(newRelation);
+
+      // Add to selectedFamilyRelationships for display
+      this.selectedFamilyRelationships.push({
+        donor: selectedDonor,
+        relationshipType: this.newRelationshipType,
+        donorId: selectedDonor.id,
+        relationId: newRelation.id,
+        isReverse: false
+      });
+
+      console.log('Added family relationship:', { donor: selectedDonor.fullName, type: this.newRelationshipType });
+      this.changed = true;
+
+      // Reset relationship type
+      this.newRelationshipType = '';
+    } catch (error) {
+      console.error('Error adding family relationship:', error);
+      this.ui.info('שגיאה בהוספת קשר משפחתי');
     }
-
-    this.donor.familyRelationships.push({
-      donorId: donor.id,
-      relationshipType: this.newRelationshipType
-    });
-
-    // Add to selectedFamilyRelationships for display
-    this.selectedFamilyRelationships.push({
-      donor: donor,
-      relationshipType: this.newRelationshipType,
-      donorId: donor.id
-    });
-
-    console.log('Added family relationship:', { donor: donor.fullName, type: this.newRelationshipType });
-    this.changed = true;
-
-    // Reset relationship type
-    this.newRelationshipType = '';
   }
 
-  removeFamilyRelationship(relationship: { donor: Donor; relationshipType: string; donorId: string }) {
-    if (!this.donor?.familyRelationships) return;
-
-    // Remove from donor's familyRelationships
-    const index = this.donor.familyRelationships.findIndex(r => r.donorId === relationship.donorId);
-    if (index > -1) {
-      this.donor.familyRelationships.splice(index, 1);
+  async removeFamilyRelationship(relationship: { donor: Donor; relationshipType: string; donorId: string; relationId: string; isReverse: boolean }) {
+    if (!confirm(`האם למחוק את הקשר המשפחתי עם ${relationship.donor.fullName}?`)) {
+      return;
     }
 
-    // Remove from selectedFamilyRelationships
-    const selectedIndex = this.selectedFamilyRelationships.findIndex(r => r.donorId === relationship.donorId);
-    if (selectedIndex > -1) {
-      this.selectedFamilyRelationships.splice(selectedIndex, 1);
-    }
+    try {
+      // מחק את רשומת ה-DonorRelation
+      const relation = await this.donorRelationRepo.findId(relationship.relationId);
+      if (relation) {
+        await this.donorRelationRepo.delete(relation);
+      }
 
-    console.log('Removed family relationship:', relationship.donor.fullName);
-    this.changed = true;
+      // Remove from selectedFamilyRelationships
+      const selectedIndex = this.selectedFamilyRelationships.findIndex(r => r.relationId === relationship.relationId);
+      if (selectedIndex > -1) {
+        this.selectedFamilyRelationships.splice(selectedIndex, 1);
+      }
+
+      console.log('Removed family relationship:', relationship.donor.fullName);
+      this.changed = true;
+    } catch (error) {
+      console.error('Error removing family relationship:', error);
+      this.ui.info('שגיאה במחיקת קשר משפחתי');
+    }
   }
 
   getAvailableDonorsForFamily(): Donor[] {
@@ -1318,7 +2253,7 @@ export class DonorDetailsModalComponent implements OnInit {
       if (donor.id === this.donor?.id) return false;
 
       // Don't show already selected family members
-      const alreadySelected = this.donor?.familyRelationships?.some(r => r.donorId === donor.id);
+      const alreadySelected = this.selectedFamilyRelationships.some(r => r.donorId === donor.id);
       return !alreadySelected;
     });
   }
@@ -1348,6 +2283,14 @@ export class DonorDetailsModalComponent implements OnInit {
       }
     } catch (error) {
       console.error('Error opening family member details:', error);
+    }
+  }
+
+  // Scroll to specific section
+  scrollToSection(sectionId: string) {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }
 }

@@ -552,8 +552,9 @@ export async function seedDatabase() {
       certificateIndex++
     }
 
-    // Create basic events (excluding birth date which is a separate field in donor)
+    // Create basic events
     const events = [
+      { description: 'יום הולדת', type: 'personal', isRequired: false, sortOrder: 0, category: 'אישי' },
       { description: 'יום נישואין', type: 'personal', isRequired: false, sortOrder: 1, category: 'אישי' },
       { description: 'יארצייט אבא', type: 'personal', isRequired: false, sortOrder: 2, category: 'יארצייט' },
       { description: 'יארצייט אמא', type: 'personal', isRequired: false, sortOrder: 3, category: 'יארצייט' },
@@ -580,15 +581,19 @@ export async function seedDatabase() {
 
     // Create some sample donor events
     const sampleDonorEvents = [
-      // Some marriage dates (index 0 is now יום נישואין after removing birth date)
-      { donorIndex: 0, eventIndex: 0, hebrewDate: new Date('2000-06-10'), gregorianDate: new Date('2000-06-10'), notes: 'יום נישואין' },
-      { donorIndex: 1, eventIndex: 0, hebrewDate: new Date('2005-03-15'), gregorianDate: new Date('2005-03-15'), notes: 'יום נישואין' },
+      // Birth dates (index 0 is יום הולדת)
+      { donorIndex: 0, eventIndex: 0, date: new Date('1975-05-15'), notes: 'יום הולדת' },
+      { donorIndex: 1, eventIndex: 0, date: new Date('1980-08-22'), notes: 'יום הולדת' },
+      { donorIndex: 2, eventIndex: 0, date: new Date('1970-12-03'), notes: 'יום הולדת' },
+      // Some marriage dates (index 1 is יום נישואין)
+      { donorIndex: 0, eventIndex: 1, date: new Date('2000-06-10'), notes: 'יום נישואין' },
+      { donorIndex: 1, eventIndex: 1, date: new Date('2005-03-15'), notes: 'יום נישואין' },
       // Some yahrzeit dates
-      { donorIndex: 2, eventIndex: 1, hebrewDate: new Date('2010-01-20'), gregorianDate: new Date('2010-01-20'), notes: 'יארצייט אבא' },
-      { donorIndex: 2, eventIndex: 2, hebrewDate: new Date('2015-11-05'), gregorianDate: new Date('2015-11-05'), notes: 'יארצייט אמא' },
+      { donorIndex: 2, eventIndex: 2, date: new Date('2010-01-20'), notes: 'יארצייט אבא' },
+      { donorIndex: 2, eventIndex: 3, date: new Date('2015-11-05'), notes: 'יארצייט אמא' },
       // Bar/Bat Mitzvahs
-      { donorIndex: 3, eventIndex: 4, hebrewDate: new Date('2020-03-12'), gregorianDate: new Date('2020-03-12'), notes: 'בר מצווה' },
-      { donorIndex: 4, eventIndex: 5, hebrewDate: new Date('2021-06-18'), gregorianDate: new Date('2021-06-18'), notes: 'בת מצווה' },
+      { donorIndex: 3, eventIndex: 5, date: new Date('2020-03-12'), notes: 'בר מצווה' },
+      { donorIndex: 4, eventIndex: 6, date: new Date('2021-06-18'), notes: 'בת מצווה' },
     ]
 
     let donorEventIndex = 0
@@ -602,8 +607,7 @@ export async function seedDatabase() {
           donorId: donor.id,
           event: event,
           eventId: event.id,
-          hebrewDate: donorEventData.hebrewDate,
-          gregorianDate: donorEventData.gregorianDate//,
+          date: donorEventData.date//,
           // notes: donorEventData.notes
         })
 

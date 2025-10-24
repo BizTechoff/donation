@@ -3,7 +3,7 @@ import { remultExpress } from 'remult/remult-express'
 import { SignInController, getUser } from '../app/users/SignInController'
 import { UpdatePasswordController } from '../app/users/UpdatePasswordController'
 import { DonorController } from '../shared/controllers/donor.controller'
-import { Bank, Company, Contact, Organization } from '../shared/entity'
+import { Bank, Circle, Company, Contact, DonorAddress, DonorContact, DonorNote, DonorPlace, DonorReceptionHour, DonorRelation, Organization } from '../shared/entity'
 import { Blessing } from '../shared/entity/blessing'
 import { Campaign } from '../shared/entity/campaign'
 import { Certificate } from '../shared/entity/certificate'
@@ -25,7 +25,7 @@ import { LetterController } from '../shared/controllers/letter.controller'
 export const entities = [
   User, Donor, Donation, Campaign, DonationMethod, StandingOrder, Reminder,
   Certificate, Event, DonorEvent, Blessing, Country, Place, DonationPartner,
-  DonationFile, Contact, Bank, Organization, Company]
+  DonationFile, Contact, Bank, Organization, Company, Circle, DonorRelation, DonorAddress, DonorContact, DonorPlace, DonorNote, DonorReceptionHour]
 export const api = remultExpress({
   admin: true,
   controllers: [SignInController, UpdatePasswordController, SeedController, DonorController, LetterController],

@@ -1,0 +1,155 @@
+<div class="modal-container" *ngIf="circle">
+  <!-- Header -->
+  <div class="modal-header">
+    <h2>
+      <mat-icon class="header-icon">group_work</mat-icon>
+      {{ isNew ? 'חוג חדש' : 'עריכת חוג' }}
+    </h2>
+    <button mat-icon-button class="close-btn" (click)="cancel()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <!-- Loading Spinner -->
+  <div *ngIf="loading" class="loading-overlay">
+    <mat-spinner diameter="50"></mat-spinner>
+  </div>
+
+  <!-- Content -->
+  <div class="modal-content" *ngIf="!loading">
+    <div class="form-section">
+      <!-- Name (Hebrew) -->
+      <div class="form-group">
+        <label class="form-label required">שם החוג</label>
+        <input
+          type="text"
+          class="form-control"
+          [(ngModel)]="circle.name"
+          placeholder="לדוגמה: חוג זהב, חוג VIP"
+          required
+        />
+      </div>
+
+      <!-- Name (English) -->
+      <div class="form-group">
+        <label class="form-label">שם באנגלית</label>
+        <input
+          type="text"
+          class="form-control"
+          [(ngModel)]="circle.nameEnglish"
+          placeholder="Example: Gold Circle, VIP Circle"
+        />
+      </div>
+
+      <!-- Description -->
+      <div class="form-group">
+        <label class="form-label">תיאור</label>
+        <textarea
+          class="form-control"
+          [(ngModel)]="circle.description"
+          rows="3"
+          placeholder="תיאור החוג (אופציונלי)">
+        </textarea>
+      </div>
+
+      <!-- Color Selector -->
+      <div class="form-group">
+        <label class="form-label">צבע התגית</label>
+        <div class="color-picker">
+          <div
+            *ngFor="let colorOption of colorOptions"
+            class="color-option"
+            [class.selected]="circle.color === colorOption.value"
+            [style.background-color]="colorOption.value"
+            (click)="circle.color = colorOption.value"
+            [title]="colorOption.name">
+            <mat-icon *ngIf="circle.color === colorOption.value">check</mat-icon>
+          </div>
+        </div>
+      </div>
+
+      <!-- Icon Selector -->
+      <div class="form-group">
+        <label class="form-label">אייקון</label>
+        <div class="icon-picker">
+          <div
+            *ngFor="let iconOption of iconOptions"
+            class="icon-option"
+            [class.selected]="circle.icon === iconOption"
+            (click)="circle.icon = iconOption">
+            <mat-icon>{{ iconOption }}</mat-icon>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sort Order -->
+      <div class="form-group">
+        <label class="form-label">סדר מיון</label>
+        <input
+          type="number"
+          class="form-control"
+          [(ngModel)]="circle.sortOrder"
+          placeholder="0"
+        />
+      </div>
+
+      <!-- Active Status -->
+      <div class="form-group checkbox-group">
+        <label class="checkbox-label">
+          <input
+            type="checkbox"
+            [(ngModel)]="circle.isActive"
+          />
+          <span>חוג פעיל</span>
+        </label>
+      </div>
+
+      <!-- Preview -->
+      <div class="form-group" *ngIf="circle.name">
+        <label class="form-label">תצוגה מקדימה</label>
+        <div class="circle-preview">
+          <span
+            class="circle-tag"
+            [style.background-color]="circle.color"
+            [style.color]="'white'">
+            <mat-icon *ngIf="circle.icon">{{ circle.icon }}</mat-icon>
+            {{ circle.name }}
+            <button class="remove-tag-btn">
+              <mat-icon>close</mat-icon>
+            </button>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="modal-footer">
+    <button
+      mat-stroked-button
+      color="warn"
+      (click)="deleteCircle()"
+      *ngIf="!isNew"
+      [disabled]="loading">
+      <mat-icon>delete</mat-icon>
+      מחק חוג
+    </button>
+
+    <div class="footer-actions">
+      <button
+        mat-stroked-button
+        (click)="cancel()"
+        [disabled]="loading">
+        ביטול
+      </button>
+      <button
+        mat-raised-button
+        color="primary"
+        (click)="save()"
+        [disabled]="loading || !circle.name">
+        <mat-icon>save</mat-icon>
+        {{ isNew ? 'צור חוג' : 'שמור שינויים' }}
+      </button>
+    </div>
+  </div>
+</div>

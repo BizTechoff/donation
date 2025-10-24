@@ -54,6 +54,10 @@ export class Letter {
         'donor_suffix',
         'donation_amount',
         'donation_currency_symbol',
+        'payer_name',
+        'payer_address',
+        'receipt_number',
+        'account_name',
         'letter_suffix'
     ])
     static ty_yeshiva_no_receipt = new Letter('מכתב תודה מהישיבה ללא קבלה', [
@@ -89,6 +93,10 @@ export class Letter {
         'donor_suffix',
         'donation_amount',
         'donation_currency_symbol',
+        'payer_name',
+        'payer_address',
+        'receipt_number',
+        'account_name',
         'letter_suffix'
     ])
     static ty_no_receipt = new Letter('מכתב תודה ללא קבלה', [

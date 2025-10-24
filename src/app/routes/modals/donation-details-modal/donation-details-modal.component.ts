@@ -2,7 +2,7 @@ import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
 import { DialogConfig, openDialog } from 'common-ui-elements';
 import { remult } from 'remult';
-import { Bank, Campaign, Country, Donation, DonationFile, DonationMethod, DonationPartner, Donor, Organization, User } from '../../../../shared/entity';
+import { Bank, Campaign, Company, Country, Donation, DonationFile, DonationMethod, DonationPartner, Donor, Organization, User } from '../../../../shared/entity';
 import { Letter } from '../../../../shared/enum/letter';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
@@ -42,6 +42,7 @@ export class DonationDetailsModalComponent implements OnInit {
   selectedPartners: Donor[] = [];
   organizations: Organization[] = [];
   banks: Bank[] = [];
+  payerCompanies: Company[] = [];
 
   donationRepo = remult.repo(Donation);
   donorRepo = remult.repo(Donor);
@@ -577,6 +578,9 @@ export class DonationDetailsModalComponent implements OnInit {
           include: { fundraiser: true }
         }) || undefined;
 
+        // Load companies for payer selection
+        await this.loadPayerCompanies();
+
         // Auto-update currency for new donations when loading existing donor
         if (this.isNewDonation && this.selectedDonor) {
           await this.updateCurrencyBasedOnCountry(this.selectedDonor);
@@ -936,6 +940,14 @@ export class DonationDetailsModalComponent implements OnInit {
         if (this.selectedDonor.fundraiser) {
           this.donation.fundraiserId = this.selectedDonor.fundraiser.id;
         }
+
+        // Load companies for payer selection
+        await this.loadPayerCompanies();
+
+        // Set default payer to personal (donor themselves) if not already set
+        if (!this.donation.payerCompanyId && !this.donation.payerName) {
+          await this.onPayerChange(null);
+        }
       }
     } catch (error) {
       console.error('Error in onDonorChange:', error);
@@ -1174,5 +1186,45 @@ export class DonationDetailsModalComponent implements OnInit {
   getCurrencyName(code: string): string {
     const key = `currency${code}` as keyof typeof this.i18n.terms;
     return this.i18n.terms[key] as string || code;
+  }
+
+  /**
+   * Load companies associated with the selected donor
+   */
+  async loadPayerCompanies() {
+    this.payerCompanies = [];
+
+    if (!this.selectedDonor?.companyIds?.length) {
+      return;
+    }
+
+    try {
+      this.payerCompanies = await remult.repo(Company).find({
+        where: { id: { $in: this.selectedDonor.companyIds } },
+        include: { place: true }
+      });
+    } catch (error) {
+      console.error('Error loading payer companies:', error);
+    }
+  }
+
+  /**
+   * Handle payer selection change
+   */
+  async onPayerChange(payerCompanyId: string | null) {
+    if (!payerCompanyId) {
+      // Personal payer (the donor themselves)
+      if (this.selectedDonor) {
+        this.donation.payerName = `${this.selectedDonor.firstName || ''} ${this.selectedDonor.lastName || ''}`.trim();
+        this.donation.payerAddress = this.selectedDonor.homePlace?.fullAddress || '';
+      }
+    } else {
+      // Company payer
+      const company = this.payerCompanies.find(c => c.id === payerCompanyId);
+      if (company) {
+        this.donation.payerName = company.name;
+        this.donation.payerAddress = company.place?.fullAddress || '';
+      }
+    }
   }
 }

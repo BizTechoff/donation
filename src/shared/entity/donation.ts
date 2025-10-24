@@ -14,6 +14,7 @@ import { Campaign } from './campaign'
 import { DonationMethod } from './donation-method'
 import { Organization } from './organization'
 import { Bank } from './bank'
+import { Company } from './company'
 import { Roles } from '../enum/roles'
 
 @Entity<Donation>('donations', {
@@ -255,6 +256,22 @@ export class Donation extends IdEntity {
     caption: 'שם המשלם',
   })
   payerName = ''
+
+  @Fields.string({
+    caption: 'כתובת משלם',
+  })
+  payerAddress = ''
+
+  @Fields.string({
+    caption: 'מזהה חברה משלמת',
+  })
+  payerCompanyId = ''
+
+  @Relations.toOne<Donation, Company>(() => Company, {
+    caption: 'חברה משלמת',
+    field: 'payerCompanyId'
+  })
+  payerCompany?: Company
 
   @Fields.string({
     caption: 'תדירות',

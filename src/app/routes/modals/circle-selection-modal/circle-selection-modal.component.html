@@ -1,0 +1,66 @@
+<div class="modal-backdrop" (click)="closeDialog()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ args.title || 'בחר חוג' }}</h2>
+      <button class="close-btn" (click)="closeDialog()" title="סגור">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <!-- Search Section -->
+      <div class="search-section">
+        <div class="search-input-group">
+          <input
+            type="text"
+            class="form-control search-input"
+            [(ngModel)]="circleSearchTerm"
+            placeholder="חפש חוג...">
+          <button *ngIf="circleSearchTerm" class="clear-search-btn" (click)="clearSearch()">
+            <mat-icon>clear</mat-icon>
+          </button>
+        </div>
+        <button class="btn btn-create-new" (click)="createNewCircle()">
+          <mat-icon>add</mat-icon>
+          יצירת חוג חדש
+        </button>
+      </div>
+
+      <!-- Circles Grid -->
+      <div class="circles-grid-section">
+        <div class="circles-grid" *ngIf="getFilteredCircles().length > 0">
+          <div class="circle-card"
+               *ngFor="let circle of getFilteredCircles()"
+               (click)="selectCircle(circle)"
+               [class.selected]="selectedCircle?.id === circle.id"
+               [style.border-color]="circle.color || '#667eea'">
+            <div class="circle-card-content">
+              <div class="circle-icon-wrapper" [style.background-color]="circle.color || '#667eea'">
+                <mat-icon *ngIf="circle.icon">{{ circle.icon }}</mat-icon>
+                <mat-icon *ngIf="!circle.icon">group_work</mat-icon>
+              </div>
+              <div class="circle-info">
+                <div class="circle-name">{{ circle.name }}</div>
+                <div class="circle-name-english" *ngIf="circle.nameEnglish">{{ circle.nameEnglish }}</div>
+              </div>
+            </div>
+            <div class="select-indicator">
+              <mat-icon>check_circle</mat-icon>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty state when no circles found -->
+        <div class="no-circles-found" *ngIf="getFilteredCircles().length === 0">
+          <mat-icon class="empty-icon">group_work</mat-icon>
+          <p *ngIf="circleSearchTerm">לא נמצאו חוגים התואמים לחיפוש "{{ circleSearchTerm }}"</p>
+          <p *ngIf="!circleSearchTerm">אין חוגים זמינים</p>
+          <button class="btn btn-primary" (click)="createNewCircle()">
+            <mat-icon>add</mat-icon>
+            יצור חוג חדש
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

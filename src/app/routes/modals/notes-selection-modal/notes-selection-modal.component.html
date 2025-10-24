@@ -1,0 +1,132 @@
+<div class="modal-backdrop" (click)="closeDialog()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ args.title || 'בחר סוג הערה' }}</h2>
+      <button class="close-btn" (click)="closeDialog()" title="סגור">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <!-- Search Section -->
+      <div class="search-section">
+        <div class="search-input-group">
+          <mat-icon class="search-icon">search</mat-icon>
+          <input
+            type="text"
+            class="form-control search-input"
+            [(ngModel)]="searchTerm"
+            (ngModelChange)="filterNoteTypes()"
+            placeholder="חפש סוג הערה...">
+          <button *ngIf="searchTerm" class="clear-search-btn" (click)="clearSearch()">
+            <mat-icon>clear</mat-icon>
+          </button>
+        </div>
+        <button class="btn btn-success add-new-btn" (click)="toggleCreateNewType()">
+          <mat-icon>{{ showCreateNewType ? 'close' : 'add' }}</mat-icon>
+          {{ showCreateNewType ? 'ביטול' : 'הוסף סוג הערה חדש' }}
+        </button>
+      </div>
+
+      <!-- Create New Note Type Section -->
+      <div class="create-type-section" *ngIf="showCreateNewType">
+        <div class="create-type-card">
+          <h3>יצירת סוג הערה חדש</h3>
+          <div class="new-type-form">
+            <input
+              type="text"
+              class="form-control"
+              [(ngModel)]="newNoteType"
+              placeholder="שם סוג ההערה (לדוגמה: העדפות אוכל)"
+              (keyup.enter)="createNewNoteType()">
+            <div class="form-actions">
+              <button class="btn btn-primary" (click)="createNewNoteType()" [disabled]="!newNoteType.trim()">
+                <mat-icon>save</mat-icon>
+                צור ושמור
+              </button>
+              <button class="btn btn-secondary" (click)="toggleCreateNewType()">
+                <mat-icon>cancel</mat-icon>
+                ביטול
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Note Types List -->
+      <div class="note-types-section" *ngIf="!showCreateNewType">
+        <div class="note-types-list">
+          <div class="note-type-item"
+               *ngFor="let noteType of filteredNoteTypes"
+               (click)="selectNoteType(noteType)"
+               [class.selected]="selectedNoteType === noteType"
+               [class.editing]="editingNoteType === noteType">
+
+            <!-- Normal display mode -->
+            <div class="note-type-content" *ngIf="editingNoteType !== noteType">
+              <div class="note-type-info">
+                <mat-icon class="note-icon">label</mat-icon>
+                <span class="note-type-name">{{ noteType }}</span>
+              </div>
+              <div class="note-type-actions">
+                <button class="edit-btn" (click)="startEditNoteType(noteType, $event)" title="ערוך">
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button class="delete-btn" (click)="deleteNoteType(noteType, $event)" title="מחק">
+                  <mat-icon>delete</mat-icon>
+                </button>
+                <button class="select-btn" *ngIf="selectedNoteType === noteType">
+                  <mat-icon>check_circle</mat-icon>
+                </button>
+              </div>
+            </div>
+
+            <!-- Edit mode -->
+            <div class="note-type-edit" *ngIf="editingNoteType === noteType">
+              <input
+                type="text"
+                class="form-control edit-input"
+                [(ngModel)]="editedNoteTypeName"
+                (keyup.enter)="saveEditNoteType()"
+                (click)="$event.stopPropagation()"
+                placeholder="שם סוג ההערה">
+              <div class="edit-actions">
+                <button class="save-edit-btn" (click)="saveEditNoteType(); $event.stopPropagation()" title="שמור">
+                  <mat-icon>check</mat-icon>
+                </button>
+                <button class="cancel-edit-btn" (click)="cancelEditNoteType(); $event.stopPropagation()" title="בטל">
+                  <mat-icon>close</mat-icon>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty state -->
+        <div class="no-types-found" *ngIf="filteredNoteTypes.length === 0">
+          <mat-icon class="empty-icon">note_add</mat-icon>
+          <p *ngIf="searchTerm">לא נמצאו סוגי הערות התואמים לחיפוש "{{ searchTerm }}"</p>
+          <p *ngIf="!searchTerm">אין סוגי הערות זמינים</p>
+          <button class="btn btn-primary" (click)="toggleCreateNewType()">
+            <mat-icon>add</mat-icon>
+            הוסף סוג הערה ראשון
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeDialog()">
+        <mat-icon>close</mat-icon>
+        ביטול
+      </button>
+      <button class="btn btn-primary"
+              (click)="saveNoteType()"
+              [disabled]="!selectedNoteType">
+        <mat-icon>add</mat-icon>
+        הוסף סוג הערה
+      </button>
+    </div>
+  </div>
+</div>

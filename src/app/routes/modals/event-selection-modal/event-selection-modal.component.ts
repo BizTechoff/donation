@@ -126,4 +126,35 @@ export class EventSelectionModalComponent implements OnInit {
       (event.category || 'אחר') === category
     );
   }
+
+  async createNewEventForCategory(category: string) {
+    const description = prompt(`צור אירוע ${category} חדש - הזן תיאור לאירוע:`);
+
+    if (!description || description.trim() === '') {
+      return;
+    }
+
+    try {
+      const newEvent = this.eventRepo.create({
+        description: description.trim(),
+        type: 'personal',
+        category: category,
+        isRequired: false,
+        isActive: true,
+        sortOrder: this.availableEvents.length
+      });
+
+      await newEvent.save();
+
+      // Add to available events list
+      this.availableEvents.push(newEvent);
+
+      // Select the new event
+      this.selectEvent(newEvent);
+
+    } catch (error) {
+      console.error('Error creating new event:', error);
+      alert('שגיאה ביצירת האירוע');
+    }
+  }
 }

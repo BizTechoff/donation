@@ -7,26 +7,23 @@ import {
   Relations,
 } from 'remult'
 import { Donor } from './donor'
-import { Event } from './event'
 
-@Entity<DonorEvent>('donor_events', {
+@Entity<DonorReceptionHour>('donor_reception_hours', {
   allowApiCrud: Allow.authenticated,
   allowApiRead: Allow.authenticated,
   allowApiUpdate: Allow.authenticated,
   allowApiDelete: Allow.authenticated,
   allowApiInsert: Allow.authenticated,
-  saving: async (donorEvent) => {
+  saving: async (donorReceptionHour) => {
     if (isBackend()) {
-      if (donorEvent._.isNew()) {
-        donorEvent.createdDate = new Date()
+      if (donorReceptionHour._.isNew()) {
+        donorReceptionHour.createdDate = new Date()
       }
-      donorEvent.updatedDate = new Date()
+      donorReceptionHour.updatedDate = new Date()
     }
   },
 })
-export class DonorEvent extends IdEntity {
-
-
+export class DonorReceptionHour extends IdEntity {
   @Fields.string({ caption: 'מזהה תורם' })
   donorId?: string;
 
@@ -37,27 +34,27 @@ export class DonorEvent extends IdEntity {
   })
   donor?: Donor;
 
-  @Fields.string({ caption: 'מזהה אירוע' })
-  eventId?: string;
-
-  @Relations.toOne(() => Event, {
-    field: "eventId",
-    caption: 'אירוע',
-    defaultIncluded: true
+  @Fields.string({
+    caption: 'שעת התחלה',
+    allowNull: false,
   })
-  event?: Event;
+  startTime = '' // Format: HH:MM
 
-  @Fields.dateOnly({
-    caption: 'תאריך',
-    allowNull: true,
+  @Fields.string({
+    caption: 'שעת סיום',
+    allowNull: false,
   })
-  date?: Date
+  endTime = '' // Format: HH:MM
 
-  // @Fields.string({
-  //   caption: 'הערות',
-  //   allowNull: true,
-  // })
-  // notes = ''
+  @Fields.string({
+    caption: 'תיאור',
+  })
+  description?: string
+
+  @Fields.number({
+    caption: 'סדר תצוגה',
+  })
+  sortOrder = 0
 
   @Fields.boolean({
     caption: 'פעיל',
@@ -73,5 +70,4 @@ export class DonorEvent extends IdEntity {
     caption: 'תאריך עדכון',
   })
   updatedDate = new Date()
-
 }
