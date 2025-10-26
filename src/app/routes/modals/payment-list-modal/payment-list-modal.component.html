@@ -1,0 +1,183 @@
+<!-- Payment List Modal -->
+<div class="modal-overlay" (click)="closeModal()">
+  <div class="modal-content payment-list-modal" (click)="$event.stopPropagation()">
+
+    <!-- Modal Header -->
+    <div class="modal-header">
+      <div class="header-content">
+        <div class="header-icon">
+          <mat-icon>{{modalIcon}}</mat-icon>
+        </div>
+        <div class="header-text">
+          <h2>{{modalTitle}}</h2>
+          <p class="header-subtitle" *ngIf="!loading">
+            סה"כ {{totalPayments}} תשלומים • {{totalAmount | number:'1.2-2'}} ₪
+          </p>
+        </div>
+      </div>
+      <button class="modal-close" (click)="closeModal()" matTooltip="סגור" [dir]="'rtl'">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-overlay" *ngIf="loading">
+      <div class="loading-spinner">טוען נתונים...</div>
+    </div>
+
+    <!-- Modal Body -->
+    <div class="modal-body" *ngIf="!loading">
+
+      <!-- Filters Section -->
+      <div class="filters-section">
+        <div class="filters-grid">
+          <div class="filter-group">
+            <mat-icon class="filter-icon">search</mat-icon>
+            <input type="text"
+                   class="filter-input"
+                   [(ngModel)]="filterText"
+                   placeholder="חיפוש בהערות, אסמכתא, מזהה תשלום או סכום">
+          </div>
+
+          <div class="filter-group">
+            <mat-icon class="filter-icon">info</mat-icon>
+            <select class="filter-select" [(ngModel)]="filterStatus">
+              <option value="">כל הסטטוסים</option>
+              <option value="pending">בהמתנה</option>
+              <option value="completed">הושלם</option>
+              <option value="failed">נכשל</option>
+              <option value="cancelled">בוטל</option>
+            </select>
+          </div>
+
+          <div class="filter-actions">
+            <button mat-stroked-button (click)="addPayment()" class="add-btn">
+              <mat-icon>add</mat-icon>
+              הוסף תשלום
+            </button>
+            <button mat-stroked-button (click)="uploadTransactions()" class="upload-btn" *ngIf="donation?.frequency">
+              <mat-icon>upload_file</mat-icon>
+              העלה קובץ תנועות
+            </button>
+            <button mat-stroked-button (click)="exportToExcel()" class="export-btn">
+              <mat-icon>download</mat-icon>
+              ייצוא לאקסל
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Payments Table -->
+      <div class="table-container">
+        <table mat-table [dataSource]="filteredPayments" class="payments-table" matSort>
+
+          <!-- Date Column -->
+          <ng-container matColumnDef="paymentDate">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>תאריך תשלום</th>
+            <td mat-cell *matCellDef="let payment">
+              <div class="date-cell">
+                <mat-icon class="cell-icon">event</mat-icon>
+                {{payment.paymentDate | date:'dd/MM/yyyy'}}
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Amount Column -->
+          <ng-container matColumnDef="amount">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>סכום</th>
+            <td mat-cell *matCellDef="let payment">
+              <div class="amount-cell">
+                <mat-icon class="cell-icon">attach_money</mat-icon>
+                <span class="amount">{{payment.amount | number:'1.2-2'}}</span>
+                <span class="currency">₪</span>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Status Column -->
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>סטטוס</th>
+            <td mat-cell *matCellDef="let payment">
+              <span class="status-badge" [class]="getStatusClass(payment.status)">
+                {{getStatusText(payment.status)}}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Reference Column -->
+          <ng-container matColumnDef="reference">
+            <th mat-header-cell *matHeaderCellDef>אסמכתא</th>
+            <td mat-cell *matCellDef="let payment">
+              <span *ngIf="payment.reference">{{payment.reference}}</span>
+              <span *ngIf="!payment.reference" class="no-data">-</span>
+            </td>
+          </ng-container>
+
+          <!-- Payment Identifier Column -->
+          <ng-container matColumnDef="paymentIdentifier">
+            <th mat-header-cell *matHeaderCellDef>מזהה תשלום</th>
+            <td mat-cell *matCellDef="let payment">
+              <span *ngIf="payment.paymentIdentifier">{{payment.paymentIdentifier}}</span>
+              <span *ngIf="!payment.paymentIdentifier" class="no-data">-</span>
+            </td>
+          </ng-container>
+
+          <!-- Actions Column -->
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>פעולות</th>
+            <td mat-cell *matCellDef="let payment">
+              <div class="actions-cell">
+                <button mat-icon-button
+                        (click)="editPayment(payment)"
+                        matTooltip="עריכה"
+                        class="action-btn edit-btn">
+                  <mat-icon>edit</mat-icon>
+                </button>
+
+                <button mat-icon-button
+                        (click)="deletePayment(payment)"
+                        matTooltip="מחיקה"
+                        class="action-btn delete-btn">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+        </table>
+
+        <!-- No Data Message -->
+        <div class="no-data-message" *ngIf="filteredPayments.length === 0">
+          <mat-icon class="no-data-icon">{{modalIcon}}</mat-icon>
+          <h3>אין תשלומים להצגה</h3>
+          <p>לא נמצאו תשלומים בפועל לתרומה זו או לפי הפילטרים שנבחרו</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Modal Footer -->
+    <div class="modal-footer">
+      <div class="footer-summary">
+        <div class="summary-item">
+          <mat-icon>receipt_long</mat-icon>
+          <span>סה"כ תשלומים: {{filteredPayments.length}}</span>
+        </div>
+        <div class="summary-item">
+          <mat-icon>attach_money</mat-icon>
+          <span>סה"כ סכום: {{getFilteredTotal() | number:'1.2-2'}} ₪</span>
+        </div>
+      </div>
+
+      <div class="footer-actions">
+        <button mat-stroked-button (click)="closeModal()" class="cancel-button">
+          <mat-icon>close</mat-icon>
+          סגור
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>

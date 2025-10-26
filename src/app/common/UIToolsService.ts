@@ -212,6 +212,13 @@ export class UIToolsService implements UITools {
     )
   }
 
+  async paymentListDialog(donationId: string, donationAmount?: number): Promise<void> {
+    return await openDialog(
+      (await import('../routes/modals/payment-list-modal/payment-list-modal.component')).PaymentListModalComponent,
+      (dlg) => dlg.args = { donationId, donationAmount }
+    )
+  }
+
   private enhanceFieldOptionsAndDataControlOptions(
     commonUIPlugin: CommonUIElementsPluginsService
   ) {

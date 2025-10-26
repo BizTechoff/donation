@@ -84,6 +84,7 @@ import { CampaignBlessingBookModalComponent } from './routes/modals/campaign-ble
 import { ToggleSwitchComponent } from './shared/toggle-switch/toggle-switch.component'
 import { UserDetailsComponent } from './route/user-details/user-details.component'
 import { FileUploadComponent } from './components/file-upload/file-upload.component'
+import { PaymentListModalComponent } from './routes/modals/payment-list-modal/payment-list-modal.component'
 
 @NgModule({
   declarations: [
@@ -137,7 +138,8 @@ import { FileUploadComponent } from './components/file-upload/file-upload.compon
     ToggleSwitchComponent,
     UserDetailsComponent,
     OsmAddressInputComponent,
-    FileUploadComponent
+    FileUploadComponent,
+    PaymentListModalComponent
   ],
   imports: [
     BrowserModule,

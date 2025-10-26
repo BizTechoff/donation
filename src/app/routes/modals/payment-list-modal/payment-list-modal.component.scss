@@ -1,0 +1,470 @@
+// Payment List Modal Styles
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.15);
+  width: 100%;
+  max-width: 1200px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  cursor: default;
+}
+
+// Modal Header
+.modal-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 1.5rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.1"/><circle cx="50" cy="10" r="0.5" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+    opacity: 0.3;
+  }
+
+  .header-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    position: relative;
+    z-index: 1;
+
+    .header-icon {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      width: 3rem;
+      height: 3rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      mat-icon {
+        font-size: 1.5rem;
+        width: 1.5rem;
+        height: 1.5rem;
+      }
+    }
+
+    .header-text {
+      h2 {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 600;
+      }
+
+      .header-subtitle {
+        margin: 0.25rem 0 0 0;
+        opacity: 0.9;
+        font-size: 0.875rem;
+      }
+    }
+  }
+
+  .modal-close {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    border-radius: 50%;
+    width: 2.5rem;
+    height: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    z-index: 1;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: scale(1.1);
+    }
+
+    mat-icon {
+      font-size: 1.25rem;
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+  }
+}
+
+// Loading State
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+
+  .loading-spinner {
+    font-size: 1.125rem;
+    color: #666;
+  }
+}
+
+// Modal Body
+.modal-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 1.5rem 2rem;
+}
+
+// Filters Section
+.filters-section {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: #f8f9ff;
+  border-radius: 12px;
+  border: 1px solid #e1e5f2;
+
+  .filters-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    align-items: center;
+
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: white;
+      border-radius: 8px;
+      padding: 0.5rem;
+      border: 1px solid #e1e5f2;
+
+      .filter-icon {
+        color: #667eea;
+        font-size: 1.25rem;
+        width: 1.25rem;
+        height: 1.25rem;
+      }
+
+      .filter-input,
+      .filter-select {
+        border: none;
+        outline: none;
+        background: transparent;
+        flex: 1;
+        font-size: 0.875rem;
+        color: #333;
+
+        &::placeholder {
+          color: #999;
+        }
+      }
+    }
+
+    .filter-actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+
+      .add-btn {
+        color: #28a745;
+        border-color: #28a745;
+
+        &:hover {
+          background: #28a745;
+          color: white;
+        }
+      }
+
+      .upload-btn {
+        color: #17a2b8;
+        border-color: #17a2b8;
+
+        &:hover {
+          background: #17a2b8;
+          color: white;
+        }
+      }
+
+      .export-btn {
+        color: #667eea;
+        border-color: #667eea;
+
+        &:hover {
+          background: #667eea;
+          color: white;
+        }
+      }
+    }
+  }
+}
+
+// Table Container
+.table-container {
+  flex: 1;
+  overflow: auto;
+  border: 1px solid #e1e5f2;
+  border-radius: 12px;
+  background: white;
+
+  .payments-table {
+    width: 100%;
+    background: white;
+
+    th {
+      background: #f8f9ff;
+      color: #333;
+      font-weight: 600;
+      border-bottom: 2px solid #e1e5f2;
+      text-align: right;
+    }
+
+    td {
+      border-bottom: 1px solid #f0f0f0;
+      text-align: right;
+      padding: 1rem 0.75rem;
+    }
+
+    tr:hover {
+      background: #f8f9ff;
+    }
+
+    // Cell Styles
+    .date-cell,
+    .amount-cell {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+
+      .cell-icon {
+        color: #667eea;
+        font-size: 1rem;
+        width: 1rem;
+        height: 1rem;
+      }
+    }
+
+    .amount-cell {
+      .amount {
+        font-weight: 600;
+        color: #2d3748;
+      }
+
+      .currency {
+        color: #666;
+        font-size: 0.875rem;
+      }
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-align: center;
+
+      &.status-pending {
+        background: #fff3cd;
+        color: #856404;
+      }
+
+      &.status-completed {
+        background: #d4edda;
+        color: #155724;
+      }
+
+      &.status-failed {
+        background: #f8d7da;
+        color: #721c24;
+      }
+
+      &.status-cancelled {
+        background: #f0f0f0;
+        color: #666;
+      }
+    }
+
+    .no-data {
+      color: #999;
+      font-style: italic;
+    }
+
+    .actions-cell {
+      display: flex;
+      gap: 0.25rem;
+      justify-content: flex-start;
+
+      .action-btn {
+        width: 2rem;
+        height: 2rem;
+        min-width: 2rem;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        mat-icon {
+          font-size: 1rem;
+          width: 1rem;
+          height: 1rem;
+        }
+
+        &.edit-btn {
+          color: #667eea;
+          &:hover { background: rgba(102, 126, 234, 0.1); }
+        }
+
+        &.delete-btn {
+          color: #dc3545;
+          &:hover { background: rgba(220, 53, 69, 0.1); }
+        }
+      }
+    }
+  }
+
+  // No Data Message
+  .no-data-message {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    text-align: center;
+    color: #666;
+
+    .no-data-icon {
+      font-size: 4rem;
+      width: 4rem;
+      height: 4rem;
+      color: #ccc;
+      margin-bottom: 1rem;
+    }
+
+    h3 {
+      margin: 0 0 0.5rem 0;
+      color: #333;
+    }
+
+    p {
+      margin: 0;
+      font-size: 0.875rem;
+    }
+  }
+}
+
+// Modal Footer
+.modal-footer {
+  border-top: 1px solid #e1e5f2;
+  padding: 1rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f8f9ff;
+
+  .footer-summary {
+    display: flex;
+    gap: 2rem;
+
+    .summary-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: #666;
+      font-size: 0.875rem;
+
+      mat-icon {
+        color: #667eea;
+        font-size: 1rem;
+        width: 1rem;
+        height: 1rem;
+      }
+    }
+  }
+
+  .footer-actions {
+    display: flex;
+    gap: 0.75rem;
+
+    .cancel-button {
+      color: #666;
+      border-color: #ddd;
+
+      &:hover {
+        background: #f5f5f5;
+      }
+    }
+  }
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+  .modal-content {
+    margin: 0.5rem;
+    max-height: 95vh;
+  }
+
+  .modal-header {
+    padding: 1rem 1.5rem;
+
+    .header-content .header-text h2 {
+      font-size: 1.25rem;
+    }
+  }
+
+  .modal-body {
+    padding: 1rem 1.5rem;
+  }
+
+  .modal-footer {
+    padding: 1rem 1.5rem;
+    flex-direction: column;
+    gap: 1rem;
+
+    .footer-summary {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+  }
+
+  .filters-section .filters-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .payments-table {
+    th, td {
+      padding: 0.5rem;
+      font-size: 0.875rem;
+    }
+  }
+}

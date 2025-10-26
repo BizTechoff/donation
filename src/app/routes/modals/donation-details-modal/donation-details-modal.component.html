@@ -49,6 +49,10 @@
         <mat-icon>attach_file</mat-icon>
         <span>קבצים</span>
       </button>
+      <button class="nav-btn" (click)="openPaymentList()" *ngIf="!isNewDonation" title="תשלומים בפועל">
+        <mat-icon>payment</mat-icon>
+        <span>תשלומים בפועל</span>
+      </button>
     </div>
 
     <!-- Loading State -->

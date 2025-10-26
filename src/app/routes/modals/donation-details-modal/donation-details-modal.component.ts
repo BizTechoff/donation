@@ -631,6 +631,12 @@ export class DonationDetailsModalComponent implements OnInit {
     }
   }
 
+  async openPaymentList() {
+    if (this.donation?.id) {
+      await this.ui.paymentListDialog(this.donation.id, this.donation.amount);
+    }
+  }
+
   closeModal(event?: MouseEvent) {
     // If clicking on overlay or direct close button click
     if ((event && event.target === event.currentTarget) || !event) {
