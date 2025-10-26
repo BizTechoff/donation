@@ -1,14 +1,17 @@
 import { remult } from 'remult';
+import { createPostgresConnection } from 'remult/postgres';
 import { seedCountries } from './seed-countries';
 import { seedDonorsWithCountries } from './seed-donors-with-countries';
-import { createPostgresConnection } from '../postgres';
 
 export async function runSeed() {
   try {
     console.log('Starting database seed...');
 
     // Connect to database
-    await createPostgresConnection();
+    remult.dataProvider = await createPostgresConnection({
+      configuration: 'heroku',
+      sslInDev: !(process.env['DEV_MODE'] === 'DEV')
+    });
 
     // Seed countries first
     console.log('\n1. Seeding countries...');

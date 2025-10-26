@@ -116,6 +116,26 @@ export class CircleDetailsModalComponent implements OnInit {
       return;
     }
 
+    // Check for duplicate name
+    try {
+      const existingCircles = await this.circleRepo.find({
+        where: {
+          name: this.circle.name.trim(),
+          isActive: true
+        }
+      });
+
+      // If editing, exclude current circle from duplicate check
+      const duplicates = existingCircles.filter(c => c.id !== this.circle!.id);
+
+      if (duplicates.length > 0) {
+        this.ui.error('קיים כבר חוג עם שם זה');
+        return;
+      }
+    } catch (error) {
+      console.error('Error checking for duplicate circle name:', error);
+    }
+
     try {
       this.loading = true;
       await this.circle.save();

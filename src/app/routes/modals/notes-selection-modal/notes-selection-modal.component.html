@@ -59,14 +59,14 @@
           <div class="note-type-item"
                *ngFor="let noteType of filteredNoteTypes"
                (click)="selectNoteType(noteType)"
-               [class.selected]="selectedNoteType === noteType"
-               [class.editing]="editingNoteType === noteType">
+               [class.selected]="selectedNoteType?.id === noteType.id"
+               [class.editing]="editingNoteType?.id === noteType.id">
 
             <!-- Normal display mode -->
-            <div class="note-type-content" *ngIf="editingNoteType !== noteType">
+            <div class="note-type-content" *ngIf="editingNoteType?.id !== noteType.id">
               <div class="note-type-info">
                 <mat-icon class="note-icon">label</mat-icon>
-                <span class="note-type-name">{{ noteType }}</span>
+                <span class="note-type-name">{{ noteType.name }}</span>
               </div>
               <div class="note-type-actions">
                 <button class="edit-btn" (click)="startEditNoteType(noteType, $event)" title="ערוך">
@@ -75,14 +75,14 @@
                 <button class="delete-btn" (click)="deleteNoteType(noteType, $event)" title="מחק">
                   <mat-icon>delete</mat-icon>
                 </button>
-                <button class="select-btn" *ngIf="selectedNoteType === noteType">
+                <button class="select-btn" *ngIf="selectedNoteType?.id === noteType.id">
                   <mat-icon>check_circle</mat-icon>
                 </button>
               </div>
             </div>
 
             <!-- Edit mode -->
-            <div class="note-type-edit" *ngIf="editingNoteType === noteType">
+            <div class="note-type-edit" *ngIf="editingNoteType?.id === noteType.id">
               <input
                 type="text"
                 class="form-control edit-input"

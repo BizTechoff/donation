@@ -1,0 +1,174 @@
+<!-- Family Relation Details Modal -->
+<div class="family-relation-modal">
+
+  <div class="modal-header">
+    <div class="header-content">
+      <div class="header-icon">
+        <mat-icon>family_restroom</mat-icon>
+      </div>
+      <div class="header-text">
+        <h2>{{ isNewRelation ? 'הוספת קשר משפחתי' : 'עריכת קשר משפחתי' }}</h2>
+      </div>
+    </div>
+    <button class="modal-close" (click)="closeModal()" matTooltip="סגור" [dir]="i18n.lang.RTL ? 'rtl' : 'ltr'">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <div class="modal-body">
+
+    <!-- Relationship Type Selection as Cards -->
+    <div class="relationship-type-selection">
+      <label class="relationship-selection-label">בחר סוג קשר:</label>
+      <div class="relationship-types-grid">
+        <div class="relationship-type-option" [class.active]="newRelationshipType === 'אבא'">
+          <label class="relationship-card">
+            <input type="radio" name="relationshipType" value="אבא" [(ngModel)]="newRelationshipType" class="relationship-radio">
+            <div class="relationship-content">
+              <span class="relationship-label">אבא</span>
+            </div>
+          </label>
+        </div>
+        <div class="relationship-type-option" [class.active]="newRelationshipType === 'אח'">
+          <label class="relationship-card">
+            <input type="radio" name="relationshipType" value="אח" [(ngModel)]="newRelationshipType" class="relationship-radio">
+            <div class="relationship-content">
+              <span class="relationship-label">אח</span>
+            </div>
+          </label>
+        </div>
+        <div class="relationship-type-option" [class.active]="newRelationshipType === 'אחות'">
+          <label class="relationship-card">
+            <input type="radio" name="relationshipType" value="אחות" [(ngModel)]="newRelationshipType" class="relationship-radio">
+            <div class="relationship-content">
+              <span class="relationship-label">אחות</span>
+            </div>
+          </label>
+        </div>
+        <div class="relationship-type-option" [class.active]="newRelationshipType === 'אחר'">
+          <label class="relationship-card">
+            <input type="radio" name="relationshipType" value="אחר" [(ngModel)]="newRelationshipType" class="relationship-radio">
+            <div class="relationship-content">
+              <span class="relationship-label">אחר</span>
+            </div>
+          </label>
+        </div>
+        <div class="relationship-type-option" [class.active]="newRelationshipType === 'בן'">
+          <label class="relationship-card">
+            <input type="radio" name="relationshipType" value="בן" [(ngModel)]="newRelationshipType" class="relationship-radio">
+            <div class="relationship-content">
+              <span class="relationship-label">בן</span>
+            </div>
+          </label>
+        </div>
+        <div class="relationship-type-option" [class.active]="newRelationshipType === 'בת'">
+          <label class="relationship-card">
+            <input type="radio" name="relationshipType" value="בת" [(ngModel)]="newRelationshipType" class="relationship-radio">
+            <div class="relationship-content">
+              <span class="relationship-label">בת</span>
+            </div>
+          </label>
+        </div>
+        <div class="relationship-type-option" [class.active]="newRelationshipType === 'דוד'">
+          <label class="relationship-card">
+            <input type="radio" name="relationshipType" value="דוד" [(ngModel)]="newRelationshipType" class="relationship-radio">
+            <div class="relationship-content">
+              <span class="relationship-label">דוד</span>
+            </div>
+          </label>
+        </div>
+        <div class="relationship-type-option" [class.active]="newRelationshipType === 'דודה'">
+          <label class="relationship-card">
+            <input type="radio" name="relationshipType" value="דודה" [(ngModel)]="newRelationshipType" class="relationship-radio">
+            <div class="relationship-content">
+              <span class="relationship-label">דודה</span>
+            </div>
+          </label>
+        </div>
+        <div class="relationship-type-option" [class.active]="newRelationshipType === 'חבר'">
+          <label class="relationship-card">
+            <input type="radio" name="relationshipType" value="חבר" [(ngModel)]="newRelationshipType" class="relationship-radio">
+            <div class="relationship-content">
+              <span class="relationship-label">חבר</span>
+            </div>
+          </label>
+        </div>
+        <div class="relationship-type-option" [class.active]="newRelationshipType === 'חותן'">
+          <label class="relationship-card">
+            <input type="radio" name="relationshipType" value="חותן" [(ngModel)]="newRelationshipType" class="relationship-radio">
+            <div class="relationship-content">
+              <span class="relationship-label">חותן</span>
+            </div>
+          </label>
+        </div>
+        <div class="relationship-type-option" [class.active]="newRelationshipType === 'חמו'">
+          <label class="relationship-card">
+            <input type="radio" name="relationshipType" value="חמו" [(ngModel)]="newRelationshipType" class="relationship-radio">
+            <div class="relationship-content">
+              <span class="relationship-label">חמו</span>
+            </div>
+          </label>
+        </div>
+        <div class="relationship-type-option" [class.active]="newRelationshipType === 'נכד'">
+          <label class="relationship-card">
+            <input type="radio" name="relationshipType" value="נכד" [(ngModel)]="newRelationshipType" class="relationship-radio">
+            <div class="relationship-content">
+              <span class="relationship-label">נכד</span>
+            </div>
+          </label>
+        </div>
+        <div class="relationship-type-option" [class.active]="newRelationshipType === 'נכדה'">
+          <label class="relationship-card">
+            <input type="radio" name="relationshipType" value="נכדה" [(ngModel)]="newRelationshipType" class="relationship-radio">
+            <div class="relationship-content">
+              <span class="relationship-label">נכדה</span>
+            </div>
+          </label>
+        </div>
+        <div class="relationship-type-option" [class.active]="newRelationshipType === 'סבא'">
+          <label class="relationship-card">
+            <input type="radio" name="relationshipType" value="סבא" [(ngModel)]="newRelationshipType" class="relationship-radio">
+            <div class="relationship-content">
+              <span class="relationship-label">סבא</span>
+            </div>
+          </label>
+        </div>
+        <div class="relationship-type-option" [class.active]="newRelationshipType === 'סבתא'">
+          <label class="relationship-card">
+            <input type="radio" name="relationshipType" value="סבתא" [(ngModel)]="newRelationshipType" class="relationship-radio">
+            <div class="relationship-content">
+              <span class="relationship-label">סבתא</span>
+            </div>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Donor Selection -->
+    <div class="donor-selection" *ngIf="newRelationshipType">
+      <label class="donor-selection-label">בחר תורם:</label>
+      <select class="form-control donor-select" [(ngModel)]="selectedDonorId">
+        <option value="" disabled selected>בחר תורם</option>
+        <option *ngFor="let donor of getAvailableDonors()" [value]="donor.id">
+          {{ donor.fullName }}
+        </option>
+      </select>
+    </div>
+
+  </div>
+
+  <div class="modal-footer">
+    <div class="footer-actions">
+      <button mat-stroked-button (click)="closeModal()" class="cancel-button">
+        <mat-icon>close</mat-icon>
+        ביטול
+      </button>
+      <button mat-raised-button color="primary" (click)="saveRelation()" class="save-button"
+              [disabled]="!newRelationshipType || !selectedDonorId">
+        <mat-icon>save</mat-icon>
+        שמירה
+      </button>
+    </div>
+  </div>
+
+</div>

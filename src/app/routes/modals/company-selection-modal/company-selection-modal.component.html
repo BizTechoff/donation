@@ -1,0 +1,68 @@
+<div class="modal-backdrop" (click)="closeDialog()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ args.title || 'בחר חברה' }}</h2>
+      <button class="close-btn" (click)="closeDialog()" title="סגור">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <!-- Search Section -->
+      <div class="search-section">
+        <div class="search-input-group">
+          <mat-icon class="search-icon">search</mat-icon>
+          <input
+            type="text"
+            class="form-control search-input"
+            [(ngModel)]="searchTerm"
+            placeholder="חפש חברה...">
+          <button *ngIf="searchTerm" class="clear-search-btn" (click)="clearSearch()">
+            <mat-icon>clear</mat-icon>
+          </button>
+        </div>
+        <button class="btn btn-create-new" (click)="createNewCompany()">
+          <mat-icon>add</mat-icon>
+          יצירת חברה חדשה
+        </button>
+      </div>
+
+      <!-- Companies List -->
+      <div class="companies-list-section">
+        <div class="companies-list" *ngIf="getFilteredCompanies().length > 0">
+          <div class="company-item"
+               *ngFor="let company of getFilteredCompanies()"
+               (click)="selectCompany(company)"
+               [class.selected]="selectedCompany?.id === company.id">
+            <div class="company-item-content">
+              <div class="company-icon-wrapper">
+                <mat-icon>business</mat-icon>
+              </div>
+              <div class="company-info">
+                <div class="company-name">{{ company.name }}</div>
+                <div class="company-address" *ngIf="company.place?.fullAddress">
+                  <mat-icon class="location-icon">location_on</mat-icon>
+                  {{ company.place?.fullAddress }}
+                </div>
+              </div>
+            </div>
+            <div class="select-indicator">
+              <mat-icon>check_circle</mat-icon>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty state when no companies found -->
+        <div class="no-companies-found" *ngIf="getFilteredCompanies().length === 0">
+          <mat-icon class="empty-icon">business</mat-icon>
+          <p *ngIf="searchTerm">לא נמצאו חברות התואמות לחיפוש "{{ searchTerm }}"</p>
+          <p *ngIf="!searchTerm">אין חברות זמינות</p>
+          <button class="btn btn-primary" (click)="createNewCompany()">
+            <mat-icon>add</mat-icon>
+            יצירת חברה חדשה
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

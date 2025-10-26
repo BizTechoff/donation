@@ -2043,7 +2043,7 @@
 .add-family-relationship {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
 }
 
 .family-help-text {
@@ -2052,6 +2052,122 @@
   text-align: center;
   padding: 8px;
   font-size: 13px;
+}
+
+// Relationship Type Selection Grid
+.relationship-type-selection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  .relationship-selection-label {
+    font-weight: 500;
+    color: #333;
+    font-size: 14px;
+  }
+}
+
+.relationship-types-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  margin-top: 8px;
+
+  @media (max-width: 1024px) {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.relationship-type-option {
+  .relationship-card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    min-height: 45px;
+
+    .relationship-radio {
+      display: none;
+    }
+
+    .relationship-content {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .relationship-label {
+      font-weight: 500;
+      color: #333;
+      font-size: 13px;
+      text-align: center;
+    }
+
+    &:hover {
+      border-color: #c5e1a5;
+      background: #f1f8e9;
+    }
+  }
+
+  &.active .relationship-card {
+    border-color: #9C27B0;
+    background: linear-gradient(135deg, rgba(156, 39, 176, 0.1), rgba(156, 39, 176, 0.05));
+
+    .relationship-label {
+      color: #9C27B0;
+      font-weight: 600;
+    }
+
+    &::after {
+      content: '✓';
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      background: #9C27B0;
+      color: white;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: bold;
+    }
+  }
+}
+
+// Donor Selection
+.donor-selection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  .donor-selection-label {
+    font-weight: 500;
+    color: #333;
+    font-size: 14px;
+  }
+
+  .donor-select {
+    width: 100%;
+  }
 }
 
 .add-family-controls {
@@ -2386,12 +2502,19 @@
   }
 }
 // Reception Hours Styling
-.reception-card {
+.reception-hours-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+
   .card-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #f0f0f0;
 
     h4 {
       display: flex;
@@ -3162,7 +3285,7 @@
 }
 
 // Updated Reception Hours Row Layout
-.reception-card .reception-hour-item .reception-hour-row {
+.reception-hours-card .reception-hour-item .reception-hour-row {
   display: flex;
   align-items: flex-end;
   gap: 12px;

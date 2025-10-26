@@ -12,7 +12,9 @@ export interface CompanyDetailsModalArgs {
 }
 
 @DialogConfig({
-  hasBackdrop: true
+  hasBackdrop: true,
+  maxWidth: '900px',
+  maxHeight: '90vh'
 })
 @Component({
   selector: 'app-company-details-modal',

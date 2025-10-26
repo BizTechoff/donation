@@ -7,6 +7,7 @@ import {
   Relations,
 } from 'remult'
 import { Donor } from './donor'
+import { NoteType } from './note-type'
 
 @Entity<DonorNote>('donor_notes', {
   allowApiCrud: Allow.authenticated,
@@ -35,10 +36,22 @@ export class DonorNote extends IdEntity {
   donor?: Donor;
 
   @Fields.string({
+    caption: 'מזהה סוג הערה',
+    allowNull: true,
+  })
+  noteTypeId?: string;
+
+  @Relations.toOne(() => NoteType, {
+    field: "noteTypeId",
     caption: 'סוג הערה',
+  })
+  noteTypeEntity?: NoteType;
+
+  @Fields.string({
+    caption: 'סוג הערה (טקסט)',
     allowNull: false,
   })
-  noteType = '' // סוג ההערה מהרשימה
+  noteType = '' // סוג ההערה מהרשימה (שמור גם כטקסט לתאימות לאחור)
 
   @Fields.string({
     caption: 'תוכן ההערה',

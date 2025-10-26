@@ -49,9 +49,9 @@ export class DonorRelation extends IdEntity {
   donor2Id = ''
 
   @Fields.string({
-    caption: 'סוג קשר',
+    caption: 'סוג קשר 1',
   })
-  relationshipType = ''
+  relationshipType1 = ''
 
   @Fields.date({
     allowApiUpdate: false,

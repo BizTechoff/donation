@@ -20,7 +20,7 @@
   </div>
 
   <!-- Section Navigation -->
-  <div class="section-navigation" *ngIf="!loading && !isNewDonor">
+  <div class="section-navigation" *ngIf="!isNewDonor">
     <button class="nav-btn" (click)="scrollToSection('section-personal')" title="פרטים אישיים">
       <mat-icon>person</mat-icon>
       <span>פרטים</span>
@@ -59,15 +59,7 @@
     </button>
   </div>
 
-  <!-- Loading State -->
-  <div class="loading-overlay" *ngIf="loading">
-    <div class="loading-spinner">
-      <mat-spinner diameter="60"></mat-spinner>
-      <p>{{ (i18n.terms$ | async)?.loadingData }}</p>
-    </div>
-  </div>
-
-  <div class="modal-body" *ngIf="!loading">
+  <div class="modal-body">
     <div class="details-grid" *ngIf="donor">
       <!-- פרטים אישיים -->
       <div id="section-personal" class="section personal-details">
@@ -229,7 +221,7 @@
             </div>
             <app-osm-address-input
               [label]="donorPlace.description"
-              [placeholder]="'הקלד כתובת ' + donorPlace.description + '...'"
+              [placeholder]="'הקלד כתובת ' + '...'"
               countryCode="il"
               [(place)]="donorPlace.place"
               (placeChange)="onDonorPlaceSelected(donorPlace, $event)">
@@ -349,6 +341,7 @@
             </div>
           </div>
         </div>
+
       </div>
 
       <!-- מידע משפחתי -->
@@ -479,22 +472,31 @@
 
               <!-- Family Relationships Section (new) -->
               <div class="family-group">
-                <h4 class="group-title">
-                  <mat-icon>family_restroom</mat-icon>
-                  {{ (i18n.terms$ | async)?.familyRelationships }}
-                </h4>
+                <div class="section-header">
+                  <h4 class="group-title">
+                    <mat-icon>family_restroom</mat-icon>
+                    {{ (i18n.terms$ | async)?.familyRelationships }}
+                  </h4>
+                  <button class="add-btn" (click)="addNewFamilyRelation()" title="הוסף קשר משפחתי">
+                    <mat-icon>add</mat-icon>
+                  </button>
+                </div>
 
                 <!-- Selected Family Relationships -->
                 <div class="family-relationships-selected" *ngIf="selectedFamilyRelationships.length > 0">
                   <div class="selected-family-list">
                     <div class="selected-family-member" *ngFor="let relationship of selectedFamilyRelationships">
-                      <span class="relationship-type-badge">{{ relationship.relationshipType }}</span>
+                      <span class="relationship-type-badge clickable"
+                        (click)="editFamilyRelation(relationship)"
+                        matTooltip="לחץ לעריכת סוג הקשר"
+                        title="לחץ לעריכת סוג הקשר">{{ relationship.relationshipType }}</span>
                       <span class="family-member-name clickable"
-                        (click)="openFamilyMemberDetails(relationship.donor, $event)" matTooltip="לחץ לפתיחת פרטי התורם"
+                        (click)="openFamilyMemberDetails(relationship.donor, $event)"
+                        matTooltip="לחץ לפתיחת פרטי התורם"
                         title="לחץ לפתיחת פרטי התורם">
                         {{ relationship.donor.fullName }}
                       </span>
-                      <button mat-icon-button class="remove-family-btn" (click)="removeFamilyRelationship(relationship)"
+                      <button mat-icon-button class="remove-family-btn" (click)="removeFamilyRelationship(relationship); $event.stopPropagation()"
                         matTooltip="הסר מהרשימה" type="button">
                         <mat-icon>close</mat-icon>
                       </button>
@@ -502,43 +504,6 @@
                   </div>
                 </div>
 
-                <!-- Add Family Relationship Controls -->
-                <div class="add-family-relationship">
-                  <div class="family-help-text" *ngIf="selectedFamilyRelationships.length === 0">
-                    <small>{{ (i18n.terms$ | async)?.noFamilyRelationships }}</small>
-                  </div>
-
-                  <div class="add-family-controls">
-                    <!-- Relationship Type Selection -->
-                    <select class="form-control relationship-type-select" [(ngModel)]="newRelationshipType">
-                      <option value="" disabled>סוג קשר</option>
-                      <option value="אבא">אבא</option>
-                      <option value="אח">אח</option>
-                      <option value="דוד">דוד</option>
-                      <option value="סבא">סבא</option>
-                      <option value="חותן">חותן</option>
-                      <option value="חמו">חמו</option>
-                      <option value="בן">בן</option>
-                      <option value="נכד">נכד</option>
-                      <option value="אחות">אחות</option>
-                      <option value="דודה">דודה</option>
-                      <option value="סבתא">סבתא</option>
-                      <option value="בת">בת</option>
-                      <option value="נכדה">נכדה</option>
-                      <option value="חבר">חבר</option>
-                      <option value="אחר">אחר</option>
-                    </select>
-
-                    <!-- Donor Selection -->
-                    <select class="form-control donor-select" (change)="onFamilyMemberSelect($event)" value=""
-                      [disabled]="!newRelationshipType">
-                      <option value="" disabled>{{ newRelationshipType ? 'בחר תורם' : 'בחר תחילה סוג קשר' }}</option>
-                      <option *ngFor="let donor of getAvailableDonorsForFamily()" [value]="donor.id">
-                        {{ donor.fullName }}
-                      </option>
-                    </select>
-                  </div>
-                </div>
               </div>
 
             </div>
@@ -555,11 +520,6 @@
             </div>
 
             <div class="dates-container" [class.scrollable]="(customPersonalDates.length + 3) > 5">
-
-              <!-- Empty state message when no personal events exist -->
-              <div *ngIf="donorEvents.length === 0 && customPersonalDates.length === 0" class="empty-events-message">
-                <p>לא נמצאו אירועים אישיים לתורם זה, להוספת אירוע יש ללחוץ על +</p>
-              </div>
 
               <!-- Donor Events displayed in single row -->
               <div *ngFor="let donorEvent of donorEvents; trackBy: trackDonorEventById"
@@ -624,11 +584,6 @@
           </div>
         </div>
 
-        <!-- Empty state -->
-        <div class="empty-companies" *ngIf="selectedCompanies.length === 0">
-          <p>לא הוגדרו חברות. לחץ על + להוספה.</p>
-        </div>
-
         <!-- Legacy Companies (read-only display) -->
         <div *ngIf="donor.companies && donor.companies.length > 0" class="legacy-companies-section">
           <h5 class="legacy-title">
@@ -676,11 +631,6 @@
                 <mat-icon>close</mat-icon>
               </button>
             </span>
-          </div>
-
-          <!-- Empty state -->
-          <div class="empty-circles" *ngIf="selectedCircles.length === 0">
-            <p>לא הוגדרו חוגים. לחץ על + להוספה.</p>
           </div>
         </div>
 
@@ -1016,16 +966,16 @@
           </div>
 
           <!-- Reception Hours Card -->
-          <div class="info-card reception-card">
+          <div class="info-card reception-hours-card">
             <div class="card-header">
-              <mat-icon class="card-icon">schedule</mat-icon>
-              <h4>{{ (i18n.terms$ | async)?.receptionHours }}</h4>
+              <h4>
+                <mat-icon class="card-icon">schedule</mat-icon>
+                {{ (i18n.terms$ | async)?.receptionHours }}
+              </h4>
               <button class="add-btn" (click)="addNewReceptionHour()" title="הוסף טווח שעות">
                 <mat-icon>add</mat-icon>
               </button>
             </div>
-
-            <!-- Reception Hours List -->
             <div class="reception-hours-list" *ngIf="donorReceptionHours.length > 0">
               <div class="reception-hour-item" *ngFor="let receptionHour of donorReceptionHours">
                 <button class="remove-btn" (click)="removeDonorReceptionHour(receptionHour)" title="הסר">
@@ -1061,11 +1011,6 @@
                 </div>
               </div>
             </div>
-
-            <!-- Empty state -->
-            <div class="empty-reception-hours" *ngIf="donorReceptionHours.length === 0">
-              <p>לא הוגדרו טווחי שעות קבלה. לחץ על + להוספה.</p>
-            </div>
           </div>
         </div>
 
@@ -1099,17 +1044,12 @@
               </div>
             </div>
           </div>
-
-          <!-- Empty state -->
-          <div class="empty-notes" *ngIf="donorNotes.length === 0">
-            <p>לא הוגדרו הערות. לחץ על + להוספה.</p>
-          </div>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="modal-footer" *ngIf="!loading">
+  <div class="modal-footer">
     <div class="footer-actions-left">
       <!-- Quick Actions -->
       <button mat-stroked-button class="quick-action-btn" *ngIf="!isNewDonor" (click)="openGifts()"
@@ -1155,7 +1095,7 @@
         <mat-icon>close</mat-icon>
         {{ (i18n.terms$ | async)?.cancel }}
       </button>
-      <button mat-raised-button color="primary" (click)="saveDonor()" class="save-button" [disabled]="loading">
+      <button mat-raised-button color="primary" (click)="saveDonor()" class="save-button">
         <mat-icon>save</mat-icon>
         {{ (i18n.terms$ | async)?.saveDonor }}
       </button>

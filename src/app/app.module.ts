@@ -52,6 +52,7 @@ import { ReportsComponent } from './route/reports/reports.component'
 import { LanguageSwitcherComponent } from './i18n/language-switcher.component'
 import { DonorsMapComponent } from './route/donors-map/donors-map.component'
 import { DonorDetailsModalComponent } from './routes/modals/donor-details-modal/donor-details-modal.component'
+import { FamilyRelationDetailsModalComponent } from './routes/modals/family-relation-details-modal/family-relation-details-modal.component'
 import { SharedComponentsModule } from './shared/shared-components.module'
 import { HebrewDateService } from './services/hebrew-date.service'
 import { GlobalFiltersComponent } from './components/global-filters/global-filters.component'
@@ -60,6 +61,7 @@ import { SeedDataComponent } from './components/seed-data/seed-data.component'
 import { EventSelectionModalComponent } from './routes/modals/event-selection-modal/event-selection-modal.component'
 import { NotesSelectionModalComponent } from './routes/modals/notes-selection-modal/notes-selection-modal.component'
 import { CircleSelectionModalComponent } from './routes/modals/circle-selection-modal/circle-selection-modal.component'
+import { CompanySelectionModalComponent } from './routes/modals/company-selection-modal/company-selection-modal.component'
 import { OsmAddressInputComponent } from './common/osm-address-input/osm-address-input.component'
 import { LetterPropertiesModalComponent } from './routes/modals/letter-properties-modal/letter-properties-modal.component'
 import { ReminderDetailsModalComponent } from './routes/modals/reminder-details-modal/reminder-details-modal.component'
@@ -103,7 +105,9 @@ import { UserDetailsComponent } from './route/user-details/user-details.componen
     EventSelectionModalComponent,
     NotesSelectionModalComponent,
     CircleSelectionModalComponent,
+    CompanySelectionModalComponent,
     DonorDetailsModalComponent,
+    FamilyRelationDetailsModalComponent,
     LetterPropertiesModalComponent,
     ReminderDetailsModalComponent,
     DonationDetailsModalComponent,
