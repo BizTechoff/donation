@@ -154,8 +154,69 @@ export class PaymentListModalComponent implements OnInit {
   }
 
   async uploadTransactions() {
-    // TODO: Implement Excel upload
-    this.ui.info('העלאת קובץ תנועות תתבצע בהמשך');
+    // Create file input element
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.xlsx,.xls';
+
+    input.onchange = async (e: any) => {
+      const file = e.target?.files?.[0];
+      if (!file) return;
+
+      try {
+        this.loading = true;
+
+        // Import xlsx dynamically
+        const XLSX = await import('xlsx');
+
+        // Read the file
+        const data = await file.arrayBuffer();
+        const workbook = XLSX.read(data, { type: 'array' });
+
+        // Get first sheet
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+
+        // Convert to JSON
+        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+        if (jsonData.length === 0) {
+          this.ui.error('הקובץ ריק או לא מכיל נתונים');
+          return;
+        }
+
+        // Send to backend for processing
+        const result = await PaymentController.processExcelTransactions(
+          this.args.donationId,
+          jsonData as any[]
+        );
+
+        // Reload payments
+        await this.loadPayments();
+        this.calculateTotals();
+
+        // Show results
+        let message = `נמצאו ${result.matched} תשלומים תואמים\n`;
+        message += `נוצרו ${result.created} רשומות תשלום חדשות\n`;
+
+        if (result.errors.length > 0) {
+          message += `\nשגיאות:\n${result.errors.slice(0, 5).join('\n')}`;
+          if (result.errors.length > 5) {
+            message += `\n...ועוד ${result.errors.length - 5} שגיאות`;
+          }
+        }
+
+        this.ui.info(message);
+
+      } catch (error) {
+        console.error('Error uploading Excel file:', error);
+        this.ui.error('שגיאה בעיבוד קובץ האקסל: ' + (error instanceof Error ? error.message : 'שגיאה לא ידועה'));
+      } finally {
+        this.loading = false;
+      }
+    };
+
+    input.click();
   }
 
   exportToExcel() {
