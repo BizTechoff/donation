@@ -1,9 +1,11 @@
 import { config } from "dotenv";
 import { NextFunction, Request, Response } from "express";
+import { FileController } from "../shared/controllers/file.controller";
 
 
-S3Controller.generateUploadURLDelegate = async (action: string, fileName: string, fileType: string, bucketKey: string) => await doGenerateSignedURL(action, fileName, fileType, bucketKey)
+FileController.generateUploadURLDelegate = async (action: string, fileName: string, fileType: string, bucketKey: string) => await doGenerateSignedURL(action, fileName, fileType, bucketKey)
 
+console.info('generateUploadURLDelegate succesfuly registered.')
 config()
 
 const s3Client = async () => {
@@ -65,18 +67,17 @@ export const doGenerateSignedURL = async (action: string, fileName: string, file
         const s3 = await s3Client()
         if (s3) {
             // ✅ זמנים שונים לפעולות שונות
-            const params = action === 'putObject'
-                ? ({
-                    Bucket: process.env['S3_BUCKET_NAME']!,
-                    Key: bucketKey ? `${bucketKey}/${fileName}` : `${fileName}`,
-                    Expires: 120, // ✅ זמן דינמי
-                    ContentType: fileType, // MIME type of the file
-                })
-                : ({
-                    Bucket: process.env['S3_BUCKET_NAME']!,
-                    Key: bucketKey ? `${bucketKey}/${fileName}` : `${fileName}`,
-                    Expires: 1800
-                })
+            // Note: For putObject, we include ContentType in the signature
+            const params: any = {
+                Bucket: process.env['S3_BUCKET_NAME']!,
+                Key: bucketKey ? `${bucketKey}/${fileName}` : `${fileName}`,
+                Expires: action === 'putObject' ? 120 : 1800
+            };
+
+            // Add ContentType for putObject to ensure proper file handling
+            if (action === 'putObject' && fileType) {
+                params.ContentType = fileType;
+            }
 
 
             // var params1 = ({
@@ -109,8 +110,8 @@ export const doGenerateSignedURL = async (action: string, fileName: string, file
             console.error(result.error)
         }
     } else {
-        result.error = 'aws-S3 Channel is Closed!!'
-        console.debug('s3Client.error: aws-S3 Channel is Closed!!');
+        result.error = 'Upload Channel is Closed!!'
+        console.debug('s3Client.error: Upload Channel is Closed!!');
     }
 
     return result

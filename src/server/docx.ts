@@ -13,7 +13,7 @@ const isProduction = process.env['NODE_ENV'] === "production";
 
 
 LetterController.createLetterDelegate = async (type = Letter.ty_normal, contents = [] as DocxContentControl[]) => await createLetterDocX(type, contents)
-
+console.info('createLetterDelegate succesfuly registered.')
 export const createLetterDocX = async (type = Letter.ty_normal, contents = [] as DocxContentControl[]) => {
 
     var result: DocxCreateResponse = { success: false, url: '', error: '', fileName: '' }

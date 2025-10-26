@@ -1,0 +1,80 @@
+<div class="modal-backdrop" (click)="closeDialog()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ args.title || 'בחר עמותה' }}</h2>
+      <button class="close-btn" (click)="closeDialog()" title="סגור">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <!-- Search Section -->
+      <div class="search-section">
+        <div class="search-input-group">
+          <mat-icon class="search-icon">search</mat-icon>
+          <input
+            type="text"
+            class="form-control search-input"
+            [(ngModel)]="searchTerm"
+            placeholder="חפש עמותה...">
+          <button *ngIf="searchTerm" class="clear-search-btn" (click)="clearSearch()">
+            <mat-icon>clear</mat-icon>
+          </button>
+        </div>
+        <button class="btn btn-create-new" (click)="createNewOrganization()">
+          <mat-icon>add</mat-icon>
+          יצירת עמותה חדשה
+        </button>
+      </div>
+
+      <!-- Loading state -->
+      <div class="loading-section" *ngIf="loading">
+        <mat-icon class="loading-icon">hourglass_empty</mat-icon>
+        <p>טוען עמותות...</p>
+      </div>
+
+      <!-- Organizations List -->
+      <div class="organizations-list-section" *ngIf="!loading">
+        <div class="organizations-list" *ngIf="getFilteredOrganizations().length > 0">
+          <div class="organization-item"
+               *ngFor="let organization of getFilteredOrganizations()"
+               (click)="selectOrganization(organization)"
+               [class.selected]="selectedOrganization?.id === organization.id">
+            <div class="organization-item-content">
+              <div class="organization-icon-wrapper">
+                <mat-icon>business</mat-icon>
+              </div>
+              <div class="organization-info">
+                <div class="organization-name">{{ organization.name }}</div>
+                <div class="organization-details" *ngIf="organization.registrationNumber">
+                  <span>
+                    <mat-icon class="detail-icon">tag</mat-icon>
+                    מס' עמותה: {{ organization.registrationNumber }}
+                  </span>
+                </div>
+                <div class="organization-address" *ngIf="organization.place?.fullAddress">
+                  <mat-icon class="location-icon">location_on</mat-icon>
+                  {{ organization.place?.fullAddress }}
+                </div>
+              </div>
+            </div>
+            <div class="select-indicator">
+              <mat-icon>check_circle</mat-icon>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty state when no organizations found -->
+        <div class="no-organizations-found" *ngIf="getFilteredOrganizations().length === 0">
+          <mat-icon class="empty-icon">business</mat-icon>
+          <p *ngIf="searchTerm">לא נמצאו עמותות התואמות לחיפוש "{{ searchTerm }}"</p>
+          <p *ngIf="!searchTerm">אין עמותות זמינות</p>
+          <button class="btn btn-primary" (click)="createNewOrganization()">
+            <mat-icon>add</mat-icon>
+            יצירת עמותה חדשה
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

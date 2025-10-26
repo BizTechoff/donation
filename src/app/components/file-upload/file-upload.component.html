@@ -1,0 +1,73 @@
+<div class="file-upload-container">
+  <!-- Upload button hidden - should be in section header -->
+
+  <!-- Upload Progress -->
+  <div class="upload-progress-section" *ngIf="uploading">
+    <div class="progress-item" *ngFor="let fileName of getUploadingFiles()">
+      <div class="progress-info">
+        <mat-icon class="file-icon">insert_drive_file</mat-icon>
+        <span class="file-name">{{ fileName }}</span>
+        <span class="progress-percent">{{ uploadProgress[fileName].progress }}%</span>
+      </div>
+      <mat-progress-bar
+        mode="determinate"
+        [value]="uploadProgress[fileName].progress"
+        [color]="uploadProgress[fileName].status === 'error' ? 'warn' : 'primary'">
+      </mat-progress-bar>
+      <div class="error-message" *ngIf="uploadProgress[fileName].status === 'error'">
+        {{ uploadProgress[fileName].error }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Files List -->
+  <div class="files-list" *ngIf="files.length > 0">
+    <h4 class="files-header">
+      <mat-icon>attach_file</mat-icon>
+      קבצים מצורפים ({{ files.length }})
+    </h4>
+
+    <div class="file-item" *ngFor="let file of files">
+      <div class="file-info" (click)="downloadFile(file)" style="cursor: pointer;" title="לחץ להורדת הקובץ">
+        <mat-icon class="file-icon">{{ getFileIcon(file) }}</mat-icon>
+        <div class="file-details">
+          <div class="file-name">{{ file.fileName }}</div>
+          <div class="file-meta">
+            <span class="file-size">{{ formatFileSize(file.fileSize) }}</span>
+            <span class="file-date" *ngIf="file.createdDate">
+              {{ file.createdDate | date:'dd/MM/yyyy HH:mm' }}
+            </span>
+            <span class="file-uploader" *ngIf="file.uploadedBy">
+              הועלה ע"י {{ file.uploadedBy.name }}
+            </span>
+          </div>
+          <div class="file-description" *ngIf="file.description">
+            {{ file.description }}
+          </div>
+        </div>
+      </div>
+
+      <div class="file-actions">
+        <!-- <button
+          mat-icon-button
+          (click)="downloadFile(file)"
+          matTooltip="הורדה">
+          <mat-icon>download</mat-icon>
+        </button> -->
+        <button
+          mat-icon-button
+          color="warn"
+          (click)="deleteFile(file)"
+          matTooltip="מחיקה">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <!-- <div class="empty-state" *ngIf="files.length === 0 && !uploading && donationId">
+    <mat-icon>cloud_upload</mat-icon>
+    <p>לא הועלו קבצים עדיין</p>
+  </div> -->
+</div>

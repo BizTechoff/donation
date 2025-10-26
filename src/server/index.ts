@@ -6,8 +6,9 @@ import helmet from 'helmet'
 import sslRedirect from 'heroku-ssl-redirect'
 import path from 'path'
 import { api } from './api'
-import { getPlace, getPlaces, reverseGeocode } from './geo'
 import './docx'
+import { getPlace, getPlaces, reverseGeocode } from './geo'
+import './s3'
 
 async function startup() {
   const app = express()

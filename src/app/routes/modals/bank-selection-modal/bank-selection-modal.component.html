@@ -1,0 +1,84 @@
+<div class="modal-backdrop" (click)="closeDialog()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ args.title || 'בחר בנק' }}</h2>
+      <button class="close-btn" (click)="closeDialog()" title="סגור">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <!-- Search Section -->
+      <div class="search-section">
+        <div class="search-input-group">
+          <mat-icon class="search-icon">search</mat-icon>
+          <input
+            type="text"
+            class="form-control search-input"
+            [(ngModel)]="searchTerm"
+            placeholder="חפש בנק...">
+          <button *ngIf="searchTerm" class="clear-search-btn" (click)="clearSearch()">
+            <mat-icon>clear</mat-icon>
+          </button>
+        </div>
+        <button class="btn btn-create-new" (click)="createNewBank()">
+          <mat-icon>add</mat-icon>
+          יצירת בנק חדש
+        </button>
+      </div>
+
+      <!-- Loading state -->
+      <div class="loading-section" *ngIf="loading">
+        <mat-icon class="loading-icon">hourglass_empty</mat-icon>
+        <p>טוען בנקים...</p>
+      </div>
+
+      <!-- Banks List -->
+      <div class="banks-list-section" *ngIf="!loading">
+        <div class="banks-list" *ngIf="getFilteredBanks().length > 0">
+          <div class="bank-item"
+               *ngFor="let bank of getFilteredBanks()"
+               (click)="selectBank(bank)"
+               [class.selected]="selectedBank?.id === bank.id">
+            <div class="bank-item-content">
+              <div class="bank-icon-wrapper">
+                <mat-icon>account_balance</mat-icon>
+              </div>
+              <div class="bank-info">
+                <div class="bank-name">{{ bank.name }}</div>
+                <div class="bank-details" *ngIf="bank.bankCode || bank.branchCode">
+                  <span *ngIf="bank.bankCode">
+                    <mat-icon class="detail-icon">tag</mat-icon>
+                    {{ bank.bankCode }}
+                  </span>
+                  <span *ngIf="bank.branchCode" style="margin-right: 12px;">
+                    <mat-icon class="detail-icon">store</mat-icon>
+                    {{ bank.branchCode }}
+                  </span>
+                </div>
+                <div class="bank-address" *ngIf="bank.place?.fullAddress">
+                  <mat-icon class="location-icon">location_on</mat-icon>
+                  {{ bank.place?.fullAddress }}
+                </div>
+              </div>
+            </div>
+            <div class="select-indicator">
+              <mat-icon>check_circle</mat-icon>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty state when no banks found -->
+        <div class="no-banks-found" *ngIf="getFilteredBanks().length === 0">
+          <mat-icon class="empty-icon">account_balance</mat-icon>
+          <p *ngIf="searchTerm">לא נמצאו בנקים התואמים לחיפוש "{{ searchTerm }}"</p>
+          <p *ngIf="!searchTerm">אין בנקים זמינים</p>
+          <button class="btn btn-primary" (click)="createNewBank()">
+            <mat-icon>add</mat-icon>
+            יצירת בנק חדש
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

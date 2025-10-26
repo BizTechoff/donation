@@ -26,6 +26,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner'
 import { MatTableModule } from '@angular/material/table'
 import { MatSortModule } from '@angular/material/sort'
 import { MatPaginatorModule } from '@angular/material/paginator'
+import { MatProgressBarModule } from '@angular/material/progress-bar'
 import { CommonUIElementsModule } from 'common-ui-elements'
 import { UsersComponent } from './users/users.component'
 import { YesNoQuestionComponent } from './common/yes-no-question/yes-no-question.component'
@@ -62,6 +63,9 @@ import { EventSelectionModalComponent } from './routes/modals/event-selection-mo
 import { NotesSelectionModalComponent } from './routes/modals/notes-selection-modal/notes-selection-modal.component'
 import { CircleSelectionModalComponent } from './routes/modals/circle-selection-modal/circle-selection-modal.component'
 import { CompanySelectionModalComponent } from './routes/modals/company-selection-modal/company-selection-modal.component'
+import { BankSelectionModalComponent } from './routes/modals/bank-selection-modal/bank-selection-modal.component'
+import { OrganizationSelectionModalComponent } from './routes/modals/organization-selection-modal/organization-selection-modal.component'
+import { DonorSelectionModalComponent } from './routes/modals/donor-selection-modal/donor-selection-modal.component'
 import { OsmAddressInputComponent } from './common/osm-address-input/osm-address-input.component'
 import { LetterPropertiesModalComponent } from './routes/modals/letter-properties-modal/letter-properties-modal.component'
 import { ReminderDetailsModalComponent } from './routes/modals/reminder-details-modal/reminder-details-modal.component'
@@ -79,6 +83,7 @@ import { CampaignDonorsModalComponent } from './routes/modals/campaign-donors-mo
 import { CampaignBlessingBookModalComponent } from './routes/modals/campaign-blessing-book-modal/campaign-blessing-book-modal.component'
 import { ToggleSwitchComponent } from './shared/toggle-switch/toggle-switch.component'
 import { UserDetailsComponent } from './route/user-details/user-details.component'
+import { FileUploadComponent } from './components/file-upload/file-upload.component'
 
 @NgModule({
   declarations: [
@@ -106,6 +111,9 @@ import { UserDetailsComponent } from './route/user-details/user-details.componen
     NotesSelectionModalComponent,
     CircleSelectionModalComponent,
     CompanySelectionModalComponent,
+    BankSelectionModalComponent,
+    OrganizationSelectionModalComponent,
+    DonorSelectionModalComponent,
     DonorDetailsModalComponent,
     FamilyRelationDetailsModalComponent,
     LetterPropertiesModalComponent,
@@ -128,7 +136,8 @@ import { UserDetailsComponent } from './route/user-details/user-details.componen
     SeedDataComponent,
     ToggleSwitchComponent,
     UserDetailsComponent,
-    OsmAddressInputComponent
+    OsmAddressInputComponent,
+    FileUploadComponent
   ],
   imports: [
     BrowserModule,
@@ -158,6 +167,7 @@ import { UserDetailsComponent } from './route/user-details/user-details.componen
     MatTableModule,
     MatSortModule,
     MatPaginatorModule,
+    MatProgressBarModule,
     CommonUIElementsModule
   ],
   providers: [

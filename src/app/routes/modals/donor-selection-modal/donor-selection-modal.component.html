@@ -1,0 +1,84 @@
+<div class="modal-backdrop" (click)="closeDialog()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ args.title || 'בחר שותף לתרומה' }}</h2>
+      <button class="close-btn" (click)="closeDialog()" title="סגור">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <!-- Search Section -->
+      <div class="search-section">
+        <div class="search-input-group">
+          <mat-icon class="search-icon">search</mat-icon>
+          <input
+            type="text"
+            class="form-control search-input"
+            [(ngModel)]="searchTerm"
+            placeholder="חפש תורם...">
+          <button *ngIf="searchTerm" class="clear-search-btn" (click)="clearSearch()">
+            <mat-icon>clear</mat-icon>
+          </button>
+        </div>
+        <button class="btn btn-create-new" (click)="createNewDonor()">
+          <mat-icon>add</mat-icon>
+          יצירת תורם חדש
+        </button>
+      </div>
+
+      <!-- Loading state -->
+      <div class="loading-section" *ngIf="loading">
+        <mat-icon class="loading-icon">hourglass_empty</mat-icon>
+        <p>טוען תורמים...</p>
+      </div>
+
+      <!-- Donors List -->
+      <div class="donors-list-section" *ngIf="!loading">
+        <div class="donors-list" *ngIf="getFilteredDonors().length > 0">
+          <div class="donor-item"
+               *ngFor="let donor of getFilteredDonors()"
+               (click)="selectDonor(donor)"
+               [class.selected]="selectedDonor?.id === donor.id">
+            <div class="donor-item-content">
+              <div class="donor-icon-wrapper">
+                <mat-icon>person</mat-icon>
+              </div>
+              <div class="donor-info">
+                <div class="donor-name">{{ getDonorDisplayName(donor) }}</div>
+                <div class="donor-details" *ngIf="donor.email || donor.phone">
+                  <span *ngIf="donor.phone">
+                    <mat-icon class="detail-icon">phone</mat-icon>
+                    {{ donor.phone }}
+                  </span>
+                  <span *ngIf="donor.email" style="margin-right: 12px;">
+                    <mat-icon class="detail-icon">email</mat-icon>
+                    {{ donor.email }}
+                  </span>
+                </div>
+                <div class="donor-address" *ngIf="donor.homePlace?.fullAddress">
+                  <mat-icon class="location-icon">location_on</mat-icon>
+                  {{ donor.homePlace?.fullAddress }}
+                </div>
+              </div>
+            </div>
+            <div class="select-indicator">
+              <mat-icon>check_circle</mat-icon>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty state when no donors found -->
+        <div class="no-donors-found" *ngIf="getFilteredDonors().length === 0">
+          <mat-icon class="empty-icon">person</mat-icon>
+          <p *ngIf="searchTerm">לא נמצאו תורמים התואמים לחיפוש "{{ searchTerm }}"</p>
+          <p *ngIf="!searchTerm">אין תורמים זמינים</p>
+          <button class="btn btn-primary" (click)="createNewDonor()">
+            <mat-icon>add</mat-icon>
+            יצירת תורם חדש
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
