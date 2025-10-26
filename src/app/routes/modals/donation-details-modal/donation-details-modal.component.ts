@@ -234,8 +234,10 @@ export class DonationDetailsModalComponent implements OnInit {
 
           // Initialize standing order defaults
           this.donation.standingOrderType = 'bank';
-          this.donation.unlimitedPayments = true;
-          this.donation.numberOfPayments = 0;
+          this.donation.frequency = 'monthly';
+          this.donation.dayOfMonth = 10;
+          this.donation.unlimitedPayments = false;
+          this.donation.numberOfPayments = 12;
 
           // Pre-select donor if donorId is provided
           if (this.args.donorId) {
@@ -259,6 +261,20 @@ export class DonationDetailsModalComponent implements OnInit {
             }
             if (!this.donation.partnerIds) {
               this.donation.partnerIds = [];
+            }
+
+            // Set default standing order values if not set
+            if (!this.donation.frequency) {
+              this.donation.frequency = 'monthly';
+            }
+            if (!this.donation.dayOfMonth) {
+              this.donation.dayOfMonth = 10;
+            }
+            if (this.donation.unlimitedPayments === undefined || this.donation.unlimitedPayments === null) {
+              this.donation.unlimitedPayments = false;
+            }
+            if (!this.donation.numberOfPayments) {
+              this.donation.numberOfPayments = 12;
             }
 
             // Auto-fill payerName if not set (for existing donations)
