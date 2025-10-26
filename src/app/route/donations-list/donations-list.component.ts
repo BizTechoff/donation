@@ -203,6 +203,72 @@ export class DonationsListComponent implements OnInit, OnDestroy {
     }
   }
 
+  async uploadTransactions(donation: Donation) {
+    // Create file input element
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.xlsx,.xls';
+
+    input.onchange = async (e: any) => {
+      const file = e.target?.files?.[0];
+      if (!file) return;
+
+      try {
+        this.loading = true;
+
+        // Import xlsx dynamically
+        const XLSX = await import('xlsx');
+
+        // Read the file
+        const data = await file.arrayBuffer();
+        const workbook = XLSX.read(data, { type: 'array' });
+
+        // Get first sheet
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+
+        // Convert to JSON
+        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+        if (jsonData.length === 0) {
+          this.ui.error('הקובץ ריק או לא מכיל נתונים');
+          return;
+        }
+
+        // Import PaymentController dynamically to avoid circular dependencies
+        const { PaymentController } = await import('../../../shared/controllers/payment.controller');
+
+        // Send to backend for processing
+        const result = await PaymentController.processExcelTransactions(
+          donation.id,
+          jsonData as any[]
+        );
+
+        // Show results
+        let message = `קליטת תנועות לתרומה של ${donation.donor?.displayName || 'תורם לא ידוע'}\n\n`;
+        message += `נמצאו ${result.matched} תשלומים תואמים\n`;
+        message += `נוצרו ${result.created} רשומות תשלום חדשות\n`;
+
+        if (result.errors.length > 0) {
+          message += `\nשגיאות:\n${result.errors.slice(0, 5).join('\n')}`;
+          if (result.errors.length > 5) {
+            message += `\n...ועוד ${result.errors.length - 5} שגיאות`;
+          }
+        }
+
+        alert(message);
+
+      } catch (error) {
+        console.error('Error uploading Excel file:', error);
+        this.ui.error('שגיאה בעיבוד קובץ האקסל: ' + (error instanceof Error ? error.message : 'שגיאה לא ידועה'));
+      } finally {
+        this.loading = false;
+      }
+    };
+
+    input.click();
+  }
+
   closeModal() {
     this.showAddDonationModal = false;
     this.editingDonation = undefined;

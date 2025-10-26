@@ -133,6 +133,8 @@
           [title]="(i18n.terms$ | async)?.edit">✏</button>
         <button class="btn-icon btn-receipt" (click)="issueReceipt(donation)" [disabled]="donation.receiptIssued"
           [title]="(i18n.terms$ | async)?.receiptAction">🧾</button>
+        <button class="btn-icon btn-excel" *ngIf="donation.frequency" (click)="uploadTransactions(donation)"
+          title="קלוט תנועות">📊</button>
         <button class="btn-icon btn-delete" (click)="deleteDonation(donation)"
           [title]="(i18n.terms$ | async)?.delete">🗑</button>
         <button class="btn-icon btn-cancel" (click)="cancelDonation(donation)"
