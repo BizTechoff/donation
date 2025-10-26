@@ -314,9 +314,20 @@
               <div class="form-group">
                 <div class="field-title">
                   <mat-icon class="field-icon">person</mat-icon>
-                  <label>{{i18n.terms.payerName}}</label>
+                  <label>שם משלם</label>
                 </div>
-                <input type="text" class="form-control" [(ngModel)]="donation.payerName" [placeholder]="i18n.terms.payerNamePlaceholder">
+                <select class="form-control" [(ngModel)]="donation.payerName">
+                  <option value="">בחר משלם</option>
+                  <option *ngFor="let option of payerOptions" [value]="option.value">{{ option.label }}</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <div class="field-title">
+                  <mat-icon class="field-icon">receipt</mat-icon>
+                  <label>אסמכתא</label>
+                </div>
+                <input type="text" class="form-control" [(ngModel)]="donation.referenceNumber" placeholder="אסמכתא">
               </div>
 
               <div class="form-group">
