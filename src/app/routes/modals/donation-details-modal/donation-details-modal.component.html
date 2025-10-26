@@ -459,8 +459,10 @@
                   <mat-icon class="field-icon">person</mat-icon>
                   <label>שם משלם</label>
                 </div>
-                <input type="text" class="form-control" [(ngModel)]="donation.cardHolderName"
-                  [placeholder]="'שם משלם'">
+                <select class="form-control" [(ngModel)]="donation.cardHolderName">
+                  <option value="">בחר משלם</option>
+                  <option *ngFor="let option of payerOptions" [value]="option.value">{{ option.label }}</option>
+                </select>
               </div>
 
               <div class="form-group">
@@ -487,6 +489,35 @@
                 </div>
                 <input type="text" class="form-control" [(ngModel)]="donation.cardExpiry" maxlength="5"
                   placeholder="MM/YY">
+              </div>
+            </div>
+          </div>
+
+          <!-- Cash Payment Details -->
+          <div class="payment-details" *ngIf="isCashPayment">
+            <div class="payment-details-header">
+              <mat-icon class="payment-icon">payments</mat-icon>
+              <h4>פרטי מזומן</h4>
+            </div>
+
+            <div class="form-grid">
+              <div class="form-group">
+                <div class="field-title">
+                  <mat-icon class="field-icon">person</mat-icon>
+                  <label>שם משלם</label>
+                </div>
+                <select class="form-control" [(ngModel)]="donation.payerName">
+                  <option value="">בחר משלם</option>
+                  <option *ngFor="let option of payerOptions" [value]="option.value">{{ option.label }}</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <div class="field-title">
+                  <mat-icon class="field-icon">receipt</mat-icon>
+                  <label>אסמכתא</label>
+                </div>
+                <input type="text" class="form-control" [(ngModel)]="donation.referenceNumber" placeholder="אסמכתא">
               </div>
             </div>
           </div>
