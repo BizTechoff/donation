@@ -61,6 +61,12 @@ export class DonationOrganization extends IdEntity {
   })
   reference = ''
 
+  @Fields.string({
+    caption: 'מזהה תשלום',
+    allowNull: true,
+  })
+  paymentIdentifier = ''
+
   @Fields.boolean({
     caption: 'פעיל',
   })

@@ -7,27 +7,26 @@ import {
   Fields,
   Relations,
 } from 'remult'
-import { Bank } from './bank'
 import { Donation } from './donation'
 import { Roles } from '../enum/roles'
 
-@Entity<DonationBank>('donation_banks', {
+@Entity<Payment>('payments', {
   allowApiCrud: Allow.authenticated,
   allowApiRead: Allow.authenticated,
   allowApiUpdate: [Roles.admin],
   allowApiDelete: [Roles.admin],
   allowApiInsert: Allow.authenticated,
-  saving: async (donationBank) => {
+  saving: async (payment) => {
     if (isBackend()) {
-      if (donationBank._.isNew()) {
-        donationBank.createdDate = new Date()
+      if (payment._.isNew()) {
+        payment.createdDate = new Date()
       }
-      donationBank.updatedDate = new Date()
+      payment.updatedDate = new Date()
     }
   },
 })
-export class DonationBank extends IdEntity {
-  @Relations.toOne<DonationBank, Donation>(() => Donation, {
+export class Payment extends IdEntity {
+  @Relations.toOne<Payment, Donation>(() => Donation, {
     caption: 'תרומה',
     field: 'donationId'
   })
@@ -39,25 +38,27 @@ export class DonationBank extends IdEntity {
   })
   donationId = ''
 
-  @Relations.toOne<DonationBank, Bank>(() => Bank, {
-    caption: 'בנק',
-    field: 'bankId'
+  @Fields.number({
+    validate: [Validators.required, Validators.min(0)],
+    caption: 'סכום תשלום',
   })
-  bank?: Bank
+  amount = 0
 
-  @Fields.string({
-    caption: 'בנק ID',
+  @Fields.dateOnly({
+    caption: 'תאריך תשלום',
     validate: Validators.required,
   })
-  bankId = ''
+  paymentDate = new Date()
 
   @Fields.string({
-    caption: 'שם משלם',
+    caption: 'סטטוס',
+    allowNull: true,
   })
-  payerName = ''
+  status = 'pending' // pending, completed, failed, cancelled
 
   @Fields.string({
     caption: 'אסמכתא',
+    allowNull: true,
   })
   reference = ''
 
@@ -67,20 +68,26 @@ export class DonationBank extends IdEntity {
   })
   paymentIdentifier = ''
 
+  @Fields.string({
+    caption: 'הערות',
+    allowNull: true,
+  })
+  notes = ''
+
+  @Fields.date({
+    caption: 'תאריך יצירה',
+    allowNull: true,
+  })
+  createdDate?: Date
+
+  @Fields.date({
+    caption: 'תאריך עדכון',
+    allowNull: true,
+  })
+  updatedDate?: Date
+
   @Fields.boolean({
     caption: 'פעיל',
   })
   isActive = true
-
-  @Fields.date({
-    allowApiUpdate: false,
-    caption: 'תאריך יצירה',
-  })
-  createdDate = new Date()
-
-  @Fields.date({
-    allowApiUpdate: false,
-    caption: 'תאריך עדכון',
-  })
-  updatedDate = new Date()
 }

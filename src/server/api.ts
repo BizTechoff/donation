@@ -4,7 +4,7 @@ import { SignInController, getUser } from '../app/users/SignInController'
 import { UpdatePasswordController } from '../app/users/UpdatePasswordController'
 import { DonorController } from '../shared/controllers/donor.controller'
 import { DonationController } from '../shared/controllers/donation.controller'
-import { Bank, Circle, Company, Contact, DonationBank, DonationOrganization, DonorAddress, DonorContact, DonorNote, DonorPlace, DonorReceptionHour, DonorRelation, NoteType, Organization } from '../shared/entity'
+import { Bank, Circle, Company, Contact, DonationBank, DonationOrganization, DonorAddress, DonorContact, DonorNote, DonorPlace, DonorReceptionHour, DonorRelation, NoteType, Organization, Payment } from '../shared/entity'
 import { Blessing } from '../shared/entity/blessing'
 import { Campaign } from '../shared/entity/campaign'
 import { Certificate } from '../shared/entity/certificate'
@@ -27,7 +27,7 @@ import { FileController } from '../shared/controllers/file.controller'
 export const entities = [
   User, Donor, Donation, Campaign, DonationMethod, StandingOrder, Reminder,
   Certificate, Event, DonorEvent, Blessing, Country, Place, DonationPartner,
-  DonationFile, Contact, Bank, Organization, Company, Circle, DonorRelation, DonorAddress, DonorContact, DonorPlace, DonorNote, DonorReceptionHour, NoteType, DonationBank, DonationOrganization]
+  DonationFile, Contact, Bank, Organization, Company, Circle, DonorRelation, DonorAddress, DonorContact, DonorPlace, DonorNote, DonorReceptionHour, NoteType, DonationBank, DonationOrganization, Payment]
 export const api = remultExpress({
   admin: true,
   controllers: [SignInController, UpdatePasswordController, SeedController, DonorController, DonationController, LetterController, FileController],
