@@ -28,7 +28,7 @@ export class UIToolsService implements UITools {
     zone: NgZone,
     private snackBar: MatSnackBar,
     commonUIPlugin: CommonUIElementsPluginsService,
-    private busy: BusyService
+    public busy: BusyService
   ) {
     this.mediaMatcher.addListener((mql) =>
       zone.run(() => /*this.mediaMatcher = mql*/ ''.toString())
