@@ -456,24 +456,6 @@
             <div class="form-grid">
               <div class="form-group">
                 <div class="field-title">
-                  <mat-icon class="field-icon">numbers</mat-icon>
-                  <label>{{i18n.terms.cardNumberLast4}}</label>
-                </div>
-                <input type="text" class="form-control" [(ngModel)]="donation.cardNumber" maxlength="4"
-                  [placeholder]="i18n.terms.cardNumberPlaceholder">
-              </div>
-
-              <div class="form-group">
-                <div class="field-title">
-                  <mat-icon class="field-icon">date_range</mat-icon>
-                  <label>{{i18n.terms.cardExpiry}}</label>
-                </div>
-                <input type="text" class="form-control" [(ngModel)]="donation.cardExpiry" maxlength="5"
-                  [placeholder]="i18n.terms.cardExpiryPlaceholder">
-              </div>
-
-              <div class="form-group">
-                <div class="field-title">
                   <mat-icon class="field-icon">person</mat-icon>
                   <label>שם משלם</label>
                 </div>
@@ -484,9 +466,27 @@
               <div class="form-group">
                 <div class="field-title">
                   <mat-icon class="field-icon">receipt</mat-icon>
-                  <label>מספר אסמכתא / חשבונית</label>
+                  <label>אסמכתא</label>
                 </div>
-                <input type="text" class="form-control" [(ngModel)]="donation.referenceNumber" placeholder="מספר אסמכתא / חשבונית">
+                <input type="text" class="form-control" [(ngModel)]="donation.referenceNumber" placeholder="אסמכתא">
+              </div>
+
+              <div class="form-group">
+                <div class="field-title">
+                  <mat-icon class="field-icon">numbers</mat-icon>
+                  <label>4 ספרות אחרונות</label>
+                </div>
+                <input type="text" class="form-control" [(ngModel)]="donation.cardNumber" maxlength="4"
+                  [placeholder]="'4 ספרות אחרונות'">
+              </div>
+
+              <div class="form-group">
+                <div class="field-title">
+                  <mat-icon class="field-icon">date_range</mat-icon>
+                  <label>תוקף (MM/YY)</label>
+                </div>
+                <input type="text" class="form-control" [(ngModel)]="donation.cardExpiry" maxlength="5"
+                  placeholder="MM/YY">
               </div>
             </div>
           </div>
@@ -644,22 +644,6 @@
               <div class="form-grid">
                 <div class="form-group">
                   <div class="field-title">
-                    <mat-icon class="field-icon">credit_card</mat-icon>
-                    <label>{{ (i18n.terms$ | async)?.cardNumberLabel }}</label>
-                  </div>
-                  <input type="text" class="form-control" [(ngModel)]="donation.cardNumber" maxlength="4"
-                    pattern="[0-9]{4}" [placeholder]="(i18n.terms$ | async)?.cardNumberLabel">
-                </div>
-                <div class="form-group">
-                  <div class="field-title">
-                    <mat-icon class="field-icon">date_range</mat-icon>
-                    <label>{{ (i18n.terms$ | async)?.cardExpiryLabel }}</label>
-                  </div>
-                  <input type="text" class="form-control" [(ngModel)]="donation.cardExpiry" placeholder="MM/YY"
-                    maxlength="5">
-                </div>
-                <div class="form-group">
-                  <div class="field-title">
                     <mat-icon class="field-icon">person</mat-icon>
                     <label>שם משלם</label>
                   </div>
@@ -670,9 +654,27 @@
                 <div class="form-group">
                   <div class="field-title">
                     <mat-icon class="field-icon">receipt</mat-icon>
-                    <label>מספר אסמכתא / חשבונית</label>
+                    <label>אסמכתא</label>
                   </div>
-                  <input type="text" class="form-control" [(ngModel)]="donation.referenceNumber" placeholder="מספר אסמכתא / חשבונית">
+                  <input type="text" class="form-control" [(ngModel)]="donation.referenceNumber" placeholder="אסמכתא">
+                </div>
+
+                <div class="form-group">
+                  <div class="field-title">
+                    <mat-icon class="field-icon">numbers</mat-icon>
+                    <label>4 ספרות אחרונות</label>
+                  </div>
+                  <input type="text" class="form-control" [(ngModel)]="donation.cardNumber" maxlength="4"
+                    pattern="[0-9]{4}" placeholder="4 ספרות אחרונות">
+                </div>
+
+                <div class="form-group">
+                  <div class="field-title">
+                    <mat-icon class="field-icon">date_range</mat-icon>
+                    <label>תוקף (MM/YY)</label>
+                  </div>
+                  <input type="text" class="form-control" [(ngModel)]="donation.cardExpiry" placeholder="MM/YY"
+                    maxlength="5">
                 </div>
               </div>
             </div>
