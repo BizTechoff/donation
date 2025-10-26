@@ -588,59 +588,52 @@
 
             <!-- Bank Details Section -->
             <div class="bank-details-section" *ngIf="donation.standingOrderType === 'bank'">
-              <h5>
+              <h4>
                 {{ (i18n.terms$ | async)?.bankDetailsSection }}
-                <button class="add-btn" (click)="addNewBank()" [title]="i18n.terms.addNewBank">
+                <button class="add-btn" *ngIf="donationBanks.length === 0" (click)="addNewBank()" [title]="i18n.terms.addNewBank">
                   <mat-icon>add</mat-icon>
                 </button>
-              </h5>
-              <div class="form-grid">
-                <!-- Bank Dropdown Selector -->
-                <div class="form-group full-width">
-                  <div class="field-title">
-                    <mat-icon class="field-icon">account_balance</mat-icon>
-                    <label>{{i18n.terms.selectBank}}</label>
-                  </div>
-                  <div style="display: flex; gap: 10px; align-items: center;">
-                    <select class="form-control" [(ngModel)]="donation.bankId" (change)="onBankChange()"
-                      style="flex: 1;">
-                      <option value="">{{i18n.terms.selectBank}}</option>
-                      <option *ngFor="let bank of banks" [value]="bank.id">
-                        {{ bank.name }}
-                      </option>
-                    </select>
-                    <button mat-stroked-button type="button" (click)="editBank()" class="edit-btn" [matTooltip]="i18n.terms.editBank"
-                      [disabled]="!donation.bankId" style="white-space: nowrap;">
-                      <mat-icon>edit</mat-icon>
-                      {{i18n.terms.edit}}
-                    </button>
-                  </div>
-                </div>
+              </h4>
 
-                <!-- Bank Fields (can be overridden) -->
-                <div class="form-group">
-                  <div class="field-title">
-                    <mat-icon class="field-icon">account_balance</mat-icon>
-                    <label>{{ (i18n.terms$ | async)?.bankNameLabel }}</label>
+              <!-- Donation Banks List -->
+              <div class="donation-banks-list" *ngIf="donationBanks.length > 0" style="padding: 16px; background: rgba(255, 255, 255, 0.7); border-bottom: 1px solid #e1e8ed;">
+
+                <div class="donation-bank-card" *ngFor="let donationBank of donationBanks" style="background: white; border: 1px solid #e1e8ed; border-radius: 8px; padding: 12px 16px; margin-bottom: 12px; display: flex; align-items: flex-start; gap: 16px;">
+                  <!-- Bank Icon and Details -->
+                  <mat-icon style="color: #667eea; font-size: 24px; width: 24px; height: 24px; flex-shrink: 0; margin-top: 20px;">account_balance</mat-icon>
+                  <div style="min-width: 180px; cursor: pointer; margin-top: 4px;" (click)="viewBankDetails(donationBank.bankId)" title="לחץ לצפייה בפרטי הבנק">
+                    <div style="font-size: 11px; color: #6c757d; margin-bottom: 2px;">בנק</div>
+                    <div style="font-weight: 600; color: #667eea; font-size: 14px; text-decoration: underline;">{{ donationBank.bank?.name || 'בנק לא ידוע' }}</div>
+                    <div style="font-size: 11px; color: #6c757d;" *ngIf="donationBank.bank?.bankCode || donationBank.bank?.branchCode">
+                      <span *ngIf="donationBank.bank?.bankCode">{{ donationBank.bank?.bankCode }}</span>
+                      <span *ngIf="donationBank.bank?.branchCode">-{{ donationBank.bank?.branchCode }}</span>
+                    </div>
                   </div>
-                  <input type="text" class="form-control" [(ngModel)]="donation.bankName"
-                    [placeholder]="selectedBank?.name || (i18n.terms$ | async)?.bankNameLabel">
-                </div>
-                <div class="form-group">
-                  <div class="field-title">
-                    <mat-icon class="field-icon">store</mat-icon>
-                    <label>{{ (i18n.terms$ | async)?.bankBranchLabel }}</label>
+
+                  <!-- Payer Name Dropdown -->
+                  <div style="flex: 1; min-width: 200px;">
+                    <label style="display: block; font-size: 11px; color: #6c757d; margin-bottom: 4px;">שם משלם</label>
+                    <select class="form-control"
+                            [(ngModel)]="donationBank.payerName"
+                            (ngModelChange)="onDonationBankPayerChange(donationBank)"
+                            style="font-size: 14px; padding: 8px 12px;">
+                      <option value="">בחר משלם</option>
+                      <option *ngFor="let option of payerOptions" [value]="option.value">{{ option.label }}</option>
+                    </select>
                   </div>
-                  <input type="text" class="form-control" [(ngModel)]="donation.bankBranch"
-                    [placeholder]="(i18n.terms$ | async)?.bankBranchLabel">
-                </div>
-                <div class="form-group">
-                  <div class="field-title">
-                    <mat-icon class="field-icon">account_box</mat-icon>
-                    <label>{{ (i18n.terms$ | async)?.bankAccountLabel }}</label>
+
+                  <!-- Reference Field -->
+                  <div style="flex: 1; min-width: 150px;">
+                    <label style="display: block; font-size: 11px; color: #6c757d; margin-bottom: 4px;">אסמכתא</label>
+                    <input type="text" class="form-control" [(ngModel)]="donationBank.reference"
+                           (blur)="onDonationBankReferenceChange(donationBank)"
+                           placeholder="אסמכתא" style="font-size: 14px; padding: 8px 12px;">
                   </div>
-                  <input type="text" class="form-control" [(ngModel)]="donation.bankAccount"
-                    [placeholder]="(i18n.terms$ | async)?.bankAccountLabel">
+
+                  <!-- Delete Button -->
+                  <button mat-icon-button (click)="removeDonationBank(donationBank)" style="color: #dc3545; flex-shrink: 0; margin-top: 16px;">
+                    <mat-icon>delete</mat-icon>
+                  </button>
                 </div>
               </div>
             </div>
