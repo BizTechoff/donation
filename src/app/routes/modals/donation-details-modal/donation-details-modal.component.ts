@@ -1094,7 +1094,12 @@ export class DonationDetailsModalComponent implements OnInit {
         const donationBank = this.donationBankRepo.create();
         donationBank.donationId = this.donation.id;
         donationBank.bankId = selectedBank.id;
-        donationBank.payerName = this.donation.payerName || '';
+
+        // Set default payer name to donor
+        const donorName = this.selectedDonor
+          ? `${this.selectedDonor.firstName || ''} ${this.selectedDonor.lastName || ''}`.trim()
+          : '';
+        donationBank.payerName = this.donation.payerName || donorName || '';
         donationBank.reference = '';
         donationBank.isActive = true;
 
@@ -1278,7 +1283,12 @@ export class DonationDetailsModalComponent implements OnInit {
         const donationOrganization = this.donationOrganizationRepo.create();
         donationOrganization.donationId = this.donation.id;
         donationOrganization.organizationId = selectedOrganization.id;
-        donationOrganization.payerName = this.donation.payerName || '';
+
+        // Set default payer name to donor
+        const donorName = this.selectedDonor
+          ? `${this.selectedDonor.firstName || ''} ${this.selectedDonor.lastName || ''}`.trim()
+          : '';
+        donationOrganization.payerName = this.donation.payerName || donorName || '';
         donationOrganization.reference = '';
         donationOrganization.isActive = true;
 
@@ -1455,6 +1465,16 @@ export class DonationDetailsModalComponent implements OnInit {
           label: `${company.name} (${relatedText})`
         });
       });
+
+      // Set default payer name to donor if not already set
+      if (!this.donation.payerName && donorName) {
+        this.donation.payerName = donorName;
+      }
+
+      // Set default cardHolderName to donor if not already set (for credit card payments)
+      if (!this.donation.cardHolderName && donorName) {
+        this.donation.cardHolderName = donorName;
+      }
     }
 
     console.log('updatePayerOptions called, set', this.payerOptions.length, 'options:', this.payerOptions.map(o => ({
