@@ -66,6 +66,7 @@ import { CompanySelectionModalComponent } from './routes/modals/company-selectio
 import { BankSelectionModalComponent } from './routes/modals/bank-selection-modal/bank-selection-modal.component'
 import { OrganizationSelectionModalComponent } from './routes/modals/organization-selection-modal/organization-selection-modal.component'
 import { DonorSelectionModalComponent } from './routes/modals/donor-selection-modal/donor-selection-modal.component'
+import { DonorAddressTypeSelectionModalComponent } from './routes/modals/donor-address-type-selection-modal/donor-address-type-selection-modal.component'
 import { OsmAddressInputComponent } from './common/osm-address-input/osm-address-input.component'
 import { LetterPropertiesModalComponent } from './routes/modals/letter-properties-modal/letter-properties-modal.component'
 import { ReminderDetailsModalComponent } from './routes/modals/reminder-details-modal/reminder-details-modal.component'
@@ -115,6 +116,7 @@ import { PaymentListModalComponent } from './routes/modals/payment-list-modal/pa
     BankSelectionModalComponent,
     OrganizationSelectionModalComponent,
     DonorSelectionModalComponent,
+    DonorAddressTypeSelectionModalComponent,
     DonorDetailsModalComponent,
     FamilyRelationDetailsModalComponent,
     LetterPropertiesModalComponent,

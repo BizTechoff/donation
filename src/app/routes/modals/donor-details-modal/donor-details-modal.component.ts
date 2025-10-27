@@ -2,19 +2,20 @@ import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
 import { BusyService, DialogConfig, openDialog } from 'common-ui-elements';
 import { remult } from 'remult';
-import { Circle, Company, CompanyInfo, Contact, Country, Donation, Donor, DonorAddress, DonorContact, DonorEvent, DonorNote, DonorPlace, DonorReceptionHour, DonorRelation, Event, NoteType, Place, User } from '../../../../shared/entity';
 import { DonorController } from '../../../../shared/controllers/donor.controller';
+import { Circle, Company, CompanyInfo, Contact, Country, Donation, Donor, DonorAddress, DonorAddressType, DonorContact, DonorEvent, DonorNote, DonorPlace, DonorReceptionHour, DonorRelation, Event, NoteType, Place, User } from '../../../../shared/entity';
 import { AddressComponents } from '../../../common/osm-address-input/osm-address-input.component';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
 import { ActiveFilter, FilterOption, NavigationRecord } from '../../../shared/modal-navigation-header/modal-navigation-header.component';
-import { CompanyDetailsModalComponent } from '../company-details-modal/company-details-modal.component';
-import { CompanySelectionModalComponent } from '../company-selection-modal/company-selection-modal.component';
 import { CircleDetailsModalComponent } from '../circle-details-modal/circle-details-modal.component';
 import { CircleSelectionModalComponent } from '../circle-selection-modal/circle-selection-modal.component';
+import { CompanyDetailsModalComponent } from '../company-details-modal/company-details-modal.component';
+import { CompanySelectionModalComponent } from '../company-selection-modal/company-selection-modal.component';
 import { DonorDonationsModalArgs, DonorDonationsModalComponent } from '../donor-donations-modal/donor-donations-modal.component';
-import { NotesSelectionModalArgs, NotesSelectionModalComponent } from '../notes-selection-modal/notes-selection-modal.component';
 import { FamilyRelationDetailsModalComponent } from '../family-relation-details-modal/family-relation-details-modal.component';
+import { NotesSelectionModalArgs, NotesSelectionModalComponent } from '../notes-selection-modal/notes-selection-modal.component';
+import { DonorAddressTypeSelectionModalComponent } from '../donor-address-type-selection-modal/donor-address-type-selection-modal.component';
 
 export interface DonorDetailsModalArgs {
   donorId: string; // Can be 'new' for new donor or donor ID
@@ -158,6 +159,7 @@ export class DonorDetailsModalComponent implements OnInit {
         this.donor.isActive = true;
         this.donor.wantsUpdates = true;
         this.donor.companyIds = [];
+        this.donor.circleIds = [];
         this.donor.wantsTaxReceipts = true;
         this.donor.preferredLanguage = 'he';
         this.donor.companies = [];
@@ -369,7 +371,7 @@ export class DonorDetailsModalComponent implements OnInit {
       donorId: '', // Will be set when donor is saved
       type: 'email',
       email: '',
-      description: '',
+      description: 'אישי',
       isPrimary: true,
       isActive: true
     });
@@ -402,6 +404,7 @@ export class DonorDetailsModalComponent implements OnInit {
         this.donor.isActive = true;
         this.donor.wantsUpdates = true;
         this.donor.companyIds = [];
+        this.donor.circleIds = [];
         this.donor.wantsTaxReceipts = true;
         this.donor.preferredLanguage = 'he';
         // Country will be set via homePlace
@@ -540,7 +543,10 @@ export class DonorDetailsModalComponent implements OnInit {
     try {
       this.donorPlaces = await this.donorPlaceRepo.find({
         where: { donorId: this.donor.id, isActive: true },
-        include: { place: { include: { country: true } } }
+        include: {
+          place: { include: { country: true } },
+          addressType: true
+        }
       });
       console.log(`Loaded ${this.donorPlaces.length} donor places`);
     } catch (error) {
@@ -724,7 +730,7 @@ export class DonorDetailsModalComponent implements OnInit {
       }
 
       const wasNew = this.isNewDonor;
-      await this.donorRepo.save(this.donor);
+      await remult.repo(Donor).save(this.donor);
 
       // Save donor events (new and existing)
       if (this.donor.id) {
@@ -1054,6 +1060,13 @@ export class DonorDetailsModalComponent implements OnInit {
         email: type === 'email' ? '' : undefined,
         prefix: type === 'phone' ? '+972' : undefined,
         isPrimary: this.donorContacts.filter(c => c.type === type).length === 0,
+        description: type === 'email'
+          ? (this.donorContacts.filter(c => c.type === type).length
+            ? ''
+            : 'אישי')
+          : (this.donorContacts.filter(c => c.type === type).length
+            ? ''
+            : 'נייד'),
         isActive: true
       });
 
@@ -1115,16 +1128,24 @@ export class DonorDetailsModalComponent implements OnInit {
 
   // DonorPlace methods
   async addNewPlace() {
-    const description = prompt('הזן תיאור לכתובת (לדוגמה: בית, עבודה, הורים):');
-
-    if (!description || description.trim() === '') {
-      return;
-    }
-
     try {
+      // Open address type selection modal
+      const selectedAddressType: DonorAddressType | undefined = await openDialog(
+        DonorAddressTypeSelectionModalComponent,
+        (modal: DonorAddressTypeSelectionModalComponent) => {
+          modal.args = { title: 'בחר סוג כתובת' };
+        }
+      );
+
+      if (!selectedAddressType) {
+        return; // User cancelled
+      }
+
       const newPlace = this.donorPlaceRepo.create({
         donorId: this.donor?.id || '',
-        description: description.trim(),
+        addressTypeId: selectedAddressType.id,
+        addressType: selectedAddressType,
+        description: selectedAddressType.name, // For backwards compatibility
         isPrimary: this.donorPlaces.length === 0,
         isActive: true
       });
@@ -1132,7 +1153,7 @@ export class DonorDetailsModalComponent implements OnInit {
       // If this is an existing donor, save the place immediately
       if (this.donor?.id && !this.isNewDonor) {
         await this.donorPlaceRepo.save(newPlace);
-        console.log('Saved new place immediately:', description);
+        console.log('Saved new place immediately:', selectedAddressType.name);
       }
 
       this.donorPlaces.push(newPlace);
@@ -1177,16 +1198,16 @@ export class DonorDetailsModalComponent implements OnInit {
 
       for (const contact of phoneContacts) {
         // Only update if prefix is empty or default
-          contact.prefix = phonePrefix;
+        contact.prefix = phonePrefix;
 
-          // If contact already exists, save it
-          if (contact.id) {
-            try {
-              await this.donorContactRepo.save(contact);
-            } catch (error) {
-              console.error('Error updating contact prefix:', error);
-            }
+        // If contact already exists, save it
+        if (contact.id) {
+          try {
+            await this.donorContactRepo.save(contact);
+          } catch (error) {
+            console.error('Error updating contact prefix:', error);
           }
+        }
       }
 
       console.log(`Updated phone prefixes to ${phonePrefix} for home address`);
@@ -2104,18 +2125,38 @@ export class DonorDetailsModalComponent implements OnInit {
       );
 
       if (dialogResult) {
+        console.log('-1-1', typeof dialogResult, dialogResult instanceof Circle)
         let circleToAdd: Circle | undefined;
 
         // Check if it's a new circle that was created
-        if (typeof dialogResult === 'object' && 'newCircle' in dialogResult) {
-          // Reload circles list to include the new circle
-          await this.loadCircles();
-          circleToAdd = (dialogResult as any).newCircle;
-        } else if (dialogResult instanceof Circle) {
-          // An existing circle was selected
-          circleToAdd = dialogResult;
+        if (typeof dialogResult === 'object') {
+          if ('newCircle' in dialogResult) {
+            // Reload circles list to include the new circle
+            await this.loadCircles();
+            circleToAdd = (dialogResult as any).newCircle;
+          }
+          else {
+            circleToAdd = (dialogResult as Circle);
+          }
         }
 
+
+        // if (typeof dialogResult === 'object' && 'newCircle' in dialogResult) {
+        //   console.log('00')
+        //   // Reload circles list to include the new circle
+        //   await this.loadCircles();
+        //   circleToAdd = (dialogResult as any).newCircle;
+        // } else if (dialogResult instanceof Circle) {
+        //   console.log('11')
+        //   // An existing circle was selected
+        //   circleToAdd = dialogResult;
+        // } else if (typeof dialogResult === 'object') {
+        //   console.log('33')
+        //   // An existing circle was selected
+        //   circleToAdd = (dialogResult as Circle);
+        // }
+
+        console.log('dialogResult', dialogResult, circleToAdd)
         // Add the circle to donor's circleIds
         if (circleToAdd && !this.donor.circleIds?.includes(circleToAdd.id)) {
           if (!this.donor.circleIds) {
@@ -2125,8 +2166,10 @@ export class DonorDetailsModalComponent implements OnInit {
           // Create new array to trigger Angular change detection
           this.selectedCircles = [...this.selectedCircles, circleToAdd];
 
-          // Save the updated circleIds to database
-          await this.donorRepo.save(this.donor);
+          // Save the updated circleIds to database only if this is an existing donor
+          if (!this.isNewDonor && this.donor.id) {
+            await remult.repo(Donor).save(this.donor);
+          }
 
           this.changed = true;
           console.log('Added circle:', circleToAdd.name);
@@ -2177,8 +2220,10 @@ export class DonorDetailsModalComponent implements OnInit {
       }
     }
 
-    // Save the updated circleIds to database
-    await this.donorRepo.save(this.donor);
+    // Save the updated circleIds to database only if this is an existing donor
+    if (!this.isNewDonor && this.donor.id) {
+      await remult.repo(Donor).save(this.donor);
+    }
 
     // Remove from selectedCircles
     const selectedIndex = this.selectedCircles.findIndex(c => c.id === circle.id);

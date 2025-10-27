@@ -95,12 +95,12 @@ export class Donor extends IdEntity {
   @Fields.string({
     caption: 'תואר האשה',
   })
-  wifeTitle = ''
+  wifeTitle = 'גב\''
 
   @Fields.string({
     caption: 'תואר באנגלית בן/בת זוג',
   })
-  wifeTitleEnglish = ''
+  wifeTitleEnglish = 'Mrs.'
 
   @Fields.string({
     caption: 'שם באנגלית בן/בת זוג',
@@ -309,6 +309,7 @@ export class Donor extends IdEntity {
 
   @Fields.json({
     caption: 'חוגים',
+    includeInApi: true
   })
   circleIds?: string[] // Array of Circle IDs
 

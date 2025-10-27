@@ -1319,7 +1319,7 @@ export const termsEn = {
   publicReceptionDesc: 'Public Reception',
   emailOnly: 'Email Only',
   sendLettersByEmail: 'Send letters by email',
-  automaticEvents: 'Auto-join campaigns with similar location',
+  automaticEvents: 'Auto-join to campaigns with similar location',
   addByLocation: 'Add by location',
 
   // Interests & Hobbies

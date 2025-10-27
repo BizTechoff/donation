@@ -1517,4 +1517,82 @@ export class DonationDetailsModalComponent implements OnInit {
       element.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }
+
+  /**
+   * Get currency symbol based on currency code
+   */
+  getCurrencySymbol(code: string): string {
+    const symbolMap: { [key: string]: string } = {
+      'ILS': '₪',
+      'USD': '$',
+      'EUR': '€',
+      'GBP': '£',
+      'CAD': 'C$',
+      'AUD': 'A$',
+      'CHF': 'CHF',
+      'JPY': '¥',
+      'SEK': 'kr',
+      'NOK': 'kr',
+      'DKK': 'kr',
+      'PLN': 'zł',
+      'HUF': 'Ft',
+      'CZK': 'Kč',
+      'RON': 'lei',
+      'BGN': 'лв',
+      'HRK': 'kn',
+      'ISK': 'kr',
+      'UAH': '₴',
+      'RUB': '₽',
+      'TRY': '₺',
+      'CNY': '¥',
+      'INR': '₹',
+      'KRW': '₩',
+      'THB': '฿',
+      'SGD': 'S$',
+      'MYR': 'RM',
+      'IDR': 'Rp',
+      'PHP': '₱',
+      'VND': '₫',
+      'HKD': 'HK$',
+      'TWD': 'NT$',
+      'PKR': '₨',
+      'BDT': '৳',
+      'LKR': 'Rs',
+      'BRL': 'R$',
+      'ARS': '$',
+      'MXN': '$',
+      'CLP': '$',
+      'COP': '$',
+      'PEN': 'S/',
+      'UYU': '$U',
+      'AED': 'د.إ',
+      'SAR': 'ر.س',
+      'JOD': 'د.ا',
+      'EGP': 'E£',
+      'LBP': 'ل.ل',
+      'BHD': 'ب.د',
+      'KWD': 'د.ك',
+      'QAR': 'ر.ق',
+      'OMR': 'ر.ع',
+      'ZAR': 'R',
+      'NGN': '₦',
+      'KES': 'KSh',
+      'ETB': 'Br',
+      'GHS': '₵',
+      'NZD': 'NZ$'
+    };
+    return symbolMap[code] || code;
+  }
+
+  /**
+   * Get payment amount per installment
+   */
+  getPaymentAmount(): string {
+    if (!this.donation || !this.donation.amount || this.donation.unlimitedPayments || !this.donation.numberOfPayments || this.donation.numberOfPayments <= 0) {
+      return '';
+    }
+
+    const amountPerPayment = this.donation.amount / this.donation.numberOfPayments;
+    return amountPerPayment.toFixed(2);
+  }
 }

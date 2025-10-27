@@ -1249,12 +1249,42 @@
     }
   }
 
-  .payment-count-input {
+  .payment-count-input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex: 1;
     margin-left: 20px;
+  }
 
+  .payment-count-input {
     .form-control {
       width: 200px;
       max-width: 100%;
+    }
+  }
+
+  .payment-amount-display {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+    border-radius: 8px;
+    border: 2px solid rgba(102, 126, 234, 0.3);
+
+    .payment-amount-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #667eea;
+    }
+
+    .payment-amount-value {
+      font-size: 15px;
+      font-weight: 700;
+      color: #764ba2;
+      direction: ltr;
+      unicode-bidi: embed;
     }
   }
 }

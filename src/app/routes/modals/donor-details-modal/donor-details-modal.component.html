@@ -45,9 +45,9 @@
       <mat-icon>business</mat-icon>
       <span>חברות</span>
     </button>
-    <button class="nav-btn" (click)="scrollToSection('section-categories')" title="קטגוריות">
+    <button class="nav-btn" (click)="scrollToSection('section-categories')" title="חוגים">
       <mat-icon>label</mat-icon>
-      <span>קטגוריות</span>
+      <span>חוגים</span>
     </button>
     <button class="nav-btn" (click)="scrollToSection('section-preferences')" title="העדפות">
       <mat-icon>settings</mat-icon>
@@ -214,13 +214,13 @@
           <div class="address-item place-item" *ngFor="let donorPlace of donorPlaces">
             <div class="address-header">
               <mat-icon class="address-type-icon">place</mat-icon>
-              <h4>{{ donorPlace.description }}</h4>
+              <h4>{{ donorPlace.addressType?.name || donorPlace.description }}</h4>
               <button class="remove-address-btn" (click)="removeDonorPlace(donorPlace)" title="הסר כתובת">
                 <mat-icon>close</mat-icon>
               </button>
             </div>
             <app-osm-address-input
-              [label]="donorPlace.description"
+              [label]="donorPlace.addressType?.name || donorPlace.description"
               [placeholder]="'הקלד כתובת ' + '...'"
               countryCode="il"
               [(place)]="donorPlace.place"
@@ -633,7 +633,7 @@
             </span>
           </div>
         </div>
-
+<h4></h4>
         <!-- Donor Level Card -->
         <div class="info-card donor-level-card">
           <div class="form-grid">

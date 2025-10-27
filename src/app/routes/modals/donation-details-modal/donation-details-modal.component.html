@@ -623,9 +623,15 @@
                       (change)="onUnlimitedPaymentsChange()">
                     <span>{{ (i18n.terms$ | async)?.unlimitedPayments }}</span>
                   </label>
-                  <div class="payment-count-input" *ngIf="!donation.unlimitedPayments">
-                    <input type="number" class="form-control" [(ngModel)]="donation.numberOfPayments" min="1"
-                      [placeholder]="(i18n.terms$ | async)?.paymentsCount">
+                  <div class="payment-count-input-wrapper" *ngIf="!donation.unlimitedPayments">
+                    <div class="payment-count-input">
+                      <input type="number" class="form-control" [(ngModel)]="donation.numberOfPayments" min="1"
+                        [placeholder]="(i18n.terms$ | async)?.paymentsCount">
+                    </div>
+                    <div class="payment-amount-display" *ngIf="getPaymentAmount()">
+                      <span class="payment-amount-label">כל תשלום:</span>
+                      <span class="payment-amount-value">{{ getPaymentAmount() }} {{ getCurrencySymbol(donation.currency) }}</span>
+                    </div>
                   </div>
                 </div>
               </div>

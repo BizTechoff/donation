@@ -1,0 +1,112 @@
+<div class="modal-backdrop" (click)="closeDialog()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ args.title || 'בחר סוג כתובת' }}</h2>
+      <button class="close-btn" (click)="closeDialog()" title="סגור">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <!-- New Address Type Form -->
+      <div class="new-type-form" *ngIf="showNewAddressTypeForm">
+        <div class="form-header">
+          <h3>
+            <mat-icon>add_location</mat-icon>
+            סוג כתובת חדש
+          </h3>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>שם סוג כתובת *</label>
+            <input
+              type="text"
+              class="form-control"
+              [(ngModel)]="newAddressTypeName"
+              placeholder="לדוגמה: בית, עבודה, קיץ..."
+              (keyup.enter)="createNewAddressType()">
+          </div>
+          <div class="form-group full-width">
+            <label>תיאור</label>
+            <textarea
+              class="form-control"
+              rows="2"
+              [(ngModel)]="newAddressTypeDescription"
+              placeholder="תיאור אופציונלי"></textarea>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-cancel" (click)="cancelNewAddressType()" [disabled]="savingNewAddressType">
+            <mat-icon>close</mat-icon>
+            ביטול
+          </button>
+          <button class="btn btn-save" (click)="createNewAddressType()" [disabled]="savingNewAddressType || !newAddressTypeName.trim()">
+            <mat-icon>save</mat-icon>
+            {{ savingNewAddressType ? 'שומר...' : 'שמור' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Search Section -->
+      <div class="search-section" *ngIf="!showNewAddressTypeForm">
+        <div class="search-input-group">
+          <mat-icon class="search-icon">search</mat-icon>
+          <input
+            type="text"
+            class="form-control search-input"
+            [(ngModel)]="searchTerm"
+            placeholder="חפש סוג כתובת...">
+          <button *ngIf="searchTerm" class="clear-search-btn" (click)="clearSearch()">
+            <mat-icon>clear</mat-icon>
+          </button>
+        </div>
+        <button class="btn btn-create-new" (click)="showCreateNewForm()">
+          <mat-icon>add</mat-icon>
+          סוג כתובת חדש
+        </button>
+      </div>
+
+      <!-- Loading state -->
+      <div class="loading-section" *ngIf="loading">
+        <mat-icon class="loading-icon">hourglass_empty</mat-icon>
+        <p>טוען סוגי כתובות...</p>
+      </div>
+
+      <!-- Address Types List -->
+      <div class="types-list-section" *ngIf="!loading && !showNewAddressTypeForm">
+        <div class="types-list" *ngIf="getFilteredAddressTypes().length > 0">
+          <div class="type-item"
+               *ngFor="let type of getFilteredAddressTypes()"
+               (click)="selectAddressType(type)"
+               [class.selected]="selectedAddressType?.id === type.id">
+            <div class="type-item-content">
+              <div class="type-icon-wrapper">
+                <mat-icon>location_on</mat-icon>
+              </div>
+              <div class="type-info">
+                <div class="type-name">{{ type.name }}</div>
+                <div class="type-description" *ngIf="type.description">
+                  {{ type.description }}
+                </div>
+              </div>
+            </div>
+            <div class="select-indicator">
+              <mat-icon>check_circle</mat-icon>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty state when no types found -->
+        <div class="no-types-found" *ngIf="getFilteredAddressTypes().length === 0">
+          <mat-icon class="empty-icon">location_on</mat-icon>
+          <p *ngIf="searchTerm">לא נמצאו סוגי כתובות התואמים לחיפוש "{{ searchTerm }}"</p>
+          <p *ngIf="!searchTerm">אין סוגי כתובות זמינים</p>
+          <button class="btn btn-primary" (click)="showCreateNewForm()">
+            <mat-icon>add</mat-icon>
+            יצירת סוג כתובת חדש
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

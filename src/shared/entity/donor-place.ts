@@ -8,6 +8,7 @@ import {
 } from 'remult'
 import { Donor } from './donor'
 import { Place } from './place'
+import { DonorAddressType } from './donor-address-type'
 
 @Entity<DonorPlace>('donor_places', {
   allowApiCrud: Allow.authenticated,
@@ -45,11 +46,21 @@ export class DonorPlace extends IdEntity {
   })
   place?: Place;
 
+  @Fields.string({ caption: 'מזהה סוג כתובת' })
+  addressTypeId?: string;
+
+  @Relations.toOne(() => DonorAddressType, {
+    field: "addressTypeId",
+    caption: 'סוג כתובת',
+    defaultIncluded: true
+  })
+  addressType?: DonorAddressType;
+
   @Fields.string({
     caption: 'תיאור הכתובת',
-    allowNull: false,
+    allowNull: true,
   })
-  description = '' // e.g., "בית", "עבודה", "קיץ", "הורים"
+  description = '' // e.g., "בית", "עבודה", "קיץ", "הורים" - kept for backwards compatibility
 
   @Fields.boolean({
     caption: 'כתובת ראשית',

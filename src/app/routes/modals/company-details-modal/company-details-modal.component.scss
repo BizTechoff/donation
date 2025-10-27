@@ -23,11 +23,12 @@
 }
 
 /* Modern Modal Content */
-.bank-details-modal {
+.company-details-modal {
   width: 90vw;
   max-width: 900px;
   height: 90vh;
   max-height: 90vh;
+  margin: auto;
   background: white;
   border-radius: 16px;
   box-shadow: 0 24px 48px rgba(0, 0, 0, 0.2);
@@ -37,6 +38,7 @@
   animation: slideIn 0.3s ease-out;
   overflow: hidden;
   cursor: default;
+  box-sizing: border-box;
 }
 
 @keyframes slideIn {
@@ -62,6 +64,8 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   position: relative;
   overflow: hidden;
+  flex-shrink: 0;
+  min-height: auto;
 }
 
 .modal-header::before {
@@ -189,6 +193,23 @@
   padding: 32px;
   background: #fafbfc;
   min-height: 0;
+  position: relative;
+  z-index: 1;
+
+  // Scrollbar styling
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background: #555;
+  }
 }
 
 /* Sections */
@@ -356,8 +377,8 @@
   align-items: center;
   gap: 16px;
   border-radius: 0 0 16px 16px;
-  position: sticky;
-  bottom: 0;
+  flex-shrink: 0;
+  min-height: auto;
   z-index: 100;
 }
 
@@ -413,7 +434,7 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
-  .bank-details-modal {
+  .company-details-modal {
     width: 95vw;
     max-height: 95vh;
   }

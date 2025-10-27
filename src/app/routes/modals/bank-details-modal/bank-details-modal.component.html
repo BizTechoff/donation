@@ -70,6 +70,18 @@
 
             <div class="form-group">
               <div class="field-title">
+                <mat-icon class="field-icon">badge</mat-icon>
+                <label>מזהה משלם</label>
+              </div>
+              <input type="text"
+                     class="form-control"
+                     [(ngModel)]="bank.payerIdentifier"
+                     (ngModelChange)="onFieldChange()"
+                     placeholder="מזהה משלם">
+            </div>
+
+            <div class="form-group">
+              <div class="field-title">
                 <mat-icon class="field-icon">attach_money</mat-icon>
                 <label>{{ (i18n.terms$ | async)?.currency || 'מטבע' }}</label>
               </div>
@@ -120,6 +132,30 @@
                      [(ngModel)]="bank.phone"
                      (ngModelChange)="onFieldChange()"
                      [placeholder]="(i18n.terms$ | async)?.phoneNumber || 'מספר טלפון'">
+            </div>
+
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">person</mat-icon>
+                <label>שם משלם</label>
+              </div>
+              <input type="text"
+                     class="form-control"
+                     [(ngModel)]="bank.payerName"
+                     (ngModelChange)="onFieldChange()"
+                     placeholder="שם משלם">
+            </div>
+
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">receipt</mat-icon>
+                <label>אסמכתא</label>
+              </div>
+              <input type="text"
+                     class="form-control"
+                     [(ngModel)]="bank.reference"
+                     (ngModelChange)="onFieldChange()"
+                     placeholder="אסמכתא">
             </div>
 
             <div class="form-group">
