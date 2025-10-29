@@ -1,12 +1,12 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { remult } from 'remult';
-import { Donation, Donor, Campaign, DonationMethod } from '../../../shared/entity';
-import { I18nService } from '../../i18n/i18n.service';
-import { UIToolsService } from '../../common/UIToolsService';
-import { GlobalFilterService } from '../../services/global-filter.service';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { Campaign, Donation, DonationMethod, Donor } from '../../../shared/entity';
+import { UIToolsService } from '../../common/UIToolsService';
+import { I18nService } from '../../i18n/i18n.service';
+import { GlobalFilterService } from '../../services/global-filter.service';
 
 @Component({
   selector: 'app-donations-list',
@@ -103,7 +103,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
     this.donations = await this.donationRepo.find({
       orderBy: { donationDate: 'desc' },
       include: {
-        donor: true,
+        donor: {include: {fundraiser: true}},
         campaign: true,
         donationMethod: true,
         createdBy: true

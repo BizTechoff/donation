@@ -1,12 +1,12 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { HDate, Sedra } from '@hebcal/core';
 import { remult } from 'remult';
-import { Reminder, Donor } from '../../../shared/entity';
-import { I18nService } from '../../i18n/i18n.service';
-import { UIToolsService } from '../../common/UIToolsService';
-import { GlobalFilterService } from '../../services/global-filter.service';
 import { Subscription } from 'rxjs';
-import { HDate, HebrewCalendar, ParshaEvent, Sedra } from '@hebcal/core';
+import { Donor, Reminder } from '../../../shared/entity';
 import { DialogConfig } from '../../common-ui-elements';
+import { UIToolsService } from '../../common/UIToolsService';
+import { I18nService } from '../../i18n/i18n.service';
+import { GlobalFilterService } from '../../services/global-filter.service';
 
 @DialogConfig({
   hasBackdrop: true
@@ -227,7 +227,7 @@ export class RemindersComponent implements OnInit, OnDestroy {
   get upcomingBirthdays(): Donor[] {
     const today = new Date();
     const nextWeek = new Date(today.getTime() + (7 * 24 * 60 * 60 * 1000));
-    
+
     return this.donors.filter(donor => {
       if (!donor.birthDate) return false;
       const thisYearBirthday = new Date(today.getFullYear(), donor.birthDate.getMonth(), donor.birthDate.getDate());
@@ -238,7 +238,7 @@ export class RemindersComponent implements OnInit, OnDestroy {
   get donationCandidates(): Donor[] {
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-    
+
     // This would need to be implemented with actual donation data
     // For now returning empty array as we'd need to join with donations
     return [];
@@ -288,7 +288,8 @@ export class RemindersComponent implements OnInit, OnDestroy {
     }
 
     // Apply parasha filter
-    if (this.fromParasha !== '' || this.toParasha !== '') {
+    if (this.fromParasha !== '') {// || this.toParasha !== '') {
+      this.toParasha = this.fromParasha
       filtered = this.filterByParasha(filtered);
     }
 

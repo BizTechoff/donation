@@ -99,9 +99,15 @@ export class Donation extends IdEntity {
   })
   isUrgent = false
 
+  @Relations.toOne<Donation, User>(() => User, {
+    caption: 'מתרים',
+    field: 'fundraiserId'
+  })
+  fundraiser?: User
+
   @Fields.string({
     caption: 'מתרים ID',
-  })
+  })  
   fundraiserId = ''
 
   @Fields.json({

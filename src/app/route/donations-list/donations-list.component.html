@@ -5,6 +5,37 @@
       async)?.recordNewDonation }}</button>
   </div>
 
+  <div class="summary-cards">
+    <div class="summary-card total">
+      <div class="card-icon">💰</div>
+      <div class="card-content">
+        <h3>{{ (i18n.terms$ | async)?.totalDonationsSum }}</h3>
+        <span class="amount">₪{{ totalAmount | number }}</span>
+      </div>
+    </div>
+    <div class="summary-card monthly">
+      <div class="card-icon">📅</div>
+      <div class="card-content">
+        <h3>{{ (i18n.terms$ | async)?.pendingApprovalAmount }}</h3>
+        <span class="amount">₪{{ pendingAmount | number }}</span>
+      </div>
+    </div>
+    <div class="summary-card donors">
+      <div class="card-icon">👥</div>
+      <div class="card-content">
+        <h3>{{ (i18n.terms$ | async)?.numberOfDonations }}</h3>
+        <span class="count">{{ donations.length }}</span>
+      </div>
+    </div>
+    <div class="summary-card avg">
+      <div class="card-icon">📊</div>
+      <div class="card-content">
+        <h3>{{ (i18n.terms$ | async)?.completedDonationsCount }}</h3>
+        <span class="count">{{ completedDonationsCount }}</span>
+      </div>
+    </div>
+  </div>
+
   <div class="filters-section">
     <div class="filter-row">
       <div class="filter-group">
@@ -52,43 +83,12 @@
     </div>
   </div>
 
-  <div class="summary-cards">
-    <div class="summary-card total">
-      <div class="card-icon">💰</div>
-      <div class="card-content">
-        <h3>{{ (i18n.terms$ | async)?.totalDonationsSum }}</h3>
-        <span class="amount">₪{{ totalAmount | number }}</span>
-      </div>
-    </div>
-    <div class="summary-card monthly">
-      <div class="card-icon">📅</div>
-      <div class="card-content">
-        <h3>{{ (i18n.terms$ | async)?.pendingApprovalAmount }}</h3>
-        <span class="amount">₪{{ pendingAmount | number }}</span>
-      </div>
-    </div>
-    <div class="summary-card donors">
-      <div class="card-icon">👥</div>
-      <div class="card-content">
-        <h3>{{ (i18n.terms$ | async)?.numberOfDonations }}</h3>
-        <span class="count">{{ donations.length }}</span>
-      </div>
-    </div>
-    <div class="summary-card avg">
-      <div class="card-icon">📊</div>
-      <div class="card-content">
-        <h3>{{ (i18n.terms$ | async)?.completedDonationsCount }}</h3>
-        <span class="count">{{ completedDonationsCount }}</span>
-      </div>
-    </div>
-  </div>
-
   <div class="donations-table-wrapper">
     <table class="donations-table">
       <thead>
         <tr>
-          <th>{{ (i18n.terms$ | async)?.dateColumn }}</th>
           <th>{{ (i18n.terms$ | async)?.donorColumn }}</th>
+          <th>{{ (i18n.terms$ | async)?.dateColumn }}</th>
           <th>{{ (i18n.terms$ | async)?.amountColumn }}</th>
           <th>{{ (i18n.terms$ | async)?.currencyColumn }}</th>
           <th>{{ (i18n.terms$ | async)?.methodColumn }}</th>
@@ -99,13 +99,13 @@
       </thead>
       <tbody>
         <tr *ngFor="let donation of donationsWithCampaign">
+          <td class="donor-col">
+            <strong>{{ getDonorName(donation) }}</strong>
+          </td>
           <td class="date-col">
             <div class="date-display">
               <span class="hebrew-date">{{ donation.donationDate | date:'dd/MM/yyyy' }}</span>
             </div>
-          </td>
-          <td class="donor-col">
-            <strong>{{ getDonorName(donation) }}</strong>
           </td>
           <td class="amount-col">
             <span class="amount">₪{{donation.amount | number}}</span>
@@ -115,7 +115,7 @@
             <span class="method-badge method-{{donation.donationMethod?.type}}">{{ getMethodName(donation) }}</span>
           </td>
           <td class="campaign-col">{{ getCampaignName(donation) }}</td>
-          <td class="fundraiser-col">{{ donation.fundraiserId || (i18n.terms$ | async)?.createdByUnknown }}</td>
+          <td class="fundraiser-col">{{ donation.donor?.fundraiser?.name || '-' || (i18n.terms$ | async)?.createdByUnknown }}</td>
           <td class="actions">
             <!-- <button class="btn-icon btn-view" (click)="editDonation(donation)"
               [title]="(i18n.terms$ | async)?.viewDetails">👁</button> -->

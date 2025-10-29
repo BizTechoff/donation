@@ -50,7 +50,7 @@
         </select>
       </div>
       
-      <div class="filter-group">
+      <!-- <div class="filter-group">
         <label>{{ (i18n.terms$ | async)?.reminderStatusFilter }}</label>
         <select class="form-control">
           <option value="">{{ (i18n.terms$ | async)?.everything }}</option>
@@ -59,7 +59,7 @@
           <option value="overdue">{{ (i18n.terms$ | async)?.overdueStatus }}</option>
           <option value="cancelled">{{ (i18n.terms$ | async)?.cancelledStatusReminder }}</option>
         </select>
-      </div>
+      </div> -->
 
       <div class="filter-group">
         <label>{{ (i18n.terms$ | async)?.dateFromReminder }}</label>
@@ -76,7 +76,7 @@
         <input type="text" class="form-control" [placeholder]="(i18n.terms$ | async)?.donorNamePlaceholder">
       </div>
 
-      <div class="filter-group">
+      <!-- <div class="filter-group">
         <label>{{ (i18n.terms$ | async)?.regionFilter }}</label>
         <select class="form-control">
           <option value="">{{ (i18n.terms$ | async)?.everything }}</option>
@@ -85,23 +85,23 @@
           <option value="south">{{ (i18n.terms$ | async)?.southRegion }}</option>
           <option value="jerusalem">{{ (i18n.terms$ | async)?.jerusalemRegion }}</option>
         </select>
-      </div>
+      </div> -->
 
       <div class="filter-group">
-        <label>מפרשה</label>
+        <label>פרשה</label>
         <select class="form-control" [(ngModel)]="fromParasha" (change)="applyParashaFilter()">
           <option value="">בחר פרשה</option>
           <option *ngFor="let parasha of torahPortions; let i = index" [value]="i">{{parasha}} ({{i}})</option>
         </select>
       </div>
 
-      <div class="filter-group">
+      <!-- <div class="filter-group">
         <label>עד פרשה</label>
         <select class="form-control" [(ngModel)]="toParasha" (change)="applyParashaFilter()">
           <option value="">בחר פרשה</option>
           <option *ngFor="let parasha of torahPortions; let i = index" [value]="i">{{parasha}} ({{i}})</option>
         </select>
-      </div>
+      </div> -->
     </div>
   </div>
 
