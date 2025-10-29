@@ -4,6 +4,28 @@
     <button class="btn btn-primary create-certificate-btn" (click)="openCreateModal()">{{ (i18n.terms$ | async)?.createNewCertificate }}</button>
   </div>
 
+  <div class="certificate-types">
+    <div class="type-card memorial-cert">
+      <div class="card-icon">🕯️</div>
+      <h3>{{ (i18n.terms$ | async)?.memorialCertificatesCard }}</h3>
+      <p>{{ (i18n.terms$ | async)?.memorialCertDescription }}</p>
+      <div class="stats">
+        <span class="count">28</span>
+        <span class="label">{{ (i18n.terms$ | async)?.activeMemorials }}</span>
+      </div>
+    </div>
+
+    <div class="type-card memorial-cert">
+      <div class="card-icon">📅</div>
+      <h3>{{ (i18n.terms$ | async)?.memorialDay }}</h3>
+      <p>נציבים ליום מיוחד</p>
+      <div class="stats">
+        <span class="count">15</span>
+        <span class="label">נציבים פעילים</span>
+      </div>
+    </div>
+  </div>
+
   <div class="filters-section">
     <div class="filter-row">
       <div class="filter-group">
@@ -51,27 +73,6 @@
     </div>
   </div>
 
-  <div class="certificate-types">
-    <div class="type-card memorial-cert">
-      <div class="card-icon">🕯️</div>
-      <h3>{{ (i18n.terms$ | async)?.memorialCertificatesCard }}</h3>
-      <p>{{ (i18n.terms$ | async)?.memorialCertDescription }}</p>
-      <div class="stats">
-        <span class="count">28</span>
-        <span class="label">{{ (i18n.terms$ | async)?.activeMemorials }}</span>
-      </div>
-    </div>
-
-    <div class="type-card memorial-cert">
-      <div class="card-icon">📅</div>
-      <h3>{{ (i18n.terms$ | async)?.memorialDay }}</h3>
-      <p>נציבים ליום מיוחד</p>
-      <div class="stats">
-        <span class="count">15</span>
-        <span class="label">נציבים פעילים</span>
-      </div>
-    </div>
-  </div>
 
   <div class="certificates-grid">
     <div class="grid-header">
@@ -115,9 +116,7 @@
         <button class="btn-icon btn-reminder" [title]="certificate.reminderId ? ((i18n.terms$ | async)?.reminderExists) : ((i18n.terms$ | async)?.createReminderButton)" (click)="createReminder(certificate)">
           {{ certificate.reminderId ? '🔔' : '🔔➕' }}
         </button>
-        <!-- <button class="btn-icon btn-print" [title]="(i18n.terms$ | async)?.printAction" (click)="updateCertificateStatus(certificate, 'printed')">🖨</button>
-        <button class="btn-icon btn-download" [title]="(i18n.terms$ | async)?.downloadAction">⬇</button>
-        <button class="btn-icon btn-delivered" [title]="(i18n.terms$ | async)?.markAsDelivered" (click)="updateCertificateStatus(certificate, 'delivered')">✅</button> -->
+        <button class="btn-icon btn-delete" [title]="(i18n.terms$ | async)?.delete" (click)="deleteCertificate(certificate)">🗑</button>
       </div>
     </div>
   </div>

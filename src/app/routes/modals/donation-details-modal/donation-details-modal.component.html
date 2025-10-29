@@ -1,252 +1,255 @@
 <!-- Don;tion Details Modal -->
 <div class="donation-details-modal">
 
-    <!-- Modal Header with gradient and icon -->
-    <div class="modal-header">
-      <div class="header-content">
-        <div class="header-icon">
-          <mat-icon>{{isNewDonation ? 'add_circle' : 'attach_money'}}</mat-icon>
-        </div>
-        <div class="header-text">
-          <h2>{{isNewDonation ? i18n.terms.newDonation : i18n.terms.donationDetails}}</h2>
-          <p class="header-subtitle" *ngIf="!isNewDonation && donation">
-            {{getDonorDisplayName(selectedDonor)}}
-          </p>
-        </div>
+  <!-- Modal Header with gradient and icon -->
+  <div class="modal-header">
+    <div class="header-content">
+      <div class="header-icon">
+        <mat-icon>{{isNewDonation ? 'add_circle' : 'attach_money'}}</mat-icon>
       </div>
-      <button class="modal-close" (click)="closeModal()" [matTooltip]="i18n.terms.close" [dir]="'rtl'">
-        <mat-icon>close</mat-icon>
-      </button>
+      <div class="header-text">
+        <h2>{{isNewDonation ? i18n.terms.newDonation : i18n.terms.donationDetails}}</h2>
+        <p class="header-subtitle" *ngIf="!isNewDonation && donation">
+          {{getDonorDisplayName(selectedDonor)}}
+        </p>
+      </div>
     </div>
+    <button class="modal-close" (click)="closeModal()" [matTooltip]="i18n.terms.close" [dir]="'rtl'">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
 
-    <!-- Section Navigation -->
-    <div class="section-navigation" *ngIf="!isNewDonation">
-      <button class="nav-btn" (click)="scrollToSection('section-donor-payment')" [title]="i18n.terms.donorAndPaymentDetails || 'תורם ותשלום'">
-        <mat-icon>person</mat-icon>
-        <span>{{ i18n.terms.donor || 'תורם' }}</span>
-      </button>
-      <button class="nav-btn" (click)="scrollToSection('section-donation-type')" [title]="i18n.terms.donationType || 'סוג תרומה'">
-        <mat-icon>category</mat-icon>
-        <span>{{ i18n.terms.donationType || 'סוג' }}</span>
-      </button>
-      <button class="nav-btn" (click)="scrollToSection('section-basic-details')" [title]="i18n.terms.basicDonationDetails || 'פרטים בסיסיים'">
-        <mat-icon>info</mat-icon>
-        <span>פרטים</span>
-      </button>
-      <button class="nav-btn" (click)="scrollToSection('section-payment-method')" *ngIf="donation?.donationType !== 'commitment'" [title]="i18n.terms.paymentMethod || 'אמצעי תשלום'">
-        <mat-icon>payment</mat-icon>
-        <span>תשלום</span>
-      </button>
-      <button class="nav-btn" (click)="scrollToSection('section-partners')" [title]="i18n.terms.donationPartners || 'שותפים'">
-        <mat-icon>group</mat-icon>
-        <span>שותפים</span>
-      </button>
-      <button class="nav-btn" (click)="scrollToSection('section-notes')" [title]="i18n.terms.notes || 'הערות'">
-        <mat-icon>note</mat-icon>
-        <span>הערות</span>
-      </button>
-      <button class="nav-btn" (click)="scrollToSection('section-files')" *ngIf="!isNewDonation" [title]="i18n.terms.attachedFiles || 'קבצים'">
-        <mat-icon>attach_file</mat-icon>
-        <span>קבצים</span>
-      </button>
-    </div>
+  <!-- Section Navigation -->
+  <div class="section-navigation" *ngIf="!isNewDonation">
+    <button class="nav-btn" (click)="scrollToSection('section-donor-payment')"
+      [title]="i18n.terms.donorAndPaymentDetails || 'תורם ותשלום'">
+      <mat-icon>person</mat-icon>
+      <span>{{ i18n.terms.donor || 'תורם' }}</span>
+    </button>
+    <button class="nav-btn" (click)="scrollToSection('section-donation-type')"
+      [title]="i18n.terms.donationType || 'סוג תרומה'">
+      <mat-icon>category</mat-icon>
+      <span>{{ i18n.terms.donationType || 'סוג' }}</span>
+    </button>
+    <button class="nav-btn" (click)="scrollToSection('section-basic-details')"
+      [title]="i18n.terms.basicDonationDetails || 'פרטים בסיסיים'">
+      <mat-icon>info</mat-icon>
+      <span>פרטים</span>
+    </button>
+    <button class="nav-btn" (click)="scrollToSection('section-payment-method')"
+      *ngIf="donation?.donationType !== 'commitment'" [title]="i18n.terms.paymentMethod || 'אמצעי תשלום'">
+      <mat-icon>payment</mat-icon>
+      <span>תשלום</span>
+    </button>
+    <button class="nav-btn" (click)="scrollToSection('section-partners')"
+      [title]="i18n.terms.donationPartners || 'שותפים'">
+      <mat-icon>group</mat-icon>
+      <span>שותפים</span>
+    </button>
+    <button class="nav-btn" (click)="scrollToSection('section-notes')" [title]="i18n.terms.notes || 'הערות'">
+      <mat-icon>note</mat-icon>
+      <span>הערות</span>
+    </button>
+    <button class="nav-btn" (click)="scrollToSection('section-files')" *ngIf="!isNewDonation"
+      [title]="i18n.terms.attachedFiles || 'קבצים'">
+      <mat-icon>attach_file</mat-icon>
+      <span>קבצים</span>
+    </button>
+  </div>
 
-    <!-- Loading State -->
-    <div class="loading-overlay" *ngIf="loading">
-      <div class="loading-spinner">{{i18n.terms.loadingData}}</div>
-    </div>
+  <!-- Loading State -->
+  <div class="loading-overlay" *ngIf="loading">
+    <div class="loading-spinner">{{i18n.terms.loadingData}}</div>
+  </div>
 
-    <div class="modal-body">
-      <div class="details-grid" *ngIf="donation && !loading">
+  <div class="modal-body">
+    <div class="details-grid" *ngIf="donation && !loading">
 
 
 
-        <!-- פרטי תורם ותשלום -->
-        <div id="section-donor-payment" class="section donor-payment-section">
-          <h3>{{i18n.terms.donorAndPaymentDetails}}</h3>
-          <div class="form-grid">
-            <div class="form-group">
-              <div class="field-title">
-                <mat-icon class="field-icon">person</mat-icon>
-                <label>{{i18n.terms.donor}} *</label>
-              </div>
-              <div class="input-with-icon">
-                <select class="form-control" [(ngModel)]="donation.donorId" (ngModelChange)="onDonorChange($event)">
-                  <option value="">{{i18n.terms.selectDonor}}</option>
-                  <option *ngFor="let donor of donors" [value]="donor.id">
-                    {{ getDonorDisplayName(donor) }}
-                  </option>
-                </select>
-                <button mat-icon-button
-                        class="edit-icon-btn"
-                        [class.active]="donation.donorId"
-                        [disabled]="!donation.donorId"
-                        (click)="openDonorDetails()"
-                        [matTooltip]="i18n.terms.openDonorDetails"
-                        type="button">
-                  <mat-icon>person</mat-icon>
-                </button>
-              </div>
+      <!-- פרטי תורם ותשלום -->
+      <div id="section-donor-payment" class="section donor-payment-section">
+        <h3>{{i18n.terms.donorAndPaymentDetails}}</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <div class="field-title">
+              <mat-icon class="field-icon">person</mat-icon>
+              <label>{{i18n.terms.donor}} *</label>
             </div>
-
-            <div class="form-group">
-              <div class="field-title">
-                <mat-icon class="field-icon">campaign</mat-icon>
-                <label>{{i18n.terms.campaign}}</label>
-              </div>
-              <select class="form-control" [(ngModel)]="donation.campaignId" (change)="onCampaignChange()">
-                <option value="">{{i18n.terms.noCampaignOption}}</option>
-                <option *ngFor="let campaign of campaigns" [value]="campaign.id">
-                  {{ campaign.name }}
+            <div class="input-with-icon">
+              <select class="form-control" [(ngModel)]="donation.donorId" (ngModelChange)="onDonorChange($event)">
+                <option value="">{{i18n.terms.selectDonor}}</option>
+                <option *ngFor="let donor of donors" [value]="donor.id">
+                  {{ getDonorDisplayName(donor) }}
                 </option>
               </select>
+              <button mat-icon-button class="edit-icon-btn" [class.active]="donation.donorId"
+                [disabled]="!donation.donorId" (click)="openDonorDetails()" [matTooltip]="i18n.terms.openDonorDetails"
+                type="button">
+                <mat-icon>person</mat-icon>
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <div class="field-title">
+              <mat-icon class="field-icon">campaign</mat-icon>
+              <label>{{i18n.terms.campaign}}</label>
+            </div>
+            <select class="form-control" [(ngModel)]="donation.campaignId" (change)="onCampaignChange()">
+              <option value="">{{i18n.terms.noCampaignOption}}</option>
+              <option *ngFor="let campaign of campaigns" [value]="campaign.id">
+                {{ campaign.name }}
+              </option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- סוג תרומה -->
+      <div id="section-donation-type" class="section donation-type-section">
+        <h3>{{i18n.terms.donationType}}</h3>
+        <div class="form-grid">
+          <div class="form-group full-width">
+            <div class="donation-type-selector">
+              <div class="donation-type-option" [class.active]="donation.donationType === 'full'">
+                <label class="donation-type-card">
+                  <input type="radio" name="donationType" value="full" [(ngModel)]="donation.donationType"
+                    class="donation-type-radio">
+                  <div class="donation-type-content">
+                    <mat-icon class="donation-type-icon">payments</mat-icon>
+                    <div class="donation-type-text">
+                      <span class="donation-type-label">{{i18n.terms.fullDonation}}</span>
+                      <!-- <span class="donation-type-description">תשלום מלא ומיידי</span> -->
+                    </div>
+                  </div>
+                </label>
+              </div>
+
+              <div class="donation-type-option" [class.active]="donation.donationType === 'commitment'">
+                <label class="donation-type-card">
+                  <input type="radio" name="donationType" value="commitment" [(ngModel)]="donation.donationType"
+                    class="donation-type-radio">
+                  <div class="donation-type-content">
+                    <mat-icon class="donation-type-icon">handshake</mat-icon>
+                    <div class="donation-type-text">
+                      <span class="donation-type-label">{{i18n.terms.commitment}}</span>
+                      <!-- <span class="donation-type-description">הבטחה לתשלום בעתיד</span> -->
+                    </div>
+                  </div>
+                </label>
+              </div>
             </div>
           </div>
         </div>
+      </div>
 
-        <!-- סוג תרומה -->
-        <div id="section-donation-type" class="section donation-type-section">
-          <h3>{{i18n.terms.donationType}}</h3>
-          <div class="form-grid">
-            <div class="form-group full-width">
-              <div class="donation-type-selector">
-                <div class="donation-type-option" [class.active]="donation.donationType === 'full'">
-                  <label class="donation-type-card">
-                    <input type="radio" name="donationType" value="full" [(ngModel)]="donation.donationType"
-                      class="donation-type-radio">
-                    <div class="donation-type-content">
-                      <mat-icon class="donation-type-icon">payments</mat-icon>
-                      <div class="donation-type-text">
-                        <span class="donation-type-label">{{i18n.terms.fullDonation}}</span>
-                        <!-- <span class="donation-type-description">תשלום מלא ומיידי</span> -->
-                      </div>
-                    </div>
-                  </label>
-                </div>
+      <!-- פרטי תרומה בסיסיים -->
+      <div id="section-basic-details" class="section basic-details">
+        <h3>{{i18n.terms.basicDonationDetails}}</h3>
 
-                <div class="donation-type-option" [class.active]="donation.donationType === 'commitment'">
-                  <label class="donation-type-card">
-                    <input type="radio" name="donationType" value="commitment" [(ngModel)]="donation.donationType"
-                      class="donation-type-radio">
-                    <div class="donation-type-content">
-                      <mat-icon class="donation-type-icon">handshake</mat-icon>
-                      <div class="donation-type-text">
-                        <span class="donation-type-label">{{i18n.terms.commitment}}</span>
-                        <!-- <span class="donation-type-description">הבטחה לתשלום בעתיד</span> -->
-                      </div>
-                    </div>
-                  </label>
-                </div>
-              </div>
+        <div class="form-grid">
+          <div class="form-group full-width">
+            <div class="field-title">
+              <mat-icon class="field-icon">event</mat-icon>
+              <label>{{i18n.terms.donationDateLabel}}</label>
             </div>
+            <app-modern-dual-date-picker [(ngModel)]="donation.donationDate" [disabled]="false" [compact]="false"
+              [calendar_open_heb_and_eng_parallel]="true" (dateChange)="changed = true">
+            </app-modern-dual-date-picker>
           </div>
         </div>
 
-        <!-- פרטי תרומה בסיסיים -->
-        <div id="section-basic-details" class="section basic-details">
-          <h3>{{i18n.terms.basicDonationDetails}}</h3>
-          
-          <div class="form-grid">
-            <div class="form-group full-width">
-              <div class="field-title">
-                <mat-icon class="field-icon">event</mat-icon>
-                <label>{{i18n.terms.donationDateLabel}}</label>
-              </div>
-              <app-modern-dual-date-picker [(ngModel)]="donation.donationDate" [disabled]="false" [compact]="false"
-                [calendar_open_heb_and_eng_parallel]="true" (dateChange)="changed = true">
-              </app-modern-dual-date-picker>
+        <h4></h4>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <div class="field-title">
+              <mat-icon class="field-icon">attach_money</mat-icon>
+              <label>{{i18n.terms.amount}} *</label>
             </div>
+            <input type="number" class="form-control" [(ngModel)]="donation.amount"
+              [placeholder]="i18n.terms.enterAmount" min="0" step="0.01">
           </div>
 
-          <h4></h4>
-
-          <div class="form-grid">
-            <div class="form-group">
-              <div class="field-title">
-                <mat-icon class="field-icon">attach_money</mat-icon>
-                <label>{{i18n.terms.amount}} *</label>
-              </div>
-              <input type="number" class="form-control" [(ngModel)]="donation.amount" [placeholder]="i18n.terms.enterAmount" min="0"
-                step="0.01">
+          <div class="form-group">
+            <div class="field-title">
+              <mat-icon class="field-icon">monetization_on</mat-icon>
+              <label>{{i18n.terms.currency}}</label>
             </div>
+            <select class="form-control" [(ngModel)]="donation.currency">
+              <option value="ILS">{{getCurrencyName('ILS')}}</option>
+              <option value="USD">{{getCurrencyName('USD')}}</option>
+              <option value="EUR">{{getCurrencyName('EUR')}}</option>
+              <option value="GBP">{{getCurrencyName('GBP')}}</option>
+              <option value="CAD">{{getCurrencyName('CAD')}}</option>
+              <option value="AUD">{{getCurrencyName('AUD')}}</option>
+              <option value="CHF">{{getCurrencyName('CHF')}}</option>
+              <option value="JPY">{{getCurrencyName('JPY')}}</option>
+              <option value="SEK">{{getCurrencyName('SEK')}}</option>
+              <option value="NOK">{{getCurrencyName('NOK')}}</option>
+              <option value="DKK">{{getCurrencyName('DKK')}}</option>
+              <option value="PLN">{{getCurrencyName('PLN')}}</option>
+              <option value="HUF">{{getCurrencyName('HUF')}}</option>
+              <option value="CZK">{{getCurrencyName('CZK')}}</option>
+              <option value="RON">{{getCurrencyName('RON')}}</option>
+              <option value="BGN">{{getCurrencyName('BGN')}}</option>
+              <option value="HRK">{{getCurrencyName('HRK')}}</option>
+              <option value="ISK">{{getCurrencyName('ISK')}}</option>
+              <option value="UAH">{{getCurrencyName('UAH')}}</option>
+              <option value="RUB">{{getCurrencyName('RUB')}}</option>
+              <option value="TRY">{{getCurrencyName('TRY')}}</option>
+              <option value="CNY">{{getCurrencyName('CNY')}}</option>
+              <option value="INR">{{getCurrencyName('INR')}}</option>
+              <option value="KRW">{{getCurrencyName('KRW')}}</option>
+              <option value="THB">{{getCurrencyName('THB')}}</option>
+              <option value="SGD">{{getCurrencyName('SGD')}}</option>
+              <option value="MYR">{{getCurrencyName('MYR')}}</option>
+              <option value="IDR">{{getCurrencyName('IDR')}}</option>
+              <option value="PHP">{{getCurrencyName('PHP')}}</option>
+              <option value="VND">{{getCurrencyName('VND')}}</option>
+              <option value="HKD">{{getCurrencyName('HKD')}}</option>
+              <option value="TWD">{{getCurrencyName('TWD')}}</option>
+              <option value="PKR">{{getCurrencyName('PKR')}}</option>
+              <option value="BDT">{{getCurrencyName('BDT')}}</option>
+              <option value="LKR">{{getCurrencyName('LKR')}}</option>
+              <option value="BRL">{{getCurrencyName('BRL')}}</option>
+              <option value="ARS">{{getCurrencyName('ARS')}}</option>
+              <option value="MXN">{{getCurrencyName('MXN')}}</option>
+              <option value="CLP">{{getCurrencyName('CLP')}}</option>
+              <option value="COP">{{getCurrencyName('COP')}}</option>
+              <option value="PEN">{{getCurrencyName('PEN')}}</option>
+              <option value="UYU">{{getCurrencyName('UYU')}}</option>
+              <option value="AED">{{getCurrencyName('AED')}}</option>
+              <option value="SAR">{{getCurrencyName('SAR')}}</option>
+              <option value="JOD">{{getCurrencyName('JOD')}}</option>
+              <option value="EGP">{{getCurrencyName('EGP')}}</option>
+              <option value="LBP">{{getCurrencyName('LBP')}}</option>
+              <option value="BHD">{{getCurrencyName('BHD')}}</option>
+              <option value="KWD">{{getCurrencyName('KWD')}}</option>
+              <option value="QAR">{{getCurrencyName('QAR')}}</option>
+              <option value="OMR">{{getCurrencyName('OMR')}}</option>
+              <option value="ZAR">{{getCurrencyName('ZAR')}}</option>
+              <option value="NGN">{{getCurrencyName('NGN')}}</option>
+              <option value="KES">{{getCurrencyName('KES')}}</option>
+              <option value="ETB">{{getCurrencyName('ETB')}}</option>
+              <option value="GHS">{{getCurrencyName('GHS')}}</option>
+              <option value="NZD">{{getCurrencyName('NZD')}}</option>
+            </select>
+          </div>
 
-            <div class="form-group">
-              <div class="field-title">
-                <mat-icon class="field-icon">monetization_on</mat-icon>
-                <label>{{i18n.terms.currency}}</label>
-              </div>
-              <select class="form-control" [(ngModel)]="donation.currency">
-                <option value="ILS">{{getCurrencyName('ILS')}}</option>
-                <option value="USD">{{getCurrencyName('USD')}}</option>
-                <option value="EUR">{{getCurrencyName('EUR')}}</option>
-                <option value="GBP">{{getCurrencyName('GBP')}}</option>
-                <option value="CAD">{{getCurrencyName('CAD')}}</option>
-                <option value="AUD">{{getCurrencyName('AUD')}}</option>
-                <option value="CHF">{{getCurrencyName('CHF')}}</option>
-                <option value="JPY">{{getCurrencyName('JPY')}}</option>
-                <option value="SEK">{{getCurrencyName('SEK')}}</option>
-                <option value="NOK">{{getCurrencyName('NOK')}}</option>
-                <option value="DKK">{{getCurrencyName('DKK')}}</option>
-                <option value="PLN">{{getCurrencyName('PLN')}}</option>
-                <option value="HUF">{{getCurrencyName('HUF')}}</option>
-                <option value="CZK">{{getCurrencyName('CZK')}}</option>
-                <option value="RON">{{getCurrencyName('RON')}}</option>
-                <option value="BGN">{{getCurrencyName('BGN')}}</option>
-                <option value="HRK">{{getCurrencyName('HRK')}}</option>
-                <option value="ISK">{{getCurrencyName('ISK')}}</option>
-                <option value="UAH">{{getCurrencyName('UAH')}}</option>
-                <option value="RUB">{{getCurrencyName('RUB')}}</option>
-                <option value="TRY">{{getCurrencyName('TRY')}}</option>
-                <option value="CNY">{{getCurrencyName('CNY')}}</option>
-                <option value="INR">{{getCurrencyName('INR')}}</option>
-                <option value="KRW">{{getCurrencyName('KRW')}}</option>
-                <option value="THB">{{getCurrencyName('THB')}}</option>
-                <option value="SGD">{{getCurrencyName('SGD')}}</option>
-                <option value="MYR">{{getCurrencyName('MYR')}}</option>
-                <option value="IDR">{{getCurrencyName('IDR')}}</option>
-                <option value="PHP">{{getCurrencyName('PHP')}}</option>
-                <option value="VND">{{getCurrencyName('VND')}}</option>
-                <option value="HKD">{{getCurrencyName('HKD')}}</option>
-                <option value="TWD">{{getCurrencyName('TWD')}}</option>
-                <option value="PKR">{{getCurrencyName('PKR')}}</option>
-                <option value="BDT">{{getCurrencyName('BDT')}}</option>
-                <option value="LKR">{{getCurrencyName('LKR')}}</option>
-                <option value="BRL">{{getCurrencyName('BRL')}}</option>
-                <option value="ARS">{{getCurrencyName('ARS')}}</option>
-                <option value="MXN">{{getCurrencyName('MXN')}}</option>
-                <option value="CLP">{{getCurrencyName('CLP')}}</option>
-                <option value="COP">{{getCurrencyName('COP')}}</option>
-                <option value="PEN">{{getCurrencyName('PEN')}}</option>
-                <option value="UYU">{{getCurrencyName('UYU')}}</option>
-                <option value="AED">{{getCurrencyName('AED')}}</option>
-                <option value="SAR">{{getCurrencyName('SAR')}}</option>
-                <option value="JOD">{{getCurrencyName('JOD')}}</option>
-                <option value="EGP">{{getCurrencyName('EGP')}}</option>
-                <option value="LBP">{{getCurrencyName('LBP')}}</option>
-                <option value="BHD">{{getCurrencyName('BHD')}}</option>
-                <option value="KWD">{{getCurrencyName('KWD')}}</option>
-                <option value="QAR">{{getCurrencyName('QAR')}}</option>
-                <option value="OMR">{{getCurrencyName('OMR')}}</option>
-                <option value="ZAR">{{getCurrencyName('ZAR')}}</option>
-                <option value="NGN">{{getCurrencyName('NGN')}}</option>
-                <option value="KES">{{getCurrencyName('KES')}}</option>
-                <option value="ETB">{{getCurrencyName('ETB')}}</option>
-                <option value="GHS">{{getCurrencyName('GHS')}}</option>
-                <option value="NZD">{{getCurrencyName('NZD')}}</option>
-              </select>
+
+
+          <div class="form-group">
+            <div class="field-title">
+              <mat-icon class="field-icon">help</mat-icon>
+              <label>{{i18n.terms.reason}}</label>
             </div>
+            <input type="text" class="form-control" [(ngModel)]="donation.reason"
+              [placeholder]="i18n.terms.enterReason">
+          </div>
 
-
-
-            <div class="form-group">
-              <div class="field-title">
-                <mat-icon class="field-icon">help</mat-icon>
-                <label>{{i18n.terms.reason}}</label>
-              </div>
-              <input type="text" class="form-control" [(ngModel)]="donation.reason" [placeholder]="i18n.terms.enterReason">
-            </div>
-
-            <!-- <div class="form-group">
+          <!-- <div class="form-group">
               <div class="field-title">
                 <mat-icon class="field-icon">support_agent</mat-icon>
                 <label>{{i18n.terms.fundraiser}}</label>
@@ -258,10 +261,10 @@
                 </option>
               </select>
             </div> -->
-          </div>
+        </div>
 
-          <div class="form-grid">
-            <!-- <div class="form-group">
+        <div class="form-grid">
+          <!-- <div class="form-group">
               <div class="field-title">
                 <mat-icon class="field-icon">info</mat-icon>
                 <label>סטטוס תרומה *</label>
@@ -273,103 +276,343 @@
               </select>
             </div> -->
 
-          </div>
         </div>
+      </div>
 
 
-        <!-- אמצעי תשלום -->
-        <div id="section-payment-method" class="section payment-method-section" *ngIf="donation.donationType !== 'commitment'">
-          <h3>{{i18n.terms.paymentMethod}}</h3>
-          <div class="form-grid">
-            <div class="form-group full-width">
-              <div class="payment-method-selector">
-                <div class="payment-method-option" *ngFor="let method of donationMethods"
-                  [class.active]="donation.donationMethodId === method.id">
-                  <label class="payment-method-card">
-                    <input type="radio" name="paymentMethod" [value]="method.id" [(ngModel)]="donation.donationMethodId"
-                      (change)="onPaymentMethodChange()" class="payment-method-radio">
-                    <div class="payment-method-content">
-                      <mat-icon class="payment-method-icon">payment</mat-icon>
-                      <div class="payment-method-text">
-                        <span class="payment-method-label">{{ method.name }}</span>
-                      </div>
+      <!-- אמצעי תשלום -->
+      <div id="section-payment-method" class="section payment-method-section"
+        *ngIf="donation.donationType !== 'commitment'">
+        <h3>{{i18n.terms.paymentMethod}}</h3>
+        <div class="form-grid">
+          <div class="form-group full-width">
+            <div class="payment-method-selector">
+              <div class="payment-method-option" *ngFor="let method of donationMethods"
+                [class.active]="donation.donationMethodId === method.id">
+                <label class="payment-method-card">
+                  <input type="radio" name="paymentMethod" [value]="method.id" [(ngModel)]="donation.donationMethodId"
+                    (change)="onPaymentMethodChange()" class="payment-method-radio">
+                  <div class="payment-method-content">
+                    <mat-icon class="payment-method-icon">payment</mat-icon>
+                    <div class="payment-method-text">
+                      <span class="payment-method-label">{{ method.name }}</span>
                     </div>
-                  </label>
-                </div>
+                  </div>
+                </label>
               </div>
             </div>
           </div>
         </div>
+      </div>
 
-        <!-- Payment Details Section -->
-        <div class="section payment-details-section"
-          *ngIf="selectedPaymentMethod && selectedPaymentMethod.type !== 'cash' && donation.donationType !== 'commitment'">
-          <!-- Check Payment Details -->
-          <div class="payment-details" *ngIf="isCheckPayment">
-            <div class="payment-details-header">
-              <mat-icon class="payment-icon">receipt</mat-icon>
-              <h4>{{i18n.terms.checkDetails}}</h4>
+      <!-- Payment Details Section -->
+      <div class="payment-details-section"
+        *ngIf="selectedPaymentMethod && selectedPaymentMethod.type !== 'cash' && donation?.donationType !== 'commitment'">
+        <!-- Check Payment Details -->
+        <div class="payment-details" *ngIf="isCheckPayment">
+          <div class="payment-details-header">
+            <mat-icon class="payment-icon">receipt</mat-icon>
+            <h4>{{i18n.terms.checkDetails}}</h4>
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">person</mat-icon>
+                <label>שם משלם</label>
+              </div>
+              <select class="form-control" [(ngModel)]="donation.payerName">
+                <option value="">בחר משלם</option>
+                <option *ngFor="let option of payerOptions" [value]="option.value">{{ option.label }}</option>
+              </select>
             </div>
-            <div class="form-grid">
-              <div class="form-group">
-                <div class="field-title">
-                  <mat-icon class="field-icon">person</mat-icon>
-                  <label>שם משלם</label>
+
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">receipt</mat-icon>
+                <label>אסמכתא</label>
+              </div>
+              <input type="text" class="form-control" [(ngModel)]="donation.referenceNumber" placeholder="אסמכתא">
+            </div>
+
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">account_balance</mat-icon>
+                <label>{{i18n.terms.accountNumber}}</label>
+              </div>
+              <input type="text" class="form-control" [(ngModel)]="donation.bankAccount"
+                [placeholder]="i18n.terms.accountNumberPlaceholder">
+            </div>
+
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">tag</mat-icon>
+                <label>{{i18n.terms.checkNumber}}</label>
+              </div>
+              <input type="text" class="form-control" [(ngModel)]="donation.checkNumber"
+                [placeholder]="i18n.terms.checkNumberPlaceholder">
+            </div>
+          </div>
+        </div>
+
+        <!-- Bank Transfer Details -->
+        <div class="payment-details" *ngIf="isTransferPayment">
+          <div class="payment-details-header">
+            <mat-icon class="payment-icon">account_balance</mat-icon>
+            <h4>
+              {{i18n.terms.bankTransferDetails}}
+              <button class="add-btn" *ngIf="donationBanks.length === 0" (click)="addNewBank()"
+                [title]="i18n.terms.addNewBank">
+                <mat-icon>add</mat-icon>
+              </button>
+            </h4>
+          </div>
+
+          <!-- Donation Banks List -->
+          <div class="donation-banks-list" *ngIf="donationBanks.length > 0"
+            style="padding: 16px; background: rgba(255, 255, 255, 0.7); border-bottom: 1px solid #e1e8ed;">
+
+            <div class="donation-bank-card" *ngFor="let donationBank of donationBanks"
+              style="background: white; border: 1px solid #e1e8ed; border-radius: 8px; padding: 12px 16px; margin-bottom: 12px; display: flex; align-items: flex-start; gap: 16px;">
+              <!-- Bank Icon and Details -->
+              <mat-icon
+                style="color: #667eea; font-size: 24px; width: 24px; height: 24px; flex-shrink: 0; margin-top: 20px;">account_balance</mat-icon>
+              <div style="min-width: 180px; cursor: pointer; margin-top: 4px;"
+                (click)="viewBankDetails(donationBank.bankId)" title="לחץ לצפייה בפרטי הבנק">
+                <div style="font-size: 11px; color: #6c757d; margin-bottom: 2px;">בנק</div>
+                <div style="font-weight: 600; color: #667eea; font-size: 14px; text-decoration: underline;">{{
+                  donationBank.bank?.name || 'בנק לא ידוע' }}</div>
+                <div style="font-size: 11px; color: #6c757d;"
+                  *ngIf="donationBank.bank?.bankCode || donationBank.bank?.branchCode">
+                  <span *ngIf="donationBank.bank?.bankCode">{{ donationBank.bank?.bankCode }}</span>
+                  <span *ngIf="donationBank.bank?.branchCode">-{{ donationBank.bank?.branchCode }}</span>
                 </div>
-                <select class="form-control" [(ngModel)]="donation.payerName">
+              </div>
+
+              <!-- Payer Name Dropdown -->
+              <div style="flex: 1; min-width: 200px;">
+                <label style="display: block; font-size: 11px; color: #6c757d; margin-bottom: 4px;">שם משלם</label>
+                <select class="form-control" [(ngModel)]="donationBank.payerName"
+                  (ngModelChange)="onDonationBankPayerChange(donationBank)" style="font-size: 14px; padding: 8px 12px;">
                   <option value="">בחר משלם</option>
                   <option *ngFor="let option of payerOptions" [value]="option.value">{{ option.label }}</option>
                 </select>
               </div>
 
-              <div class="form-group">
-                <div class="field-title">
-                  <mat-icon class="field-icon">receipt</mat-icon>
-                  <label>אסמכתא</label>
-                </div>
-                <input type="text" class="form-control" [(ngModel)]="donation.referenceNumber" placeholder="אסמכתא">
+              <!-- Reference Field -->
+              <div style="flex: 1; min-width: 150px;">
+                <label style="display: block; font-size: 11px; color: #6c757d; margin-bottom: 4px;">אסמכתא</label>
+                <input type="text" class="form-control" [(ngModel)]="donationBank.reference"
+                  (blur)="onDonationBankReferenceChange(donationBank)" placeholder="אסמכתא"
+                  style="font-size: 14px; padding: 8px 12px;">
               </div>
 
-              <div class="form-group">
-                <div class="field-title">
-                  <mat-icon class="field-icon">account_balance</mat-icon>
-                  <label>{{i18n.terms.accountNumber}}</label>
+              <!-- Delete Button -->
+              <button mat-icon-button (click)="removeDonationBank(donationBank)"
+                style="color: #dc3545; flex-shrink: 0; margin-top: 16px;">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Organization Payment Details -->
+        <div class="payment-details info-background" *ngIf="isOrganizationPayment">
+          <div class="payment-details-header">
+            <mat-icon class="payment-icon">business</mat-icon>
+            <h4>
+              {{i18n.terms.organizationDetails}}
+              <button class="add-btn" *ngIf="donationOrganizations.length === 0" (click)="addOrganizationToDonation()"
+                [title]="i18n.terms.addNewOrganization">
+                <mat-icon>add</mat-icon>
+              </button>
+            </h4>
+          </div>
+
+          <!-- Donation Organizations List -->
+          <div class="donation-organizations-list" *ngIf="donationOrganizations.length > 0"
+            style="padding: 16px; background: rgba(255, 255, 255, 0.7); border-bottom: 1px solid #e1e8ed;">
+
+            <div class="donation-organization-card" *ngFor="let donationOrganization of donationOrganizations"
+              style="background: white; border: 1px solid #e1e8ed; border-radius: 8px; padding: 12px 16px; margin-bottom: 12px; display: flex; align-items: flex-start; gap: 16px;">
+              <!-- Organization Icon and Details -->
+              <mat-icon
+                style="color: #667eea; font-size: 24px; width: 24px; height: 24px; flex-shrink: 0; margin-top: 20px;">business</mat-icon>
+              <div style="min-width: 180px; cursor: pointer; margin-top: 4px;"
+                (click)="viewOrganizationDetails(donationOrganization.organizationId)" title="לחץ לצפייה בפרטי העמותה">
+                <div style="font-size: 11px; color: #6c757d; margin-bottom: 2px;">עמותה</div>
+                <div style="font-weight: 600; color: #667eea; font-size: 14px; text-decoration: underline;">{{
+                  donationOrganization.organization?.name || 'עמותה לא ידועה' }}</div>
+                <div style="font-size: 11px; color: #6c757d;"
+                  *ngIf="donationOrganization.organization?.registrationNumber">
+                  <span>מס' עמותה: {{ donationOrganization.organization?.registrationNumber }}</span>
                 </div>
-                <input type="text" class="form-control" [(ngModel)]="donation.bankAccount" [placeholder]="i18n.terms.accountNumberPlaceholder">
               </div>
 
-              <div class="form-group">
-                <div class="field-title">
-                  <mat-icon class="field-icon">tag</mat-icon>
-                  <label>{{i18n.terms.checkNumber}}</label>
-                </div>
-                <input type="text" class="form-control" [(ngModel)]="donation.checkNumber" [placeholder]="i18n.terms.checkNumberPlaceholder">
+              <!-- Payer Name Dropdown -->
+              <div style="flex: 1; min-width: 200px;">
+                <label style="display: block; font-size: 11px; color: #6c757d; margin-bottom: 4px;">שם משלם</label>
+                <select class="form-control" [(ngModel)]="donationOrganization.payerName"
+                  (ngModelChange)="onDonationOrganizationPayerChange(donationOrganization)"
+                  style="font-size: 14px; padding: 8px 12px;">
+                  <option value="">בחר משלם</option>
+                  <option *ngFor="let option of payerOptions" [value]="option.value">{{ option.label }}</option>
+                </select>
+              </div>
+
+              <!-- Reference Field -->
+              <div style="flex: 1; min-width: 150px;">
+                <label style="display: block; font-size: 11px; color: #6c757d; margin-bottom: 4px;">אסמכתא</label>
+                <input type="text" class="form-control" [(ngModel)]="donationOrganization.reference"
+                  (blur)="onDonationOrganizationReferenceChange(donationOrganization)" placeholder="אסמכתא"
+                  style="font-size: 14px; padding: 8px 12px;">
+              </div>
+
+              <!-- Delete Button -->
+              <button mat-icon-button (click)="removeDonationOrganization(donationOrganization)"
+                style="color: #dc3545; flex-shrink: 0; margin-top: 16px;">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Credit Card Details -->
+        <div class="payment-details" *ngIf="isCreditCardPayment">
+          <div class="payment-details-header">
+            <mat-icon class="payment-icon">credit_card</mat-icon>
+            <h4>{{i18n.terms.creditCardDetails}}</h4>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">person</mat-icon>
+                <label>שם משלם</label>
+              </div>
+              <select class="form-control" [(ngModel)]="donation.payerName">
+                <option value="">בחר משלם</option>
+                <option *ngFor="let option of payerOptions" [value]="option.value">{{ option.label }}</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">receipt</mat-icon>
+                <label>אסמכתא</label>
+              </div>
+              <input type="text" class="form-control" [(ngModel)]="donation.referenceNumber" placeholder="אסמכתא">
+            </div>
+
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">numbers</mat-icon>
+                <label>4 ספרות אחרונות</label>
+              </div>
+              <input type="text" class="form-control" [(ngModel)]="donation.cardNumber" maxlength="4"
+                [placeholder]="'4 ספרות אחרונות'">
+            </div>
+
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">date_range</mat-icon>
+                <label>תוקף (MM/YY)</label>
+              </div>
+              <input type="text" class="form-control" [(ngModel)]="donation.cardExpiry" maxlength="5"
+                placeholder="MM/YY">
+            </div>
+          </div>
+        </div>
+
+        <!-- Cash Payment Details -->
+        <div class="payment-details" *ngIf="isCashPayment">
+          <div class="payment-details-header">
+            <mat-icon class="payment-icon">payments</mat-icon>
+            <h4>פרטי מזומן</h4>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">person</mat-icon>
+                <label>שם משלם</label>
+              </div>
+              <select class="form-control" [(ngModel)]="donation.payerName">
+                <option value="">בחר משלם</option>
+                <option *ngFor="let option of payerOptions" [value]="option.value">{{ option.label }}</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <div class="field-title">
+                <mat-icon class="field-icon">receipt</mat-icon>
+                <label>אסמכתא</label>
+              </div>
+              <input type="text" class="form-control" [(ngModel)]="donation.referenceNumber" placeholder="אסמכתא">
+            </div>
+          </div>
+        </div>
+
+        <!-- Standing Order Details -->
+        <div class="payment-details" *ngIf="isStandingOrderPayment">
+          <div class="payment-details-header">
+            <mat-icon class="payment-icon">autorenew</mat-icon>
+            <h4>{{i18n.terms.standingOrderDetails}}</h4>
+          </div>
+
+
+
+          <!-- Standing Order Type Selection -->
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <div class="field-title">
+                <mat-icon class="field-icon">payment</mat-icon>
+                <label>{{ (i18n.terms$ | async)?.standingOrderTypeLabel }}</label>
+              </div>
+              <div class="standing-order-type-selector">
+                <label class="radio-option">
+                  <input type="radio" name="standingOrderType" value="bank" [(ngModel)]="donation.standingOrderType">
+                  <span>{{ (i18n.terms$ | async)?.bankStandingOrder }}</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="standingOrderType" value="creditCard"
+                    [(ngModel)]="donation.standingOrderType">
+                  <span>{{ (i18n.terms$ | async)?.creditCardStandingOrder }}</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="standingOrderType" value="organization"
+                    [(ngModel)]="donation.standingOrderType">
+                  <span>{{ (i18n.terms$ | async)?.organizationStandingOrder }}</span>
+                </label>
               </div>
             </div>
           </div>
 
-          <!-- Bank Transfer Details -->
-          <div class="payment-details" *ngIf="isTransferPayment">
-            <div class="payment-details-header">
-              <mat-icon class="payment-icon">account_balance</mat-icon>
-              <h4>
-                {{i18n.terms.bankTransferDetails}}
-                <button class="add-btn" *ngIf="donationBanks.length === 0" (click)="addNewBank()" [title]="i18n.terms.addNewBank">
-                  <mat-icon>add</mat-icon>
-                </button>
-              </h4>
-            </div>
+          <!-- Bank Details Section -->
+          <div class="bank-details-section" *ngIf="donation.standingOrderType === 'bank'">
+            <h4>
+              {{ (i18n.terms$ | async)?.bankDetailsSection }}
+              <button class="add-btn" *ngIf="donationBanks.length === 0" (click)="addNewBank()"
+                [title]="i18n.terms.addNewBank">
+                <mat-icon>add</mat-icon>
+              </button>
+            </h4>
 
             <!-- Donation Banks List -->
-            <div class="donation-banks-list" *ngIf="donationBanks.length > 0" style="padding: 16px; background: rgba(255, 255, 255, 0.7); border-bottom: 1px solid #e1e8ed;">
+            <div class="donation-banks-list" *ngIf="donationBanks.length > 0"
+              style="padding: 16px; background: rgba(255, 255, 255, 0.7); border-bottom: 1px solid #e1e8ed;">
 
-              <div class="donation-bank-card" *ngFor="let donationBank of donationBanks" style="background: white; border: 1px solid #e1e8ed; border-radius: 8px; padding: 12px 16px; margin-bottom: 12px; display: flex; align-items: flex-start; gap: 16px;">
+              <div class="donation-bank-card" *ngFor="let donationBank of donationBanks"
+                style="background: white; border: 1px solid #e1e8ed; border-radius: 8px; padding: 12px 16px; margin-bottom: 12px; display: flex; align-items: flex-start; gap: 16px;">
                 <!-- Bank Icon and Details -->
-                <mat-icon style="color: #667eea; font-size: 24px; width: 24px; height: 24px; flex-shrink: 0; margin-top: 20px;">account_balance</mat-icon>
-                <div style="min-width: 180px; cursor: pointer; margin-top: 4px;" (click)="viewBankDetails(donationBank.bankId)" title="לחץ לצפייה בפרטי הבנק">
+                <mat-icon
+                  style="color: #667eea; font-size: 24px; width: 24px; height: 24px; flex-shrink: 0; margin-top: 20px;">account_balance</mat-icon>
+                <div style="min-width: 180px; cursor: pointer; margin-top: 4px;"
+                  (click)="viewBankDetails(donationBank.bankId)" title="לחץ לצפייה בפרטי הבנק">
                   <div style="font-size: 11px; color: #6c757d; margin-bottom: 2px;">בנק</div>
-                  <div style="font-weight: 600; color: #667eea; font-size: 14px; text-decoration: underline;">{{ donationBank.bank?.name || 'בנק לא ידוע' }}</div>
-                  <div style="font-size: 11px; color: #6c757d;" *ngIf="donationBank.bank?.bankCode || donationBank.bank?.branchCode">
+                  <div style="font-weight: 600; color: #667eea; font-size: 14px; text-decoration: underline;">{{
+                    donationBank.bank?.name || 'בנק לא ידוע' }}</div>
+                  <div style="font-size: 11px; color: #6c757d;"
+                    *ngIf="donationBank.bank?.bankCode || donationBank.bank?.branchCode">
                     <span *ngIf="donationBank.bank?.bankCode">{{ donationBank.bank?.bankCode }}</span>
                     <span *ngIf="donationBank.bank?.branchCode">-{{ donationBank.bank?.branchCode }}</span>
                   </div>
@@ -378,10 +621,9 @@
                 <!-- Payer Name Dropdown -->
                 <div style="flex: 1; min-width: 200px;">
                   <label style="display: block; font-size: 11px; color: #6c757d; margin-bottom: 4px;">שם משלם</label>
-                  <select class="form-control"
-                          [(ngModel)]="donationBank.payerName"
-                          (ngModelChange)="onDonationBankPayerChange(donationBank)"
-                          style="font-size: 14px; padding: 8px 12px;">
+                  <select class="form-control" [(ngModel)]="donationBank.payerName"
+                    (ngModelChange)="onDonationBankPayerChange(donationBank)"
+                    style="font-size: 14px; padding: 8px 12px;">
                     <option value="">בחר משלם</option>
                     <option *ngFor="let option of payerOptions" [value]="option.value">{{ option.label }}</option>
                   </select>
@@ -391,79 +633,22 @@
                 <div style="flex: 1; min-width: 150px;">
                   <label style="display: block; font-size: 11px; color: #6c757d; margin-bottom: 4px;">אסמכתא</label>
                   <input type="text" class="form-control" [(ngModel)]="donationBank.reference"
-                         (blur)="onDonationBankReferenceChange(donationBank)"
-                         placeholder="אסמכתא" style="font-size: 14px; padding: 8px 12px;">
+                    (blur)="onDonationBankReferenceChange(donationBank)" placeholder="אסמכתא"
+                    style="font-size: 14px; padding: 8px 12px;">
                 </div>
 
                 <!-- Delete Button -->
-                <button mat-icon-button (click)="removeDonationBank(donationBank)" style="color: #dc3545; flex-shrink: 0; margin-top: 16px;">
+                <button mat-icon-button (click)="removeDonationBank(donationBank)"
+                  style="color: #dc3545; flex-shrink: 0; margin-top: 16px;">
                   <mat-icon>delete</mat-icon>
                 </button>
               </div>
             </div>
           </div>
 
-          <!-- Organization Payment Details -->
-          <div class="payment-details info-background" *ngIf="isOrganizationPayment">
-            <div class="payment-details-header">
-              <mat-icon class="payment-icon">business</mat-icon>
-              <h4>
-                {{i18n.terms.organizationDetails}}
-                <button class="add-btn" *ngIf="donationOrganizations.length === 0" (click)="addOrganizationToDonation()" [title]="i18n.terms.addNewOrganization">
-                  <mat-icon>add</mat-icon>
-                </button>
-              </h4>
-            </div>
-
-            <!-- Donation Organizations List -->
-            <div class="donation-organizations-list" *ngIf="donationOrganizations.length > 0" style="padding: 16px; background: rgba(255, 255, 255, 0.7); border-bottom: 1px solid #e1e8ed;">
-
-              <div class="donation-organization-card" *ngFor="let donationOrganization of donationOrganizations" style="background: white; border: 1px solid #e1e8ed; border-radius: 8px; padding: 12px 16px; margin-bottom: 12px; display: flex; align-items: flex-start; gap: 16px;">
-                <!-- Organization Icon and Details -->
-                <mat-icon style="color: #667eea; font-size: 24px; width: 24px; height: 24px; flex-shrink: 0; margin-top: 20px;">business</mat-icon>
-                <div style="min-width: 180px; cursor: pointer; margin-top: 4px;" (click)="viewOrganizationDetails(donationOrganization.organizationId)" title="לחץ לצפייה בפרטי העמותה">
-                  <div style="font-size: 11px; color: #6c757d; margin-bottom: 2px;">עמותה</div>
-                  <div style="font-weight: 600; color: #667eea; font-size: 14px; text-decoration: underline;">{{ donationOrganization.organization?.name || 'עמותה לא ידועה' }}</div>
-                  <div style="font-size: 11px; color: #6c757d;" *ngIf="donationOrganization.organization?.registrationNumber">
-                    <span>מס' עמותה: {{ donationOrganization.organization?.registrationNumber }}</span>
-                  </div>
-                </div>
-
-                <!-- Payer Name Dropdown -->
-                <div style="flex: 1; min-width: 200px;">
-                  <label style="display: block; font-size: 11px; color: #6c757d; margin-bottom: 4px;">שם משלם</label>
-                  <select class="form-control"
-                          [(ngModel)]="donationOrganization.payerName"
-                          (ngModelChange)="onDonationOrganizationPayerChange(donationOrganization)"
-                          style="font-size: 14px; padding: 8px 12px;">
-                    <option value="">בחר משלם</option>
-                    <option *ngFor="let option of payerOptions" [value]="option.value">{{ option.label }}</option>
-                  </select>
-                </div>
-
-                <!-- Reference Field -->
-                <div style="flex: 1; min-width: 150px;">
-                  <label style="display: block; font-size: 11px; color: #6c757d; margin-bottom: 4px;">אסמכתא</label>
-                  <input type="text" class="form-control" [(ngModel)]="donationOrganization.reference"
-                         (blur)="onDonationOrganizationReferenceChange(donationOrganization)"
-                         placeholder="אסמכתא" style="font-size: 14px; padding: 8px 12px;">
-                </div>
-
-                <!-- Delete Button -->
-                <button mat-icon-button (click)="removeDonationOrganization(donationOrganization)" style="color: #dc3545; flex-shrink: 0; margin-top: 16px;">
-                  <mat-icon>delete</mat-icon>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Credit Card Details -->
-          <div class="payment-details" *ngIf="isCreditCardPayment">
-            <div class="payment-details-header">
-              <mat-icon class="payment-icon">credit_card</mat-icon>
-              <h4>{{i18n.terms.creditCardDetails}}</h4>
-            </div>
-
+          <!-- Credit Card Details Section -->
+          <div class="credit-card-details-section" *ngIf="donation.standingOrderType === 'creditCard'">
+            <h5>{{ (i18n.terms$ | async)?.creditCardDetailsSection }}</h5>
             <div class="form-grid">
               <div class="form-group">
                 <div class="field-title">
@@ -490,7 +675,7 @@
                   <label>4 ספרות אחרונות</label>
                 </div>
                 <input type="text" class="form-control" [(ngModel)]="donation.cardNumber" maxlength="4"
-                  [placeholder]="'4 ספרות אחרונות'">
+                  pattern="[0-9]{4}" placeholder="4 ספרות אחרונות">
               </div>
 
               <div class="form-group">
@@ -498,292 +683,144 @@
                   <mat-icon class="field-icon">date_range</mat-icon>
                   <label>תוקף (MM/YY)</label>
                 </div>
-                <input type="text" class="form-control" [(ngModel)]="donation.cardExpiry" maxlength="5"
-                  placeholder="MM/YY">
+                <input type="text" class="form-control" [(ngModel)]="donation.cardExpiry" placeholder="MM/YY"
+                  maxlength="5">
               </div>
             </div>
           </div>
 
-          <!-- Cash Payment Details -->
-          <div class="payment-details" *ngIf="isCashPayment">
-            <div class="payment-details-header">
-              <mat-icon class="payment-icon">payments</mat-icon>
-              <h4>פרטי מזומן</h4>
-            </div>
+          <!-- Organization Standing Order Details Section -->
+          <div class="organization-details-section" *ngIf="donation.standingOrderType === 'organization'">
+            <h4>
+              {{i18n.terms.organizationDetails}}
+              <button class="add-btn" *ngIf="donationOrganizations.length === 0" (click)="addOrganizationToDonation()"
+                [title]="i18n.terms.addNewOrganization">
+                <mat-icon>add</mat-icon>
+              </button>
+            </h4>
 
-            <div class="form-grid">
-              <div class="form-group">
-                <div class="field-title">
-                  <mat-icon class="field-icon">person</mat-icon>
-                  <label>שם משלם</label>
-                </div>
-                <select class="form-control" [(ngModel)]="donation.payerName">
-                  <option value="">בחר משלם</option>
-                  <option *ngFor="let option of payerOptions" [value]="option.value">{{ option.label }}</option>
-                </select>
-              </div>
+            <!-- Donation Organizations List -->
+            <div class="donation-organizations-list" *ngIf="donationOrganizations.length > 0"
+              style="padding: 16px; background: rgba(255, 255, 255, 0.7); border-bottom: 1px solid #e1e8ed;">
 
-              <div class="form-group">
-                <div class="field-title">
-                  <mat-icon class="field-icon">receipt</mat-icon>
-                  <label>אסמכתא</label>
-                </div>
-                <input type="text" class="form-control" [(ngModel)]="donation.referenceNumber" placeholder="אסמכתא">
-              </div>
-            </div>
-          </div>
-
-          <!-- Standing Order Details -->
-          <div class="payment-details" *ngIf="isStandingOrderPayment">
-            <div class="payment-details-header">
-              <mat-icon class="payment-icon">autorenew</mat-icon>
-              <h4>{{i18n.terms.standingOrderDetails}}</h4>
-            </div>
-
-            <!-- Frequency and Payment Settings -->
-            <div class="form-grid">
-              <div class="form-group">
-                <div class="field-title">
-                  <mat-icon class="field-icon">schedule</mat-icon>
-                  <label>{{i18n.terms.frequency}}</label>
-                </div>
-                <select class="form-control" [(ngModel)]="donation.frequency">
-                  <option value="weekly">{{i18n.terms.weekly}}</option>
-                  <option value="monthly">{{i18n.terms.monthly}}</option>
-                  <!-- <option value="quarterly">{{i18n.terms.quarterly}}</option>
-                  <option value="yearly">{{i18n.terms.yearly}}</option> -->
-                </select>
-              </div>
-
-              <!-- Day selection based on frequency -->
-              <div class="form-group"
-                *ngIf="donation.frequency === 'monthly' || donation.frequency === 'quarterly' || donation.frequency === 'yearly'">
-                <div class="field-title">
-                  <mat-icon class="field-icon">today</mat-icon>
-                  <label>{{i18n.terms.dayOfMonth}}</label>
-                </div>
-                <select class="form-control" [(ngModel)]="donation.dayOfMonth">
-                  <option value="">{{i18n.terms.selectDay}}</option>
-                  <option *ngFor="let day of getDaysOfMonth()" [value]="day">{{ day }}</option>
-                </select>
-              </div>
-
-              <div class="form-group" *ngIf="donation.frequency === 'weekly'">
-                <div class="field-title">
-                  <mat-icon class="field-icon">calendar_view_week</mat-icon>
-                  <label>{{i18n.terms.dayOfWeek}}</label>
-                </div>
-                <select class="form-control" [(ngModel)]="donation.dayOfWeek">
-                  <option value="">{{i18n.terms.selectDay}}</option>
-                  <option *ngFor="let day of getDaysOfWeek()" [value]="day.value">{{ day.name }}</option>
-                </select>
-              </div>
-            </div>
-
-            <!-- Number of Payments Section -->
-            <div class="form-grid">
-              <div class="form-group full-width">
-                <div class="field-title">
-                  <mat-icon class="field-icon">repeat</mat-icon>
-                  <label>{{ (i18n.terms$ | async)?.numberOfPaymentsLabel }}</label>
-                </div>
-                <div class="payment-count-selector">
-                  <label class="checkbox-option">
-                    <input type="checkbox" [(ngModel)]="donation.unlimitedPayments"
-                      (change)="onUnlimitedPaymentsChange()">
-                    <span>{{ (i18n.terms$ | async)?.unlimitedPayments }}</span>
-                  </label>
-                  <div class="payment-count-input-wrapper">
-                    <div class="payment-count-input" *ngIf="!donation.unlimitedPayments">
-                      <input type="number" class="form-control" [(ngModel)]="donation.numberOfPayments" min="1"
-                        [placeholder]="(i18n.terms$ | async)?.paymentsCount">
-                    </div>
-                    <div class="payment-amount-display" *ngIf="getPaymentAmount()">
-                      <span class="payment-amount-label">כל תשלום:</span>
-                      <span class="payment-amount-value">{{ getPaymentAmount() }} {{ getCurrencySymbol(donation.currency) }}</span>
-                    </div>
+              <div class="donation-organization-card" *ngFor="let donationOrganization of donationOrganizations"
+                style="background: white; border: 1px solid #e1e8ed; border-radius: 8px; padding: 12px 16px; margin-bottom: 12px; display: flex; align-items: flex-start; gap: 16px;">
+                <!-- Organization Icon and Details -->
+                <mat-icon
+                  style="color: #667eea; font-size: 24px; width: 24px; height: 24px; flex-shrink: 0; margin-top: 20px;">business</mat-icon>
+                <div style="min-width: 180px; cursor: pointer; margin-top: 4px;"
+                  (click)="viewOrganizationDetails(donationOrganization.organizationId)"
+                  title="לחץ לצפייה בפרטי העמותה">
+                  <div style="font-size: 11px; color: #6c757d; margin-bottom: 2px;">עמותה</div>
+                  <div style="font-weight: 600; color: #667eea; font-size: 14px; text-decoration: underline;">{{
+                    donationOrganization.organization?.name || 'עמותה לא ידועה' }}</div>
+                  <div style="font-size: 11px; color: #6c757d;"
+                    *ngIf="donationOrganization.organization?.registrationNumber">
+                    <span>מס' עמותה: {{ donationOrganization.organization?.registrationNumber }}</span>
                   </div>
                 </div>
-              </div>
-            </div>
 
-
-            <!-- Standing Order Type Selection -->
-            <div class="form-grid">
-              <div class="form-group full-width">
-                <div class="field-title">
-                  <mat-icon class="field-icon">payment</mat-icon>
-                  <label>{{ (i18n.terms$ | async)?.standingOrderTypeLabel }}</label>
-                </div>
-                <div class="standing-order-type-selector">
-                  <label class="radio-option">
-                    <input type="radio" name="standingOrderType" value="bank" [(ngModel)]="donation.standingOrderType">
-                    <span>{{ (i18n.terms$ | async)?.bankStandingOrder }}</span>
-                  </label>
-                  <label class="radio-option">
-                    <input type="radio" name="standingOrderType" value="creditCard"
-                      [(ngModel)]="donation.standingOrderType">
-                    <span>{{ (i18n.terms$ | async)?.creditCardStandingOrder }}</span>
-                  </label>
-                  <label class="radio-option">
-                    <input type="radio" name="standingOrderType" value="organization"
-                      [(ngModel)]="donation.standingOrderType">
-                    <span>{{ (i18n.terms$ | async)?.organizationStandingOrder }}</span>
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            <!-- Bank Details Section -->
-            <div class="bank-details-section" *ngIf="donation.standingOrderType === 'bank'">
-              <h4>
-                {{ (i18n.terms$ | async)?.bankDetailsSection }}
-                <button class="add-btn" *ngIf="donationBanks.length === 0" (click)="addNewBank()" [title]="i18n.terms.addNewBank">
-                  <mat-icon>add</mat-icon>
-                </button>
-              </h4>
-
-              <!-- Donation Banks List -->
-              <div class="donation-banks-list" *ngIf="donationBanks.length > 0" style="padding: 16px; background: rgba(255, 255, 255, 0.7); border-bottom: 1px solid #e1e8ed;">
-
-                <div class="donation-bank-card" *ngFor="let donationBank of donationBanks" style="background: white; border: 1px solid #e1e8ed; border-radius: 8px; padding: 12px 16px; margin-bottom: 12px; display: flex; align-items: flex-start; gap: 16px;">
-                  <!-- Bank Icon and Details -->
-                  <mat-icon style="color: #667eea; font-size: 24px; width: 24px; height: 24px; flex-shrink: 0; margin-top: 20px;">account_balance</mat-icon>
-                  <div style="min-width: 180px; cursor: pointer; margin-top: 4px;" (click)="viewBankDetails(donationBank.bankId)" title="לחץ לצפייה בפרטי הבנק">
-                    <div style="font-size: 11px; color: #6c757d; margin-bottom: 2px;">בנק</div>
-                    <div style="font-weight: 600; color: #667eea; font-size: 14px; text-decoration: underline;">{{ donationBank.bank?.name || 'בנק לא ידוע' }}</div>
-                    <div style="font-size: 11px; color: #6c757d;" *ngIf="donationBank.bank?.bankCode || donationBank.bank?.branchCode">
-                      <span *ngIf="donationBank.bank?.bankCode">{{ donationBank.bank?.bankCode }}</span>
-                      <span *ngIf="donationBank.bank?.branchCode">-{{ donationBank.bank?.branchCode }}</span>
-                    </div>
-                  </div>
-
-                  <!-- Payer Name Dropdown -->
-                  <div style="flex: 1; min-width: 200px;">
-                    <label style="display: block; font-size: 11px; color: #6c757d; margin-bottom: 4px;">שם משלם</label>
-                    <select class="form-control"
-                            [(ngModel)]="donationBank.payerName"
-                            (ngModelChange)="onDonationBankPayerChange(donationBank)"
-                            style="font-size: 14px; padding: 8px 12px;">
-                      <option value="">בחר משלם</option>
-                      <option *ngFor="let option of payerOptions" [value]="option.value">{{ option.label }}</option>
-                    </select>
-                  </div>
-
-                  <!-- Reference Field -->
-                  <div style="flex: 1; min-width: 150px;">
-                    <label style="display: block; font-size: 11px; color: #6c757d; margin-bottom: 4px;">אסמכתא</label>
-                    <input type="text" class="form-control" [(ngModel)]="donationBank.reference"
-                           (blur)="onDonationBankReferenceChange(donationBank)"
-                           placeholder="אסמכתא" style="font-size: 14px; padding: 8px 12px;">
-                  </div>
-
-                  <!-- Delete Button -->
-                  <button mat-icon-button (click)="removeDonationBank(donationBank)" style="color: #dc3545; flex-shrink: 0; margin-top: 16px;">
-                    <mat-icon>delete</mat-icon>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <!-- Credit Card Details Section -->
-            <div class="credit-card-details-section" *ngIf="donation.standingOrderType === 'creditCard'">
-              <h5>{{ (i18n.terms$ | async)?.creditCardDetailsSection }}</h5>
-              <div class="form-grid">
-                <div class="form-group">
-                  <div class="field-title">
-                    <mat-icon class="field-icon">person</mat-icon>
-                    <label>שם משלם</label>
-                  </div>
-                  <select class="form-control" [(ngModel)]="donation.payerName">
+                <!-- Payer Name Dropdown -->
+                <div style="flex: 1; min-width: 200px;">
+                  <label style="display: block; font-size: 11px; color: #6c757d; margin-bottom: 4px;">שם משלם</label>
+                  <select class="form-control" [(ngModel)]="donationOrganization.payerName"
+                    (ngModelChange)="onDonationOrganizationPayerChange(donationOrganization)"
+                    style="font-size: 14px; padding: 8px 12px;">
                     <option value="">בחר משלם</option>
                     <option *ngFor="let option of payerOptions" [value]="option.value">{{ option.label }}</option>
                   </select>
                 </div>
 
-                <div class="form-group">
-                  <div class="field-title">
-                    <mat-icon class="field-icon">receipt</mat-icon>
-                    <label>אסמכתא</label>
-                  </div>
-                  <input type="text" class="form-control" [(ngModel)]="donation.referenceNumber" placeholder="אסמכתא">
+                <!-- Reference Field -->
+                <div style="flex: 1; min-width: 150px;">
+                  <label style="display: block; font-size: 11px; color: #6c757d; margin-bottom: 4px;">אסמכתא</label>
+                  <input type="text" class="form-control" [(ngModel)]="donationOrganization.reference"
+                    (blur)="onDonationOrganizationReferenceChange(donationOrganization)" placeholder="אסמכתא"
+                    style="font-size: 14px; padding: 8px 12px;">
                 </div>
 
-                <div class="form-group">
-                  <div class="field-title">
-                    <mat-icon class="field-icon">numbers</mat-icon>
-                    <label>4 ספרות אחרונות</label>
-                  </div>
-                  <input type="text" class="form-control" [(ngModel)]="donation.cardNumber" maxlength="4"
-                    pattern="[0-9]{4}" placeholder="4 ספרות אחרונות">
-                </div>
-
-                <div class="form-group">
-                  <div class="field-title">
-                    <mat-icon class="field-icon">date_range</mat-icon>
-                    <label>תוקף (MM/YY)</label>
-                  </div>
-                  <input type="text" class="form-control" [(ngModel)]="donation.cardExpiry" placeholder="MM/YY"
-                    maxlength="5">
-                </div>
-              </div>
-            </div>
-
-            <!-- Organization Standing Order Details Section -->
-            <div class="organization-details-section" *ngIf="donation.standingOrderType === 'organization'">
-              <h4>
-                {{i18n.terms.organizationDetails}}
-                <button class="add-btn" *ngIf="donationOrganizations.length === 0" (click)="addOrganizationToDonation()" [title]="i18n.terms.addNewOrganization">
-                  <mat-icon>add</mat-icon>
+                <!-- Delete Button -->
+                <button mat-icon-button (click)="removeDonationOrganization(donationOrganization)"
+                  style="color: #dc3545; flex-shrink: 0; margin-top: 16px;">
+                  <mat-icon>delete</mat-icon>
                 </button>
-              </h4>
-
-              <!-- Donation Organizations List -->
-              <div class="donation-organizations-list" *ngIf="donationOrganizations.length > 0" style="padding: 16px; background: rgba(255, 255, 255, 0.7); border-bottom: 1px solid #e1e8ed;">
-
-                <div class="donation-organization-card" *ngFor="let donationOrganization of donationOrganizations" style="background: white; border: 1px solid #e1e8ed; border-radius: 8px; padding: 12px 16px; margin-bottom: 12px; display: flex; align-items: flex-start; gap: 16px;">
-                  <!-- Organization Icon and Details -->
-                  <mat-icon style="color: #667eea; font-size: 24px; width: 24px; height: 24px; flex-shrink: 0; margin-top: 20px;">business</mat-icon>
-                  <div style="min-width: 180px; cursor: pointer; margin-top: 4px;" (click)="viewOrganizationDetails(donationOrganization.organizationId)" title="לחץ לצפייה בפרטי העמותה">
-                    <div style="font-size: 11px; color: #6c757d; margin-bottom: 2px;">עמותה</div>
-                    <div style="font-weight: 600; color: #667eea; font-size: 14px; text-decoration: underline;">{{ donationOrganization.organization?.name || 'עמותה לא ידועה' }}</div>
-                    <div style="font-size: 11px; color: #6c757d;" *ngIf="donationOrganization.organization?.registrationNumber">
-                      <span>מס' עמותה: {{ donationOrganization.organization?.registrationNumber }}</span>
-                    </div>
-                  </div>
-
-                  <!-- Payer Name Dropdown -->
-                  <div style="flex: 1; min-width: 200px;">
-                    <label style="display: block; font-size: 11px; color: #6c757d; margin-bottom: 4px;">שם משלם</label>
-                    <select class="form-control"
-                            [(ngModel)]="donationOrganization.payerName"
-                            (ngModelChange)="onDonationOrganizationPayerChange(donationOrganization)"
-                            style="font-size: 14px; padding: 8px 12px;">
-                      <option value="">בחר משלם</option>
-                      <option *ngFor="let option of payerOptions" [value]="option.value">{{ option.label }}</option>
-                    </select>
-                  </div>
-
-                  <!-- Reference Field -->
-                  <div style="flex: 1; min-width: 150px;">
-                    <label style="display: block; font-size: 11px; color: #6c757d; margin-bottom: 4px;">אסמכתא</label>
-                    <input type="text" class="form-control" [(ngModel)]="donationOrganization.reference"
-                           (blur)="onDonationOrganizationReferenceChange(donationOrganization)"
-                           placeholder="אסמכתא" style="font-size: 14px; padding: 8px 12px;">
-                  </div>
-
-                  <!-- Delete Button -->
-                  <button mat-icon-button (click)="removeDonationOrganization(donationOrganization)" style="color: #dc3545; flex-shrink: 0; margin-top: 16px;">
-                    <mat-icon>delete</mat-icon>
-                  </button>
-                </div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- פרטי אישור -->
-        <!-- <div class="section receipt-details">
+        <h4></h4>
+
+        <!-- Frequency and Payment Settings -->
+        <div class="form-grid" *ngIf="isStandingOrderPayment">
+          <div class="form-group">
+            <div class="field-title">
+              <mat-icon class="field-icon">schedule</mat-icon>
+              <label>{{i18n.terms.frequency}}</label>
+            </div>
+            <select class="form-control" [(ngModel)]="donation.frequency">
+              <option value="weekly">{{i18n.terms.weekly}}</option>
+              <option value="monthly">{{i18n.terms.monthly}}</option>
+              <!-- <option value="quarterly">{{i18n.terms.quarterly}}</option>
+                  <option value="yearly">{{i18n.terms.yearly}}</option> -->
+            </select>
+          </div>
+
+          <!-- Day selection based on frequency -->
+          <div class="form-group"
+            *ngIf="donation.frequency === 'monthly' || donation.frequency === 'quarterly' || donation.frequency === 'yearly'">
+            <div class="field-title">
+              <mat-icon class="field-icon">today</mat-icon>
+              <label>{{i18n.terms.dayOfMonth}}</label>
+            </div>
+            <select class="form-control" [(ngModel)]="donation.dayOfMonth">
+              <option value="">{{i18n.terms.selectDay}}</option>
+              <option *ngFor="let day of getDaysOfMonth()" [value]="day">{{ day }}</option>
+            </select>
+          </div>
+
+          <div class="form-group" *ngIf="donation.frequency === 'weekly'">
+            <div class="field-title">
+              <mat-icon class="field-icon">calendar_view_week</mat-icon>
+              <label>{{i18n.terms.dayOfWeek}}</label>
+            </div>
+            <select class="form-control" [(ngModel)]="donation.dayOfWeek">
+              <option value="">{{i18n.terms.selectDay}}</option>
+              <option *ngFor="let day of getDaysOfWeek()" [value]="day.value">{{ day.name }}</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Number of Payments Section -->
+        <div class="form-grid" *ngIf="isStandingOrderPayment">
+          <div class="form-group full-width">
+            <div class="field-title">
+              <mat-icon class="field-icon">repeat</mat-icon>
+              <label>{{ (i18n.terms$ | async)?.numberOfPaymentsLabel }}</label>
+            </div>
+            <div class="payment-count-selector">
+              <label class="checkbox-option">
+                <input type="checkbox" [(ngModel)]="donation.unlimitedPayments" (change)="onUnlimitedPaymentsChange()">
+                <span>{{ (i18n.terms$ | async)?.unlimitedPayments }}</span>
+              </label>
+              <div class="payment-count-input-wrapper">
+                <div class="payment-count-input" *ngIf="!donation.unlimitedPayments">
+                  <input type="number" class="form-control" [(ngModel)]="donation.numberOfPayments" min="1"
+                    [placeholder]="(i18n.terms$ | async)?.paymentsCount">
+                </div>
+                <div class="payment-amount-display" *ngIf="getPaymentAmount()">
+                  <span class="payment-amount-label">כל תשלום:</span>
+                  <span class="payment-amount-value">{{ getPaymentAmount() }} {{ getCurrencySymbol(donation.currency)
+                    }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- פרטי אישור -->
+      <!-- <div class="section receipt-details">
           <h3>פרטי אישור</h3>
           <div class="form-grid">
             <div class="form-group">
@@ -809,52 +846,57 @@
           </div>
         </div> -->
 
-        <!-- שותפים לתרומה -->
-        <div id="section-partners" class="section partners-section">
-          <h3>
-            <mat-icon class="section-icon">group</mat-icon>
-            {{i18n.terms.donationPartners}}
-            <button class="add-btn" (click)="addNewPartner()" title="הוסף שותף">
-              <mat-icon>add</mat-icon>
-            </button>
-          </h3>
+      <!-- שותפים לתרומה -->
+      <div id="section-partners" class="section partners-section">
+        <h3>
+          <mat-icon class="section-icon">group</mat-icon>
+          {{i18n.terms.donationPartners}}
+          <button class="add-btn" (click)="addNewPartner()" title="הוסף שותף">
+            <mat-icon>add</mat-icon>
+          </button>
+        </h3>
 
-          <!-- Selected Partners Display -->
-          <div class="partners-list" *ngIf="selectedPartners.length > 0">
-            <div class="partner-card" *ngFor="let partner of selectedPartners" style="background: white; border: 1px solid #e1e8ed; border-radius: 8px; padding: 12px 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 16px;">
-              <mat-icon style="color: #667eea; font-size: 24px; width: 24px; height: 24px; flex-shrink: 0;">person</mat-icon>
-              <div style="flex: 1; cursor: pointer;" (click)="openPartnerDonorDetails(partner, $event)" title="לחץ לצפייה בפרטי התורם">
-                <div style="font-weight: 600; color: #667eea; font-size: 14px; text-decoration: underline;">{{ getPartnerDisplayName(partner) }}</div>
-              </div>
-              <button mat-icon-button (click)="removePartner(partner)" style="color: #dc3545; flex-shrink: 0;" [title]="i18n.terms.removePartner">
-                <mat-icon>delete</mat-icon>
-              </button>
+        <!-- Selected Partners Display -->
+        <div class="partners-list" *ngIf="selectedPartners.length > 0">
+          <div class="partner-card" *ngFor="let partner of selectedPartners"
+            style="background: white; border: 1px solid #e1e8ed; border-radius: 8px; padding: 12px 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 16px;">
+            <mat-icon
+              style="color: #667eea; font-size: 24px; width: 24px; height: 24px; flex-shrink: 0;">person</mat-icon>
+            <div style="flex: 1; cursor: pointer;" (click)="openPartnerDonorDetails(partner, $event)"
+              title="לחץ לצפייה בפרטי התורם">
+              <div style="font-weight: 600; color: #667eea; font-size: 14px; text-decoration: underline;">{{
+                getPartnerDisplayName(partner) }}</div>
             </div>
+            <button mat-icon-button (click)="removePartner(partner)" style="color: #dc3545; flex-shrink: 0;"
+              [title]="i18n.terms.removePartner">
+              <mat-icon>delete</mat-icon>
+            </button>
           </div>
         </div>
+      </div>
 
-        
 
-        <!-- אפיון תרומה -->
-        <div class="section donation-characterization">
-          <h3>{{i18n.terms.donationCharacterization}}</h3>
-          <div class="form-grid">
-            <div class="form-group">
-              <div class="donation-type-option" [class.active]="donation.isExceptional">
-                <label class="donation-type-card">
-                  <input type="checkbox" [(ngModel)]="donation.isExceptional" class="donation-type-checkbox">
-                  <div class="donation-type-content">
-                    <mat-icon class="donation-type-icon">priority_high</mat-icon>
-                    <div class="donation-type-text">
-                      <span class="donation-type-label">{{i18n.terms.exceptionalDonation}}</span>
-                      <span class="donation-type-description">{{i18n.terms.exceptionalDonationDesc}}</span>
-                    </div>
+
+      <!-- אפיון תרומה -->
+      <div class="section donation-characterization">
+        <h3>{{i18n.terms.donationCharacterization}}</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <div class="donation-type-option" [class.active]="donation.isExceptional">
+              <label class="donation-type-card">
+                <input type="checkbox" [(ngModel)]="donation.isExceptional" class="donation-type-checkbox">
+                <div class="donation-type-content">
+                  <mat-icon class="donation-type-icon">priority_high</mat-icon>
+                  <div class="donation-type-text">
+                    <span class="donation-type-label">{{i18n.terms.exceptionalDonation}}</span>
+                    <span class="donation-type-description">{{i18n.terms.exceptionalDonationDesc}}</span>
                   </div>
-                </label>
-              </div>
+                </div>
+              </label>
             </div>
+          </div>
 
-            <!-- <div class="form-group">
+          <!-- <div class="form-group">
               <div class="donation-type-option" [class.active]="donation.isUrgent">
                 <label class="donation-type-card">
                   <input type="checkbox" [(ngModel)]="donation.isUrgent" class="donation-type-checkbox">
@@ -868,23 +910,23 @@
                 </label>
               </div>
             </div> -->
-          </div>
         </div>
+      </div>
 
-        <!-- הערות -->
-        <div id="section-notes" class="section notes-section">
-          <h3>{{i18n.terms.notes}}</h3>
-          <div class="form-grid">
-            <div class="form-group full-width">
-              <!-- <div class="field-title">
+      <!-- הערות -->
+      <div id="section-notes" class="section notes-section">
+        <h3>{{i18n.terms.notes}}</h3>
+        <div class="form-grid">
+          <div class="form-group full-width">
+            <!-- <div class="field-title">
                 <mat-icon class="field-icon">note</mat-icon>
                 <label>{{i18n.terms.notes}}</label>
               </div> -->
-              <textarea class="form-control" rows="4" [(ngModel)]="donation.notes"
-                [placeholder]="i18n.terms.enterNotes"></textarea>
-            </div>
+            <textarea class="form-control" rows="4" [(ngModel)]="donation.notes"
+              [placeholder]="i18n.terms.enterNotes"></textarea>
+          </div>
 
-            <!-- <div class="form-group">
+          <!-- <div class="form-group">
               <div class="anonymous-option" [class.active]="donation.isAnonymous">
                 <label class="anonymous-card">
                   <input type="checkbox" [(ngModel)]="donation.isAnonymous" class="anonymous-checkbox">
@@ -895,33 +937,30 @@
                 </label>
               </div>
             </div> -->
-          </div>
-        </div>
-
-        <!-- קבצים מצורפים -->
-        <div id="section-files" class="section files-section" *ngIf="!isNewDonation">
-          <h3>
-            <mat-icon class="section-icon">attach_file</mat-icon>
-            {{i18n.terms.attachedFiles || 'קבצים מצורפים'}}
-            <button class="add-btn" (click)="fileUploadComponent.openFilePicker()" [title]="i18n.terms.uploadFile || 'העלה קובץ'">
-              <mat-icon>add</mat-icon>
-            </button>
-          </h3>
-          <app-file-upload
-            #fileUploadComponent
-            [donationId]="donation.id"
-            [allowMultiple]="true"
-            [acceptedTypes]="'image/*,.pdf'"
-            [maxFileSize]="10485760">
-          </app-file-upload>
         </div>
       </div>
-    </div>
 
-    <div class="modal-footer">
-      <div class="footer-actions-left">
-        <!-- Campaign-based Actions -->
-        <!-- <div class="campaign-actions" *ngIf="selectedCampaign">
+      <!-- קבצים מצורפים -->
+      <div id="section-files" class="section files-section" *ngIf="!isNewDonation">
+        <h3>
+          <mat-icon class="section-icon">attach_file</mat-icon>
+          {{i18n.terms.attachedFiles || 'קבצים מצורפים'}}
+          <button class="add-btn" (click)="fileUploadComponent.openFilePicker()"
+            [title]="i18n.terms.uploadFile || 'העלה קובץ'">
+            <mat-icon>add</mat-icon>
+          </button>
+        </h3>
+        <app-file-upload #fileUploadComponent [donationId]="donation.id" [allowMultiple]="true"
+          [acceptedTypes]="'image/*,.pdf'" [maxFileSize]="10485760">
+        </app-file-upload>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-footer">
+    <div class="footer-actions-left">
+      <!-- Campaign-based Actions -->
+      <!-- <div class="campaign-actions" *ngIf="selectedCampaign">
           <button mat-stroked-button class="action-button campaign-contacts-btn" (click)="openCampaignContacts()"
             title="אנשי קשר ופעילים">
             <mat-icon>contacts</mat-icon>
@@ -929,45 +968,45 @@
           </button>
         </div> -->
 
-        <!-- Additional Actions -->
-        <button mat-stroked-button class="action-button print-letter-btn" (click)="printLetter()" [title]="i18n.terms.letterGeneration">
-          <mat-icon>print</mat-icon>
-          {{i18n.terms.letterGeneration}}
-        </button>
+      <!-- Additional Actions -->
+      <button mat-stroked-button class="action-button print-letter-btn" (click)="printLetter()"
+        [title]="i18n.terms.letterGeneration">
+        <mat-icon>print</mat-icon>
+        {{i18n.terms.letterGeneration}}
+      </button>
 
-        <button mat-stroked-button class="action-button add-reminder-btn" (click)="addReminder()" [title]="i18n.terms.addReminder">
-          <mat-icon>alarm_add</mat-icon>
-          {{i18n.terms.addReminder}}
-        </button>
+      <button mat-stroked-button class="action-button add-reminder-btn" (click)="addReminder()"
+        [title]="i18n.terms.addReminder">
+        <mat-icon>alarm_add</mat-icon>
+        {{i18n.terms.addReminder}}
+      </button>
 
-        <button
-
+      <button
         *ngIf="!isNewDonation && selectedPaymentMethod && selectedPaymentMethod.type === 'standing_order' && donation.donationType !== 'commitment' &&
         ((donation.standingOrderType === 'bank' && donationBanks.length) || (donation.standingOrderType === 'organization' && donationOrganizations.length))"
-
         mat-stroked-button class="action-button payment-list-btn" (click)="openPaymentList()" title="תנועות">
-          <mat-icon>payment</mat-icon>
-          תנועות
-        </button>
+        <mat-icon>payment</mat-icon>
+        תנועות
+      </button>
 
-        <!-- Divider -->
-        <div class="footer-divider"></div>
+      <!-- Divider -->
+      <div class="footer-divider"></div>
 
-        <!-- Admin Actions -->
-        <button mat-stroked-button color="warn" *ngIf="!isNewDonation" (click)="deleteDonation()" class="action-button">
-          <mat-icon>delete</mat-icon>
-          {{i18n.terms.deleteDonation}}
-        </button>
-      </div>
-      <div class="footer-actions-right">
-        <button mat-stroked-button (click)="closeModal()" class="cancel-button">
-          <mat-icon>close</mat-icon>
-          {{i18n.terms.cancel}}
-        </button>
-        <button mat-raised-button color="primary" (click)="saveDonation()" class="save-button" [disabled]="loading">
-          <mat-icon>save</mat-icon>
-          {{isNewDonation ? i18n.terms.saveDonation : i18n.terms.updateDonation}}
-        </button>
-      </div>
+      <!-- Admin Actions -->
+      <button mat-stroked-button color="warn" *ngIf="!isNewDonation" (click)="deleteDonation()" class="action-button">
+        <mat-icon>delete</mat-icon>
+        {{i18n.terms.deleteDonation}}
+      </button>
     </div>
+    <div class="footer-actions-right">
+      <button mat-stroked-button (click)="closeModal()" class="cancel-button">
+        <mat-icon>close</mat-icon>
+        {{i18n.terms.cancel}}
+      </button>
+      <button mat-raised-button color="primary" (click)="saveDonation()" class="save-button" [disabled]="loading">
+        <mat-icon>save</mat-icon>
+        {{isNewDonation ? i18n.terms.saveDonation : i18n.terms.updateDonation}}
+      </button>
+    </div>
+  </div>
 </div>

@@ -193,6 +193,19 @@ export class CertificatesComponent implements OnInit, OnDestroy {
     }
   }
 
+  async deleteCertificate(certificate: Certificate) {
+    if (await this.ui.yesNoQuestion(this.i18n.terms.deleteConfirmation || 'האם למחוק תעודה זו?')) {
+      try {
+        await repo(Certificate).delete(certificate);
+        this.ui.info(this.i18n.terms.deleteSuccess || 'נמחק בהצלחה');
+        await this.loadCertificates();
+      } catch (error) {
+        console.error('Error deleting certificate:', error);
+        this.ui.error(this.i18n.terms.deleteError || 'שגיאה במחיקה');
+      }
+    }
+  }
+
   onFromParashaChange() {
     // כאשר נבחרה פרשה ב"מפרשה" ו"עד פרשה" ריק, העתק את הערך ל"עד פרשה"
     if (this.filterFromParasha && !this.filterToParasha) {

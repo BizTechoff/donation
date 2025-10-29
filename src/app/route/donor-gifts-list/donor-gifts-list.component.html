@@ -13,6 +13,30 @@
     </div>
   </div>
 
+  <div class="summary-cards">
+    <div class="summary-card">
+      <div class="card-icon">🎁</div>
+      <div class="card-content">
+        <h3>{{ (i18n.terms$ | async)?.totalGifts }}</h3>
+        <span class="count">{{ donorGifts.length }}</span>
+      </div>
+    </div>
+    <div class="summary-card">
+      <div class="card-icon">📦</div>
+      <div class="card-content">
+        <h3>{{ (i18n.terms$ | async)?.deliveredGifts }}</h3>
+        <span class="count">{{ deliveredCount }}</span>
+      </div>
+    </div>
+    <div class="summary-card">
+      <div class="card-icon">⏳</div>
+      <div class="card-content">
+        <h3>{{ (i18n.terms$ | async)?.pendingGifts }}</h3>
+        <span class="count">{{ pendingCount }}</span>
+      </div>
+    </div>
+  </div>
+
   <div class="filters-section">
     <div class="filter-row">
       <div class="filter-group">
@@ -60,30 +84,6 @@
     </div>
   </div>
 
-  <div class="summary-cards">
-    <div class="summary-card">
-      <div class="card-icon">🎁</div>
-      <div class="card-content">
-        <h3>{{ (i18n.terms$ | async)?.totalGifts }}</h3>
-        <span class="count">{{ donorGifts.length }}</span>
-      </div>
-    </div>
-    <div class="summary-card">
-      <div class="card-icon">📦</div>
-      <div class="card-content">
-        <h3>{{ (i18n.terms$ | async)?.deliveredGifts }}</h3>
-        <span class="count">{{ deliveredCount }}</span>
-      </div>
-    </div>
-    <div class="summary-card">
-      <div class="card-icon">⏳</div>
-      <div class="card-content">
-        <h3>{{ (i18n.terms$ | async)?.pendingGifts }}</h3>
-        <span class="count">{{ pendingCount }}</span>
-      </div>
-    </div>
-  </div>
-
   <div class="table-wrapper" *ngIf="!loading && donorGifts.length > 0">
     <table class="data-table">
       <thead>
@@ -109,13 +109,9 @@
             </span>
           </td>
           <td>{{ donorGift.notes }}</td>
-          <td class="actions-cell" (click)="$event.stopPropagation()">
-            <button class="btn btn-icon" (click)="editDonorGift(donorGift)" [title]="(i18n.terms$ | async)?.edit">
-              <mat-icon>edit</mat-icon>
-            </button>
-            <button class="btn btn-icon btn-danger" (click)="deleteDonorGift(donorGift)" [title]="(i18n.terms$ | async)?.delete">
-              <mat-icon>delete</mat-icon>
-            </button>
+          <td class="actions" (click)="$event.stopPropagation()">
+            <button class="btn-icon btn-edit" (click)="editDonorGift(donorGift)" [title]="(i18n.terms$ | async)?.edit">✏</button>
+            <button class="btn-icon btn-delete" (click)="deleteDonorGift(donorGift)" [title]="(i18n.terms$ | async)?.delete">🗑</button>
           </td>
         </tr>
       </tbody>
