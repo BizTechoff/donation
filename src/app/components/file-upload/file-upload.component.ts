@@ -9,7 +9,8 @@ import { FileUploadService, UploadProgress } from '../../services/file-upload.se
   styleUrls: ['./file-upload.component.scss']
 })
 export class FileUploadComponent implements OnInit {
-  @Input() donationId!: string;
+  @Input() donationId?: string;
+  @Input() certificateId?: string;
   @Input() allowMultiple = true;
   @Input() acceptedTypes = 'image/*,.pdf';
   @Input() maxFileSize = 10 * 1024 * 1024; // 10MB default
@@ -27,15 +28,26 @@ export class FileUploadComponent implements OnInit {
   async ngOnInit() {
     if (this.donationId) {
       await this.loadFiles();
+    } else if (this.certificateId) {
+      await this.loadFilesByCertificate();
     }
   }
 
   async loadFiles() {
     try {
-      this.files = await this.fileUploadService.getFilesByDonation(this.donationId);
+      this.files = await this.fileUploadService.getFilesByDonation(this.donationId!);
       this.filesChanged.emit(this.files);
     } catch (error) {
       console.error('Error loading files:', error);
+    }
+  }
+
+  async loadFilesByCertificate() {
+    try {
+      this.files = await this.fileUploadService.getFilesByCertificate(this.certificateId!);
+      this.filesChanged.emit(this.files);
+    } catch (error) {
+      console.error('Error loading certificate files:', error);
     }
   }
 
@@ -65,8 +77,8 @@ export class FileUploadComponent implements OnInit {
   }
 
   async uploadFiles(files: File[]) {
-    if (!this.donationId) {
-      alert('לא ניתן להעלות קבצים ללא תרומה קיימת');
+    if (!this.donationId && !this.certificateId) {
+      alert('לא ניתן להעלות קבצים ללא תרומה או תעודה קיימת');
       return;
     }
 
@@ -90,8 +102,9 @@ export class FileUploadComponent implements OnInit {
 
       await this.fileUploadService.uploadFile(
         file,
-        this.donationId,
-        '',
+        this.donationId || '',
+        this.certificateId || '',
+        undefined,
         (progress) => {
           if (progress.error) {
             errors.push(progress.error)
@@ -104,7 +117,11 @@ export class FileUploadComponent implements OnInit {
     }
 
     // Reload files list
-    await this.loadFiles();
+    if (this.donationId) {
+      await this.loadFiles();
+    } else if (this.certificateId) {
+      await this.loadFilesByCertificate();
+    }
 
     this.uploading = false;
     this.uploadProgress = {};
@@ -132,7 +149,11 @@ export class FileUploadComponent implements OnInit {
     try {
       const result = await this.fileUploadService.deleteFile(file.id);
       if (result.success) {
-        await this.loadFiles();
+        if (this.donationId) {
+          await this.loadFiles();
+        } else if (this.certificateId) {
+          await this.loadFilesByCertificate();
+        }
       } else {
         alert('שגיאה במחיקת הקובץ: ' + result.error);
       }

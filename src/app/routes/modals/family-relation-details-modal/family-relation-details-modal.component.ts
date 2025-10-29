@@ -87,6 +87,11 @@ export class FamilyRelationDetailsModalComponent implements OnInit {
         relationshipType1: ''
       });
     }
+
+    // Prevent accidental close for new relation
+    if (this.isNewRelation) {
+      this.dialogRef.disableClose = true;
+    }
   }
 
   async saveRelation() {
@@ -102,9 +107,8 @@ export class FamilyRelationDetailsModalComponent implements OnInit {
       this.relation.donor2Id = this.selectedDonorId;
       this.relation.relationshipType1 = this.newRelationshipType;
 
-      await this.donorRelationRepo.save(this.relation);
-
-      this.dialogRef.close(true);
+      // Return the relation object (unsaved) - will be saved when donor is saved
+      this.dialogRef.close(this.relation);
     } catch (error) {
       console.error('Error saving relation:', error);
       alert('שגיאה בשמירת הקשר');

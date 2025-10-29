@@ -25,7 +25,7 @@ import { Place } from './place'
     }
   },
 })
-export class Company extends IdEntity {
+export class Company extends IdEntity { // חברות\עמותות שהתורם מקוושר אליו ודרכו מטעמם הגיעה התרומה
   @Fields.string({
     validate: Validators.required,
     caption: 'שם החברה',

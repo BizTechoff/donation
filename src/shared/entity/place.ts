@@ -45,6 +45,16 @@ export class Place {
   houseNumber?: string;
 
   @Fields.string({
+    caption: 'בניין'
+  })
+  building?: string;
+
+  @Fields.string({
+    caption: 'דירה'
+  })
+  apartment?: string;
+
+  @Fields.string({
     caption: 'שכונה'
   })
   neighborhood?: string;
@@ -148,6 +158,8 @@ export class Place {
 
     if (this.street) parts.push(this.street);
     if (this.houseNumber) parts.push(this.houseNumber);
+    if (this.building) parts.push(this.building);
+    if (this.apartment) parts.push(this.apartment);
     if (this.neighborhood) parts.push(this.neighborhood);
     if (this.city) parts.push(this.city);
 

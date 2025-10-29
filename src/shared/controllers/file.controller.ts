@@ -13,7 +13,8 @@ export interface FileUploadData {
   fileName: string;
   fileType: string;
   fileSize: number;
-  donationId: string;
+  donationId?: string;
+  certificateId?: string;
   description?: string;
 }
 
@@ -29,12 +30,25 @@ export class FileController {
   @BackendMethod({ allowed: Allow.authenticated })
   static async getUploadUrl(fileData: FileUploadData): Promise<UploadUrlResponse> {
     try {
-      const { fileName, fileType, fileSize, donationId, description } = fileData;
+      const { fileName, fileType, fileSize, donationId, certificateId, description } = fileData;
 
       // Generate unique filename to avoid collisions
       const timestamp = Date.now();
       const uniqueFileName = `${timestamp}_${fileName}`;
-      const bucketKey = `donations/${donationId}`;
+
+      // Determine bucket key based on whether it's for a donation or certificate
+      let bucketKey: string;
+      if (donationId) {
+        bucketKey = `donations/${donationId}`;
+      } else if (certificateId) {
+        bucketKey = `certificates/${certificateId}`;
+      } else {
+        return {
+          success: false,
+          url: '',
+          error: 'Either donationId or certificateId must be provided'
+        };
+      }
 
       // Get signed URL from S3
       const s3Result = await FileController.generateUploadURLDelegate('putObject', uniqueFileName, fileType, bucketKey);
@@ -120,6 +134,19 @@ export class FileController {
     const fileRepo = remult.repo(DonationFile);
     return await fileRepo.find({
       where: { donationId: donationId, isActive: true },
+      orderBy: { createdDate: 'desc' },
+      include: { uploadedBy: true }
+    });
+  }
+
+  /**
+   * Get all files for a certificate
+   */
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async getFilesByCertificate(certificateId: string): Promise<DonationFile[]> {
+    const fileRepo = remult.repo(DonationFile);
+    return await fileRepo.find({
+      where: { certificateId: certificateId, isActive: true },
       orderBy: { createdDate: 'desc' },
       include: { uploadedBy: true }
     });

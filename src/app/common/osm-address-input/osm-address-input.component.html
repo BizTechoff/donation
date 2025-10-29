@@ -61,7 +61,31 @@
         </div>
       </div>
 
-      <!-- שורה שנייה: שכונה ועיר -->
+      <!-- שורה שנייה: בניין ודירה -->
+      <div class="detail-row">
+        <div class="detail-field">
+          <label>{{ (i18n.terms$ | async)?.building || 'בניין' }}</label>
+          <input
+            type="text"
+            [(ngModel)]="place.building"
+            (change)="onDetailChange()"
+            [placeholder]="(i18n.terms$ | async)?.building || 'בניין'"
+            dir="rtl"
+          >
+        </div>
+        <div class="detail-field">
+          <label>{{ (i18n.terms$ | async)?.apartment || 'דירה' }}</label>
+          <input
+            type="text"
+            [(ngModel)]="place.apartment"
+            (change)="onDetailChange()"
+            [placeholder]="(i18n.terms$ | async)?.apartment || 'דירה'"
+            dir="rtl"
+          >
+        </div>
+      </div>
+
+      <!-- שורה שלישית: שכונה ועיר -->
       <div class="detail-row">
         <div class="detail-field">
           <label>{{ (i18n.terms$ | async)?.neighborhood || 'שכונה' }}</label>
@@ -85,7 +109,7 @@
         </div>
       </div>
 
-      <!-- שורה שלישית: מחוז ומיקוד -->
+      <!-- שורה רביעית: מחוז ומיקוד -->
       <div class="detail-row">
         <div class="detail-field">
           <label>{{ (i18n.terms$ | async)?.state || 'מחוז' }}</label>
@@ -109,7 +133,7 @@
         </div>
       </div>
 
-      <!-- שורה רביעית: מדינה -->
+      <!-- שורה חמישית: מדינה -->
       <div class="detail-row">
         <div class="detail-field full-width">
           <label>{{ (i18n.terms$ | async)?.countryAutoUpdated || 'מדינה (מתעדכן אוטומטית מגוגל)' }}</label>
@@ -124,7 +148,7 @@
         </div>
       </div>
 
-      <!-- שורה רביעית: שם המקום (אם יש) -->
+      <!-- שורה שישית: שם המקום (אם יש) -->
       <div class="detail-row" *ngIf="place.placeName">
         <div class="detail-field full-width">
           <label>{{ (i18n.terms$ | async)?.placeName || 'שם המקום' }}</label>

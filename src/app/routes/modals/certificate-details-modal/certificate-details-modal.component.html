@@ -116,22 +116,24 @@
         </div>
       </div>
 
-      <div class="attachments-section" *ngIf="certificate?.attachments && certificate.attachments.length > 0">
-        <h4>{{ (i18n.terms$ | async)?.attachedFiles }}</h4>
-        <ul class="attachments-list">
-          <li *ngFor="let attachment of certificate.attachments" class="attachment-item">
-            <a [href]="attachment.path" target="_blank" class="attachment-link">
-              {{ attachment.name }}
-            </a>
-            <span class="attachment-size">({{ (attachment.size / 1024).toFixed(2) }} KB)</span>
-          </li>
-        </ul>
+      <div class="section file-uploads" *ngIf="certificate?.id">
+        <h3>
+          {{ (i18n.terms$ | async)?.attachedFiles }}
+          <button class="add-btn" (click)="fileUploadComponent.openFilePicker()" [title]="(i18n.terms$ | async)?.uploadFileButton || 'העלה קובץ'">
+            <mat-icon>add</mat-icon>
+          </button>
+        </h3>
+        <app-file-upload
+          #fileUploadComponent
+          [certificateId]="certificate.id"
+          [allowMultiple]="true"
+          [acceptedTypes]="'image/*,.pdf'"
+          [maxFileSize]="10485760">
+        </app-file-upload>
       </div>
     </div>
     <div class="modal-footer">
-      <input type="file" #fileInput style="display: none" (change)="onFileSelected($event)" accept="image/*,.pdf">
       <button class="btn btn-secondary" (click)="onClose()">{{ (i18n.terms$ | async)?.cancel }}</button>
-      <button class="btn btn-success" (click)="fileInput.click()">{{ (i18n.terms$ | async)?.uploadFileButton }}</button>
       <button class="btn btn-info" (click)="createOrEditReminder()">
         {{ certificate.reminderId ? (i18n.terms$ | async)?.reminderButton : (i18n.terms$ | async)?.createReminder }}
       </button>

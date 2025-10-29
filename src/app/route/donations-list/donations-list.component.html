@@ -83,64 +83,56 @@
     </div>
   </div>
 
-  <div class="donations-grid">
-    <div class="grid-header">
-      <div class="grid-col">{{ (i18n.terms$ | async)?.dateColumn }}</div>
-      <div class="grid-col">{{ (i18n.terms$ | async)?.donorColumn }}</div>
-      <div class="grid-col">{{ (i18n.terms$ | async)?.amountColumn }}</div>
-      <div class="grid-col">{{ (i18n.terms$ | async)?.currencyColumn }}</div>
-      <div class="grid-col">{{ (i18n.terms$ | async)?.methodColumn }}</div>
-      <div class="grid-col">{{ (i18n.terms$ | async)?.campaign }}</div>
-      <div class="grid-col">{{ (i18n.terms$ | async)?.fundraiserColumn }}</div>
-      <!-- <div class="grid-col">{{ (i18n.terms$ | async)?.thankYouLetterColumn }}</div> -->
-      <!-- <div class="grid-col">{{ (i18n.terms$ | async)?.proofColumn }}</div> -->
-      <div class="grid-col">{{ (i18n.terms$ | async)?.actionsColumn }}</div>
-    </div>
-
-    <div class="grid-row" *ngFor="let donation of donationsWithCampaign">
-      <div class="grid-col date-col">
-        <div class="date-display">
-          <span class="hebrew-date">{{ donation.donationDate | date:'dd/MM/yyyy' }}</span>
-          <!-- <span class="secular-date">{{ donation.donationDate | date:'dd/MM/yyyy' }}</span> -->
-        </div>
-      </div>
-      <div class="grid-col donor-col">
-        <strong>{{ getDonorName(donation) }}</strong>
-      </div>
-      <div class="grid-col amount-col">
-        <span class="amount">₪{{donation.amount | number}}</span>
-      </div>
-      <div class="grid-col">{{donation.currency}}</div>
-      <div class="grid-col">
-        <span class="method-badge method-{{donation.donationMethod?.type}}">{{ getMethodName(donation) }}</span>
-      </div>
-      <div class="grid-col">{{ getCampaignName(donation) }}</div>
-      <div class="grid-col">{{ donation.fundraiserId || (i18n.terms$ | async)?.createdByUnknown }}</div>
-      <!-- <div class="grid-col">
-        <span class="status-badge" [class]="'status-' + donation.status">
-          {{ getStatusText(donation.status) }}
-        </span>
-      </div> -->
-      <!-- <div class="grid-col">
-        <span class="proof-indicator" [class]="donation.receiptIssued ? 'has-proof' : 'no-proof'">
-          {{donation.receiptIssued ? '✓' : '✗'}}
-        </span>
-      </div> -->
-      <div class="grid-col actions">
-        <button class="btn-icon btn-view" (click)="editDonation(donation)"
-          [title]="(i18n.terms$ | async)?.viewDetails">👁</button>
-        <button class="btn-icon btn-edit" (click)="editDonation(donation)"
-          [title]="(i18n.terms$ | async)?.edit">✏</button>
-        <button class="btn-icon btn-receipt" (click)="issueReceipt(donation)" [disabled]="donation.receiptIssued"
-          [title]="(i18n.terms$ | async)?.receiptAction">🧾</button>
-        <button class="btn-icon btn-excel" *ngIf="donation.frequency" (click)="uploadTransactions(donation)"
-          title="קלוט תנועות">📊</button>
-        <button class="btn-icon btn-delete" (click)="deleteDonation(donation)"
-          [title]="(i18n.terms$ | async)?.delete">🗑</button>
-        <button class="btn-icon btn-cancel" (click)="cancelDonation(donation)"
-          [disabled]="donation.status === 'cancelled'" [title]="(i18n.terms$ | async)?.cancelDonation">❌</button>
-      </div>
-    </div>
+  <div class="donations-table-wrapper">
+    <table class="donations-table">
+      <thead>
+        <tr>
+          <th>{{ (i18n.terms$ | async)?.dateColumn }}</th>
+          <th>{{ (i18n.terms$ | async)?.donorColumn }}</th>
+          <th>{{ (i18n.terms$ | async)?.amountColumn }}</th>
+          <th>{{ (i18n.terms$ | async)?.currencyColumn }}</th>
+          <th>{{ (i18n.terms$ | async)?.methodColumn }}</th>
+          <th>{{ (i18n.terms$ | async)?.campaign }}</th>
+          <th>{{ (i18n.terms$ | async)?.fundraiserColumn }}</th>
+          <th>{{ (i18n.terms$ | async)?.actionsColumn }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let donation of donationsWithCampaign">
+          <td class="date-col">
+            <div class="date-display">
+              <span class="hebrew-date">{{ donation.donationDate | date:'dd/MM/yyyy' }}</span>
+            </div>
+          </td>
+          <td class="donor-col">
+            <strong>{{ getDonorName(donation) }}</strong>
+          </td>
+          <td class="amount-col">
+            <span class="amount">₪{{donation.amount | number}}</span>
+          </td>
+          <td class="currency-col">{{ getCurrencyName(donation.currency) }}</td>
+          <td class="method-col">
+            <span class="method-badge method-{{donation.donationMethod?.type}}">{{ getMethodName(donation) }}</span>
+          </td>
+          <td class="campaign-col">{{ getCampaignName(donation) }}</td>
+          <td class="fundraiser-col">{{ donation.fundraiserId || (i18n.terms$ | async)?.createdByUnknown }}</td>
+          <td class="actions">
+            <!-- <button class="btn-icon btn-view" (click)="editDonation(donation)"
+              [title]="(i18n.terms$ | async)?.viewDetails">👁</button> -->
+            <button class="btn-icon btn-edit" (click)="editDonation(donation)"
+              [title]="(i18n.terms$ | async)?.edit">✏</button>
+            <!-- <button class="btn-icon btn-receipt" (click)="issueReceipt(donation)" [disabled]="donation.receiptIssued"
+              [title]="(i18n.terms$ | async)?.receiptAction">🧾</button> -->
+            <!-- <button class="btn-icon btn-excel" *ngIf="donation.frequency" (click)="uploadTransactions(donation)"
+              title="קלוט תנועות">📊</button> -->
+            <button class="btn-icon btn-delete" (click)="deleteDonation(donation)"
+              [title]="(i18n.terms$ | async)?.delete">🗑</button>
+            <!-- <button class="btn-icon btn-cancel" (click)="cancelDonation(donation)"
+              [disabled]="donation.status === 'cancelled'" [title]="(i18n.terms$ | async)?.cancelDonation">❌</button> -->
+          </td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 
   <div class="pagination">

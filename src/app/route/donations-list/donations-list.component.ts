@@ -361,7 +361,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
 
   get totalAmount(): number {
     return this.donations
-      .filter(d => d.status === 'completed')
+      // .filter(d => d.status === 'completed')
       .reduce((sum, donation) => sum + donation.amount, 0);
   }
 
@@ -377,6 +377,18 @@ export class DonationsListComponent implements OnInit, OnDestroy {
 
   getCampaignName(donation: Donation): string {
     return donation.campaign?.name || this.i18n.currentTerms.withoutCampaign || '';
+  }
+
+  getCurrencyName(currencyCode: string): string {
+    const currencyMap: { [key: string]: string } = {
+      'ILS': '₪',
+      'USD': '$',
+      'EUR': '€',
+      'GBP': '£',
+      'JPY': '¥',
+      'CHF': 'Fr'
+    };
+    return currencyMap[currencyCode] || currencyCode;
   }
 
   getMethodName(donation: Donation): string {

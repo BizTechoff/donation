@@ -261,6 +261,11 @@ export class Donor extends IdEntity {
   gender: 'male' | 'female' | '' = 'male'
 
   @Fields.string({
+    caption: 'יוחסין',
+  })
+  lineage: 'cohen' | 'levi' | 'israel' = 'israel'
+
+  @Fields.string({
     caption: 'טלפון בית',
   })
   homePhone = ''

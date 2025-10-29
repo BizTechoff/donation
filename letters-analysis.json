@@ -1,0 +1,943 @@
+[
+  {
+    "file": "TYNoReceipt.docx",
+    "path": "אמריקה\\TYNoReceipt.docx",
+    "fullPath": "src\\assets\\letters\\אמריקה\\TYNoReceipt.docx",
+    "fields": [
+      "FullAddress",
+      "Amount",
+      "תרומה"
+    ]
+  },
+  {
+    "file": "TYReceipt.docx",
+    "path": "אמריקה\\TYReceipt.docx",
+    "fullPath": "src\\assets\\letters\\אמריקה\\TYReceipt.docx",
+    "fields": [
+      "FullAddress",
+      "28A0092B-C50C-407E-A947-70E740481C1C",
+      "53640926-AAD7-44D8-BBD7-CCE9431645EC",
+      "Number_receipt",
+      "Amount",
+      "Name_receipt",
+      "FullAddress_Work",
+      "FullCity_Work"
+    ]
+  },
+  {
+    "file": "TYYeshivaNoReceipt.docx",
+    "path": "אמריקה\\TYYeshivaNoReceipt.docx",
+    "fullPath": "src\\assets\\letters\\אמריקה\\TYYeshivaNoReceipt.docx",
+    "fields": [
+      "28A0092B-C50C-407E-A947-70E740481C1C",
+      "53640926-AAD7-44D8-BBD7-CCE9431645EC",
+      "FullAddress",
+      "תואר_מלא",
+      "תואר_עברית",
+      "שם_עברית",
+      "סיומת_עברית",
+      "תרומה",
+      "סיומת_מכתב"
+    ]
+  },
+  {
+    "file": "TYYeshivaReceipt.docx",
+    "path": "אמריקה\\TYYeshivaReceipt.docx",
+    "fullPath": "src\\assets\\letters\\אמריקה\\TYYeshivaReceipt.docx",
+    "fields": [
+      "FullAddress",
+      "תואר_מלא",
+      "תואר_עברית",
+      "שם_עברית",
+      "סיומת_עברית",
+      "תרומה",
+      "סיומת_מכתב",
+      "28A0092B-C50C-407E-A947-70E740481C1C",
+      "</w:t></w:r><w:r w:rsidR=\"00152D1A\" w:rsidRPr=\"00152D1A\"><w:rPr><w:rFonts w:ascii=\"Poppins Medium\" w:hAnsi=\"Poppins Medium\" w:cs=\"Poppins Medium\"/><w:noProof/><w:spacing w:val=\"4\"/><w:sz w:val=\"22\"/><w:szCs w:val=\"22\"/></w:rPr><w:t>N</w:t></w:r><w:r w:rsidR=\"00152D1A\"><w:rPr><w:rFonts w:ascii=\"Poppins Medium\" w:hAnsi=\"Poppins Medium\" w:cs=\"Poppins Medium\"/><w:noProof/><w:spacing w:val=\"4\"/><w:sz w:val=\"22\"/><w:szCs w:val=\"22\"/></w:rPr><w:t>umber</w:t></w:r><w:r w:rsidR=\"00152D1A\" w:rsidRPr=\"00152D1A\"><w:rPr><w:rFonts w:ascii=\"Poppins Medium\" w:hAnsi=\"Poppins Medium\" w:cs=\"Poppins Medium\"/><w:noProof/><w:spacing w:val=\"4\"/><w:sz w:val=\"22\"/><w:szCs w:val=\"22\"/></w:rPr><w:t>_receipt</w:t></w:r><w:r w:rsidR=\"00152D1A\"><w:rPr><w:rFonts w:ascii=\"Poppins Medium\" w:hAnsi=\"Poppins Medium\" w:cs=\"Poppins Medium\"/><w:noProof/><w:spacing w:val=\"4\"/><w:sz w:val=\"22\"/><w:szCs w:val=\"22\"/></w:rPr><w:t>",
+      "Amount",
+      "Name_receipt",
+      "FullAddress_Work",
+      "FullCity_Work"
+    ]
+  },
+  {
+    "file": "אב.docx",
+    "path": "ניחום אבלים\\אב.docx",
+    "fullPath": "src\\assets\\letters\\ניחום אבלים\\אב.docx",
+    "fields": [
+      "FullAddress",
+      "תואר_מלא",
+      "תואר_עברית",
+      "שם_עברית",
+      "סיומת_עברית",
+      "תואר_נפטר",
+      "פרטי_נפטר",
+      "קשר_לנפטר",
+      "אב_הנפטר",
+      "סיומת_נפטר"
+    ]
+  },
+  {
+    "file": "אח.docx",
+    "path": "ניחום אבלים\\אח.docx",
+    "fullPath": "src\\assets\\letters\\ניחום אבלים\\אח.docx",
+    "fields": [
+      "FullAddress",
+      "תואר_מלא",
+      "תואר_עברית",
+      "שם_עברית",
+      "סיומת_עברית",
+      "תואר_נפטר",
+      "פרטי_נפטר",
+      "קשר_לנפטר",
+      "אב_הנפטר",
+      "סיומת_נפטר"
+    ]
+  },
+  {
+    "file": "אחות.docx",
+    "path": "ניחום אבלים\\אחות.docx",
+    "fullPath": "src\\assets\\letters\\ניחום אבלים\\אחות.docx",
+    "fields": [
+      "FullAddress",
+      "תואר_מלא",
+      "תואר_עברית",
+      "שם_עברית",
+      "סיומת_עברית",
+      "תואר_נפטר",
+      "פרטי_נפטר",
+      "קשר_לנפטר",
+      "אב_הנפטר",
+      "סיומת_נפטר"
+    ]
+  },
+  {
+    "file": "אם.docx",
+    "path": "ניחום אבלים\\אם.docx",
+    "fullPath": "src\\assets\\letters\\ניחום אבלים\\אם.docx",
+    "fields": [
+      "FullAddress",
+      "תואר_מלא",
+      "תואר_עברית",
+      "שם_עברית",
+      "סיומת_עברית",
+      "תואר_נפטר",
+      "פרטי_נפטר",
+      "קשר_לנפטר",
+      "אב_הנפטר",
+      "סיומת_נפטר"
+    ]
+  },
+  {
+    "file": "בן.docx",
+    "path": "ניחום אבלים\\בן.docx",
+    "fullPath": "src\\assets\\letters\\ניחום אבלים\\בן.docx",
+    "fields": [
+      "FullAddress",
+      "תואר_מלא",
+      "תואר_עברית",
+      "שם_עברית",
+      "סיומת_עברית",
+      "תואר_נפטר",
+      "פרטי_נפטר",
+      "קשר_לנפטר",
+      "אב_הנפטר",
+      "סיומת_נפטר"
+    ]
+  },
+  {
+    "file": "בת זוג.docx",
+    "path": "ניחום אבלים\\בת זוג.docx",
+    "fullPath": "src\\assets\\letters\\ניחום אבלים\\בת זוג.docx",
+    "fields": [
+      "FullAddress",
+      "תואר_מלא",
+      "תואר_עברית",
+      "שם_עברית",
+      "סיומת_עברית",
+      "תואר_נפטר",
+      "פרטי_נפטר",
+      "קשר_לנפטר",
+      "אב_הנפטר",
+      "סיומת_נפטר"
+    ]
+  },
+  {
+    "file": "בת.docx",
+    "path": "ניחום אבלים\\בת.docx",
+    "fullPath": "src\\assets\\letters\\ניחום אבלים\\בת.docx",
+    "fields": [
+      "FullAddress",
+      "תואר_מלא",
+      "תואר_עברית",
+      "שם_עברית",
+      "סיומת_עברית",
+      "תואר_נפטר",
+      "פרטי_נפטר",
+      "קשר_לנפטר",
+      "אב_הנפטר",
+      "סיומת_נפטר"
+    ]
+  },
+  {
+    "file": "בן.docx",
+    "path": "שמחות\\אירוסין\\בן.docx",
+    "fullPath": "src\\assets\\letters\\שמחות\\אירוסין\\בן.docx",
+    "fields": [
+      "FullAddress",
+      "תואר_מלא",
+      "תואר_עברית",
+      "שם_עברית",
+      "סיומת_עברית",
+      "תואר_חתן",
+      "שם_חתן",
+      "סיומת_חתן",
+      "תואר_מחותן",
+      "שם_מחותן",
+      "סיומת_מחותן",
+      "סיומת_מכתב"
+    ]
+  },
+  {
+    "file": "בת.docx",
+    "path": "שמחות\\אירוסין\\בת.docx",
+    "fullPath": "src\\assets\\letters\\שמחות\\אירוסין\\בת.docx",
+    "fields": [
+      "FullAddress",
+      "תואר_מלא",
+      "תואר_עברית",
+      "שם_עברית",
+      "סיומת_עברית",
+      "תואר_חתן",
+      "שם_חתן",
+      "סיומת_חתן",
+      "תואר_מחותן",
+      "שם_מחותן",
+      "סיומת_ מחותן",
+      "סיומת_מכתב"
+    ]
+  },
+  {
+    "file": "נין.docx",
+    "path": "שמחות\\אירוסין\\נין.docx",
+    "fullPath": "src\\assets\\letters\\שמחות\\אירוסין\\נין.docx",
+    "fields": [
+      "FullAddress",
+      "תואר_מלא",
+      "תואר_עברית",
+      "שם_עברית",
+      "סיומת_עברית",
+      "תואר_חתן",
+      "שם_חתן",
+      "סיומת_חתן",
+      "קירבה_אב",
+      "תואר_אב",
+      "שם_אב",
+      "סיומת_אב",
+      "קירבה_סב",
+      "סב_תואר",
+      "סב_שם",
+      "סב_סיומת",
+      "תואר_מחותן",
+      "שם_מחותן",
+      "סיומת_ מחותן",
+      "סיומת_מכתב"
+    ]
+  },
+  {
+    "file": "נינה.docx",
+    "path": "שמחות\\אירוסין\\נינה.docx",
+    "fullPath": "src\\assets\\letters\\שמחות\\אירוסין\\נינה.docx",
+    "fields": [
+      "FullAddress",
+      "תואר_מלא",
+      "תואר_עברית",
+      "שם_עברית",
+      "סיומת_עברית",
+      "קירבה_אב",
+      "תואר_אב",
+      "שם_אב",
+      "סיומת_אב",
+      "קירבה_סב",
+      "סב_תואר",
+      "סב_שם",
+      "סב_סיומת",
+      "תואר_חתן",
+      "שם_חתן",
+      "סיומת_חתן",
+      "תואר_מחותן",
+      "שם_מחותן",
+      "סיומת_ מחותן",
+      "סיומת_מכתב"
+    ]
+  },
+  {
+    "file": "נכד.docx",
+    "path": "שמחות\\אירוסין\\נכד.docx",
+    "fullPath": "src\\assets\\letters\\שמחות\\אירוסין\\נכד.docx",
+    "fields": [
+      "FullAddress",
+      "תואר_מלא",
+      "תואר_עברית",
+      "שם_עברית",
+      "סיומת_עברית",
+      "תואר_חתן",
+      "שם_חתן",
+      "סיומת_חתן",
+      "קירבה_אב",
+      "תואר_אב",
+      "שם_אב",
+      "סיומת_אב",
+      "תואר_מחותן",
+      "שם_מחותן",
+      "סיומת_ מחותן",
+      "סיומת_מכתב"
+    ]
+  },
+  {
+    "file": "נכדה.docx",
+    "path": "שמחות\\אירוסין\\נכדה.docx",
+    "fullPath": "src\\assets\\letters\\שמחות\\אירוסין\\נכדה.docx",
+    "fields": [
+      "FullAddress",
+      "תואר_מלא",
+      "תואר_עברית",
+      "שם_עברית",
+      "סיומת_עברית",
+      "קירבה_אב",
+      "תואר_אב",
+      "שם_אב",
+      "סיומת_אב",
+      "תואר_חתן",
+      "שם_חתן",
+      "סיומת_חתן",
+      "תואר_מחותן",
+      "שם_מחותן",
+      "סיומת_ מחותן",
+      "סיומת_מכתב"
+    ]
+  },
+  {
+    "file": "בן נין.docx",
+    "path": "שמחות\\בן\\בן נין.docx",
+    "fullPath": "src\\assets\\letters\\שמחות\\בן\\בן נין.docx",
+    "fields": [
+      "FullAddress",
+      "תואר_מלא",
+      "תואר_עברית",
+      "שם_עברית",
+      "סיומת_עברית",
+      "תואר_חתן",
+      "שם_חתן",
+      "סיומת_חתן",
+      "קירבה_אב",
+      "תואר_אב",
+      "שם_אב",
+      "סיומת_אב",
+      "קירבה_סב",
+      "סב_תואר",
+      "סב_שם",
+      "סב_סיומת",
+      "סיומת_מכתב"
+    ]
+  },
+  {
+    "file": "בן.docx",
+    "path": "שמחות\\בן\\בן.docx",
+    "fullPath": "src\\assets\\letters\\שמחות\\בן\\בן.docx",
+    "fields": [
+      "FullAddress",
+      "תואר_מלא",
+      "תואר_עברית",
+      "שם_עברית",
+      "סיומת_עברית",
+      "סיומת_מכתב"
+    ]
+  },
+  {
+    "file": "נין.docx",
+    "path": "שמחות\\בן\\נין.docx",
+    "fullPath": "src\\assets\\letters\\שמחות\\בן\\נין.docx",
+    "fields": [
+      "FullAddress",
+      "תואר  מלא",
+      "תואר_עברית",
+      "שם_עברית",
+      "סיומת_עברית",
+      "תואר_חתן",
+      "שם_חתן",
+      "סיומת_חתן",
+      "קירבה_אב",
+      "תואר_אב",
+      "שם_אב",
+      "סיומת_אב",
+      "סיומת_מכתב"
+    ]
+  },
+  {
+    "file": "נכד.docx",
+    "path": "שמחות\\בן\\נכד.docx",
+    "fullPath": "src\\assets\\letters\\שמחות\\בן\\נכד.docx",
+    "fields": [
+      "FullAddress",
+      "תואר_מלא",
+      "תואר_עברית",
+      "שם_עברית",
+      "סיומת_עברית",
+      "קירבה_חתן",
+      "תואר_חתן",
+      "שם_חתן",
+      "סיומת_חתן",
+      "סיומת_מכתב"
+    ]
+  },
+  {
+    "file": "בן.docx",
+    "path": "שמחות\\בר מצוה\\בן.docx",
+    "fullPath": "src\\assets\\letters\\שמחות\\בר מצוה\\בן.docx",
+    "fields": [
+      "FullAddress",
+      "תואר_מלא",
+      "תואר_עברית",
+      "שם_עברית",
+      "סיומת_עברית",
+      "תואר_חתן",
+      "שם_חתן",
+      "סיומת_חתן",
+      "סיומת_מכתב"
+    ]
+  },
+  {
+    "file": "נין.docx",
+    "path": "שמחות\\בר מצוה\\נין.docx",
+    "fullPath": "src\\assets\\letters\\שמחות\\בר מצוה\\נין.docx",
+    "fields": [
+      "FullAddress",
+      "תואר_מלא",
+      "סיומת_עברית",
+      "תואר_חתן",
+      "שם_חתן",
+      "סיומת_חתן",
+      "קירבה_אב",
+      "תואר_אב",
+      "שם_אב",
+      "סיומת_אב",
+      "קירבה_סב",
+      "סב_תואר",
+      "סב_שם",
+      "סב_סיומת",
+      "סיומת_מכתב"
+    ]
+  },
+  {
+    "file": "נכד.docx",
+    "path": "שמחות\\בר מצוה\\נכד.docx",
+    "fullPath": "src\\assets\\letters\\שמחות\\בר מצוה\\נכד.docx",
+    "fields": [
+      "FullAddress",
+      "תואר_מלא",
+      "תואר_עברית",
+      "שם_עברית",
+      "סיומת_עברית",
+      "תואר_חתן",
+      "שם_חתן",
+      "סיומת_חתן",
+      "קירבה_אב",
+      "תואר_אב",
+      "שם_אב",
+      "סיומת_אב",
+      "סיומת_מכתב"
+    ]
+  },
+  {
+    "file": "בת נין.docx",
+    "path": "שמחות\\בת\\בת נין.docx",
+    "fullPath": "src\\assets\\letters\\שמחות\\בת\\בת נין.docx",
+    "fields": [
+      "FullAddress",
+      "תואר_מלא",
+      "תואר_עברית",
+      "שם_עברית",
+      "סיומת_עברית",
+      "תואר_חתן",
+      "שם_חתן",
+      "סיומת_חתן",
+      "קירבה_אב",
+      "תואר_אב",
+      "שם_אב",
+      "סיומת_אב",
+      "קירבה_סב",
+      "סב_תואר",
+      "סב_שם",
+      "סב_סיומת",
+      "סיומת_מכתב"
+    ]
+  },
+  {
+    "file": "בת.docx",
+    "path": "שמחות\\בת\\בת.docx",
+    "fullPath": "src\\assets\\letters\\שמחות\\בת\\בת.docx",
+    "fields": [
+      "FullAddress",
+      "תואר_מלא",
+      "תואר_עברית",
+      "שם_עברית",
+      "סיומת_עברית",
+      "סיומת_מכתב"
+    ]
+  },
+  {
+    "file": "נינה.docx",
+    "path": "שמחות\\בת\\נינה.docx",
+    "fullPath": "src\\assets\\letters\\שמחות\\בת\\נינה.docx",
+    "fields": [
+      "FullAddress",
+      "תואר_מלא",
+      "תואר_עברית",
+      "שם_עברית",
+      "סיומת_עברית",
+      "תואר_חתן",
+      "שם_חתן",
+      "סיומת_חתן",
+      "קירבה_אב",
+      "תואר_אב",
+      "שם _אב",
+      "סיומת_אב",
+      "סיומת_מכתב"
+    ]
+  },
+  {
+    "file": "נכדה.docx",
+    "path": "שמחות\\בת\\נכדה.docx",
+    "fullPath": "src\\assets\\letters\\שמחות\\בת\\נכדה.docx",
+    "fields": [
+      "FullAddress",
+      "תואר_מלא",
+      "תואר_עברית",
+      "שם_עברית",
+      "סיומת_עברית",
+      "קירבה_חתן",
+      "תואר_חתן",
+      "שם_חתן",
+      "סיומת_חתן",
+      "סיומת_מכתב"
+    ]
+  },
+  {
+    "file": "בן.docx",
+    "path": "שמחות\\נישואין\\בן.docx",
+    "fullPath": "src\\assets\\letters\\שמחות\\נישואין\\בן.docx",
+    "fields": [
+      "FullAddress",
+      "תואר_מלא",
+      "תואר_עברית",
+      "שם_עברית",
+      "סיומת_עברית",
+      "תואר_חתן",
+      "שם_חתן",
+      "סיומת_חתן",
+      "תואר_מחותן",
+      "שם_מחותן",
+      "סיומת_ מחותן",
+      "סיומת_מכתב"
+    ]
+  },
+  {
+    "file": "בת.docx",
+    "path": "שמחות\\נישואין\\בת.docx",
+    "fullPath": "src\\assets\\letters\\שמחות\\נישואין\\בת.docx",
+    "fields": [
+      "FullAddress]\"/><w:format w:val=\"FIRST CAPITAL\"/></w:textInput></w:ffData></w:fldChar></w:r><w:bookmarkStart w:id=\"0\" w:name=\"Word_W_FullCtovet\"/><w:r><w:rPr><w:rFonts w:cs=\"Livorna\"/><w:spacing w:val=\"4\"/><w:sz w:val=\"24\"/><w:szCs w:val=\"24\"/></w:rPr><w:instrText xml:space=\"preserve\"> FORMTEXT </w:instrText></w:r><w:r><w:rPr><w:rFonts w:cs=\"Livorna\"/><w:spacing w:val=\"4\"/><w:sz w:val=\"24\"/><w:szCs w:val=\"24\"/></w:rPr></w:r><w:r><w:rPr><w:rFonts w:cs=\"Livorna\"/><w:spacing w:val=\"4\"/><w:sz w:val=\"24\"/><w:szCs w:val=\"24\"/></w:rPr><w:fldChar w:fldCharType=\"separate\"/></w:r><w:r><w:rPr><w:rFonts w:cs=\"Livorna\"/><w:spacing w:val=\"4\"/><w:sz w:val=\"24\"/><w:szCs w:val=\"24\"/></w:rPr><w:t>{FullAddress]</w:t></w:r><w:r><w:rPr><w:rFonts w:cs=\"Livorna\"/><w:spacing w:val=\"4\"/><w:sz w:val=\"24\"/><w:szCs w:val=\"24\"/></w:rPr><w:fldChar w:fldCharType=\"end\"/></w:r><w:bookmarkEnd w:id=\"0\"/></w:p><w:p w14:paraId=\"603160E4\" w14:textId=\"77777777\" w:rsidR=\"00420179\" w:rsidRDefault=\"00420179\" w:rsidP=\"00420179\"><w:pPr><w:spacing w:line=\"400\" w:lineRule=\"exact\"/><w:rPr><w:rFonts w:cs=\"Livorna\"/><w:spacing w:val=\"4\"/><w:sz w:val=\"28\"/><w:szCs w:val=\"28\"/></w:rPr></w:pPr></w:p><w:p w14:paraId=\"615EF872\" w14:textId=\"296D57A7\" w:rsidR=\"00F2081C\" w:rsidRPr=\"009D52FA\" w:rsidRDefault=\"00407B65\" w:rsidP=\"004D49B8\"><w:pPr><w:bidi/><w:spacing w:line=\"360\" w:lineRule=\"exact\"/><w:ind w:firstLine=\"2\"/><w:jc w:val=\"center\"/><w:rPr><w:rFonts w:cs=\"Livorna\"/><w:spacing w:val=\"4\"/><w:sz w:val=\"28\"/><w:szCs w:val=\"28\"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:cs=\"Livorna\"/><w:spacing w:val=\"4\"/><w:sz w:val=\"28\"/><w:szCs w:val=\"28\"/><w:rtl/></w:rPr><w:fldChar w:fldCharType=\"begin\"><w:ffData><w:name w:val=\"Word_FullToar\"/><w:enabled w:val=\"0\"/><w:calcOnExit w:val=\"0\"/><w:textInput><w:default w:val=\"{תואר_מלא",
+      "תואר_מלא",
+      "תואר_עברית",
+      "שם_עברית",
+      "סיומת_עברית",
+      "תואר_חתן",
+      "שם_חתן",
+      "סיומת_חתן",
+      "תואר_מחותן",
+      "שם_מחותן",
+      "סיומת_ מחותן",
+      "סיומת_מכתב"
+    ]
+  },
+  {
+    "file": "נין.docx",
+    "path": "שמחות\\נישואין\\נין.docx",
+    "fullPath": "src\\assets\\letters\\שמחות\\נישואין\\נין.docx",
+    "fields": [
+      "FullAddress",
+      "תואר_מלא",
+      "תואר_עברית",
+      "שם_עברית",
+      "סיומת_עברית",
+      "תואר_חתן",
+      "שם_חתן",
+      "סיומת_חתן",
+      "קירבה_אב",
+      "תואר_אב",
+      "שם_אב",
+      "סיומת_אב",
+      "קירבה_סב",
+      "סב_תואר",
+      "סב_שם",
+      "סב_סיומת",
+      "תואר_מחותן",
+      "שם_מחותן",
+      "סיומת_ מחותן",
+      "סיומת_מכתב"
+    ]
+  },
+  {
+    "file": "נינה.docx",
+    "path": "שמחות\\נישואין\\נינה.docx",
+    "fullPath": "src\\assets\\letters\\שמחות\\נישואין\\נינה.docx",
+    "fields": [
+      "FullAddress",
+      "תואר_מלא",
+      "תואר_עברית",
+      "שם_עברית",
+      "סיומת_עברית",
+      "קירבה_אב",
+      "תואר_אב",
+      "שם_אב",
+      "סיומת_אב",
+      "קירבה_סב",
+      "סב_תואר",
+      "סב_שם",
+      "סב_סיומת",
+      "תואר_חתן",
+      "שם_חתן",
+      "סיומת_חתן",
+      "תואר_מחותן",
+      "שם_מחותן",
+      "סיומת_ מחותן",
+      "סיומת_מכתב"
+    ]
+  },
+  {
+    "file": "נכד.docx",
+    "path": "שמחות\\נישואין\\נכד.docx",
+    "fullPath": "src\\assets\\letters\\שמחות\\נישואין\\נכד.docx",
+    "fields": [
+      "FullAddress",
+      "תואר_מלא",
+      "תואר_עברית",
+      "שם_עברית",
+      "סיומת_עברית",
+      "תואר_חתן",
+      "שם_חתן",
+      "סיומת_חתן",
+      "קירבה_אב",
+      "תואר_אב",
+      "שם_אב",
+      "סיומת_אב",
+      "תואר_מחותן",
+      "שם_מחותן",
+      "סיומת_ מחותן",
+      "סיומת_מכתב"
+    ]
+  },
+  {
+    "file": "נכדה.docx",
+    "path": "שמחות\\נישואין\\נכדה.docx",
+    "fullPath": "src\\assets\\letters\\שמחות\\נישואין\\נכדה.docx",
+    "fields": [
+      "FullAddress",
+      "תואר_מלא",
+      "תואר_עברית",
+      "שם_עברית",
+      "סיומת_עברית",
+      "קירבה_אב",
+      "תואר_אב",
+      "שם_אב",
+      "סיומת_אב",
+      "תואר_חתן",
+      "שם_חתן",
+      "סיומת_חתן",
+      "תואר_מחותן",
+      "שם_מחותן",
+      "סיומת_ מחותן",
+      "סיומת_מכתב"
+    ]
+  },
+  {
+    "file": "הכנסת ספר תורה.docx",
+    "path": "שמחות\\ספר תורה\\הכנסת ספר תורה.docx",
+    "fullPath": "src\\assets\\letters\\שמחות\\ספר תורה\\הכנסת ספר תורה.docx",
+    "fields": [
+      "FullAddress",
+      "תואר_מלא",
+      "תואר_עברית",
+      "שם_עברית",
+      "סיומת_עברית",
+      "סיומת_מכתב"
+    ]
+  },
+  {
+    "file": "בית חדש .docx",
+    "path": "שמחות\\שונות\\בית חדש .docx",
+    "fullPath": "src\\assets\\letters\\שמחות\\שונות\\בית חדש .docx",
+    "fields": [
+      "91240B29-F687-4F45-9708-019B960494DF",
+      "AF507438-7753-43E0-B8FC-AC1667EBCBE1"
+    ]
+  },
+  {
+    "file": "בן ובת.docx",
+    "path": "שמחות\\תאומים\\בן ובת.docx",
+    "fullPath": "src\\assets\\letters\\שמחות\\תאומים\\בן ובת.docx",
+    "fields": [
+      "FullAddress",
+      "תואר_מלא",
+      "תואר_עברית",
+      "שם_עברית",
+      "סיומת_עברית",
+      "סיומת_מכתב"
+    ]
+  },
+  {
+    "file": "בנות נין.docx",
+    "path": "שמחות\\תאומים\\בנות נין.docx",
+    "fullPath": "src\\assets\\letters\\שמחות\\תאומים\\בנות נין.docx",
+    "fields": [
+      "FullAddress",
+      "תואר_מלא",
+      "תואר_עברית",
+      "שם_עברית",
+      "סיומת_עברית",
+      "קירבה_חתן",
+      "תואר_חתן",
+      "שם_חתן",
+      "סיומת_חתן",
+      "קירבה_אב",
+      "תואר_אב",
+      "שם_אב",
+      "סיומת_אב",
+      "קירבה_סב",
+      "סב_תואר",
+      "סב_שם",
+      "סב_סיומת",
+      "סיומת_מכתב"
+    ]
+  },
+  {
+    "file": "בנות.docx",
+    "path": "שמחות\\תאומים\\בנות.docx",
+    "fullPath": "src\\assets\\letters\\שמחות\\תאומים\\בנות.docx",
+    "fields": [
+      "FullAddress",
+      "תואר_מלא",
+      "תואר_עברית",
+      "שם_עברית",
+      "סיומת_עברית",
+      "סיומת_מכתב"
+    ]
+  },
+  {
+    "file": "בני נין - בן ובת.docx",
+    "path": "שמחות\\תאומים\\בני נין - בן ובת.docx",
+    "fullPath": "src\\assets\\letters\\שמחות\\תאומים\\בני נין - בן ובת.docx",
+    "fields": [
+      "FullAddress",
+      "תואר_מלא",
+      "תואר_עברית",
+      "שם_עברית",
+      "סיומת_עברית",
+      "קירבה_חתן",
+      "תואר_חתן",
+      "שם_חתן",
+      "סיומת_חתן]\"/></w:textInput></w:ffData></w:fldChar></w:r><w:bookmarkStart w:id=\"8\" w:name=\"Word_Chatan_Siyomet\"/><w:r w:rsidR=\"006C6182\"><w:rPr><w:rFonts w:cs=\"Livorna\"/><w:spacing w:val=\"4\"/><w:sz w:val=\"28\"/><w:szCs w:val=\"28\"/><w:rtl/></w:rPr><w:instrText xml:space=\"preserve\"> </w:instrText></w:r><w:r w:rsidR=\"006C6182\"><w:rPr><w:rFonts w:cs=\"Livorna\"/><w:spacing w:val=\"4\"/><w:sz w:val=\"28\"/><w:szCs w:val=\"28\"/></w:rPr><w:instrText>FORMTEXT</w:instrText></w:r><w:r w:rsidR=\"006C6182\"><w:rPr><w:rFonts w:cs=\"Livorna\"/><w:spacing w:val=\"4\"/><w:sz w:val=\"28\"/><w:szCs w:val=\"28\"/><w:rtl/></w:rPr><w:instrText xml:space=\"preserve\"> </w:instrText></w:r><w:r w:rsidR=\"006C6182\"><w:rPr><w:rFonts w:cs=\"Livorna\"/><w:spacing w:val=\"4\"/><w:sz w:val=\"28\"/><w:szCs w:val=\"28\"/><w:rtl/></w:rPr></w:r><w:r w:rsidR=\"006C6182\"><w:rPr><w:rFonts w:cs=\"Livorna\"/><w:spacing w:val=\"4\"/><w:sz w:val=\"28\"/><w:szCs w:val=\"28\"/><w:rtl/></w:rPr><w:fldChar w:fldCharType=\"separate\"/></w:r><w:r w:rsidR=\"006C6182\"><w:rPr><w:rFonts w:cs=\"Livorna\"/><w:spacing w:val=\"4\"/><w:sz w:val=\"28\"/><w:szCs w:val=\"28\"/><w:rtl/></w:rPr><w:t>{סיומת_חתן]</w:t></w:r><w:r w:rsidR=\"006C6182\"><w:rPr><w:rFonts w:cs=\"Livorna\"/><w:spacing w:val=\"4\"/><w:sz w:val=\"28\"/><w:szCs w:val=\"28\"/><w:rtl/></w:rPr><w:fldChar w:fldCharType=\"end\"/></w:r><w:bookmarkEnd w:id=\"8\"/></w:p><w:p w14:paraId=\"57D477F6\" w14:textId=\"269642A5\" w:rsidR=\"00D40675\" w:rsidRDefault=\"006C6182\" w:rsidP=\"00D40675\"><w:pPr><w:bidi/><w:spacing w:line=\"400\" w:lineRule=\"exact\"/><w:jc w:val=\"center\"/><w:rPr><w:rFonts w:cs=\"Livorna\"/><w:b/><w:bCs/><w:spacing w:val=\"4\"/><w:sz w:val=\"36\"/><w:szCs w:val=\"36\"/><w:rtl/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:cs=\"Livorna\"/><w:spacing w:val=\"4\"/><w:sz w:val=\"28\"/><w:szCs w:val=\"28\"/><w:rtl/></w:rPr><w:fldChar w:fldCharType=\"begin\"><w:ffData><w:name w:val=\"Word_Av_Kirva\"/><w:enabled/><w:calcOnExit w:val=\"0\"/><w:textInput><w:default w:val=\"{קירבה_אב",
+      "קירבה_אב",
+      "תואר_אב",
+      "שם_אב",
+      "סיומת_אב",
+      "קירבה_סב",
+      "סב_תואר",
+      "סב_שם",
+      "סב_סיומת",
+      "סיומת_מכתב"
+    ]
+  },
+  {
+    "file": "בני נין.docx",
+    "path": "שמחות\\תאומים\\בני נין.docx",
+    "fullPath": "src\\assets\\letters\\שמחות\\תאומים\\בני נין.docx",
+    "fields": [
+      "FullAddress",
+      "תואר_מלא",
+      "תואר_עברית",
+      "שם_עברית",
+      "סיומת_עברית",
+      "קירבה_חתן",
+      "תואר_חתן",
+      "שם_חתן",
+      "סיומת_חתן",
+      "קירבה_אב",
+      "תואר_אב",
+      "שם_אב",
+      "סיומת_אב",
+      "קירבה_סב",
+      "סב_תואר",
+      "סב_שם",
+      "סב_סיומת",
+      "סיומת_מכתב"
+    ]
+  },
+  {
+    "file": "בנים.docx",
+    "path": "שמחות\\תאומים\\בנים.docx",
+    "fullPath": "src\\assets\\letters\\שמחות\\תאומים\\בנים.docx",
+    "fields": [
+      "FullAddress",
+      "תואר_מלא",
+      "תואר_עברית",
+      "שם_עברית",
+      "סיומת_עברית",
+      "סיומת_מכתב"
+    ]
+  },
+  {
+    "file": "נינות.docx",
+    "path": "שמחות\\תאומים\\נינות.docx",
+    "fullPath": "src\\assets\\letters\\שמחות\\תאומים\\נינות.docx",
+    "fields": [
+      "FullAddress",
+      "תואר_מלא",
+      "תואר_עברית",
+      "שם_עברית",
+      "סיומת_עברית",
+      "תואר_חתן",
+      "שם_חתן",
+      "סיומת_חתן",
+      "קירבה_אב",
+      "תואר_אב",
+      "שם_אב",
+      "סיומת_אב",
+      "סיומת_מכתב"
+    ]
+  },
+  {
+    "file": "נינים -בן ובת.docx",
+    "path": "שמחות\\תאומים\\נינים -בן ובת.docx",
+    "fullPath": "src\\assets\\letters\\שמחות\\תאומים\\נינים -בן ובת.docx",
+    "fields": [
+      "FullAddress",
+      "תואר_מלא",
+      "תואר_עברית",
+      "שם_עברית",
+      "סיומת_עברית",
+      "קירבה_חתן",
+      "תואר_חתן",
+      "שם_חתן",
+      "סיומת_חתן",
+      "קירבה_אב",
+      "תואר_אב",
+      "שם_אב",
+      "סיומת_אב",
+      "סיומת_מכתב"
+    ]
+  },
+  {
+    "file": "נינים.docx",
+    "path": "שמחות\\תאומים\\נינים.docx",
+    "fullPath": "src\\assets\\letters\\שמחות\\תאומים\\נינים.docx",
+    "fields": [
+      "FullAddress",
+      "תואר_מלא",
+      "תואר_עברית",
+      "שם_עברית",
+      "סיומת_עברית",
+      "קירבה_חתן",
+      "תואר_חתן",
+      "שם_חתן",
+      "סיומת_חתן",
+      "קירבה_אב",
+      "תואר_אב",
+      "שם_אב",
+      "סיומת_אב",
+      "סיומת_מכתב"
+    ]
+  },
+  {
+    "file": "נכדות.docx",
+    "path": "שמחות\\תאומים\\נכדות.docx",
+    "fullPath": "src\\assets\\letters\\שמחות\\תאומים\\נכדות.docx",
+    "fields": [
+      "FullAddress",
+      "תואר_מלא",
+      "תואר_עברית",
+      "שם_עברית",
+      "סיומת_עברית",
+      "קירבה_חתן",
+      "תואר_חתן",
+      "שם_חתן",
+      "סיומת_חתן",
+      "סיומת_מכתב"
+    ]
+  },
+  {
+    "file": "נכדים - בן ובת.docx",
+    "path": "שמחות\\תאומים\\נכדים - בן ובת.docx",
+    "fullPath": "src\\assets\\letters\\שמחות\\תאומים\\נכדים - בן ובת.docx",
+    "fields": [
+      "FullAddress",
+      "תואר_מלא",
+      "תואר_עברית",
+      "שם_עברית",
+      "סיומת_עברית",
+      "קירבה_חתן",
+      "תואר_חתן",
+      "שם_חתן",
+      "סיומת_חתן",
+      "סיומת_מכתב"
+    ]
+  },
+  {
+    "file": "נכדים.docx",
+    "path": "שמחות\\תאומים\\נכדים.docx",
+    "fullPath": "src\\assets\\letters\\שמחות\\תאומים\\נכדים.docx",
+    "fields": [
+      "FullAddress",
+      "תואר_מלא",
+      "תואר_עברית",
+      "שם_עברית",
+      "סיומת_עברית",
+      "קירבה_חתן",
+      "תואר_חתן",
+      "שם_חתן",
+      "סיומת_חתן",
+      "סיומת_מכתב"
+    ]
+  },
+  {
+    "file": "מכתב תודה עם סיבה.docx",
+    "path": "תרומות\\מכתב תודה עם סיבה.docx",
+    "fullPath": "src\\assets\\letters\\תרומות\\מכתב תודה עם סיבה.docx",
+    "fields": [
+      "FullAddress",
+      "תואר_מלא",
+      "תואר_עברית",
+      "שם_עברית",
+      "סיומת_עברית",
+      "תרומה",
+      "סיבה_תרומה",
+      "</w:t></w:r><w:r w:rsidR=\"00D767B1\"><w:rPr><w:rFonts w:cs=\"Livorna\"/><w:b/><w:bCs/><w:sz w:val=\"32\"/><w:szCs w:val=\"32\"/><w:rtl/></w:rPr><w:t>סיבה_תרומה</w:t></w:r><w:r w:rsidR=\"00D767B1\"><w:rPr><w:rFonts w:cs=\"Livorna\"/><w:b/><w:bCs/><w:sz w:val=\"32\"/><w:szCs w:val=\"32\"/></w:rPr><w:t>",
+      "סיומת_מכתב"
+    ]
+  },
+  {
+    "file": "מכתב תודה רגיל.docx",
+    "path": "תרומות\\מכתב תודה רגיל.docx",
+    "fullPath": "src\\assets\\letters\\תרומות\\מכתב תודה רגיל.docx",
+    "fields": [
+      "FullAddress",
+      "תואר_מלא",
+      "תואר_עברית",
+      "שם_עברית",
+      "סיומת_עברית",
+      "תרומה",
+      "סיומת_מכתב"
+    ]
+  }
+]

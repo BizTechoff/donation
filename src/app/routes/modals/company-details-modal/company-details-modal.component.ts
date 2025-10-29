@@ -43,6 +43,11 @@ export class CompanyDetailsModalComponent implements OnInit {
 
   async ngOnInit() {
     await this.initializeCompany();
+
+    // Prevent accidental close for new company
+    if (this.isNew) {
+      this.dialogRef.disableClose = true;
+    }
   }
 
   private async initializeCompany() {

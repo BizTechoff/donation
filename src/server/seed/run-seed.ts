@@ -2,6 +2,7 @@ import { remult } from 'remult';
 import { createPostgresConnection } from 'remult/postgres';
 import { seedCountries } from './seed-countries';
 import { seedDonorsWithCountries } from './seed-donors-with-countries';
+import { seedLetterTitles } from './seed-letter-titles';
 
 export async function runSeed() {
   try {
@@ -20,6 +21,10 @@ export async function runSeed() {
     // Seed donors with locations
     console.log('\n2. Seeding donors with country locations...');
     await seedDonorsWithCountries();
+
+    // Seed letter titles (prefix and suffix lines)
+    console.log('\n3. Seeding letter titles...');
+    await seedLetterTitles();
 
     console.log('\n✅ Database seed completed successfully!');
     console.log('\nYou can now test the global filters with countries in both Hebrew and English.');

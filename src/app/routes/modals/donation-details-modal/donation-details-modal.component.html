@@ -49,10 +49,6 @@
         <mat-icon>attach_file</mat-icon>
         <span>קבצים</span>
       </button>
-      <button class="nav-btn" (click)="openPaymentList()" *ngIf="!isNewDonation" title="תשלומים בפועל">
-        <mat-icon>payment</mat-icon>
-        <span>תשלומים בפועל</span>
-      </button>
     </div>
 
     <!-- Loading State -->
@@ -474,7 +470,7 @@
                   <mat-icon class="field-icon">person</mat-icon>
                   <label>שם משלם</label>
                 </div>
-                <select class="form-control" [(ngModel)]="donation.cardHolderName">
+                <select class="form-control" [(ngModel)]="donation.payerName">
                   <option value="">בחר משלם</option>
                   <option *ngFor="let option of payerOptions" [value]="option.value">{{ option.label }}</option>
                 </select>
@@ -544,32 +540,6 @@
               <h4>{{i18n.terms.standingOrderDetails}}</h4>
             </div>
 
-            <!-- Standing Order Type Selection -->
-            <div class="form-grid">
-              <div class="form-group full-width">
-                <div class="field-title">
-                  <mat-icon class="field-icon">payment</mat-icon>
-                  <label>{{ (i18n.terms$ | async)?.standingOrderTypeLabel }}</label>
-                </div>
-                <div class="standing-order-type-selector">
-                  <label class="radio-option">
-                    <input type="radio" name="standingOrderType" value="bank" [(ngModel)]="donation.standingOrderType">
-                    <span>{{ (i18n.terms$ | async)?.bankStandingOrder }}</span>
-                  </label>
-                  <label class="radio-option">
-                    <input type="radio" name="standingOrderType" value="creditCard"
-                      [(ngModel)]="donation.standingOrderType">
-                    <span>{{ (i18n.terms$ | async)?.creditCardStandingOrder }}</span>
-                  </label>
-                  <label class="radio-option">
-                    <input type="radio" name="standingOrderType" value="organization"
-                      [(ngModel)]="donation.standingOrderType">
-                    <span>{{ (i18n.terms$ | async)?.organizationStandingOrder }}</span>
-                  </label>
-                </div>
-              </div>
-            </div>
-
             <!-- Frequency and Payment Settings -->
             <div class="form-grid">
               <div class="form-group">
@@ -623,8 +593,8 @@
                       (change)="onUnlimitedPaymentsChange()">
                     <span>{{ (i18n.terms$ | async)?.unlimitedPayments }}</span>
                   </label>
-                  <div class="payment-count-input-wrapper" *ngIf="!donation.unlimitedPayments">
-                    <div class="payment-count-input">
+                  <div class="payment-count-input-wrapper">
+                    <div class="payment-count-input" *ngIf="!donation.unlimitedPayments">
                       <input type="number" class="form-control" [(ngModel)]="donation.numberOfPayments" min="1"
                         [placeholder]="(i18n.terms$ | async)?.paymentsCount">
                     </div>
@@ -637,6 +607,32 @@
               </div>
             </div>
 
+
+            <!-- Standing Order Type Selection -->
+            <div class="form-grid">
+              <div class="form-group full-width">
+                <div class="field-title">
+                  <mat-icon class="field-icon">payment</mat-icon>
+                  <label>{{ (i18n.terms$ | async)?.standingOrderTypeLabel }}</label>
+                </div>
+                <div class="standing-order-type-selector">
+                  <label class="radio-option">
+                    <input type="radio" name="standingOrderType" value="bank" [(ngModel)]="donation.standingOrderType">
+                    <span>{{ (i18n.terms$ | async)?.bankStandingOrder }}</span>
+                  </label>
+                  <label class="radio-option">
+                    <input type="radio" name="standingOrderType" value="creditCard"
+                      [(ngModel)]="donation.standingOrderType">
+                    <span>{{ (i18n.terms$ | async)?.creditCardStandingOrder }}</span>
+                  </label>
+                  <label class="radio-option">
+                    <input type="radio" name="standingOrderType" value="organization"
+                      [(ngModel)]="donation.standingOrderType">
+                    <span>{{ (i18n.terms$ | async)?.organizationStandingOrder }}</span>
+                  </label>
+                </div>
+              </div>
+            </div>
 
             <!-- Bank Details Section -->
             <div class="bank-details-section" *ngIf="donation.standingOrderType === 'bank'">
@@ -699,7 +695,7 @@
                     <mat-icon class="field-icon">person</mat-icon>
                     <label>שם משלם</label>
                   </div>
-                  <select class="form-control" [(ngModel)]="donation.cardHolderName">
+                  <select class="form-control" [(ngModel)]="donation.payerName">
                     <option value="">בחר משלם</option>
                     <option *ngFor="let option of payerOptions" [value]="option.value">{{ option.label }}</option>
                   </select>
@@ -942,6 +938,16 @@
         <button mat-stroked-button class="action-button add-reminder-btn" (click)="addReminder()" [title]="i18n.terms.addReminder">
           <mat-icon>alarm_add</mat-icon>
           {{i18n.terms.addReminder}}
+        </button>
+
+        <button
+
+        *ngIf="!isNewDonation && selectedPaymentMethod && selectedPaymentMethod.type === 'standing_order' && donation.donationType !== 'commitment' &&
+        ((donation.standingOrderType === 'bank' && donationBanks.length) || (donation.standingOrderType === 'organization' && donationOrganizations.length))"
+
+        mat-stroked-button class="action-button payment-list-btn" (click)="openPaymentList()" title="תנועות">
+          <mat-icon>payment</mat-icon>
+          תנועות
         </button>
 
         <!-- Divider -->

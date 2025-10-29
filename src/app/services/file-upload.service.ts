@@ -23,13 +23,15 @@ export class FileUploadService {
   /**
    * Upload a file to S3 and save metadata in DB
    * @param file - The file to upload
-   * @param donationId - The donation ID
+   * @param donationId - The donation ID (optional if certificateId provided)
+   * @param certificateId - The certificate ID (optional if donationId provided)
    * @param description - Optional description
    * @param onProgress - Optional callback for progress updates
    */
   async uploadFile(
     file: File,
     donationId: string,
+    certificateId: string,
     description?: string,
     onProgress?: (progress: UploadProgress) => void
   ): Promise<{ success: boolean; fileId?: string; error?: string }> {
@@ -39,7 +41,8 @@ export class FileUploadService {
         fileName: file.name,
         fileType: file.type,
         fileSize: file.size,
-        donationId: donationId,
+        donationId: donationId || undefined,
+        certificateId: certificateId || undefined,
         description: description
       };
 
@@ -104,7 +107,8 @@ export class FileUploadService {
         filePath: fileS3Link,
         fileType: fileData.fileType,
         fileSize: fileData.fileSize,
-        donationId: fileData.donationId,
+        donationId: fileData.donationId || '',
+        certificateId: fileData.certificateId || '',
         description: fileData.description,
         isActive: true,
         uploadedById: remult.user?.id
@@ -144,6 +148,7 @@ export class FileUploadService {
   async uploadMultipleFiles(
     files: File[],
     donationId: string,
+    certificateId: string,
     description?: string,
     onProgress?: (progress: UploadProgress) => void
   ): Promise<{ success: boolean; uploadedCount: number; errors: string[] }> {
@@ -151,7 +156,7 @@ export class FileUploadService {
     let uploadedCount = 0;
 
     for (const file of files) {
-      const result = await this.uploadFile(file, donationId, description, onProgress);
+      const result = await this.uploadFile(file, donationId, certificateId, description, onProgress);
       if (result.success) {
         uploadedCount++;
       } else {
@@ -171,6 +176,13 @@ export class FileUploadService {
    */
   async getFilesByDonation(donationId: string): Promise<DonationFile[]> {
     return await FileController.getFilesByDonation(donationId);
+  }
+
+  /**
+   * Get all files for a certificate
+   */
+  async getFilesByCertificate(certificateId: string): Promise<DonationFile[]> {
+    return await FileController.getFilesByCertificate(certificateId);
   }
 
   /**

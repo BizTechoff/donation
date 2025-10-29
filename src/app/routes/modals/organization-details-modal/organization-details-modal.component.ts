@@ -56,6 +56,11 @@ export class OrganizationDetailsModalComponent implements OnInit {
 
   async ngOnInit() {
     await this.initializeOrganization();
+
+    // Prevent accidental close for new organization
+    if (this.isNew) {
+      this.dialogRef.disableClose = true;
+    }
   }
 
   private async initializeOrganization() {

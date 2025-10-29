@@ -1,7 +1,7 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { Campaign, Donor } from '../../../../shared/entity';
+import { Campaign, Donor, Circle } from '../../../../shared/entity';
 import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
 import { UIToolsService } from '../../../common/UIToolsService';
@@ -24,15 +24,27 @@ export class CampaignInvitedListModalComponent implements OnInit {
 
   campaign!: Campaign;
   invitedDonors: Donor[] = [];
+  allDonors: Donor[] = []; // All donors in system for filter lists
   campaignRepo = remult.repo(Campaign);
   donorRepo = remult.repo(Donor);
+  circleRepo = remult.repo(Circle);
   loading = false;
 
   // Selection management
   selectedDonors: Set<string> = new Set();
 
-  // Show all donors toggle (bypass filters)
-  // showAllDonors = false;
+  // Filter data
+  circles: Circle[] = [];
+  countries: string[] = [];
+  cities: string[] = [];
+  neighborhoods: string[] = [];
+
+  // Active filters
+  selectedCountry = '';
+  selectedCity = '';
+  selectedNeighborhood = '';
+  selectedCircleId = '';
+  selectedAlumniStatus = '';
 
   // Filter stats
   totalDonors = 0;
@@ -52,11 +64,66 @@ export class CampaignInvitedListModalComponent implements OnInit {
 
   async ngOnInit() {
     await this.loadCampaign();
+    await this.loadCircles();
+    await this.loadAllDonorsForFilters();
+    this.extractFilterData();
     await this.loadInvitedDonors();
     // Load previously saved invited donors
     if (this.campaign?.invitedDonorIds) {
       this.selectedDonors = new Set(this.campaign.invitedDonorIds);
     }
+  }
+
+  async loadCircles() {
+    try {
+      this.circles = await this.circleRepo.find({
+        where: { isActive: true },
+        orderBy: { sortOrder: 'asc', name: 'asc' }
+      });
+    } catch (error) {
+      console.error('Error loading circles:', error);
+    }
+  }
+
+  async loadAllDonorsForFilters() {
+    try {
+      // Load all donors with their places and countries for filter lists
+      this.allDonors = await this.donorRepo.find({
+        include: {
+          homePlace: {
+            include: {
+              country: true
+            }
+          }
+        },
+        orderBy: { firstName: 'asc', lastName: 'asc' }
+      });
+    } catch (error) {
+      console.error('Error loading all donors for filters:', error);
+    }
+  }
+
+  extractFilterData() {
+    // Extract unique values from ALL donors (not just filtered ones)
+    const countriesSet = new Set<string>();
+    const citiesSet = new Set<string>();
+    const neighborhoodsSet = new Set<string>();
+
+    this.allDonors.forEach(donor => {
+      if (donor.homePlace?.country?.name) {
+        countriesSet.add(donor.homePlace.country.name);
+      }
+      if (donor.homePlace?.city) {
+        citiesSet.add(donor.homePlace.city);
+      }
+      if (donor.homePlace?.neighborhood) {
+        neighborhoodsSet.add(donor.homePlace.neighborhood);
+      }
+    });
+
+    this.countries = Array.from(countriesSet).sort();
+    this.cities = Array.from(citiesSet).sort();
+    this.neighborhoods = Array.from(neighborhoodsSet).sort();
   }
 
   async loadCampaign() {
@@ -92,10 +159,80 @@ export class CampaignInvitedListModalComponent implements OnInit {
 
     this.loading = true;
     try {
-      // Load all donors in the system
-      const allDonors = await this.donorRepo.find({});
-      this.invitedDonors = allDonors;
-      this.totalDonors = allDonors.length;
+      // Build filter conditions
+      const where: any = {};
+
+      // Apply country filter
+      if (this.selectedCountry) {
+        where['homePlace.country.name'] = this.selectedCountry;
+      }
+
+      // Apply city filter
+      if (this.selectedCity) {
+        where['homePlace.city'] = this.selectedCity;
+      }
+
+      // Apply neighborhood filter
+      if (this.selectedNeighborhood) {
+        where['homePlace.neighborhood'] = this.selectedNeighborhood;
+      }
+
+      // Apply circle filter
+      if (this.selectedCircleId) {
+        where['circleIds'] = { $contains: this.selectedCircleId };
+      }
+
+      // Apply alumni filter
+      if (this.selectedAlumniStatus === 'alumni') {
+        where['isAlumni'] = true;
+      } else if (this.selectedAlumniStatus === 'notAlumni') {
+        where['isAlumni'] = false;
+      }
+
+      // Apply אנ"ש filter
+      if (this.campaign.isAnash) {
+        where['isAnash'] = true;
+      } else if (this.campaign.excludeAnash) {
+        where['isAnash'] = false;
+      }
+
+      // Apply age filters
+      if (this.campaign.minAge || this.campaign.maxAge) {
+        // Age filtering will need to be done client-side or with a backend method
+        // For now, we'll load all matching donors and filter by age after
+      }
+
+      // Apply circle filter from campaign (old style)
+      if (this.campaign.circle) {
+        where['level'] = this.campaign.circle;
+      }
+
+      // Load donors with filters
+      const allDonors = await this.donorRepo.find({
+        where: Object.keys(where).length > 0 ? where : undefined,
+        include: {
+          homePlace: {
+            include: {
+              country: true
+            }
+          }
+        }
+      });
+
+      // Apply age filtering client-side if needed
+      if (this.campaign.minAge || this.campaign.maxAge) {
+        this.invitedDonors = allDonors.filter(donor => {
+          if (!donor.birthDate) return true; // Include if no birthDate
+          const age = this.calculateAge(donor.birthDate);
+          if (this.campaign.minAge && age < this.campaign.minAge) return false;
+          if (this.campaign.maxAge && age > this.campaign.maxAge) return false;
+          return true;
+        });
+      } else {
+        this.invitedDonors = allDonors;
+      }
+
+      this.totalDonors = this.invitedDonors.length;
 
     } catch (error: any) {
       console.error('Error loading invited donors:', error);
@@ -155,15 +292,22 @@ export class CampaignInvitedListModalComponent implements OnInit {
       this.campaign.isAnash ||
       this.campaign.excludeAnash ||
       this.campaign.circle ||
-      this.campaign.sameCountryOnly ||
-      this.campaign.excludeSameCountry ||
       this.campaign.minAge ||
-      this.campaign.maxAge
+      this.campaign.maxAge ||
+      this.selectedCountry ||
+      this.selectedCity ||
+      this.selectedNeighborhood ||
+      this.selectedCircleId ||
+      this.selectedAlumniStatus
     );
   }
 
   markAsChanged() {
     // Reload donors when filters change
+    this.loadInvitedDonors();
+  }
+
+  onFilterChange() {
     this.loadInvitedDonors();
   }
 
@@ -195,20 +339,6 @@ export class CampaignInvitedListModalComponent implements OnInit {
     this.markAsChanged();
   }
 
-  // Methods for same country include/exclude
-  onSameCountryIncludeChange() {
-    if (this.campaign.sameCountryOnly && this.campaign.excludeSameCountry) {
-      this.campaign.excludeSameCountry = false;
-    }
-    this.markAsChanged();
-  }
-
-  onSameCountryExcludeChange() {
-    if (this.campaign.excludeSameCountry && this.campaign.sameCountryOnly) {
-      this.campaign.sameCountryOnly = false;
-    }
-    this.markAsChanged();
-  }
 
   // Open activists related to campaign
   openActivists() {

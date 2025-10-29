@@ -249,14 +249,24 @@
   }
 }
 
-// Global override to ensure autocomplete doesn't interfere with dual-date
+// Global override to ensure autocomplete appears above modals
+// Material Dialog uses z-index 1000-1006 for nested modals, backdrop uses 999-1005
+// So autocomplete needs to be higher than 1006 to appear on top of all modals
 ::ng-deep .mat-autocomplete-panel {
-  z-index: 102 !important;
+  z-index: 2000 !important;
+  max-height: 400px !important;
 }
 
 // Ensure dual-date picker is always on top when both are visible
 ::ng-deep .dual-date-picker {
   z-index: 9999 !important;
+}
+
+// Override for mat-dialog overlay to not affect autocomplete
+::ng-deep .cdk-overlay-container {
+  .mat-autocomplete-panel {
+    z-index: 2000 !important;
+  }
 }
 
 // Animation for smooth loading

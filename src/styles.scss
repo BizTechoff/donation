@@ -140,9 +140,16 @@ th {
   }
 }
 
-// Keep address autocomplete below dual-date
+// Address autocomplete must be above all modals (which use 1000-1006)
+// So we use 2000 to ensure it's always on top
 .mat-autocomplete-panel {
-  z-index: 500 !important;
+  z-index: 2000 !important;
+  max-height: 400px;
+}
+
+// Special handling for autocomplete in overlays to ensure proper stacking
+.cdk-overlay-container .mat-autocomplete-panel {
+  z-index: 2000 !important;
 }
 
 // Keep address containers below dual-date

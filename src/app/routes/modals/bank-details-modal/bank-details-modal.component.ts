@@ -53,6 +53,11 @@ export class BankDetailsModalComponent implements OnInit {
 
   async ngOnInit() {
     await this.initializeBank();
+
+    // Prevent accidental close for new bank
+    if (this.isNew) {
+      this.dialogRef.disableClose = true;
+    }
   }
 
   private async initializeBank() {

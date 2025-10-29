@@ -141,59 +141,77 @@
   }
 }
 
-.donations-grid {
+.donations-table-wrapper {
   background: white;
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-  
-  .grid-header {
-    background: #34495e;
-    color: white;
-    display: grid;
-    grid-template-columns: 1.5fr 2fr 1fr 0.8fr 1.2fr 1fr 1fr 1fr 0.8fr 1.2fr;
-    padding: 0;
-    
-    .grid-col {
-      padding: 15px 10px;
-      font-weight: 600;
-      font-size: 14px;
-      border-left: 1px solid #2c3e50;
-      
-      &:last-child {
-        border-left: none;
+  overflow: auto;
+
+  .donations-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+
+    thead {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+      color: white;
+
+      tr {
+        th {
+          padding: 15px 10px;
+          font-weight: 600;
+          font-size: 14px;
+          text-align: center;
+          border-left: 1px solid rgba(255, 255, 255, 0.2);
+          white-space: nowrap;
+          width: auto;
+
+          &:first-child {
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
+          }
+
+          &:last-child {
+            border-left: none;
+          }
+        }
       }
     }
-  }
-  
-  .grid-row {
-    display: grid;
-    grid-template-columns: 1.5fr 2fr 1fr 0.8fr 1.2fr 1fr 1fr 1fr 0.8fr 1.2fr;
-    border-bottom: 1px solid #ecf0f1;
-    transition: background-color 0.2s ease;
-    
-    &:hover {
-      background-color: #f7f9fc;
-    }
-    
-    &:last-child {
-      border-bottom: none;
-    }
-    
-    .grid-col {
-      padding: 15px 10px;
-      font-size: 14px;
-      display: flex;
-      align-items: center;
-      border-left: 1px solid #ecf0f1;
-      
-      &:last-child {
-        border-left: none;
-      }
-      
-      &.actions {
-        justify-content: center;
-        gap: 5px;
+
+    tbody {
+      tr {
+        border-bottom: 1px solid #ecf0f1;
+        transition: background-color 0.2s ease;
+
+        &:hover {
+          background-color: #f7f9fc;
+        }
+
+        &:last-child {
+          border-bottom: none;
+        }
+
+        td {
+          padding: 15px 10px;
+          font-size: 14px;
+          text-align: center;
+          border-left: 1px solid #ecf0f1;
+          vertical-align: middle;
+
+          &:first-child {
+            border-right: 1px solid #ecf0f1;
+          }
+
+          &:last-child {
+            border-left: none;
+          }
+
+          &.actions {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 5px;
+          }
+        }
       }
     }
   }
@@ -627,118 +645,124 @@
     }
   }
 
-  .donations-grid {
-    .grid-header {
-      display: none;
-    }
+  .donations-table-wrapper {
+    overflow-x: auto;
 
-    .grid-row {
-      grid-template-columns: 1fr;
-      padding: 12px;
-      margin-bottom: 12px;
-      border: 1px solid #e0e0e0;
-      border-radius: 10px;
-      background: white;
-      gap: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-
-      &:hover {
-        background-color: #fafafa;
-        box-shadow: 0 3px 12px rgba(0,0,0,0.12);
+    .donations-table {
+      thead {
+        display: none;
       }
 
-      .grid-col {
-        border: none;
-        padding: 6px 0;
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        gap: 8px;
-        font-size: 14px;
+      tbody {
+        tr {
+          display: block;
+          padding: 12px;
+          margin-bottom: 12px;
+          border: 1px solid #e0e0e0;
+          border-radius: 10px;
+          background: white;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 
-        &.date-col {
-          background: #f8f9fa;
-          padding: 10px;
-          border-radius: 6px;
-          margin-bottom: 4px;
-          flex-direction: column;
-          align-items: flex-start;
-
-          .date-display {
-            width: 100%;
-
-            .hebrew-date {
-              font-size: 15px;
-              font-weight: 700;
-            }
-
-            .secular-date {
-              font-size: 12px;
-            }
+          &:hover {
+            background-color: #fafafa;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.12);
           }
-        }
 
-        &.donor-col {
-          font-size: 15px;
-          margin-bottom: 6px;
-
-          strong {
-            color: #2c3e50;
-          }
-        }
-
-        &.amount-col {
-          .amount {
-            font-size: 16px;
-            font-weight: 700;
-          }
-        }
-
-        &.actions {
-          flex-direction: row;
-          justify-content: space-between;
-          flex-wrap: nowrap;
-          gap: 4px;
-          margin-top: 8px;
-          padding-top: 10px;
-          border-top: 1px solid #ecf0f1;
-
-          .btn-icon {
-            flex: 1;
-            min-width: 0;
-            padding: 8px 4px;
-            font-size: 16px;
+          td {
             display: flex;
+            flex-direction: row;
             align-items: center;
-            justify-content: center;
+            gap: 8px;
+            border: none;
+            padding: 6px 0;
+            font-size: 14px;
+            text-align: right;
 
-            &:disabled {
-              opacity: 0.4;
+            &.date-col {
+              background: #f8f9fa;
+              padding: 10px;
+              border-radius: 6px;
+              margin-bottom: 4px;
+              flex-direction: column;
+              align-items: flex-start;
+
+              .date-display {
+                width: 100%;
+
+                .hebrew-date {
+                  font-size: 15px;
+                  font-weight: 700;
+                }
+
+                .secular-date {
+                  font-size: 12px;
+                }
+              }
+            }
+
+            &.donor-col {
+              font-size: 15px;
+              margin-bottom: 6px;
+
+              strong {
+                color: #2c3e50;
+              }
+            }
+
+            &.amount-col {
+              .amount {
+                font-size: 16px;
+                font-weight: 700;
+              }
+            }
+
+            &.actions {
+              flex-direction: row;
+              justify-content: space-between;
+              flex-wrap: nowrap;
+              gap: 4px;
+              margin-top: 8px;
+              padding-top: 10px;
+              border-top: 1px solid #ecf0f1;
+
+              .btn-icon {
+                flex: 1;
+                min-width: 0;
+                padding: 8px 4px;
+                font-size: 16px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+
+                &:disabled {
+                  opacity: 0.4;
+                }
+              }
+            }
+
+            &:nth-child(1)::before { content: ''; }
+            &:nth-child(2)::before { content: var(--label-donor, 'תורם: '); }
+            &:nth-child(3)::before { content: var(--label-amount, 'סכום: '); }
+            &:nth-child(4)::before { content: var(--label-currency, 'מטבע: '); }
+            &:nth-child(5)::before { content: var(--label-payment, 'תשלום: '); }
+            &:nth-child(6)::before { content: var(--label-campaign, 'קמפיין: '); }
+            &:nth-child(7)::before { content: var(--label-fundraiser, 'מגייס: '); }
+            &:nth-child(8)::before { content: var(--label-receipt, 'קבלה: '); }
+
+            &::before {
+              font-weight: 700;
+              color: #7f8c8d;
+              font-size: 12px;
+              white-space: nowrap;
+              min-width: 65px;
+            }
+
+            // הסתרת שדות פחות חשובים במובייל
+            &:nth-child(4), // מטבע
+            &:nth-child(7) { // מגייס
+              display: none;
             }
           }
-        }
-
-        &:nth-child(1)::before { content: ''; }
-        &:nth-child(2)::before { content: var(--label-donor, 'תורם: '); }
-        &:nth-child(3)::before { content: var(--label-amount, 'סכום: '); }
-        &:nth-child(4)::before { content: var(--label-currency, 'מטבע: '); }
-        &:nth-child(5)::before { content: var(--label-payment, 'תשלום: '); }
-        &:nth-child(6)::before { content: var(--label-campaign, 'קמפיין: '); }
-        &:nth-child(7)::before { content: var(--label-fundraiser, 'מגייס: '); }
-        &:nth-child(8)::before { content: var(--label-receipt, 'קבלה: '); }
-
-        &::before {
-          font-weight: 700;
-          color: #7f8c8d;
-          font-size: 12px;
-          white-space: nowrap;
-          min-width: 65px;
-        }
-
-        // הסתרת שדות פחות חשובים במובייל
-        &:nth-child(4), // מטבע
-        &:nth-child(7) { // מגייס
-          display: none;
         }
       }
     }
@@ -885,57 +909,60 @@
     }
   }
 
-  .donations-grid {
-    .grid-row {
-      padding: 10px;
-      margin-bottom: 10px;
-      gap: 6px;
+  .donations-table-wrapper {
+    .donations-table {
+      tbody {
+        tr {
+          padding: 10px;
+          margin-bottom: 10px;
 
-      .grid-col {
-        font-size: 13px;
-        padding: 5px 0;
+          td {
+            font-size: 13px;
+            padding: 5px 0;
 
-        &::before {
-          font-size: 11px;
-          min-width: 60px;
-        }
-
-        &.date-col {
-          padding: 8px;
-
-          .date-display {
-            .hebrew-date {
-              font-size: 14px;
-            }
-
-            .secular-date {
+            &::before {
               font-size: 11px;
+              min-width: 60px;
             }
-          }
-        }
 
-        &.donor-col {
-          font-size: 14px;
+            &.date-col {
+              padding: 8px;
 
-          strong {
-            font-weight: 700;
-          }
-        }
+              .date-display {
+                .hebrew-date {
+                  font-size: 14px;
+                }
 
-        &.amount-col {
-          .amount {
-            font-size: 15px;
-          }
-        }
+                .secular-date {
+                  font-size: 11px;
+                }
+              }
+            }
 
-        &.actions {
-          gap: 3px;
-          padding-top: 8px;
-          margin-top: 6px;
+            &.donor-col {
+              font-size: 14px;
 
-          .btn-icon {
-            padding: 7px 3px;
-            font-size: 15px;
+              strong {
+                font-weight: 700;
+              }
+            }
+
+            &.amount-col {
+              .amount {
+                font-size: 15px;
+              }
+            }
+
+            &.actions {
+              gap: 3px;
+              padding-top: 8px;
+              margin-top: 6px;
+
+              .btn-icon {
+                padding: 7px 3px;
+                font-size: 15px;
+              }
+            }
           }
         }
       }

@@ -25,7 +25,7 @@ import { Place } from './place'
     }
   },
 })
-export class Organization extends IdEntity {
+export class Organization extends IdEntity {// ארגונים שתורמים בעצמם
   @Fields.string({
     validate: Validators.required,
     caption: 'שם העמותה',

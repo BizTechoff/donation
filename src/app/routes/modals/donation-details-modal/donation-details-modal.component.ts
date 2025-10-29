@@ -2,24 +2,21 @@ import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
 import { DialogConfig, openDialog } from 'common-ui-elements';
 import { remult } from 'remult';
-import { Bank, Campaign, Company, Country, Donation, DonationBank, DonationOrganization, DonationFile, DonationMethod, DonationPartner, Donor, Organization, User } from '../../../../shared/entity';
 import { DonationController } from '../../../../shared/controllers/donation.controller';
-import { Letter } from '../../../../shared/enum/letter';
+import { Bank, Campaign, Company, Country, Donation, DonationBank, DonationFile, DonationMethod, DonationOrganization, DonationPartner, Donor, Organization, User } from '../../../../shared/entity';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
 import { LetterService } from '../../../services/letter.service';
-import { BankDetailsModalComponent } from '../bank-details-modal/bank-details-modal.component';
 import { BankSelectionModalComponent } from '../bank-selection-modal/bank-selection-modal.component';
-import { OrganizationSelectionModalComponent } from '../organization-selection-modal/organization-selection-modal.component';
-import { DonorSelectionModalComponent } from '../donor-selection-modal/donor-selection-modal.component';
 import { DonorDetailsModalComponent } from '../donor-details-modal/donor-details-modal.component';
-import { OrganizationDetailsModalComponent } from '../organization-details-modal/organization-details-modal.component';
-import { ReminderDetailsModalComponent } from '../reminder-details-modal/reminder-details-modal.component';
+import { DonorSelectionModalComponent } from '../donor-selection-modal/donor-selection-modal.component';
+import { OrganizationSelectionModalComponent } from '../organization-selection-modal/organization-selection-modal.component';
 
 export interface DonationDetailsModalArgs {
   donationId: string; // Can be 'new' for new donation or donation ID
   donorId?: string; // Optional donor ID for pre-selecting donor in new donations
   campaignId?: string; // Optional campaign ID for pre-selecting campaign in new donations
+  amount?: number; // Optional amount for pre-setting donation amount
 }
 
 @DialogConfig({
@@ -225,6 +222,11 @@ export class DonationDetailsModalComponent implements OnInit {
           this.donation.currency = 'ILS';
           this.donation.status = 'pending';
 
+          // Set amount from args if provided
+          if (this.args.amount) {
+            this.donation.amount = this.args.amount;
+          }
+
           // Initialize additional fields for dynamic payment methods
           this.donation.bankName = '';
           this.donation.checkNumber = '';
@@ -345,6 +347,11 @@ export class DonationDetailsModalComponent implements OnInit {
     } finally {
       this.loading = false;
     }
+
+    // Prevent accidental close for new donation
+    if (this.isNewDonation) {
+      this.dialogRef.disableClose = true;
+    }
   }
 
   private async loadDonationBanks() {
@@ -445,6 +452,23 @@ export class DonationDetailsModalComponent implements OnInit {
 
       // Use remult.repo() for saving in the app (client side)
       await this.donationRepo.save(this.donation);
+
+      // Save all related entities - Unit of Work Pattern
+      if (this.donation.id) {
+        // Save donation banks
+        for (const donationBank of this.donationBanks) {
+          donationBank.donationId = this.donation.id;
+          await this.donationBankRepo.save(donationBank);
+        }
+
+        // Save donation organizations
+        for (const donationOrg of this.donationOrganizations) {
+          donationOrg.donationId = this.donation.id;
+          await this.donationOrganizationRepo.save(donationOrg);
+        }
+
+        console.log('Saved all donation relations using Unit of Work pattern');
+      }
 
       this.changed = wasNew || this.hasChanges();
       this.dialogRef.close(this.changed);
@@ -868,15 +892,15 @@ export class DonationDetailsModalComponent implements OnInit {
   }
 
   onUnlimitedPaymentsChange() {
-    if (this.donation.unlimitedPayments) {
-      // When unlimited is selected, clear the number of payments
-      this.donation.numberOfPayments = 0;
-    } else {
-      // When limited is selected, set a default value if it's 0
-      if (!this.donation.numberOfPayments || this.donation.numberOfPayments === 0) {
-        this.donation.numberOfPayments = 12; // Default to 12 payments
-      }
-    }
+    // if (this.donation.unlimitedPayments) {
+    //   // When unlimited is selected, clear the number of payments
+    //   this.donation.numberOfPayments = 0;
+    // } else {
+    //   // When limited is selected, set a default value if it's 0
+    //   if (!this.donation.numberOfPayments || this.donation.numberOfPayments === 0) {
+    //     this.donation.numberOfPayments = 12; // Default to 12 payments
+    //   }
+    // }
     this.changed = true;
   }
 
@@ -1184,8 +1208,8 @@ export class DonationDetailsModalComponent implements OnInit {
   async onDonationBankPayerChange(donationBank: DonationBank) {
     try {
       console.log('onDonationBankPayerChange called with payerName:', donationBank.payerName);
-      await donationBank.save();
-      console.log('Donation bank saved successfully');
+      this.changed = true;
+      // Changes will be saved when donation is saved
     } catch (error) {
       console.error('Error updating donation bank payer:', error);
       this.ui.error('שגיאה בעדכון שם המשלם');
@@ -1197,7 +1221,8 @@ export class DonationDetailsModalComponent implements OnInit {
    */
   async onDonationBankReferenceChange(donationBank: DonationBank) {
     try {
-      await donationBank.save();
+      this.changed = true;
+      // Changes will be saved when donation is saved
     } catch (error) {
       console.error('Error updating donation bank reference:', error);
       this.ui.error('שגיאה בעדכון האסמכתא');
@@ -1495,16 +1520,21 @@ export class DonationDetailsModalComponent implements OnInit {
    * Handle payer selection change
    */
   async onPayerChange(payerCompanyId: string | null) {
+      console.log(0)
     if (!payerCompanyId) {
+      console.log(1)
       // Personal payer (the donor themselves)
       if (this.selectedDonor) {
+        console.log(2)
         this.donation.payerName = `${this.selectedDonor.firstName || ''} ${this.selectedDonor.lastName || ''}`.trim();
         this.donation.payerAddress = this.selectedDonor.homePlace?.fullAddress || '';
       }
     } else {
+      console.log(3)
       // Company payer
       const company = this.payerCompanies.find(c => c.id === payerCompanyId);
       if (company) {
+        console.log(4)
         this.donation.payerName = company.name;
         this.donation.payerAddress = company.place?.fullAddress || '';
       }
@@ -1588,11 +1618,14 @@ export class DonationDetailsModalComponent implements OnInit {
    * Get payment amount per installment
    */
   getPaymentAmount(): string {
-    if (!this.donation || !this.donation.amount || this.donation.unlimitedPayments || !this.donation.numberOfPayments || this.donation.numberOfPayments <= 0) {
+    if (!this.donation || !this.donation.amount || !this.donation.numberOfPayments || this.donation.numberOfPayments <= 0) {
       return '';
     }
 
-    const amountPerPayment = this.donation.amount / this.donation.numberOfPayments;
+    const amountPerPayment =     this.donation.unlimitedPayments 
+    ?this.donation.amount
+    :this.donation.amount / this.donation.numberOfPayments;
     return amountPerPayment.toFixed(2);
   }
+  
 }

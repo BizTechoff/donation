@@ -57,9 +57,13 @@ export class DonationFile extends IdEntity {
 
   @Fields.string({
     caption: 'תרומה ID',
-    validate: Validators.required,
   })
   donationId = ''
+
+  @Fields.string({
+    caption: 'תעודה ID',
+  })
+  certificateId = ''
 
   @Fields.string({
     caption: 'תיאור',

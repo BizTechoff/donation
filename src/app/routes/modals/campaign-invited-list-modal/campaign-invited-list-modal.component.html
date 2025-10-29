@@ -50,29 +50,83 @@
           </div>
         </div>
 
-        <!-- תושבי המדינה criteria with include/exclude options -->
+        <!-- Country Filter -->
         <div class="filter-item">
           <div class="filter-header">
-            <mat-icon class="filter-icon">location_on</mat-icon>
-            <span class="filter-label">{{ (i18n.terms$ | async)?.sameCountryCriteria }}</span>
+            <mat-icon class="filter-icon">public</mat-icon>
+            <span class="filter-label">מדינה</span>
           </div>
-          <div class="filter-options">
-            <label class="option-checkbox">
-              <input type="checkbox" [(ngModel)]="campaign.sameCountryOnly"
-                     [disabled]="!canEdit || campaign.excludeSameCountry"
-                     (ngModelChange)="onSameCountryIncludeChange()">
-              <span class="checkbox-label include">✓ כולל</span>
-            </label>
-            <label class="option-checkbox">
-              <input type="checkbox" [(ngModel)]="campaign.excludeSameCountry"
-                     [disabled]="!canEdit || campaign.sameCountryOnly"
-                     (ngModelChange)="onSameCountryExcludeChange()">
-              <span class="checkbox-label exclude">✗ לא כולל</span>
-            </label>
-          </div>
+          <select class="filter-select"
+                  [(ngModel)]="selectedCountry"
+                  [disabled]="!canEdit"
+                  (ngModelChange)="onFilterChange()">
+            <option value="">הכל</option>
+            <option *ngFor="let country of countries" [value]="country">{{country}}</option>
+          </select>
         </div>
 
-        <!-- Circle Filter -->
+        <!-- City Filter -->
+        <div class="filter-item">
+          <div class="filter-header">
+            <mat-icon class="filter-icon">location_city</mat-icon>
+            <span class="filter-label">עיר</span>
+          </div>
+          <select class="filter-select"
+                  [(ngModel)]="selectedCity"
+                  [disabled]="!canEdit"
+                  (ngModelChange)="onFilterChange()">
+            <option value="">הכל</option>
+            <option *ngFor="let city of cities" [value]="city">{{city}}</option>
+          </select>
+        </div>
+
+        <!-- Neighborhood Filter -->
+        <div class="filter-item">
+          <div class="filter-header">
+            <mat-icon class="filter-icon">home</mat-icon>
+            <span class="filter-label">שכונה</span>
+          </div>
+          <select class="filter-select"
+                  [(ngModel)]="selectedNeighborhood"
+                  [disabled]="!canEdit"
+                  (ngModelChange)="onFilterChange()">
+            <option value="">הכל</option>
+            <option *ngFor="let neighborhood of neighborhoods" [value]="neighborhood">{{neighborhood}}</option>
+          </select>
+        </div>
+
+        <!-- Circle Entity Filter -->
+        <div class="filter-item">
+          <div class="filter-header">
+            <mat-icon class="filter-icon">group</mat-icon>
+            <span class="filter-label">חוג</span>
+          </div>
+          <select class="filter-select"
+                  [(ngModel)]="selectedCircleId"
+                  [disabled]="!canEdit"
+                  (ngModelChange)="onFilterChange()">
+            <option value="">הכל</option>
+            <option *ngFor="let circle of circles" [value]="circle.id">{{circle.name}}</option>
+          </select>
+        </div>
+
+        <!-- Alumni Filter -->
+        <div class="filter-item">
+          <div class="filter-header">
+            <mat-icon class="filter-icon">school</mat-icon>
+            <span class="filter-label">בוגרים</span>
+          </div>
+          <select class="filter-select"
+                  [(ngModel)]="selectedAlumniStatus"
+                  [disabled]="!canEdit"
+                  (ngModelChange)="onFilterChange()">
+            <option value="">הכל</option>
+            <option value="alumni">בוגרים</option>
+            <option value="notAlumni">לא בוגרים</option>
+          </select>
+        </div>
+
+        <!-- Circle Filter (old style) -->
         <div class="filter-item">
           <div class="filter-header">
             <mat-icon class="filter-icon">group_work</mat-icon>

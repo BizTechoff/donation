@@ -735,6 +735,44 @@
   }
 }
 
+/* Donation Banks, Organizations and Partners Cards Styling */
+.donation-banks-list,
+.donation-organizations-list,
+.partners-list {
+  .donation-bank-card,
+  .donation-organization-card,
+  .partner-card {
+    position: relative;
+    overflow: hidden;
+
+    // Add gradient background to the label areas
+    > div:first-of-type {
+      position: relative;
+
+      > div:first-child {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white !important;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-weight: 600 !important;
+        display: inline-block;
+        margin-bottom: 4px;
+      }
+    }
+
+    // Style for all label elements
+    label {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white !important;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-weight: 600 !important;
+      display: inline-block;
+      margin-bottom: 4px !important;
+    }
+  }
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .donation-details-modal {
