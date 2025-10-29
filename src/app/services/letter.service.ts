@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import { LetterController } from '../../shared/controllers/letter.controller';
-import { Letter } from '../../shared/enum/letter';
 import { DocxCreateResponse } from '../../shared/type/letter.type';
 import { GlobalFilterService } from './global-filter.service';
+import { Letter } from '../../shared/enum/letter';
 
 @Injectable({
   providedIn: 'root'
@@ -11,8 +11,8 @@ export class LetterService {
 
   constructor(private globalFilterService: GlobalFilterService) { }
 
-  async createLetter(donationId = '', type = Letter.ty_normal, prefix = [] as string[], suffix = [] as string[]): Promise<DocxCreateResponse> {
-    const response = await LetterController.createLetter(donationId, type, prefix, suffix);
+  async createLetter(donationId = '', type: Letter, fieldValues: { [key: string]: string }, prefix = [] as string[], suffix = [] as string[]): Promise<DocxCreateResponse> {
+    const response = await LetterController.createLetter(donationId, type, fieldValues, prefix, suffix);
 
     // If successful, trigger automatic download
     if (response.success && response.url) {

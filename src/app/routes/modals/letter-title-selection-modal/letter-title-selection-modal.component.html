@@ -1,0 +1,131 @@
+<!-- Letter Title Selection Modal -->
+<div class="letter-title-selection-modal">
+
+  <!-- Modal Header -->
+  <div class="modal-header">
+    <div class="header-content">
+      <div class="header-icon">
+        <mat-icon>text_fields</mat-icon>
+      </div>
+      <div class="header-text">
+        <h2>בחירת {{ titleType }}</h2>
+        <p class="header-subtitle">בחר כותרת או צור חדשה</p>
+      </div>
+    </div>
+    <button class="modal-close" (click)="closeModal()" matTooltip="סגור" [dir]="'rtl'">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-overlay" *ngIf="loading">
+    <div class="loading-spinner">טוען...</div>
+  </div>
+
+  <div class="modal-body">
+
+    <!-- Action Bar -->
+    <div class="action-bar">
+      <button mat-raised-button color="primary" (click)="startCreate()" [disabled]="editingTitle">
+        <mat-icon>add</mat-icon>
+        צור כותרת חדשה
+      </button>
+    </div>
+
+    <!-- Edit Form -->
+    <div class="edit-form" *ngIf="editingTitle">
+      <h3>{{ isCreating ? 'יצירת כותרת חדשה' : 'עריכת כותרת' }}</h3>
+      <div class="form-row">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>טקסט הכותרת</mat-label>
+          <input matInput [(ngModel)]="editingTitle.text" placeholder="הזן טקסט כותרת">
+        </mat-form-field>
+      </div>
+      <div class="form-row two-columns">
+        <mat-form-field appearance="outline">
+          <mat-label>קטגוריה</mat-label>
+          <input matInput [(ngModel)]="editingTitle.category" placeholder="חגים, שמחות, תרומות...">
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>סדר מיון</mat-label>
+          <input matInput type="number" [(ngModel)]="editingTitle.sortOrder">
+        </mat-form-field>
+      </div>
+      <div class="form-row">
+        <mat-checkbox [(ngModel)]="editingTitle.active">פעיל</mat-checkbox>
+      </div>
+      <div class="form-actions">
+        <button mat-stroked-button (click)="cancelEdit()">
+          <mat-icon>close</mat-icon>
+          ביטול
+        </button>
+        <button mat-raised-button color="primary" (click)="saveTitle()">
+          <mat-icon>save</mat-icon>
+          שמור
+        </button>
+      </div>
+    </div>
+
+    <!-- Titles List -->
+    <div class="titles-section">
+      <h3 *ngIf="letterTitles.length > 0">כותרות קיימות (לחץ לבחירה)</h3>
+      <div class="empty-state" *ngIf="letterTitles.length === 0">
+        <mat-icon>text_fields</mat-icon>
+        <p>אין כותרות מסוג זה עדיין</p>
+        <p class="hint">לחץ על "צור כותרת חדשה" להוספת כותרת ראשונה</p>
+      </div>
+
+      <div class="titles-list" *ngIf="letterTitles.length > 0" cdkDropList (cdkDropListDropped)="onDrop($event)">
+        <div class="title-item" *ngFor="let title of letterTitles; let i = index"
+          [class.inactive]="!title.active"
+          [class.editing]="editingTitle?.id === title.id"
+          cdkDrag>
+
+          <div class="drag-handle" cdkDragHandle>
+            <mat-icon>drag_indicator</mat-icon>
+          </div>
+
+          <div class="title-order">{{ i + 1 }}</div>
+
+          <div class="title-content" (click)="selectTitle(title)">
+            <div class="title-text">{{ title.text }}</div>
+            <div class="title-meta">
+              <span *ngIf="title.category" class="category-badge">{{ title.category }}</span>
+            </div>
+          </div>
+
+          <div class="title-actions">
+            <button mat-icon-button (click)="toggleActive(title); $event.stopPropagation()"
+              [matTooltip]="title.active ? 'השבת' : 'הפעל'">
+              <mat-icon>{{ title.active ? 'toggle_on' : 'toggle_off' }}</mat-icon>
+            </button>
+            <button mat-icon-button (click)="startEdit(title); $event.stopPropagation()"
+              matTooltip="ערוך">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button mat-icon-button color="warn" (click)="deleteTitle(title); $event.stopPropagation()"
+              matTooltip="מחק">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Modal Footer -->
+  <div class="modal-footer">
+    <div class="footer-info">
+      <mat-icon>info</mat-icon>
+      <span>ניתן לגרור על מנת למיין ולבחירה יש ללחוץ על הרשומה</span>
+    </div>
+    <div class="footer-actions">
+      <button mat-stroked-button (click)="closeModal()">
+        <mat-icon>close</mat-icon>
+        סגור
+      </button>
+    </div>
+  </div>
+
+</div>

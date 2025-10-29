@@ -4,17 +4,17 @@ import * as fs from "fs";
 import path from "path";
 import PizZip from "pizzip";
 import { LetterController } from "../shared/controllers/letter.controller";
-import { Letter } from "../shared/enum/letter";
 import { DocxContentControl, DocxCreateResponse } from "../shared/type/letter.type";
+import { Letter } from "../shared/enum/letter";
 
 config()
 
 const isProduction = process.env['NODE_ENV'] === "production";
 
 
-LetterController.createLetterDelegate = async (type = Letter.ty_normal, contents = [] as DocxContentControl[]) => await createLetterDocX(type, contents)
+LetterController.createLetterDelegate = async (type:Letter, contents = [] as DocxContentControl[]) => await createLetterDocX(type, contents)
 console.info('createLetterDelegate succesfuly registered.')
-export const createLetterDocX = async (type = Letter.ty_normal, contents = [] as DocxContentControl[]) => {
+export const createLetterDocX = async (type:Letter, contents = [] as DocxContentControl[]) => {
 
     var result: DocxCreateResponse = { success: false, url: '', error: '', fileName: '' }
 
@@ -22,7 +22,7 @@ export const createLetterDocX = async (type = Letter.ty_normal, contents = [] as
         contents = [] as DocxContentControl[]
     }
 
-    const fullPath = path.resolve(__dirname, `../${isProduction ? 'donation/' : ''}assets/letters`, `${type.caption}.docx`);
+    const fullPath = path.resolve(__dirname, `../${isProduction ? 'donation/' : ''}assets/letters`, `${type.templatePath}`);//.docx`);
     console.log('fullPath', fullPath)
 
     var content = ''
@@ -80,7 +80,8 @@ export const createLetterDocX = async (type = Letter.ty_normal, contents = [] as
 
     // Convert buffer to base64 for client download
     const base64 = buf.toString('base64');
-    const fileName = `${type.caption}_${new Date().getTime()}.docx`;
+    const fileName = `${type.caption}.docx`;
+    // const fileName = `${type.caption}_${new Date().getTime()}.docx`;
 
     result.success = true;
     result.url = `data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,${base64}`;

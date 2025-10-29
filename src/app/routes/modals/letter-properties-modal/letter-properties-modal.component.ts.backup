@@ -1,0 +1,366 @@
+import { Component, OnInit } from '@angular/core';
+import { MatDialogRef } from '@angular/material/dialog';
+import { DialogConfig } from 'common-ui-elements';
+import { remult } from 'remult';
+import { Donation, DonorPlace } from '../../../../shared/entity';
+import { Letter } from '../../../../shared/enum/letter';
+import { UIToolsService } from '../../../common/UIToolsService';
+import { I18nService } from '../../../i18n/i18n.service';
+import { LetterService } from '../../../services/letter.service';
+
+export interface LetterPropertiesModalArgs {
+  donationId: string;
+}
+
+export interface LetterPropertiesResult {
+  selectedType: Letter;
+  prefix: string[];
+  suffix: string[];
+}
+
+export interface FieldValue {
+  fieldName: string;
+  displayName: string;
+  value: string;
+}
+
+@DialogConfig({
+  hasBackdrop: true,
+  maxWidth: '80vw',
+  maxHeight: '80vh'
+})
+@Component({
+  selector: 'app-letter-properties-modal',
+  templateUrl: './letter-properties-modal.component.html',
+  styleUrls: ['./letter-properties-modal.component.scss']
+})
+export class LetterPropertiesModalComponent implements OnInit {
+  args!: LetterPropertiesModalArgs;
+
+  // Available letter types
+  letterTypes: Letter[] = [];
+  selectedLetterType?: Letter;
+
+  // Prefix options (opening lines)
+  availablePrefixLines: string[] = [
+    'כבוד ידידנו הנדיב הנכבד, אוהב תורה ורודף חסד'
+  ];
+  selectedPrefixLines: string[] = [];
+  customPrefixLine = '';
+
+  // Suffix options (closing lines)
+  availableSuffixLines: string[] = [
+    'א כשר און א פרייליכען פסח',
+    'א פרייליכען יום טוב',
+    'בברכת גמר חתימה טובה',
+    'בברכת הצלחה רבה וכט"ס',
+    'בברכת כתיבה וחתימה טובה',
+    'ביקרא דאורייתא וכט"ס'
+  ];
+  selectedSuffixLines: string[] = [];
+  customSuffixLine = '';
+
+  loading = false;
+
+  // Donation data
+  donation?: Donation;
+  fieldValues: FieldValue[] = [];
+
+  constructor(
+    public i18n: I18nService,
+    private letterService: LetterService,
+    private ui: UIToolsService,
+    public dialogRef: MatDialogRef<LetterPropertiesModalComponent>
+  ) { }
+
+  async ngOnInit() {
+    this.loadLetterTypes();
+    await this.loadDonation();
+  }
+
+  async loadDonation() {
+    if (!this.args?.donationId) return;
+
+    try {
+      this.loading = true;
+      const donationRepo = remult.repo(Donation);
+      this.donation = await donationRepo.findId(this.args.donationId, {
+        include: { donor: { include: { homePlace: { include: { country: true } } } }, campaign: true }
+      }) || undefined;
+      // console.log(this.donation?.donor?.homePlace?.country?.name)
+      if (this.donation) {
+        await this.updateFieldValues();
+      }
+    } catch (error) {
+      console.error('Error loading donation:', error);
+      this.ui.error('שגיאה בטעינת נתוני התרומה');
+    } finally {
+      this.loading = false;
+    }
+  }
+
+  loadLetterTypes() {
+    this.letterTypes = Letter.getFields();
+    // Select first type by default
+    if (this.letterTypes.length > 0) {
+      this.selectedLetterType = this.letterTypes[0];
+      this.updateFieldValues();
+    }
+  }
+
+  selectLetterType(type: Letter) {
+    this.selectedLetterType = type;
+    this.updateFieldValues();
+  }
+
+  async updateFieldValues() {
+    if (!this.selectedLetterType || !this.donation) {
+      this.fieldValues = [];
+      return;
+    }
+
+    const fieldPromises = this.selectedLetterType.fields
+      .filter(field => field !== 'letter_prefix' && field !== 'letter_suffix')
+      .map(async field => ({
+        fieldName: field,
+        displayName: this.getFieldDisplayName(field),
+        value: await this.getFieldValue(field)
+      }));
+
+    const allFields = await Promise.all(fieldPromises);
+    this.fieldValues = allFields.filter(fv => fv.value.trim().length > 0);
+  }
+
+  getFieldDisplayName(field: string): string {
+    const fieldNames: Record<string, string> = {
+      'letter_heb_date': 'תאריך עברי',
+      'donor_eng_title': 'תואר באנגלית',
+      'donor_eng_first_name': 'שם פרטי באנגלית',
+      'donor_eng_last_name': 'שם משפחה באנגלית',
+      'donor_eng_suffix': 'סיומת באנגלית',
+      'donor_home_address': 'כתובת',
+      'donor_country': 'מדינה',
+      'donor_title': 'תואר',
+      'donor_first_name': 'שם פרטי',
+      'donor_last_name': 'שם משפחה',
+      'donor_suffix': 'סיומת',
+      'donation_amount': 'סכום תרומה',
+      'donation_currency_symbol': 'סמל מטבע',
+      'donation_reason': 'סיבת התרומה'
+    };
+    return fieldNames[field] || field;
+  }
+
+  toCamelCase(str: string): string {
+    return str.replace(/_([a-z])/g, (match, char) => char.toUpperCase());
+  }
+
+  async getFieldValue(field: string): Promise<string> {
+    if (!this.donation) return '';
+    var result = ''
+
+    switch (field) {
+      case 'Number_receipt': {
+        result = '000000' + this.donation.referenceNumber
+        result = result.slice(-6)
+        break
+      }
+      case 'Name_receipt': {
+        result = this.donation.payerName
+        break
+      }
+      case 'FullAddress_Work': {
+        // כתובת הארגון או בנק
+        result = this.donation.payerName
+        break
+      }
+      case 'FullCity_Work': {
+        // כתובת הארגון או בנק
+        result = this.donation.payerName
+        break
+      }
+      case 'FullAddress': {
+        const parts = [] as string[]
+
+        const row1 =
+          `${this.donation.donor?.titleEnglish} ${this.donation.donor?.maritalStatus === 'married' ? ' & Mrs' : ''} ${this.donation.donor?.firstNameEnglish[0].toUpperCase()} ${this.toCamelCase(this.donation.donor?.lastNameEnglish || '')}` || ''
+
+        const address = await remult.repo(DonorPlace).findFirst({ donor: this.donation.donor })
+        const row2 = `${address?.place?.apartment} ${address?.place?.building}` || ''
+
+        const row3 = `${address?.place?.houseNumber} ${address?.place?.street}` || ''
+
+        const row4 = `${address?.place?.city} ${address?.place?.country?.code === 'US' ? address?.place?.country?.name : ''} ${address?.place?.postcode}` || ''
+
+        const row5 = address?.place?.country?.name || ''
+
+        parts.push(row1, row2, row3, row4, row5)
+
+        result = parts.join('\n')
+        break
+      }
+      case 'תואר_מלא': {
+        const parts = [] as string[]
+        parts.push(...this.selectedPrefixLines)
+        result = parts.join('\n')
+        break
+      }
+      case 'תואר_עברית':
+        {
+          result = `${this.donation.donor?.title}`
+          break
+        }
+      case 'שם_עברית':
+        {
+          result = `${this.donation.donor?.firstName} ${this.donation.donor?.lineage === 'israel' ? '' : this.donation.donor?.lineage} ${this.donation.donor?.lastName} `
+          break
+        }
+      case 'סיומת_עברית':
+        {
+          result = `${this.donation.donor?.suffix}`
+          break
+        }
+      case 'סיומת_מכתב':
+        {
+          result = this.selectedSuffixLines.join('\n');
+          break
+        }
+      case 'תרומה':
+        {
+          const currency = await this.getFieldValue('Currency_symbol')
+          result = `${currency}${this.donation.amount.toString()}`;
+          break
+        }
+      case 'סיבה_תרומה':
+        {
+          result = this.donation.reason || '';
+          break
+        }
+      case 'Currency_symbol': {
+        const currencySymbols: Record<string, string> = {
+          'ILS': '₪',
+          'USD': '$',
+          'EUR': '€',
+          'GBP': '£',
+          'JPY': '¥'
+        };
+        result = currencySymbols[this.donation.currency || 'ILS'] || this.donation.currency || '₪';
+        break
+      }
+    }
+    console.log(field, result)
+
+    return result
+  }
+
+  // Prefix management
+  addPrefixLine(line: string) {
+    if (line && !this.selectedPrefixLines.includes(line)) {
+      this.selectedPrefixLines.push(line);
+    }
+  }
+
+  addCustomPrefixLine() {
+    if (this.customPrefixLine.trim()) {
+      this.addPrefixLine(this.customPrefixLine.trim());
+      this.customPrefixLine = '';
+    }
+  }
+
+  removePrefixLine(index: number) {
+    this.selectedPrefixLines.splice(index, 1);
+  }
+
+  movePrefixLineUp(index: number) {
+    if (index > 0) {
+      const temp = this.selectedPrefixLines[index];
+      this.selectedPrefixLines[index] = this.selectedPrefixLines[index - 1];
+      this.selectedPrefixLines[index - 1] = temp;
+    }
+  }
+
+  movePrefixLineDown(index: number) {
+    if (index < this.selectedPrefixLines.length - 1) {
+      const temp = this.selectedPrefixLines[index];
+      this.selectedPrefixLines[index] = this.selectedPrefixLines[index + 1];
+      this.selectedPrefixLines[index + 1] = temp;
+    }
+  }
+
+  // Suffix management
+  addSuffixLine(line: string) {
+    if (line && !this.selectedSuffixLines.includes(line)) {
+      this.selectedSuffixLines.push(line);
+    }
+  }
+
+  addCustomSuffixLine() {
+    if (this.customSuffixLine.trim()) {
+      this.addSuffixLine(this.customSuffixLine.trim());
+      this.customSuffixLine = '';
+    }
+  }
+
+  removeSuffixLine(index: number) {
+    this.selectedSuffixLines.splice(index, 1);
+  }
+
+  moveSuffixLineUp(index: number) {
+    if (index > 0) {
+      const temp = this.selectedSuffixLines[index];
+      this.selectedSuffixLines[index] = this.selectedSuffixLines[index - 1];
+      this.selectedSuffixLines[index - 1] = temp;
+    }
+  }
+
+  moveSuffixLineDown(index: number) {
+    if (index < this.selectedSuffixLines.length - 1) {
+      const temp = this.selectedSuffixLines[index];
+      this.selectedSuffixLines[index] = this.selectedSuffixLines[index + 1];
+      this.selectedSuffixLines[index + 1] = temp;
+    }
+  }
+
+  async generateLetter() {
+    if (!this.selectedLetterType) {
+      this.ui.error('נא לבחור סוג מכתב');
+      return;
+    }
+
+    if (!this.args?.donationId) {
+      this.ui.error('חסר מזהה תרומה');
+      return;
+    }
+
+    try {
+      this.loading = true;
+
+      const response = await this.letterService.createLetter(
+        this.args.donationId,
+        this.selectedLetterType,
+        this.selectedPrefixLines,
+        this.selectedSuffixLines
+      );
+
+      if (response.success) {
+        this.ui.info('מכתב הופק והורד בהצלחה');
+        this.dialogRef.close({
+          selectedType: this.selectedLetterType,
+          prefix: this.selectedPrefixLines,
+          suffix: this.selectedSuffixLines
+        } as LetterPropertiesResult);
+      } else {
+        this.ui.error('שגיאה בהפקת המכתב: ' + response.error);
+      }
+    } catch (error) {
+      console.error('Error generating letter:', error);
+      this.ui.error('שגיאה בהפקת המכתב');
+    } finally {
+      this.loading = false;
+    }
+  }
+
+  closeModal() {
+    this.dialogRef.close(null);
+  }
+}

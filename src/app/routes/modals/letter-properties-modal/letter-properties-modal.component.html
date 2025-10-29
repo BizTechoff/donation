@@ -1,6 +1,40 @@
 <!-- Letter Properties Modal -->
 <div class="letter-properties-modal">
 
+
+<!--
+ניחום אבלים
+----------------
+{{ '{' }}תואר_נפטר{{ '}' }}
+{{ '{' }}פרטי_נפטר{{ '}' }}
+{{ '{' }}קשר_לנפטר{{ '}' }}
+{{ '{' }}אב_הנפטר{{ '}' }}
+{{ '{' }}סיומת_נפטר{{ '}' }}
+
+שמחות
+---------
+{{ '{' }}תואר_חתן{{ '}' }}
+{{ '{' }}שם_חתן{{ '}' }}
+{{ '{' }}סיומת_חתן{{ '}' }}
+
+{{ '{' }}קירבה_חתן{{ '}' }}
+{{ '{' }}תואר_מחותן{{ '}' }}
+{{ '{' }}שם_מחותן{{ '}' }}
+{{ '{' }}סיומת_ מחותן{{ '}' }}
+
+{{ '{' }}קירבה_אב{{ '}' }}
+{{ '{' }}תואר_אב{{ '}' }}
+{{ '{' }}שם_אב{{ '}' }}
+{{ '{' }}סיומת_אב{{ '}' }}
+
+{{ '{' }}קירבה_סב{{ '}' }}
+{{ '{' }}סב_תואר{{ '}' }}
+{{ '{' }}סב_שם{{ '}' }}
+{{ '{' }}סב_סיומת{{ '}' }}
+-->
+
+
+
   <!-- Modal Header -->
   <div class="modal-header">
     <div class="header-content">
@@ -24,29 +58,120 @@
 
   <div class="modal-body">
 
-    <!-- Section 1: Letter Type Selection -->
+    <!-- Section 1: Letter Type Selection - Hierarchical -->
     <div class="section letter-type-section">
-      <h3>סוג מכתב</h3>
-      <div class="letter-types-grid">
-        <div class="letter-type-card" *ngFor="let type of letterTypes" [class.selected]="selectedLetterType === type"
-          (click)="selectLetterType(type)">
-          <div class="card-icon">
-            <mat-icon>mail</mat-icon>
-          </div>
-          <div class="card-content">
-            <h4>{{ type.caption }}</h4>
-            <p>{{ type.fields.length }} שדות</p>
-          </div>
-          <div class="card-check" *ngIf="selectedLetterType === type">
-            <mat-icon>check_circle</mat-icon>
+
+      <!-- Step 1: Category Selection -->
+      <div *ngIf="!selectedCategory">
+        <h3>בחר קטגוריה</h3>
+        <div class="letter-types-grid">
+          <div class="letter-type-card" *ngFor="let category of categories"
+            (click)="selectCategory(category)">
+            <div class="card-icon">
+              <mat-icon>folder</mat-icon>
+            </div>
+            <div class="card-content">
+              <h4>{{ category.name }}</h4>
+              <p>{{ category.subcategories.length }} תת-קטגוריות</p>
+            </div>
           </div>
         </div>
       </div>
+
+      <!-- Step 2: Subcategory Selection -->
+      <div *ngIf="selectedCategory && !selectedSubcategory">
+        <div class="breadcrumb">
+          <button mat-button (click)="backToCategories()">
+            <mat-icon>arrow_forward</mat-icon>
+            חזור לקטגוריות
+          </button>
+          <span class="breadcrumb-separator">/</span>
+          <span class="breadcrumb-current">{{ selectedCategory.name }}</span>
+        </div>
+        <h3>בחר תת-קטגוריה</h3>
+        <div class="letter-types-grid">
+          <div class="letter-type-card" *ngFor="let subcategory of selectedCategory.subcategories"
+            (click)="selectSubcategory(subcategory)">
+            <div class="card-icon">
+              <mat-icon>description</mat-icon>
+            </div>
+            <div class="card-content">
+              <h4>{{ subcategory.name }}</h4>
+              <p>{{ subcategory.letters.length }} מכתבים</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: Letter Selection -->
+      <div *ngIf="selectedCategory && selectedSubcategory && !selectedLetterType">
+        <div class="breadcrumb">
+          <button mat-button (click)="backToCategories()">
+            <mat-icon>arrow_forward</mat-icon>
+            חזור לקטגוריות
+          </button>
+          <span class="breadcrumb-separator">/</span>
+          <button mat-button (click)="backToSubcategories()">
+            {{ selectedCategory.name }}
+          </button>
+          <span class="breadcrumb-separator">/</span>
+          <span class="breadcrumb-current">{{ selectedSubcategory.name }}</span>
+        </div>
+        <h3>בחר מכתב</h3>
+        <div class="letter-types-grid">
+          <div class="letter-type-card" *ngFor="let letter of selectedSubcategory.letters"
+            (click)="selectLetterType(letter)">
+            <div class="card-icon">
+              <mat-icon>mail</mat-icon>
+            </div>
+            <div class="card-content">
+              <h4>{{ letter.caption.split(' / ')[letter.caption.split(' / ').length - 1] }}</h4>
+              <p>{{ letter.fields.length }} שדות</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Selected Letter Display -->
+      <div *ngIf="selectedLetterType">
+        <div class="breadcrumb">
+          <button mat-button (click)="backToCategories()">
+            <mat-icon>arrow_forward</mat-icon>
+            קטגוריות
+          </button>
+          <span class="breadcrumb-separator">/</span>
+          <button mat-button (click)="backToSubcategories()">
+            {{ selectedCategory?.name }}
+          </button>
+          <span class="breadcrumb-separator">/</span>
+          <span class="breadcrumb-current">{{ selectedSubcategory?.name }}</span>
+        </div>
+        <div class="selected-letter-display">
+          <div class="letter-type-card selected">
+            <div class="card-icon">
+              <mat-icon>mail</mat-icon>
+            </div>
+            <div class="card-content">
+              <h4>{{ selectedLetterType.caption.split(' / ')[selectedLetterType.caption.split(' / ').length - 1] }}</h4>
+              <p>{{ selectedLetterType.fields.length }} שדות</p>
+            </div>
+            <div class="card-check">
+              <mat-icon>check_circle</mat-icon>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <!-- Section 2: Prefix Lines (Opening) -->
-    <div class="section prefix-section">
-      <h3>שורות פתיחה למכתב</h3>
+    <div class="section prefix-section" *ngIf="selectedLetterType">
+      <div class="section-header">
+        <h3>ברכות פתיחה למכתב</h3>
+        <button mat-icon-button color="primary" (click)="openPrefixSelectionModal()" matTooltip="הוסף ברכת פתיחה">
+          <mat-icon>add_circle</mat-icon>
+        </button>
+      </div>
 
       <!-- Selected Prefix Lines -->
       <div class="selected-lines" *ngIf="selectedPrefixLines.length > 0">
@@ -68,53 +193,50 @@
         </div>
       </div>
 
-      <!-- Available Suffix Lines -->
-      <div class="available-lines">
-        <h4>ברכות פתיחה זמינות:</h4>
-        <div class="available-line" *ngFor="let line of availablePrefixLines"
-          [class.disabled]="selectedPrefixLines.includes(line)" (click)="addPrefixLine(line)">
-          <mat-icon>add_circle_outline</mat-icon>
-          <span>{{ line }}</span>
-        </div>
-      </div>
-
-      <!-- Add Custom Prefix Line -->
-      <div class="add-line-section">
-        <div class="add-line-input">
-          <input type="text" class="form-control" [(ngModel)]="customPrefixLine"
-            placeholder="הכנס שורת פתיחה מותאמת אישית..." (keyup.enter)="addCustomPrefixLine()">
-          <button mat-raised-button color="primary" (click)="addCustomPrefixLine()"
-            [disabled]="!customPrefixLine.trim()">
-            <mat-icon>add</mat-icon>
-            הוסף שורה
-          </button>
-        </div>
-      </div>
-
       <div class="help-text" *ngIf="selectedPrefixLines.length === 0">
         <mat-icon>info</mat-icon>
         <span>לא נבחרו שורות פתיחה. המכתב יתחיל ישירות בתוכן.</span>
       </div>
     </div>
 
-    <!-- Section 3: Letter Fields (Display Only) -->
+    <!-- Section 3: Letter Fields (Editable) -->
     <div class="section fields-section" *ngIf="selectedLetterType && fieldValues.length > 0">
       <h3>שדות המכתב</h3>
       <div class="fields-info">
-        <mat-icon>info</mat-icon>
-        <p>השדות הבאים ימולאו אוטומטית מנתוני התרומה:</p>
+        <mat-icon>edit</mat-icon>
+        <p>השדות הבאים נטענו מנתוני התרומה. ניתן לערוך את הערכים לפני הפקת המכתב:</p>
       </div>
-      <div class="fields-list">
-        <div class="field-item" *ngFor="let fieldValue of fieldValues">
-          <div class="field-name">{{ fieldValue.displayName }}:</div>
-          <div class="field-value">{{ fieldValue.value }}</div>
+      <div class="fields-grid-table">
+        <div class="field-row" *ngFor="let fieldValue of fieldValues">
+          <div class="field-label">{{ fieldValue.displayName }}:</div>
+          <div class="field-input">
+            <textarea
+              *ngIf="fieldValue.isMultiline"
+              class="form-control field-textarea"
+              rows="3"
+              [(ngModel)]="fieldValue.value"
+              (ngModelChange)="onFieldValueChange(fieldValue, $event)"
+            ></textarea>
+            <input
+              *ngIf="!fieldValue.isMultiline"
+              type="text"
+              class="form-control field-input-text"
+              [(ngModel)]="fieldValue.value"
+              (ngModelChange)="onFieldValueChange(fieldValue, $event)"
+            />
+          </div>
         </div>
       </div>
     </div>
 
     <!-- Section 4: Suffix Lines (Closing) -->
-    <div class="section suffix-section">
-      <h3>שורות סיום למכתב</h3>
+    <div class="section suffix-section" *ngIf="selectedLetterType">
+      <div class="section-header">
+        <h3>ברכות סיום למכתב</h3>
+        <button mat-icon-button color="primary" (click)="openSuffixSelectionModal()" matTooltip="הוסף ברכת סיום">
+          <mat-icon>add_circle</mat-icon>
+        </button>
+      </div>
 
       <!-- Selected Suffix Lines -->
       <div class="selected-lines" *ngIf="selectedSuffixLines.length > 0">
@@ -136,29 +258,6 @@
         </div>
       </div>
 
-      <!-- Available Suffix Lines -->
-      <div class="available-lines">
-        <h4>ברכות סיום זמינות:</h4>
-        <div class="available-line" *ngFor="let line of availableSuffixLines"
-          [class.disabled]="selectedSuffixLines.includes(line)" (click)="addSuffixLine(line)">
-          <mat-icon>add_circle_outline</mat-icon>
-          <span>{{ line }}</span>
-        </div>
-      </div>
-
-      <!-- Add Custom Suffix Line -->
-      <div class="add-line-section">
-        <div class="add-line-input">
-          <input type="text" class="form-control" [(ngModel)]="customSuffixLine"
-            placeholder="הכנס ברכת סיום מותאמת אישית..." (keyup.enter)="addCustomSuffixLine()">
-          <button mat-raised-button color="primary" (click)="addCustomSuffixLine()"
-            [disabled]="!customSuffixLine.trim()">
-            <mat-icon>add</mat-icon>
-            הוסף ברכה
-          </button>
-        </div>
-      </div>
-
       <div class="help-text" *ngIf="selectedSuffixLines.length === 0">
         <mat-icon>info</mat-icon>
         <span>לא נבחרו ברכות סיום. המכתב יסתיים ללא ברכה.</span>
@@ -176,7 +275,7 @@
         ביטול
       </button>
       <button mat-raised-button color="primary" (click)="generateLetter()" class="generate-button"
-        [disabled]="loading || !selectedLetterType">
+        [disabled]="loading || !selectedLetterType || !isAllFieldsFilled()">
         <mat-icon>print</mat-icon>
         הפק מכתב
       </button>
