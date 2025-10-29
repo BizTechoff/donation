@@ -12,6 +12,7 @@ import { SignInController } from './users/SignInController'
 import { UpdatePasswordController } from './users/UpdatePasswordController'
 import { remult } from 'remult'
 import { User } from '../shared/entity/user'
+import { terms } from './terms'
 
 @Component({
   selector: 'app-root',
@@ -27,6 +28,7 @@ export class AppComponent implements OnInit {
     public i18n: I18nService
   ) {}
   remult = remult
+  terms=terms
 
   async signIn() {
     const signIn = new SignInController()

@@ -76,10 +76,10 @@ export class UIToolsService implements UITools {
   isScreenSmall() {
     return this.mediaMatcher.matches
   }
-  async yesNoQuestion(question: string) {
+  async yesNoQuestion(question: string, isAQuestion = false) {
     return await openDialog(
       YesNoQuestionComponent,
-      (d) => (d.args = { message: question }),
+      (d) => (d.args = { message: question, isAQuestion: isAQuestion }),
       (d) => d.okPressed
     )
   }
@@ -118,10 +118,10 @@ export class UIToolsService implements UITools {
     )
   }
 
-  async donationDetailsDialog(donationId: string, options?: { donorId?: string; campaignId?: string }): Promise<boolean> {
+  async donationDetailsDialog(donationId: string, options?: { donorId?: string; campaignId?: string; amount?: number }): Promise<boolean> {
     return await openDialog(
       (await import('../routes/modals/donation-details-modal/donation-details-modal.component')).DonationDetailsModalComponent,
-      (dlg) => dlg.args = { donationId, donorId: options?.donorId, campaignId: options?.campaignId }
+      (dlg) => dlg.args = { donationId, donorId: options?.donorId, campaignId: options?.campaignId, amount: options?.amount }
     )
   }
 
@@ -136,6 +136,13 @@ export class UIToolsService implements UITools {
     return await openDialog(
       (await import('../routes/modals/standing-order-details-modal/standing-order-details-modal.component')).StandingOrderDetailsModalComponent,
       (dlg) => dlg.args = { standingOrderId, donorId: options?.donorId }
+    )
+  }
+
+  async donorGiftDetailsDialog(donorGiftId: string, options?: { donorId?: string }): Promise<boolean> {
+    return await openDialog(
+      (await import('../routes/modals/donor-gift-details-modal/donor-gift-details-modal.component')).DonorGiftDetailsModalComponent,
+      (dlg) => dlg.args = { donorGiftId, donorId: options?.donorId }
     )
   }
 
@@ -216,6 +223,13 @@ export class UIToolsService implements UITools {
     return await openDialog(
       (await import('../routes/modals/payment-list-modal/payment-list-modal.component')).PaymentListModalComponent,
       (dlg) => dlg.args = { donationId, donationAmount }
+    )
+  }
+
+  async paymentDetailsDialog(paymentId: string, options?: { donationId?: string; amount?: number }): Promise<boolean> {
+    return await openDialog(
+      (await import('../routes/modals/payment-details-modal/payment-details-modal.component')).PaymentDetailsModalComponent,
+      (dlg) => dlg.args = { paymentId, donationId: options?.donationId, amount: options?.amount }
     )
   }
 

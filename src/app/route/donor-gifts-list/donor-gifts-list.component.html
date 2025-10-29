@@ -1,0 +1,138 @@
+<div class="donor-gifts-container">
+  <div class="page-header">
+    <h1>{{ (i18n.terms$ | async)?.donorGifts }}</h1>
+    <div class="header-actions">
+      <button class="btn btn-secondary manage-catalog-btn" (click)="manageGiftCatalog()">
+        <mat-icon>inventory_2</mat-icon>
+        {{ (i18n.terms$ | async)?.manageGiftCatalog }}
+      </button>
+      <button class="btn btn-primary add-btn" (click)="createDonorGift()">
+        <mat-icon>add</mat-icon>
+        {{ (i18n.terms$ | async)?.addGiftToDonor }}
+      </button>
+    </div>
+  </div>
+
+  <div class="filters-section">
+    <div class="filter-row">
+      <div class="filter-group">
+        <label>{{ (i18n.terms$ | async)?.searchDonor }}</label>
+        <input type="text" class="form-control"
+               [(ngModel)]="searchDonorName"
+               (ngModelChange)="applyFilters()"
+               [placeholder]="(i18n.terms$ | async)?.donorNamePlaceholder">
+      </div>
+
+      <div class="filter-group">
+        <label>{{ (i18n.terms$ | async)?.donor }}</label>
+        <select class="form-control" [(ngModel)]="selectedDonorId" (ngModelChange)="applyFilters()">
+          <option value="">{{ (i18n.terms$ | async)?.allDonors }}</option>
+          <option *ngFor="let donor of donors" [value]="donor.id">
+            {{ donor.firstName }} {{ donor.lastName }}
+          </option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>{{ (i18n.terms$ | async)?.giftType }}</label>
+        <select class="form-control" [(ngModel)]="selectedGiftId" (ngModelChange)="applyFilters()">
+          <option value="">{{ (i18n.terms$ | async)?.allGifts }}</option>
+          <option *ngFor="let gift of gifts" [value]="gift.id">
+            {{ gift.name }}
+          </option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>{{ (i18n.terms$ | async)?.year }}</label>
+        <select class="form-control" [(ngModel)]="selectedYear" (ngModelChange)="applyFilters()">
+          <option value="">{{ (i18n.terms$ | async)?.allYears }}</option>
+          <option *ngFor="let year of years" [value]="year">{{ year }}</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <button class="btn btn-secondary" (click)="clearFilters()">
+          <mat-icon>clear</mat-icon>
+          {{ (i18n.terms$ | async)?.clearFilters }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="summary-cards">
+    <div class="summary-card">
+      <div class="card-icon">🎁</div>
+      <div class="card-content">
+        <h3>{{ (i18n.terms$ | async)?.totalGifts }}</h3>
+        <span class="count">{{ donorGifts.length }}</span>
+      </div>
+    </div>
+    <div class="summary-card">
+      <div class="card-icon">📦</div>
+      <div class="card-content">
+        <h3>{{ (i18n.terms$ | async)?.deliveredGifts }}</h3>
+        <span class="count">{{ deliveredCount }}</span>
+      </div>
+    </div>
+    <div class="summary-card">
+      <div class="card-icon">⏳</div>
+      <div class="card-content">
+        <h3>{{ (i18n.terms$ | async)?.pendingGifts }}</h3>
+        <span class="count">{{ pendingCount }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="table-wrapper" *ngIf="!loading && donorGifts.length > 0">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>{{ (i18n.terms$ | async)?.donor }}</th>
+          <th>{{ (i18n.terms$ | async)?.gift }}</th>
+          <th>{{ (i18n.terms$ | async)?.deliveryDate }}</th>
+          <th>{{ (i18n.terms$ | async)?.reminderDate }}</th>
+          <th>{{ (i18n.terms$ | async)?.status }}</th>
+          <th>{{ (i18n.terms$ | async)?.notes }}</th>
+          <th>{{ (i18n.terms$ | async)?.actions }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let donorGift of donorGifts" (click)="editDonorGift(donorGift)" class="clickable-row">
+          <td>{{ getDonorName(donorGift) }}</td>
+          <td>{{ donorGift.gift?.name }}</td>
+          <td>{{ formatDate(donorGift.deliveryDate) }}</td>
+          <td>{{ formatDate(donorGift.reminderDate) }}</td>
+          <td>
+            <span class="status-badge" [class.delivered]="donorGift.isDelivered" [class.pending]="!donorGift.isDelivered">
+              {{ donorGift.isDelivered ? (i18n.terms$ | async)?.delivered : (i18n.terms$ | async)?.pending }}
+            </span>
+          </td>
+          <td>{{ donorGift.notes }}</td>
+          <td class="actions-cell" (click)="$event.stopPropagation()">
+            <button class="btn btn-icon" (click)="editDonorGift(donorGift)" [title]="(i18n.terms$ | async)?.edit">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button class="btn btn-icon btn-danger" (click)="deleteDonorGift(donorGift)" [title]="(i18n.terms$ | async)?.delete">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="empty-state" *ngIf="!loading && donorGifts.length === 0">
+    <mat-icon>card_giftcard</mat-icon>
+    <h3>{{ (i18n.terms$ | async)?.noGiftsFound }}</h3>
+    <p>{{ (i18n.terms$ | async)?.addFirstGift }}</p>
+    <button class="btn btn-primary" (click)="createDonorGift()">
+      <mat-icon>add</mat-icon>
+      {{ (i18n.terms$ | async)?.addNewGift }}
+    </button>
+  </div>
+
+  <div class="loading-spinner" *ngIf="loading">
+    <mat-spinner></mat-spinner>
+  </div>
+</div>

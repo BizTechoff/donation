@@ -38,6 +38,7 @@ export const termsEn = {
   reminders: 'Reminders',
   donorsMap: 'Donors Map',
   campaigns: 'Campaigns',
+  gifts: 'Gifts',
   reports: 'Reports',
 
   // Donors Map
@@ -600,10 +601,10 @@ export const termsEn = {
   dinnerCampaignType: 'Dinner',
   basicCampaignInfoSection: 'Basic Campaign Information',
   financialInfoSection: 'Financial Information',
-  datesSection: 'Dates',
+  datesSection: 'Campaign Period',
   inviteesSection: 'Invitees',
   generalCriteriaLabel: 'General Criteria',
-  settingsSection: 'Settings',
+  settingsSection: 'Links',
   dinnerInvitationLinkLabel: 'Dinner Invitation Link',
   dinnerBlessingBookLinkLabel: 'Dinner Blessing Book Link',
   invitedListButton: 'Invited List',
@@ -628,8 +629,8 @@ export const termsEn = {
   poundGBP: 'British Pound (£)',
   dollarCAD: 'Canadian Dollar (C$)',
   dollarAUD: 'Australian Dollar (A$)',
-  standardDonationLabel: 'Standard Donation',
-  standardDonationPlaceholder: 'Default amount',
+  standardDonationLabel: 'Default Donation Amount',
+  standardDonationPlaceholder: 'Default donation amount',
   raisedAmountLabel: 'Raised Amount',
   raisedAmountPlaceholder: 'Raised amount',
   completionPercentageLabel: 'Completion Percentage',
@@ -1173,6 +1174,10 @@ export const termsEn = {
   gender: 'Gender',
   male: 'Male',
   female: 'Female',
+  lineage: 'Lineage',
+  lineageIsrael: 'Israel',
+  lineageCohen: 'Cohen',
+  lineageLevi: 'Levi',
   donationDateLabel: 'Donation Date *',
   reason: 'Reason',
   enterReason: 'Enter Reason',
@@ -1339,9 +1344,6 @@ export const termsEn = {
   editCompany: 'Edit Company',
   legacyCompanies: 'Legacy Companies (View Only)',
 
-  // Quick Actions
-  gifts: 'Gifts',
-
   // Bank Details Modal
   newBank: 'New Bank',
   basicBankDetails: 'Basic Bank Details',
@@ -1363,6 +1365,7 @@ export const termsEn = {
   street: 'Street',
   streetName: 'Street Name',
   houseNumber: 'No.',
+  apartment: 'Apartment',
   neighborhood: 'Neighborhood',
   state: 'State',
   postcode: 'Postcode',
@@ -1491,5 +1494,28 @@ export const termsEn = {
   levelFull: 'Full',
   levelBronze: 'Bronze',
   levelSilver: 'Silver',
-  levelGold: 'Gold'
+  levelGold: 'Gold',
+
+  // Gifts - additional translations
+  gift: 'Gift',
+  addNewGift: 'Add New Gift',
+  editGift: 'Edit Gift',
+  giftType: 'Gift Type',
+  allGifts: 'All Gifts',
+  deliveryDate: 'Delivery Date',
+  reminderDate: 'Reminder Date',
+  giftDelivered: 'Gift Delivered',
+  delivered: 'Delivered',
+  totalGifts: 'Total Gifts',
+  deliveredGifts: 'Delivered Gifts',
+  pendingGifts: 'Pending Gifts',
+  noGiftsFound: 'No Gifts Found',
+  noGiftsYet: 'No gifts added for this donor yet',
+  addFirstGift: 'Add First Gift',
+  selectGift: 'Select Gift',
+  allDonors: 'All Donors',
+  allYears: 'All Years',
+  donorGifts: 'Donor Gifts',
+  manageGiftCatalog: 'Manage Gift Catalog',
+  addGiftToDonor: 'Add Gift To Donor'
 }

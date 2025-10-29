@@ -216,6 +216,11 @@ export class DonorDetailsModalComponent implements OnInit {
       // Setup filters
       this.setupFilterOptions();
     });
+
+    // Prevent accidental close for new donor
+    if (this.isNewDonor) {
+      this.dialogRef.disableClose = true;
+    }
   }
 
   private async loadAvailableEvents() {
@@ -732,57 +737,52 @@ export class DonorDetailsModalComponent implements OnInit {
       const wasNew = this.isNewDonor;
       await remult.repo(Donor).save(this.donor);
 
-      // Save donor events (new and existing)
+      // Save all related entities (new and modified) - Unit of Work Pattern
       if (this.donor.id) {
+        // Save donor events
         for (const donorEvent of this.donorEvents) {
-          // Only save events that don't have an ID (new events)
-          if (!donorEvent.id) {
-            donorEvent.donorId = this.donor.id;
-            await this.donorEventRepo.save(donorEvent);
-            console.log('Saved new donor event:', donorEvent.event?.description);
-          }
+          donorEvent.donorId = this.donor.id;
+          await this.donorEventRepo.save(donorEvent);
         }
 
+        // Save donor addresses
         for (const donorAddress of this.donorAddresses) {
-          if (!donorAddress.id) {
-            donorAddress.donorId = this.donor.id;
-            await this.donorAddressRepo.save(donorAddress);
-            console.log('Saved new donor address:', donorAddress.addressName);
-          }
+          donorAddress.donorId = this.donor.id;
+          await this.donorAddressRepo.save(donorAddress);
         }
 
+        // Save donor contacts
         for (const donorContact of this.donorContacts) {
-          if (!donorContact.id) {
-            donorContact.donorId = this.donor.id;
-            await this.donorContactRepo.save(donorContact);
-            console.log('Saved new donor contact:', donorContact.type, donorContact.prefix);
-          }
+          donorContact.donorId = this.donor.id;
+          await this.donorContactRepo.save(donorContact);
         }
 
+        // Save donor places
         for (const donorPlace of this.donorPlaces) {
-          if (!donorPlace.id) {
-            donorPlace.donorId = this.donor.id;
-            await this.donorPlaceRepo.save(donorPlace);
-            console.log('Saved new donor place:', donorPlace.description);
-          }
+          donorPlace.donorId = this.donor.id;
+          await this.donorPlaceRepo.save(donorPlace);
         }
 
+        // Save donor notes
         for (const donorNote of this.donorNotes) {
-          if (!donorNote.id) {
-            donorNote.donorId = this.donor.id;
-            await this.donorNoteRepo.save(donorNote);
-            console.log('Saved new donor note:', donorNote.noteType);
-          }
+          donorNote.donorId = this.donor.id;
+          await this.donorNoteRepo.save(donorNote);
         }
 
+        // Save reception hours (only if both times are filled)
         for (const receptionHour of this.donorReceptionHours) {
-          // Only save reception hours that have both startTime and endTime filled
-          if (!receptionHour.id && receptionHour.startTime && receptionHour.endTime) {
+          if (receptionHour.startTime && receptionHour.endTime) {
             receptionHour.donorId = this.donor.id;
             await this.donorReceptionHourRepo.save(receptionHour);
-            console.log('Saved new reception hour:', receptionHour.startTime, '-', receptionHour.endTime);
           }
         }
+
+        // Save donor relations (family relationships)
+        for (const donorRelation of this.donorRelations) {
+          await this.donorRelationRepo.save(donorRelation);
+        }
+
+        console.log('Saved all donor relations using Unit of Work pattern');
       }
 
       this.changed = wasNew || this.hasChanges();
@@ -937,11 +937,6 @@ export class DonorDetailsModalComponent implements OnInit {
 
   // Events Management
   async addEventFromDialog(event: Event) {
-    if (!this.donor?.id) {
-      alert('אנא שמור את התורם קודם');
-      return;
-    }
-
     // Check if event already exists for this donor
     const existsAlready = this.donorEvents.find(de => de.eventId === event.id);
     if (existsAlready) {
@@ -951,18 +946,16 @@ export class DonorDetailsModalComponent implements OnInit {
 
     try {
       const donorEvent = this.donorEventRepo.create({
-        donorId: this.donor.id,
+        donorId: this.donor?.id || '',
         eventId: event.id,
         date: undefined,
         isActive: true
       });
 
-      await this.donorEventRepo.save(donorEvent);
-
       // Set the event relation manually
       donorEvent.event = event;
 
-      // Add to the current list instead of reloading from DB
+      // Add to local array - will be saved when donor is saved
       this.donorEvents.push(donorEvent);
 
       this.changed = true;
@@ -981,12 +974,13 @@ export class DonorDetailsModalComponent implements OnInit {
 
     if (confirm('האם אתה בטוח שברצונך להסיר את האירוע?')) {
       try {
-        if (!donorEvent.isNew()) {
-          await donorEvent.delete();
+        // If the event has an ID, it was already saved to DB and needs to be deleted
+        if (donorEvent.id) {
+          await this.donorEventRepo.delete(donorEvent);
         }
 
-        // Remove from local array instead of reloading
-        const index = this.donorEvents.findIndex(de => de.id === donorEvent.id);
+        // Remove from local array
+        const index = this.donorEvents.findIndex(de => de === donorEvent);
         if (index > -1) {
           this.donorEvents.splice(index, 1);
         }
@@ -1002,8 +996,8 @@ export class DonorDetailsModalComponent implements OnInit {
   async onDonorEventDateChange(donorEvent: DonorEvent, value: Date | null) {
     try {
       donorEvent.date = value || undefined;
-      await this.donorEventRepo.save(donorEvent);
       this.changed = true;
+      // Changes will be saved when donor is saved
     } catch (error) {
       console.error('Error updating event date:', error);
     }
@@ -1070,12 +1064,7 @@ export class DonorDetailsModalComponent implements OnInit {
         isActive: true
       });
 
-      // If this is an existing donor, save the contact immediately
-      if (this.donor?.id && !this.isNewDonor) {
-        await this.donorContactRepo.save(newContact);
-        console.log('Saved new contact immediately:', type, newContact.prefix);
-      }
-
+      // Add to local array - will be saved when donor is saved
       this.donorContacts.push(newContact);
       this.changed = true;
     } catch (error) {
@@ -1150,12 +1139,7 @@ export class DonorDetailsModalComponent implements OnInit {
         isActive: true
       });
 
-      // If this is an existing donor, save the place immediately
-      if (this.donor?.id && !this.isNewDonor) {
-        await this.donorPlaceRepo.save(newPlace);
-        console.log('Saved new place immediately:', selectedAddressType.name);
-      }
-
+      // Add to local array - will be saved when donor is saved
       this.donorPlaces.push(newPlace);
       this.changed = true;
     } catch (error) {
@@ -1199,29 +1183,12 @@ export class DonorDetailsModalComponent implements OnInit {
       for (const contact of phoneContacts) {
         // Only update if prefix is empty or default
         contact.prefix = phonePrefix;
-
-        // If contact already exists, save it
-        if (contact.id) {
-          try {
-            await this.donorContactRepo.save(contact);
-          } catch (error) {
-            console.error('Error updating contact prefix:', error);
-          }
-        }
       }
 
       console.log(`Updated phone prefixes to ${phonePrefix} for home address`);
     }
 
-    // If this is an existing place, save it immediately
-    if (donorPlace.id) {
-      try {
-        await this.donorPlaceRepo.save(donorPlace);
-        console.log('Saved donor place:', donorPlace.description);
-      } catch (error) {
-        console.error('Error saving donor place:', error);
-      }
-    }
+    // Changes will be saved when donor is saved
 
     // Force UI update
     this.changeDetector.detectChanges();
@@ -1261,12 +1228,7 @@ export class DonorDetailsModalComponent implements OnInit {
         isActive: true
       });
 
-      // If this is an existing donor, save the note immediately
-      if (this.donor?.id && !this.isNewDonor) {
-        await this.donorNoteRepo.save(newNote);
-        console.log('Saved new note immediately:', result.noteType);
-      }
-
+      // Add to local array - will be saved when donor is saved
       this.donorNotes.push(newNote);
       this.changed = true;
     } catch (error) {
@@ -1364,15 +1326,7 @@ export class DonorDetailsModalComponent implements OnInit {
     this.sortReceptionHours();
     this.changed = true;
 
-    // If this is an existing reception hour, save it immediately
-    if (receptionHour.id) {
-      try {
-        await this.donorReceptionHourRepo.save(receptionHour);
-        console.log('Saved donor reception hour');
-      } catch (error) {
-        console.error('Error saving donor reception hour:', error);
-      }
-    }
+    // Changes will be saved when donor is saved
   }
 
   // Validation function for reception hours
@@ -2350,24 +2304,31 @@ export class DonorDetailsModalComponent implements OnInit {
   }
 
   private getReverseRelationshipType(relationshipType: string, donorGender: 'male' | 'female' | ''): string {
-    // Map of relationship types and their reverse by gender
-    const reverseMap: { [key: string]: { male: string; female: string } } = {
-      'אבא': { male: 'בן', female: 'בת' },
-      'אח': { male: 'אח', female: 'אחות' },
-      'דוד': { male: 'בן אח', female: 'בת אח' },
-      'סבא': { male: 'נכד', female: 'נכדה' },
-      'חותן': { male: 'חתן', female: 'כלה' },
-      'חמו': { male: 'חתן', female: 'כלה' },
-      'בן': { male: 'אבא', female: 'אבא' },
-      'נכד': { male: 'סבא', female: 'סבתא' },
-      'אחות': { male: 'אח', female: 'אחות' },
-      'דודה': { male: 'בן אח', female: 'בת אח' },
-      'סבתא': { male: 'נכד', female: 'נכדה' },
-      'בת': { male: 'אבא', female: 'אמא' },
-      'נכדה': { male: 'סבא', female: 'סבתא' },
-      'חבר': { male: 'חבר', female: 'חברה' },
-      'אחר': { male: 'אחר', female: 'אחר' }
-    };
+    
+  const reverseMap: { [key: string]: { male: string; female: string } } = {
+    'בן': { male: 'אב', female: 'אם' },
+    'בת': { male: 'אב', female: 'אם' },
+    'אב': { male: 'בן', female: 'בת' },
+    'אם': { male: 'בן', female: 'בת' },
+    'נכד': { male: 'סבא', female: 'סבתא' },
+    'נכדה': { male: 'סבא', female: 'סבתא' },
+    'סבא': { male: 'נכד', female: 'נכדה' },
+    'סבתא': { male: 'נכד', female: 'נכדה' },
+    'אח': { male: 'אח', female: 'אחות' },
+    'אחות': { male: 'אח', female: 'אחות' },
+    'דוד': { male: 'אחיין', female: 'אחיינית' },
+    'דודה': { male: 'אחיין', female: 'אחיינית' },
+    'אחיין': { male: 'דוד', female: 'דודה' },
+    'אחיינית': { male: 'דוד', female: 'דודה' },
+    'חתן': { male: 'חותן', female: 'חותנת' },
+    'כלה': { male: 'חותן', female: 'חותנת' },
+    'חותן': { male: 'חתן', female: 'כלה' },
+    'חותנת': { male: 'חתן', female: 'כלה' },
+    'בעל': { male: '', female: 'אישה' },
+    'אישה': { male: 'בעל', female: '' },
+    'גיס': { male: 'גיס', female: 'גיסה' },
+    'גיסה': { male: 'גיס', female: 'גיסה' },
+  };
 
     const mapping = reverseMap[relationshipType];
     if (!mapping) return 'אחר';
@@ -2400,8 +2361,8 @@ export class DonorDetailsModalComponent implements OnInit {
         relationshipType1: this.newRelationshipType
       });
 
-      await this.donorRelationRepo.save(newRelation);
-
+      // await this.donorRelationRepo.save(newRelation);
+console.log(' newRelation.id', newRelation.id)
       // Add to selectedFamilyRelationships for display
       this.selectedFamilyRelationships.push({
         donor: selectedDonor,
@@ -2476,9 +2437,19 @@ export class DonorDetailsModalComponent implements OnInit {
       };
     });
 
-    if (result) {
-      // Reload family relationships
-      await this.loadSelectedFamilyRelationships();
+    if (result && result !== false) {
+      // Add the new relation to local array - will be saved when donor is saved
+      const newRelation = result as DonorRelation;
+
+      // Load the related donor data if not already included
+      if (!newRelation.donor2) {
+        newRelation.donor2 = this.allDonorsForFamily.find(d => d.id === newRelation.donor2Id);
+      }
+
+      this.donorRelations.push(newRelation);
+
+      // Rebuild the display list from local array
+      this.buildSelectedFamilyRelationships();
       this.changed = true;
     }
   }
@@ -2497,9 +2468,23 @@ export class DonorDetailsModalComponent implements OnInit {
       };
     });
 
-    if (result) {
-      // Reload family relationships
-      await this.loadSelectedFamilyRelationships();
+    if (result && result !== false) {
+      // Update the relation in local array - will be saved when donor is saved
+      const updatedRelation = result as DonorRelation;
+
+      // Find and update the relation in local array
+      const index = this.donorRelations.findIndex(r => r.id === updatedRelation.id);
+      if (index > -1) {
+        // Load the related donor data if not already included
+        if (!updatedRelation.donor2) {
+          updatedRelation.donor2 = this.allDonorsForFamily.find(d => d.id === updatedRelation.donor2Id);
+        }
+
+        this.donorRelations[index] = updatedRelation;
+      }
+
+      // Rebuild the display list from local array
+      this.buildSelectedFamilyRelationships();
       this.changed = true;
     }
   }
@@ -2538,5 +2523,10 @@ export class DonorDetailsModalComponent implements OnInit {
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
+  }
+
+  formatDate(date: Date | undefined): string {
+    if (!date) return '';
+    return new Date(date).toLocaleDateString('he-IL');
   }
 }

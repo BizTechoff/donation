@@ -1,0 +1,126 @@
+<div class="modal-container">
+  <!-- Modal Header -->
+  <div class="modal-header">
+    <div class="header-content">
+      <mat-icon class="header-icon">inventory_2</mat-icon>
+      <div class="header-text">
+        <h2>קטלוג מתנות</h2>
+        <p class="subtitle" *ngIf="!loading">
+          סה"כ {{filteredGifts.length}} מתנות • {{activeGiftsCount}} פעילות • {{inactiveGiftsCount}} לא פעילות
+        </p>
+      </div>
+    </div>
+    <button mat-icon-button class="close-btn" (click)="close()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-container" *ngIf="loading">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>טוען רשימת מתנות...</p>
+  </div>
+
+  <!-- Modal Body -->
+  <div class="modal-body" *ngIf="!loading">
+
+    <!-- Actions Bar -->
+    <div class="actions-bar">
+      <div class="search-box">
+        <mat-icon>search</mat-icon>
+        <input type="text"
+               class="search-input"
+               [(ngModel)]="searchText"
+               (ngModelChange)="applyFilters()"
+               placeholder="חיפוש לפי שם מתנה, קטגוריה או תיאור...">
+      </div>
+
+      <button mat-raised-button
+              color="primary"
+              class="add-btn"
+              (click)="addNewGift()">
+        <mat-icon>add</mat-icon>
+        הוסף מתנה חדשה
+      </button>
+    </div>
+
+    <!-- Gifts Table -->
+    <div class="table-wrapper">
+      <table class="gifts-table" *ngIf="filteredGifts.length > 0">
+        <thead>
+          <tr>
+            <th>שם המתנה</th>
+            <th>קטגוריה</th>
+            <th>ערך משוער</th>
+            <th>תיאור</th>
+            <th>סטטוס</th>
+            <th>פעולות</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let gift of filteredGifts" [class.inactive-row]="!gift.isActive">
+            <td class="gift-name">
+              <mat-icon class="gift-icon">redeem</mat-icon>
+              <span>{{gift.name}}</span>
+            </td>
+            <td>{{gift.category || '-'}}</td>
+            <td class="value-cell">
+              <span *ngIf="gift.estimatedValue">
+                {{gift.estimatedValue | number:'1.0-0'}} ₪
+              </span>
+              <span *ngIf="!gift.estimatedValue">-</span>
+            </td>
+            <td class="description-cell">
+              <span class="description-text">{{gift.description || '-'}}</span>
+            </td>
+            <td>
+              <mat-slide-toggle
+                [checked]="gift.isActive"
+                (change)="toggleActive(gift)"
+                color="primary">
+                {{gift.isActive ? 'פעיל' : 'לא פעיל'}}
+              </mat-slide-toggle>
+            </td>
+            <td class="actions-cell">
+              <button mat-icon-button
+                      (click)="editGift(gift)"
+                      matTooltip="עריכה"
+                      class="action-btn edit-btn">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button mat-icon-button
+                      (click)="deleteGift(gift)"
+                      matTooltip="מחיקה"
+                      class="action-btn delete-btn">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Empty State -->
+      <div class="empty-state" *ngIf="filteredGifts.length === 0">
+        <mat-icon class="empty-icon">inventory_2</mat-icon>
+        <h3>אין מתנות להצגה</h3>
+        <p *ngIf="searchText">נסה לשנות את הפילטרים או להוסיף מתנה חדשה</p>
+        <p *ngIf="!searchText">התחל על ידי הוספת מתנה ראשונה לקטלוג</p>
+        <button mat-raised-button
+                color="primary"
+                (click)="addNewGift()">
+          <mat-icon>add</mat-icon>
+          הוסף מתנה ראשונה
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Modal Footer -->
+  <div class="modal-footer" *ngIf="!loading">
+    <button mat-stroked-button (click)="close()">
+      <mat-icon>close</mat-icon>
+      סגור
+    </button>
+  </div>
+</div>

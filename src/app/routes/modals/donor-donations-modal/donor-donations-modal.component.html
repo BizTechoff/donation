@@ -10,8 +10,11 @@
         </div>
         <div class="header-text">
           <h2>{{modalTitle}}</h2>
-          <p class="header-subtitle" *ngIf="!loading">
+          <p class="header-subtitle" *ngIf="!loading && !isGiftsMode">
             סה"כ {{totalDonations}} תרומות • {{totalAmount | number:'1.2-2'}} ₪
+          </p>
+          <p class="header-subtitle" *ngIf="!loading && isGiftsMode">
+            סה"כ {{totalDonations}} מתנות
           </p>
         </div>
       </div>
@@ -36,10 +39,10 @@
             <input type="text"
                    class="filter-input"
                    [(ngModel)]="filterText"
-                   placeholder="חיפוש בהערות או סכום">
+                   [placeholder]="isGiftsMode ? 'חיפוש שם מתנה או הערות' : 'חיפוש בהערות או סכום'">
           </div>
 
-          <div class="filter-group">
+          <div class="filter-group" *ngIf="!isGiftsMode">
             <mat-icon class="filter-icon">campaign</mat-icon>
             <select class="filter-select" [(ngModel)]="filterCampaign">
               <option value="">כל הקמפיינים</option>
@@ -49,7 +52,7 @@
             </select>
           </div>
 
-          <div class="filter-group">
+          <div class="filter-group" *ngIf="!isGiftsMode">
             <mat-icon class="filter-icon">payment</mat-icon>
             <select class="filter-select" [(ngModel)]="filterMethod">
               <option value="">כל אמצעי התשלום</option>
@@ -79,7 +82,7 @@
       </div>
 
       <!-- Donations Table -->
-      <div class="table-container">
+      <div class="table-container" *ngIf="!isGiftsMode">
         <table mat-table [dataSource]="filteredDonations" class="donations-table" matSort>
 
           <!-- Date Column -->
@@ -196,11 +199,81 @@
         </div>
       </div>
 
+      <!-- Gifts Table -->
+      <div class="table-container" *ngIf="isGiftsMode">
+        <table mat-table [dataSource]="filteredDonorGifts" class="donations-table" matSort>
+
+          <!-- Delivery Date Column -->
+          <ng-container matColumnDef="deliveryDate">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>תאריך מסירה</th>
+            <td mat-cell *matCellDef="let donorGift">
+              <div class="date-cell">
+                <mat-icon class="cell-icon">event</mat-icon>
+                {{formatDate(donorGift.deliveryDate)}}
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Gift Name Column -->
+          <ng-container matColumnDef="giftName">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>שם המתנה</th>
+            <td mat-cell *matCellDef="let donorGift">
+              <div class="gift-cell">
+                <mat-icon class="cell-icon">redeem</mat-icon>
+                {{donorGift.gift?.name || 'לא מוגדר'}}
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Status Column -->
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>סטטוס</th>
+            <td mat-cell *matCellDef="let donorGift">
+              <span class="status-badge" [class]="getGiftStatusClass(donorGift.isDelivered)">
+                {{getGiftStatusText(donorGift.isDelivered)}}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Actions Column -->
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>פעולות</th>
+            <td mat-cell *matCellDef="let donorGift">
+              <div class="actions-cell">
+                <button mat-icon-button
+                        (click)="editDonorGift(donorGift)"
+                        matTooltip="עריכה"
+                        class="action-btn edit-btn">
+                  <mat-icon>edit</mat-icon>
+                </button>
+
+                <button mat-icon-button
+                        (click)="deleteDonorGift(donorGift)"
+                        matTooltip="מחיקה"
+                        class="action-btn delete-btn">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="currentDisplayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: currentDisplayedColumns;"></tr>
+        </table>
+
+        <!-- No Data Message -->
+        <div class="no-data-message" *ngIf="filteredDonorGifts.length === 0">
+          <mat-icon class="no-data-icon">{{modalIcon}}</mat-icon>
+          <h3>אין מתנות להצגה</h3>
+          <p>לא נמצאו מתנות עבור התורם הזה או לפי הפילטרים שנבחרו</p>
+        </div>
+      </div>
+
     </div>
 
     <!-- Modal Footer -->
     <div class="modal-footer">
-      <div class="footer-summary">
+      <div class="footer-summary" *ngIf="!isGiftsMode">
         <div class="summary-item">
           <mat-icon>receipt_long</mat-icon>
           <span>סה"כ תרומות: {{filteredDonations.length}}</span>
@@ -208,6 +281,21 @@
         <div class="summary-item">
           <mat-icon>attach_money</mat-icon>
           <span>סה"כ סכום: {{getFilteredTotal() | number:'1.2-2'}} ₪</span>
+        </div>
+      </div>
+
+      <div class="footer-summary" *ngIf="isGiftsMode">
+        <div class="summary-item">
+          <mat-icon>redeem</mat-icon>
+          <span>סה"כ מתנות: {{filteredDonorGifts.length}}</span>
+        </div>
+        <div class="summary-item">
+          <mat-icon>check_circle</mat-icon>
+          <span>נמסרו: {{deliveredGiftsCount}}</span>
+        </div>
+        <div class="summary-item">
+          <mat-icon>schedule</mat-icon>
+          <span>ממתינות: {{pendingGiftsCount}}</span>
         </div>
       </div>
 

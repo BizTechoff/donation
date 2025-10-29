@@ -8,10 +8,10 @@
     <div class="toolbar-actions">
       <!-- Quick Actions -->
       <app-quick-actions *ngIf="remult.authenticated()"></app-quick-actions>
-      
+
       <!-- Global Filters -->
       <app-global-filters *ngIf="remult.authenticated()"></app-global-filters>
-      
+
       <!-- Language Switcher -->
       <app-language-switcher></app-language-switcher>
 
@@ -37,14 +37,17 @@
     </div>
   </mat-toolbar>
   <mat-sidenav-container class="app-sidenav-container" [dir]="i18n.lang.RTL ? 'rtl' : 'ltr'">
-    <mat-sidenav #sidenav class="app-sidenav mat-elevation-z10 no-print" [opened]="!uiService.isScreenSmall() && remult.authenticated()"
+    <mat-sidenav #sidenav class="app-sidenav mat-elevation-z10 no-print"
+      [opened]="!uiService.isScreenSmall() && remult.authenticated()"
       [mode]="uiService.isScreenSmall() ? 'over' : 'side'">
       <div style="width: 100%; text-align: center"></div>
-      <h3 *ngIf="remult.authenticated()">
+      <h3 style="padding-left: 3px;" *ngIf="remult.authenticated()">
         {{ (i18n.terms$ | async)?.hello }} {{ remult.user!.name }}
       </h3>
       <mat-nav-list role="list">
         <ng-container *ngFor="let m of router.config">
+          <mat-divider  style="opacity: .2;"
+            *ngIf="shouldDisplayRoute(m) && [terms.userAccounts, terms.reminders, terms.certificates].includes(m.path)"></mat-divider>
           <a mat-list-item *ngIf="shouldDisplayRoute(m)" routerLinkActive="active-route" [routerLink]="m.path"
             (click)="routeClicked()">
             {{ getRouteNameObservable(m) | async }}

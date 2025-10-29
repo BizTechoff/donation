@@ -182,6 +182,19 @@
             </select>
           </div>
 
+          <!-- Lineage (יוחסין) -->
+          <div class="form-group">
+            <div class="field-title">
+              <mat-icon class="field-icon">family_restroom</mat-icon>
+              <label>{{ (i18n.terms$ | async)?.lineage }}</label>
+            </div>
+            <select class="form-control" [(ngModel)]="donor.lineage" (change)="onFieldChange()">
+              <option value="cohen">{{ (i18n.terms$ | async)?.lineageCohen }}</option>
+              <option value="levi">{{ (i18n.terms$ | async)?.lineageLevi }}</option>
+              <option value="israel">{{ (i18n.terms$ | async)?.lineageIsrael }}</option>
+            </select>
+          </div>
+
           <!-- Fundraiser (מתרים) -->
           <div class="form-group">
             <div class="field-title">
@@ -486,14 +499,16 @@
                 <div class="family-relationships-selected" *ngIf="selectedFamilyRelationships.length > 0">
                   <div class="selected-family-list">
                     <div class="selected-family-member" *ngFor="let relationship of selectedFamilyRelationships">
-                      <span class="relationship-type-badge clickable"
-                        (click)="editFamilyRelation(relationship)"
-                        matTooltip="לחץ לעריכת סוג הקשר"
-                        title="לחץ לעריכת סוג הקשר">{{ relationship.relationshipType }}</span>
-                      <span class="family-member-name clickable"
-                        (click)="openFamilyMemberDetails(relationship.donor, $event)"
-                        matTooltip="לחץ לפתיחת פרטי התורם"
-                        title="לחץ לפתיחת פרטי התורם">
+                      <span class="relationship-type-badge"
+                        [class.clickable]="relationship.relationId"
+                        (click)="relationship.relationId && editFamilyRelation(relationship)"
+                        [matTooltip]="relationship.relationId ? 'לחץ לעריכת סוג הקשר' : ''"
+                        [title]="relationship.relationId ? 'לחץ לעריכת סוג הקשר' : ''">{{ relationship.relationshipType }}</span>
+                      <span class="family-member-name"
+                        [class.clickable]="relationship.relationId"
+                        (click)="relationship.relationId && openFamilyMemberDetails(relationship.donor, $event)"
+                        [matTooltip]="relationship.relationId ? 'לחץ לפתיחת פרטי התורם' : ''"
+                        [title]="relationship.relationId ? 'לחץ לפתיחת פרטי התורם' : ''">
                         {{ relationship.donor.fullName }}
                       </span>
                       <button mat-icon-button class="remove-family-btn" (click)="removeFamilyRelationship(relationship); $event.stopPropagation()"

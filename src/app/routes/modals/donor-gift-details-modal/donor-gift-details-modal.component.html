@@ -1,0 +1,103 @@
+<div class="modal-container" *ngIf="!loading && donorGift">
+  <div class="modal-header">
+    <h2>{{ isNew ? (i18n.terms$ | async)?.addNewGift : (i18n.terms$ | async)?.editGift }}</h2>
+    <button mat-icon-button (click)="close()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <div class="modal-body">
+    <div class="form-section">
+      <!-- Donor Selection -->
+      <div class="form-row">
+        <div class="form-group full-width">
+          <label>{{ (i18n.terms$ | async)?.donor }} <span class="required">*</span></label>
+          <div class="donor-selector">
+            <select class="form-control"
+                    [(ngModel)]="donorGift.donorId"
+                    (ngModelChange)="onDonorChange($event)"
+                    [disabled]="!isNew">
+              <option value="">{{ (i18n.terms$ | async)?.selectDonor }}</option>
+              <option *ngFor="let donor of donors" [value]="donor.id">
+                {{ getDonorName(donor) }}
+              </option>
+            </select>
+            <button mat-icon-button
+                    (click)="openDonorSelectionModal()"
+                    [disabled]="!isNew"
+                    [title]="(i18n.terms$ | async)?.searchDonor">
+              <mat-icon>search</mat-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gift Selection -->
+      <div class="form-row">
+        <div class="form-group full-width">
+          <label>{{ (i18n.terms$ | async)?.gift }} <span class="required">*</span></label>
+          <select class="form-control"
+                  [(ngModel)]="donorGift.giftId"
+                  (ngModelChange)="onGiftChange($event)">
+            <option value="">{{ (i18n.terms$ | async)?.selectGift }}</option>
+            <option *ngFor="let gift of gifts" [value]="gift.id">
+              {{ gift.name }}
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Delivery Date -->
+      <div class="form-row">
+        <div class="form-group">
+          <label>{{ (i18n.terms$ | async)?.deliveryDate }} <span class="required">*</span></label>
+          <input type="date"
+                 class="form-control"
+                 [(ngModel)]="donorGift.deliveryDate">
+        </div>
+
+        <!-- Reminder Date -->
+        <div class="form-group">
+          <label>{{ (i18n.terms$ | async)?.reminderDate }}</label>
+          <input type="date"
+                 class="form-control"
+                 [(ngModel)]="donorGift.reminderDate">
+        </div>
+      </div>
+
+      <!-- Status -->
+      <div class="form-row">
+        <div class="form-group full-width">
+          <mat-checkbox [(ngModel)]="donorGift.isDelivered">
+            {{ (i18n.terms$ | async)?.giftDelivered }}
+          </mat-checkbox>
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <div class="form-row">
+        <div class="form-group full-width">
+          <label>{{ (i18n.terms$ | async)?.notes }}</label>
+          <textarea class="form-control"
+                    rows="4"
+                    [(ngModel)]="donorGift.notes"
+                    [placeholder]="(i18n.terms$ | async)?.notesPlaceholder"></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-footer">
+    <button class="btn btn-secondary" (click)="close()">
+      {{ (i18n.terms$ | async)?.cancel }}
+    </button>
+    <button class="btn btn-primary" (click)="save()" [disabled]="loading">
+      <mat-icon>save</mat-icon>
+      {{ (i18n.terms$ | async)?.save }}
+    </button>
+  </div>
+</div>
+
+<div class="loading-container" *ngIf="loading">
+  <mat-spinner></mat-spinner>
+</div>

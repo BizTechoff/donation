@@ -2,7 +2,7 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialogRef } from '@angular/material/dialog';
 import { DialogConfig } from 'common-ui-elements';
-import { Donation, Donor, DonationMethod, Campaign } from '../../../../shared/entity';
+import { Donation, Donor, DonationMethod, Campaign, DonorGift, Gift } from '../../../../shared/entity';
 import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
 import { UIToolsService } from '../../../common/UIToolsService';
@@ -29,10 +29,16 @@ export class DonorDonationsModalComponent implements OnInit {
   campaigns: Campaign[] = [];
   donationMethods: DonationMethod[] = [];
 
+  // For gifts mode
+  donorGifts: DonorGift[] = [];
+  gifts: Gift[] = [];
+
   donationRepo = remult.repo(Donation);
   donorRepo = remult.repo(Donor);
   campaignRepo = remult.repo(Campaign);
   donationMethodRepo = remult.repo(DonationMethod);
+  donorGiftRepo = remult.repo(DonorGift);
+  giftRepo = remult.repo(Gift);
 
   loading = false;
 
@@ -44,6 +50,13 @@ export class DonorDonationsModalComponent implements OnInit {
 
   // Table configuration
   displayedColumns: string[] = ['donationDate', 'amount', 'currency', 'campaign', 'method', 'actions'];
+
+  get currentDisplayedColumns(): string[] {
+    if (this.isGiftsMode) {
+      return ['deliveryDate', 'giftName', 'status', 'actions'];
+    }
+    return this.displayedColumns;
+  }
 
   // Totals
   totalAmount = 0;
@@ -94,12 +107,16 @@ export class DonorDonationsModalComponent implements OnInit {
       // Load donor
       this.donor = await this.donorRepo.findId(this.args.donorId) || undefined;
 
-      // Load related data
-      await Promise.all([
-        this.loadDonations(),
-        this.loadCampaigns(),
-        this.loadDonationMethods()
-      ]);
+      // Load related data based on donation type
+      if (this.args.donationType === 'gifts') {
+        await this.loadDonorGifts();
+      } else {
+        await Promise.all([
+          this.loadDonations(),
+          this.loadCampaigns(),
+          this.loadDonationMethods()
+        ]);
+      }
 
       this.calculateTotals();
     } catch (error) {
@@ -118,10 +135,6 @@ export class DonorDonationsModalComponent implements OnInit {
       case 'donations':
         whereClause.donationType = 'full';
         break;
-      case 'gifts':
-        // Assuming gifts have a specific status or type
-        whereClause.donationType = 'commitment';
-        break;
       case 'receipts':
         whereClause.receiptIssued = true;
         break;
@@ -133,6 +146,17 @@ export class DonorDonationsModalComponent implements OnInit {
       include: {
         campaign: true,
         donationMethod: true
+      }
+    });
+  }
+
+  async loadDonorGifts() {
+    this.donorGifts = await this.donorGiftRepo.find({
+      where: { donorId: this.args.donorId },
+      orderBy: { deliveryDate: 'desc' },
+      include: {
+        donor: true,
+        gift: true
       }
     });
   }
@@ -150,8 +174,13 @@ export class DonorDonationsModalComponent implements OnInit {
   }
 
   calculateTotals() {
-    this.totalDonations = this.donations.length;
-    this.totalAmount = this.donations.reduce((sum, donation) => sum + donation.amount, 0);
+    if (this.args.donationType === 'gifts') {
+      this.totalDonations = this.donorGifts.length;
+      this.totalAmount = 0; // Gifts don't have amounts
+    } else {
+      this.totalDonations = this.donations.length;
+      this.totalAmount = this.donations.reduce((sum, donation) => sum + donation.amount, 0);
+    }
   }
 
   get filteredDonations(): Donation[] {
@@ -171,6 +200,28 @@ export class DonorDonationsModalComponent implements OnInit {
 
       return matchesText && matchesCampaign && matchesMethod && matchesStatus;
     });
+  }
+
+  get filteredDonorGifts(): DonorGift[] {
+    return this.donorGifts.filter(dg => {
+      const matchesText = !this.filterText ||
+        dg.gift?.name?.toLowerCase().includes(this.filterText.toLowerCase()) ||
+        dg.notes?.toLowerCase().includes(this.filterText.toLowerCase());
+
+      return matchesText;
+    });
+  }
+
+  get isGiftsMode(): boolean {
+    return this.args.donationType === 'gifts';
+  }
+
+  get deliveredGiftsCount(): number {
+    return this.filteredDonorGifts.filter(dg => dg.isDelivered).length;
+  }
+
+  get pendingGiftsCount(): number {
+    return this.filteredDonorGifts.filter(dg => !dg.isDelivered).length;
   }
 
   getFilteredTotal(): number {
@@ -257,6 +308,43 @@ export class DonorDonationsModalComponent implements OnInit {
       association: this.i18n.terms.other
     };
     return typeLabels[method.type] || method.name;
+  }
+
+  // Gift-related methods
+  async editDonorGift(donorGift: DonorGift) {
+    // Open donor gift details modal
+    const changed = await this.ui.donorGiftDetailsDialog(donorGift.id);
+    if (changed) {
+      await this.loadDonorGifts();
+      this.calculateTotals();
+    }
+  }
+
+  async deleteDonorGift(donorGift: DonorGift) {
+    if (await this.ui.yesNoQuestion(`האם אתה בטוח שברצונך למחוק את המתנה "${donorGift.gift?.name}"?`)) {
+      try {
+        await this.donorGiftRepo.delete(donorGift);
+        await this.loadDonorGifts();
+        this.calculateTotals();
+        this.ui.info('המתנה נמחקה בהצלחה');
+      } catch (error) {
+        console.error('Error deleting donor gift:', error);
+        this.ui.error('שגיאה במחיקת המתנה');
+      }
+    }
+  }
+
+  getGiftStatusText(isDelivered: boolean): string {
+    return isDelivered ? 'נמסרה' : 'ממתינה';
+  }
+
+  getGiftStatusClass(isDelivered: boolean): string {
+    return isDelivered ? 'status-completed' : 'status-pending';
+  }
+
+  formatDate(date: Date | undefined): string {
+    if (!date) return '';
+    return new Date(date).toLocaleDateString('he-IL');
   }
 
   closeModal() {

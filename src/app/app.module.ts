@@ -27,6 +27,8 @@ import { MatTableModule } from '@angular/material/table'
 import { MatSortModule } from '@angular/material/sort'
 import { MatPaginatorModule } from '@angular/material/paginator'
 import { MatProgressBarModule } from '@angular/material/progress-bar'
+import { MatSlideToggleModule } from '@angular/material/slide-toggle'
+import { DragDropModule } from '@angular/cdk/drag-drop'
 import { CommonUIElementsModule } from 'common-ui-elements'
 import { UsersComponent } from './users/users.component'
 import { YesNoQuestionComponent } from './common/yes-no-question/yes-no-question.component'
@@ -69,6 +71,7 @@ import { DonorSelectionModalComponent } from './routes/modals/donor-selection-mo
 import { DonorAddressTypeSelectionModalComponent } from './routes/modals/donor-address-type-selection-modal/donor-address-type-selection-modal.component'
 import { OsmAddressInputComponent } from './common/osm-address-input/osm-address-input.component'
 import { LetterPropertiesModalComponent } from './routes/modals/letter-properties-modal/letter-properties-modal.component'
+import { LetterTitleSelectionModalComponent } from './routes/modals/letter-title-selection-modal/letter-title-selection-modal.component'
 import { ReminderDetailsModalComponent } from './routes/modals/reminder-details-modal/reminder-details-modal.component'
 import { DonationDetailsModalComponent } from './routes/modals/donation-details-modal/donation-details-modal.component'
 import { CampaignDetailsModalComponent } from './routes/modals/campaign-details-modal/campaign-details-modal.component'
@@ -82,10 +85,17 @@ import { CircleDetailsModalComponent } from './routes/modals/circle-details-moda
 import { DonorDonationsModalComponent } from './routes/modals/donor-donations-modal/donor-donations-modal.component'
 import { CampaignDonorsModalComponent } from './routes/modals/campaign-donors-modal/campaign-donors-modal.component'
 import { CampaignBlessingBookModalComponent } from './routes/modals/campaign-blessing-book-modal/campaign-blessing-book-modal.component'
+import { BlessingTypeSelectionModalComponent } from './routes/modals/blessing-type-selection-modal/blessing-type-selection-modal.component'
+import { BlessingTextEditModalComponent } from './routes/modals/blessing-text-edit-modal/blessing-text-edit-modal.component'
 import { ToggleSwitchComponent } from './shared/toggle-switch/toggle-switch.component'
 import { UserDetailsComponent } from './route/user-details/user-details.component'
 import { FileUploadComponent } from './components/file-upload/file-upload.component'
 import { PaymentListModalComponent } from './routes/modals/payment-list-modal/payment-list-modal.component'
+import { PaymentDetailsModalComponent } from './routes/modals/payment-details-modal/payment-details-modal.component'
+import { DonorGiftsListComponent } from './route/donor-gifts-list/donor-gifts-list.component'
+import { DonorGiftDetailsModalComponent } from './routes/modals/donor-gift-details-modal/donor-gift-details-modal.component'
+import { GiftDetailsModalComponent } from './routes/modals/gift-details-modal/gift-details-modal.component'
+import { GiftCatalogModalComponent } from './routes/modals/gift-catalog-modal/gift-catalog-modal.component'
 
 @NgModule({
   declarations: [
@@ -120,6 +130,7 @@ import { PaymentListModalComponent } from './routes/modals/payment-list-modal/pa
     DonorDetailsModalComponent,
     FamilyRelationDetailsModalComponent,
     LetterPropertiesModalComponent,
+    LetterTitleSelectionModalComponent,
     ReminderDetailsModalComponent,
     DonationDetailsModalComponent,
     CampaignDetailsModalComponent,
@@ -133,6 +144,8 @@ import { PaymentListModalComponent } from './routes/modals/payment-list-modal/pa
     DonorDonationsModalComponent,
     CampaignDonorsModalComponent,
     CampaignBlessingBookModalComponent,
+    BlessingTypeSelectionModalComponent,
+    BlessingTextEditModalComponent,
     ModalNavigationHeaderComponent,
     GlobalFiltersComponent,
     QuickActionsComponent,
@@ -141,7 +154,12 @@ import { PaymentListModalComponent } from './routes/modals/payment-list-modal/pa
     UserDetailsComponent,
     OsmAddressInputComponent,
     FileUploadComponent,
-    PaymentListModalComponent
+    PaymentListModalComponent,
+    PaymentDetailsModalComponent,
+    DonorGiftsListComponent,
+    DonorGiftDetailsModalComponent,
+    GiftDetailsModalComponent,
+    GiftCatalogModalComponent
   ],
   imports: [
     BrowserModule,
@@ -172,6 +190,8 @@ import { PaymentListModalComponent } from './routes/modals/payment-list-modal/pa
     MatSortModule,
     MatPaginatorModule,
     MatProgressBarModule,
+    MatSlideToggleModule,
+    DragDropModule,
     CommonUIElementsModule
   ],
   providers: [

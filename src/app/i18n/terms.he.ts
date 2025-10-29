@@ -39,6 +39,7 @@ export const termsHe = {
   reminders: 'תזכורות',
   donorsMap: 'מפת תורמים',
   campaigns: 'קמפיינים',
+  gifts: 'מתנות',
   reports: 'דוחות',
 
   // Donors Map
@@ -598,10 +599,10 @@ export const termsHe = {
   dinnerCampaignType: 'דינער',
   basicCampaignInfoSection: 'פרטי קמפיין בסיסיים',
   financialInfoSection: 'מידע כספי',
-  datesSection: 'תאריכים',
+  datesSection: 'תקופת הקמפיין',
   inviteesSection: 'מוזמנים',
   generalCriteriaLabel: 'קריטריונים כלליים',
-  settingsSection: 'הגדרות',
+  settingsSection: 'לינקים',
   dinnerInvitationLinkLabel: 'קישור להזמנה לדינער',
   dinnerBlessingBookLinkLabel: 'קישור לספר ברכות של הדינער',
   invitedListButton: 'רשימת מוזמנים',
@@ -626,7 +627,7 @@ export const termsHe = {
   poundGBP: 'פאונד בריטי (£)',
   dollarCAD: 'דולר קנדי (C$)',
   dollarAUD: 'דולר אוסטרלי (A$)',
-  standardDonationLabel: 'תרומה סטנדרטית',
+  standardDonationLabel: 'סכום כברירת מחדל לתרומה',
   standardDonationPlaceholder: 'סכום ברירת מחדל',
   raisedAmountLabel: 'סכום שנאסף',
   raisedAmountPlaceholder: 'סכום שנאסף',
@@ -1171,6 +1172,10 @@ export const termsHe = {
   gender: 'מגדר',
   male: 'זכר',
   female: 'נקבה',
+  lineage: 'יוחסין',
+  lineageIsrael: 'ישראל',
+  lineageCohen: 'כהן',
+  lineageLevi: 'לוי',
   donationDateLabel: 'תאריך תרומה *',
   reason: 'סיבה',
   enterReason: 'הכנס סיבה',
@@ -1337,9 +1342,6 @@ export const termsHe = {
   editCompany: 'ערוך חברה',
   legacyCompanies: 'חברות ישנות (לתצוגה בלבד)',
 
-  // Quick Actions
-  gifts: 'מתנות',
-
   // Bank Details Modal
   newBank: 'בנק חדש',
   basicBankDetails: 'פרטי בנק בסיסיים',
@@ -1361,6 +1363,7 @@ export const termsHe = {
   street: 'רחוב',
   streetName: 'שם רחוב',
   houseNumber: 'מס׳',
+  apartment: 'דירה',
   neighborhood: 'שכונה',
   state: 'מחוז',
   postcode: 'מיקוד',
@@ -1489,5 +1492,28 @@ export const termsHe = {
   levelFull: 'מלא',
   levelBronze: 'ברונזה',
   levelSilver: 'כסף',
-  levelGold: 'זהב'
+  levelGold: 'זהב',
+
+  // Gifts
+  gift: 'מתנה',
+  addNewGift: 'הוסף מתנה חדשה',
+  editGift: 'ערוך מתנה',
+  giftType: 'סוג מתנה',
+  allGifts: 'כל המתנות',
+  deliveryDate: 'תאריך מסירה',
+  reminderDate: 'תזכורת',
+  giftDelivered: 'המתנה נמסרה',
+  delivered: 'נמסר',
+  totalGifts: 'סה"כ מתנות',
+  deliveredGifts: 'מתנות שנמסרו',
+  pendingGifts: 'מתנות ממתינות',
+  noGiftsFound: 'לא נמצאו מתנות',
+  noGiftsYet: 'עדיין לא נוספו מתנות לתורם זה',
+  addFirstGift: 'הוסף מתנה ראשונה',
+  selectGift: 'בחר מתנה',
+  allDonors: 'כל התורמים',
+  allYears: 'כל השנים',
+  donorGifts: 'מתנות לתורמים',
+  manageGiftCatalog: 'ניהול קטלוג מתנות',
+  addGiftToDonor: 'שייך מתנה לתורם'
 }

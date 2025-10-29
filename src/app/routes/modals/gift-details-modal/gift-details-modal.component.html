@@ -1,0 +1,90 @@
+<div class="modal-container" *ngIf="!loading && gift">
+  <div class="modal-header">
+    <h2>{{ isNew ? 'הוספת מתנה חדשה לקטלוג' : 'עריכת מתנה' }}</h2>
+    <button mat-icon-button (click)="close()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <div class="modal-body">
+    <div class="form-section">
+      <!-- Gift Name -->
+      <div class="form-row">
+        <div class="form-group full-width">
+          <label>שם המתנה <span class="required">*</span></label>
+          <input type="text"
+                 class="form-control"
+                 [(ngModel)]="gift.name"
+                 placeholder="לדוגמה: סידור תפילה, ספר תורה, מגילה...">
+        </div>
+      </div>
+
+      <!-- Category -->
+      <div class="form-row">
+        <div class="form-group">
+          <label>קטגוריה</label>
+          <input type="text"
+                 class="form-control"
+                 [(ngModel)]="gift.category"
+                 placeholder="לדוגמה: ספרים, כלי קודש, בגדים...">
+        </div>
+
+        <!-- Estimated Value -->
+        <div class="form-group">
+          <label>ערך משוער</label>
+          <input type="number"
+                 class="form-control"
+                 [(ngModel)]="gift.estimatedValue"
+                 placeholder="0.00"
+                 min="0"
+                 step="0.01">
+        </div>
+      </div>
+
+      <!-- Description -->
+      <div class="form-row">
+        <div class="form-group full-width">
+          <label>תיאור</label>
+          <textarea class="form-control"
+                    rows="3"
+                    [(ngModel)]="gift.description"
+                    placeholder="תיאור המתנה..."></textarea>
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <div class="form-row">
+        <div class="form-group full-width">
+          <label>הערות</label>
+          <textarea class="form-control"
+                    rows="3"
+                    [(ngModel)]="gift.notes"
+                    placeholder="הערות נוספות..."></textarea>
+        </div>
+      </div>
+
+      <!-- Is Active -->
+      <div class="form-row">
+        <div class="form-group full-width">
+          <mat-checkbox [(ngModel)]="gift.isActive">
+            מתנה פעילה (זמינה לשיוך)
+          </mat-checkbox>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-footer">
+    <button class="btn btn-secondary" (click)="close()">
+      {{ (i18n.terms$ | async)?.cancel }}
+    </button>
+    <button class="btn btn-primary" (click)="save()" [disabled]="loading">
+      <mat-icon>save</mat-icon>
+      {{ (i18n.terms$ | async)?.save }}
+    </button>
+  </div>
+</div>
+
+<div class="loading-container" *ngIf="loading">
+  <mat-spinner></mat-spinner>
+</div>
