@@ -13,13 +13,15 @@ import { UpdatePasswordController } from './users/UpdatePasswordController'
 import { remult } from 'remult'
 import { User } from '../shared/entity/user'
 import { terms } from './terms'
-
+ 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
 })
 export class AppComponent implements OnInit {
+  version = '2025.10.29' // environment.production ? '2025.08.05' : '2025.07.31'
+  
   constructor(
     public router: Router,
     public activeRoute: ActivatedRoute,
@@ -189,4 +191,19 @@ export class AppComponent implements OnInit {
   routeClicked() {
     if (this.uiService.isScreenSmall()) this.sidenav.close()
   }
+
+  getUserInitials(): string {
+    if (!remult.user?.name) return ''
+    const names = remult.user.name.trim().split(' ')
+    if (names.length === 1) {
+      return names[0].substring(0, 2).toUpperCase()
+    }
+    return (names[0][0] + names[names.length - 1][0]).toUpperCase()
+  }  
+
+  openBizTechoff() {
+    window?.open(`https://biztechoff.co.il/`, '_blank')
+    // window?.open(`https://biztechoff.co.il/v/${this.version}`, '_blank')
+  }
+
 }

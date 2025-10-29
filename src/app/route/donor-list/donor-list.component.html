@@ -1,17 +1,4 @@
 <div class="donor-list-container">
-  <!-- Navigation Header -->
-  <!-- <app-modal-navigation-header
-    title="רשימת תורמים"
-    [records]="allDonors"
-    [currentRecordId]="''"
-    [filterOptions]="filterOptions"
-    placeholder="חיפוש תורמים..."
-    (recordSelected)="onRecordSelected($event)"
-    (searchChanged)="onSearchChanged($event)"
-    (filtersChanged)="onFiltersChanged($event)"
-    (navigateNext)="onNavigateNext()"
-    (navigatePrevious)="onNavigatePrevious()">
-  </app-modal-navigation-header> -->
 
   <div class="page-header">
     <h1>{{ (i18n.terms$ | async)?.donorListTitle }}</h1>
@@ -89,17 +76,17 @@
       <div class="grid-col">-</div>
       <div class="grid-col">{{donor.createdDate | date:'dd/MM/yyyy'}}</div>
       <div class="grid-col actions">
-        <button class="btn-icon btn-view" (click)="viewDonor(donor)" [title]="(i18n.terms$ | async)?.viewDetails">👁</button>
+        <!-- <button class="btn-icon btn-view" (click)="viewDonor(donor)" [title]="(i18n.terms$ | async)?.viewDetails">👁</button> -->
         <button class="btn-icon btn-edit" (click)="editDonor(donor)" [title]="(i18n.terms$ | async)?.edit">✏</button>
         <button class="btn-icon btn-delete" (click)="deleteDonor(donor)" [title]="(i18n.terms$ | async)?.delete">🗑</button>
-        <button class="btn-icon btn-toggle" (click)="deactivateDonor(donor)" *ngIf="donor.isActive" [title]="(i18n.terms$ | async)?.deactivate">⏸</button>
+        <!-- <button class="btn-icon btn-toggle" (click)="deactivateDonor(donor)" *ngIf="donor.isActive" [title]="(i18n.terms$ | async)?.deactivate">⏸</button> -->
       </div>
     </div>
   </div>
 
   <div class="pagination">
     <button class="btn-page">{{ (i18n.terms$ | async)?.previous }}</button>
-    <span class="page-info">{{ (i18n.terms$ | async)?.pageOf?.replace('{current}', '1')?.replace('{total}', '10') }}</span>
+    <span class="page-info">{{ (i18n.terms$ | async)?.pageOf?.replace('{current}', '1')?.replace('{total}', donors.length + '') }}</span>
     <button class="btn-page">{{ (i18n.terms$ | async)?.next }}</button>
   </div>
 </div>

@@ -1,6 +1,6 @@
 .reminders-container {
   padding: 20px;
-  max-width: 1400px;
+  max-width: 100%;
   margin: 0 auto;
   direction: rtl;
   font-family: 'Segoe UI', Arial, sans-serif;
@@ -13,9 +13,13 @@
   margin-bottom: 30px;
   
   h1 {
-    color: #2c3e50;
     font-size: 2rem;
     margin: 0;
+    font-weight: 700;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
   
   .add-reminder-btn {
@@ -183,25 +187,39 @@
 }
 
 .reminders-grid {
+  width: 100%;
   background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  overflow: auto;
   margin-bottom: 30px;
-  
+  border: 1px solid #dee2e6;
+
   .grid-header {
-    background: #34495e;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
     color: white;
     display: grid;
     grid-template-columns: 1.5fr 1fr 2fr 2.5fr 1fr 1fr 1fr 1.5fr;
     padding: 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 10;
 
     .grid-col {
       padding: 15px 10px;
       font-weight: 600;
       font-size: 14px;
-      border-left: 1px solid #2c3e50;
-      
+      text-align: center;
+      border-left: 1px solid rgba(255, 255, 255, 0.2);
+      background: transparent !important;
+      white-space: nowrap;
+
+      &:first-child {
+        border-right: 1px solid rgba(255, 255, 255, 0.2);
+        border-left: none;
+      }
+
       &:last-child {
         border-left: none;
       }
@@ -213,48 +231,62 @@
     grid-template-columns: 1.5fr 1fr 2fr 2.5fr 1fr 1fr 1fr 1.5fr;
     border-bottom: 1px solid #ecf0f1;
     transition: all 0.2s ease;
-    
+    cursor: pointer;
+
     &:hover {
       background-color: #f7f9fc;
+      transform: translateY(-1px);
     }
-    
+
     &.overdue {
       background-color: #fef9e7;
       border-left: 4px solid #f39c12;
     }
-    
+
     &.today {
       background-color: #ffebee;
       border-left: 4px solid #e74c3c;
     }
-    
+
     &.completed {
       background-color: #e8f8f0;
       opacity: 0.7;
-      
+
       .grid-col {
         text-decoration: line-through;
       }
     }
-    
+
     &:last-child {
       border-bottom: none;
     }
-    
+
     .grid-col {
       padding: 15px 10px;
       font-size: 14px;
       display: flex;
       align-items: center;
+      justify-content: center;
+      text-align: center;
       border-left: 1px solid #ecf0f1;
-      
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+
+      &:first-child {
+        border-right: 1px solid #ecf0f1;
+        border-left: none;
+        font-weight: 600;
+      }
+
       &:last-child {
         border-left: none;
       }
-      
+
       &.actions {
         justify-content: center;
         gap: 5px;
+        white-space: normal;
       }
     }
   }

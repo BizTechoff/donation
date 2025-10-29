@@ -40,13 +40,23 @@
     <mat-sidenav #sidenav class="app-sidenav mat-elevation-z10 no-print"
       [opened]="!uiService.isScreenSmall() && remult.authenticated()"
       [mode]="uiService.isScreenSmall() ? 'over' : 'side'">
-      <div style="width: 100%; text-align: center"></div>
-      <h3 style="padding-left: 3px;" *ngIf="remult.authenticated()">
-        {{ (i18n.terms$ | async)?.hello }} {{ remult.user!.name }}
-      </h3>
+
+      <!-- Sidenav Header with Logo and User -->
+      <div class="sidenav-header" *ngIf="remult.authenticated()">
+        <div class="user-profile">
+          <div class="user-avatar">
+            <img src="./assets/yyg.logo.png" alt="Logo" class="avatar-logo">
+          </div>
+          <!-- <div class="user-info">
+            <div class="user-name">{{ (i18n.terms$ | async)?.hello }} {{ remult.user!.name }}</div>
+            <div class="user-greeting">{{ (i18n.terms$ | async)?.hello }}</div>
+          </div> -->
+        </div>
+      </div>
+
       <mat-nav-list role="list">
         <ng-container *ngFor="let m of router.config">
-          <mat-divider  style="opacity: .2;"
+          <mat-divider  style="opacity: .2; color: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"
             *ngIf="shouldDisplayRoute(m) && [terms.userAccounts, terms.reminders, terms.certificates].includes(m.path)"></mat-divider>
           <a mat-list-item *ngIf="shouldDisplayRoute(m)" routerLinkActive="active-route" [routerLink]="m.path"
             (click)="routeClicked()">
@@ -61,4 +71,10 @@
       </div>
     </div>
   </mat-sidenav-container>
+ 
+  <div class="biztechoff">
+    <!-- <ngx-marquee> -->
+    <span (click)="this.openBizTechoff()">BizTechoff™v{{ this.version }}</span>
+    <!-- </ngx-marquee> -->
+  </div>
 </div>

@@ -867,7 +867,7 @@ export const termsEn = {
   actionsHeaderReminder: 'Actions',
   markAsCompleted: 'Mark as Completed',
   editReminder: 'Edit',
-  snoozeReminder: 'Snooze Reminder',
+  snoozeReminder: 'Snooze Reminder To Tomorrow',
   deleteReminder: 'Delete',
   
   // Quick Reminders Section

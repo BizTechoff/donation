@@ -173,7 +173,7 @@
           </td> -->
           
           <td class="actions">
-            <button class="btn-icon btn-complete" [title]="(i18n.terms$ | async)?.markAsCompleted" *ngIf="!reminder.isCompleted" (click)="completeReminder(reminder)">✅</button>
+            <!-- <button class="btn-icon btn-complete" [title]="(i18n.terms$ | async)?.markAsCompleted" *ngIf="!reminder.isCompleted" (click)="completeReminder(reminder)">✅</button> -->
             <button class="btn-icon btn-edit" [title]="(i18n.terms$ | async)?.editReminder" (click)="editReminder(reminder)">✏</button>
             <button class="btn-icon btn-postpone" [title]="(i18n.terms$ | async)?.snoozeReminder" *ngIf="!reminder.isCompleted" (click)="snoozeReminder(reminder, 1)">⏰</button>
             <button class="btn-icon btn-delete" [title]="(i18n.terms$ | async)?.deleteReminder" (click)="deleteReminder(reminder)">🗑</button>

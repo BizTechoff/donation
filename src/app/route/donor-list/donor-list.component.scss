@@ -80,18 +80,19 @@
   overflow: hidden;
   
   .grid-header {
-    background: #34495e;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     display: grid;
     grid-template-columns: 2fr 2fr 1.5fr 2fr 1fr 1.5fr 1.5fr 1fr;
     padding: 0;
-    
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
     .grid-col {
       padding: 15px 10px;
       font-weight: 600;
       font-size: 14px;
-      border-left: 1px solid #2c3e50;
-      
+      border-left: 1px solid rgba(255, 255, 255, 0.2);
+
       &:last-child {
         border-left: none;
       }
