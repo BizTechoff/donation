@@ -1,0 +1,36 @@
+<div class="modal-overlay">
+  <div class="modal-content blessing-type-modal">
+    <div class="modal-header">
+      <h2>בחירת סוג ברכה</h2>
+      <button class="modal-close" (click)="onClose()">&times;</button>
+    </div>
+
+    <div class="modal-body" *ngIf="!loading">
+      <div class="blessing-types-grid">
+        <div *ngFor="let type of blessingTypes"
+             class="blessing-type-card"
+             (click)="selectType(type)"
+             [class.selected]="selectedType?.id === type.id">
+          <div class="type-header">
+            <h3>{{type.type}}</h3>
+          </div>
+          <div class="type-price">
+            <span class="currency">₪</span>
+            <span class="amount">{{type.price | number}}</span>
+          </div>
+          <div class="type-footer">
+            <button class="select-btn">בחר</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="loading-state" *ngIf="loading">
+      <div class="spinner">טוען...</div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="onClose()">ביטול</button>
+    </div>
+  </div>
+</div>

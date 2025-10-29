@@ -1,0 +1,42 @@
+<div class="modal-overlay">
+  <div class="modal-content blessing-text-modal">
+    <div class="modal-header">
+      <div class="header-content">
+        <h2>עריכת נוסח ברכה</h2>
+        <p class="donor-name">לתורם/ת: {{args.donorName}}</p>
+      </div>
+      <button class="modal-close" (click)="onClose()">&times;</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="editor-container">
+        <label class="editor-label">נוסח הברכה:</label>
+        <textarea
+          class="blessing-textarea"
+          [(ngModel)]="blessingText"
+          (ngModelChange)="onTextChange()"
+          placeholder="הקלד/י כאן את נוסח הברכה..."
+          rows="12"
+          autofocus
+        ></textarea>
+        <div class="character-count">
+          {{characterCount}} תווים
+        </div>
+      </div>
+
+      <!-- <div class="suggestions-section">
+        <h4>💡 הצעות לנוסח ברכה:</h4>
+        <ul class="suggestions-list">
+          <li>בזכות תרומתכם הנדיבה תזכו לכל טוב סלה</li>
+          <li>תודה רבה על התרומה הנדיבה, תזכו לראות ברכה והצלחה</li>
+          <li>בעזרת השם יתברך תזכו לכל טוב ולנחת מכל הילדים</li>
+        </ul>
+      </div> -->
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="onClose()">ביטול</button>
+      <button class="btn btn-primary" (click)="save()">שמור ברכה</button>
+    </div>
+  </div>
+</div>

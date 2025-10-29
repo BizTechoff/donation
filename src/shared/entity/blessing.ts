@@ -9,6 +9,7 @@ import {
 } from 'remult'
 import { Campaign } from './campaign'
 import { Donor } from './donor'
+import { BlessingBookType } from './blessing-book-type'
 import { Roles } from '../enum/roles'
 
 @Entity<Blessing>('blessings', {
@@ -62,6 +63,22 @@ export class Blessing extends IdEntity {
     caption: 'אימייל',
   })
   email = ''
+
+  @Relations.toOne<Blessing, BlessingBookType>(() => BlessingBookType, {
+    caption: 'סוג ברכה (גודל)',
+    field: 'blessingBookTypeId'
+  })
+  blessingBookType?: BlessingBookType
+
+  @Fields.string({
+    caption: 'סוג ברכה ID',
+  })
+  blessingBookTypeId = ''
+
+  @Fields.number({
+    caption: 'סכום',
+  })
+  amount = 0
 
   @Fields.string({
     caption: 'תוכן הברכה',

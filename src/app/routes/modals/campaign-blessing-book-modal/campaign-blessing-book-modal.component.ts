@@ -1,11 +1,14 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialogRef } from '@angular/material/dialog';
-import { DialogConfig } from 'common-ui-elements';
+import { DialogConfig, openDialog } from 'common-ui-elements';
 import { Donation, Donor, Campaign, Blessing } from '../../../../shared/entity';
+import { BlessingBookType } from '../../../../shared/entity/blessing-book-type';
 import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
 import { UIToolsService } from '../../../common/UIToolsService';
+import { BlessingTypeSelectionModalComponent } from '../blessing-type-selection-modal/blessing-type-selection-modal.component';
+import { BlessingTextEditModalComponent } from '../blessing-text-edit-modal/blessing-text-edit-modal.component';
 
 export interface CampaignBlessingBookModalArgs {
   campaignId: string;
@@ -14,10 +17,11 @@ export interface CampaignBlessingBookModalArgs {
 
 export interface DonorBlessing {
   donor: Donor;
-  donation?: Donation;
+  donation?: Donation; // Donation matching the blessing type amount
   blessing?: Blessing;
   blessingStatus: 'pending' | 'sent' | 'received' | 'none';
   totalDonated: number;
+  matchingDonationsCount: number; // Number of donations matching blessing type amount and campaign
 }
 
 @DialogConfig({
@@ -33,11 +37,13 @@ export class CampaignBlessingBookModalComponent implements OnInit {
 
   campaign?: Campaign;
   donorBlessings: DonorBlessing[] = [];
+  blessingTypes: BlessingBookType[] = [];
 
   donationRepo = remult.repo(Donation);
   donorRepo = remult.repo(Donor);
   campaignRepo = remult.repo(Campaign);
   blessingRepo = remult.repo(Blessing);
+  blessingTypeRepo = remult.repo(BlessingBookType);
 
   loading = false;
 
@@ -45,9 +51,10 @@ export class CampaignBlessingBookModalComponent implements OnInit {
   filterText = '';
   filterStatus = '';
   filterLevel = '';
+  filterBlessingType = '';
 
   // Table configuration
-  displayedColumns: string[] = ['donorName', 'phone', 'email', 'totalAmount', 'blessingStatus', 'blessingText'];
+  displayedColumns: string[] = ['donorName', 'phone', 'email', 'blessingType', 'totalAmount', 'blessingStatus', 'blessingText'];
 
   // Statistics
   totalDonors = 0;
@@ -78,6 +85,12 @@ export class CampaignBlessingBookModalComponent implements OnInit {
       // Load campaign
       this.campaign = await this.campaignRepo.findId(this.args.campaignId) || undefined;
 
+      // Load blessing types
+      this.blessingTypes = await this.blessingTypeRepo.find({
+        where: { isActive: true },
+        orderBy: { price: 'asc' }
+      });
+
       // If campaign has invited donors, show only those
       if (this.campaign?.invitedDonorIds && this.campaign.invitedDonorIds.length > 0) {
         // Load only invited donors
@@ -106,6 +119,9 @@ export class CampaignBlessingBookModalComponent implements OnInit {
           where: {
             campaignId: this.args.campaignId,
             donorId: { $in: this.campaign.invitedDonorIds }
+          },
+          include: {
+            blessingBookType: true
           }
         });
 
@@ -119,30 +135,44 @@ export class CampaignBlessingBookModalComponent implements OnInit {
             donation: undefined,
             blessing: undefined,
             blessingStatus: 'none',
-            totalDonated: 0
+            totalDonated: 0,
+            matchingDonationsCount: 0
           });
         }
 
-        // Add donation information - keep only the latest donation per donor
+        // Add blessing information first (so we know the expected amount)
+        for (const blessing of blessings) {
+          const donorBlessing = donorMap.get(blessing.donorId);
+          if (donorBlessing) {
+            donorBlessing.blessing = blessing;
+            donorBlessing.blessingStatus = this.getBlessingStatus(blessing);
+          }
+        }
+
+        // Add donation information - find donation matching blessing type amount
         for (const donation of donations) {
           if (!donation.donor) continue;
 
           const donorId = donation.donorId;
           const donorBlessing = donorMap.get(donorId);
 
-          if (donorBlessing && !donorBlessing.donation) {
-            // This is the latest donation for this donor (due to orderBy desc)
-            donorBlessing.donation = donation;
-            donorBlessing.totalDonated = donation.amount;
-          }
-        }
-
-        // Add blessing information
-        for (const blessing of blessings) {
-          const donorBlessing = donorMap.get(blessing.donorId);
           if (donorBlessing) {
-            donorBlessing.blessing = blessing;
-            donorBlessing.blessingStatus = this.getBlessingStatus(blessing);
+            // Calculate total donated
+            donorBlessing.totalDonated += donation.amount;
+
+            // If we have a blessing with a type, count and match donations
+            if (donorBlessing.blessing?.blessingBookType) {
+              const expectedAmount = donorBlessing.blessing.blessingBookType.price;
+              if (donation.amount === expectedAmount) {
+                donorBlessing.matchingDonationsCount++;
+                if (!donorBlessing.donation) {
+                  donorBlessing.donation = donation;
+                }
+              }
+            } else if (!donorBlessing.donation) {
+              // If no blessing type yet, just keep the latest donation
+              donorBlessing.donation = donation;
+            }
           }
         }
 
@@ -158,12 +188,16 @@ export class CampaignBlessingBookModalComponent implements OnInit {
 
         // Load existing blessings for this campaign
         const blessings = await this.blessingRepo.find({
-          where: { campaignId: this.args.campaignId }
+          where: { campaignId: this.args.campaignId },
+          include: {
+            blessingBookType: true
+          }
         });
 
         // Group by donor and create DonorBlessing objects
         const donorMap = new Map<string, DonorBlessing>();
 
+        // First create entries from donations
         for (const donation of donations) {
           if (!donation.donor) continue;
 
@@ -171,10 +205,11 @@ export class CampaignBlessingBookModalComponent implements OnInit {
           if (!donorMap.has(donorId)) {
             donorMap.set(donorId, {
               donor: donation.donor,
-              donation: donation,
+              donation: undefined,
               blessing: undefined,
               blessingStatus: 'none',
-              totalDonated: 0
+              totalDonated: 0,
+              matchingDonationsCount: 0
             });
           }
 
@@ -188,6 +223,30 @@ export class CampaignBlessingBookModalComponent implements OnInit {
           if (donorBlessing) {
             donorBlessing.blessing = blessing;
             donorBlessing.blessingStatus = this.getBlessingStatus(blessing);
+          }
+        }
+
+        // Now match donations to blessing types
+        for (const donation of donations) {
+          if (!donation.donor) continue;
+
+          const donorId = donation.donorId;
+          const donorBlessing = donorMap.get(donorId);
+
+          if (donorBlessing) {
+            // If we have a blessing with a type, count and match donations
+            if (donorBlessing.blessing?.blessingBookType) {
+              const expectedAmount = donorBlessing.blessing.blessingBookType.price;
+              if (donation.amount === expectedAmount) {
+                donorBlessing.matchingDonationsCount++;
+                if (!donorBlessing.donation) {
+                  donorBlessing.donation = donation;
+                }
+              }
+            } else if (!donorBlessing.donation) {
+              // If no blessing type yet, just keep the first donation
+              donorBlessing.donation = donation;
+            }
           }
         }
 
@@ -238,7 +297,10 @@ export class CampaignBlessingBookModalComponent implements OnInit {
       const matchesLevel = !this.filterLevel ||
         donorBlessing.donor.level === this.filterLevel;
 
-      return matchesText && matchesStatus && matchesLevel;
+      const matchesBlessingType = !this.filterBlessingType ||
+        donorBlessing.blessing?.blessingBookTypeId === this.filterBlessingType;
+
+      return matchesText && matchesStatus && matchesLevel && matchesBlessingType;
     });
   }
 
@@ -275,6 +337,34 @@ export class CampaignBlessingBookModalComponent implements OnInit {
     }
   }
 
+  async selectBlessingType(donorBlessing: DonorBlessing) {
+    const selectedType = await openDialog(BlessingTypeSelectionModalComponent, (dlg) => {}) as BlessingBookType | undefined;
+
+    if (selectedType && selectedType.id) {
+      // Create or update blessing with selected type
+      let blessing = donorBlessing.blessing;
+      if (!blessing) {
+        blessing = this.blessingRepo.create();
+        blessing.donorId = donorBlessing.donor.id;
+        blessing.campaignId = this.args.campaignId;
+        blessing.name = donorBlessing.donor.fullName || '';
+      }
+
+      blessing.blessingBookTypeId = selectedType.id;
+      blessing.blessingBookType = selectedType;
+      blessing.amount = selectedType.price;
+
+      try {
+        await this.blessingRepo.save(blessing);
+        donorBlessing.blessing = blessing;
+        this.ui.info('סוג הברכה נבחר בהצלחה');
+      } catch (error) {
+        console.error('Error saving blessing type:', error);
+        this.ui.error('שגיאה בשמירת סוג הברכה');
+      }
+    }
+  }
+
   async editBlessing(donorBlessing: DonorBlessing) {
     // Create or find blessing
     let blessing = donorBlessing.blessing;
@@ -285,16 +375,22 @@ export class CampaignBlessingBookModalComponent implements OnInit {
       blessing.name = donorBlessing.donor.fullName || '';
     }
 
-    // Open blessing edit dialog
-    const text = await this.promptForBlessingText(blessing.blessingContent || '');
-    if (text !== null) {
+    // Open blessing text edit dialog
+    const text = await openDialog(BlessingTextEditModalComponent, (dlg) => {
+      dlg.args = {
+        initialText: blessing!.blessingContent || '',
+        donorName: donorBlessing.donor.fullName || ''
+      };
+    }) as string | undefined;
+
+    if (text !== undefined && text !== null) {
       blessing.blessingContent = text;
-      if (text.trim() !== '') {
+      if (typeof text === 'string' && text.trim() !== '') {
         blessing.status = 'אישר';
       }
 
       try {
-        await blessing.save();
+        await this.blessingRepo.save(blessing);
         donorBlessing.blessing = blessing;
         donorBlessing.blessingStatus = this.getBlessingStatus(blessing);
         this.calculateStatistics();
@@ -304,13 +400,6 @@ export class CampaignBlessingBookModalComponent implements OnInit {
         this.ui.error('שגיאה בשמירת הברכה');
       }
     }
-  }
-
-  async promptForBlessingText(currentText: string): Promise<string | null> {
-    return new Promise((resolve) => {
-      const text = prompt('נוסח הברכה:', currentText);
-      resolve(text);
-    });
   }
 
   async markAsSent(donorBlessing: DonorBlessing) {
@@ -335,7 +424,40 @@ export class CampaignBlessingBookModalComponent implements OnInit {
     await this.ui.donorDetailsDialog(donor.id);
   }
 
-  async openDonationDetails(donation: Donation) {
+  async selectOrCreateDonation(donorBlessing: DonorBlessing) {
+    if (!donorBlessing.blessing?.blessingBookType) {
+      this.ui.error('יש לבחור תחילה סוג ברכה');
+      return;
+    }
+
+    // Check if there are matching donations
+    if (donorBlessing.matchingDonationsCount === 0) {
+      // No matching donations - create new one directly
+      const result = await this.ui.donationDetailsDialog('new', {
+        donorId: donorBlessing.donor.id,
+        campaignId: this.args.campaignId,
+        amount: donorBlessing.blessing.blessingBookType.price
+      });
+
+      if (result) {
+        await this.loadData();
+      }
+    } else {
+      // Has matching donations - show donor donations modal to select
+      await this.ui.donorDonationsDialog(
+        donorBlessing.donor.id,
+        'donations',
+        donorBlessing.donor.fullName
+      );
+
+      // Reload data to show the selected/new donation
+      await this.loadData();
+    }
+  }
+
+  async openDonationDetails(donation: Donation | undefined) {
+    if (!donation) return;
+
     const result = await this.ui.donationDetailsDialog(donation.id);
     if (result) {
       // Reload data to reflect any changes
@@ -343,17 +465,10 @@ export class CampaignBlessingBookModalComponent implements OnInit {
     }
   }
 
-  async createDonation(donorBlessing: DonorBlessing) {
-    // Create new donation for this donor and campaign
-    const result = await this.ui.donationDetailsDialog('new', {
-      donorId: donorBlessing.donor.id,
-      campaignId: this.args.campaignId
-    });
-
-    if (result) {
-      // Reload data to show the new donation
-      await this.loadData();
-    }
+  getTruncatedBlessingText(text: string | undefined, maxLength: number = 30): string {
+    if (!text) return '';
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
   }
 
   async exportToExcel() {
