@@ -34,10 +34,9 @@ export class PaymentListModalComponent implements OnInit {
 
   // Filters
   filterText = '';
-  filterStatus = '';
 
   // Table configuration
-  displayedColumns: string[] = ['paymentDate', 'amount', 'status', 'reference', 'paymentIdentifier', 'actions'];
+  displayedColumns: string[] = ['paymentDate', 'amount', 'reference', 'paymentIdentifier', 'actions'];
 
   // Totals
   totalAmount = 0;
@@ -56,7 +55,7 @@ export class PaymentListModalComponent implements OnInit {
   }
 
   get modalTitle(): string {
-    return 'רשימת תשלומים בפועל';
+    return 'רשימת תנועות שנקלטו';
   }
 
   get modalIcon(): string {
@@ -98,10 +97,7 @@ export class PaymentListModalComponent implements OnInit {
         payment.paymentIdentifier?.toLowerCase().includes(this.filterText.toLowerCase()) ||
         payment.amount.toString().includes(this.filterText);
 
-      const matchesStatus = !this.filterStatus ||
-        payment.status === this.filterStatus;
-
-      return matchesText && matchesStatus;
+      return matchesText;
     });
   }
 
@@ -130,13 +126,24 @@ export class PaymentListModalComponent implements OnInit {
   }
 
   async addPayment() {
-    // TODO: Open payment form to add new payment
-    this.ui.info('הוספת תשלום תתבצע בהמשך');
+    const result = await this.ui.paymentDetailsDialog('new', {
+      donationId: this.args.donationId,
+      amount: this.donation?.amount
+    });
+
+    if (result) {
+      await this.loadPayments();
+      this.calculateTotals();
+    }
   }
 
   async editPayment(payment: Payment) {
-    // TODO: Open payment form to edit payment
-    this.ui.info('עריכת תשלום תתבצע בהמשך');
+    const result = await this.ui.paymentDetailsDialog(payment.id);
+
+    if (result) {
+      await this.loadPayments();
+      this.calculateTotals();
+    }
   }
 
   async deletePayment(payment: Payment) {

@@ -1,0 +1,90 @@
+<div class="modal-overlay">
+  <div class="modal-content payment-details-modal">
+    <div class="modal-header">
+      <div class="header-content">
+        <h2>{{isNewPayment ? 'הוספת תשלום חדש' : 'עריכת תשלום'}}</h2>
+      </div>
+      <button class="modal-close" (click)="onClose()">&times;</button>
+    </div>
+
+    <div class="modal-body" *ngIf="!loading">
+      <div class="form-container">
+
+        <!-- Payment Date -->
+        <div class="form-group">
+          <label class="form-label">
+            <mat-icon>event</mat-icon>
+            תאריך תשלום <span class="required">*</span>
+          </label>
+          <input type="date"
+                 class="form-input"
+                 [(ngModel)]="payment.paymentDate"
+                 required>
+        </div>
+
+        <!-- Amount -->
+        <div class="form-group">
+          <label class="form-label">
+            <mat-icon>attach_money</mat-icon>
+            סכום <span class="required">*</span>
+          </label>
+          <input type="number"
+                 class="form-input"
+                 [(ngModel)]="payment.amount"
+                 placeholder="0.00"
+                 min="0"
+                 step="0.01"
+                 required>
+        </div>
+
+        <!-- Reference -->
+        <div class="form-group">
+          <label class="form-label">
+            <mat-icon>receipt</mat-icon>
+            אסמכתא
+          </label>
+          <input type="text"
+                 class="form-input"
+                 [(ngModel)]="payment.reference"
+                 placeholder="מספר אסמכתא">
+        </div>
+
+        <!-- Payment Identifier -->
+        <div class="form-group">
+          <label class="form-label">
+            <mat-icon>confirmation_number</mat-icon>
+            מזהה תשלום
+          </label>
+          <input type="text"
+                 class="form-input"
+                 [(ngModel)]="payment.paymentIdentifier"
+                 placeholder="מזהה תשלום">
+        </div>
+
+        <!-- Notes -->
+        <div class="form-group">
+          <label class="form-label">
+            <mat-icon>notes</mat-icon>
+            הערות
+          </label>
+          <textarea class="form-textarea"
+                    [(ngModel)]="payment.notes"
+                    placeholder="הערות נוספות..."
+                    rows="3"></textarea>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="loading-overlay" *ngIf="loading">
+      <div class="loading-spinner">טוען...</div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="onClose()">ביטול</button>
+      <button class="btn btn-primary" (click)="save()" [disabled]="loading">
+        {{isNewPayment ? 'הוסף תשלום' : 'שמור שינויים'}}
+      </button>
+    </div>
+  </div>
+</div>
