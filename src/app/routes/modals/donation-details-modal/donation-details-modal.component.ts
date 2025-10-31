@@ -1133,7 +1133,7 @@ export class DonationDetailsModalComponent implements OnInit {
         donationBank.reference = '';
         donationBank.isActive = true;
 
-        await donationBank.save();
+        await this.donationBankRepo.save(donationBank);
 
         // Reload donation banks
         await this.loadDonationBanks();
@@ -1187,7 +1187,7 @@ export class DonationDetailsModalComponent implements OnInit {
 
       // Mark as inactive instead of deleting
       donationBank.isActive = false;
-      await donationBank.save();
+      await this.donationBankRepo.save(donationBank);
 
       // Reload donation banks
       await this.loadDonationBanks();
@@ -1199,33 +1199,6 @@ export class DonationDetailsModalComponent implements OnInit {
     } catch (error) {
       console.error('Error removing donation bank:', error);
       this.ui.error('שגיאה בהסרת הבנק');
-    }
-  }
-
-  /**
-   * Handle payer name change for donation bank
-   */
-  async onDonationBankPayerChange(donationBank: DonationBank) {
-    try {
-      console.log('onDonationBankPayerChange called with payerName:', donationBank.payerName);
-      this.changed = true;
-      // Changes will be saved when donation is saved
-    } catch (error) {
-      console.error('Error updating donation bank payer:', error);
-      this.ui.error('שגיאה בעדכון שם המשלם');
-    }
-  }
-
-  /**
-   * Handle reference change for donation bank
-   */
-  async onDonationBankReferenceChange(donationBank: DonationBank) {
-    try {
-      this.changed = true;
-      // Changes will be saved when donation is saved
-    } catch (error) {
-      console.error('Error updating donation bank reference:', error);
-      this.ui.error('שגיאה בעדכון האסמכתא');
     }
   }
 
@@ -1323,7 +1296,7 @@ export class DonationDetailsModalComponent implements OnInit {
         donationOrganization.reference = '';
         donationOrganization.isActive = true;
 
-        await donationOrganization.save();
+        await this.donationOrganizationRepo.save(donationOrganization);
 
         // Reload donation organizations
         await this.loadDonationOrganizations();
@@ -1348,7 +1321,7 @@ export class DonationDetailsModalComponent implements OnInit {
 
       // Mark as inactive instead of deleting
       donationOrganization.isActive = false;
-      await donationOrganization.save();
+      await this.donationOrganizationRepo.save(donationOrganization);
 
       // Reload donation organizations
       await this.loadDonationOrganizations();
@@ -1360,30 +1333,6 @@ export class DonationDetailsModalComponent implements OnInit {
     } catch (error) {
       console.error('Error removing donation organization:', error);
       this.ui.error('שגיאה בהסרת העמותה');
-    }
-  }
-
-  /**
-   * Handle payer name change for donation organization
-   */
-  async onDonationOrganizationPayerChange(donationOrganization: DonationOrganization) {
-    try {
-      await donationOrganization.save();
-    } catch (error) {
-      console.error('Error updating donation organization payer:', error);
-      this.ui.error('שגיאה בעדכון שם המשלם');
-    }
-  }
-
-  /**
-   * Handle reference change for donation organization
-   */
-  async onDonationOrganizationReferenceChange(donationOrganization: DonationOrganization) {
-    try {
-      await donationOrganization.save();
-    } catch (error) {
-      console.error('Error updating donation organization reference:', error);
-      this.ui.error('שגיאה בעדכון האסמכתא');
     }
   }
 

@@ -26,6 +26,20 @@
   }
 }
 
+.payment-sep{
+  height: 40px;
+}
+
+.payment-sep-half{
+  height: 10px;
+}
+
+.payment-method-section1{
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
 /* Modern Header */
 .modal-header {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -1649,6 +1663,105 @@
 
       span {
         font-size: 10px;
+      }
+    }
+  }
+}
+
+/* Field Add Button (for entity selection) */
+.field-add-btn {
+  background: transparent;
+  border: 1px solid #667eea;
+  color: #667eea;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+  margin-left: 8px;
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+
+  &:hover {
+    background: #667eea;
+    color: white;
+    transform: scale(1.1);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+/* Entity List (Bank & Organization) */
+.entity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  .entity-item {
+    background: #f8f9fc;
+    border: 1px solid #e1e8ed;
+    border-radius: 6px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: #f0f2f8;
+      border-color: #d0d8e6;
+    }
+
+    .entity-name {
+      flex: 1;
+      font-size: 13px;
+      color: #667eea;
+      cursor: pointer;
+      text-decoration: none;
+      transition: color 0.2s ease;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+
+      &:hover {
+        text-decoration: underline;
+        color: #764ba2;
+      }
+    }
+
+    .delete-btn {
+      color: #8492a6;
+      width: 28px;
+      height: 28px;
+      min-width: 28px;
+      flex-shrink: 0;
+      transition: all 0.2s ease;
+
+      mat-icon {
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+      }
+
+      &:hover {
+        color: #dc3545;
+        background: rgba(220, 53, 69, 0.1);
+      }
+
+      &:active {
+        transform: scale(0.9);
       }
     }
   }

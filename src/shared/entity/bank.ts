@@ -64,16 +64,6 @@ export class Bank extends IdEntity {
   payerIdentifier = ''
 
   @Fields.string({
-    caption: 'שם משלם',
-  })
-  payerName = ''
-
-  @Fields.string({
-    caption: 'אסמכתא',
-  })
-  reference = ''
-
-  @Fields.string({
     caption: 'טלפון',
   })
   phone = ''
