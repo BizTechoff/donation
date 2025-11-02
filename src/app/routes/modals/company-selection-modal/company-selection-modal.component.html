@@ -46,6 +46,14 @@
                 </div>
               </div>
             </div>
+            <div class="company-actions">
+              <button mat-icon-button class="edit-btn" (click)="editCompany(company, $event)" title="עריכת חברה">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button mat-icon-button class="delete-btn" (click)="deleteCompany(company, $event)" title="מחיקת חברה">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
             <div class="select-indicator">
               <mat-icon>check_circle</mat-icon>
             </div>

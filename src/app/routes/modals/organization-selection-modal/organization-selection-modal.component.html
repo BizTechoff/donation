@@ -58,6 +58,14 @@
                 </div>
               </div>
             </div>
+            <div class="organization-actions">
+              <button mat-icon-button class="edit-btn" (click)="editOrganization(organization, $event)" title="עריכת עמותה">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button mat-icon-button class="delete-btn" (click)="deleteOrganization(organization, $event)" title="מחיקת עמותה">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
             <div class="select-indicator">
               <mat-icon>check_circle</mat-icon>
             </div>

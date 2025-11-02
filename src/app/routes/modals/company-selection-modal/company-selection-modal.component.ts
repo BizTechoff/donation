@@ -84,6 +84,54 @@ export class CompanySelectionModalComponent implements OnInit {
     }
   }
 
+  // Edit existing company
+  async editCompany(company: Company, event: Event) {
+    event.stopPropagation(); // Prevent selecting the company
+    try {
+      const dialogResult = await openDialog(
+        CompanyDetailsModalComponent,
+        (modal: CompanyDetailsModalComponent) => {
+          modal.args = { companyId: company.id };
+        }
+      );
+
+      if (dialogResult) {
+        // Reload the updated company
+        const updatedCompany = await this.companyRepo.findId(company.id, {
+          include: { place: true }
+        });
+        if (updatedCompany) {
+          // Update in the local list
+          const index = this.availableCompanies.findIndex(c => c.id === company.id);
+          if (index !== -1) {
+            this.availableCompanies[index] = updatedCompany;
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error editing company:', error);
+    }
+  }
+
+  // Delete company
+  async deleteCompany(company: Company, event: Event) {
+    event.stopPropagation(); // Prevent selecting the company
+
+    if (!confirm(`האם אתה בטוח שברצונך למחוק את החברה "${company.name}"?`)) {
+      return;
+    }
+
+    try {
+      await this.companyRepo.delete(company);
+
+      // Remove from local list
+      this.availableCompanies = this.availableCompanies.filter(c => c.id !== company.id);
+    } catch (error) {
+      console.error('Error deleting company:', error);
+      alert('שגיאה במחיקת החברה. ייתכן שהחברה מקושרת לתורמים קיימים.');
+    }
+  }
+
   // Clear search
   clearSearch() {
     this.searchTerm = '';

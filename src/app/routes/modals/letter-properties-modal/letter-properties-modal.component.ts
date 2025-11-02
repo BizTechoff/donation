@@ -358,8 +358,8 @@ export class LetterPropertiesModalComponent implements OnInit {
         break;
       }
       case 'Number_receipt': {
-        result = '000000' + this.donation.referenceNumber
-        result = result.slice(-6)
+        result = '00000000' + this.donation.referenceNumber
+        result = result.slice(-8)
         break
       }
       case 'Name_receipt': {
@@ -430,7 +430,7 @@ export class LetterPropertiesModalComponent implements OnInit {
         const row4 = `${address?.place?.city} ${address?.place?.country?.code === 'US' ? address?.place?.country?.name : ''} ${address?.place?.postcode}` || ''
         const row5 = address?.place?.country?.name || ''
 
-        parts.push(row1, row2, row3, row4, row5)
+        parts.push(row1?.trim(), row2?.trim(), row3?.trim(), row4?.trim(), row5?.trim())
         console.log('getValue',row1, row2, row3, row4, row5)
         result = parts.filter(p => p.trim()).join('\n')
         console.log('result',result)
@@ -491,74 +491,6 @@ export class LetterPropertiesModalComponent implements OnInit {
         };
         result = currencySymbols[this.donation.currency || 'ILS'] || this.donation.currency || '₪';
         break
-      }
-
-      // ===== Legacy fields (from old Letter class) =====
-      case 'letter_heb_date': {
-        // TODO: Implement Hebrew date
-        result = new Date().toLocaleDateString('he-IL');
-        break;
-      }
-      case 'donor_eng_title': {
-        result = this.donation.donor?.titleEnglish || '';
-        break;
-      }
-      case 'donor_eng_first_name': {
-        result = this.donation.donor?.firstNameEnglish || '';
-        break;
-      }
-      case 'donor_eng_last_name': {
-        result = this.donation.donor?.lastNameEnglish || '';
-        break;
-      }
-      case 'donor_eng_suffix': {
-        result = this.donation.donor?.suffix || '';
-        break;
-      }
-      case 'donor_home_address': {
-        const address = await remult.repo(DonorPlace).findFirst({ donor: this.donation.donor })
-        result = `${address?.place?.street || ''} ${address?.place?.houseNumber || ''}`.trim();
-        break;
-      }
-      case 'donor_country': {
-        const address = await remult.repo(DonorPlace).findFirst({ donor: this.donation.donor })
-        result = address?.place?.country?.name || '';
-        break;
-      }
-      case 'donor_title': {
-        result = this.donation.donor?.title || '';
-        break;
-      }
-      case 'donor_first_name': {
-        result = this.donation.donor?.firstName || '';
-        break;
-      }
-      case 'donor_last_name': {
-        result = this.donation.donor?.lastName || '';
-        break;
-      }
-      case 'donor_suffix': {
-        result = this.donation.donor?.suffix || '';
-        break;
-      }
-      case 'donation_amount': {
-        result = this.donation.amount.toString();
-        break;
-      }
-      case 'donation_currency_symbol': {
-        const currencySymbols: Record<string, string> = {
-          'ILS': '₪',
-          'USD': '$',
-          'EUR': '€',
-          'GBP': '£',
-          'JPY': '¥'
-        };
-        result = currencySymbols[this.donation.currency || 'ILS'] || this.donation.currency || '₪';
-        break;
-      }
-      case 'donation_reason': {
-        result = this.donation.reason || '';
-        break;
       }
 
       // ===== Condolence Fields (ניחום אבלים) =====

@@ -23,7 +23,9 @@
       <mat-label>{{ (i18n.terms$ | async)?.campaign }}</mat-label>
       <mat-select [value]="currentFilters.campaignIds || []"
                   (valueChange)="updateFilter('campaignIds', $event.length > 0 ? $event : undefined)"
-                  multiple>
+                  multiple
+                  panelClass="global-filter-select-panel"
+                  disableOptionCentering>
         <mat-option *ngFor="let campaign of campaigns" [value]="campaign.id">
           {{ campaign.name }}
         </mat-option>
@@ -35,7 +37,9 @@
       <mat-label>{{ (i18n.terms$ | async)?.country }}</mat-label>
       <mat-select [value]="currentFilters.countryIds || []"
                   (valueChange)="updateFilter('countryIds', $event.length > 0 ? $event : undefined)"
-                  multiple>
+                  multiple
+                  panelClass="global-filter-select-panel"
+                  disableOptionCentering>
         <mat-option *ngFor="let country of countries" [value]="country.id">
           {{ country.displayName }}
         </mat-option>

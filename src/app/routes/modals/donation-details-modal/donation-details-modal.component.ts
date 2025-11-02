@@ -1281,9 +1281,10 @@ export class DonationDetailsModalComponent implements OnInit {
           };
         }
       ) as Organization | null;
-
+console.log('addOrganizationToDonation',1)
       // If an organization was selected, create a new DonationOrganization record
       if (selectedOrganization) {
+        console.log('addOrganizationToDonation',2,selectedOrganization.id)
         const donationOrganization = this.donationOrganizationRepo.create();
         donationOrganization.donationId = this.donation.id;
         donationOrganization.organizationId = selectedOrganization.id;

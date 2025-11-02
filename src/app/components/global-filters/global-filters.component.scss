@@ -98,9 +98,18 @@
     right: auto;
     left: -8px;
   }
-  
+
   .date-range-container,
   .amount-range-container {
     flex-direction: row-reverse;
+  }
+}
+
+// Global style for mat-select panels inside global-filter
+// This ensures the dropdown appears above the menu content
+::ng-deep .cdk-overlay-container {
+  // The select panel should be above menu content
+  .global-filter-select-panel {
+    z-index: 1002 !important;
   }
 }

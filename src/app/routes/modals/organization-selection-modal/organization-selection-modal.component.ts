@@ -102,6 +102,45 @@ export class OrganizationSelectionModalComponent implements OnInit {
     }
   }
 
+  // Edit existing organization
+  async editOrganization(organization: Organization, event: Event) {
+    event.stopPropagation(); // Prevent selecting the organization
+    try {
+      const dialogResult = await openDialog(
+        OrganizationDetailsModalComponent,
+        (modal: OrganizationDetailsModalComponent) => {
+          modal.args = { organizationId: organization.id };
+        }
+      );
+
+      if (dialogResult) {
+        // Reload the updated organization
+        await this.loadOrganizations();
+      }
+    } catch (error) {
+      console.error('Error editing organization:', error);
+    }
+  }
+
+  // Delete organization
+  async deleteOrganization(organization: Organization, event: Event) {
+    event.stopPropagation(); // Prevent selecting the organization
+
+    if (!confirm(`האם אתה בטוח שברצונך למחוק את העמותה "${organization.name}"?`)) {
+      return;
+    }
+
+    try {
+      await this.organizationRepo.delete(organization);
+
+      // Remove from local list
+      this.availableOrganizations = this.availableOrganizations.filter(o => o.id !== organization.id);
+    } catch (error) {
+      console.error('Error deleting organization:', error);
+      alert('שגיאה במחיקת העמותה. ייתכן שהעמותה מקושרת לתרומות קיימות.');
+    }
+  }
+
   // Clear search
   clearSearch() {
     this.searchTerm = '';
