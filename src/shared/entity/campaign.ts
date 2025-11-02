@@ -225,6 +225,20 @@ export class Campaign extends IdEntity {
   })
   invitedDonorIds: string[] = []
 
+  @Fields.json({
+    caption: 'פילטרי מוזמנים',
+  })
+  invitedDonorFilters: {
+    selectedCountry?: string;
+    selectedCity?: string;
+    selectedNeighborhood?: string;
+    selectedCircleId?: string;
+    includeAlumni?: boolean;
+    excludeAlumni?: boolean;
+    showOnlySelected?: boolean;
+    showSelectedFirst?: boolean;
+  } = {}
+
   get progressPercentage() {
     if (this.targetAmount === 0) return 0
     return Math.min(100, Math.round((this.raisedAmount / this.targetAmount) * 100))

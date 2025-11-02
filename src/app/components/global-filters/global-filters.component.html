@@ -7,9 +7,9 @@
   <span *ngIf="activeFiltersCount > 0" class="filter-count">{{ activeFiltersCount }}</span>
 </button>
 
-<mat-menu #filtersMenu="matMenu" class="filters-menu" [dir]="i18n.lang.RTL ? 'rtl' : 'ltr'">
+<mat-menu #filtersMenu="matMenu" class="filters-menu" [dir]="i18n.lang.RTL ? 'rtl' : 'ltr'" [hasBackdrop]="false">
   <div class="filters-content" (click)="$event.stopPropagation()">
-    
+
     <!-- Filter Header -->
     <div class="filters-header">
       <h3>{{ (i18n.terms$ | async)?.filters }}</h3>
@@ -17,14 +17,13 @@
         <mat-icon>clear_all</mat-icon>
       </button>
     </div>
-    
+
     <!-- Campaign Filter -->
     <mat-form-field appearance="outline" class="filter-field">
       <mat-label>{{ (i18n.terms$ | async)?.campaign }}</mat-label>
       <mat-select [value]="currentFilters.campaignIds || []"
                   (valueChange)="updateFilter('campaignIds', $event.length > 0 ? $event : undefined)"
                   multiple
-                  panelClass="global-filter-select-panel"
                   disableOptionCentering>
         <mat-option *ngFor="let campaign of campaigns" [value]="campaign.id">
           {{ campaign.name }}
@@ -38,7 +37,6 @@
       <mat-select [value]="currentFilters.countryIds || []"
                   (valueChange)="updateFilter('countryIds', $event.length > 0 ? $event : undefined)"
                   multiple
-                  panelClass="global-filter-select-panel"
                   disableOptionCentering>
         <mat-option *ngFor="let country of countries" [value]="country.id">
           {{ country.displayName }}
@@ -70,7 +68,7 @@
         <mat-datepicker #toPicker></mat-datepicker>
       </mat-form-field>
     </div>
-    
+
     <!-- Amount Range -->
     <div class="amount-range-container">
       <mat-form-field appearance="outline" class="filter-field amount-field">
@@ -91,7 +89,7 @@
                (input)="onAmountMaxInput($event)">
       </mat-form-field>
     </div>
-    
+
     <!-- Active Filters Chips -->
     <div *ngIf="hasActiveFilters" class="active-filters">
       <h4>{{ (i18n.terms$ | async)?.activeFilters }}</h4>
@@ -109,30 +107,30 @@
           {{ (i18n.terms$ | async)?.country }}: {{ getCountryDisplayName(countryId) }}
           <mat-icon matChipRemove>cancel</mat-icon>
         </mat-chip>
-        
-        <mat-chip *ngIf="currentFilters.dateFrom" 
-                  [removable]="true" 
+
+        <mat-chip *ngIf="currentFilters.dateFrom"
+                  [removable]="true"
                   (removed)="clearFilter('dateFrom')">
           {{ (i18n.terms$ | async)?.fromDate }}: {{ currentFilters.dateFrom | date:'short' }}
           <mat-icon matChipRemove>cancel</mat-icon>
         </mat-chip>
-        
-        <mat-chip *ngIf="currentFilters.dateTo" 
-                  [removable]="true" 
+
+        <mat-chip *ngIf="currentFilters.dateTo"
+                  [removable]="true"
                   (removed)="clearFilter('dateTo')">
           {{ (i18n.terms$ | async)?.toDate }}: {{ currentFilters.dateTo | date:'short' }}
           <mat-icon matChipRemove>cancel</mat-icon>
         </mat-chip>
-        
-        <mat-chip *ngIf="currentFilters.amountMin !== undefined" 
-                  [removable]="true" 
+
+        <mat-chip *ngIf="currentFilters.amountMin !== undefined"
+                  [removable]="true"
                   (removed)="clearFilter('amountMin')">
           {{ (i18n.terms$ | async)?.minAmount }}: {{ currentFilters.amountMin }}
           <mat-icon matChipRemove>cancel</mat-icon>
         </mat-chip>
-        
-        <mat-chip *ngIf="currentFilters.amountMax !== undefined" 
-                  [removable]="true" 
+
+        <mat-chip *ngIf="currentFilters.amountMax !== undefined"
+                  [removable]="true"
                   (removed)="clearFilter('amountMax')">
           {{ (i18n.terms$ | async)?.maxAmount }}: {{ currentFilters.amountMax }}
           <mat-icon matChipRemove>cancel</mat-icon>

@@ -9,6 +9,7 @@ import { I18nService } from '../../../i18n/i18n.service';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { BlessingTypeSelectionModalComponent } from '../blessing-type-selection-modal/blessing-type-selection-modal.component';
 import { BlessingTextEditModalComponent } from '../blessing-text-edit-modal/blessing-text-edit-modal.component';
+import { ExcelExportService, ExcelColumn } from '../../../services/excel-export.service';
 
 export interface CampaignBlessingBookModalArgs {
   campaignId: string;
@@ -67,7 +68,8 @@ export class CampaignBlessingBookModalComponent implements OnInit {
     private ui: UIToolsService,
     private snackBar: MatSnackBar,
     private cdr: ChangeDetectorRef,
-    public dialogRef: MatDialogRef<CampaignBlessingBookModalComponent>
+    public dialogRef: MatDialogRef<CampaignBlessingBookModalComponent>,
+    private excelService: ExcelExportService
   ) {}
 
   async ngOnInit() {
@@ -472,8 +474,45 @@ export class CampaignBlessingBookModalComponent implements OnInit {
   }
 
   async exportToExcel() {
-    // TODO: Implement Excel export for blessing book
-    this.ui.info('ייצוא לאקסל יבוצע בהמשך');
+    if (!this.campaign) return;
+
+    const dataToExport = this.filteredDonorBlessings;
+
+    if (dataToExport.length === 0) {
+      this.snackBar.open('אין נתונים לייצוא', 'סגור', { duration: 3000 });
+      return;
+    }
+
+    // הגדרת עמודות
+    const columns: ExcelColumn<DonorBlessing>[] = [
+      { header: 'שם תורם', mapper: (db) => db.donor.fullName || '-', width: 20 },
+      { header: 'טלפון', mapper: (db) => db.donor.phone || '-', width: 15 },
+      { header: 'אימייל', mapper: (db) => db.donor.email || '-', width: 25 },
+      { header: 'סוג ברכה', mapper: (db) => db.blessing?.blessingBookType?.type || '-', width: 15 },
+      { header: 'מחיר סוג ברכה', mapper: (db) => db.blessing?.blessingBookType?.price || '-', width: 15 },
+      { header: 'סה"כ תרם', mapper: (db) => db.totalDonated, width: 12 },
+      { header: 'מספר תרומות תואמות', mapper: (db) => db.matchingDonationsCount, width: 18 },
+      { header: 'סטטוס ברכה', mapper: (db) => this.getStatusText(db.blessingStatus), width: 12 },
+      { header: 'נוסח ברכה', mapper: (db) => db.blessing?.blessingContent || '-', width: 40 }
+    ];
+
+    // ייצוא
+    await this.excelService.export({
+      data: dataToExport,
+      columns: columns,
+      sheetName: 'ספר ברכות',
+      fileName: this.excelService.generateFileName(`ספר_ברכות_${this.campaign.name}`),
+      includeStats: true,
+      stats: [
+        { label: 'שם קמפיין', value: this.campaign.name },
+        { label: 'סה"כ תורמים', value: this.totalDonors },
+        { label: 'ברכות ממתינות', value: this.pendingBlessings },
+        { label: 'ברכות שנשלחו', value: this.sentBlessings },
+        { label: 'ברכות שהתקבלו', value: this.receivedBlessings },
+        { label: 'מוצגים לאחר פילטור', value: dataToExport.length },
+        { label: 'תאריך ייצוא', value: new Date().toLocaleDateString('he-IL') }
+      ]
+    });
   }
 
   async sendBulkReminders() {

@@ -106,7 +106,7 @@ export class GlobalFilterService {
             };
           }
           user.settings.globalFilters = filters;
-          await user.save();
+          await this.userRepo.save(user);
         }
       }
     } catch (error) {

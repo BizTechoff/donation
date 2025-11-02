@@ -656,6 +656,7 @@ export const termsEn = {
   deleteCampaignButton: 'Delete Campaign',
   cancelButton: 'Cancel',
   saveCampaignButton: 'Save Campaign',
+  saveInviteesButton: 'Save Invitees',
 
   // Certificates Page - From certificates.component.html
   certificatesAndMemorials: 'Certificates and Memorials',

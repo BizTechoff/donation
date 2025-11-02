@@ -95,7 +95,7 @@
             </select>
           </div>
 
-          <div class="filter-group">
+          <!-- <div class="filter-group">
             <mat-icon class="filter-icon">stars</mat-icon>
             <select class="filter-select" [(ngModel)]="filterLevel">
               <option value="">{{ (i18n.terms$ | async)?.allLevels }}</option>
@@ -106,7 +106,7 @@
               <option value="silver_stones">{{ (i18n.terms$ | async)?.levelSilver }}</option>
               <option value="gold_pillars">{{ (i18n.terms$ | async)?.levelGold }}</option>
             </select>
-          </div>
+          </div> -->
 
           <div class="filter-actions">
             <!-- <button mat-raised-button
@@ -116,13 +116,6 @@
               <mat-icon>notification_important</mat-icon>
               שלח תזכורות
             </button> -->
-
-            <button mat-stroked-button
-                    (click)="exportToExcel()"
-                    class="export-btn">
-              <mat-icon>download</mat-icon>
-              {{ (i18n.terms$ | async)?.exportToExcel }}
-            </button>
           </div>
         </div>
       </div>
@@ -273,6 +266,13 @@
       </div>
 
       <div class="footer-actions">
+        <button mat-stroked-button
+                (click)="exportToExcel()"
+                class="export-btn">
+          <mat-icon>download</mat-icon>
+          {{ (i18n.terms$ | async)?.exportToExcel }}
+        </button>
+
         <button mat-stroked-button (click)="closeModal()" class="cancel-button">
           <mat-icon>close</mat-icon>
           {{ (i18n.terms$ | async)?.closeButton }}

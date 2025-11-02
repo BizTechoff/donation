@@ -76,19 +76,14 @@ export class CertificatesComponent implements OnInit, OnDestroy {
   }
 
   async loadCertificates() {
-    const query: any = {
+    this.allCertificates = await repo(Certificate).find({
       include: {
         donor: true,
         createdBy: true,
         reminder: true
       },
       orderBy: { createdDate: 'desc' }
-    };
-
-    // Apply global filters
-    const filteredQuery = this.globalFilterService.applyFiltersToQuery(query);
-
-    this.allCertificates = await repo(Certificate).find(filteredQuery);
+    });
     this.filterCertificates();
   }
 

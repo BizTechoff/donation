@@ -25,6 +25,14 @@
       <div class="section-title">
         <mat-icon>filter_list</mat-icon>
         <h3>{{ (i18n.terms$ | async)?.generalCriteriaLabel }}</h3>
+        <button class="clear-filters-btn"
+                (click)="clearFilters()"
+                [disabled]="!hasActiveFilters"
+                [matTooltip]="'נקה פילטרים'"
+                [dir]="'rtl'">
+          <mat-icon>clear_all</mat-icon>
+          <span>נקה פילטרים</span>
+        </button>
       </div>
 
       <div class="filters-grid">
@@ -45,6 +53,28 @@
               <input type="checkbox" [(ngModel)]="campaign.excludeAnash"
                      [disabled]="!canEdit || campaign.isAnash"
                      (ngModelChange)="onAnashExcludeChange()">
+              <span class="checkbox-label exclude">✗ לא כולל</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Alumni Filter -->
+        <div class="filter-item">
+          <div class="filter-header">
+            <mat-icon class="filter-icon">school</mat-icon>
+            <span class="filter-label">בוגרים</span>
+          </div>
+          <div class="filter-options">
+            <label class="option-checkbox">
+              <input type="checkbox" [(ngModel)]="includeAlumni"
+                     [disabled]="!canEdit || excludeAlumni"
+                     (ngModelChange)="onAlumniIncludeChange()">
+              <span class="checkbox-label include">✓ כולל</span>
+            </label>
+            <label class="option-checkbox">
+              <input type="checkbox" [(ngModel)]="excludeAlumni"
+                     [disabled]="!canEdit || includeAlumni"
+                     (ngModelChange)="onAlumniExcludeChange()">
               <span class="checkbox-label exclude">✗ לא כולל</span>
             </label>
           </div>
@@ -110,60 +140,6 @@
           </select>
         </div>
 
-        <!-- Alumni Filter -->
-        <div class="filter-item">
-          <div class="filter-header">
-            <mat-icon class="filter-icon">school</mat-icon>
-            <span class="filter-label">בוגרים</span>
-          </div>
-          <select class="filter-select"
-                  [(ngModel)]="selectedAlumniStatus"
-                  [disabled]="!canEdit"
-                  (ngModelChange)="onFilterChange()">
-            <option value="">הכל</option>
-            <option value="alumni">בוגרים</option>
-            <option value="notAlumni">לא בוגרים</option>
-          </select>
-        </div>
-
-        <!-- Circle Filter (old style) -->
-        <div class="filter-item">
-          <div class="filter-header">
-            <mat-icon class="filter-icon">group_work</mat-icon>
-            <span class="filter-label">{{ (i18n.terms$ | async)?.categoryField }}</span>
-          </div>
-          <div class="circle-options">
-            <div class="circle-option"
-                 [class.active]="campaign.circle === 'platinum'"
-                 [class.disabled]="!canEdit"
-                 (click)="toggleCircle('platinum')">
-              <span class="circle-icon">👑</span>
-              <span class="circle-label">{{ (i18n.terms$ | async)?.circlePlatinum }}</span>
-            </div>
-            <div class="circle-option"
-                 [class.active]="campaign.circle === 'gold'"
-                 [class.disabled]="!canEdit"
-                 (click)="toggleCircle('gold')">
-              <span class="circle-icon">🥇</span>
-              <span class="circle-label">{{ (i18n.terms$ | async)?.circleGold }}</span>
-            </div>
-            <div class="circle-option"
-                 [class.active]="campaign.circle === 'silver'"
-                 [class.disabled]="!canEdit"
-                 (click)="toggleCircle('silver')">
-              <span class="circle-icon">🥈</span>
-              <span class="circle-label">{{ (i18n.terms$ | async)?.circleSilver }}</span>
-            </div>
-            <div class="circle-option"
-                 [class.active]="campaign.circle === 'regular'"
-                 [class.disabled]="!canEdit"
-                 (click)="toggleCircle('regular')">
-              <span class="circle-icon">⭕</span>
-              <span class="circle-label">{{ (i18n.terms$ | async)?.circleRegular }}</span>
-            </div>
-          </div>
-        </div>
-
         <!-- Age Range Filter -->
         <div class="filter-item age-filter">
           <div class="filter-header">
@@ -201,6 +177,18 @@
         </div> -->
       </div>
 
+      <!-- Display Options Section -->
+      <div class="display-options-section">
+        <label class="display-option-checkbox">
+          <input type="checkbox" [(ngModel)]="showOnlySelected">
+          <span class="checkbox-label">הצג רק מסומנים</span>
+        </label>
+        <label class="display-option-checkbox">
+          <input type="checkbox" [(ngModel)]="showSelectedFirst">
+          <span class="checkbox-label">הצג מסומנים ראשונים ברשימה</span>
+        </label>
+      </div>
+
     </div>
 
     <!-- Loading State -->
@@ -231,7 +219,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let donor of invitedDonors" class="donor-row">
+            <tr *ngFor="let donor of displayedDonors" class="donor-row">
               <td class="checkbox-column">
                 <input type="checkbox"
                        [checked]="isSelected(donor.id)"
@@ -259,7 +247,7 @@
         </table>
 
         <!-- Empty State -->
-        <div class="empty-state" *ngIf="invitedDonors.length === 0">
+        <div class="empty-state" *ngIf="displayedDonors.length === 0">
           <mat-icon>people_outline</mat-icon>
           <p>{{ (i18n.terms$ | async)?.noInviteesFound }}</p>
         </div>
@@ -285,7 +273,7 @@
           <mat-icon>people</mat-icon>
           {{ (i18n.terms$ | async)?.totalInvitees }}: {{invitedDonors.length}}
         </span>
-        <span class="stat-item" *ngIf="selectedCount > 0">
+        <span class="stat-item" *ngIf="true || selectedCount > 0">
           <mat-icon>check_circle</mat-icon>
           {{ (i18n.terms$ | async)?.selectedInvitees }}: {{selectedCount}}
         </span>
@@ -307,7 +295,7 @@
       <div class="footer-actions">
         <button mat-raised-button color="primary" (click)="saveCampaign()" [disabled]="loading">
           <mat-icon>save</mat-icon>
-          {{ (i18n.terms$ | async)?.saveCampaignButton }}
+          {{ (i18n.terms$ | async)?.saveInviteesButton }}
         </button>
 
         <!-- <button mat-raised-button

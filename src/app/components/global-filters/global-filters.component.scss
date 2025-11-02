@@ -24,7 +24,7 @@
 .filters-menu {
   min-width: 320px;
   max-width: 450px;
-  
+
   .filters-content {
     padding: 16px;
     min-width: 300px;
@@ -38,7 +38,7 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
-  
+
   h3 {
     margin: 0;
     font-weight: 500;
@@ -48,7 +48,7 @@
 .filter-field {
   width: 100%;
   margin-bottom: 12px;
-  
+
   &.date-field,
   &.amount-field {
     width: calc(50% - 8px);
@@ -67,23 +67,23 @@
   margin-top: 20px;
   padding-top: 16px;
   border-top: 1px solid #e0e0e0;
-  
+
   h4 {
     margin: 0 0 12px 0;
     font-size: 14px;
     font-weight: 500;
     color: #666;
   }
-  
+
   mat-chip-set {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
   }
-  
+
   mat-chip {
     font-size: 12px;
-    
+
     mat-icon {
       font-size: 16px;
       width: 16px;
@@ -102,14 +102,5 @@
   .date-range-container,
   .amount-range-container {
     flex-direction: row-reverse;
-  }
-}
-
-// Global style for mat-select panels inside global-filter
-// This ensures the dropdown appears above the menu content
-::ng-deep .cdk-overlay-container {
-  // The select panel should be above menu content
-  .global-filter-select-panel {
-    z-index: 1002 !important;
   }
 }

@@ -654,6 +654,7 @@ export const termsHe = {
   deleteCampaignButton: 'מחק קמפיין',
   cancelButton: 'ביטול',
   saveCampaignButton: 'שמור קמפיין',
+  saveInviteesButton: 'שמור מוזמנים',
 
   // Certificates Page - From certificates.component.html
   certificatesAndMemorials: 'תעודות ונציבים',

@@ -6,6 +6,7 @@ import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { openDialog, DialogConfig } from 'common-ui-elements';
+import { ExcelExportService, ExcelColumn } from '../../../services/excel-export.service';
 
 export interface CampaignInvitedListModalArgs {
   campaignId: string;
@@ -46,6 +47,14 @@ export class CampaignInvitedListModalComponent implements OnInit {
   selectedCircleId = '';
   selectedAlumniStatus = '';
 
+  // Alumni filters (like Anash)
+  includeAlumni = false;
+  excludeAlumni = false;
+
+  // Display options
+  showOnlySelected = false;
+  showSelectedFirst = false;
+
   // Filter stats
   totalDonors = 0;
   filteredByAnash = 0;
@@ -59,7 +68,8 @@ export class CampaignInvitedListModalComponent implements OnInit {
     private ui: UIToolsService,
     private snackBar: MatSnackBar,
     private cdr: ChangeDetectorRef,
-    public dialogRef: MatDialogRef<CampaignInvitedListModalComponent>
+    public dialogRef: MatDialogRef<CampaignInvitedListModalComponent>,
+    private excelService: ExcelExportService
   ) {}
 
   async ngOnInit() {
@@ -67,9 +77,12 @@ export class CampaignInvitedListModalComponent implements OnInit {
     await this.loadCircles();
     await this.loadAllDonorsForFilters();
     this.extractFilterData();
+    // Load previously saved filters
+    this.loadFiltersFromCampaign();
     await this.loadInvitedDonors();
-    // Load previously saved invited donors
-    if (this.campaign?.invitedDonorIds) {
+    // Load previously saved invited donors - only if not empty
+    // Otherwise keep the selection from filters (applyFiltersAsSelection)
+    if (this.campaign?.invitedDonorIds && this.campaign.invitedDonorIds.length > 0) {
       this.selectedDonors = new Set(this.campaign.invitedDonorIds);
     }
   }
@@ -159,57 +172,8 @@ export class CampaignInvitedListModalComponent implements OnInit {
 
     this.loading = true;
     try {
-      // Build filter conditions
-      const where: any = {};
-
-      // Apply country filter
-      if (this.selectedCountry) {
-        where['homePlace.country.name'] = this.selectedCountry;
-      }
-
-      // Apply city filter
-      if (this.selectedCity) {
-        where['homePlace.city'] = this.selectedCity;
-      }
-
-      // Apply neighborhood filter
-      if (this.selectedNeighborhood) {
-        where['homePlace.neighborhood'] = this.selectedNeighborhood;
-      }
-
-      // Apply circle filter
-      if (this.selectedCircleId) {
-        where['circleIds'] = { $contains: this.selectedCircleId };
-      }
-
-      // Apply alumni filter
-      if (this.selectedAlumniStatus === 'alumni') {
-        where['isAlumni'] = true;
-      } else if (this.selectedAlumniStatus === 'notAlumni') {
-        where['isAlumni'] = false;
-      }
-
-      // Apply אנ"ש filter
-      if (this.campaign.isAnash) {
-        where['isAnash'] = true;
-      } else if (this.campaign.excludeAnash) {
-        where['isAnash'] = false;
-      }
-
-      // Apply age filters
-      if (this.campaign.minAge || this.campaign.maxAge) {
-        // Age filtering will need to be done client-side or with a backend method
-        // For now, we'll load all matching donors and filter by age after
-      }
-
-      // Apply circle filter from campaign (old style)
-      if (this.campaign.circle) {
-        where['level'] = this.campaign.circle;
-      }
-
-      // Load donors with filters
+      // Load ALL donors without filtering - filters will only affect selection
       const allDonors = await this.donorRepo.find({
-        where: Object.keys(where).length > 0 ? where : undefined,
         include: {
           homePlace: {
             include: {
@@ -219,20 +183,11 @@ export class CampaignInvitedListModalComponent implements OnInit {
         }
       });
 
-      // Apply age filtering client-side if needed
-      if (this.campaign.minAge || this.campaign.maxAge) {
-        this.invitedDonors = allDonors.filter(donor => {
-          if (!donor.birthDate) return true; // Include if no birthDate
-          const age = this.calculateAge(donor.birthDate);
-          if (this.campaign.minAge && age < this.campaign.minAge) return false;
-          if (this.campaign.maxAge && age > this.campaign.maxAge) return false;
-          return true;
-        });
-      } else {
-        this.invitedDonors = allDonors;
-      }
-
+      this.invitedDonors = allDonors;
       this.totalDonors = this.invitedDonors.length;
+
+      // Apply current filters as selection
+      this.applyFiltersAsSelection();
 
     } catch (error: any) {
       console.error('Error loading invited donors:', error);
@@ -240,6 +195,149 @@ export class CampaignInvitedListModalComponent implements OnInit {
     } finally {
       this.loading = false;
     }
+  }
+
+  // Apply current filters by selecting/deselecting matching donors
+  // Two-stage process: 1) Inclusive filters select, 2) Exclusive filters deselect
+  private applyFiltersAsSelection() {
+
+    console.log('applyFiltersAsSelection')
+
+    if (!this.campaign) return;
+
+    // Only apply if there are active filters
+    if (!this.hasActiveFilters) return;
+
+    // שלב א': טיפול בפילטרי "כולל" - נקה ובחר מחדש
+    if (this.hasInclusiveFilters) {
+    console.log('applyFiltersAsSelection 1')
+
+      this.selectedDonors.clear();
+      this.invitedDonors.forEach(donor => {
+        if (this.matchesInclusiveFilters(donor)) {
+          this.selectedDonors.add(donor.id);
+    console.log(' this.selectedDonors.size', this.selectedDonors.size)
+        }
+      });
+    }
+
+    // שלב ב': טיפול בפילטרי "לא כולל" - הסר סימון בלבד
+    if (this.hasExclusiveFilters) {
+    console.log('applyFiltersAsSelection 2')
+      this.invitedDonors.forEach(donor => {
+        if (this.shouldBeExcluded(donor)) {
+          this.selectedDonors.delete(donor.id);
+        }
+      });
+    }
+  }
+
+  // Check if there are any inclusive filters active
+  private get hasInclusiveFilters(): boolean {
+    if (!this.campaign) return false;
+    return !!(
+      this.campaign.isAnash ||
+      this.includeAlumni ||
+      this.selectedCountry ||
+      this.selectedCity ||
+      this.selectedNeighborhood ||
+      this.selectedCircleId ||
+      this.campaign.circle ||
+      this.campaign.minAge ||
+      this.campaign.maxAge
+    );
+  }
+
+  // Check if there are any exclusive filters active
+  private get hasExclusiveFilters(): boolean {
+    if (!this.campaign) return false;
+    return !!(
+      this.campaign.excludeAnash ||
+      this.excludeAlumni
+    );
+  }
+
+  // Check if donor matches inclusive filter criteria
+  private matchesInclusiveFilters(donor: Donor): boolean {
+    // Apply country filter
+    if (this.selectedCountry) {
+    console.log('selectedCountry')
+      if (donor.homePlace?.country?.name !== this.selectedCountry) {
+        return false;
+      }
+    }
+
+    // Apply city filter
+    if (this.selectedCity) {
+    console.log('selecselectedCitytedCountry')
+      if (donor.homePlace?.city !== this.selectedCity) {
+        return false;
+      }
+    }
+
+    // Apply neighborhood filter
+    if (this.selectedNeighborhood) {
+    console.log('selectedNeighborhood')
+      if (donor.homePlace?.neighborhood !== this.selectedNeighborhood) {
+        return false;
+      }
+    }
+
+    // Apply circle filter
+    if (this.selectedCircleId) {
+      console.log('this.selectedCircleId',this.selectedCircleId)
+      if (!donor.circleIds?.includes(this.selectedCircleId)) {
+        return false;
+      }
+    }
+
+    // Apply alumni inclusive filter
+    if (this.includeAlumni) {
+    console.log('includeAlumni')
+      if (!donor.isAlumni) return false;
+    }
+
+    // Apply אנ"ש inclusive filter
+    if (this.campaign.isAnash) {
+    console.log('isAnash',donor.isAnash,donor.firstName)
+      if (!donor.isAnash) return false;
+    console.log('isAnash 2',donor.isAnash,donor.firstName)
+    }
+
+    // Apply age filters
+    if (this.campaign.minAge || this.campaign.maxAge) {
+    console.log('minAge')
+      if (donor.birthDate) {
+        const age = this.calculateAge(donor.birthDate);
+        if (this.campaign.minAge && age < this.campaign.minAge) return false;
+        if (this.campaign.maxAge && age > this.campaign.maxAge) return false;
+      }
+    }
+
+    // Apply circle filter from campaign (old style)
+    if (this.campaign.circle) {
+    console.log('circle',this.campaign.circle,donor.circleIds?.length)
+      if (donor.level !== this.campaign.circle) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  // Check if donor should be excluded (exclusive filters)
+  private shouldBeExcluded(donor: Donor): boolean {
+    // Exclude alumni
+    if (this.excludeAlumni && donor.isAlumni) {
+      return true;
+    }
+
+    // Exclude אנ"ש
+    if (this.campaign.excludeAnash && donor.isAnash) {
+      return true;
+    }
+
+    return false;
   }
 
   private calculateAge(birthDate: Date): number {
@@ -262,8 +360,49 @@ export class CampaignInvitedListModalComponent implements OnInit {
   }
 
   async exportToExcel() {
-    // TODO: Implement Excel export
-    this.snackBar.open('ייצוא לאקסל בפיתוח', 'סגור', { duration: 3000 });
+    if (!this.campaign) return;
+
+    // בדיקה אם לייצא רק מסומנים או את כולם
+    let donorsToExport = this.displayedDonors;
+
+    if (this.selectedCount > 0 && this.selectedCount < this.displayedDonors.length) {
+      const exportSelected = await this.ui.yesNoQuestion(
+        `יש ${this.selectedCount} תורמים מסומנים מתוך ${this.displayedDonors.length}. האם לייצא רק את המסומנים?`
+      );
+      if (exportSelected) {
+        donorsToExport = this.displayedDonors.filter(d => this.isSelected(d.id));
+      }
+    }
+
+    // הגדרת עמודות
+    const columns: ExcelColumn<Donor>[] = [
+      { header: 'שם מלא', mapper: (d) => this.getDonorDisplayName(d), width: 20 },
+      { header: 'טלפון', mapper: (d) => this.getDonorPhone(d), width: 15 },
+      { header: 'אימייל', mapper: (d) => this.getDonorEmail(d), width: 25 },
+      { header: 'רמה', mapper: (d) => this.getDonorLevel(d), width: 12 },
+      { header: 'עיר', mapper: (d) => d.homePlace?.city || '-', width: 15 },
+      { header: 'שכונה', mapper: (d) => d.homePlace?.neighborhood || '-', width: 15 },
+      { header: 'מדינה', mapper: (d) => d.homePlace?.country?.name || '-', width: 15 },
+      { header: 'אנ"ש', mapper: (d) => this.excelService.booleanToHebrew(d.isAnash), width: 8 },
+      { header: 'בוגר', mapper: (d) => this.excelService.booleanToHebrew(d.isAlumni), width: 8 },
+      { header: 'מסומן', mapper: (d) => this.isSelected(d.id) ? '✓' : '', width: 8 }
+    ];
+
+    // ייצוא
+    await this.excelService.export({
+      data: donorsToExport,
+      columns: columns,
+      sheetName: 'מוזמנים',
+      fileName: this.excelService.generateFileName(`מוזמנים_${this.campaign.name}`),
+      includeStats: true,
+      stats: [
+        { label: 'שם קמפיין', value: this.campaign.name },
+        { label: 'סה"כ מוזמנים מוצגים', value: this.displayedDonors.length },
+        { label: 'מוזמנים מיוצאים', value: donorsToExport.length },
+        { label: 'מסומנים', value: this.selectedCount },
+        { label: 'תאריך ייצוא', value: new Date().toLocaleDateString('he-IL') }
+      ]
+    });
   }
 
   async sendInvitations() {
@@ -298,17 +437,19 @@ export class CampaignInvitedListModalComponent implements OnInit {
       this.selectedCity ||
       this.selectedNeighborhood ||
       this.selectedCircleId ||
-      this.selectedAlumniStatus
+      this.includeAlumni ||
+      this.excludeAlumni
     );
   }
 
   markAsChanged() {
-    // Reload donors when filters change
-    this.loadInvitedDonors();
+    // Apply filters as selection (don't reload - just update selection)
+    this.applyFiltersAsSelection();
   }
 
   onFilterChange() {
-    this.loadInvitedDonors();
+    // Apply filters as selection (don't reload - just update selection)
+    this.applyFiltersAsSelection();
   }
 
   toggleCircle(circle: 'platinum' | 'gold' | 'silver' | 'regular') {
@@ -339,6 +480,46 @@ export class CampaignInvitedListModalComponent implements OnInit {
     this.markAsChanged();
   }
 
+  // Methods for Alumni include/exclude (like Anash)
+  onAlumniIncludeChange() {
+    if (this.includeAlumni && this.excludeAlumni) {
+      this.excludeAlumni = false;
+    }
+    this.markAsChanged();
+  }
+
+  onAlumniExcludeChange() {
+    if (this.excludeAlumni && this.includeAlumni) {
+      this.includeAlumni = false;
+    }
+    this.markAsChanged();
+  }
+
+  // Clear all filters
+  clearFilters() {
+    // Clear campaign filters
+    if (this.campaign) {
+      this.campaign.isAnash = false;
+      this.campaign.excludeAnash = false;
+      this.campaign.circle = '';
+      this.campaign.minAge = undefined;
+      this.campaign.maxAge = undefined;
+    }
+
+    // Clear local filters
+    this.selectedCountry = '';
+    this.selectedCity = '';
+    this.selectedNeighborhood = '';
+    this.selectedCircleId = '';
+    this.includeAlumni = false;
+    this.excludeAlumni = false;
+    this.showOnlySelected = false;
+    this.showSelectedFirst = false;
+
+    // Reapply (which will clear selection since no filters)
+    this.markAsChanged();
+  }
+
 
   // Open activists related to campaign
   openActivists() {
@@ -359,6 +540,8 @@ export class CampaignInvitedListModalComponent implements OnInit {
       this.loading = true;
       // Save selected donors to campaign
       this.campaign.invitedDonorIds = Array.from(this.selectedDonors);
+      // Save current filters to campaign
+      this.campaign.invitedDonorFilters = this.getCurrentFilters();
       await remult.repo(Campaign).update(this.campaign.id, this.campaign);
       this.snackBar.open('הקמפיין נשמר בהצלחה', 'סגור', { duration: 3000 });
       await this.loadInvitedDonors();
@@ -421,5 +604,72 @@ export class CampaignInvitedListModalComponent implements OnInit {
 
   get selectedCount(): number {
     return this.selectedDonors.size;
+  }
+
+  // Load filters from campaign
+  private loadFiltersFromCampaign() {
+    if (!this.campaign?.invitedDonorFilters) return;
+
+    const filters = this.campaign.invitedDonorFilters;
+
+    // Load local filters that are not part of campaign entity
+    if (filters.selectedCountry !== undefined) this.selectedCountry = filters.selectedCountry;
+    if (filters.selectedCity !== undefined) this.selectedCity = filters.selectedCity;
+    if (filters.selectedNeighborhood !== undefined) this.selectedNeighborhood = filters.selectedNeighborhood;
+    if (filters.selectedCircleId !== undefined) this.selectedCircleId = filters.selectedCircleId;
+    if (filters.includeAlumni !== undefined) this.includeAlumni = filters.includeAlumni;
+    if (filters.excludeAlumni !== undefined) this.excludeAlumni = filters.excludeAlumni;
+    if (filters.showOnlySelected !== undefined) this.showOnlySelected = filters.showOnlySelected;
+    if (filters.showSelectedFirst !== undefined) this.showSelectedFirst = filters.showSelectedFirst;
+  }
+
+  // Save current filters to object
+  private getCurrentFilters() {
+    return {
+      selectedCountry: this.selectedCountry || undefined,
+      selectedCity: this.selectedCity || undefined,
+      selectedNeighborhood: this.selectedNeighborhood || undefined,
+      selectedCircleId: this.selectedCircleId || undefined,
+      includeAlumni: this.includeAlumni || undefined,
+      excludeAlumni: this.excludeAlumni || undefined,
+      showOnlySelected: this.showOnlySelected || undefined,
+      showSelectedFirst: this.showSelectedFirst || undefined,
+    };
+  }
+
+  // Get filtered and sorted donors list based on display options
+  get displayedDonors(): Donor[] {
+    let result = [...this.invitedDonors];
+
+    // Filter: show only selected
+    if (this.showOnlySelected) {
+      result = result.filter(donor => this.selectedDonors.has(donor.id));
+    }
+
+    // Sort: selected first, then alphabetically
+    if (this.showSelectedFirst) {
+      result.sort((a, b) => {
+        const aSelected = this.selectedDonors.has(a.id);
+        const bSelected = this.selectedDonors.has(b.id);
+
+        // First by selection status
+        if (aSelected && !bSelected) return -1;
+        if (!aSelected && bSelected) return 1;
+
+        // Then alphabetically by first name, then last name
+        const aName = `${a.firstName || ''} ${a.lastName || ''}`.trim().toLowerCase();
+        const bName = `${b.firstName || ''} ${b.lastName || ''}`.trim().toLowerCase();
+        return aName.localeCompare(bName, 'he');
+      });
+    } else {
+      // Just alphabetically
+      result.sort((a, b) => {
+        const aName = `${a.firstName || ''} ${a.lastName || ''}`.trim().toLowerCase();
+        const bName = `${b.firstName || ''} ${b.lastName || ''}`.trim().toLowerCase();
+        return aName.localeCompare(bName, 'he');
+      });
+    }
+
+    return result;
   }
 }

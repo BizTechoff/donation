@@ -1,4 +1,5 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, HostListener, ElementRef } from '@angular/core';
+import { MatMenuTrigger } from '@angular/material/menu';
 import { remult } from 'remult';
 import { Subscription } from 'rxjs';
 import { GlobalFilterService, GlobalFilters } from '../../services/global-filter.service';
@@ -12,19 +13,22 @@ import { I18nService } from '../../i18n/i18n.service';
   styleUrls: ['./global-filters.component.scss']
 })
 export class GlobalFiltersComponent implements OnInit, OnDestroy {
-  
+
+  @ViewChild(MatMenuTrigger) menuTrigger!: MatMenuTrigger;
+
   currentFilters: GlobalFilters = {};
   campaigns: Campaign[] = [];
   countries: Country[] = [];
 
   campaignRepo = remult.repo(Campaign);
   countryRepo = remult.repo(Country);
-  
+
   private subscription = new Subscription();
-  
+
   constructor(
     private filterService: GlobalFilterService,
-    public i18n: I18nService
+    public i18n: I18nService,
+    private elementRef: ElementRef
   ) {}
   
   async ngOnInit() {
@@ -137,5 +141,19 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
     const input = event.target as HTMLInputElement;
     const value = input.value ? +input.value : undefined;
     this.updateFilter('amountMax', value);
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent) {
+    if (!this.menuTrigger || !this.menuTrigger.menuOpen) {
+      return;
+    }
+
+    const clickedInside = this.elementRef.nativeElement.contains(event.target);
+    const clickedOnOverlay = (event.target as HTMLElement).closest('.cdk-overlay-pane');
+
+    if (!clickedInside && !clickedOnOverlay) {
+      this.menuTrigger.closeMenu();
+    }
   }
 }
