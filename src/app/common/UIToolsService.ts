@@ -132,13 +132,6 @@ export class UIToolsService implements UITools {
     );
   }
 
-  async standingOrderDetailsDialog(standingOrderId: string, options?: { donorId?: string }): Promise<boolean> {
-    return await openDialog(
-      (await import('../routes/modals/standing-order-details-modal/standing-order-details-modal.component')).StandingOrderDetailsModalComponent,
-      (dlg) => dlg.args = { standingOrderId, donorId: options?.donorId }
-    )
-  }
-
   async donorGiftDetailsDialog(donorGiftId: string, options?: { donorId?: string }): Promise<boolean> {
     return await openDialog(
       (await import('../routes/modals/donor-gift-details-modal/donor-gift-details-modal.component')).DonorGiftDetailsModalComponent,

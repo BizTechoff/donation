@@ -4,6 +4,8 @@ import { remult } from 'remult';
 import * as L from 'leaflet';
 import { Subscription } from 'rxjs';
 import { Donor } from '../../../shared/entity/donor';
+import { DonorContact } from '../../../shared/entity/donor-contact';
+import { DonorPlace } from '../../../shared/entity/donor-place';
 import { Donation } from '../../../shared/entity/donation';
 import { Place } from '../../../shared/entity/place';
 import { GeocodingService } from '../../services/geocoding.service';
@@ -22,14 +24,6 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'assets/leaflet/marker-shadow.png',
 });
 
-interface DonorWithStats extends Donor {
-  totalDonations: number;
-  averageDonation: number;
-  lastDonationDate: Date | null;
-  donationCount: number;
-  status: 'active' | 'inactive' | 'high-donor' | 'recent-donor';
-}
-
 @Component({
   selector: 'app-donors-map',
   templateUrl: './donors-map.component.html',
@@ -42,8 +36,21 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
   private markersLayer!: L.LayerGroup;
   private subscription = new Subscription();
 
-  donors: DonorWithStats[] = [];
+  donors: Donor[] = [];
   donations: Donation[] = [];
+
+  // Maps for related data from dedicated entities
+  donorPlaceMap = new Map<string, Place>();
+  donorEmailMap = new Map<string, string>();
+  donorPhoneMap = new Map<string, string>();
+  donorFullAddressMap = new Map<string, string>();
+
+  // Stats maps
+  donorTotalDonationsMap = new Map<string, number>();
+  donorAverageDonationMap = new Map<string, number>();
+  donorLastDonationDateMap = new Map<string, Date | null>();
+  donorDonationCountMap = new Map<string, number>();
+  donorStatusMap = new Map<string, 'active' | 'inactive' | 'high-donor' | 'recent-donor'>();
 
   loading = false;
   showSummary = true;
@@ -61,6 +68,8 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     private geoService: GeoService
   ) {}
 
+  // Note: DonorService already injected above for findFiltered()
+
   // סטטיסטיקות
   get totalDonors(): number {
     return this.donors.length;
@@ -72,13 +81,16 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   get averageDonation(): number {
     if (this.donors.length === 0) return 0;
-    const totalAmount = this.donors.reduce((sum, d) => sum + d.totalDonations, 0);
-    const totalCount = this.donors.reduce((sum, d) => sum + d.donationCount, 0);
+    const totalAmount = this.donors.reduce((sum, d) => sum + (this.donorTotalDonationsMap.get(d.id) || 0), 0);
+    const totalCount = this.donors.reduce((sum, d) => sum + (this.donorDonationCountMap.get(d.id) || 0), 0);
     return totalCount > 0 ? totalAmount / totalCount : 0;
   }
 
   get donorsOnMap(): number {
-    return this.donors.filter(d => d.homePlace?.latitude && d.homePlace?.longitude).length;
+    return this.donors.filter(d => {
+      const place = this.donorPlaceMap.get(d.id);
+      return place?.latitude && place?.longitude;
+    }).length;
   }
 
   async ngOnInit() {
@@ -138,10 +150,27 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     const currentFilters = this.filterService.currentFilters;
     console.log('DonorsMap: Loading donors with filters:', currentFilters);
 
-    this.donors = await this.donorService.findFiltered() as DonorWithStats[];
+    const baseDonors = await this.donorService.findFiltered();
+
+    // Use DonorService to load all related data
+    const relatedData = await this.donorService.loadDonorRelatedData(
+      baseDonors.map(d => d.id)
+    );
+
+    // Populate maps from service
+    this.donorPlaceMap = relatedData.donorPlaceMap;
+    this.donorEmailMap = relatedData.donorEmailMap;
+    this.donorPhoneMap = relatedData.donorPhoneMap;
+    this.donorFullAddressMap = relatedData.donorFullAddressMap;
+    // Note: birthDate not needed for donors-map
+
+    this.donors = baseDonors;
 
     console.log('DonorsMap: Loaded donors:', this.donors.length);
-    console.log('DonorsMap: Donors with locations:', this.donors.filter(d => d.homePlace?.latitude && d.homePlace?.longitude).length);
+    console.log('DonorsMap: Donors with locations:', this.donors.filter(d => {
+      const place = this.donorPlaceMap.get(d.id);
+      return place?.latitude && place?.longitude;
+    }).length);
 
     // Add demo coordinates for Israel testing
     if (this.donors.length > 0) {
@@ -161,13 +190,12 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
       // Assign Israeli coordinates to first 10 donors
       this.donors.slice(0, Math.min(this.donors.length, israelCoords.length)).forEach((donor, index) => {
         if (israelCoords[index]) {
-          // Create a mock homePlace if it doesn't exist
-          if (!donor.homePlace) {
-            const place = new Place();
+          // Get or create a mock primaryPlace if it doesn't exist
+          let place = this.donorPlaceMap.get(donor.id);
+          if (!place) {
+            place = new Place();
             place.id = `demo-${index}`;
-            place.fullAddress = israelCoords[index].name;
             place.city = israelCoords[index].name;
-            // place.country = 'ישראל';
             place.latitude = israelCoords[index].lat;
             place.longitude = israelCoords[index].lng;
             place.placeName = israelCoords[index].name;
@@ -177,12 +205,12 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
             place.neighborhood = '';
             place.state = '';
             place.postcode = '';
-            // Set country to Israel - find or default
-            donor.homePlace = place;
+            this.donorPlaceMap.set(donor.id, place);
+            this.donorFullAddressMap.set(donor.id, israelCoords[index].name);
           } else {
-            // Update existing homePlace with demo coordinates
-            donor.homePlace.latitude = israelCoords[index].lat;
-            donor.homePlace.longitude = israelCoords[index].lng;
+            // Update existing primaryPlace with demo coordinates
+            place.latitude = israelCoords[index].lat;
+            place.longitude = israelCoords[index].lng;
           }
           console.log(`Added coordinates for donor ${index + 1}:`, donor.displayName, israelCoords[index]);
         }
@@ -307,39 +335,56 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   calculateDonorStats() {
+    // Clear existing stats
+    this.donorDonationCountMap.clear();
+    this.donorTotalDonationsMap.clear();
+    this.donorAverageDonationMap.clear();
+    this.donorLastDonationDateMap.clear();
+    this.donorStatusMap.clear();
+
     this.donors.forEach(donor => {
       const donorDonations = this.donations.filter(d => d.donorId === donor.id);
-      
-      donor.donationCount = donorDonations.length;
-      donor.totalDonations = donorDonations.reduce((sum, d) => sum + d.amount, 0);
-      donor.averageDonation = donor.donationCount > 0 ? donor.totalDonations / donor.donationCount : 0;
-      
+
+      const donationCount = donorDonations.length;
+      const totalDonations = donorDonations.reduce((sum, d) => sum + d.amount, 0);
+      const averageDonation = donationCount > 0 ? totalDonations / donationCount : 0;
+
+      this.donorDonationCountMap.set(donor.id, donationCount);
+      this.donorTotalDonationsMap.set(donor.id, totalDonations);
+      this.donorAverageDonationMap.set(donor.id, averageDonation);
+
       // מצא תאריך תרומה אחרונה
-      const sortedDonations = donorDonations.sort((a, b) => 
+      const sortedDonations = donorDonations.sort((a, b) =>
         new Date(b.donationDate).getTime() - new Date(a.donationDate).getTime()
       );
-      donor.lastDonationDate = sortedDonations.length > 0 ? sortedDonations[0].donationDate : null;
-      
+      const lastDonationDate = sortedDonations.length > 0 ? sortedDonations[0].donationDate : null;
+      this.donorLastDonationDateMap.set(donor.id, lastDonationDate);
+
       // קבע סטטוס לפי קריטריונים
-      donor.status = this.determineDonorStatus(donor);
+      const status = this.determineDonorStatus(donor.id);
+      this.donorStatusMap.set(donor.id, status);
     });
   }
 
-  determineDonorStatus(donor: DonorWithStats): 'active' | 'inactive' | 'high-donor' | 'recent-donor' {
-    if (!donor.isActive) return 'inactive';
-    
+  determineDonorStatus(donorId: string): 'active' | 'inactive' | 'high-donor' | 'recent-donor' {
+    const donor = this.donors.find(d => d.id === donorId);
+    if (!donor || !donor.isActive) return 'inactive';
+
+    const totalDonations = this.donorTotalDonationsMap.get(donorId) || 0;
+    const lastDonationDate = this.donorLastDonationDateMap.get(donorId);
+
     // תורם גדול - מעל 10,000 שקלים בסך הכל
-    if (donor.totalDonations > 10000) return 'high-donor';
-    
+    if (totalDonations > 10000) return 'high-donor';
+
     // תרם לאחרונה - תרם בחודשים האחרונים
-    if (donor.lastDonationDate) {
+    if (lastDonationDate) {
       const threeMonthsAgo = new Date();
       threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-      if (new Date(donor.lastDonationDate) > threeMonthsAgo) {
+      if (new Date(lastDonationDate) > threeMonthsAgo) {
         return 'recent-donor';
       }
     }
-    
+
     return 'active';
   }
 
@@ -391,16 +436,20 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
       console.log('Map or markers layer not ready');
       return;
     }
-    
+
     this.markersLayer.clearLayers();
-    
+
     console.log('Adding markers for donors:', this.donors.length);
-    console.log('Donors with coordinates:', this.donors.filter(d => d.homePlace?.latitude && d.homePlace?.longitude).length);
-    
+    console.log('Donors with coordinates:', this.donors.filter(d => {
+      const place = this.donorPlaceMap.get(d.id);
+      return place?.latitude && place?.longitude;
+    }).length);
+
     let addedCount = 0;
     this.donors.forEach((donor, index) => {
-      if (donor.homePlace?.latitude && donor.homePlace?.longitude) {
-        console.log(`Adding marker ${index + 1}:`, donor.displayName, donor.homePlace.latitude, donor.homePlace.longitude);
+      const place = this.donorPlaceMap.get(donor.id);
+      if (place?.latitude && place?.longitude) {
+        console.log(`Adding marker ${index + 1}:`, donor.displayName, place.latitude, place.longitude);
         try {
           const marker = this.createMarkerForDonor(donor);
           this.markersLayer.addLayer(marker);
@@ -412,10 +461,10 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
         console.log(`No coordinates for donor ${index + 1}:`, donor.displayName);
       }
     });
-    
+
     console.log('Total markers added:', addedCount);
     console.log('Markers layer count:', this.markersLayer.getLayers().length);
-    
+
     // Force map refresh
     setTimeout(() => {
       if (this.map && this.map.getContainer()) {
@@ -428,9 +477,15 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     }, 100);
   }
 
-  createMarkerForDonor(donor: DonorWithStats): L.Marker {
-    const color = this.getMarkerColor(donor.status);
-    
+  createMarkerForDonor(donor: Donor): L.Marker {
+    const status = this.donorStatusMap.get(donor.id) || 'active';
+    const color = this.getMarkerColor(status);
+    const place = this.donorPlaceMap.get(donor.id);
+
+    if (!place?.latitude || !place?.longitude) {
+      throw new Error('Missing place coordinates');
+    }
+
     // יצירת אייקון צבעוני
     const customIcon = L.divIcon({
       html: `<div style="
@@ -446,7 +501,7 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
       iconAnchor: [10, 10]
     });
 
-    const marker = L.marker([donor.homePlace!.latitude!, donor.homePlace!.longitude!], {
+    const marker = L.marker([place.latitude, place.longitude], {
       icon: customIcon
     });
 
@@ -467,14 +522,22 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  createPopupContent(donor: DonorWithStats): string {
-    const lastDonationText = donor.lastDonationDate 
-      ? new Date(donor.lastDonationDate).toLocaleDateString(this.i18n.lang.RTL ? 'he-IL' : 'en-US')
+  createPopupContent(donor: Donor): string {
+    const lastDonationDate = this.donorLastDonationDateMap.get(donor.id);
+    const lastDonationText = lastDonationDate
+      ? new Date(lastDonationDate).toLocaleDateString(this.i18n.lang.RTL ? 'he-IL' : 'en-US')
       : this.i18n.terms.noDataAvailable;
-    
+
+    const fullAddress = this.donorFullAddressMap.get(donor.id);
+    const primaryEmail = this.donorEmailMap.get(donor.id);
+    const primaryPhone = this.donorPhoneMap.get(donor.id);
+    const totalDonations = this.donorTotalDonationsMap.get(donor.id) || 0;
+    const donationCount = this.donorDonationCountMap.get(donor.id) || 0;
+    const averageDonation = this.donorAverageDonationMap.get(donor.id) || 0;
+
     const direction = this.i18n.lang.RTL ? 'rtl' : 'ltr';
     const textAlign = this.i18n.lang.RTL ? 'right' : 'left';
-    
+
     return `
       <div style="direction: ${direction}; font-family: Arial, sans-serif; min-width: 250px; text-align: ${textAlign};">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
@@ -494,31 +557,31 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
             + הוסף תרומה
           </button>
         </div>
-        
+
         <div style="border-bottom: 2px solid #3498db; margin-bottom: 10px;"></div>
-        
+
         <div style="margin-bottom: 8px;">
           <strong>📍 ${this.i18n.terms.addressLabel}:</strong><br>
-          ${donor.fullAddress || this.i18n.terms.notSpecifiedAddress}
+          ${fullAddress || this.i18n.terms.notSpecifiedAddress}
         </div>
         <div style="margin-bottom: 8px;">
-          <strong>📧 ${this.i18n.terms.emailLabel}:</strong> ${donor.email || this.i18n.terms.mapNotSpecified}
+          <strong>📧 ${this.i18n.terms.emailLabel}:</strong> ${primaryEmail || this.i18n.terms.mapNotSpecified}
         </div>
         <div style="margin-bottom: 8px;">
-          <strong>📞 ${this.i18n.terms.phoneLabel}:</strong> ${donor.phone || this.i18n.terms.mapNotSpecified}
+          <strong>📞 ${this.i18n.terms.phoneLabel}:</strong> ${primaryPhone || this.i18n.terms.mapNotSpecified}
         </div>
         <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin-top: 10px;">
           <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
             <span><strong>💰 ${this.i18n.terms.totalDonationsLabel}:</strong></span>
-            <span>₪${donor.totalDonations.toLocaleString()}</span>
+            <span>₪${totalDonations.toLocaleString()}</span>
           </div>
           <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
             <span><strong>📊 ${this.i18n.terms.donationCountLabel}:</strong></span>
-            <span>${donor.donationCount}</span>
+            <span>${donationCount}</span>
           </div>
           <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
             <span><strong>📈 ${this.i18n.terms.averageDonationLabel}:</strong></span>
-            <span>₪${donor.averageDonation.toLocaleString()}</span>
+            <span>₪${averageDonation.toLocaleString()}</span>
           </div>
           <div style="display: flex; justify-content: space-between;">
             <span><strong>📅 ${this.i18n.terms.lastDonationLabel}:</strong></span>
@@ -540,9 +603,11 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // פונקציה להמרת כתובות תורמים שחסרים להם קואורדינטות
   async geocodeMissingAddresses() {
-    const donorsWithoutCoords = this.donors.filter(d =>
-      !d.homePlace?.latitude && !d.homePlace?.longitude && d.homePlace?.fullAddress && d.homePlace.fullAddress.trim() !== ''
-    );
+    const donorsWithoutCoords = this.donors.filter(d => {
+      const place = this.donorPlaceMap.get(d.id);
+      const fullAddress = this.donorFullAddressMap.get(d.id);
+      return !place?.latitude && !place?.longitude && fullAddress && fullAddress.trim() !== '';
+    });
 
     if (donorsWithoutCoords.length === 0) {
       alert(this.i18n.terms.allDonorsHaveCoordinates);
@@ -554,16 +619,21 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
     for (const donor of donorsWithoutCoords) {
       try {
+        const fullAddress = this.donorFullAddressMap.get(donor.id);
+        const place = this.donorPlaceMap.get(donor.id);
+
+        if (!fullAddress) continue;
+
         const coords = await this.geocodingService.geocodeAddress(
-          donor.fullAddress!,
-          donor.homePlace?.city || '',
-          donor.homePlace?.country?.name || ''
+          fullAddress,
+          place?.city || '',
+          place?.country?.name || ''
         );
 
-        if (coords && donor.homePlace) {
-          donor.homePlace.latitude = coords.latitude;
-          donor.homePlace.longitude = coords.longitude;
-          // await donor.homePlace.save(); // Disabled for now
+        if (coords && place) {
+          place.latitude = coords.latitude;
+          place.longitude = coords.longitude;
+          // await place.save(); // Disabled for now
           updatedCount++;
         }
 
@@ -579,7 +649,7 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
       .replace('{count}', updatedCount.toString())
       .replace('{total}', donorsWithoutCoords.length.toString());
     alert(message);
-    
+
     if (updatedCount > 0) {
       this.addMarkersToMap();
     }

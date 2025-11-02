@@ -87,7 +87,7 @@
               </div>
             </div>
 
-            <div class="form-row">
+            <div class="form-row" *ngIf="!(reminder.isRecurring)">
               <div class="form-group full-width">
                 <app-modern-dual-date-picker [label]="getDueDateLabel()" [(ngModel)]="reminder.dueDate"
                   [disabled]="loading" [compact]="false">
@@ -95,7 +95,7 @@
               </div>
             </div>
 
-            <div class="form-row">
+            <div class="form-row" *ngIf="true || !(reminder.isRecurring && reminder.recurringPattern === 'yearly')">
               <div class="form-group">
                 <label>{{ (i18n.terms$ | async)?.dueTime }}</label>
                 <input type="time" class="form-control" [(ngModel)]="reminder.dueTime">
@@ -270,7 +270,7 @@
                   (ngModelChange)="onDonorSelectionChange($event)">
                   <option value="">{{ (i18n.terms$ | async)?.noAssignment }}</option>
                   <option *ngFor="let donor of donors" [value]="donor.id">
-                    {{ donor.fullName }} ({{ donor.email }})
+                    {{ donor.fullName }}
                   </option>
                 </select>
               </div>

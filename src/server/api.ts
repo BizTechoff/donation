@@ -2,11 +2,14 @@ import { createPostgresConnection } from 'remult/postgres'
 import { remultExpress } from 'remult/remult-express'
 import { SignInController, getUser } from '../app/users/SignInController'
 import { UpdatePasswordController } from '../app/users/UpdatePasswordController'
-import { DonorController } from '../shared/controllers/donor.controller'
 import { DonationController } from '../shared/controllers/donation.controller'
+import { DonorController } from '../shared/controllers/donor.controller'
+import { FileController } from '../shared/controllers/file.controller'
+import { LetterController } from '../shared/controllers/letter.controller'
 import { PaymentController } from '../shared/controllers/payment.controller'
-import { Bank, Circle, Company, Contact, DonationBank, DonationOrganization, DonorAddress, DonorAddressType, DonorContact, DonorGift, DonorNote, DonorPlace, DonorReceptionHour, DonorRelation, Gift, LetterTitle, NoteType, Organization, Payment } from '../shared/entity'
+import { Bank, Circle, Company, DonationBank, DonationOrganization, DonorAddressType, DonorContact, DonorGift, DonorNote, DonorPlace, DonorReceptionHour, DonorRelation, Gift, LetterTitle, NoteType, Organization, Payment } from '../shared/entity'
 import { Blessing } from '../shared/entity/blessing'
+import { BlessingBookType } from '../shared/entity/blessing-book-type'
 import { Campaign } from '../shared/entity/campaign'
 import { Certificate } from '../shared/entity/certificate'
 import { Country } from '../shared/entity/country'
@@ -19,22 +22,15 @@ import { Event } from '../shared/entity/event'
 import { DonationFile } from '../shared/entity/file'
 import { Place } from '../shared/entity/place'
 import { Reminder } from '../shared/entity/reminder'
-import { StandingOrder } from '../shared/entity/standing-order'
 import { User } from '../shared/entity/user'
-import { SeedController } from './SeedController'
-import { LetterController } from '../shared/controllers/letter.controller'
-import { FileController } from '../shared/controllers/file.controller'
-import { BlessingBookType } from '../shared/entity/blessing-book-type'
-import { seedBlessingBookTypes } from './seed/seed-blessing-book-types'
-import { seedLetterTitles } from './seed/seed-letter-titles'
 
 export const entities = [
-  User, Donor, Donation, Campaign, DonationMethod, StandingOrder, Reminder,
+  User, Donor, Donation, Campaign, DonationMethod, Reminder,
   Certificate, Event, DonorEvent, Blessing, Country, Place, DonationPartner,
-  DonationFile, Contact, Bank, Organization, Company, Circle, DonorRelation, DonorAddress, DonorContact, DonorPlace, DonorNote, DonorReceptionHour, NoteType, DonationBank, DonationOrganization, Payment, DonorAddressType, BlessingBookType, LetterTitle, Gift, DonorGift]
+  DonationFile, Bank, Organization, Company, Circle, DonorRelation, DonorContact, DonorPlace, DonorNote, DonorReceptionHour, NoteType, DonationBank, DonationOrganization, Payment, DonorAddressType, BlessingBookType, LetterTitle, Gift, DonorGift]
 export const api = remultExpress({
   admin: true,
-  controllers: [SignInController, UpdatePasswordController, SeedController, DonorController, DonationController, LetterController, FileController, PaymentController],
+  controllers: [SignInController, UpdatePasswordController, DonorController, DonationController, LetterController, FileController, PaymentController],
   entities,
   getUser,
   dataProvider: async () => {

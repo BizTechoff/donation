@@ -599,19 +599,6 @@
           </div>
         </div>
 
-        <!-- Legacy Companies (read-only display) -->
-        <div *ngIf="donor.companies && donor.companies.length > 0" class="legacy-companies-section">
-          <h5 class="legacy-title">
-            <mat-icon>history</mat-icon>
-            {{ (i18n.terms$ | async)?.legacyCompanies }}
-          </h5>
-          <div class="legacy-companies-list">
-            <div *ngFor="let company of donor.companies" class="legacy-company-item">
-              <mat-icon class="legacy-icon">business_center</mat-icon>
-              <span>{{ company.name }} - {{ company.role }}</span>
-            </div>
-          </div>
-        </div>
       </div>
 
       <!-- קטגוריות וחוגים -->

@@ -14,7 +14,7 @@ export class LetterController {
 
     const donation = await remult.repo(Donation).findId(
       donationId,
-      { include: { donor: { include: { homePlace: { include: { country: true } } } }, campaign: true } })
+      { include: { donor: true, campaign: true } })
     if (!donation) throw 'NO donation for id: ' + donationId
 
     const contents = [] as DocxContentControl[]

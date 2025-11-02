@@ -52,7 +52,6 @@
       <div class="grid-col">{{ (i18n.terms$ | async)?.address }}</div>
       <div class="grid-col">{{ (i18n.terms$ | async)?.phone }}</div>
       <div class="grid-col">{{ (i18n.terms$ | async)?.email }}</div>
-      <div class="grid-col">{{ (i18n.terms$ | async)?.circle }}</div>
       <div class="grid-col">{{ (i18n.terms$ | async)?.totalDonationsHeader }}</div>
       <div class="grid-col">{{ (i18n.terms$ | async)?.lastDonation }}</div>
       <div class="grid-col">{{ (i18n.terms$ | async)?.actions }}</div>
@@ -65,15 +64,10 @@
           <small *ngIf="donor.idNumber">({{ (i18n.terms$ | async)?.idNumberShort }}: {{donor.idNumber}})</small>
         </div>
       </div>
-      <div class="grid-col">{{donor.fullAddress}}</div>
-      <div class="grid-col">{{donor.phone}}</div>
-      <div class="grid-col">{{donor.email}}</div>
-      <div class="grid-col">
-        <span class="level-badge" [class]="donor.isActive ? 'level-active' : 'level-inactive'">
-          {{donor.isActive ? ((i18n.terms$ | async)?.active) : ((i18n.terms$ | async)?.inactive)}}
-        </span>
-      </div>
-      <div class="grid-col">-</div>
+      <div class="grid-col">{{getDonorAddress(donor.id)}}</div>
+      <div class="grid-col">{{getDonorPhone(donor.id)}}</div>
+      <div class="grid-col">{{getDonorEmail(donor.id)}}</div>
+      <div class="grid-col">{{getDonorTotalDonations(donor.id) | number:'1.2-2'}}</div>
       <div class="grid-col">{{donor.createdDate | date:'dd/MM/yyyy'}}</div>
       <div class="grid-col actions">
         <!-- <button class="btn-icon btn-view" (click)="viewDonor(donor)" [title]="(i18n.terms$ | async)?.viewDetails">👁</button> -->

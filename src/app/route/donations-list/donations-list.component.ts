@@ -473,15 +473,10 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   get filteredDonors(): Donor[] {
     const globalFilters = this.globalFilterService.currentFilters;
 
-    // אם אין פילטרים גלובליים, החזר את כל התורמים
-    if (!globalFilters.countryIds || globalFilters.countryIds.length === 0) {
-      return this.donors;
-    }
-
-    // סנן תורמים לפי מדינה
-    return this.donors.filter(donor =>
-      donor.countryId && globalFilters.countryIds!.includes(donor.countryId)
-    );
+    // Note: Country filtering is now handled through DonorPlace, not directly on Donor
+    // For donations list, we don't filter donors by country
+    // If country filtering is needed, it should be implemented through DonorService
+    return this.donors;
   }
 
   // מטפל בשינוי בשדה חיפוש תורם

@@ -153,7 +153,7 @@
           <td class="donor-col">
             <div class="donor-info">
               <strong>{{getDonorName(reminder)}}</strong>
-              <small *ngIf="reminder.relatedDonor?.phone">{{reminder.relatedDonor?.phone}}</small>
+              <small *ngIf="getReminderDonorPhone(reminder)">{{getReminderDonorPhone(reminder)}}</small>
             </div>
           </td>
           

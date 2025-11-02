@@ -3,7 +3,7 @@ import { MatDialogRef } from '@angular/material/dialog';
 import { BusyService, DialogConfig, openDialog } from 'common-ui-elements';
 import { remult } from 'remult';
 import { DonorController } from '../../../../shared/controllers/donor.controller';
-import { Circle, Company, CompanyInfo, Contact, Country, Donation, Donor, DonorAddress, DonorAddressType, DonorContact, DonorEvent, DonorNote, DonorPlace, DonorReceptionHour, DonorRelation, Event, NoteType, Place, User } from '../../../../shared/entity';
+import { Circle, Company, Country, Donation, Donor, DonorAddressType, DonorContact, DonorEvent, DonorNote, DonorPlace, DonorReceptionHour, DonorRelation, Event, NoteType, Place, User } from '../../../../shared/entity';
 import { AddressComponents } from '../../../common/osm-address-input/osm-address-input.component';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
@@ -48,8 +48,6 @@ export class DonorDetailsModalComponent implements OnInit {
   countries: Country[] = [];
   eventRepo = remult.repo(Event);
   donorEventRepo = remult.repo(DonorEvent);
-  donorAddressRepo = remult.repo(DonorAddress);
-  donorAddresses: DonorAddress[] = [];
   donorContactRepo = remult.repo(DonorContact);
   donorContacts: DonorContact[] = [];
   donorPlaceRepo = remult.repo(DonorPlace);
@@ -59,15 +57,10 @@ export class DonorDetailsModalComponent implements OnInit {
   donorReceptionHourRepo = remult.repo(DonorReceptionHour);
   donorReceptionHours: DonorReceptionHour[] = [];
   noteTypeRepo = remult.repo(NoteType);
-  contactRepo = remult.repo(Contact);
   userRepo = remult.repo(User);
   donorRelationRepo = remult.repo(DonorRelation);
   donorRelations: DonorRelation[] = [];
   isNewDonor = false;
-
-  // Contact related
-  contacts: Contact[] = [];
-  selectedContact?: Contact;
 
   // Fundraisers (users with donator=true)
   fundraisers: User[] = [];
@@ -130,7 +123,6 @@ export class DonorDetailsModalComponent implements OnInit {
       // Set all data
       this.availableEvents = data.events;
       this.countries = data.countries;
-      this.contacts = data.contacts;
       this.fundraisers = data.fundraisers;
       this.allDonorsForFamily = data.allDonorsForFamily;
       this.companies = data.companies;
@@ -162,19 +154,18 @@ export class DonorDetailsModalComponent implements OnInit {
         this.donor.circleIds = [];
         this.donor.wantsTaxReceipts = true;
         this.donor.preferredLanguage = 'he';
-        this.donor.companies = [];
 
-        // Set initial place if provided
+        // Set initial place if provided - create DonorPlace
         if (this.args.initialPlace) {
-          this.donor.homePlaceId = this.args.initialPlace.id;
-          this.donor.homePlace = this.args.initialPlace;
-        }
-
-        // Set default to Israel if available
-        const israelCountry = this.countries.find(c => c.code === 'IL' || c.name === 'ישראל');
-        if (israelCountry) {
-          this.donor.countryId = israelCountry.id;
-          this.donor.country = israelCountry;
+          const homeDonorPlace = new DonorPlace();
+          homeDonorPlace.donorId = '';
+          homeDonorPlace.placeId = this.args.initialPlace.id;
+          // Don't set relation objects, only IDs to avoid Remult relation processing issues
+          homeDonorPlace.addressTypeId = undefined;
+          homeDonorPlace.isPrimary = true;
+          homeDonorPlace.isActive = true;
+          homeDonorPlace.description = 'בית';
+          this.donorPlaces.push(homeDonorPlace);
         }
 
         // Create default birth date event
@@ -202,7 +193,6 @@ export class DonorDetailsModalComponent implements OnInit {
         this.donorNotes = data.donorNotes;
         this.donorPlaces = data.donorPlaces;
         this.donorReceptionHours = data.donorReceptionHours;
-        this.donorAddresses = data.donorAddresses;
         this.donorContacts = data.donorContacts;
         this.donorRelations = data.donorRelations;
 
@@ -300,16 +290,6 @@ export class DonorDetailsModalComponent implements OnInit {
     console.log(`Built ${this.phonePrefixOptions.length} phone prefix options`);
   }
 
-  private async loadContacts() {
-    try {
-      this.contacts = await this.contactRepo.find({
-        orderBy: { firstName: 'asc', lastName: 'asc' }
-      });
-    } catch (error) {
-      console.error('Error loading contacts:', error);
-    }
-  }
-
   private async loadFundraisers() {
     try {
       this.fundraisers = await this.userRepo.find({
@@ -324,13 +304,8 @@ export class DonorDetailsModalComponent implements OnInit {
   private async setDefaultCountry() {
     if (!this.donor) return;
 
-    // Set default to Israel if available
-    const israelCountry = this.countries.find(c => c.code === 'IL' || c.name === 'ישראל');
-    if (israelCountry) {
-      this.donor.countryId = israelCountry.id;
-      this.donor.country = israelCountry;
-      console.log('Set default country to Israel');
-    }
+    // Country is now managed through DonorPlace, not directly on Donor
+    console.log('Country will be set when adding a DonorPlace');
   }
 
   private async createDefaultBirthDateEvent() {
@@ -413,16 +388,22 @@ export class DonorDetailsModalComponent implements OnInit {
         this.donor.wantsTaxReceipts = true;
         this.donor.preferredLanguage = 'he';
         // Country will be set via homePlace
-        this.donor.companies = [];
 
         // Set default Israel country if available
         await this.setDefaultCountry();
 
-        // If initial place is provided, set it
+        // If initial place is provided, create DonorPlace
         if (this.args.initialPlace) {
-          this.donor.homePlace = this.args.initialPlace;
-          this.donor.homePlaceId = this.args.initialPlace.id;
-          console.log('Set initial place for new donor:', this.args.initialPlace);
+          const homeDonorPlace = new DonorPlace();
+          homeDonorPlace.donorId = '';
+          homeDonorPlace.placeId = this.args.initialPlace.id;
+          // Don't set relation objects, only IDs to avoid Remult relation processing issues
+          homeDonorPlace.addressTypeId = undefined;
+          homeDonorPlace.isPrimary = true;
+          homeDonorPlace.isActive = true;
+          homeDonorPlace.description = 'בית';
+          this.donorPlaces.push(homeDonorPlace);
+          console.log('Set initial place for new donor:', this.args.initialPlace.id);
         }
 
         // Create default birth date event for new donor
@@ -439,31 +420,20 @@ export class DonorDetailsModalComponent implements OnInit {
         this.isNewDonor = false;
         console.log('Loading existing donor with ID:', this.args.donorId);
         this.donor = await this.donorRepo.findId(this.args.donorId, {
-          useCache: false,
-          include: {
-            homePlace: { include: { country: true } },
-            vacationPlace: { include: { country: true } }
-          }
+          useCache: false
         }) || undefined;
 
         if (this.donor) {
           console.log('Donor loaded:', {
             id: this.donor.id,
-            name: this.donor.fullName,
-            homePlaceId: this.donor.homePlaceId,
-            vacationPlaceId: this.donor.vacationPlaceId
+            name: this.donor.fullName
           });
 
-          // Ensure companies array exists
-          if (!this.donor.companies) {
-            this.donor.companies = [];
-          }
           this.originalDonorData = JSON.stringify(this.donor);
 
           console.log('Starting to load related data...');
           await this.loadDonations();
           await this.loadDonorEvents();
-          await this.loadDonorAddresses();
           await this.loadDonorContacts();
           await this.loadDynamicDonorPlaces();
           await this.loadDonorNotes();
@@ -505,28 +475,6 @@ export class DonorDetailsModalComponent implements OnInit {
       }
     } catch (error) {
       console.error('Error loading donor events:', error);
-    }
-  }
-
-  private async loadDonorAddresses() {
-    if (!this.donor?.id) return;
-
-    try {
-      this.donorAddresses = await this.donorAddressRepo.find({
-        where: { donorId: this.donor.id, isActive: true }
-      });
-
-      // Manually load the place details for each donor address
-      for (const donorAddress of this.donorAddresses) {
-        if (donorAddress.placeId) {
-          const foundPlace = await remult.repo(Place).findId(donorAddress.placeId, {
-            include: { country: true }
-          });
-          donorAddress.place = foundPlace || undefined;
-        }
-      }
-    } catch (error) {
-      console.error('Error loading donor addresses:', error);
     }
   }
 
@@ -589,70 +537,36 @@ export class DonorDetailsModalComponent implements OnInit {
   private async loadDonorPlaces() {
     if (!this.donor) return;
 
-    console.log('loadDonorPlaces - Donor info:', {
-      donorId: this.donor.id,
-      homePlaceId: this.donor.homePlaceId,
-      vacationPlaceId: this.donor.vacationPlaceId
-    });
+    console.log('loadDonorPlaces - Loading DonorPlace entities for donor:', this.donor.id);
 
     try {
-      // Load home place if homePlaceId exists
-      if (this.donor.homePlaceId) {
-        console.log('Attempting to load home place with ID:', this.donor.homePlaceId);
-        const homePlace = await remult.repo(Place).findId(this.donor.homePlaceId, {
-          include: { country: true }
-        });
-        if (homePlace) {
-          this.donor.homePlace = homePlace;
-          console.log('Loaded home place successfully:', homePlace);
-        } else {
-          console.log('Home place not found in database with ID:', this.donor.homePlaceId);
-        }
-      } else {
-        console.log('No homePlaceId found for donor');
-      }
+      // Load all DonorPlace records for this donor
+      // Don't include relations to avoid save issues with null relations
+      const loadedPlaces = await this.donorPlaceRepo.find({
+        where: {
+          donorId: this.donor.id,
+          isActive: true
+        },
+        include: {
+          place: { include: { country: true } },
+          addressType: true
+        },
+        orderBy: { isPrimary: 'desc' }
+      });
 
-      // Load vacation place if vacationPlaceId exists
-      if (this.donor.vacationPlaceId) {
-        console.log('Attempting to load vacation place with ID:', this.donor.vacationPlaceId);
-        const vacationPlace = await remult.repo(Place).findId(this.donor.vacationPlaceId, {
-          include: { country: true }
-        });
-        if (vacationPlace) {
-          this.donor.vacationPlace = vacationPlace;
-          console.log('Loaded vacation place successfully:', vacationPlace);
-        } else {
-          console.log('Vacation place not found in database with ID:', this.donor.vacationPlaceId);
+      // Clear relation objects that might be null before storing
+      // Keep only IDs to prevent Remult save errors
+      this.donorPlaces = loadedPlaces.map(dp => {
+        const cleanPlace = Object.assign(new DonorPlace(), dp);
+        // Clear relation objects but keep IDs
+        if (cleanPlace.addressType === null) {
+          cleanPlace.addressTypeId = undefined;
         }
-      } else {
-        console.log('No vacationPlaceId found for donor');
-      }
+        // Don't clear place/donor relations as we need them for display
+        return cleanPlace;
+      });
 
-      // Load places for companies
-      if (this.donor.companies && this.donor.companies.length > 0) {
-        for (const company of this.donor.companies) {
-          if (company.placeRecordId) {
-            console.log('Attempting to load company place with ID:', company.placeRecordId);
-            try {
-              const companyPlace = await remult.repo(Place).findId(company.placeRecordId, {
-                include: { country: true }
-              });
-              if (companyPlace) {
-                // עדכן את השדות של החברה עם המידע מה-Place
-                company.address = companyPlace.fullAddress || company.address;
-                company.neighborhood = companyPlace.neighborhood || company.neighborhood;
-                company.location = companyPlace.city || company.location;
-                company.placeId = companyPlace.placeId || company.placeId;
-                console.log('Loaded company place successfully:', companyPlace);
-              } else {
-                console.log('Company place not found with ID:', company.placeRecordId);
-              }
-            } catch (error) {
-              console.error('Error loading company place:', error);
-            }
-          }
-        }
-      }
+      console.log(`Loaded ${this.donorPlaces.length} donor places`);
     } catch (error) {
       console.error('Error loading donor places:', error);
     }
@@ -743,24 +657,37 @@ export class DonorDetailsModalComponent implements OnInit {
         for (const donorEvent of this.donorEvents) {
           donorEvent.donorId = this.donor.id;
           await this.donorEventRepo.save(donorEvent);
-        }
-
-        // Save donor addresses
-        for (const donorAddress of this.donorAddresses) {
-          donorAddress.donorId = this.donor.id;
-          await this.donorAddressRepo.save(donorAddress);
+          // No need to update ID back as donorEvent is saved directly
         }
 
         // Save donor contacts
         for (const donorContact of this.donorContacts) {
           donorContact.donorId = this.donor.id;
           await this.donorContactRepo.save(donorContact);
+          // No need to update ID back as donorContact is saved directly
         }
 
         // Save donor places
         for (const donorPlace of this.donorPlaces) {
           donorPlace.donorId = this.donor.id;
-          await this.donorPlaceRepo.save(donorPlace);
+
+          // Create a clean object for saving to prevent Remult errors with null relations
+          // Only include scalar fields, not relation objects
+          const cleanPlace = this.donorPlaceRepo.create();
+          cleanPlace.id = donorPlace.id;
+          cleanPlace.donorId = donorPlace.donorId;
+          cleanPlace.placeId = donorPlace.placeId;
+          cleanPlace.addressTypeId = donorPlace.addressTypeId || undefined;
+          cleanPlace.description = donorPlace.description;
+          cleanPlace.isPrimary = donorPlace.isPrimary;
+          cleanPlace.isActive = donorPlace.isActive;
+          cleanPlace.createdDate = donorPlace.createdDate;
+          cleanPlace.updatedDate = donorPlace.updatedDate;
+
+          await this.donorPlaceRepo.save(cleanPlace);
+
+          // Update the original donorPlace with the saved ID to prevent duplicates on next save
+          donorPlace.id = cleanPlace.id;
         }
 
         // Save donor notes
@@ -797,14 +724,40 @@ export class DonorDetailsModalComponent implements OnInit {
 
     console.log('onHomePlaceSelected', place?.id || 'NULL', place?.placeId || 'NULL')
 
-    this.donor.homePlaceId = place?.id || '';
-    this.donor.homePlace = place;
-    this.changed = true;
+    // Find or create DonorPlace for home address
+    // Look for existing DonorPlace with addressType matching home options
+    const homeAddressTypes = ['בית', 'מגורים', 'בית מגורים', 'כתובת מגורים'];
+    let homeDonorPlace = this.donorPlaces.find(dp =>
+      dp.addressType?.description && homeAddressTypes.includes(dp.addressType.description) ||
+      dp.description && homeAddressTypes.includes(dp.description)
+    );
 
-    // עדכון קידומת (country) בהתאם למדינה שנבחרה בכתובת
-    if (place?.country?.code) {
-      this.updateCountryByCode(place.country.code);
+    if (!homeDonorPlace && place) {
+      // Create new DonorPlace for home
+      homeDonorPlace = new DonorPlace();
+      homeDonorPlace.donorId = this.donor.id;
+      homeDonorPlace.isPrimary = true;
+      homeDonorPlace.isActive = true;
+      homeDonorPlace.description = 'בית';
+      // Don't set relation objects, only IDs to avoid Remult relation processing issues
+      homeDonorPlace.addressTypeId = undefined;
+      this.donorPlaces.push(homeDonorPlace);
     }
+
+    if (homeDonorPlace) {
+      if (place) {
+        // Only set ID, not the relation object
+        homeDonorPlace.placeId = place.id;
+      } else {
+        // Remove home place if undefined
+        const index = this.donorPlaces.indexOf(homeDonorPlace);
+        if (index > -1) {
+          this.donorPlaces.splice(index, 1);
+        }
+      }
+    }
+
+    this.changed = true;
 
     // Force UI update
     this.changeDetector.detectChanges();
@@ -813,27 +766,37 @@ export class DonorDetailsModalComponent implements OnInit {
   async onVacationPlaceSelected(place: Place | undefined) {
     if (!this.donor) return;
 
-    this.donor.vacationPlaceId = place?.id || '';
-    this.donor.vacationPlace = place;
-    this.changed = true;
+    // Find or create DonorPlace for vacation address
+    let vacationDonorPlace = this.donorPlaces.find(dp =>
+      dp.description === 'קיץ' || dp.addressType?.description === 'קיץ'
+    );
 
-    // Force UI update
-    this.changeDetector.detectChanges();
-  }
+    if (!vacationDonorPlace && place) {
+      // Create new DonorPlace for vacation
+      vacationDonorPlace = new DonorPlace();
+      vacationDonorPlace.donorId = this.donor.id;
+      vacationDonorPlace.isPrimary = false;
+      vacationDonorPlace.isActive = true;
+      vacationDonorPlace.description = 'קיץ';
+      // Don't set relation objects, only IDs to avoid Remult relation processing issues
+      vacationDonorPlace.addressTypeId = undefined;
+      this.donorPlaces.push(vacationDonorPlace);
+    }
 
-  async onDonorAddressPlaceSelected(donorAddress: DonorAddress, place: Place | undefined) {
-    donorAddress.placeId = place?.id || '';
-    donorAddress.place = place;
-    this.changed = true;
-
-    // If this is an existing address, save it immediately
-    if (donorAddress.id) {
-      try {
-        await this.donorAddressRepo.save(donorAddress);
-      } catch (error) {
-        console.error('Error saving donor address:', error);
+    if (vacationDonorPlace) {
+      if (place) {
+        // Only set ID, not the relation object
+        vacationDonorPlace.placeId = place.id;
+      } else {
+        // Remove vacation place if undefined
+        const index = this.donorPlaces.indexOf(vacationDonorPlace);
+        if (index > -1) {
+          this.donorPlaces.splice(index, 1);
+        }
       }
     }
+
+    this.changed = true;
 
     // Force UI update
     this.changeDetector.detectChanges();
@@ -1000,48 +963,6 @@ export class DonorDetailsModalComponent implements OnInit {
       // Changes will be saved when donor is saved
     } catch (error) {
       console.error('Error updating event date:', error);
-    }
-  }
-
-  async addNewAddress() {
-    const addressName = prompt('הזן שם לכתובת (למשל: בית, עבודה, קיץ):');
-    if (!addressName || addressName.trim() === '') return;
-
-    try {
-      const newAddress = this.donorAddressRepo.create({
-        donorId: this.donor?.id || '',
-        placeId: '',
-        addressName: addressName.trim(),
-        isPrimary: this.donorAddresses.length === 0, // First address is primary by default
-        isActive: true
-      });
-
-      this.donorAddresses.push(newAddress);
-      this.changed = true;
-    } catch (error) {
-      console.error('Error adding address:', error);
-      alert('שגיאה בהוספת הכתובת');
-    }
-  }
-
-  async removeDonorAddress(donorAddress: DonorAddress) {
-    if (confirm('האם אתה בטוח שברצונך להסיר את הכתובת?')) {
-      try {
-        if (!donorAddress.isNew()) {
-          await this.donorAddressRepo.delete(donorAddress);
-        }
-
-        // Remove from local array
-        const index = this.donorAddresses.findIndex(da => da.id === donorAddress.id);
-        if (index > -1) {
-          this.donorAddresses.splice(index, 1);
-        }
-
-        this.changed = true;
-      } catch (error) {
-        console.error('Error removing address:', error);
-        alert('שגיאה בהסרת הכתובת');
-      }
     }
   }
 
@@ -1398,15 +1319,6 @@ export class DonorDetailsModalComponent implements OnInit {
   }
 
 
-  // Company management methods
-  onOtherConnectionChange() {
-    // Clear relationship fields if "קשר אחר" is unchecked
-    if (this.donor && !this.donor.isOtherConnection) {
-      this.donor.relationshipType = '';
-      this.donor.relationshipOf = '';
-    }
-  }
-
   // Action button methods
   async openGifts() {
     if (!this.donor?.id) return;
@@ -1601,13 +1513,21 @@ export class DonorDetailsModalComponent implements OnInit {
 
   // Convert Place to AddressComponents for the address input component
   getHomeAddressComponents(): AddressComponents | undefined {
-    console.log('getHomeAddressComponents called - donor.homePlace:', this.donor?.homePlace);
-    if (!this.donor?.homePlace) {
+    console.log('getHomeAddressComponents called - looking in donorPlaces');
+
+    // Find home place from donorPlaces
+    const homeAddressTypes = ['בית', 'מגורים', 'בית מגורים', 'כתובת מגורים'];
+    const homeDonorPlace = this.donorPlaces.find(dp =>
+      dp.addressType?.description && homeAddressTypes.includes(dp.addressType.description) ||
+      dp.description && homeAddressTypes.includes(dp.description)
+    );
+
+    if (!homeDonorPlace?.place) {
       console.log('No homePlace found, returning undefined');
       return undefined;
     }
 
-    const place = this.donor.homePlace;
+    const place = homeDonorPlace.place;
     const addressComponents = {
       fullAddress: place.fullAddress || '',
       placeId: place.placeId || '',
@@ -1630,9 +1550,16 @@ export class DonorDetailsModalComponent implements OnInit {
   }
 
   getVacationAddressComponents(): AddressComponents | undefined {
-    if (!this.donor?.vacationPlace) return undefined;
+    // Find vacation place from donorPlaces (if exists)
+    const vacationDonorPlace = this.donorPlaces.find(dp =>
+      dp.description === 'קיץ' || dp.addressType?.description === 'קיץ'
+    );
 
-    const place = this.donor.vacationPlace;
+    if (!vacationDonorPlace?.place) {
+      return undefined;
+    }
+
+    const place = vacationDonorPlace.place;
     return {
       fullAddress: place.fullAddress || '',
       placeId: place.placeId || '',
@@ -1651,7 +1578,7 @@ export class DonorDetailsModalComponent implements OnInit {
     };
   }
 
-  getCompanyAddressComponents(company: CompanyInfo): AddressComponents | undefined {
+  getCompanyAddressComponents(company: any): AddressComponents | undefined {
     console.log('getCompanyAddressComponents called with company:', company);
 
     // אם יש כתובת או נתונים, צור AddressComponents
@@ -1771,27 +1698,12 @@ export class DonorDetailsModalComponent implements OnInit {
   }
 
   // Update country based on country code from address
+  // Note: Country is now managed through DonorPlace, not directly on Donor
   private updateCountryByCode(countryCode: string) {
     if (!this.donor || !countryCode) return;
 
-    // חיפוש מדינה לפי קוד
-    const country = this.countries.find(c => c.code?.toUpperCase() === countryCode.toUpperCase());
-
-    if (country) {
-      this.donor.countryId = country.id;
-      this.donor.country = country;
-
-      // Auto-populate phone prefixes from country, but allow them to remain editable
-      if (country.phonePrefix) {
-        this.donor.homePhonePrefix = country.phonePrefix;
-        this.donor.mobilePhonePrefix = country.phonePrefix;
-      }
-
-      console.log(`Updated country to: ${country.name} (${country.nameEn}) - ${country.phonePrefix}`);
-      this.changed = true;
-    } else {
-      console.warn(`Country not found for code: ${countryCode}. Will be created automatically when place is saved.`);
-    }
+    // Country information is now stored in Place entity linked through DonorPlace
+    console.log(`Country code ${countryCode} will be part of the Place in DonorPlace`);
   }
 
 

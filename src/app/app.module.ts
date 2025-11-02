@@ -48,7 +48,6 @@ import { DonorListComponent } from './route/donor-list/donor-list.component'
 import { DonationsListComponent } from './route/donations-list/donations-list.component'
 import { ModalNavigationHeaderComponent } from './shared/modal-navigation-header/modal-navigation-header.component'
 import { CampaignsListComponent } from './route/campaigns-list/campaigns-list.component'
-import { StandingOrdersComponent } from './route/standing-orders/standing-orders.component'
 import { CertificatesComponent } from './route/certificates/certificates.component'
 import { RemindersComponent } from './route/reminders/reminders.component'
 import { ReportsComponent } from './route/reports/reports.component'
@@ -76,7 +75,6 @@ import { ReminderDetailsModalComponent } from './routes/modals/reminder-details-
 import { DonationDetailsModalComponent } from './routes/modals/donation-details-modal/donation-details-modal.component'
 import { CampaignDetailsModalComponent } from './routes/modals/campaign-details-modal/campaign-details-modal.component'
 import { CampaignInvitedListModalComponent } from './routes/modals/campaign-invited-list-modal/campaign-invited-list-modal.component'
-import { StandingOrderDetailsModalComponent } from './routes/modals/standing-order-details-modal/standing-order-details-modal.component'
 import { CertificateDetailsModalComponent } from './routes/modals/certificate-details-modal/certificate-details-modal.component'
 import { OrganizationDetailsModalComponent } from './routes/modals/organization-details-modal/organization-details-modal.component'
 import { BankDetailsModalComponent } from './routes/modals/bank-details-modal/bank-details-modal.component'
@@ -113,7 +111,6 @@ import { GiftCatalogModalComponent } from './routes/modals/gift-catalog-modal/gi
     DonorListComponent,
     DonationsListComponent,
     CampaignsListComponent,
-    StandingOrdersComponent,
     CertificatesComponent,
     RemindersComponent,
     ReportsComponent,
@@ -135,7 +132,6 @@ import { GiftCatalogModalComponent } from './routes/modals/gift-catalog-modal/gi
     DonationDetailsModalComponent,
     CampaignDetailsModalComponent,
     CampaignInvitedListModalComponent,
-    StandingOrderDetailsModalComponent,
     CertificateDetailsModalComponent,
     OrganizationDetailsModalComponent,
     BankDetailsModalComponent,

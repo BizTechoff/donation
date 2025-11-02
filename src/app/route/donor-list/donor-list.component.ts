@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Subscription } from 'rxjs';
-import { Donor } from '../../../shared/entity';
+import { Donor, DonorContact, DonorPlace, Place } from '../../../shared/entity';
 import { I18nService } from '../../i18n/i18n.service';
 import { UIToolsService } from '../../common/UIToolsService';
 import { DonorService } from '../../services/donor.service';
@@ -18,6 +18,12 @@ export class DonorListComponent implements OnInit, OnDestroy {
   donors: Donor[] = [];
   loading = false;
   private subscription = new Subscription();
+
+  // Maps for donor-related data
+  donorEmailMap = new Map<string, string>();
+  donorPhoneMap = new Map<string, string>();
+  donorFullAddressMap = new Map<string, string>();
+  donorTotalDonationsMap = new Map<string, number>();
 
   // Navigation header properties
   allDonors: NavigationRecord[] = [];
@@ -71,6 +77,18 @@ export class DonorListComponent implements OnInit, OnDestroy {
     try {
       // Use the new service which automatically applies global filters
       this.donors = await this.donorService.findFiltered();
+
+      // Load all related data efficiently using DonorService
+      const relatedData = await this.donorService.loadDonorRelatedData(
+        this.donors.map(d => d.id)
+      );
+
+      // Store in maps for easy lookup
+      this.donorEmailMap = relatedData.donorEmailMap;
+      this.donorPhoneMap = relatedData.donorPhoneMap;
+      this.donorFullAddressMap = relatedData.donorFullAddressMap;
+      this.donorTotalDonationsMap = relatedData.donorTotalDonationsMap;
+
     } catch (error) {
       console.error('Error loading donors:', error);
     } finally {
@@ -120,6 +138,23 @@ export class DonorListComponent implements OnInit, OnDestroy {
     }
   }
 
+  // Helper methods to get donor-related data from maps
+  getDonorEmail(donorId: string): string {
+    return this.donorEmailMap.get(donorId) || '';
+  }
+
+  getDonorPhone(donorId: string): string {
+    return this.donorPhoneMap.get(donorId) || '';
+  }
+
+  getDonorAddress(donorId: string): string {
+    return this.donorFullAddressMap.get(donorId) || '';
+  }
+
+  getDonorTotalDonations(donorId: string): number {
+    return this.donorTotalDonationsMap.get(donorId) || 0;
+  }
+
   private async loadAllDonors() {
     try {
       const donorRepo = remult.repo(Donor);
@@ -128,14 +163,32 @@ export class DonorListComponent implements OnInit, OnDestroy {
         orderBy: { firstName: 'asc', lastName: 'asc' }
       });
 
-      this.allDonors = donors.map(donor => ({
-        id: donor.id,
-        displayName: donor.fullName || donor.displayName || '',
-        name: donor.fullName || donor.displayName || '',
-        city: donor.homePlace?.city || '',
-        country: donor.homePlace?.country || '',
-        isActive: donor.isActive
-      }));
+      // Load DonorPlaces for all donors
+      const donorPlaceRepo = remult.repo(DonorPlace);
+      const donorPlaces = await donorPlaceRepo.find({
+        where: { donorId: { $in: donors.map(d => d.id) }, isPrimary: true },
+        include: { place: { include: { country: true } } }
+      });
+
+      // Create a map of donorId -> primary place
+      const placesMap = new Map();
+      for (const dp of donorPlaces) {
+        if (dp.donorId) {
+          placesMap.set(dp.donorId, dp.place);
+        }
+      }
+
+      this.allDonors = donors.map(donor => {
+        const place = placesMap.get(donor.id);
+        return {
+          id: donor.id,
+          displayName: donor.fullName || donor.displayName || '',
+          name: donor.fullName || donor.displayName || '',
+          city: place?.city || '',
+          country: place?.country || '',
+          isActive: donor.isActive
+        };
+      });
     } catch (error) {
       console.error('Error loading all donors:', error);
     }

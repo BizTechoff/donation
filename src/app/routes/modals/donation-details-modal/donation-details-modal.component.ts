@@ -7,6 +7,7 @@ import { Bank, Campaign, Company, Country, Donation, DonationBank, DonationFile,
 import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
 import { LetterService } from '../../../services/letter.service';
+import { DonorService } from '../../../services/donor.service';
 import { BankSelectionModalComponent } from '../bank-selection-modal/bank-selection-modal.component';
 import { DonorDetailsModalComponent } from '../donor-details-modal/donor-details-modal.component';
 import { DonorSelectionModalComponent } from '../donor-selection-modal/donor-selection-modal.component';
@@ -199,6 +200,7 @@ export class DonationDetailsModalComponent implements OnInit {
     private ui: UIToolsService,
     private cdr: ChangeDetectorRef,
     private letter: LetterService,
+    private donorService: DonorService,
     public dialogRef: MatDialogRef<DonationDetailsModalComponent>
   ) { }
 
@@ -824,9 +826,8 @@ export class DonationDetailsModalComponent implements OnInit {
     // Handle special payment methods
     if (this.selectedPaymentMethod?.name === 'כרטיס אשראי') {
       this.openPaymentModal();
-    } else if (this.selectedPaymentMethod?.name === 'הוק') {
-      this.openStandingOrderModal();
     }
+    // Standing order (הוק) feature removed
   }
 
   // Getter methods for template conditionals
@@ -929,23 +930,6 @@ export class DonationDetailsModalComponent implements OnInit {
     }
   }
 
-  async openStandingOrderModal() {
-    try {
-      console.log('Opening StandingOrderModal for הו"ק');
-
-      // Open the standing order modal for creating a new standing order
-      const donorId = this.donation?.donorId;
-      const result = await this.ui.standingOrderDetailsDialog('new', donorId ? { donorId } : undefined);
-
-      if (result) {
-        console.log('Standing order created successfully');
-      }
-    } catch (error) {
-      console.error('Error opening StandingOrderModal:', error);
-      alert('שגיאה בפתיחת הוראת קבע');
-    }
-  }
-
   // Update currency based on selected donor's country
   async onDonorChange(donorId: string) {
     if (!donorId) {
@@ -988,28 +972,14 @@ export class DonationDetailsModalComponent implements OnInit {
   // Helper function to update currency based on donor's country
   private async updateCurrencyBasedOnCountry(donor: Donor) {
     try {
-      // Load the country to get the country code - removed countryId reference
-      if (donor.homePlace) {
-        // Country lookup disabled for now - this.countries not available
+      // Country-based currency update disabled - always use ILS
+      // This method could be enhanced in the future to:
+      // 1. Load home place from DonorPlace entities
+      // 2. Get country from the place
+      // 3. Map country code to currency using countryCurrencyMap
 
-        // Country-based currency update disabled
-        // if (country?.code) {
-        // Map country code to currency
-        // const currency = this.countryCurrencyMap[country.code];
-        // if (currency) {
-        //   this.donation.currency = currency;
-        //   console.log(`Updated currency to ${currency} based on country ${country.name} (${country.code})`);
-        // } else {
-        //   // Default to ILS if no mapping found
-        //   this.donation.currency = 'ILS';
-        //   console.log(`No currency mapping found for country ${country.code}, defaulting to ILS`);
-        // }
-        // Default to ILS
-        this.donation.currency = 'ILS';
-      } else {
-        // Default to ILS if donor has no country
-        this.donation.currency = 'ILS';
-      }
+      // Default to ILS
+      this.donation.currency = 'ILS';
     } catch (error: any) {
       console.error('Error updating currency based on donor country:', error);
       // Default to ILS on error
@@ -1477,7 +1447,10 @@ console.log('addOrganizationToDonation',1)
       if (this.selectedDonor) {
         console.log(2)
         this.donation.payerName = `${this.selectedDonor.firstName || ''} ${this.selectedDonor.lastName || ''}`.trim();
-        this.donation.payerAddress = this.selectedDonor.homePlace?.fullAddress || '';
+
+        // Load home place from DonorPlace entities
+        const homePlace = await this.donorService.getHomePlaceForDonor(this.selectedDonor.id);
+        this.donation.payerAddress = homePlace?.fullAddress || '';
       }
     } else {
       console.log(3)

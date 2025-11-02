@@ -3,7 +3,6 @@ import { Fields, getFields, remult } from 'remult'
 import { Donation } from '../../../shared/entity/donation'
 import { Donor } from '../../../shared/entity/donor'
 import { Campaign } from '../../../shared/entity/campaign'
-import { StandingOrder } from '../../../shared/entity/standing-order'
 import { I18nService } from '../../i18n/i18n.service'
 
 @Component({
@@ -39,7 +38,6 @@ export class HomeComponent implements OnInit {
   donationRepo = remult.repo(Donation);
   donorRepo = remult.repo(Donor);
   campaignRepo = remult.repo(Campaign);
-  standingOrderRepo = remult.repo(StandingOrder);
 
   constructor(public i18n: I18nService) {}
 
@@ -112,10 +110,7 @@ export class HomeComponent implements OnInit {
     });
     this.totalDonors = donors.length;
 
-    const standingOrders = await this.standingOrderRepo.find({
-      where: { status: 'active', frequency: 'monthly' }
-    });
-    this.monthlyRecurring = standingOrders.reduce((sum, so) => sum + so.amount, 0);
+    this.monthlyRecurring = 0;
   }
 
   formatCurrency(amount: number): string {

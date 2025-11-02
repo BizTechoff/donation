@@ -2,7 +2,7 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialogRef } from '@angular/material/dialog';
 import { DialogConfig, openDialog } from 'common-ui-elements';
-import { Donation, Donor, Campaign, Blessing } from '../../../../shared/entity';
+import { Donation, Donor, Campaign, Blessing, DonorContact } from '../../../../shared/entity';
 import { BlessingBookType } from '../../../../shared/entity/blessing-book-type';
 import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
@@ -10,6 +10,7 @@ import { UIToolsService } from '../../../common/UIToolsService';
 import { BlessingTypeSelectionModalComponent } from '../blessing-type-selection-modal/blessing-type-selection-modal.component';
 import { BlessingTextEditModalComponent } from '../blessing-text-edit-modal/blessing-text-edit-modal.component';
 import { ExcelExportService, ExcelColumn } from '../../../services/excel-export.service';
+import { DonorService } from '../../../services/donor.service';
 
 export interface CampaignBlessingBookModalArgs {
   campaignId: string;
@@ -48,6 +49,10 @@ export class CampaignBlessingBookModalComponent implements OnInit {
 
   loading = false;
 
+  // Maps for donor-related data
+  donorEmailMap = new Map<string, string>();
+  donorPhoneMap = new Map<string, string>();
+
   // Filters
   filterText = '';
   filterStatus = '';
@@ -69,7 +74,8 @@ export class CampaignBlessingBookModalComponent implements OnInit {
     private snackBar: MatSnackBar,
     private cdr: ChangeDetectorRef,
     public dialogRef: MatDialogRef<CampaignBlessingBookModalComponent>,
-    private excelService: ExcelExportService
+    private excelService: ExcelExportService,
+    private donorService: DonorService
   ) {}
 
   async ngOnInit() {
@@ -101,6 +107,13 @@ export class CampaignBlessingBookModalComponent implements OnInit {
             id: { $in: this.campaign.invitedDonorIds }
           }
         });
+
+        // Load contact info using DonorService
+        const relatedData = await this.donorService.loadDonorRelatedData(
+          invitedDonors.map(d => d.id)
+        );
+        this.donorEmailMap = relatedData.donorEmailMap;
+        this.donorPhoneMap = relatedData.donorPhoneMap;
 
         // Load campaign donations for invited donors, ordered by date descending
         const donations = await this.donationRepo.find({
@@ -187,6 +200,14 @@ export class CampaignBlessingBookModalComponent implements OnInit {
             donor: true
           }
         });
+
+        // Get unique donor IDs
+        const donorIds = [...new Set(donations.map(d => d.donorId).filter(id => id))];
+
+        // Load contact info using DonorService
+        const relatedData = await this.donorService.loadDonorRelatedData(donorIds);
+        this.donorEmailMap = relatedData.donorEmailMap;
+        this.donorPhoneMap = relatedData.donorPhoneMap;
 
         // Load existing blessings for this campaign
         const blessings = await this.blessingRepo.find({
@@ -285,12 +306,24 @@ export class CampaignBlessingBookModalComponent implements OnInit {
     this.receivedBlessings = this.donorBlessings.filter(db => db.blessingStatus === 'received').length;
   }
 
+  getDonorPhone(donorId: string): string {
+    return this.donorPhoneMap.get(donorId) || '';
+  }
+
+  getDonorEmail(donorId: string): string {
+    return this.donorEmailMap.get(donorId) || '';
+  }
+
   get filteredDonorBlessings(): DonorBlessing[] {
     return this.donorBlessings.filter(donorBlessing => {
+      const donor = donorBlessing.donor;
+      const phone = this.getDonorPhone(donor.id);
+      const email = this.getDonorEmail(donor.id);
+
       const matchesText = !this.filterText ||
-        donorBlessing.donor.fullName?.toLowerCase().includes(this.filterText.toLowerCase()) ||
-        donorBlessing.donor.phone?.includes(this.filterText) ||
-        donorBlessing.donor.email?.toLowerCase().includes(this.filterText.toLowerCase()) ||
+        donor.fullName?.toLowerCase().includes(this.filterText.toLowerCase()) ||
+        phone.includes(this.filterText) ||
+        email.toLowerCase().includes(this.filterText.toLowerCase()) ||
         donorBlessing.blessing?.blessingContent?.toLowerCase().includes(this.filterText.toLowerCase());
 
       const matchesStatus = !this.filterStatus ||
@@ -486,8 +519,8 @@ export class CampaignBlessingBookModalComponent implements OnInit {
     // הגדרת עמודות
     const columns: ExcelColumn<DonorBlessing>[] = [
       { header: 'שם תורם', mapper: (db) => db.donor.fullName || '-', width: 20 },
-      { header: 'טלפון', mapper: (db) => db.donor.phone || '-', width: 15 },
-      { header: 'אימייל', mapper: (db) => db.donor.email || '-', width: 25 },
+      { header: 'טלפון', mapper: (db) => this.getDonorPhone(db.donor.id) || '-', width: 15 },
+      { header: 'אימייל', mapper: (db) => this.getDonorEmail(db.donor.id) || '-', width: 25 },
       { header: 'סוג ברכה', mapper: (db) => db.blessing?.blessingBookType?.type || '-', width: 15 },
       { header: 'מחיר סוג ברכה', mapper: (db) => db.blessing?.blessingBookType?.price || '-', width: 15 },
       { header: 'סה"כ תרם', mapper: (db) => db.totalDonated, width: 12 },

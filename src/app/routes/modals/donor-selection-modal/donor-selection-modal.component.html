@@ -46,19 +46,19 @@
               </div>
               <div class="donor-info">
                 <div class="donor-name">{{ getDonorDisplayName(donor) }}</div>
-                <div class="donor-details" *ngIf="donor.email || donor.phone">
-                  <span *ngIf="donor.phone">
+                <div class="donor-details" *ngIf="getDonorEmail(donor.id) || getDonorPhone(donor.id)">
+                  <span *ngIf="getDonorPhone(donor.id)">
                     <mat-icon class="detail-icon">phone</mat-icon>
-                    {{ donor.phone }}
+                    {{ getDonorPhone(donor.id) }}
                   </span>
-                  <span *ngIf="donor.email" style="margin-right: 12px;">
+                  <span *ngIf="getDonorEmail(donor.id)" style="margin-right: 12px;">
                     <mat-icon class="detail-icon">email</mat-icon>
-                    {{ donor.email }}
+                    {{ getDonorEmail(donor.id) }}
                   </span>
                 </div>
-                <div class="donor-address" *ngIf="donor.homePlace?.fullAddress">
+                <div class="donor-address" *ngIf="getDonorPlace(donor.id)?.fullAddress">
                   <mat-icon class="location-icon">location_on</mat-icon>
-                  {{ donor.homePlace?.fullAddress }}
+                  {{ getDonorPlace(donor.id)?.fullAddress }}
                 </div>
               </div>
             </div>

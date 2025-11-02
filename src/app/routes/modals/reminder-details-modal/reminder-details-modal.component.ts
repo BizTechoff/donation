@@ -3,11 +3,12 @@ import { MatDialogRef } from '@angular/material/dialog';
 import { DialogConfig, openDialog } from 'common-ui-elements';
 import { remult } from 'remult';
 import { Subscription } from 'rxjs';
-import { Certificate, Contact, Donation, Donor, Reminder, User } from '../../../../shared/entity';
+import { Certificate, Donation, Donor, Reminder, User, DonorContact, DonorPlace, Place } from '../../../../shared/entity';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
 import { GlobalFilterService } from '../../../services/global-filter.service';
 import { HebrewDateService } from '../../../services/hebrew-date.service';
+import { DonorService } from '../../../services/donor.service';
 
 export interface ReminderDetailsModalArgs {
   reminderId?: string; // 'new' for new reminder or reminder ID for editing
@@ -40,7 +41,6 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
   donorRepo = remult.repo(Donor);
   donationRepo = remult.repo(Donation);
   userRepo = remult.repo(User);
-  contactRepo = remult.repo(Contact);
   certificateRepo = remult.repo(Certificate);
 
   loading = false;
@@ -49,9 +49,13 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
   fundraisers: User[] = [];
   donors: Donor[] = [];
   donations: Donation[] = [];
-  contacts: Contact[] = [];
   filteredDonations: Donation[] = [];
-  filteredContacts: Contact[] = [];
+
+  // Maps for donor-related data
+  donorEmailMap = new Map<string, string>();
+  donorPhoneMap = new Map<string, string>();
+  donorCountryIdMap = new Map<string, string>();
+  donorPlaceMap = new Map<string, Place>();
 
   // Options will be populated with i18n values
   typeOptions: { value: string, label: string }[] = [];
@@ -81,7 +85,8 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
     private globalFilterService: GlobalFilterService,
     private hebrewDateService: HebrewDateService,
     private cdr: ChangeDetectorRef,
-    public dialogRef: MatDialogRef<ReminderDetailsModalComponent>
+    public dialogRef: MatDialogRef<ReminderDetailsModalComponent>,
+    private donorService: DonorService
   ) { }
 
   async ngOnInit() {
@@ -264,7 +269,13 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
       const loadedDonor = await this.donorRepo.findId(donorId, {
         include: { fundraiser: true }
       }) || undefined;
+
       if (loadedDonor) {
+        // Load contact info using DonorService
+        const relatedData = await this.donorService.loadDonorRelatedData([loadedDonor.id]);
+        this.donorEmailMap = relatedData.donorEmailMap;
+        this.donorPhoneMap = relatedData.donorPhoneMap;
+
         this.reminder!.relatedDonorId = loadedDonor.id;
         this.reminder!.relatedDonor = loadedDonor;
         console.log('loadedDonor.relatedDonor',loadedDonor.firstName)
@@ -308,11 +319,14 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
         if (!this.reminder!.description || this.reminder!.description === '') {
           const descriptionParts: string[] = [];
 
-          if (loadedDonor.phone) {
-            descriptionParts.push(`טלפון: ${loadedDonor.phone}`);
+          const phone = this.donorPhoneMap.get(loadedDonor.id);
+          const email = this.donorEmailMap.get(loadedDonor.id);
+
+          if (phone) {
+            descriptionParts.push(`טלפון: ${phone}`);
           }
-          if (loadedDonor.email) {
-            descriptionParts.push(`דוא"ל: ${loadedDonor.email}`);
+          if (email) {
+            descriptionParts.push(`דוא"ל: ${email}`);
           }
 
           this.reminder!.description = descriptionParts.join('\n');
@@ -503,6 +517,29 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
     this.donors = await this.donorRepo.find({
       orderBy: { lastName: 'asc', firstName: 'asc' }
     });
+
+    // Load primary place for each donor to get country
+    const donorPlaceRepo = remult.repo(DonorPlace);
+    const placePromises = this.donors.map(async (donor) => {
+      const primaryPlace = await donorPlaceRepo.findFirst({
+        donorId: donor.id,
+        isPrimary: true,
+        isActive: true
+      }, {
+        include: {
+          place: { include: { country: true } }
+        }
+      });
+
+      if (primaryPlace?.place) {
+        this.donorPlaceMap.set(donor.id, primaryPlace.place);
+        if (primaryPlace.place.countryId) {
+          this.donorCountryIdMap.set(donor.id, primaryPlace.place.countryId);
+        }
+      }
+    });
+
+    await Promise.all(placePromises);
   }
 
   async loadDonations() {
@@ -514,16 +551,6 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
       orderBy: { donationDate: 'desc' }
     });
     this.filteredDonations = [...this.donations]; // Initialize with all donations
-  }
-
-  async loadContacts() {
-    this.contacts = await this.contactRepo.find({
-      include: {
-        donor: true
-      },
-      orderBy: { lastName: 'asc', firstName: 'asc' }
-    });
-    this.filteredContacts = [...this.contacts]; // Initialize with all contacts
   }
 
   async onDonorSelectionChange(donorId: string) {
@@ -576,21 +603,15 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
     return `${amount} - ${donor} (${date})`;
   }
 
-  getContactDisplayText(contact: Contact): string {
-    const fullName = `${contact.firstName} ${contact.lastName}`;
-    const position = contact.position ? ` - ${contact.position}` : '';
-    const phone = contact.phone ? ` (${contact.phone})` : '';
-    return `${fullName}${position}${phone}`;
-  }
-
   applyGlobalFiltersToLists() {
     const filters = this.globalFilterService.currentFilters;
 
     // Filter donors by country ID
     if (filters.countryIds && filters.countryIds.length > 0) {
-      const filteredDonors = this.donors.filter(donor =>
-        donor.countryId && filters.countryIds!.includes(donor.countryId)
-      );
+      const filteredDonors = this.donors.filter(donor => {
+        const countryId = this.donorCountryIdMap.get(donor.id);
+        return countryId && filters.countryIds!.includes(countryId);
+      });
 
       // Update filtered lists based on selected donor
       if (this.reminder?.relatedDonorId) {

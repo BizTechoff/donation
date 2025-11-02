@@ -2,10 +2,11 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialogRef } from '@angular/material/dialog';
 import { DialogConfig } from 'common-ui-elements';
-import { Campaign, Donor } from '../../../../shared/entity';
+import { Campaign, Donor, Place } from '../../../../shared/entity';
 import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
 import { UIToolsService } from '../../../common/UIToolsService';
+import { DonorService } from '../../../services/donor.service';
 
 export interface CampaignDonorsModalArgs {
   campaignId: string;
@@ -29,6 +30,12 @@ export class CampaignDonorsModalComponent implements OnInit {
   campaignRepo = remult.repo(Campaign);
   donorRepo = remult.repo(Donor);
 
+  // Maps for related data from dedicated entities
+  donorPlaceMap = new Map<string, Place>();
+  donorEmailMap = new Map<string, string>();
+  donorPhoneMap = new Map<string, string>();
+  donorBirthDateMap = new Map<string, Date>();
+
   // Filter stats
   totalDonors = 0;
   filteredByAnash = 0;
@@ -42,7 +49,8 @@ export class CampaignDonorsModalComponent implements OnInit {
     private ui: UIToolsService,
     private snackBar: MatSnackBar,
     private cdr: ChangeDetectorRef,
-    public dialogRef: MatDialogRef<CampaignDonorsModalComponent>
+    public dialogRef: MatDialogRef<CampaignDonorsModalComponent>,
+    private donorService: DonorService
   ) {}
 
   async ngOnInit() {
@@ -96,26 +104,43 @@ export class CampaignDonorsModalComponent implements OnInit {
         where.level = { $in: this.campaign.invitationLevels };
       }
 
-      // 3. Filter by same country
+      // Get initial results (country filter will be done client-side)
+      const baseDonors = await this.donorRepo.find({ where });
+      this.totalDonors = baseDonors.length;
+
+      // Use DonorService to load all related data
+      const relatedData = await this.donorService.loadDonorRelatedData(
+        baseDonors.map(d => d.id)
+      );
+
+      // Populate maps from service
+      this.donorPlaceMap = relatedData.donorPlaceMap;
+      this.donorEmailMap = relatedData.donorEmailMap;
+      this.donorPhoneMap = relatedData.donorPhoneMap;
+      this.donorBirthDateMap = relatedData.donorBirthDateMap;
+
+      let donors = baseDonors;
+
+      // 3. Filter by same country (client-side)
       if (this.campaign.sameCountryOnly && this.campaign.eventLocation) {
-        // Extract country from event location
-        const country = this.extractCountry(this.campaign.eventLocation?.fullAddress || '');
-        if (country) {
-          where.country = country;
+        const eventCountry = this.campaign.eventLocation.country;
+        if (eventCountry) {
+          donors = donors.filter((donor: Donor) => {
+            const place = this.donorPlaceMap.get(donor.id);
+            const donorCountry = place?.country;
+            return donorCountry && (donorCountry.id === eventCountry.id || donorCountry.name === eventCountry.name);
+          });
         }
       }
-
-      // Get initial results
-      let donors = await this.donorRepo.find({ where });
-      this.totalDonors = donors.length;
 
       // 4. Filter by age range (client-side as it might require calculation)
       if (this.campaign.minAge || this.campaign.maxAge) {
         const now = new Date();
         donors = donors.filter((donor: Donor) => {
-          if (!donor.birthDate) return true; // Include if no birth date
+          const birthDate = this.donorBirthDateMap.get(donor.id);
+          if (!birthDate) return true; // Include if no birth date
 
-          const age = this.calculateAge(donor.birthDate);
+          const age = this.calculateAge(birthDate);
 
           if (this.campaign.minAge && age < this.campaign.minAge) return false;
           if (this.campaign.maxAge && age > this.campaign.maxAge) return false;
@@ -197,7 +222,7 @@ export class CampaignDonorsModalComponent implements OnInit {
     this.ui.donorDetailsDialog(donor.id);
   }
 
-  closeModal(event?: Event) {
+  closeModal(event?: MouseEvent) {
     if (event) {
       event.stopPropagation();
     }
@@ -209,14 +234,18 @@ export class CampaignDonorsModalComponent implements OnInit {
   }
 
   getDonorPhone(donor: Donor): string {
-    return donor.phone || '-';
+    return this.donorPhoneMap.get(donor.id) || '-';
   }
 
   getDonorEmail(donor: Donor): string {
-    return donor.email || '-';
+    return this.donorEmailMap.get(donor.id) || '-';
   }
 
   getDonorLevel(donor: Donor): string {
     return donor.level || '-';
+  }
+
+  getDonorCity(donor: Donor): string {
+    return this.donorPlaceMap.get(donor.id)?.city || '-';
   }
 }

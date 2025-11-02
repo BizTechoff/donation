@@ -2,8 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { remult } from 'remult';
 import { Donation } from '../../../shared/entity/donation';
 import { Donor } from '../../../shared/entity/donor';
+import { DonorPlace } from '../../../shared/entity/donor-place';
 import { Campaign } from '../../../shared/entity/campaign';
-import { StandingOrder } from '../../../shared/entity/standing-order';
 import { Blessing } from '../../../shared/entity/blessing';
 import { I18nService } from '../../i18n/i18n.service';
 
@@ -122,7 +122,6 @@ export class ReportsComponent implements OnInit {
   private donationRepo = remult.repo(Donation);
   private donorRepo = remult.repo(Donor);
   private campaignRepo = remult.repo(Campaign);
-  private standingOrderRepo = remult.repo(StandingOrder);
   private blessingRepo = remult.repo(Blessing);
 
   constructor(public i18n: I18nService) {}
@@ -166,17 +165,13 @@ export class ReportsComponent implements OnInit {
       where: { isActive: true }
     });
 
-    const recurringOrders = await this.standingOrderRepo.find({
-      where: { status: 'active' }
-    });
-
     this.totalStats.donations = donations.length;
     this.totalStats.amount = donations.reduce((sum, d) => sum + d.amount, 0);
     this.totalStats.donors = donors.length;
     this.totalStats.campaigns = campaigns.length;
-    this.totalStats.avgDonation = this.totalStats.donations > 0 ? 
+    this.totalStats.avgDonation = this.totalStats.donations > 0 ?
       this.totalStats.amount / this.totalStats.donations : 0;
-    this.totalStats.recurringAmount = recurringOrders.reduce((sum, so) => sum + so.amount, 0);
+    this.totalStats.recurringAmount = 0;
   }
 
   private async loadMonthlyTrends() {
@@ -232,6 +227,25 @@ export class ReportsComponent implements OnInit {
       include: { donor: true }
     });
 
+    // Load donor places for all donors
+    const uniqueDonorIds = [...new Set(donations.map(d => d.donorId).filter(Boolean))];
+    const donorPlaces = await remult.repo(DonorPlace).find({
+      where: {
+        donorId: { $in: uniqueDonorIds },
+        isPrimary: true,
+        isActive: true
+      },
+      include: { place: true }
+    });
+
+    // Create map of donorId -> city
+    const donorCityMap = new Map<string, string>();
+    donorPlaces.forEach(dp => {
+      if (dp.donorId && dp.place?.city) {
+        donorCityMap.set(dp.donorId, dp.place.city);
+      }
+    });
+
     // ניתוח לפי סוג תורם
     const typeMap = new Map<string, number>();
     donations.forEach(donation => {
@@ -240,7 +254,7 @@ export class ReportsComponent implements OnInit {
     });
 
     const totalAmount = Array.from(typeMap.values()).reduce((sum, amount) => sum + amount, 0);
-    
+
     this.donorTypeData = Array.from(typeMap.entries()).map(([type, amount]) => ({
       label: type,
       value: amount,
@@ -250,12 +264,13 @@ export class ReportsComponent implements OnInit {
     // ניתוח לפי אזור
     const regionMap = new Map<string, number>();
     donations.forEach(donation => {
-      const region = donation.donor?.homePlace?.city || 'לא צוין';
+      const city = donation.donorId ? donorCityMap.get(donation.donorId) : undefined;
+      const region = city || 'לא צוין';
       regionMap.set(region, (regionMap.get(region) || 0) + donation.amount);
     });
 
     const regionTotal = Array.from(regionMap.values()).reduce((sum, amount) => sum + amount, 0);
-    
+
     this.regionData = Array.from(regionMap.entries())
       .map(([region, amount]) => ({
         label: region,
@@ -464,42 +479,8 @@ export class ReportsComponent implements OnInit {
   }
 
   async loadPaymentsReport() {
-    // This would require a pledge/commitment entity that doesn't exist yet
-    // For now, we'll create mock data based on standing orders vs actual donations
-    const standingOrders = await this.standingOrderRepo.find({
-      include: { donor: true }
-    });
-
-    const paymentPromises = standingOrders.map(async (order) => {
-      const actualDonations = await this.donationRepo.find({
-        where: {
-          donorId: order.donorId,
-          donationDate: { $gte: order.startDate }
-        }
-      });
-
-      const actualAmount = actualDonations.reduce((sum, d) => sum + d.amount, 0);
-      const promisedAmount = order.amount * 12; // Assuming yearly calculation
-      const remainingDebt = Math.max(0, promisedAmount - actualAmount);
-
-      let status: 'fullyPaid' | 'partiallyPaid' | 'notPaid' = 'notPaid';
-      if (actualAmount >= promisedAmount) {
-        status = 'fullyPaid';
-      } else if (actualAmount > 0) {
-        status = 'partiallyPaid';
-      }
-
-      return {
-        donorName: order.donor?.displayName || 'לא צוין',
-        promisedAmount,
-        actualAmount,
-        remainingDebt,
-        status,
-        currency: order.currency
-      };
-    });
-
-    this.paymentReportData = await Promise.all(paymentPromises);
+    // Standing orders feature removed - returning empty data
+    this.paymentReportData = [];
   }
 
   async loadYearlySummaryReport() {

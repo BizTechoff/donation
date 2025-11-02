@@ -9,28 +9,10 @@ import {
   Validators,
   isBackend
 } from 'remult'
-import { EmailField } from '../../app/common/fields/EmailField'
-import { PhoneField } from '../../app/common/fields/PhoneField'
 import { Roles } from '../enum/roles'
-import { Place } from './place'
 import { User } from './user'
-import { Contact } from './contact'
+import { Place } from './place'
 import { Country } from './country'
-
-export interface CompanyInfo {
-  id: string
-  name: string
-  number: string
-  role: string
-  placeId?: string
-  placeRecordId?: string // ID של הרשומה בטבלת Places
-  address: string
-  neighborhood: string
-  location: string
-  phone: string
-  email: string
-  website: string
-}
 
 @Entity<Donor>('donors', {
   allowApiCrud: Allow.authenticated,
@@ -138,72 +120,6 @@ export class Donor extends IdEntity {
   })
   idNumber = ''
 
-  @EmailField({
-    caption: 'דואר אלקטרוני',
-  })
-  email = ''
-
-  @PhoneField({
-    caption: 'טלפון',
-  })
-  phone = ''
-
-  @PhoneField({
-    caption: 'טלפון נוסף',
-  })
-  additionalPhone = ''
-
-  @Fields.string({
-    caption: 'מזהה מדינה',
-  })
-  countryId?: string
-
-  @Relations.toOne(() => Country, {
-    field: 'countryId',
-    caption: 'קידומת בינלאומית',
-    defaultIncluded: true
-  })
-  country?: Country
-
-  // כתובות
-  // @Relations.toOne(() => Place, {
-  //   caption: 'כתובת מגורים',
-  //   includeInApi: true,
-  // })
-  // homePlaceId?: string
-
-  // @Field(() => Place, {
-  //   // serverExpression: async (donor: Donor) => {
-  //   //   if (!donor.homePlaceId) return undefined
-  //   //   return await remult.repo(Place).findId(donor.homePlaceId)
-  //   // },
-  //   // includeInApi: true
-  // })
-  // homePlace?: Place
-
-  @Fields.string()
-  homePlaceId?: string;
-
-  @Relations.toOne(() => Place, {
-    field: "homePlaceId",
-    defaultIncluded: true
-  })
-  homePlace?: Place;
-
-  @Fields.string()
-  vacationPlaceId?: string;
-
-  @Relations.toOne(() => Place, {
-    field: "vacationPlaceId",
-    defaultIncluded: true
-  })
-  vacationPlace?: Place;
-
-  @Fields.date({
-    caption: 'תאריך לידה',
-  })
-  birthDate?: Date
-
   @Fields.string({
     caption: 'הערות',
   })
@@ -231,26 +147,6 @@ export class Donor extends IdEntity {
 
   // Additional personal fields
   @Fields.string({
-    caption: 'שם האב',
-  })
-  fatherName = ''
-
-  @Fields.string({
-    caption: 'שם החותן',
-  })
-  fatherInLawName = ''
-
-  @Fields.string({
-    caption: 'קישור משפחתי',
-  })
-  familyConnection = ''
-
-  @Fields.string({
-    caption: 'הערות קישור משפחתי',
-  })
-  familyConnectionNotes = ''
-
-  @Fields.string({
     caption: 'מצב משפחתי',
   })
   maritalStatus: 'married' | 'single' | 'widowed' | 'divorced' = 'married'
@@ -265,52 +161,11 @@ export class Donor extends IdEntity {
   })
   lineage: 'cohen' | 'levi' | 'israel' = 'israel'
 
-  @Fields.string({
-    caption: 'טלפון בית',
-  })
-  homePhone = ''
-
-  @Fields.string({
-    caption: 'קידומת טלפון בית',
-  })
-  homePhonePrefix = ''
-
-  @Fields.string({
-    caption: 'טלפון נייד',
-  })
-  mobilePhone = ''
-
-  @Fields.string({
-    caption: 'קידומת טלפון נייד',
-  })
-  mobilePhonePrefix = ''
-
-  // Personal dates
-  @Fields.date({
-    caption: 'יום נישואין',
-  })
-  anniversaryDate?: Date
-
-  @Fields.date({
-    caption: 'יארצייט אב',
-  })
-  fatherYahrzeit?: Date
-
-  @Fields.date({
-    caption: 'יארצייט אם',
-  })
-  motherYahrzeit?: Date
-
   // Categories and levels
   @Fields.string({
     caption: 'רמה',
   })
   level: 'quarter' | 'half' | 'full' | 'bronze_lords' | 'silver_stones' | 'gold_pillars' | 'sapphire_diamond' | 'platinum' | 'patron' | 'torah_holder' | 'supreme_level_1' | 'supreme_level_2' | '' = ''
-
-  @Fields.string({
-    caption: 'חוג',
-  })
-  circle = ''
 
   @Fields.json({
     caption: 'חוגים',
@@ -333,32 +188,6 @@ export class Donor extends IdEntity {
     caption: 'קשר אחר',
   })
   isOtherConnection = false
-
-  @Fields.string({
-    caption: 'סוג קשר',
-  })
-  relationshipType = '' // אבא/סבא/ידיד
-
-  @Fields.string({
-    caption: 'קשר של',
-  })
-  relationshipOf = '' // שם האדם שהתורם קשור אליו
-
-  @Fields.string({
-    caption: 'ריגושים',
-  })
-  interests = ''
-
-  @Fields.string({
-    caption: 'תחביבים',
-  })
-  hobbies = ''
-
-  // Contact preferences
-  @Fields.string({
-    caption: 'שעות קבלה',
-  })
-  receptionHours = ''
 
   // Availability days
   @Fields.boolean({
@@ -447,12 +276,6 @@ export class Donor extends IdEntity {
   })
   autoAddToLocationEvents = false
 
-  // Companies and Organizations fields
-  @Fields.json({
-    caption: 'חברות ועמותות (Legacy)',
-  })
-  companies: CompanyInfo[] = []
-
   // Company IDs - for new company selection system
   @Fields.json({
     caption: 'מזהי חברות'
@@ -520,7 +343,7 @@ export class Donor extends IdEntity {
       if (donor.lastName) parts.push(donor.lastName)
       if (donor.suffix) parts.push(donor.suffix)
       const fullName = parts.join(' ').trim()
-      return fullName || donor.email || donor.phone || 'לא ידוע'
+      return fullName || 'לא ידוע'
     }
   })
   displayName?: string
@@ -538,17 +361,8 @@ export class Donor extends IdEntity {
     return `${this.firstNameEnglish} ${this.lastNameEnglish}`.trim()
   }
 
-  get fullAddress(): string {
-    return this.homePlace?.getDisplayAddress() || ''
-  }
-
-  get vacationAddress(): string {
-    return this.vacationPlace?.getDisplayAddress() || ''
-  }
-
-
   get displayNameGetter() {
-    return this.fullName || this.email || this.phone || 'לא ידוע'
+    return this.fullName || 'לא ידוע'
   }
 
   @BackendMethod({ allowed: [Roles.admin] })

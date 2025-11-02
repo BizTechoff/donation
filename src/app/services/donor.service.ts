@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
-import { Donor } from '../../shared/entity/donor';
+import { remult } from 'remult';
+import { Donor,  DonorPlace, DonorContact, DonorEvent, Event, Place, Donation } from '../../shared/entity';
 import { DonorController } from '../../shared/controllers/donor.controller';
 import { GlobalFilters, GlobalFilterService } from './global-filter.service';
 
@@ -7,6 +8,11 @@ import { GlobalFilters, GlobalFilterService } from './global-filter.service';
   providedIn: 'root'
 })
 export class DonorService {
+  private donorPlaceRepo = remult.repo(DonorPlace);
+  private donorContactRepo = remult.repo(DonorContact);
+  private donorEventRepo = remult.repo(DonorEvent);
+  private eventRepo = remult.repo(Event);
+  private donationRepo = remult.repo(Donation);
 
   constructor(private globalFilterService: GlobalFilterService) {}
 
@@ -46,5 +52,215 @@ export class DonorService {
     const globalFilters = this.globalFilterService.currentFilters;
     const combinedFilters = { ...globalFilters, ...additionalFilters };
     return await DonorController.countFiltered(combinedFilters);
+  }
+
+  /**
+   * Load all related data for a list of donors
+   * Returns maps for efficient lookup
+   */
+  async loadDonorRelatedData(donorIds: string[]) {
+    if (!donorIds || donorIds.length === 0) {
+      return this.createEmptyMaps();
+    }
+
+    // Load all places at once
+    const allPlaces = await this.donorPlaceRepo.find({
+      where: {
+        donorId: { $in: donorIds },
+        isPrimary: true,
+        isActive: true
+      },
+      include: { place: { include: { country: true } } }
+    });
+
+    // Load all contacts at once
+    const allContacts = await this.donorContactRepo.find({
+      where: {
+        donorId: { $in: donorIds },
+        isPrimary: true,
+        isActive: true
+      }
+    });
+
+    // Load birth date event type
+    const birthEvent = await this.eventRepo.findFirst({
+      description: 'יום הולדת',
+      isActive: true
+    });
+
+    let allBirthEvents: DonorEvent[] = [];
+    if (birthEvent) {
+      allBirthEvents = await this.donorEventRepo.find({
+        where: {
+          donorId: { $in: donorIds },
+          eventId: birthEvent.id,
+          isActive: true
+        }
+      });
+    }
+
+    // Load all donations at once
+    const allDonations = await this.donationRepo.find({
+      where: {
+        donorId: { $in: donorIds },
+        status: 'completed'
+      }
+    });
+
+    // Build maps
+    return this.buildMaps(allPlaces, allContacts, allBirthEvents, allDonations);
+  }
+
+  /**
+   * Get home place for a donor
+   * Looks for DonorPlace with home-related addressType
+   */
+  async getHomePlaceForDonor(donorId: string): Promise<Place | undefined> {
+    const homeAddressTypes = ['בית', 'מגורים', 'בית מגורים', 'כתובת מגורים'];
+
+    const homeDonorPlace = await this.donorPlaceRepo.findFirst({
+      donorId,
+      isActive: true
+    }, {
+      include: {
+        place: { include: { country: true } },
+        addressType: true
+      }
+    });
+
+    if (homeDonorPlace?.addressType?.description &&
+        homeAddressTypes.includes(homeDonorPlace.addressType.description)) {
+      return homeDonorPlace.place;
+    }
+
+    return undefined;
+  }
+
+  /**
+   * Get primary email for a donor
+   */
+  async getPrimaryEmailForDonor(donorId: string): Promise<string | undefined> {
+    const primaryEmail = await this.donorContactRepo.findFirst({
+      donorId,
+      type: 'email',
+      isPrimary: true,
+      isActive: true
+    });
+
+    return primaryEmail?.email || undefined;
+  }
+
+  /**
+   * Get primary phone for a donor
+   */
+  async getPrimaryPhoneForDonor(donorId: string): Promise<string | undefined> {
+    const primaryPhone = await this.donorContactRepo.findFirst({
+      donorId,
+      type: 'phone',
+      isPrimary: true,
+      isActive: true
+    });
+
+    return primaryPhone?.phoneNumber || undefined;
+  }
+
+  /**
+   * Get birth date for a donor
+   */
+  async getBirthDateForDonor(donorId: string): Promise<Date | undefined> {
+    const birthEvent = await this.eventRepo.findFirst({
+      description: 'יום הולדת',
+      isActive: true
+    });
+
+    if (!birthEvent) return undefined;
+
+    const donorBirthEvent = await this.donorEventRepo.findFirst({
+      donorId,
+      eventId: birthEvent.id,
+      isActive: true
+    });
+
+    return donorBirthEvent?.date || undefined;
+  }
+
+  /**
+   * Build maps from loaded data for efficient lookup
+   */
+  private buildMaps(
+    allPlaces: DonorPlace[],
+    allContacts: DonorContact[],
+    allBirthEvents: DonorEvent[],
+    allDonations: Donation[]
+  ) {
+    const donorPlaceMap = new Map<string, Place>();
+    const donorEmailMap = new Map<string, string>();
+    const donorPhoneMap = new Map<string, string>();
+    const donorFullAddressMap = new Map<string, string>();
+    const donorBirthDateMap = new Map<string, Date>();
+    const donorCountryIdMap = new Map<string, string>();
+    const donorTotalDonationsMap = new Map<string, number>();
+
+    // Process places
+    allPlaces.forEach(dp => {
+      if (dp.donorId && dp.place) {
+        donorPlaceMap.set(dp.donorId, dp.place);
+        if (dp.place.getDisplayAddress) {
+          donorFullAddressMap.set(dp.donorId, dp.place.getDisplayAddress());
+        }
+        if (dp.place.countryId) {
+          donorCountryIdMap.set(dp.donorId, dp.place.countryId);
+        }
+      }
+    });
+
+    // Process contacts
+    allContacts.forEach(contact => {
+      if (!contact.donorId) return;
+      if (contact.type === 'email' && contact.email) {
+        donorEmailMap.set(contact.donorId, contact.email);
+      } else if (contact.type === 'phone' && contact.phoneNumber) {
+        donorPhoneMap.set(contact.donorId, contact.phoneNumber);
+      }
+    });
+
+    // Process birth dates
+    allBirthEvents.forEach(de => {
+      if (de.donorId && de.date) {
+        donorBirthDateMap.set(de.donorId, de.date);
+      }
+    });
+
+    // Process donations - calculate total per donor
+    allDonations.forEach(donation => {
+      if (!donation.donorId) return;
+      const currentTotal = donorTotalDonationsMap.get(donation.donorId) || 0;
+      donorTotalDonationsMap.set(donation.donorId, currentTotal + (donation.amount || 0));
+    });
+
+    return {
+      donorPlaceMap,
+      donorEmailMap,
+      donorPhoneMap,
+      donorFullAddressMap,
+      donorBirthDateMap,
+      donorCountryIdMap,
+      donorTotalDonationsMap
+    };
+  }
+
+  /**
+   * Create empty maps
+   */
+  private createEmptyMaps() {
+    return {
+      donorPlaceMap: new Map<string, Place>(),
+      donorEmailMap: new Map<string, string>(),
+      donorPhoneMap: new Map<string, string>(),
+      donorFullAddressMap: new Map<string, string>(),
+      donorBirthDateMap: new Map<string, Date>(),
+      donorCountryIdMap: new Map<string, string>(),
+      donorTotalDonationsMap: new Map<string, number>()
+    };
   }
 }

@@ -1,9 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
 import { DialogConfig, openDialog } from 'common-ui-elements';
-import { Donor } from '../../../../shared/entity';
+import { Donor, DonorContact, DonorPlace, Place } from '../../../../shared/entity';
 import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
+import { DonorService } from '../../../services/donor.service';
 import { DonorDetailsModalComponent } from '../donor-details-modal/donor-details-modal.component';
 
 export interface DonorSelectionModalArgs {
@@ -29,12 +30,18 @@ export class DonorSelectionModalComponent implements OnInit {
   availableDonors: Donor[] = [];
   donorRepo = remult.repo(Donor);
 
+  // Maps for donor-related data
+  donorEmailMap = new Map<string, string>();
+  donorPhoneMap = new Map<string, string>();
+  donorPlaceMap = new Map<string, Place>();
+
   // Search
   searchTerm = '';
   loading = false;
 
   constructor(
     public i18n: I18nService,
+    private donorService: DonorService,
     public dialogRef: MatDialogRef<any>
   ) {}
 
@@ -45,17 +52,28 @@ export class DonorSelectionModalComponent implements OnInit {
   async loadDonors() {
     this.loading = true;
     try {
-      let allDonors = await this.donorRepo.find({
+      let baseDonors = await this.donorRepo.find({
         where: { isActive: true },
         orderBy: { firstName: 'asc' }
       });
 
       // Exclude specified donor IDs
       if (this.args?.excludeIds && this.args.excludeIds.length > 0) {
-        allDonors = allDonors.filter(donor => !this.args.excludeIds!.includes(donor.id));
+        baseDonors = baseDonors.filter(donor => !this.args.excludeIds!.includes(donor.id));
       }
 
-      this.availableDonors = allDonors;
+      this.availableDonors = baseDonors;
+
+      // Load all related data efficiently using DonorService
+      const relatedData = await this.donorService.loadDonorRelatedData(
+        baseDonors.map(d => d.id)
+      );
+
+      // Store in maps for easy lookup
+      this.donorEmailMap = relatedData.donorEmailMap;
+      this.donorPhoneMap = relatedData.donorPhoneMap;
+      this.donorPlaceMap = relatedData.donorPlaceMap;
+
     } catch (error) {
       console.error('Error loading donors:', error);
     } finally {
@@ -75,6 +93,19 @@ export class DonorSelectionModalComponent implements OnInit {
       donor.lastName?.toLowerCase().includes(term) ||
       donor.fullName?.toLowerCase().includes(term)
     );
+  }
+
+  // Helper methods to get donor-related data from maps
+  getDonorEmail(donorId: string): string {
+    return this.donorEmailMap.get(donorId) || '';
+  }
+
+  getDonorPhone(donorId: string): string {
+    return this.donorPhoneMap.get(donorId) || '';
+  }
+
+  getDonorPlace(donorId: string): Place | undefined {
+    return this.donorPlaceMap.get(donorId);
   }
 
   // Select donor and close dialog immediately

@@ -2,11 +2,12 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { HDate, Sedra } from '@hebcal/core';
 import { remult } from 'remult';
 import { Subscription } from 'rxjs';
-import { Donor, Reminder } from '../../../shared/entity';
+import { Donor, Reminder, DonorContact, DonorEvent, Event } from '../../../shared/entity';
 import { DialogConfig } from '../../common-ui-elements';
 import { UIToolsService } from '../../common/UIToolsService';
 import { I18nService } from '../../i18n/i18n.service';
 import { GlobalFilterService } from '../../services/global-filter.service';
+import { DonorService } from '../../services/donor.service';
 
 @DialogConfig({
   hasBackdrop: true
@@ -28,6 +29,11 @@ export class RemindersComponent implements OnInit, OnDestroy {
   loading = false;
   activeTab: 'today' | 'week' | 'overdue' | 'all' = 'all';
 
+  // Maps for donor-related data
+  donorPhoneMap = new Map<string, string>();
+  donorBirthDateMap = new Map<string, Date>();
+  donorCountryIdMap = new Map<string, string>();
+
   // Parasha filter
   fromParasha: string = '';
   toParasha: string = '';
@@ -45,7 +51,8 @@ export class RemindersComponent implements OnInit, OnDestroy {
   constructor(
     public i18n: I18nService,
     private ui: UIToolsService,
-    private globalFilterService: GlobalFilterService
+    private globalFilterService: GlobalFilterService,
+    private donorService: DonorService
   ) { }
 
   async ngOnInit() {
@@ -84,6 +91,28 @@ export class RemindersComponent implements OnInit, OnDestroy {
         relatedDonor: true
       }
     });
+
+    // Load phone for all related donors efficiently
+    const donorIds = this.reminders
+      .filter(r => r.relatedDonor?.id)
+      .map(r => r.relatedDonor!.id);
+
+    if (donorIds.length > 0) {
+      const relatedData = await this.donorService.loadDonorRelatedData(donorIds);
+      // Merge phone map (don't overwrite existing data)
+      relatedData.donorPhoneMap.forEach((value, key) => {
+        if (!this.donorPhoneMap.has(key)) {
+          this.donorPhoneMap.set(key, value);
+        }
+      });
+      // Merge country ID map
+      relatedData.donorCountryIdMap.forEach((value, key) => {
+        if (!this.donorCountryIdMap.has(key)) {
+          this.donorCountryIdMap.set(key, value);
+        }
+      });
+    }
+
     this.applyGlobalFilters();
   }
 
@@ -91,12 +120,13 @@ export class RemindersComponent implements OnInit, OnDestroy {
     const filters = this.globalFilterService.currentFilters;
     let filtered = [...this.reminders];
 
-    // Apply country filter - filter by donor's country ID
+    // Apply country filter - filter by donor's country ID from Map
     if (filters.countryIds && filters.countryIds.length > 0) {
-      filtered = filtered.filter(reminder =>
-        reminder.relatedDonor?.countryId &&
-        filters.countryIds!.includes(reminder.relatedDonor.countryId)
-      );
+      filtered = filtered.filter(reminder => {
+        if (!reminder.relatedDonor?.id) return false;
+        const countryId = this.donorCountryIdMap.get(reminder.relatedDonor.id);
+        return countryId && filters.countryIds!.includes(countryId);
+      });
     }
 
     this.reminders = filtered;
@@ -108,6 +138,24 @@ export class RemindersComponent implements OnInit, OnDestroy {
       where: { isActive: true },
       orderBy: { lastName: 'asc' }
     });
+
+    // Load all related data efficiently using DonorService
+    const relatedData = await this.donorService.loadDonorRelatedData(
+      this.donors.map(d => d.id)
+    );
+
+    // Store in maps for easy lookup
+    this.donorPhoneMap = relatedData.donorPhoneMap;
+    this.donorBirthDateMap = relatedData.donorBirthDateMap;
+  }
+
+  // Helper methods to get donor-related data from maps
+  getDonorPhone(donorId: string): string {
+    return this.donorPhoneMap.get(donorId) || '';
+  }
+
+  getDonorBirthDate(donorId: string): Date | undefined {
+    return this.donorBirthDateMap.get(donorId);
   }
 
   async createReminder() {
@@ -158,6 +206,10 @@ export class RemindersComponent implements OnInit, OnDestroy {
 
   getDonorName(reminder: Reminder): string {
     return reminder.relatedDonor?.displayName || this.i18n.terms.generalType;
+  }
+
+  getReminderDonorPhone(reminder: Reminder): string {
+    return reminder.relatedDonor?.id ? this.donorPhoneMap.get(reminder.relatedDonor.id) || '' : '';
   }
 
   getTypeText(type: string): string {
@@ -229,8 +281,9 @@ export class RemindersComponent implements OnInit, OnDestroy {
     const nextWeek = new Date(today.getTime() + (7 * 24 * 60 * 60 * 1000));
 
     return this.donors.filter(donor => {
-      if (!donor.birthDate) return false;
-      const thisYearBirthday = new Date(today.getFullYear(), donor.birthDate.getMonth(), donor.birthDate.getDate());
+      const birthDate = this.donorBirthDateMap.get(donor.id);
+      if (!birthDate) return false;
+      const thisYearBirthday = new Date(today.getFullYear(), birthDate.getMonth(), birthDate.getDate());
       return thisYearBirthday >= today && thisYearBirthday <= nextWeek;
     });
   }

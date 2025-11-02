@@ -118,7 +118,7 @@ export class LetterPropertiesModalComponent implements OnInit {
       const donationRepo = remult.repo(Donation);
       this.donation = await donationRepo.findId(this.args.donationId, {
         include: {
-          donor: { include: { homePlace: { include: { country: true } } } },
+          donor: true,
           campaign: true,
           organization: { include: { place: { include: { country: true } } } },
           payerCompany: { include: { place: { include: { country: true } } } }
@@ -422,7 +422,7 @@ export class LetterPropertiesModalComponent implements OnInit {
         const parts = [] as string[]
 
         const row1 =
-          `${this.donation.donor?.titleEnglish} ${this.donation.donor?.maritalStatus === 'married' ? ' & Mrs' : ''} ${this.donation.donor?.firstNameEnglish[0]?.toUpperCase()} ${this.toCamelCase(this.donation.donor?.lastNameEnglish || '')}` || ''
+          `${this.donation.donor?.titleEnglish} ${this.donation.donor?.maritalStatus === 'married' ? '& Mrs.' : ''} ${this.donation.donor?.firstNameEnglish[0]?.toUpperCase()} ${this.toCamelCase(this.donation.donor?.lastNameEnglish || '')}` || ''
 
         const address = await remult.repo(DonorPlace).findFirst({ donor: this.donation.donor })
         const row2 = `${address?.place?.apartment} ${address?.place?.building}` || ''
