@@ -9,39 +9,7 @@
     <div class="filter-row">
       <div class="filter-group">
         <label>{{ (i18n.terms$ | async)?.generalSearch }}</label>
-        <input type="text" class="form-control" [placeholder]="(i18n.terms$ | async)?.searchNameAddressPhone">
-      </div>
-      
-      <div class="filter-group">
-        <label>{{ (i18n.terms$ | async)?.circle }}</label>
-        <select class="form-control">
-          <option value="">{{ (i18n.terms$ | async)?.all }}</option>
-          <option value="platinum">{{ (i18n.terms$ | async)?.platinum }}</option>
-          <option value="gold">{{ (i18n.terms$ | async)?.gold }}</option>
-          <option value="silver">{{ (i18n.terms$ | async)?.silver }}</option>
-          <option value="regular">{{ (i18n.terms$ | async)?.regular }}</option>
-        </select>
-      </div>
-
-      <div class="filter-group">
-        <label>{{ (i18n.terms$ | async)?.region }}</label>
-        <select class="form-control">
-          <option value="">{{ (i18n.terms$ | async)?.all }}</option>
-          <option value="center">{{ (i18n.terms$ | async)?.center }}</option>
-          <option value="north">{{ (i18n.terms$ | async)?.north }}</option>
-          <option value="south">{{ (i18n.terms$ | async)?.south }}</option>
-          <option value="jerusalem">{{ (i18n.terms$ | async)?.jerusalem }}</option>
-        </select>
-      </div>
-
-      <div class="filter-group">
-        <label>{{ (i18n.terms$ | async)?.communityAffiliation }}</label>
-        <select class="form-control">
-          <option value="">{{ (i18n.terms$ | async)?.all }}</option>
-          <option value="ashkenazi">{{ (i18n.terms$ | async)?.ashkenazi }}</option>
-          <option value="sephardi">{{ (i18n.terms$ | async)?.sephardi }}</option>
-          <option value="hasidi">{{ (i18n.terms$ | async)?.hasidi }}</option>
-        </select>
+        <input type="text" class="form-control" [placeholder]="(i18n.terms$ | async)?.searchNameAddressPhone" [(ngModel)]="searchTerm" (ngModelChange)="onLocalFilterChange()">
       </div>
     </div>
   </div>
@@ -57,7 +25,7 @@
       <div class="grid-col">{{ (i18n.terms$ | async)?.actions }}</div>
     </div>
 
-    <div class="grid-row" *ngFor="let donor of donors">
+    <div class="grid-row" *ngFor="let donor of filteredDonors">
       <div class="grid-col">
         <div class="donor-name">
           <strong>{{donor.fullName}}</strong>
@@ -80,7 +48,7 @@
 
   <div class="pagination">
     <button class="btn-page">{{ (i18n.terms$ | async)?.previous }}</button>
-    <span class="page-info">{{ (i18n.terms$ | async)?.pageOf?.replace('{current}', '1')?.replace('{total}', donors.length + '') }}</span>
+    <span class="page-info">{{ (i18n.terms$ | async)?.pageOf?.replace('{current}', '1')?.replace('{total}', filteredDonors.length + '') }}</span>
     <button class="btn-page">{{ (i18n.terms$ | async)?.next }}</button>
   </div>
 </div>

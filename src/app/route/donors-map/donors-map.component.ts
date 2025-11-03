@@ -1,20 +1,18 @@
-import { Component, ElementRef, OnInit, ViewChild, AfterViewInit, OnDestroy } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
-import { remult } from 'remult';
 import * as L from 'leaflet';
+import { remult } from 'remult';
 import { Subscription } from 'rxjs';
-import { Donor } from '../../../shared/entity/donor';
-import { DonorContact } from '../../../shared/entity/donor-contact';
-import { DonorPlace } from '../../../shared/entity/donor-place';
-import { Donation } from '../../../shared/entity/donation';
-import { Place } from '../../../shared/entity/place';
-import { GeocodingService } from '../../services/geocoding.service';
-import { I18nService } from '../../i18n/i18n.service';
-import { UIToolsService } from '../../common/UIToolsService';
-import { DonorService } from '../../services/donor.service';
-import { GlobalFilterService } from '../../services/global-filter.service';
-import { GeoService } from '../../services/geo.service';
 import { Country } from '../../../shared/entity/country';
+import { Donation } from '../../../shared/entity/donation';
+import { Donor } from '../../../shared/entity/donor';
+import { Place } from '../../../shared/entity/place';
+import { UIToolsService } from '../../common/UIToolsService';
+import { I18nService } from '../../i18n/i18n.service';
+import { DonorService } from '../../services/donor.service';
+import { GeoService } from '../../services/geo.service';
+import { GeocodingService } from '../../services/geocoding.service';
+import { GlobalFilterService } from '../../services/global-filter.service';
 
 // Fix for default markers in Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -65,8 +63,9 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     private ui: UIToolsService,
     private donorService: DonorService,
     private filterService: GlobalFilterService,
-    private geoService: GeoService
-  ) {}
+    private geoService: GeoService,
+    private cdr: ChangeDetectorRef
+  ) { }
 
   // Note: DonorService already injected above for findFiltered()
 
@@ -171,159 +170,6 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
       const place = this.donorPlaceMap.get(d.id);
       return place?.latitude && place?.longitude;
     }).length);
-
-    // Add demo coordinates for Israel testing
-    if (this.donors.length > 0) {
-      const israelCoords = [
-        { lat: 32.0853, lng: 34.7818, name: 'תל אביב' },
-        { lat: 31.7683, lng: 35.2137, name: 'ירושלים' },
-        { lat: 32.7940, lng: 34.9896, name: 'חיפה' },
-        { lat: 31.2530, lng: 34.7915, name: 'באר שבע' },
-        { lat: 32.3215, lng: 34.8532, name: 'נתניה' },
-        { lat: 31.8044, lng: 34.6553, name: 'אשדוד' },
-        { lat: 31.6739, lng: 34.5614, name: 'אשקלון' },
-        { lat: 32.0208, lng: 34.7806, name: 'רמת גן' },
-        { lat: 32.0930, lng: 34.8864, name: 'פתח תקווה' },
-        { lat: 32.4379, lng: 34.9104, name: 'רעננה' }
-      ];
-
-      // Assign Israeli coordinates to first 10 donors
-      this.donors.slice(0, Math.min(this.donors.length, israelCoords.length)).forEach((donor, index) => {
-        if (israelCoords[index]) {
-          // Get or create a mock primaryPlace if it doesn't exist
-          let place = this.donorPlaceMap.get(donor.id);
-          if (!place) {
-            place = new Place();
-            place.id = `demo-${index}`;
-            place.city = israelCoords[index].name;
-            place.latitude = israelCoords[index].lat;
-            place.longitude = israelCoords[index].lng;
-            place.placeName = israelCoords[index].name;
-            place.placeId = `demo-${index}`;
-            place.street = '';
-            place.houseNumber = '';
-            place.neighborhood = '';
-            place.state = '';
-            place.postcode = '';
-            this.donorPlaceMap.set(donor.id, place);
-            this.donorFullAddressMap.set(donor.id, israelCoords[index].name);
-          } else {
-            // Update existing primaryPlace with demo coordinates
-            place.latitude = israelCoords[index].lat;
-            place.longitude = israelCoords[index].lng;
-          }
-          console.log(`Added coordinates for donor ${index + 1}:`, donor.displayName, israelCoords[index]);
-        }
-      });
-      const demoCoords = [
-        { lat: 40.7128, lng: -74.0060 }, // New York
-        { lat: 34.0522, lng: -118.2437 }, // Los Angeles
-        { lat: 41.8781, lng: -87.6298 }, // Chicago
-        { lat: 29.7604, lng: -95.3698 }, // Houston
-        { lat: 33.4484, lng: -112.0740 }, // Phoenix
-        { lat: 39.9526, lng: -75.1652 }, // Philadelphia
-        { lat: 29.4241, lng: -98.4936 }, // San Antonio
-        { lat: 32.7767, lng: -96.7970 }, // Dallas
-        { lat: 37.3382, lng: -121.8863 }, // San Jose
-        { lat: 30.2672, lng: -97.7431 }, // Austin
-        { lat: 30.3322, lng: -81.6557 }, // Jacksonville
-        { lat: 37.7749, lng: -122.4194 }, // San Francisco
-        { lat: 39.7391, lng: -104.9847 }, // Denver
-        { lat: 47.6062, lng: -122.3321 }, // Seattle
-        { lat: 38.9072, lng: -77.0369 }, // Washington DC
-        { lat: 42.3601, lng: -71.0589 }, // Boston
-        { lat: 36.1627, lng: -86.7816 }, // Nashville
-        { lat: 35.2271, lng: -80.8431 }, // Charlotte
-        { lat: 39.7817, lng: -86.1478 }, // Indianapolis
-        { lat: 35.1495, lng: -90.0490 }, // Memphis
-        { lat: 36.7478, lng: -119.7725 }, // Fresno
-        { lat: 38.5816, lng: -121.4944 }, // Sacramento
-        { lat: 33.7490, lng: -84.3880 }, // Atlanta
-        { lat: 39.2904, lng: -76.6122 }, // Baltimore
-        { lat: 25.7617, lng: -80.1918 }, // Miami
-        { lat: 44.9778, lng: -93.2650 }, // Minneapolis
-        { lat: 40.4406, lng: -79.9959 }, // Pittsburgh
-        { lat: 41.4993, lng: -81.6944 }, // Cleveland
-        { lat: 28.5383, lng: -81.3792 }, // Orlando
-        { lat: 32.0835, lng: -81.0998 }, // Savannah
-        { lat: 26.1224, lng: -80.1373 }, // Fort Lauderdale
-        { lat: 27.9506, lng: -82.4572 }, // Tampa
-        { lat: 43.0389, lng: -87.9065 }, // Milwaukee
-        { lat: 39.1612, lng: -75.5264 }, // Wilmington
-        { lat: 35.7796, lng: -78.6382 }, // Raleigh
-        { lat: 32.7355, lng: -97.1081 }, // Arlington
-        { lat: 37.4419, lng: -122.1430 }, // Palo Alto
-        { lat: 33.8688, lng: -117.5931 }, // Anaheim
-        { lat: 40.0583, lng: -74.4057 }, // New Brunswick
-        { lat: 42.3584, lng: -71.0636 }, // Cambridge
-        // Additional 25 locations for more comprehensive coverage
-        { lat: 45.5152, lng: -122.6784 }, // Portland
-        { lat: 36.1699, lng: -115.1398 }, // Las Vegas
-        { lat: 43.6532, lng: -116.3113 }, // Boise
-        { lat: 32.7555, lng: -117.2323 }, // San Diego
-        { lat: 47.0379, lng: -122.9015 }, // Olympia
-        { lat: 41.2033, lng: -77.1945 }, // Pennsylvania
-        { lat: 44.2619, lng: -72.5806 }, // Vermont
-        { lat: 44.3106, lng: -69.7795 }, // Maine
-        { lat: 43.2081, lng: -71.5376 }, // New Hampshire
-        { lat: 41.7658, lng: -72.6734 }, // Connecticut
-        { lat: 41.6032, lng: -71.4774 }, // Rhode Island
-        { lat: 42.2406, lng: -71.0275 }, // Massachusetts
-        { lat: 40.5722, lng: -74.2026 }, // Staten Island
-        { lat: 40.6782, lng: -73.9442 }, // Brooklyn
-        { lat: 40.7831, lng: -73.9712 }, // Manhattan
-        { lat: 40.7489, lng: -73.9680 }, // Queens
-        { lat: 40.8448, lng: -73.8648 }, // Bronx
-        { lat: 42.3398, lng: -83.0466 }, // Detroit
-        { lat: 39.1031, lng: -84.5120 }, // Cincinnati
-        { lat: 41.4995, lng: -81.6954 }, // Cleveland
-        { lat: 43.0642, lng: -87.9073 }, // Milwaukee
-        { lat: 44.9537, lng: -93.0900 }, // Saint Paul
-        { lat: 46.8772, lng: -96.7898 }, // Fargo
-        { lat: 41.2524, lng: -95.9980 }, // Omaha
-        { lat: 39.7391, lng: -104.9847 }, // Denver
-        { lat: 40.7608, lng: -111.8910 }, // Salt Lake City
-        // Additional 30 locations for comprehensive coverage
-        { lat: 35.0928, lng: -106.6504 }, // Albuquerque
-        { lat: 33.5207, lng: -86.8025 }, // Birmingham
-        { lat: 43.6150, lng: -116.2023 }, // Boise
-        { lat: 42.3601, lng: -71.0589 }, // Boston
-        { lat: 41.2033, lng: -77.1945 }, // State College
-        { lat: 38.0293, lng: -78.4767 }, // Charlottesville
-        { lat: 39.1612, lng: -75.5264 }, // Wilmington
-        { lat: 41.7658, lng: -72.6734 }, // Hartford
-        { lat: 43.2081, lng: -71.5376 }, // Manchester
-        { lat: 44.3106, lng: -69.7795 }, // Augusta
-        { lat: 42.2406, lng: -71.0275 }, // Quincy
-        { lat: 41.6032, lng: -71.4774 }, // Providence
-        { lat: 44.2619, lng: -72.5806 }, // Montpelier
-        { lat: 43.8041, lng: -120.5542 }, // Bend
-        { lat: 45.3311, lng: -121.7113 }, // Hood River
-        { lat: 46.7296, lng: -117.0002 }, // Pullman
-        { lat: 47.2529, lng: -122.4443 }, // Tacoma
-        { lat: 48.7519, lng: -122.4787 }, // Bellingham
-        { lat: 47.9779, lng: -122.2021 }, // Everett
-        { lat: 46.5197, lng: -122.8746 }, // Chehalis
-        { lat: 46.9804, lng: -123.8552 }, // Aberdeen
-        { lat: 45.6387, lng: -121.1309 }, // The Dalles
-        { lat: 44.0521, lng: -123.0868 }, // Eugene
-        { lat: 42.3265, lng: -122.8756 }, // Medford
-        { lat: 43.8142, lng: -103.4648 }, // Rapid City
-        { lat: 46.8083, lng: -100.7837 }, // Bismarck
-        { lat: 45.7833, lng: -108.5007 }, // Billings
-        { lat: 47.0527, lng: -122.8652 }, // Olympia
-        { lat: 46.7982, lng: -92.1077 }, // Duluth
-        { lat: 44.0154, lng: -92.4699 }, // Rochester
-        { lat: 43.5460, lng: -96.7313 } // Sioux Falls
-      ];
-      
-      // Assign coordinates to all donors (overwrite existing for demo)
-      this.donors.slice(0, Math.min(this.donors.length, demoCoords.length)).forEach((donor, index) => {
-        if (demoCoords[index]) {
-          // Demo coordinates disabled - use actual places
-        }
-      });
-    }
   }
 
   async loadDonations() {
@@ -603,6 +449,39 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // פונקציה להמרת כתובות תורמים שחסרים להם קואורדינטות
   async geocodeMissingAddresses() {
+    const confirmed = confirm('האם אתה בטוח שברצונך להמיר את כל הכתובות החסרות? זה עשוי לקחת זמן ולעלות כסף (Google API)');
+
+    if (!confirmed) {
+      return;
+    }
+
+    this.loading = true;
+
+    try {
+      // Call the backend method to geocode all missing places
+      const result: any = await Place.geocodeMissingPlaces();
+
+      this.loading = false;
+
+      if (result.success && result.processed !== undefined) {
+        const message = `הושלמה המרת כתובות!\n\nסה"כ עובדו: ${result.processed}\nעודכנו בהצלחה: ${result.updated}\nנכשלו: ${result.failed}`;
+        alert(message);
+
+        // Reload the data and refresh the map
+        await this.loadData();
+        this.addMarkersToMap();
+      } else {
+        alert('שגיאה בהמרת כתובות');
+      }
+    } catch (error) {
+      this.loading = false;
+      console.error('Error calling geocodeMissingPlaces:', error);
+      alert('שגיאה בהמרת כתובות: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    }
+  }
+
+  // Legacy method - keeping for reference (not used anymore)
+  async geocodeMissingAddresses_OLD() {
     const donorsWithoutCoords = this.donors.filter(d => {
       const place = this.donorPlaceMap.get(d.id);
       const fullAddress = this.donorFullAddressMap.get(d.id);
@@ -633,8 +512,15 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
         if (coords && place) {
           place.latitude = coords.latitude;
           place.longitude = coords.longitude;
-          // await place.save(); // Disabled for now
-          updatedCount++;
+
+          // Save the updated place to database
+          try {
+            const placeRepo = remult.repo(Place);
+            await placeRepo.save(place);
+            updatedCount++;
+          } catch (error) {
+            console.error(`Error saving place for ${donor.displayName}:`, error);
+          }
         }
 
         // הוסף delay קטן כדי לא להעמיס על השרת
@@ -661,8 +547,11 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     const changed = await this.ui.donorDetailsDialog(donorId);
     if (changed) {
       // Reload data if donor was changed to refresh the map
-      await this.loadData();
-      this.addMarkersToMap();
+      // Use setTimeout to avoid ExpressionChangedAfterItHasBeenCheckedError
+      setTimeout(async () => {
+        await this.loadData();
+        this.addMarkersToMap();
+      });
     }
   }
 
@@ -671,16 +560,20 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     const changed = await this.ui.donationDetailsDialog('new', { donorId });
     if (changed) {
       // Reload donations if needed to refresh the map data
-      await this.loadDonations();
-      this.calculateDonorStats();
-      this.addMarkersToMap();
+      // Use setTimeout to avoid ExpressionChangedAfterItHasBeenCheckedError
+      setTimeout(async () => {
+        await this.loadDonations();
+        this.calculateDonorStats();
+        this.addMarkersToMap();
+      });
     }
   }
 
   async onMapClick(e: L.LeafletMouseEvent) {
     const { lat, lng } = e.latlng;
     console.log('Map clicked at:', lat, lng);
-
+    if (!e.originalEvent.ctrlKey) return
+    
     try {
       // הצגת אינדיקטור טעינה
       this.loading = true;
@@ -778,8 +671,11 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
       if (changed) {
         // רענן את המפה
-        await this.loadData();
-        this.addMarkersToMap();
+        // Use setTimeout to avoid ExpressionChangedAfterItHasBeenCheckedError
+        setTimeout(async () => {
+          await this.loadData();
+          this.addMarkersToMap();
+        });
       }
     } catch (error) {
       console.error('Error creating donor with address:', error);

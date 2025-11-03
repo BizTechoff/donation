@@ -1,4 +1,4 @@
-import { Allow, Entity, Fields, Relations, isBackend } from 'remult';
+import { Allow, BackendMethod, Entity, Fields, Relations, isBackend, remult } from 'remult';
 import { Country } from './country';
 
 @Entity('places', {
@@ -168,5 +168,14 @@ export class Place {
     if (countryDisplay) parts.push(countryDisplay);
 
     return parts.filter(p => p).join(', ');
+  }
+
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async geocodeMissingPlaces() {
+    if (isBackend()) {
+      const { geocodeMissingPlaces } = await import('../../server/geocode-places');
+      return await geocodeMissingPlaces();
+    }
+    return { success: false, message: 'Backend only method' };
   }
 }

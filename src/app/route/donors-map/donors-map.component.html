@@ -4,7 +4,7 @@
     <div class="map-controls">
       <button class="btn btn-primary" (click)="refreshMap()">{{ i18n.terms.refreshMap }}</button>
       <button class="btn btn-secondary" (click)="toggleSummary()">{{ showSummary ? i18n.terms.hideSummary : i18n.terms.showSummary }}</button>
-      <!-- <button class="btn btn-info" (click)="geocodeMissingAddresses()" [disabled]="loading">{{ i18n.terms.convertAddresses }}</button> -->
+      <button class="btn btn-info" (click)="geocodeMissingAddresses()" [disabled]="loading">{{ i18n.terms.convertAddresses }}</button>
     </div>
   </div>
 

@@ -376,6 +376,15 @@
               [placeholder]="i18n.terms.checkNumberPlaceholder">
           </div>
 
+          <div class="form-group" *ngIf="isOrganizationPayment || (isStandingOrderPayment && donation.standingOrderType === 'organization')">
+            <div class="field-title">
+              <mat-icon class="field-icon">tag</mat-icon>
+              <label>{{i18n.terms.voucherNumber}}</label>
+            </div>
+            <input type="text" class="form-control" [(ngModel)]="donation.voucherNumber"
+              [placeholder]="i18n.terms.voucherNumberPlaceholder">
+          </div>
+
           <!-- Credit Card Fields -->
           <div class="form-group"
             *ngIf="isCreditCardPayment || (isStandingOrderPayment && donation.standingOrderType === 'creditCard')">

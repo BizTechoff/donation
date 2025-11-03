@@ -12,6 +12,16 @@
       <!-- Global Filters -->
       <app-global-filters *ngIf="remult.authenticated()"></app-global-filters>
 
+      <!-- Reminder Bell Notification -->
+      <button mat-icon-button
+              class="reminder-bell"
+              [class.reminders-active]="(activeRemindersCount$ | async) || 0 > 0"
+              *ngIf="remult.authenticated()"
+              (click)="navigateToReminders()">
+        <mat-icon>notifications</mat-icon>
+        <span *ngIf="(activeRemindersCount$ | async) as count" [class.reminder-count]="count > 0">{{ count }}</span>
+      </button>
+
       <!-- Language Switcher -->
       <app-language-switcher></app-language-switcher>
 

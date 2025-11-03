@@ -148,22 +148,14 @@ export class ReportsComponent implements OnInit {
   }
 
   private async loadGeneralStats() {
-    const donations = await this.donationRepo.find({
-      where: {
-        donationDate: { 
-          $gte: this.dateRange.from,
-          $lte: this.dateRange.to
-        }
-      }
-    });
+    const donations = await this.donationRepo.find();
+    console.log('📊 Donations loaded:', donations.length);
 
-    const donors = await this.donorRepo.find({
-      where: { isActive: true }
-    });
+    const donors = await this.donorRepo.find();
+    console.log('📊 Donors loaded:', donors.length);
 
-    const campaigns = await this.campaignRepo.find({
-      where: { isActive: true }
-    });
+    const campaigns = await this.campaignRepo.find();
+    console.log('📊 Campaigns loaded:', campaigns.length);
 
     this.totalStats.donations = donations.length;
     this.totalStats.amount = donations.reduce((sum, d) => sum + d.amount, 0);
@@ -176,11 +168,6 @@ export class ReportsComponent implements OnInit {
 
   private async loadMonthlyTrends() {
     const donations = await this.donationRepo.find({
-      where: {
-        donationDate: { 
-          $gte: new Date(new Date().getFullYear() - 1, 0, 1) // שנה אחורה
-        }
-      },
       orderBy: { donationDate: 'asc' }
     });
 
@@ -232,8 +219,7 @@ export class ReportsComponent implements OnInit {
     const donorPlaces = await remult.repo(DonorPlace).find({
       where: {
         donorId: { $in: uniqueDonorIds },
-        isPrimary: true,
-        isActive: true
+        isPrimary: true
       },
       include: { place: true }
     });
@@ -384,7 +370,7 @@ export class ReportsComponent implements OnInit {
   async loadFilterOptions() {
     try {
       this.availableDonors = await this.donorRepo.find({
-        orderBy: { displayName: 'asc' }
+        orderBy: { lastName: 'asc' }
       });
 
       this.availableCampaigns = await this.campaignRepo.find({

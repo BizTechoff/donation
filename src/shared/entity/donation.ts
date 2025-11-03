@@ -31,6 +31,20 @@ import { Roles } from '../enum/roles'
       donation.updatedDate = new Date()
     }
   },
+  saved: async (donation) => {
+    if (isBackend() && donation.donorId) {
+      // עדכון ממוצע תרומות של התורם
+      const { remult } = await import('remult')
+      await updateDonorAverage(donation.donorId, remult)
+    }
+  },
+  deleted: async (donation) => {
+    if (isBackend() && donation.donorId) {
+      // עדכון ממוצע תרומות של התורם לאחר מחיקה
+      const { remult } = await import('remult')
+      await updateDonorAverage(donation.donorId, remult)
+    }
+  },
 })
 export class Donation extends IdEntity {
   @Fields.number({
@@ -349,5 +363,27 @@ export class Donation extends IdEntity {
   async cancelDonation() {
     this.status = 'cancelled'
     await this.save()
+  }
+}
+
+// פונקציה לעדכון ממוצע תרומות של תורם
+async function updateDonorAverage(donorId: string, remult: any) {
+  const { Donor } = await import('./donor')
+  const donations = await remult.repo(Donation).find({
+    where: {
+      donorId: donorId,
+      isExceptional: false
+    }
+  })
+
+  const donor = await remult.repo(Donor).findId(donorId)
+  if (donor) {
+    if (donations.length === 0) {
+      donor.ns = 0
+    } else {
+      const sum = donations.reduce((acc: number, donation: Donation) => acc + donation.amount, 0)
+      donor.ns = sum / donations.length
+    }
+    await donor.save()
   }
 }

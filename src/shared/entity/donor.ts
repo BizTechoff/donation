@@ -348,6 +348,9 @@ export class Donor extends IdEntity {
   })
   displayName?: string
 
+  @Fields.number({ caption: 'ממוצע תרומות', allowNull: true })
+  ns?: number
+
   get fullNameGetter() {
     const parts = []
     if (this.title) parts.push(this.title)

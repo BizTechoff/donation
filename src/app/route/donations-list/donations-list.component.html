@@ -88,7 +88,7 @@
       <thead>
         <tr>
           <th>{{ (i18n.terms$ | async)?.donorColumn }}</th>
-          <th>{{ (i18n.terms$ | async)?.dateColumn }}</th>
+          <th>כתובת מגורים</th>
           <th>{{ (i18n.terms$ | async)?.amountColumn }}</th>
           <th>{{ (i18n.terms$ | async)?.currencyColumn }}</th>
           <th>{{ (i18n.terms$ | async)?.methodColumn }}</th>
@@ -98,17 +98,15 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let donation of donationsWithCampaign">
+        <tr *ngFor="let donation of donations">
           <td class="donor-col">
             <strong>{{ getDonorName(donation) }}</strong>
           </td>
-          <td class="date-col">
-            <div class="date-display">
-              <span class="hebrew-date">{{ donation.donationDate | date:'dd/MM/yyyy' }}</span>
-            </div>
+          <td class="address-col">
+            <span>{{ getDonorHomeAddress(donation) }}</span>
           </td>
           <td class="amount-col">
-            <span class="amount">₪{{donation.amount | number}}</span>
+            <span class="amount">{{donation.amount | number}}</span>
           </td>
           <td class="currency-col">{{ getCurrencyName(donation.currency) }}</td>
           <td class="method-col">

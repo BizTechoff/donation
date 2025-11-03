@@ -378,7 +378,7 @@ export class RemindersComponent implements OnInit, OnDestroy {
       // Get the parsha for that Saturday
       const parsha = sedra.get(hSaturday);
 
-      console.log('Date:', date, 'Saturday:', saturday, 'Parsha:', parsha);
+      // console.log('Date:', date, 'Saturday:', saturday, 'Parsha:', parsha);
 
       if (parsha && parsha.length > 0) {
         // parsha is an array of parsha names (in English)
@@ -443,11 +443,11 @@ export class RemindersComponent implements OnInit, OnDestroy {
         };
 
         const hebrewName = englishToHebrewMap[parshaEnglish];
-        console.log('English:', parshaEnglish, 'Hebrew:', hebrewName);
+        // console.log('English:', parshaEnglish, 'Hebrew:', hebrewName);
 
         if (hebrewName) {
           const index = this.torahPortions.indexOf(hebrewName);
-          console.log('Index found:', index);
+          // console.log('Index found:', index);
           return index >= 0 ? index : 0;
         }
       }

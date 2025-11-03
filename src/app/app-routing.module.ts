@@ -33,7 +33,7 @@ const routes: Routes = [
   { path: terms.reports, component: ReportsComponent, canActivate: [AdminGuard], data: { name: 'reports' } },
   // ---------------
   { path: terms.userAccounts, component: UsersComponent, canActivate: [AdminGuard], data: { name: 'userAccounts' } },
-  { path: 'seed-data', component: SeedDataComponent, canActivate: [AdminGuard], data: { name: 'seedData' } },
+  // { path: 'seed-data', component: SeedDataComponent, canActivate: [AdminGuard], data: { name: 'seedData' } },
   { path: '', component: SilentRedirectComponent, pathMatch: 'full' },
   { path: '**', component: SilentRedirectComponent } // תופס כל נתיב 
 ]

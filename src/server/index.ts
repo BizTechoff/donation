@@ -9,6 +9,7 @@ import { api } from './api'
 import './docx'
 import { getPlace, getPlaces, reverseGeocode } from './geo'
 import './s3'
+import { checkAndSendReminders } from './scheduler'
 
 async function startup() {
   const app = express()
@@ -51,5 +52,6 @@ async function startup() {
   })
   let port = process.env['PORT'] || 3002
   app.listen(port)
+
 }
 startup()

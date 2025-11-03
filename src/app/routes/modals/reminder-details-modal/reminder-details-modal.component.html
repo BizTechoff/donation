@@ -267,7 +267,8 @@
               <div class="form-group">
                 <label>{{ (i18n.terms$ | async)?.assignToDonor }}</label>
                 <select class="form-control" [(ngModel)]="reminder.relatedDonorId"
-                  (ngModelChange)="onDonorSelectionChange($event)">
+                  (ngModelChange)="onDonorSelectionChange($event)"
+                  (focus)="onDonorDropdownOpen()">
                   <option value="">{{ (i18n.terms$ | async)?.noAssignment }}</option>
                   <option *ngFor="let donor of donors" [value]="donor.id">
                     {{ donor.fullName }}
@@ -279,7 +280,8 @@
             <div class="form-row">
               <div class="form-group">
                 <label>{{ (i18n.terms$ | async)?.assignToDonation }}</label>
-                <select class="form-control" [(ngModel)]="reminder.relatedDonationId">
+                <select class="form-control" [(ngModel)]="reminder.relatedDonationId"
+                  (focus)="onDonationDropdownOpen()">
                   <option value="">{{ (i18n.terms$ | async)?.noAssignment }}</option>
                   <option *ngFor="let donation of filteredDonations" [value]="donation.id">
                     {{ getDonationDisplayText(donation) }}

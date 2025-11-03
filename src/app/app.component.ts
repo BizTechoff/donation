@@ -12,6 +12,7 @@ import { SignInController } from './users/SignInController'
 import { UpdatePasswordController } from './users/UpdatePasswordController'
 import { remult } from 'remult'
 import { User } from '../shared/entity/user'
+import { Reminder } from '../shared/entity/reminder'
 import { terms } from './terms'
  
 @Component({
@@ -21,7 +22,13 @@ import { terms } from './terms'
 })
 export class AppComponent implements OnInit {
   version = '2025.10.29' // environment.production ? '2025.08.05' : '2025.07.31'
-  
+
+  // Active reminders count - will be updated in ngOnInit
+  activeRemindersCount$ = new Observable<number>((observer) => {
+    observer.next(0)
+    observer.complete()
+  })
+
   constructor(
     public router: Router,
     public activeRoute: ActivatedRoute,
@@ -53,11 +60,32 @@ export class AppComponent implements OnInit {
   ngOnInit(): void {
     // Initialize document direction based on current language
     this.updateDocumentDirection()
-    
+
     // Subscribe to language changes
     this.i18n.language$.subscribe(() => {
       this.updateDocumentDirection()
     })
+
+    // Initialize active reminders count live query
+    if (remult.user?.id) {
+      const today = new Date()
+      console.log('activeRemindersCount$',today)
+      this.activeRemindersCount$ = new Observable((observer) => {
+        const liveQuery = remult.repo(Reminder).liveQuery({
+          where: {
+            nextReminderDate: { $lte: today },
+            isCompleted: false,
+            isActive: true //,
+            // assignedToId: remult.user!.id
+          }
+        })
+
+        liveQuery.subscribe({
+          next: (result: any) => observer.next(result.items.length),
+          error: (err: any) => observer.error(err)
+        })
+      })
+    }
   }
 
   private updateDocumentDirection(): void {
@@ -204,6 +232,11 @@ export class AppComponent implements OnInit {
   openBizTechoff() {
     window?.open(`https://biztechoff.co.il/`, '_blank')
     // window?.open(`https://biztechoff.co.il/v/${this.version}`, '_blank')
+  }
+
+  async navigateToReminders() {
+    const { RemindersListModalComponent } = await import('./routes/modals/reminders-list-modal/reminders-list-modal.component')
+    await RemindersListModalComponent.open()
   }
 
 }

@@ -1,7 +1,7 @@
-import { Entity, Fields } from 'remult';
+import { Allow, Entity, Fields } from 'remult';
 
 @Entity('noteTypes', {
-  allowApiCrud: true,
+  allowApiCrud: Allow.authenticated,
   caption: 'סוגי הערות'
 })
 export class NoteType {

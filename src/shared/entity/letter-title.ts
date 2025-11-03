@@ -1,7 +1,7 @@
-import { Entity, Fields } from 'remult';
+import { Allow, Entity, Fields } from 'remult';
 
 @Entity('letterTitles', {
-  allowApiCrud: true,
+  allowApiCrud: Allow.authenticated,
   caption: 'כותרות מכתב'
 })
 export class LetterTitle {

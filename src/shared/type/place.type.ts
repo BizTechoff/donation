@@ -1,6 +1,7 @@
 
 export interface placeDto {
     valid: boolean,
+    placeId?: string,   // Google Place ID
     x: number,         // Longitude
     y: number,         // Latitude
     streetname: string, // Street Name

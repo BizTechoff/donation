@@ -3,7 +3,7 @@ import { ActivatedRoute } from '@angular/router';
 import { remult } from 'remult';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
-import { Campaign, Donation, DonationMethod, Donor } from '../../../shared/entity';
+import { Campaign, Donation, DonationMethod, Donor, DonorPlace } from '../../../shared/entity';
 import { UIToolsService } from '../../common/UIToolsService';
 import { I18nService } from '../../i18n/i18n.service';
 import { GlobalFilterService } from '../../services/global-filter.service';
@@ -19,11 +19,13 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   donors: Donor[] = [];
   campaigns: Campaign[] = [];
   donationMethods: DonationMethod[] = [];
+  donorPlacesMap = new Map<string, DonorPlace>();
 
   donationRepo = remult.repo(Donation);
   donorRepo = remult.repo(Donor);
   campaignRepo = remult.repo(Campaign);
   donationMethodRepo = remult.repo(DonationMethod);
+  donorPlaceRepo = remult.repo(DonorPlace);
 
   loading = false;
   showAddDonationModal = false;
@@ -155,6 +157,9 @@ export class DonationsListComponent implements OnInit, OnDestroy {
       where: Object.keys(where).length > 0 ? where : undefined
     });
 
+    // Load donor home addresses
+    await this.loadDonorAddresses();
+
     // Calculate completed donations count once after loading
     this.completedDonationsCountCache = this.donations.filter(d => d.status === 'completed').length;
   }
@@ -178,6 +183,33 @@ export class DonationsListComponent implements OnInit, OnDestroy {
       where: { isActive: true },
       orderBy: { name: 'asc' }
     });
+  }
+
+  async loadDonorAddresses() {
+    // Get unique donor IDs from donations
+    const donorIds = [...new Set(this.donations.map(d => d.donorId).filter(id => id))];
+
+    if (donorIds.length === 0) return;
+
+    // Load home addresses (בית) for all donors
+    const donorPlaces = await this.donorPlaceRepo.find({
+      where: {
+        donorId: { $in: donorIds },
+        isActive: true
+      },
+      include: {
+        place: { include: { country: true } },
+        addressType: true
+      }
+    });
+
+    // Create map of donor ID to home address
+    this.donorPlacesMap.clear();
+    for (const dp of donorPlaces) {
+      if (dp.donorId && dp.addressType?.name === 'בית') {
+        this.donorPlacesMap.set(dp.donorId, dp);
+      }
+    }
   }
 
   async createDonation() {
@@ -420,6 +452,15 @@ export class DonationsListComponent implements OnInit, OnDestroy {
     return donation.donor?.displayName || this.i18n.currentTerms.unknown || '';
   }
 
+  getDonorHomeAddress(donation: Donation): string {
+    if (!donation.donorId) return '-';
+
+    const donorPlace = this.donorPlacesMap.get(donation.donorId);
+    if (!donorPlace?.place) return '-';
+
+    return donorPlace.place.getDisplayAddress() || '-';
+  }
+
   getCampaignName(donation: Donation): string {
     return donation.campaign?.name || this.i18n.currentTerms.withoutCampaign || '';
   }
@@ -559,6 +600,10 @@ export class DonationsListComponent implements OnInit, OnDestroy {
       },
       where
     });
+
+    // Load donor addresses after filtering
+    await this.loadDonorAddresses();
+
     this.completedDonationsCountCache = this.donations.filter(d => d.status === 'completed').length;
   }
 }

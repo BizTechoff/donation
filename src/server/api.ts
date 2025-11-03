@@ -1,3 +1,4 @@
+import cron from 'node-cron'
 import { createPostgresConnection } from 'remult/postgres'
 import { remultExpress } from 'remult/remult-express'
 import { SignInController, getUser } from '../app/users/SignInController'
@@ -23,6 +24,7 @@ import { DonationFile } from '../shared/entity/file'
 import { Place } from '../shared/entity/place'
 import { Reminder } from '../shared/entity/reminder'
 import { User } from '../shared/entity/user'
+import { checkAndSendReminders } from './scheduler'
 
 export const entities = [
   User, Donor, Donation, Campaign, DonationMethod, Reminder,
@@ -39,5 +41,17 @@ export const api = remultExpress({
       sslInDev: !(process.env['DEV_MODE'] === 'DEV')
     })
   },
-  // initApi: r=> seedLetterTitles()
+  initApi: async r => {
+    // Setup cron job to check reminders every 5 minutes
+    console.log('[Server] Setting up reminder scheduler (every 5 minutes)...')
+    // cron.schedule('*/5 * * * *', async () => {
+    cron.schedule('*/1 * * * *', async () => {
+      console.log('[Cron] Running reminder check at:', new Date().toISOString())
+      await checkAndSendReminders()
+    })
+
+    // Run once on startup
+    console.log('[Server] Running initial reminder check...')
+    await checkAndSendReminders()
+  }
 })

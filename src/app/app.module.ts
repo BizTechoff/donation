@@ -72,6 +72,7 @@ import { OsmAddressInputComponent } from './common/osm-address-input/osm-address
 import { LetterPropertiesModalComponent } from './routes/modals/letter-properties-modal/letter-properties-modal.component'
 import { LetterTitleSelectionModalComponent } from './routes/modals/letter-title-selection-modal/letter-title-selection-modal.component'
 import { ReminderDetailsModalComponent } from './routes/modals/reminder-details-modal/reminder-details-modal.component'
+import { RemindersListModalComponent } from './routes/modals/reminders-list-modal/reminders-list-modal.component'
 import { DonationDetailsModalComponent } from './routes/modals/donation-details-modal/donation-details-modal.component'
 import { CampaignDetailsModalComponent } from './routes/modals/campaign-details-modal/campaign-details-modal.component'
 import { CampaignInvitedListModalComponent } from './routes/modals/campaign-invited-list-modal/campaign-invited-list-modal.component'
@@ -129,6 +130,7 @@ import { GiftCatalogModalComponent } from './routes/modals/gift-catalog-modal/gi
     LetterPropertiesModalComponent,
     LetterTitleSelectionModalComponent,
     ReminderDetailsModalComponent,
+    RemindersListModalComponent,
     DonationDetailsModalComponent,
     CampaignDetailsModalComponent,
     CampaignInvitedListModalComponent,

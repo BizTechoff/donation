@@ -231,11 +231,27 @@ export class DonorService {
       }
     });
 
-    // Process donations - calculate total per donor
+    // Process donations - calculate average per donor (excluding exceptional donations)
+    const donorDonationsCount = new Map<string, number>();
+    const donorDonationsSum = new Map<string, number>();
+
     allDonations.forEach(donation => {
       if (!donation.donorId) return;
-      const currentTotal = donorTotalDonationsMap.get(donation.donorId) || 0;
-      donorTotalDonationsMap.set(donation.donorId, currentTotal + (donation.amount || 0));
+      // Skip exceptional donations (isExceptional)
+      if (donation.isExceptional) return;
+
+      const currentSum = donorDonationsSum.get(donation.donorId) || 0;
+      const currentCount = donorDonationsCount.get(donation.donorId) || 0;
+
+      donorDonationsSum.set(donation.donorId, currentSum + (donation.amount || 0));
+      donorDonationsCount.set(donation.donorId, currentCount + 1);
+    });
+
+    // Calculate average
+    donorDonationsSum.forEach((sum, donorId) => {
+      const count = donorDonationsCount.get(donorId) || 1;
+      const average = sum / count;
+      donorTotalDonationsMap.set(donorId, average);
     });
 
     return {

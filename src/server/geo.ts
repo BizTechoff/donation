@@ -151,6 +151,64 @@ export const doGetPlace = async (place_id = '', lang = '') => {
     return result
 }
 
+/**
+ * Geocode an address to get coordinates and place details
+ * @param address Full address string
+ * @param lang Language preference (default: 'he')
+ * @returns Place details including coordinates, placeId, and address components
+ */
+export const geocodeAddress = async (address: string, lang = 'he') => {
+    if (!address || address.trim().length === 0) {
+        console.warn('geocodeAddress: Missing or empty address');
+        return null;
+    }
+
+    try {
+        const langParam = getLanguageParam(lang);
+        const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${process.env['GOOGLE_GEO_API_KEY']}${langParam}`;
+
+        console.log('Geocoding address:', address);
+
+        const response = await fetch(geocodeUrl, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json; charset=UTF-8',
+                'Cache-Control': 'no-store'
+            }
+        });
+
+        if (!response.ok) {
+            console.error(`Geocode failed with status ${response.status}`);
+            return null;
+        }
+
+        const geocodeData = await response.json();
+        console.log('Geocode data status:', geocodeData.status);
+
+        if (geocodeData.status === 'OK' && geocodeData.results && geocodeData.results.length > 0) {
+            const geocodeResult = geocodeData.results[0];
+            const placeId = geocodeResult.place_id;
+
+            console.log('Got place_id:', placeId);
+
+            // Use the existing doGetPlace to get full details
+            const placeDetails = await doGetPlace(placeId, lang);
+
+            // Add the placeId to the result
+            placeDetails.placeId = placeId;
+
+            return placeDetails;
+        } else {
+            console.warn('No results from geocode, status:', geocodeData.status);
+            return null;
+        }
+    } catch (error) {
+        console.error('Error in geocodeAddress:', error);
+        return null;
+    }
+};
+
 export const reverseGeocode = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     console.debug('reverseGeocode called at ' + new Date().toString());
 

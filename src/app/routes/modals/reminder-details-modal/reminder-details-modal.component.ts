@@ -51,6 +51,10 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
   donations: Donation[] = [];
   filteredDonations: Donation[] = [];
 
+  // Track if data has been loaded
+  private donorsLoaded = false;
+  private donationsLoaded = false;
+
   // Maps for donor-related data
   donorEmailMap = new Map<string, string>();
   donorPhoneMap = new Map<string, string>();
@@ -95,12 +99,9 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
       // Initialize options with i18n
       this.initializeOptions();
 
-      // Load data in parallel
-      await Promise.all([
-        this.loadFundraisers(),
-        this.loadDonors(),
-        this.loadDonations()
-      ]);
+      // Load only fundraisers initially (much faster)
+      // Donors and donations will be loaded on-demand when user clicks the dropdown
+      await this.loadFundraisers();
 
       // Check if new or editing
       if (!this.args.reminderId || this.args.reminderId === 'new') {
@@ -514,6 +515,8 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
   }
 
   async loadDonors() {
+    if (this.donorsLoaded) return; // Skip if already loaded
+
     this.donors = await this.donorRepo.find({
       orderBy: { lastName: 'asc', firstName: 'asc' }
     });
@@ -540,9 +543,12 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
     });
 
     await Promise.all(placePromises);
+    this.donorsLoaded = true;
   }
 
   async loadDonations() {
+    if (this.donationsLoaded) return; // Skip if already loaded
+
     this.donations = await this.donationRepo.find({
       include: {
         donor: true,
@@ -551,6 +557,7 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
       orderBy: { donationDate: 'desc' }
     });
     this.filteredDonations = [...this.donations]; // Initialize with all donations
+    this.donationsLoaded = true;
   }
 
   async onDonorSelectionChange(donorId: string) {
@@ -594,6 +601,18 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
       this.filteredDonations = [...this.donations];
     }
 
+  }
+
+  async onDonorDropdownOpen() {
+    if (!this.donorsLoaded) {
+      await this.loadDonors();
+    }
+  }
+
+  async onDonationDropdownOpen() {
+    if (!this.donationsLoaded) {
+      await this.loadDonations();
+    }
   }
 
   getDonationDisplayText(donation: Donation): string {
@@ -667,9 +686,7 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
 
     this.alertMethodOptions = [
       { value: 'email', label: terms.emailAlert },
-      { value: 'sms', label: terms.smsAlert },
-      { value: 'popup', label: terms.popupAlert },
-      { value: 'none', label: terms.noAlert }
+      { value: 'popup', label: terms.popupAlert }
     ];
 
     this.recurringPatternOptions = [

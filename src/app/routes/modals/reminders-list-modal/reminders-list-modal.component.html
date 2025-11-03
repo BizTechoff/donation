@@ -1,0 +1,126 @@
+<div class="reminders-list-modal" [attr.dir]="i18n.lang.RTL ? 'rtl' : 'ltr'">
+  <!-- Header -->
+  <div class="modal-header">
+    <h2>תזכורות פעילות</h2>
+    <button mat-icon-button (click)="close()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading-container">
+    <mat-progress-spinner mode="indeterminate" diameter="50"></mat-progress-spinner>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && reminders.length === 0" class="empty-state">
+    <mat-icon class="empty-icon">notifications_none</mat-icon>
+    <h3>אין תזכורות פעילות</h3>
+    <p>כל התזכורות הושלמו או שאין תזכורות שמגיע מועדן</p>
+  </div>
+
+  <!-- Reminders List -->
+  <div *ngIf="!loading && reminders.length > 0" class="reminders-container">
+    <div *ngFor="let reminder of reminders" class="reminder-card" [ngClass]="getPriorityClass(reminder.priority)">
+      <!-- Priority Indicator -->
+      <div class="priority-indicator">
+        <mat-icon>{{ getPriorityIcon(reminder.priority) }}</mat-icon>
+      </div>
+
+      <!-- Reminder Content -->
+      <div class="reminder-content">
+        <!-- Title & Type -->
+        <div class="reminder-header">
+          <h3>{{ reminder.title }}</h3>
+          <span class="reminder-type">{{ reminder.typeText }}</span>
+        </div>
+
+        <!-- Description -->
+        <p *ngIf="reminder.description" class="reminder-description">{{ reminder.description }}</p>
+
+        <!-- Details -->
+        <div class="reminder-details">
+          <div class="detail-item" *ngIf="reminder.relatedDonor">
+            <mat-icon>person</mat-icon>
+            <span>{{ reminder.relatedDonor.displayName }}</span>
+          </div>
+
+          <div class="detail-item">
+            <mat-icon>calendar_today</mat-icon>
+            <span>{{ reminder.dueDate | date:'short':'':'he-IL' }}</span>
+          </div>
+
+          <div class="detail-item" *ngIf="reminder.dueTime">
+            <mat-icon>schedule</mat-icon>
+            <span>{{ reminder.dueTime }}</span>
+          </div>
+
+          <div class="detail-item" *ngIf="reminder.assignedTo">
+            <mat-icon>assignment_ind</mat-icon>
+            <span>{{ reminder.assignedTo.name }}</span>
+          </div>
+
+          <div class="detail-item priority-badge" [ngClass]="getPriorityClass(reminder.priority)">
+            <span>{{ reminder.priorityText }}</span>
+          </div>
+
+          <div class="detail-item" *ngIf="reminder.isRecurring">
+            <mat-icon>repeat</mat-icon>
+            <span>חוזר</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="reminder-actions">
+        <button mat-icon-button
+                matTooltip="סמן כהושלם"
+                (click)="markAsCompleted(reminder)"
+                class="action-complete">
+          <mat-icon>check_circle</mat-icon>
+        </button>
+
+        <button mat-icon-button
+                [matMenuTriggerFor]="snoozeMenu"
+                matTooltip="דחה"
+                class="action-snooze">
+          <mat-icon>snooze</mat-icon>
+        </button>
+
+        <mat-menu #snoozeMenu="matMenu">
+          <button mat-menu-item (click)="snoozeReminder(reminder, 1)">
+            <mat-icon>schedule</mat-icon>
+            <span>דחה שעה</span>
+          </button>
+          <button mat-menu-item (click)="snoozeReminder(reminder, 4)">
+            <mat-icon>schedule</mat-icon>
+            <span>דחה 4 שעות</span>
+          </button>
+          <button mat-menu-item (click)="snoozeReminder(reminder, 24)">
+            <mat-icon>schedule</mat-icon>
+            <span>דחה יום</span>
+          </button>
+          <button mat-menu-item (click)="snoozeReminder(reminder, 168)">
+            <mat-icon>schedule</mat-icon>
+            <span>דחה שבוע</span>
+          </button>
+        </mat-menu>
+
+        <button mat-icon-button
+                matTooltip="סמן כנראה (קבע הבא)"
+                (click)="markAsSeen(reminder)"
+                class="action-seen"
+                *ngIf="reminder.isRecurring">
+          <mat-icon>visibility</mat-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <div *ngIf="!loading && reminders.length > 0" class="modal-footer">
+    <span class="reminders-count">
+      {{ reminders.length }} {{ reminders.length === 1 ? 'תזכורת' : 'תזכורות' }}
+    </span>
+  </div>
+</div>

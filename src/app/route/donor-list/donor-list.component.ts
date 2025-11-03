@@ -16,6 +16,7 @@ import { remult } from 'remult';
 export class DonorListComponent implements OnInit, OnDestroy {
 
   donors: Donor[] = [];
+  filteredDonors: Donor[] = [];
   loading = false;
   private subscription = new Subscription();
 
@@ -29,6 +30,9 @@ export class DonorListComponent implements OnInit, OnDestroy {
   allDonors: NavigationRecord[] = [];
   filterOptions: FilterOption[] = [];
   currentDonorRecord?: NavigationRecord;
+
+  // Local filter properties
+  searchTerm = '';
 
   constructor(
     public i18n: I18nService,
@@ -89,11 +93,42 @@ export class DonorListComponent implements OnInit, OnDestroy {
       this.donorFullAddressMap = relatedData.donorFullAddressMap;
       this.donorTotalDonationsMap = relatedData.donorTotalDonationsMap;
 
+      // Apply local filters
+      this.applyLocalFilters();
+
     } catch (error) {
       console.error('Error loading donors:', error);
     } finally {
       this.loading = false;
     }
+  }
+
+  applyLocalFilters() {
+    let filtered = [...this.donors];
+
+    // Apply search term filter
+    if (this.searchTerm && this.searchTerm.trim() !== '') {
+      const searchLower = this.searchTerm.toLowerCase().trim();
+      filtered = filtered.filter(donor => {
+        const name = (donor.fullName || '').toLowerCase();
+        const idNumber = (donor.idNumber || '').toLowerCase();
+        const address = (this.getDonorAddress(donor.id) || '').toLowerCase();
+        const phone = (this.getDonorPhone(donor.id) || '').toLowerCase();
+        const email = (this.getDonorEmail(donor.id) || '').toLowerCase();
+
+        return name.includes(searchLower) ||
+               idNumber.includes(searchLower) ||
+               address.includes(searchLower) ||
+               phone.includes(searchLower) ||
+               email.includes(searchLower);
+      });
+    }
+
+    this.filteredDonors = filtered;
+  }
+
+  onLocalFilterChange() {
+    this.applyLocalFilters();
   }
 
   async createDonor() {

@@ -1,0 +1,35 @@
+:host {
+  display: block !important;
+  width: 77px !important;
+  max-width: 77px !important;
+  min-width: 77px !important;
+  height: 77px !important;
+  max-height: 77px !important;
+  min-height: 77px !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  padding: 0 !important;
+  margin: 0 auto !important;
+}
+
+mat-progress-spinner {
+  width: 77px !important;
+  height: 77px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+::ng-deep mat-progress-spinner {
+  width: 77px !important;
+  height: 77px !important;
+
+  svg {
+    width: 77px !important;
+    height: 77px !important;
+  }
+
+  circle {
+    stroke: #3498db !important;
+    stroke-width: 4px !important;
+  }
+}
