@@ -64,17 +64,11 @@ export class CampaignDetailsModalComponent implements OnInit {
         this.campaign = this.campaignRepo.create();
         this.campaign.startDate = new Date();
         this.campaign.currency = 'ILS';
-        this.campaign.status = 'draft';
         this.campaign.campaignType = 'רגיל';
         this.campaign.isActive = true;
-        this.campaign.isPublic = true;
         this.campaign.targetAmount = 0;
         this.campaign.raisedAmount = 0;
-        this.campaign.invitationLevels = [];
-        this.campaign.excludedLevels = [];
-        this.campaign.sameCountryOnly = false;
-        this.campaign.excludeAnash = false;
-        this.campaign.excludeSameCountry = false;
+        this.campaign.invitedDonorFilters = {};
 
         this.originalCampaignData = JSON.stringify(this.campaign);
       } else {
@@ -115,13 +109,7 @@ export class CampaignDetailsModalComponent implements OnInit {
   }
 
   async loadSelectedUsers() {
-    if (this.campaign?.managerId) {
-      try {
-        this.selectedManager = await this.userRepo.findId(this.campaign.managerId) || undefined;
-      } catch (error) {
-        console.error('Error loading selected manager:', error);
-      }
-    }
+    // Manager field removed from Campaign entity
 
     if (this.campaign?.createdById) {
       try {
@@ -429,19 +417,22 @@ export class CampaignDetailsModalComponent implements OnInit {
 
   // Getters for status checks
   get isDraft(): boolean {
-    return this.campaign?.status === 'draft';
+    // Status removed - use isActive instead
+    return !this.campaign?.isActive && this.isNewCampaign;
   }
 
   get isActive(): boolean {
-    return this.campaign?.status === 'active';
+    return this.campaign?.isActive === true;
   }
 
   get isCompleted(): boolean {
-    return this.campaign?.status === 'completed';
+    // Status removed - based on dates
+    return this.campaign?.endDate ? new Date() > this.campaign.endDate : false;
   }
 
   get isCancelled(): boolean {
-    return this.campaign?.status === 'cancelled';
+    // Status removed
+    return false;
   }
 
   get canEdit(): boolean {
@@ -462,24 +453,28 @@ export class CampaignDetailsModalComponent implements OnInit {
 
   // Methods for level selection
   isLevelSelected(level: DonorLevel): boolean {
-    if (!this.campaign?.invitationLevels) {
+    if (!this.campaign?.invitedDonorFilters?.invitationLevels) {
       return false;
     }
-    return this.campaign.invitationLevels.includes(level.value);
+    return this.campaign.invitedDonorFilters.invitationLevels.includes(level.value);
   }
 
   toggleLevel(level: DonorLevel) {
     if (!this.campaign) return;
 
-    if (!this.campaign.invitationLevels) {
-      this.campaign.invitationLevels = [];
+    if (!this.campaign.invitedDonorFilters) {
+      this.campaign.invitedDonorFilters = {};
     }
 
-    const index = this.campaign.invitationLevels.indexOf(level.value);
+    if (!this.campaign.invitedDonorFilters.invitationLevels) {
+      this.campaign.invitedDonorFilters.invitationLevels = [];
+    }
+
+    const index = this.campaign.invitedDonorFilters.invitationLevels.indexOf(level.value);
     if (index > -1) {
-      this.campaign.invitationLevels.splice(index, 1);
+      this.campaign.invitedDonorFilters.invitationLevels.splice(index, 1);
     } else {
-      this.campaign.invitationLevels.push(level.value);
+      this.campaign.invitedDonorFilters.invitationLevels.push(level.value);
     }
 
     this.markAsChanged();
@@ -487,24 +482,28 @@ export class CampaignDetailsModalComponent implements OnInit {
 
   // Methods for exclusion criteria
   isLevelExcluded(level: DonorLevel): boolean {
-    if (!this.campaign?.excludedLevels) {
+    if (!this.campaign?.invitedDonorFilters?.excludedLevels) {
       return false;
     }
-    return this.campaign.excludedLevels.includes(level.value);
+    return this.campaign.invitedDonorFilters.excludedLevels.includes(level.value);
   }
 
   toggleExcludedLevel(level: DonorLevel) {
     if (!this.campaign) return;
 
-    if (!this.campaign.excludedLevels) {
-      this.campaign.excludedLevels = [];
+    if (!this.campaign.invitedDonorFilters) {
+      this.campaign.invitedDonorFilters = {};
     }
 
-    const index = this.campaign.excludedLevels.indexOf(level.value);
+    if (!this.campaign.invitedDonorFilters.excludedLevels) {
+      this.campaign.invitedDonorFilters.excludedLevels = [];
+    }
+
+    const index = this.campaign.invitedDonorFilters.excludedLevels.indexOf(level.value);
     if (index > -1) {
-      this.campaign.excludedLevels.splice(index, 1);
+      this.campaign.invitedDonorFilters.excludedLevels.splice(index, 1);
     } else {
-      this.campaign.excludedLevels.push(level.value);
+      this.campaign.invitedDonorFilters.excludedLevels.push(level.value);
     }
 
     this.markAsChanged();

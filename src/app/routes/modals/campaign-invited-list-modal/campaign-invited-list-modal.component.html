@@ -44,14 +44,14 @@
           </div>
           <div class="filter-options">
             <label class="option-checkbox">
-              <input type="checkbox" [(ngModel)]="campaign.isAnash"
-                     [disabled]="!canEdit || campaign.excludeAnash"
+              <input type="checkbox" [(ngModel)]="campaign.invitedDonorFilters.isAnash"
+                     [disabled]="!canEdit || !!campaign.invitedDonorFilters?.excludeAnash"
                      (ngModelChange)="onAnashIncludeChange()">
               <span class="checkbox-label include">✓ כולל</span>
             </label>
             <label class="option-checkbox">
-              <input type="checkbox" [(ngModel)]="campaign.excludeAnash"
-                     [disabled]="!canEdit || campaign.isAnash"
+              <input type="checkbox" [(ngModel)]="campaign.invitedDonorFilters.excludeAnash"
+                     [disabled]="!canEdit || !!campaign.invitedDonorFilters?.isAnash"
                      (ngModelChange)="onAnashExcludeChange()">
               <span class="checkbox-label exclude">✗ לא כולל</span>
             </label>
@@ -147,12 +147,12 @@
             <span class="filter-label">{{ (i18n.terms$ | async)?.ageRangeLabel }}</span>
           </div>
           <div class="age-inputs">
-            <input type="number" class="age-input" [(ngModel)]="campaign.minAge"
+            <input type="number" class="age-input" [(ngModel)]="campaign.invitedDonorFilters.minAge"
                    [disabled]="!canEdit" [placeholder]="(i18n.terms$ | async)?.ageFromPlaceholder"
                    min="0" max="120"
                    (ngModelChange)="markAsChanged()">
             <span class="age-separator">-</span>
-            <input type="number" class="age-input" [(ngModel)]="campaign.maxAge"
+            <input type="number" class="age-input" [(ngModel)]="campaign.invitedDonorFilters.maxAge"
                    [disabled]="!canEdit" [placeholder]="(i18n.terms$ | async)?.ageToPlaceholder"
                    min="0" max="120"
                    (ngModelChange)="markAsChanged()">

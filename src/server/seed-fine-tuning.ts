@@ -123,7 +123,6 @@ async function fineTuneCampaigns(excelData: ExcelDonationRow[]) {
     campaign.name = campaignInfo.fullName
     campaign.description = `קמפיין דינער ${campaignInfo.year ? `לשנת ${campaignInfo.year}` : ''} קוד ${campaignInfo.code}`.trim()
     campaign.campaignType = 'דינער'
-    campaign.status = 'completed'
     campaign.isActive = false
     campaign.startDate = new Date()
     campaign.currency = 'ILS'

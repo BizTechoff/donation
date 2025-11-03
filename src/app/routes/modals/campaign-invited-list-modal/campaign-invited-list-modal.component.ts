@@ -254,15 +254,15 @@ export class CampaignInvitedListModalComponent implements OnInit {
   private get hasInclusiveFilters(): boolean {
     if (!this.campaign) return false;
     return !!(
-      this.campaign.isAnash ||
+      this.campaign.invitedDonorFilters?.isAnash ||
       this.includeAlumni ||
       this.selectedCountry ||
       this.selectedCity ||
       this.selectedNeighborhood ||
       this.selectedCircleId ||
-      this.campaign.circle ||
-      this.campaign.minAge ||
-      this.campaign.maxAge
+      this.campaign.invitedDonorFilters?.circle ||
+      this.campaign.invitedDonorFilters?.minAge ||
+      this.campaign.invitedDonorFilters?.maxAge
     );
   }
 
@@ -270,7 +270,7 @@ export class CampaignInvitedListModalComponent implements OnInit {
   private get hasExclusiveFilters(): boolean {
     if (!this.campaign) return false;
     return !!(
-      this.campaign.excludeAnash ||
+      this.campaign.invitedDonorFilters?.excludeAnash ||
       this.excludeAlumni
     );
   }
@@ -320,26 +320,26 @@ export class CampaignInvitedListModalComponent implements OnInit {
     }
 
     // Apply אנ"ש inclusive filter
-    if (this.campaign.isAnash) {
+    if (this.campaign.invitedDonorFilters?.isAnash) {
     console.log('isAnash',donor.isAnash,donor.firstName)
       if (!donor.isAnash) return false;
     console.log('isAnash 2',donor.isAnash,donor.firstName)
     }
 
     // Apply age filters
-    if (this.campaign.minAge || this.campaign.maxAge) {
+    if (this.campaign.invitedDonorFilters?.minAge || this.campaign.invitedDonorFilters?.maxAge) {
     console.log('minAge')
       if (birthDate) {
         const age = this.calculateAge(birthDate);
-        if (this.campaign.minAge && age < this.campaign.minAge) return false;
-        if (this.campaign.maxAge && age > this.campaign.maxAge) return false;
+        if (this.campaign.invitedDonorFilters.minAge && age < this.campaign.invitedDonorFilters.minAge) return false;
+        if (this.campaign.invitedDonorFilters.maxAge && age > this.campaign.invitedDonorFilters.maxAge) return false;
       }
     }
 
-    // Apply circle filter from campaign (old style)
-    if (this.campaign.circle) {
-    console.log('circle',this.campaign.circle,donor.circleIds?.length)
-      if (donor.level !== this.campaign.circle) {
+    // Apply circle filter from campaign
+    if (this.campaign.invitedDonorFilters?.circle) {
+    console.log('circle',this.campaign.invitedDonorFilters.circle,donor.circleIds?.length)
+      if (donor.level !== this.campaign.invitedDonorFilters.circle) {
         return false;
       }
     }
@@ -355,7 +355,7 @@ export class CampaignInvitedListModalComponent implements OnInit {
     }
 
     // Exclude אנ"ש
-    if (this.campaign.excludeAnash && donor.isAnash) {
+    if (this.campaign.invitedDonorFilters?.excludeAnash && donor.isAnash) {
       return true;
     }
 
@@ -377,8 +377,8 @@ export class CampaignInvitedListModalComponent implements OnInit {
 
   private updateFilterStats() {
     // Update filtering statistics for display
-    this.filteredByAnash = this.campaign.isAnash ? this.invitedDonors.length : 0;
-    this.filteredByCountry = this.campaign.sameCountryOnly ? this.invitedDonors.length : 0;
+    this.filteredByAnash = this.campaign.invitedDonorFilters?.isAnash ? this.invitedDonors.length : 0;
+    this.filteredByCountry = this.campaign.invitedDonorFilters?.sameCountryOnly ? this.invitedDonors.length : 0;
   }
 
   async exportToExcel() {
@@ -444,17 +444,17 @@ export class CampaignInvitedListModalComponent implements OnInit {
   }
 
   get canEdit(): boolean {
-    return this.campaign?.status === 'draft' || this.campaign?.status === 'active';
+    return this.campaign?.isActive === true;
   }
 
   get hasActiveFilters(): boolean {
     if (!this.campaign) return false;
     return !!(
-      this.campaign.isAnash ||
-      this.campaign.excludeAnash ||
-      this.campaign.circle ||
-      this.campaign.minAge ||
-      this.campaign.maxAge ||
+      this.campaign.invitedDonorFilters?.isAnash ||
+      this.campaign.invitedDonorFilters?.excludeAnash ||
+      this.campaign.invitedDonorFilters?.circle ||
+      this.campaign.invitedDonorFilters?.minAge ||
+      this.campaign.invitedDonorFilters?.maxAge ||
       this.selectedCountry ||
       this.selectedCity ||
       this.selectedNeighborhood ||
@@ -477,11 +477,15 @@ export class CampaignInvitedListModalComponent implements OnInit {
   toggleCircle(circle: 'platinum' | 'gold' | 'silver' | 'regular') {
     if (!this.canEdit) return;
 
+    if (!this.campaign.invitedDonorFilters) {
+      this.campaign.invitedDonorFilters = {};
+    }
+
     // If clicking on the already selected circle, deselect it
-    if (this.campaign.circle === circle) {
-      this.campaign.circle = '';
+    if (this.campaign.invitedDonorFilters.circle === circle) {
+      this.campaign.invitedDonorFilters.circle = '';
     } else {
-      this.campaign.circle = circle;
+      this.campaign.invitedDonorFilters.circle = circle;
     }
 
     this.markAsChanged();
@@ -489,15 +493,23 @@ export class CampaignInvitedListModalComponent implements OnInit {
 
   // Methods for אנ"ש include/exclude
   onAnashIncludeChange() {
-    if (this.campaign.isAnash && this.campaign.excludeAnash) {
-      this.campaign.excludeAnash = false;
+    if (!this.campaign.invitedDonorFilters) {
+      this.campaign.invitedDonorFilters = {};
+    }
+
+    if (this.campaign.invitedDonorFilters.isAnash && this.campaign.invitedDonorFilters.excludeAnash) {
+      this.campaign.invitedDonorFilters.excludeAnash = false;
     }
     this.markAsChanged();
   }
 
   onAnashExcludeChange() {
-    if (this.campaign.excludeAnash && this.campaign.isAnash) {
-      this.campaign.isAnash = false;
+    if (!this.campaign.invitedDonorFilters) {
+      this.campaign.invitedDonorFilters = {};
+    }
+
+    if (this.campaign.invitedDonorFilters.excludeAnash && this.campaign.invitedDonorFilters.isAnash) {
+      this.campaign.invitedDonorFilters.isAnash = false;
     }
     this.markAsChanged();
   }
@@ -521,11 +533,14 @@ export class CampaignInvitedListModalComponent implements OnInit {
   clearFilters() {
     // Clear campaign filters
     if (this.campaign) {
-      this.campaign.isAnash = false;
-      this.campaign.excludeAnash = false;
-      this.campaign.circle = '';
-      this.campaign.minAge = undefined;
-      this.campaign.maxAge = undefined;
+      if (!this.campaign.invitedDonorFilters) {
+        this.campaign.invitedDonorFilters = {};
+      }
+      this.campaign.invitedDonorFilters.isAnash = false;
+      this.campaign.invitedDonorFilters.excludeAnash = false;
+      this.campaign.invitedDonorFilters.circle = '';
+      this.campaign.invitedDonorFilters.minAge = undefined;
+      this.campaign.invitedDonorFilters.maxAge = undefined;
     }
 
     // Clear local filters
@@ -642,7 +657,11 @@ export class CampaignInvitedListModalComponent implements OnInit {
 
   // Load filters from campaign
   private loadFiltersFromCampaign() {
-    if (!this.campaign?.invitedDonorFilters) return;
+    if (!this.campaign) return;
+
+    if (!this.campaign.invitedDonorFilters) {
+      this.campaign.invitedDonorFilters = {};
+    }
 
     const filters = this.campaign.invitedDonorFilters;
 

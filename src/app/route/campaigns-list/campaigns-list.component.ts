@@ -25,8 +25,6 @@ export class CampaignsListComponent implements OnInit {
 
   // מפיינים
   filterName = '';
-  filterStatus = '';
-  filterCategory = '';
   filterActive = '';
   sortField = 'name';
   sortDirection = 'asc';
@@ -58,14 +56,6 @@ export class CampaignsListComponent implements OnInit {
       where.name = { $contains: this.filterName };
     }
 
-    if (this.filterStatus) {
-      where.status = this.filterStatus;
-    }
-
-    if (this.filterCategory) {
-      where.category = { $contains: this.filterCategory };
-    }
-
     if (this.filterActive) {
       where.isActive = this.filterActive === 'true';
     }
@@ -74,8 +64,7 @@ export class CampaignsListComponent implements OnInit {
       where,
       orderBy: { [this.sortField]: this.sortDirection },
       include: {
-        createdBy: true,
-        manager: true
+        createdBy: true
       }
     });
   }
@@ -166,8 +155,6 @@ export class CampaignsListComponent implements OnInit {
 
   async clearFilters() {
     this.filterName = '';
-    this.filterStatus = '';
-    this.filterCategory = '';
     this.filterActive = '';
     await this.loadCampaigns();
   }
@@ -202,18 +189,18 @@ export class CampaignsListComponent implements OnInit {
   }
 
   get activeCampaigns(): number {
-    return this.campaigns.filter(c => c.status === 'active').length;
+    return this.campaigns.filter(c => c.isActive).length;
   }
 
   get totalTargetAmount(): number {
     return this.campaigns
-      .filter(c => c.status === 'active')
+      .filter(c => c.isActive)
       .reduce((sum, c) => sum + c.targetAmount, 0);
   }
 
   get totalRaisedAmount(): number {
     return this.campaigns
-      .filter(c => c.status === 'active')
+      .filter(c => c.isActive)
       .reduce((sum, c) => sum + c.raisedAmount, 0);
   }
 

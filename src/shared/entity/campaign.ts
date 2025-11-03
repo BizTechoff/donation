@@ -72,16 +72,6 @@ export class Campaign extends IdEntity {
   })
   isActive = true
 
-  @Fields.boolean({
-    caption: 'מוצג באתר',
-  })
-  isPublic = true
-
-  @Fields.string({
-    caption: 'חוג',
-  })
-  category = ''
-
   @Fields.string({
     caption: 'תמונה',
   })
@@ -120,23 +110,6 @@ export class Campaign extends IdEntity {
   })
   createdById = ''
 
-  @Relations.toOne<Campaign, User>(() => User, {
-    caption: 'אחראי קמפיין',
-    field: 'managerId'
-  })
-  manager?: User
-
-  @Fields.string({
-    caption: 'אחראי קמפיין ID',
-  })
-  managerId = ''
-
-  @Fields.string({
-    caption: 'סטטוס',
-    validate: Validators.required,
-  })
-  status: 'draft' | 'active' | 'completed' | 'cancelled' = 'draft'
-
   @Fields.string({ caption: 'מזהה מיקום האירוע' })
   eventLocationId?: string;
 
@@ -146,16 +119,6 @@ export class Campaign extends IdEntity {
     defaultIncluded: true
   })
   eventLocation?: Place;
-
-  @Fields.boolean({
-    caption: 'אנ"ש',
-  })
-  isAnash = false
-
-  @Fields.string({
-    caption: 'חוג',
-  })
-  circle: 'platinum' | 'gold' | 'silver' | 'regular' | '' = ''
 
   @Fields.string({
     caption: 'סוג קמפיין',
@@ -172,53 +135,12 @@ export class Campaign extends IdEntity {
   })
   hebrewEndDate?: Date
 
-  // Invitation criteria fields
-  @Fields.json({
-    caption: 'רמות מוזמנים',
-  })
-  invitationLevels: string[] = []
-
-  @Fields.boolean({
-    caption: 'רק תושבי המדינה',
-  })
-  sameCountryOnly = false
-
-  @Fields.number({
-    caption: 'גיל מינימלי',
-  })
-  minAge?: number
-
-  @Fields.number({
-    caption: 'גיל מקסימלי',
-  })
-  maxAge?: number
-
-  @Fields.string({
-    caption: 'חוג',
-  })
-  socialCircle = ''
 
   @Fields.number({
     caption: 'תרומה סטנדרטית',
     validate: [Validators.min(0)],
   })
   defaultDonationAmount = 0
-
-  // Exclusion criteria fields
-  @Fields.boolean({
-    caption: 'ללא אנ"ש',
-  })
-  excludeAnash = false
-
-  @Fields.boolean({
-    caption: 'ללא תושבי המדינה',
-  })
-  excludeSameCountry = false
-
-  @Fields.json({
-    caption: 'רמות מוחרגות',
-  })
-  excludedLevels: string[] = []
 
   @Fields.json({
     caption: 'מוזמנים שנבחרו',
@@ -237,6 +159,17 @@ export class Campaign extends IdEntity {
     excludeAlumni?: boolean;
     showOnlySelected?: boolean;
     showSelectedFirst?: boolean;
+    // Fields moved from separate properties:
+    invitationLevels?: string[];
+    sameCountryOnly?: boolean;
+    minAge?: number;
+    maxAge?: number;
+    socialCircle?: string;
+    excludeAnash?: boolean;
+    excludeSameCountry?: boolean;
+    excludedLevels?: string[];
+    isAnash?: boolean;
+    circle?: string;
   } = {}
 
   get progressPercentage() {
@@ -255,21 +188,18 @@ export class Campaign extends IdEntity {
 
   @BackendMethod({ allowed: [Roles.admin] })
   async activate() {
-    this.status = 'active'
     this.isActive = true
     await this.save()
   }
 
   @BackendMethod({ allowed: [Roles.admin] })
   async complete() {
-    this.status = 'completed'
     this.isActive = false
     await this.save()
   }
 
   @BackendMethod({ allowed: [Roles.admin] })
   async cancel() {
-    this.status = 'cancelled'
     this.isActive = false
     await this.save()
   }
@@ -277,9 +207,6 @@ export class Campaign extends IdEntity {
   @BackendMethod({ allowed: [Roles.admin] })
   async updateRaisedAmount(amount: number) {
     this.raisedAmount += amount
-    if (this.raisedAmount >= this.targetAmount && this.status === 'active') {
-      this.status = 'completed'
-    }
     await this.save()
   }
 }

@@ -19,25 +19,25 @@
     <div class="filter-summary" *ngIf="campaign">
       <h3>קריטריונים פעילים:</h3>
       <div class="filter-chips">
-        <div class="filter-chip" *ngIf="campaign.isAnash">
+        <div class="filter-chip" *ngIf="campaign.invitedDonorFilters?.isAnash">
           <mat-icon>group</mat-icon>
           <span>אנ"ש בלבד</span>
         </div>
-        <div class="filter-chip" *ngIf="campaign.invitationLevels?.length">
+        <div class="filter-chip" *ngIf="campaign.invitedDonorFilters?.invitationLevels?.length">
           <mat-icon>stars</mat-icon>
-          <span>רמות: {{campaign.invitationLevels.join(', ')}}</span>
+          <span>רמות: {{campaign.invitedDonorFilters?.invitationLevels?.join(', ')}}</span>
         </div>
-        <div class="filter-chip" *ngIf="campaign.sameCountryOnly">
+        <div class="filter-chip" *ngIf="campaign.invitedDonorFilters?.sameCountryOnly">
           <mat-icon>location_on</mat-icon>
           <span>תושבי המדינה</span>
         </div>
-        <div class="filter-chip" *ngIf="campaign.minAge || campaign.maxAge">
+        <div class="filter-chip" *ngIf="campaign.invitedDonorFilters?.minAge || campaign.invitedDonorFilters?.maxAge">
           <mat-icon>cake</mat-icon>
-          <span>גילאים: {{campaign.minAge || '0'}} - {{campaign.maxAge || '120'}}</span>
+          <span>גילאים: {{campaign.invitedDonorFilters?.minAge || '0'}} - {{campaign.invitedDonorFilters?.maxAge || '120'}}</span>
         </div>
-        <div class="filter-chip" *ngIf="campaign.socialCircle">
+        <div class="filter-chip" *ngIf="campaign.invitedDonorFilters?.socialCircle">
           <mat-icon>group_work</mat-icon>
-          <span>חוג: {{campaign.socialCircle}}</span>
+          <span>חוג: {{campaign.invitedDonorFilters?.socialCircle}}</span>
         </div>
       </div>
     </div>
