@@ -39,10 +39,7 @@ export class CampaignDonorsModalComponent implements OnInit {
   // Filter stats
   totalDonors = 0;
   filteredByAnash = 0;
-  filteredByLevels = 0;
-  filteredByCountry = 0;
   filteredByAge = 0;
-  filteredBySocialCircle = 0;
 
   constructor(
     public i18n: I18nService,
@@ -99,12 +96,7 @@ export class CampaignDonorsModalComponent implements OnInit {
         where.anash = true;
       }
 
-      // 2. Filter by levels
-      if (this.campaign.invitedDonorFilters?.invitationLevels && this.campaign.invitedDonorFilters.invitationLevels.length > 0) {
-        where.level = { $in: this.campaign.invitedDonorFilters.invitationLevels };
-      }
-
-      // Get initial results (country filter will be done client-side)
+      // Get initial results
       const baseDonors = await this.donorRepo.find({ where });
       this.totalDonors = baseDonors.length;
 
@@ -121,19 +113,7 @@ export class CampaignDonorsModalComponent implements OnInit {
 
       let donors = baseDonors;
 
-      // 3. Filter by same country (client-side)
-      if (this.campaign.invitedDonorFilters?.sameCountryOnly && this.campaign.eventLocation) {
-        const eventCountry = this.campaign.eventLocation.country;
-        if (eventCountry) {
-          donors = donors.filter((donor: Donor) => {
-            const place = this.donorPlaceMap.get(donor.id);
-            const donorCountry = place?.country;
-            return donorCountry && (donorCountry.id === eventCountry.id || donorCountry.name === eventCountry.name);
-          });
-        }
-      }
-
-      // 4. Filter by age range (client-side as it might require calculation)
+      // 2. Filter by age range (client-side as it might require calculation)
       if (this.campaign.invitedDonorFilters?.minAge || this.campaign.invitedDonorFilters?.maxAge) {
         const now = new Date();
         donors = donors.filter((donor: Donor) => {
@@ -148,16 +128,6 @@ export class CampaignDonorsModalComponent implements OnInit {
           return true;
         });
         this.filteredByAge = this.totalDonors - donors.length;
-      }
-
-      // 5. Filter by social circle
-      if (this.campaign.invitedDonorFilters?.socialCircle) {
-        donors = donors.filter((donor: Donor) =>
-          // Note: socialCircle field doesn't exist in Donor entity
-          // This filter is skipped for now
-          true
-        );
-        this.filteredBySocialCircle = this.totalDonors - donors.length;
       }
 
       this.invitedDonors = donors;
@@ -204,8 +174,6 @@ export class CampaignDonorsModalComponent implements OnInit {
   private updateFilterStats() {
     // Update filtering statistics for display
     this.filteredByAnash = this.campaign.invitedDonorFilters?.isAnash ? this.invitedDonors.length : 0;
-    this.filteredByLevels = this.campaign.invitedDonorFilters?.invitationLevels?.length ? this.invitedDonors.length : 0;
-    this.filteredByCountry = this.campaign.invitedDonorFilters?.sameCountryOnly ? this.invitedDonors.length : 0;
   }
 
   async exportToExcel() {

@@ -208,14 +208,12 @@ export class CampaignsListComponent implements OnInit {
   onStartDateChange(date: Date | null) {
     if (this.editingCampaign) {
       this.editingCampaign.startDate = date || new Date();
-      this.editingCampaign.hebrewStartDate = date || undefined;
     }
   }
 
   onEndDateChange(date: Date | null) {
     if (this.editingCampaign) {
       this.editingCampaign.endDate = date || undefined;
-      this.editingCampaign.hebrewEndDate = date || undefined;
     }
   }
 

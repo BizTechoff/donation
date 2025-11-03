@@ -65,10 +65,7 @@ export class CampaignInvitedListModalComponent implements OnInit {
   // Filter stats
   totalDonors = 0;
   filteredByAnash = 0;
-  filteredByLevels = 0;
-  filteredByCountry = 0;
   filteredByAge = 0;
-  filteredBySocialCircle = 0;
 
   constructor(
     public i18n: I18nService,
@@ -260,7 +257,6 @@ export class CampaignInvitedListModalComponent implements OnInit {
       this.selectedCity ||
       this.selectedNeighborhood ||
       this.selectedCircleId ||
-      this.campaign.invitedDonorFilters?.circle ||
       this.campaign.invitedDonorFilters?.minAge ||
       this.campaign.invitedDonorFilters?.maxAge
     );
@@ -336,14 +332,6 @@ export class CampaignInvitedListModalComponent implements OnInit {
       }
     }
 
-    // Apply circle filter from campaign
-    if (this.campaign.invitedDonorFilters?.circle) {
-    console.log('circle',this.campaign.invitedDonorFilters.circle,donor.circleIds?.length)
-      if (donor.level !== this.campaign.invitedDonorFilters.circle) {
-        return false;
-      }
-    }
-
     return true;
   }
 
@@ -378,7 +366,6 @@ export class CampaignInvitedListModalComponent implements OnInit {
   private updateFilterStats() {
     // Update filtering statistics for display
     this.filteredByAnash = this.campaign.invitedDonorFilters?.isAnash ? this.invitedDonors.length : 0;
-    this.filteredByCountry = this.campaign.invitedDonorFilters?.sameCountryOnly ? this.invitedDonors.length : 0;
   }
 
   async exportToExcel() {
@@ -452,7 +439,6 @@ export class CampaignInvitedListModalComponent implements OnInit {
     return !!(
       this.campaign.invitedDonorFilters?.isAnash ||
       this.campaign.invitedDonorFilters?.excludeAnash ||
-      this.campaign.invitedDonorFilters?.circle ||
       this.campaign.invitedDonorFilters?.minAge ||
       this.campaign.invitedDonorFilters?.maxAge ||
       this.selectedCountry ||
@@ -474,22 +460,6 @@ export class CampaignInvitedListModalComponent implements OnInit {
     this.applyFiltersAsSelection();
   }
 
-  toggleCircle(circle: 'platinum' | 'gold' | 'silver' | 'regular') {
-    if (!this.canEdit) return;
-
-    if (!this.campaign.invitedDonorFilters) {
-      this.campaign.invitedDonorFilters = {};
-    }
-
-    // If clicking on the already selected circle, deselect it
-    if (this.campaign.invitedDonorFilters.circle === circle) {
-      this.campaign.invitedDonorFilters.circle = '';
-    } else {
-      this.campaign.invitedDonorFilters.circle = circle;
-    }
-
-    this.markAsChanged();
-  }
 
   // Methods for אנ"ש include/exclude
   onAnashIncludeChange() {
@@ -538,7 +508,6 @@ export class CampaignInvitedListModalComponent implements OnInit {
       }
       this.campaign.invitedDonorFilters.isAnash = false;
       this.campaign.invitedDonorFilters.excludeAnash = false;
-      this.campaign.invitedDonorFilters.circle = '';
       this.campaign.invitedDonorFilters.minAge = undefined;
       this.campaign.invitedDonorFilters.maxAge = undefined;
     }

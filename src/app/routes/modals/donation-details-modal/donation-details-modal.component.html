@@ -360,15 +360,6 @@
           <!-- Check Payment Fields -->
           <div class="form-group" *ngIf="isCheckPayment">
             <div class="field-title">
-              <mat-icon class="field-icon">account_balance</mat-icon>
-              <label>{{i18n.terms.accountNumber}}</label>
-            </div>
-            <input type="text" class="form-control" [(ngModel)]="donation.bankAccount"
-              [placeholder]="i18n.terms.accountNumberPlaceholder">
-          </div>
-
-          <div class="form-group" *ngIf="isCheckPayment">
-            <div class="field-title">
               <mat-icon class="field-icon">tag</mat-icon>
               <label>{{i18n.terms.checkNumber}}</label>
             </div>

@@ -451,63 +451,6 @@ export class CampaignDetailsModalComponent implements OnInit {
     return (this.isDraft || this.isActive) && !this.isNewCampaign;
   }
 
-  // Methods for level selection
-  isLevelSelected(level: DonorLevel): boolean {
-    if (!this.campaign?.invitedDonorFilters?.invitationLevels) {
-      return false;
-    }
-    return this.campaign.invitedDonorFilters.invitationLevels.includes(level.value);
-  }
-
-  toggleLevel(level: DonorLevel) {
-    if (!this.campaign) return;
-
-    if (!this.campaign.invitedDonorFilters) {
-      this.campaign.invitedDonorFilters = {};
-    }
-
-    if (!this.campaign.invitedDonorFilters.invitationLevels) {
-      this.campaign.invitedDonorFilters.invitationLevels = [];
-    }
-
-    const index = this.campaign.invitedDonorFilters.invitationLevels.indexOf(level.value);
-    if (index > -1) {
-      this.campaign.invitedDonorFilters.invitationLevels.splice(index, 1);
-    } else {
-      this.campaign.invitedDonorFilters.invitationLevels.push(level.value);
-    }
-
-    this.markAsChanged();
-  }
-
-  // Methods for exclusion criteria
-  isLevelExcluded(level: DonorLevel): boolean {
-    if (!this.campaign?.invitedDonorFilters?.excludedLevels) {
-      return false;
-    }
-    return this.campaign.invitedDonorFilters.excludedLevels.includes(level.value);
-  }
-
-  toggleExcludedLevel(level: DonorLevel) {
-    if (!this.campaign) return;
-
-    if (!this.campaign.invitedDonorFilters) {
-      this.campaign.invitedDonorFilters = {};
-    }
-
-    if (!this.campaign.invitedDonorFilters.excludedLevels) {
-      this.campaign.invitedDonorFilters.excludedLevels = [];
-    }
-
-    const index = this.campaign.invitedDonorFilters.excludedLevels.indexOf(level.value);
-    if (index > -1) {
-      this.campaign.invitedDonorFilters.excludedLevels.splice(index, 1);
-    } else {
-      this.campaign.invitedDonorFilters.excludedLevels.push(level.value);
-    }
-
-    this.markAsChanged();
-  }
 
   // Toggle campaign active status with confirmation
   toggleCampaignActive() {

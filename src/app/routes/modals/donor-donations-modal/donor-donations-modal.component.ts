@@ -195,8 +195,7 @@ export class DonorDonationsModalComponent implements OnInit {
       const matchesMethod = !this.filterMethod ||
         donation.donationMethodId === this.filterMethod;
 
-      const matchesStatus = !this.filterStatus ||
-        donation.status === this.filterStatus;
+      const matchesStatus = !this.filterStatus;
 
       return matchesText && matchesCampaign && matchesMethod && matchesStatus;
     });
@@ -277,21 +276,6 @@ export class DonorDonationsModalComponent implements OnInit {
     }
   }
 
-  async issueReceipt(donation: Donation) {
-    if (donation.receiptIssued) {
-      this.ui.info('קבלה כבר הוצאה לתרומה זו');
-      return;
-    }
-
-    try {
-      await donation.issueReceipt();
-      await this.loadDonations();
-      this.ui.info(`קבלה הוצאה בהצלחה - מספר: ${donation.receiptNumber}`);
-    } catch (error) {
-      console.error('Error issuing receipt:', error);
-      this.ui.error('שגיאה בהוצאת הקבלה');
-    }
-  }
 
   exportToExcel() {
     // TODO: Implement Excel export

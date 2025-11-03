@@ -41148,8 +41148,9 @@ export async function seedLegacyData() {
 
         // Find matching bank by name (case insensitive, trim, remove "Bank" suffix)
         let matchedBank = null
-        if (donationData.bankName) {
-          const bankNameClean = donationData.bankName.trim().toLowerCase()
+        const bankNameFromData = (donationData as any).bankName
+        if (bankNameFromData) {
+          const bankNameClean = bankNameFromData.trim().toLowerCase()
             .replace(/\s+bank\s*$/i, '')
             .replace(/^bank\s+/i, '')
             .trim()
@@ -41171,8 +41172,9 @@ export async function seedLegacyData() {
 
         // Find matching organization by voucher number or name
         let matchedOrganization = null
-        if (donationData.organizationName) {
-          const orgNameClean = donationData.organizationName.trim().toLowerCase()
+        const orgNameFromData = (donationData as any).organizationName
+        if (orgNameFromData) {
+          const orgNameClean = orgNameFromData.trim().toLowerCase()
           matchedOrganization = allOrganizations.find(org =>
             org.name.trim().toLowerCase() === orgNameClean ||
             org.name.trim().toLowerCase().includes(orgNameClean) ||
@@ -41190,15 +41192,12 @@ export async function seedLegacyData() {
           currency: donationData.currency,
           donationDate: new Date(donationData.donationDate),
           donationMethod: paymentMethod,
-          receiptNumber: donationData.receiptNumber || '',
           accountNumber: donationData.accountNumber || '',
           voucherNumber: donationData.voucherNumber || '',
           notes: donationData.notes || '',
           bankId: matchedBank?.id || '',
           organizationId: matchedOrganization?.id || '',
-          isExceptional: donationData.isExceptional || false,
-          isUrgent: donationData.isUrgent || false,
-          receiptIssued: donationData.receiptIssued || false
+          isExceptional: donationData.isExceptional || false
         })
         await donation.save()
         donationCount++

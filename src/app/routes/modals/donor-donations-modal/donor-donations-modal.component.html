@@ -162,16 +162,8 @@
                 </button>
 
                 <button mat-icon-button
-                        *ngIf="!donation.receiptIssued && args.donationType === 'receipts'"
-                        (click)="issueReceipt(donation)"
-                        matTooltip="הוצא קבלה"
-                        class="action-btn receipt-btn">
-                  <mat-icon>receipt</mat-icon>
-                </button>
-
-                <button mat-icon-button
-                        *ngIf="donation.receiptIssued && args.donationType === 'receipts'"
-                        matTooltip="קבלה הוצאה"
+                        *ngIf="args.donationType === 'receipts'"
+                        matTooltip="קבלה"
                         class="action-btn receipt-issued-btn"
                         disabled>
                   <mat-icon>check_circle</mat-icon>

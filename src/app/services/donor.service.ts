@@ -102,8 +102,7 @@ export class DonorService {
     // Load all donations at once
     const allDonations = await this.donationRepo.find({
       where: {
-        donorId: { $in: donorIds },
-        status: 'completed'
+        donorId: { $in: donorIds }
       }
     });
 

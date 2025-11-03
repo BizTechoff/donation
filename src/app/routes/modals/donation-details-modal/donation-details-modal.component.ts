@@ -39,7 +39,6 @@ export class DonationDetailsModalComponent implements OnInit {
   donors: Donor[] = [];
   campaigns: Campaign[] = [];
   donationMethods: DonationMethod[] = [];
-  fundraisers: User[] = [];
   availablePartners: Donor[] = [];
   selectedPartners: Donor[] = [];
   organizations: Organization[] = [];
@@ -68,7 +67,6 @@ export class DonationDetailsModalComponent implements OnInit {
   selectedDonor?: Donor;
   selectedCampaign?: Campaign;
   selectedPaymentMethod?: DonationMethod;
-  selectedFundraiser?: User;
   selectedOrganization?: Organization;
   selectedBank?: Bank;
 
@@ -222,7 +220,6 @@ export class DonationDetailsModalComponent implements OnInit {
           this.donation = this.donationRepo.create();
           this.donation.donationDate = new Date();
           this.donation.currency = 'ILS';
-          this.donation.status = 'pending';
 
           // Set amount from args if provided
           if (this.args.amount) {
@@ -230,10 +227,8 @@ export class DonationDetailsModalComponent implements OnInit {
           }
 
           // Initialize additional fields for dynamic payment methods
-          this.donation.bankName = '';
           this.donation.checkNumber = '';
           this.donation.voucherNumber = '';
-          this.donation.fundraiserId = '';
           this.donation.partnerIds = [];
 
           // Initialize standing order defaults
@@ -295,7 +290,6 @@ export class DonationDetailsModalComponent implements OnInit {
         this.donors = data.donors;
         this.campaigns = data.campaigns;
         this.donationMethods = data.donationMethods;
-        this.fundraisers = data.fundraisers;
         this.availablePartners = data.availablePartners;
         this.organizations = data.organizations;
         this.banks = data.banks;
@@ -406,13 +400,6 @@ export class DonationDetailsModalComponent implements OnInit {
     } else {
       this.selectedPaymentMethod = undefined;
     }
-
-    // Update selected fundraiser
-    if (this.donation?.fundraiserId) {
-      this.selectedFundraiser = this.fundraisers.find(f => f.id === this.donation.fundraiserId);
-    } else {
-      this.selectedFundraiser = undefined;
-    }
   }
 
   private hasChanges(): boolean {
@@ -498,44 +485,13 @@ export class DonationDetailsModalComponent implements OnInit {
     }
   }
 
-  async issueReceipt() {
-    if (!this.donation) return;
-
-    try {
-      await this.donation.issueReceipt();
-      this.changed = true;
-    } catch (error) {
-      console.error('Error issuing receipt:', error);
-    }
-  }
-
-  async cancelDonation() {
-    if (!this.donation) return;
-
-    const confirmMessage = this.i18n.currentTerms.confirmCancelDonation || '';
-    if (confirm(confirmMessage)) {
-      try {
-        await this.donation.cancelDonation();
-        this.changed = true;
-      } catch (error) {
-        console.error('Error cancelling donation:', error);
-      }
-    }
-  }
 
   getDonorDisplayName(donor?: Donor): string {
     if (!donor) return '';
     return `${donor.firstName} ${donor.lastName}`.trim();
   }
 
-  getFundraiserDisplayName(fundraiser: User): string {
-    return fundraiser.name;
-  }
 
-  onFundraiserChange() {
-    this.updateSelectedOptions();
-    console.log('Fundraiser changed to:', this.selectedFundraiser?.name);
-  }
 
   async loadSelectedPartners() {
     if (!this.donation?.partnerIds || this.donation.partnerIds.length === 0) {
@@ -674,9 +630,7 @@ export class DonationDetailsModalComponent implements OnInit {
     if (this.donation?.donorId) {
       try {
         console.log('loadSelectedDonor: Loading donor with ID:', this.donation.donorId);
-        this.selectedDonor = await this.donorRepo.findId(this.donation.donorId, {
-          include: { fundraiser: true }
-        }) || undefined;
+        this.selectedDonor = await this.donorRepo.findId(this.donation.donorId) || undefined;
         console.log('loadSelectedDonor: Loaded donor:', this.selectedDonor?.firstName, this.selectedDonor?.lastName);
 
         // Load companies for payer selection
@@ -685,11 +639,6 @@ export class DonationDetailsModalComponent implements OnInit {
         // Auto-update currency for new donations when loading existing donor
         if (this.isNewDonation && this.selectedDonor) {
           await this.updateCurrencyBasedOnCountry(this.selectedDonor);
-
-          // Auto-fill fundraiser if donor has one and donation doesn't have fundraiser yet
-          if (this.selectedDonor.fundraiser && !this.donation.fundraiserId) {
-            this.donation.fundraiserId = this.selectedDonor.fundraiser.id;
-          }
         }
       } catch (error) {
         console.error('Error loading selected donor:', error);
@@ -940,25 +889,18 @@ export class DonationDetailsModalComponent implements OnInit {
     }
 
     try {
-      // Load the selected donor with fundraiser relation
-      this.selectedDonor = await this.donorRepo.findId(donorId, {
-        include: { fundraiser: true }
-      }) || undefined;
+      // Load the selected donor
+      this.selectedDonor = await this.donorRepo.findId(donorId) || undefined;
 
       if (this.selectedDonor) {
         // Update currency based on country
         await this.updateCurrencyBasedOnCountry(this.selectedDonor);
 
-        // Auto-fill fundraiser if donor has one
-        if (this.selectedDonor.fundraiser) {
-          this.donation.fundraiserId = this.selectedDonor.fundraiser.id;
-        }
-
         // Load companies for payer selection
         await this.loadPayerCompanies();
 
         // Set default payer to personal (donor themselves) if not already set
-        if (!this.donation.payerCompanyId && !this.donation.payerName) {
+        if (!this.donation.payerName) {
           await this.onPayerChange(null);
         }
       }
@@ -996,14 +938,12 @@ export class DonationDetailsModalComponent implements OnInit {
       // Auto-populate organization fields
       if (this.selectedOrganization) {
         this.donation.payerName = this.selectedOrganization.name;
-        this.donation.bankAccount = this.selectedOrganization.accountNumber || '';
         // Note: voucherNumber is typically filled manually per donation, not from organization
       }
     } else {
       this.selectedOrganization = undefined;
       // Clear fields when no organization selected
       this.donation.payerName = '';
-      this.donation.bankAccount = '';
     }
   }
 
@@ -1011,19 +951,8 @@ export class DonationDetailsModalComponent implements OnInit {
     if (this.donation?.bankId) {
       this.selectedBank = this.banks.find(b => b.id === this.donation.bankId);
       console.log('Bank changed to:', this.selectedBank?.name);
-
-      // Auto-populate bank fields
-      if (this.selectedBank) {
-        this.donation.bankName = this.selectedBank.name;
-        this.donation.bankBranch = this.selectedBank.branchCode || '';
-        this.donation.bankAccount = this.selectedBank.bankCode || '';
-      }
     } else {
       this.selectedBank = undefined;
-      // Clear fields when no bank selected
-      this.donation.bankName = '';
-      this.donation.bankBranch = '';
-      this.donation.bankAccount = '';
     }
   }
 
@@ -1421,11 +1350,6 @@ console.log('addOrganizationToDonation',1)
       if (!this.donation.payerName && donorName) {
         this.donation.payerName = donorName;
       }
-
-      // Set default cardHolderName to donor if not already set (for credit card payments)
-      if (!this.donation.cardHolderName && donorName) {
-        this.donation.cardHolderName = donorName;
-      }
     }
 
     console.log('updatePayerOptions called, set', this.payerOptions.length, 'options:', this.payerOptions.map(o => ({
@@ -1440,26 +1364,16 @@ console.log('addOrganizationToDonation',1)
    * Handle payer selection change
    */
   async onPayerChange(payerCompanyId: string | null) {
-      console.log(0)
     if (!payerCompanyId) {
-      console.log(1)
       // Personal payer (the donor themselves)
       if (this.selectedDonor) {
-        console.log(2)
         this.donation.payerName = `${this.selectedDonor.firstName || ''} ${this.selectedDonor.lastName || ''}`.trim();
-
-        // Load home place from DonorPlace entities
-        const homePlace = await this.donorService.getHomePlaceForDonor(this.selectedDonor.id);
-        this.donation.payerAddress = homePlace?.fullAddress || '';
       }
     } else {
-      console.log(3)
       // Company payer
       const company = this.payerCompanies.find(c => c.id === payerCompanyId);
       if (company) {
-        console.log(4)
         this.donation.payerName = company.name;
-        this.donation.payerAddress = company.place?.fullAddress || '';
       }
     }
   }

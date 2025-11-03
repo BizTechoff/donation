@@ -149,7 +149,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
     this.donations = await this.donationRepo.find({
       orderBy: { donationDate: 'desc' },
       include: {
-        donor: {include: {fundraiser: true}},
+        donor: true,
         campaign: true,
         donationMethod: true,
         createdBy: true
@@ -161,7 +161,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
     await this.loadDonorAddresses();
 
     // Calculate completed donations count once after loading
-    this.completedDonationsCountCache = this.donations.filter(d => d.status === 'completed').length;
+    this.completedDonationsCountCache = this.donations.length;
   }
 
   async loadDonors() {
@@ -259,26 +259,6 @@ export class DonationsListComponent implements OnInit, OnDestroy {
     }
   }
 
-  async issueReceipt(donation: Donation) {
-    try {
-      await donation.issueReceipt();
-      await this.loadDonations(); // This will also update the cache
-    } catch (error) {
-      console.error('Error issuing receipt:', error);
-    }
-  }
-
-  async cancelDonation(donation: Donation) {
-    const confirmMessage = this.i18n.currentTerms.confirmCancelDonation?.replace('{donor}', donation.donor?.displayName || '') || '';
-    if (confirm(confirmMessage)) {
-      try {
-        await donation.cancelDonation();
-        await this.loadDonations(); // This will also update the cache
-      } catch (error) {
-        console.error('Error canceling donation:', error);
-      }
-    }
-  }
 
   async uploadTransactions(donation: Donation) {
     // Create file input element
@@ -438,14 +418,11 @@ export class DonationsListComponent implements OnInit, OnDestroy {
 
   get totalAmount(): number {
     return this.donations
-      // .filter(d => d.status === 'completed')
       .reduce((sum, donation) => sum + donation.amount, 0);
   }
 
   get pendingAmount(): number {
-    return this.donations
-      .filter(d => d.status === 'pending')
-      .reduce((sum, donation) => sum + donation.amount, 0);
+    return 0; // Status field removed
   }
 
   getDonorName(donation: Donation): string {
@@ -492,14 +469,6 @@ export class DonationsListComponent implements OnInit, OnDestroy {
     return typeLabels[donation.donationMethod.type] || donation.donationMethod.name;
   }
 
-  getStatusText(status: string): string {
-    switch (status) {
-      case 'pending': return this.i18n.currentTerms.pending || '';
-      case 'completed': return this.i18n.currentTerms.completed || '';
-      case 'cancelled': return this.i18n.currentTerms.cancelled || '';
-      default: return status;
-    }
-  }
 
   get completedDonationsCount(): number {
     return this.completedDonationsCountCache;
@@ -593,7 +562,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
     this.donations = await this.donationRepo.find({
       orderBy: { donationDate: 'desc' },
       include: {
-        donor: {include: {fundraiser: true}},
+        donor: true,
         campaign: true,
         donationMethod: true,
         createdBy: true
@@ -604,6 +573,6 @@ export class DonationsListComponent implements OnInit, OnDestroy {
     // Load donor addresses after filtering
     await this.loadDonorAddresses();
 
-    this.completedDonationsCountCache = this.donations.filter(d => d.status === 'completed').length;
+    this.completedDonationsCountCache = this.donations.length;
   }
 }

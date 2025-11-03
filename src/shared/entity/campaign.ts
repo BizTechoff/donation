@@ -125,17 +125,6 @@ export class Campaign extends IdEntity {
   })
   campaignType: 'רגיל' | 'דינער' | '' = 'רגיל'
 
-  @Fields.date({
-    caption: 'תאריך התחלה עברי',
-  })
-  hebrewStartDate?: Date
-
-  @Fields.date({
-    caption: 'תאריך סיום עברי',
-  })
-  hebrewEndDate?: Date
-
-
   @Fields.number({
     caption: 'תרומה סטנדרטית',
     validate: [Validators.min(0)],
@@ -159,17 +148,10 @@ export class Campaign extends IdEntity {
     excludeAlumni?: boolean;
     showOnlySelected?: boolean;
     showSelectedFirst?: boolean;
-    // Fields moved from separate properties:
-    invitationLevels?: string[];
-    sameCountryOnly?: boolean;
     minAge?: number;
     maxAge?: number;
-    socialCircle?: string;
     excludeAnash?: boolean;
-    excludeSameCountry?: boolean;
-    excludedLevels?: string[];
     isAnash?: boolean;
-    circle?: string;
   } = {}
 
   get progressPercentage() {

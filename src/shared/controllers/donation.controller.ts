@@ -15,7 +15,6 @@ export interface DonationDetailsData {
   donors: Donor[];
   campaigns: Campaign[];
   donationMethods: DonationMethod[];
-  fundraisers: User[];
   availablePartners: Donor[];
   organizations: Organization[];
   banks: Bank[];
@@ -41,7 +40,6 @@ export class DonationController {
       donors,
       campaigns,
       donationMethods,
-      fundraisers,
       availablePartners,
       organizations,
       banks
@@ -54,10 +52,6 @@ export class DonationController {
         orderBy: { name: 'asc' }
       }),
       remult.repo(DonationMethod).find({
-        orderBy: { name: 'asc' }
-      }),
-      remult.repo(User).find({
-        where: { disabled: false, donator: true },
         orderBy: { name: 'asc' }
       }),
       remult.repo(Donor).find({
@@ -110,7 +104,6 @@ export class DonationController {
       donors,
       campaigns,
       donationMethods,
-      fundraisers,
       availablePartners,
       organizations,
       banks,

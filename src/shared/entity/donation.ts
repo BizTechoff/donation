@@ -5,7 +5,6 @@ import {
   isBackend,
   Allow,
   Fields,
-  BackendMethod,
   Relations,
 } from 'remult'
 import { User } from './user'
@@ -14,7 +13,6 @@ import { Campaign } from './campaign'
 import { DonationMethod } from './donation-method'
 import { Organization } from './organization'
 import { Bank } from './bank'
-import { Company } from './company'
 import { Roles } from '../enum/roles'
 
 @Entity<Donation>('donations', {
@@ -108,32 +106,10 @@ export class Donation extends IdEntity {
   })
   isExceptional = false
 
-  @Fields.boolean({
-    caption: 'חדר תה',
-  })
-  isUrgent = false
-
-  @Relations.toOne<Donation, User>(() => User, {
-    caption: 'מתרים',
-    field: 'fundraiserId'
-  })
-  fundraiser?: User
-
-  @Fields.string({
-    caption: 'מתרים ID',
-  })  
-  fundraiserId = ''
-
   @Fields.json({
     caption: 'שותפים לתרומה',
   })
   partnerIds: string[] = []
-
-
-  @Fields.string({
-    caption: 'שם ח"ן',
-  })
-  bankName = ''
 
   @Fields.string({
     caption: 'מספר צק',
@@ -144,26 +120,6 @@ export class Donation extends IdEntity {
     caption: 'מספר שובר',
   })
   voucherNumber = ''
-
-  @Fields.boolean({
-    caption: 'תרומה אנונימית',
-  })
-  isAnonymous = false
-
-  @Fields.boolean({
-    caption: 'התקבל אישור',
-  })
-  receiptIssued = false
-
-  @Fields.string({
-    caption: 'מספר אישור',
-  })
-  receiptNumber = ''
-
-  @Fields.date({
-    caption: 'תאריך הוצאת אישור',
-  })
-  receiptDate?: Date
 
   @Fields.dateOnly({
     caption: 'תאריך תרומה',
@@ -195,12 +151,6 @@ export class Donation extends IdEntity {
   createdById = ''
 
   @Fields.string({
-    caption: 'סטטוס תרומה',
-    validate: Validators.required,
-  })
-  status: 'pending' | 'completed' | 'cancelled' = 'pending'
-
-  @Fields.string({
     caption: 'סוג תרומה',
     validate: Validators.required,
   })
@@ -215,17 +165,6 @@ export class Donation extends IdEntity {
     caption: 'ללא הגבלת תשלומים',
   })
   unlimitedPayments = false
-
-  // Additional payment fields
-  @Fields.string({
-    caption: 'מספר סניף',
-  })
-  bankBranch = ''
-
-  @Fields.string({
-    caption: 'מספר חשבון',
-  })
-  bankAccount = ''
 
   @Fields.string({
     caption: 'מספר אסמכתא',
@@ -243,55 +182,9 @@ export class Donation extends IdEntity {
   cardExpiry = ''
 
   @Fields.string({
-    caption: 'שם בעל הכרטיס',
-  })
-  cardHolderName = ''
-
-  @Fields.string({
-    caption: 'מספר אישור כרטיס',
-  })
-  approvalNumber = ''
-
-  @Fields.string({
-    caption: 'שם ארגון',
-  })
-  organizationName = ''
-
-  @Fields.string({
-    caption: 'מקבל התשלום',
-  })
-  receivedBy = ''
-
-  @Fields.string({
-    caption: 'פלטפורמת תשלום',
-  })
-  paymentPlatform = ''
-
-  @Fields.string({
-    caption: 'מזהה עסקה',
-  })
-  transactionId = ''
-
-  @Fields.string({
     caption: 'שם המשלם',
   })
   payerName = ''
-
-  @Fields.string({
-    caption: 'כתובת משלם',
-  })
-  payerAddress = ''
-
-  @Fields.string({
-    caption: 'מזהה חברה משלמת',
-  })
-  payerCompanyId = ''
-
-  @Relations.toOne<Donation, Company>(() => Company, {
-    caption: 'חברה משלמת',
-    field: 'payerCompanyId'
-  })
-  payerCompany?: Company
 
   @Fields.string({
     caption: 'תדירות',
@@ -312,11 +205,6 @@ export class Donation extends IdEntity {
     caption: 'מספר תשלומים',
   })
   numberOfPayments?: number
-
-  @Fields.string({
-    caption: 'אסמכתא העברה',
-  })
-  transferReference = ''
 
   @Relations.toOne<Donation, Organization>(() => Organization, {
     caption: 'עמותה',
@@ -349,21 +237,6 @@ export class Donation extends IdEntity {
     size: number
   }> = []
 
-  @BackendMethod({ allowed: [Roles.admin] })
-  async issueReceipt() {
-    if (!this.receiptIssued) {
-      this.receiptNumber = `R${new Date().getFullYear()}${String(Date.now()).slice(-6)}`
-      this.receiptIssued = true
-      this.status = 'completed'
-      await this.save()
-    }
-  }
-
-  @BackendMethod({ allowed: [Roles.admin] })
-  async cancelDonation() {
-    this.status = 'cancelled'
-    await this.save()
-  }
 }
 
 // פונקציה לעדכון ממוצע תרומות של תורם

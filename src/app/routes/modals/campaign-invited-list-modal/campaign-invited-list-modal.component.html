@@ -45,13 +45,13 @@
           <div class="filter-options">
             <label class="option-checkbox">
               <input type="checkbox" [(ngModel)]="campaign.invitedDonorFilters.isAnash"
-                     [disabled]="!canEdit || !!campaign.invitedDonorFilters?.excludeAnash"
+                     [disabled]="!canEdit || !!campaign.invitedDonorFilters.excludeAnash"
                      (ngModelChange)="onAnashIncludeChange()">
               <span class="checkbox-label include">✓ כולל</span>
             </label>
             <label class="option-checkbox">
               <input type="checkbox" [(ngModel)]="campaign.invitedDonorFilters.excludeAnash"
-                     [disabled]="!canEdit || !!campaign.invitedDonorFilters?.isAnash"
+                     [disabled]="!canEdit || !!campaign.invitedDonorFilters.isAnash"
                      (ngModelChange)="onAnashExcludeChange()">
               <span class="checkbox-label exclude">✗ לא כולל</span>
             </label>

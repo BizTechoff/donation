@@ -120,8 +120,7 @@ export class LetterPropertiesModalComponent implements OnInit {
         include: {
           donor: true,
           campaign: true,
-          organization: { include: { place: { include: { country: true } } } },
-          payerCompany: { include: { place: { include: { country: true } } } }
+          organization: { include: { place: { include: { country: true } } } }
         }
       }) || undefined;
 
@@ -378,15 +377,10 @@ export class LetterPropertiesModalComponent implements OnInit {
         } else if (this.donation.organizationId && this.donation.organization?.place) {
           // Payer is an organization
           place = this.donation.organization.place;
-        } else if (this.donation.payerCompanyId && this.donation.payerCompany?.place) {
-          // Payer is a company
-          place = this.donation.payerCompany.place;
         }
 
         if (place) {
           result = `${place.houseNumber || ''} ${place.street || ''}`.trim();
-        } else {
-          result = this.donation.payerAddress || '';
         }
         break
       }
@@ -402,9 +396,6 @@ export class LetterPropertiesModalComponent implements OnInit {
         } else if (this.donation.organizationId && this.donation.organization?.place) {
           // Payer is an organization
           place = this.donation.organization.place;
-        } else if (this.donation.payerCompanyId && this.donation.payerCompany?.place) {
-          // Payer is a company
-          place = this.donation.payerCompany.place;
         }
 
         if (place) {
@@ -413,8 +404,6 @@ export class LetterPropertiesModalComponent implements OnInit {
           if (place.country?.name) parts.push(place.country.name);
           if (place.postcode) parts.push(place.postcode);
           result = parts.join(', ');
-        } else {
-          result = this.donation.payerAddress || '';
         }
         break
       }
