@@ -306,15 +306,10 @@ export class OsmAddressInputComponent implements ControlValueAccessor, OnDestroy
         console.log('Creating/updating Place record immediately upon selection:', placeData);
         console.log('PlaceId type and value:', typeof placeData.placeId, placeData.placeId);
 
-        // יצירה/עדכון של Place ב-DB מיד
-        const savedPlace = await Place.findOrCreate(placeData, remult.repo(Place));
-        console.log('Place saved successfully with ID:', savedPlace.id);
-
-        // טעינה מחדש של ה-Place עם ה-country relation
-        this.place = await remult.repo(Place).findId(savedPlace.id, {
-          include: { country: true }
-        }) || savedPlace;
-        console.log('Place reloaded with country:', this.place.country);
+        // יצירה/עדכון של Place ב-DB מיד (returns Place with country relation)
+        this.place = await Place.findOrCreate(placeData, remult.repo(Place));
+        console.log('Place saved successfully with ID:', this.place.id);
+        console.log('Place country:', this.place.country);
 
         this.hasSelectedAddress = true;
         this.showAddressDetails = false;

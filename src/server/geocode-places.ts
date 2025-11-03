@@ -1,6 +1,6 @@
 import { remult } from 'remult';
-import { Place } from '../shared/entity/place';
 import { Country } from '../shared/entity/country';
+import { Place } from '../shared/entity/place';
 
 /**
  * Process all Places that are missing coordinates (latitude = 0 or undefined)
@@ -33,27 +33,30 @@ export async function geocodeMissingPlaces() {
     let failedCount = 0;
     const failedPlaces: { placeId: string; fullAddress: string; error: string }[] = [];
 
+    let counter = 0
     // Process each place
     for (const place of placesNeedingGeocode) {
+      ++counter
+      // if(counter >= 10) break
       try {
         console.log(`\n[Geocode Places] Processing: ${place.fullAddress}`);
 
         // Call Google Geocoding API
         // If we have placeId, use doGetPlace, otherwise use geocodeAddress with fullAddress
         let geocodeResult;
-        if (place.placeId && place.placeId.trim().length > 0) {
-          console.log(`  -> Using placeId: ${place.placeId}`);
-          geocodeResult = await doGetPlace(place.placeId);
-        } else {
-          console.log(`  -> Using fullAddress for geocoding`);
-          geocodeResult = await geocodeAddress(place.fullAddress);
+        // if (place.placeId && place.placeId.trim().length > 0) {
+        //   console.log(`  -> Using placeId: ${place.placeId}`);
+        //   geocodeResult = await doGetPlace(place.placeId);
+        // } else {
+        console.log(`  -> Using fullAddress for geocoding`);
+        geocodeResult = await geocodeAddress(place.fullAddress);
 
-          // Update placeId if we got one from geocoding
-          if (geocodeResult?.valid && geocodeResult.placeId) {
-            place.placeId = geocodeResult.placeId;
-            console.log(`  -> Got new placeId: ${geocodeResult.placeId}`);
-          }
+        // Update placeId if we got one from geocoding
+        if (geocodeResult?.valid && geocodeResult.placeId) {
+          place.placeId = geocodeResult.placeId;
+          console.log(`  -> Got new placeId: ${geocodeResult.placeId}`);
         }
+        // }
 
         if (geocodeResult && geocodeResult.valid && geocodeResult.x && geocodeResult.y) {
           // Update coordinates

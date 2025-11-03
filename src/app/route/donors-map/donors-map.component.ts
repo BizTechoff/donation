@@ -31,7 +31,7 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('mapElement', { static: true }) mapElement!: ElementRef;
 
   private map!: L.Map;
-  private markersLayer!: L.LayerGroup;
+  private markersLayer!: L.FeatureGroup;
   private subscription = new Subscription();
 
   donors: Donor[] = [];
@@ -252,7 +252,7 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
       }).addTo(this.map);
 
       // יצירת שכבת סימנים
-      this.markersLayer = L.layerGroup().addTo(this.map);
+      this.markersLayer = L.featureGroup().addTo(this.map);
 
       // הוספת אירוע click למפה
       this.map.on('click', async (e: L.LeafletMouseEvent) => {
@@ -310,6 +310,22 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
     console.log('Total markers added:', addedCount);
     console.log('Markers layer count:', this.markersLayer.getLayers().length);
+
+    // Fit map to markers bounds if there are any markers
+    if (addedCount > 0) {
+      try {
+        const bounds = this.markersLayer.getBounds();
+        if (bounds.isValid()) {
+          this.map.fitBounds(bounds, {
+            padding: [50, 50], // Add padding around the markers
+            maxZoom: 15 // Don't zoom in too much if there's only one marker
+          });
+          console.log('Map fitted to bounds:', bounds);
+        }
+      } catch (error) {
+        console.warn('Error fitting map to bounds:', error);
+      }
+    }
 
     // Force map refresh
     setTimeout(() => {
@@ -659,15 +675,11 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
       console.log('Creating Place from map click:', placeData);
 
-      const savedPlace = await Place.findOrCreate(placeData, remult.repo(Place));
-
-      // טעינה מחדש של Place עם country relation
-      const place = await remult.repo(Place).findId(savedPlace.id, {
-        include: { country: true }
-      });
+      // findOrCreate returns Place with country relation already loaded
+      const place = await Place.findOrCreate(placeData, remult.repo(Place));
 
       // פתיחת דיאלוג תורם חדש עם המקום
-      const changed = await this.ui.donorDetailsDialog('new', { initialPlace: place || savedPlace });
+      const changed = await this.ui.donorDetailsDialog('new', { initialPlace: place });
 
       if (changed) {
         // רענן את המפה
