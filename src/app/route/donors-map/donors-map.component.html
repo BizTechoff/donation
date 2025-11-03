@@ -1,15 +1,18 @@
-<div class="donors-map-container" [attr.dir]="i18n.lang.RTL ? 'rtl' : 'ltr'">
+<div class="donors-map-container" [attr.dir]="i18n.lang.RTL ? 'rtl' : 'ltr'" [class.fullscreen]="isFullscreen">
   <div class="page-header">
     <h1>{{ i18n.terms.mapTitle }}</h1>
     <div class="map-controls">
       <button class="btn btn-primary" (click)="refreshMap()">{{ i18n.terms.refreshMap }}</button>
-      <button class="btn btn-secondary" (click)="toggleSummary()">{{ showSummary ? i18n.terms.hideSummary : i18n.terms.showSummary }}</button>
-      <button class="btn btn-info" (click)="geocodeMissingAddresses()" [disabled]="loading">{{ i18n.terms.convertAddresses }}</button>
+      <button class="btn btn-secondary" (click)="toggleSummary()" *ngIf="!isFullscreen">{{ showSummary ? i18n.terms.hideSummary : i18n.terms.showSummary }}</button>
+      <button class="btn btn-info" (click)="geocodeMissingAddresses()" [disabled]="loading" *ngIf="!isFullscreen">{{ i18n.terms.convertAddresses }}</button>
+      <button class="btn btn-fullscreen" (click)="toggleFullscreen()" [matTooltip]="isFullscreen ? 'יציאה ממסך מלא' : 'מסך מלא'">
+        <mat-icon>{{ isFullscreen ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
+      </button>
     </div>
   </div>
 
   <!-- Summary panel -->
-  <div class="summary-panel" [class.visible]="showSummary">
+  <div class="summary-panel" [class.visible]="showSummary" *ngIf="!isFullscreen">
     <h3>{{ i18n.terms.dataSummary }}</h3>
     <div class="summary-stats">
       <div class="stat-card">
@@ -49,7 +52,7 @@
   </div>
 
   <!-- Color legend -->
-  <div class="map-legend">
+  <div class="map-legend" [class.fullscreen-legend]="isFullscreen">
     <h4>{{ i18n.terms.legend }}</h4>
     <div class="legend-items">
       <div class="legend-item">

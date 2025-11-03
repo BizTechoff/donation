@@ -52,6 +52,7 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   loading = false;
   showSummary = true;
+  isFullscreen = false;
 
   donorRepo = remult.repo(Donor);
   donationRepo = remult.repo(Donation);
@@ -461,6 +462,28 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   toggleSummary() {
     this.showSummary = !this.showSummary;
+  }
+
+  toggleFullscreen() {
+    this.isFullscreen = !this.isFullscreen;
+
+    // Wait for DOM to update, then resize map
+    setTimeout(() => {
+      if (this.map) {
+        this.map.invalidateSize();
+
+        // Re-fit to bounds if we have markers
+        if (this.markersLayer && this.markersLayer.getLayers().length > 0) {
+          const bounds = this.markersLayer.getBounds();
+          if (bounds.isValid()) {
+            this.map.fitBounds(bounds, {
+              padding: [50, 50],
+              maxZoom: 15
+            });
+          }
+        }
+      }
+    }, 100);
   }
 
   // פונקציה להמרת כתובות תורמים שחסרים להם קואורדינטות
