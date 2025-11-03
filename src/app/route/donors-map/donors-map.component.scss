@@ -31,16 +31,25 @@
     padding: 0;
     z-index: 9999;
     background: white;
+    display: flex;
+    flex-direction: column;
 
     .page-header {
       padding: 10px 20px;
       background: white;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      flex-shrink: 0;
     }
 
     .map-container {
       flex: 1;
-      height: calc(100vh - 80px) !important;
+      height: auto !important;
+      min-height: 0;
+
+      .leaflet-map {
+        height: 100% !important;
+        width: 100%;
+      }
     }
   }
 }
@@ -221,53 +230,203 @@
     font-size: 1rem;
   }
 
-  // Fullscreen legend - position at bottom right
+  // Fullscreen legend - position at bottom right, outside of flex flow
   &.fullscreen-legend {
     position: fixed;
     bottom: 20px;
     right: 20px;
-    z-index: 1000;
+    z-index: 10000;
     max-width: 300px;
+    margin: 0;
   }
-  
+
   .legend-items {
     display: flex;
     flex-wrap: wrap;
     gap: 15px;
-    
+
     .legend-item {
       display: flex;
       align-items: center;
       gap: 8px;
-      
+
       .legend-color {
         width: 16px;
         height: 16px;
         border-radius: 50%;
         border: 2px solid #fff;
         box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2);
-        
+
         &.active {
           background: #27ae60;
         }
-        
+
         &.inactive {
           background: #95a5a6;
         }
-        
+
         &.high-donor {
           background: #f39c12;
         }
-        
+
         &.recent-donor {
           background: #e74c3c;
         }
       }
-      
+
       span {
         font-size: 0.9rem;
         color: #2c3e50;
       }
+    }
+  }
+}
+
+// Map Filters Panel
+.map-filters-panel {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 10px;
+
+  .panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e0e0e0;
+
+    h4 {
+      margin: 0;
+      color: #2c3e50;
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .btn-clear {
+      padding: 6px 12px;
+      background: #e74c3c;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all 0.3s ease;
+
+      &:hover:not(:disabled) {
+        background: #c0392b;
+      }
+
+      &:disabled {
+        background: #bdc3c7;
+        cursor: not-allowed;
+        opacity: 0.6;
+      }
+    }
+  }
+
+  .filter-group {
+    margin-bottom: 15px;
+
+    .filter-label {
+      display: block;
+      margin-bottom: 8px;
+      color: #34495e;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .filter-input, .filter-select {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      transition: border-color 0.3s ease;
+
+      &:focus {
+        outline: none;
+        border-color: #3498db;
+        box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+      }
+    }
+
+    .filter-input-small {
+      width: calc(50% - 10px);
+    }
+
+    .range-inputs {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+      .range-separator {
+        color: #7f8c8d;
+        font-weight: bold;
+      }
+    }
+  }
+
+  // Status chips for filtering
+  .status-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+
+    .status-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: white;
+
+      &:hover {
+        border-color: #3498db;
+        transform: translateY(-2px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      &.selected {
+        border-color: #3498db;
+        background: #e3f2fd;
+        box-shadow: 0 2px 4px rgba(52, 152, 219, 0.3);
+      }
+
+      .chip-color {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        border: 2px solid white;
+        box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2);
+      }
+
+      span {
+        font-size: 0.85rem;
+        color: #2c3e50;
+        font-weight: 500;
+      }
+    }
+  }
+
+  // Results counter
+  .results-counter {
+    margin-top: 20px;
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    text-align: center;
+    color: #34495e;
+    font-size: 0.95rem;
+
+    strong {
+      color: #2c3e50;
+      font-size: 1.1rem;
     }
   }
 }

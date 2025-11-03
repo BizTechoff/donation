@@ -25,6 +25,7 @@ import { Place } from '../shared/entity/place'
 import { Reminder } from '../shared/entity/reminder'
 import { User } from '../shared/entity/user'
 import { checkAndSendReminders } from './scheduler'
+import { DonorMapController } from '../shared/controllers/donor-map.controller'
 
 export const entities = [
   User, Donor, Donation, Campaign, DonationMethod, Reminder,
@@ -32,7 +33,7 @@ export const entities = [
   DonationFile, Bank, Organization, Company, Circle, DonorRelation, DonorContact, DonorPlace, DonorNote, DonorReceptionHour, NoteType, DonationBank, DonationOrganization, Payment, DonorAddressType, BlessingBookType, LetterTitle, Gift, DonorGift]
 export const api = remultExpress({
   admin: true,
-  controllers: [SignInController, UpdatePasswordController, DonorController, DonationController, LetterController, FileController, PaymentController],
+  controllers: [SignInController, UpdatePasswordController, DonorController, DonationController, LetterController, FileController, PaymentController, DonorMapController],
   entities,
   getUser,
   dataProvider: async () => {

@@ -14,6 +14,7 @@ import { remult } from 'remult'
 import { User } from '../shared/entity/user'
 import { Reminder } from '../shared/entity/reminder'
 import { terms } from './terms'
+import { SidebarService } from './services/sidebar.service'
  
 @Component({
   selector: 'app-root',
@@ -34,7 +35,8 @@ export class AppComponent implements OnInit {
     public activeRoute: ActivatedRoute,
     private routeHelper: RouteHelperService,
     public uiService: UIToolsService,
-    public i18n: I18nService
+    public i18n: I18nService,
+    private sidebarService: SidebarService
   ) {}
   remult = remult
   terms=terms
@@ -86,6 +88,22 @@ export class AppComponent implements OnInit {
         })
       })
     }
+
+    // Subscribe to fullscreen mode changes for sidebar management
+    this.sidebarService.fullscreenMode$.subscribe(isFullscreen => {
+      if (isFullscreen) {
+        // Entering fullscreen - save current state and close sidebar
+        const currentState = this.isSidebarOpen() ? 'open' : 'close'
+        this.sidebarService.saveSidebarState(currentState)
+        this.closeSidebar()
+      } else {
+        // Exiting fullscreen - restore saved state
+        const savedState = this.sidebarService.getSavedSidebarState()
+        if (savedState === 'open') {
+          this.openSidebar()
+        }
+      }
+    })
   }
 
   private updateDocumentDirection(): void {
@@ -237,6 +255,57 @@ export class AppComponent implements OnInit {
   async navigateToReminders() {
     const { RemindersListModalComponent } = await import('./routes/modals/reminders-list-modal/reminders-list-modal.component')
     await RemindersListModalComponent.open()
+  }
+
+  // Sidebar management methods
+  getSidebarMode(): 'open' | 'close' {
+    if (!remult.user?.id) return 'open';
+    return (remult.user as any).settings?.sidebarMode || 'open';
+  }
+
+  async setSidebarMode(mode: 'open' | 'close') {
+    if (!remult.user?.id) return;
+
+    const userRepo = remult.repo(User);
+    const user = await userRepo.findId(remult.user.id);
+    if (user) {
+      if (!user.settings) {
+        user.settings = {
+          openModal: 'dialog',
+          calendar_heb_holidays_jews_enabled: true,
+          calendar_open_heb_and_eng_parallel: true
+        };
+      }
+      user.settings.sidebarMode = mode;
+      await userRepo.save(user);
+
+      // Update current user object
+      remult.user = user;
+    }
+  }
+
+  async toggleSidebar() {
+    const currentMode = this.getSidebarMode();
+    const newMode = currentMode === 'open' ? 'close' : 'open';
+    await this.setSidebarMode(newMode);
+
+    if (newMode === 'open') {
+      this.sidenav.open();
+    } else {
+      this.sidenav.close();
+    }
+  }
+
+  closeSidebar() {
+    this.sidenav.close();
+  }
+
+  openSidebar() {
+    this.sidenav.open();
+  }
+
+  isSidebarOpen(): boolean {
+    return this.sidenav?.opened || false;
   }
 
 }

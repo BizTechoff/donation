@@ -100,6 +100,19 @@ export class User extends IdEntity {
     calendar_heb_holidays_jews_enabled: boolean;
     calendar_open_heb_and_eng_parallel: boolean;
     globalFilters?: any; // Store global filter preferences
+    sidebarMode?: 'open' | 'close'; // Sidebar state preference
+    mapSettings?: {
+      fullscreen?: boolean;
+      filters?: {
+        statusFilter?: string[]; // ['active', 'inactive', 'high-donor', 'recent-donor']
+        hasCoordinates?: boolean | null; // true = only with coords, false = only without, null = all
+        minTotalDonations?: number;
+        maxTotalDonations?: number;
+        minDonationCount?: number;
+        hasRecentDonation?: boolean | null; // donated in last 3 months
+        searchTerm?: string;
+      };
+    };
   };
 
   @Fields.number({

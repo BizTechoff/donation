@@ -72,6 +72,17 @@ export const termsHe = {
   convertedAddresses: 'הומרו {count} כתובות בהצלחה מתוך {total}',
   allDonorsHaveCoordinates: 'כל התורמים כבר מכילים קואורדינטות או שאין להם כתובת',
 
+  // Map Filters
+  filtersAndLegend: 'פילטרים ומקרא',
+  filterByStatus: 'סינון לפי סטטוס',
+  filterByLocation: 'מיקום',
+  withCoordinates: 'עם קואורדינטות',
+  withoutCoordinates: 'ללא קואורדינטות',
+  minDonationCount: 'מינימום תרומות',
+  totalDonationsRange: 'טווח סכום תרומות',
+  searchDonorNameAddress: 'חפש לפי שם או כתובת',
+  showing: 'מציג',
+
   // Common UI Elements
   save: 'שמור',
   add: 'הוסף',

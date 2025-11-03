@@ -71,6 +71,17 @@ export const termsEn = {
   convertedAddresses: 'Successfully converted {count} addresses out of {total}',
   allDonorsHaveCoordinates: 'All donors already have coordinates or have no address',
 
+  // Map Filters
+  filtersAndLegend: 'Filters & Legend',
+  filterByStatus: 'Filter by Status',
+  filterByLocation: 'Location',
+  withCoordinates: 'With Coordinates',
+  withoutCoordinates: 'Without Coordinates',
+  minDonationCount: 'Minimum Donations',
+  totalDonationsRange: 'Total Donations Range',
+  searchDonorNameAddress: 'Search by name or address',
+  showing: 'Showing',
+
   // Common UI Elements
   save: 'Save',
   add: 'Add',

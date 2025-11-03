@@ -204,7 +204,7 @@ export class Donation extends IdEntity {
     caption: 'סוג תרומה',
     validate: Validators.required,
   })
-  donationType: 'full' | 'commitment' | 'standingOrder' = 'full'
+  donationType: 'full' | 'commitment' = 'full'
 
   @Fields.string({
     caption: 'סוג הוראת קבע',

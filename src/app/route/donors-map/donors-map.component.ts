@@ -13,6 +13,9 @@ import { DonorService } from '../../services/donor.service';
 import { GeoService } from '../../services/geo.service';
 import { GeocodingService } from '../../services/geocoding.service';
 import { GlobalFilterService } from '../../services/global-filter.service';
+import { SidebarService } from '../../services/sidebar.service';
+import { DonorMapController, DonorMapData } from '../../../shared/controllers/donor-map.controller';
+import { User } from '../../../shared/entity/user';
 
 // Fix for default markers in Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -21,6 +24,17 @@ L.Icon.Default.mergeOptions({
   iconUrl: 'assets/leaflet/marker-icon.png',
   shadowUrl: 'assets/leaflet/marker-shadow.png',
 });
+
+// Map filter interface
+export interface MapFilters {
+  statusFilter: string[];
+  hasCoordinates: boolean | null;
+  minTotalDonations: number;
+  maxTotalDonations: number;
+  minDonationCount: number;
+  hasRecentDonation: boolean | null;
+  searchTerm: string;
+}
 
 @Component({
   selector: 'app-donors-map',
@@ -34,28 +48,32 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
   private markersLayer!: L.FeatureGroup;
   private subscription = new Subscription();
 
-  donors: Donor[] = [];
-  donations: Donation[] = [];
-
-  // Maps for related data from dedicated entities
-  donorPlaceMap = new Map<string, Place>();
-  donorEmailMap = new Map<string, string>();
-  donorPhoneMap = new Map<string, string>();
-  donorFullAddressMap = new Map<string, string>();
-
-  // Stats maps
-  donorTotalDonationsMap = new Map<string, number>();
-  donorAverageDonationMap = new Map<string, number>();
-  donorLastDonationDateMap = new Map<string, Date | null>();
-  donorDonationCountMap = new Map<string, number>();
-  donorStatusMap = new Map<string, 'active' | 'inactive' | 'high-donor' | 'recent-donor'>();
+  // All donor map data loaded from server
+  donorsMapData: DonorMapData[] = [];
+  filteredDonorsMapData: DonorMapData[] = [];
 
   loading = false;
   showSummary = true;
   isFullscreen = false;
 
-  donorRepo = remult.repo(Donor);
-  donationRepo = remult.repo(Donation);
+  // Map filters
+  mapFilters: MapFilters = {
+    statusFilter: [],
+    hasCoordinates: null,
+    minTotalDonations: 0,
+    maxTotalDonations: 999999999,
+    minDonationCount: 0,
+    hasRecentDonation: null,
+    searchTerm: ''
+  };
+
+  // Filter options
+  statusOptions = [
+    { value: 'active', label: 'פעיל', color: '#27ae60' },
+    { value: 'inactive', label: 'לא פעיל', color: '#95a5a6' },
+    { value: 'high-donor', label: 'תורם גדול', color: '#f39c12' },
+    { value: 'recent-donor', label: 'תרם לאחרונה', color: '#e74c3c' }
+  ];
 
   constructor(
     private geocodingService: GeocodingService,
@@ -65,31 +83,29 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     private donorService: DonorService,
     private filterService: GlobalFilterService,
     private geoService: GeoService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private sidebarService: SidebarService
   ) { }
-
-  // Note: DonorService already injected above for findFiltered()
 
   // סטטיסטיקות
   get totalDonors(): number {
-    return this.donors.length;
+    return this.donorsMapData.length;
   }
 
   get activeDonors(): number {
-    return this.donors.filter(d => d.isActive).length;
+    return this.donorsMapData.filter(d => d.donor.isActive).length;
   }
 
   get averageDonation(): number {
-    if (this.donors.length === 0) return 0;
-    const totalAmount = this.donors.reduce((sum, d) => sum + (this.donorTotalDonationsMap.get(d.id) || 0), 0);
-    const totalCount = this.donors.reduce((sum, d) => sum + (this.donorDonationCountMap.get(d.id) || 0), 0);
+    if (this.donorsMapData.length === 0) return 0;
+    const totalAmount = this.donorsMapData.reduce((sum, d) => sum + d.stats.totalDonations, 0);
+    const totalCount = this.donorsMapData.reduce((sum, d) => sum + d.stats.donationCount, 0);
     return totalCount > 0 ? totalAmount / totalCount : 0;
   }
 
   get donorsOnMap(): number {
-    return this.donors.filter(d => {
-      const place = this.donorPlaceMap.get(d.id);
-      return place?.latitude && place?.longitude;
+    return this.donorsMapData.filter(d => {
+      return d.donorPlace?.place?.latitude && d.donorPlace?.place?.longitude;
     }).length;
   }
 
@@ -102,6 +118,9 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     (window as any).addDonationForDonor = (donorId: string) => {
       this.addDonationForDonor(donorId);
     };
+
+    // Load saved map settings
+    await this.loadMapSettings();
 
     // Subscribe to global filter changes
     this.subscription.add(
@@ -128,11 +147,22 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
   async loadData() {
     this.loading = true;
     try {
-      await Promise.all([
-        this.loadDonors(),
-        this.loadDonations()
-      ]);
-      this.calculateDonorStats();
+      // Use DonorService to get filtered donor IDs
+      const currentFilters = this.filterService.currentFilters;
+      console.log('DonorsMap: Loading donors with filters:', currentFilters);
+
+      const filteredDonors = await this.donorService.findFiltered();
+      const donorIds = filteredDonors.map(d => d.id);
+
+      // Load all map data from server in a single call
+      this.donorsMapData = await DonorMapController.loadDonorsMapData(donorIds);
+
+      // Apply local map filters
+      this.applyMapFilters();
+
+      console.log('DonorsMap: Loaded donor map data:', this.donorsMapData.length);
+      console.log('DonorsMap: Filtered donors:', this.filteredDonorsMapData.length);
+      console.log('DonorsMap: Donors with locations:', this.donorsOnMap);
 
       // Update map markers if map is initialized
       if (this.map && this.markersLayer) {
@@ -145,94 +175,169 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  async loadDonors() {
-    // Use DonorService which automatically applies global filters
-    const currentFilters = this.filterService.currentFilters;
-    console.log('DonorsMap: Loading donors with filters:', currentFilters);
+  // Load map settings from user preferences
+  async loadMapSettings() {
+    if (!remult.user?.id) return;
 
-    const baseDonors = await this.donorService.findFiltered();
+    try {
+      const userRepo = remult.repo(User);
+      const user = await userRepo.findId(remult.user.id);
 
-    // Use DonorService to load all related data
-    const relatedData = await this.donorService.loadDonorRelatedData(
-      baseDonors.map(d => d.id)
-    );
+      if (user?.settings?.mapSettings) {
+        const savedSettings = user.settings.mapSettings;
 
-    // Populate maps from service
-    this.donorPlaceMap = relatedData.donorPlaceMap;
-    this.donorEmailMap = relatedData.donorEmailMap;
-    this.donorPhoneMap = relatedData.donorPhoneMap;
-    this.donorFullAddressMap = relatedData.donorFullAddressMap;
-    // Note: birthDate not needed for donors-map
+        // Load fullscreen preference
+        if (savedSettings.fullscreen !== undefined) {
+          this.isFullscreen = savedSettings.fullscreen;
+        }
 
-    this.donors = baseDonors;
-
-    console.log('DonorsMap: Loaded donors:', this.donors.length);
-    console.log('DonorsMap: Donors with locations:', this.donors.filter(d => {
-      const place = this.donorPlaceMap.get(d.id);
-      return place?.latitude && place?.longitude;
-    }).length);
+        // Load filter preferences
+        if (savedSettings.filters) {
+          this.mapFilters = {
+            ...this.mapFilters,
+            ...savedSettings.filters
+          };
+        }
+      }
+    } catch (error) {
+      console.error('Error loading map settings:', error);
+    }
   }
 
-  async loadDonations() {
-    this.donations = await this.donationRepo.find({
-      include: {
-        donor: true
+  // Save map settings to user preferences
+  async saveMapSettings() {
+    if (!remult.user?.id) return;
+
+    try {
+      const userRepo = remult.repo(User);
+      const user = await userRepo.findId(remult.user.id);
+
+      if (user) {
+        if (!user.settings) {
+          user.settings = {
+            openModal: 'dialog',
+            calendar_heb_holidays_jews_enabled: true,
+            calendar_open_heb_and_eng_parallel: true
+          };
+        }
+
+        user.settings.mapSettings = {
+          fullscreen: this.isFullscreen,
+          filters: { ...this.mapFilters }
+        };
+
+        await userRepo.save(user);
+        remult.user = user;
+
+        console.log('Map settings saved successfully');
       }
+    } catch (error) {
+      console.error('Error saving map settings:', error);
+    }
+  }
+
+  // Apply local map filters to the loaded data
+  applyMapFilters() {
+    this.filteredDonorsMapData = this.donorsMapData.filter(donorData => {
+      // Status filter
+      if (this.mapFilters.statusFilter.length > 0) {
+        if (!this.mapFilters.statusFilter.includes(donorData.stats.status)) {
+          return false;
+        }
+      }
+
+      // Coordinates filter
+      if (this.mapFilters.hasCoordinates !== null) {
+        const hasCoords = !!(donorData.donorPlace?.place?.latitude && donorData.donorPlace?.place?.longitude);
+        if (this.mapFilters.hasCoordinates !== hasCoords) {
+          return false;
+        }
+      }
+
+      // Total donations filter
+      if (donorData.stats.totalDonations < this.mapFilters.minTotalDonations ||
+          donorData.stats.totalDonations > this.mapFilters.maxTotalDonations) {
+        return false;
+      }
+
+      // Donation count filter
+      if (donorData.stats.donationCount < this.mapFilters.minDonationCount) {
+        return false;
+      }
+
+      // Recent donation filter
+      if (this.mapFilters.hasRecentDonation !== null) {
+        const hasRecent = donorData.stats.status === 'recent-donor';
+        if (this.mapFilters.hasRecentDonation !== hasRecent) {
+          return false;
+        }
+      }
+
+      // Search term filter
+      if (this.mapFilters.searchTerm.trim()) {
+        const term = this.mapFilters.searchTerm.toLowerCase();
+        const matchesName = donorData.donor.firstName?.toLowerCase().includes(term) ||
+                           donorData.donor.lastName?.toLowerCase().includes(term) ||
+                           donorData.donor.fullName?.toLowerCase().includes(term);
+        const matchesAddress = donorData.fullAddress?.toLowerCase().includes(term);
+        const matchesEmail = donorData.email?.toLowerCase().includes(term);
+
+        if (!matchesName && !matchesAddress && !matchesEmail) {
+          return false;
+        }
+      }
+
+      return true;
     });
   }
 
-  calculateDonorStats() {
-    // Clear existing stats
-    this.donorDonationCountMap.clear();
-    this.donorTotalDonationsMap.clear();
-    this.donorAverageDonationMap.clear();
-    this.donorLastDonationDateMap.clear();
-    this.donorStatusMap.clear();
-
-    this.donors.forEach(donor => {
-      const donorDonations = this.donations.filter(d => d.donorId === donor.id);
-
-      const donationCount = donorDonations.length;
-      const totalDonations = donorDonations.reduce((sum, d) => sum + d.amount, 0);
-      const averageDonation = donationCount > 0 ? totalDonations / donationCount : 0;
-
-      this.donorDonationCountMap.set(donor.id, donationCount);
-      this.donorTotalDonationsMap.set(donor.id, totalDonations);
-      this.donorAverageDonationMap.set(donor.id, averageDonation);
-
-      // מצא תאריך תרומה אחרונה
-      const sortedDonations = donorDonations.sort((a, b) =>
-        new Date(b.donationDate).getTime() - new Date(a.donationDate).getTime()
-      );
-      const lastDonationDate = sortedDonations.length > 0 ? sortedDonations[0].donationDate : null;
-      this.donorLastDonationDateMap.set(donor.id, lastDonationDate);
-
-      // קבע סטטוס לפי קריטריונים
-      const status = this.determineDonorStatus(donor.id);
-      this.donorStatusMap.set(donor.id, status);
-    });
+  // Check if any filter is active
+  hasActiveFilters(): boolean {
+    return this.mapFilters.statusFilter.length > 0 ||
+           this.mapFilters.hasCoordinates !== null ||
+           this.mapFilters.minTotalDonations > 0 ||
+           this.mapFilters.maxTotalDonations < 999999999 ||
+           this.mapFilters.minDonationCount > 0 ||
+           this.mapFilters.hasRecentDonation !== null ||
+           this.mapFilters.searchTerm.trim() !== '';
   }
 
-  determineDonorStatus(donorId: string): 'active' | 'inactive' | 'high-donor' | 'recent-donor' {
-    const donor = this.donors.find(d => d.id === donorId);
-    if (!donor || !donor.isActive) return 'inactive';
+  // Clear all filters
+  clearMapFilters() {
+    this.mapFilters = {
+      statusFilter: [],
+      hasCoordinates: null,
+      minTotalDonations: 0,
+      maxTotalDonations: 999999999,
+      minDonationCount: 0,
+      hasRecentDonation: null,
+      searchTerm: ''
+    };
 
-    const totalDonations = this.donorTotalDonationsMap.get(donorId) || 0;
-    const lastDonationDate = this.donorLastDonationDateMap.get(donorId);
+    this.applyMapFilters();
+    this.addMarkersToMap();
+    this.saveMapSettings();
+  }
 
-    // תורם גדול - מעל 10,000 שקלים בסך הכל
-    if (totalDonations > 10000) return 'high-donor';
-
-    // תרם לאחרונה - תרם בחודשים האחרונים
-    if (lastDonationDate) {
-      const threeMonthsAgo = new Date();
-      threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-      if (new Date(lastDonationDate) > threeMonthsAgo) {
-        return 'recent-donor';
-      }
+  // Toggle status filter
+  toggleStatusFilter(status: string) {
+    const index = this.mapFilters.statusFilter.indexOf(status);
+    if (index > -1) {
+      this.mapFilters.statusFilter.splice(index, 1);
+    } else {
+      this.mapFilters.statusFilter.push(status);
     }
 
-    return 'active';
+    this.applyMapFilters();
+    this.addMarkersToMap();
+    this.saveMapSettings();
+  }
+
+  // Update filter and refresh
+  onFilterChange() {
+    this.applyMapFilters();
+    this.addMarkersToMap();
+    this.saveMapSettings();
   }
 
   initializeMap() {
@@ -286,26 +391,23 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.markersLayer.clearLayers();
 
-    console.log('Adding markers for donors:', this.donors.length);
-    console.log('Donors with coordinates:', this.donors.filter(d => {
-      const place = this.donorPlaceMap.get(d.id);
-      return place?.latitude && place?.longitude;
-    }).length);
+    console.log('Adding markers for donors:', this.filteredDonorsMapData.length);
+    const donorsWithCoords = this.filteredDonorsMapData.filter(d => d.donorPlace?.place?.latitude && d.donorPlace?.place?.longitude);
+    console.log('Donors with coordinates:', donorsWithCoords.length);
 
     let addedCount = 0;
-    this.donors.forEach((donor, index) => {
-      const place = this.donorPlaceMap.get(donor.id);
-      if (place?.latitude && place?.longitude) {
-        console.log(`Adding marker ${index + 1}:`, donor.displayName, place.latitude, place.longitude);
+    this.filteredDonorsMapData.forEach((donorData, index) => {
+      if (donorData.donorPlace?.place?.latitude && donorData.donorPlace?.place?.longitude) {
+        console.log(`Adding marker ${index + 1}:`, donorData.donor.displayName, donorData.donorPlace.place.latitude, donorData.donorPlace.place.longitude);
         try {
-          const marker = this.createMarkerForDonor(donor);
+          const marker = this.createMarkerForDonor(donorData);
           this.markersLayer.addLayer(marker);
           addedCount++;
         } catch (error) {
-          console.error('Error creating marker for donor:', donor.displayName, error);
+          console.error('Error creating marker for donor:', donorData.donor.displayName, error);
         }
       } else {
-        console.log(`No coordinates for donor ${index + 1}:`, donor.displayName);
+        console.log(`No coordinates for donor ${index + 1}:`, donorData.donor.displayName);
       }
     });
 
@@ -340,12 +442,10 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     }, 100);
   }
 
-  createMarkerForDonor(donor: Donor): L.Marker {
-    const status = this.donorStatusMap.get(donor.id) || 'active';
-    const color = this.getMarkerColor(status);
-    const place = this.donorPlaceMap.get(donor.id);
+  createMarkerForDonor(donorData: DonorMapData): L.Marker {
+    const color = this.getMarkerColor(donorData.stats.status);
 
-    if (!place?.latitude || !place?.longitude) {
+    if (!donorData.donorPlace?.place?.latitude || !donorData.donorPlace?.place?.longitude) {
       throw new Error('Missing place coordinates');
     }
 
@@ -364,12 +464,12 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
       iconAnchor: [10, 10]
     });
 
-    const marker = L.marker([place.latitude, place.longitude], {
+    const marker = L.marker([donorData.donorPlace.place.latitude, donorData.donorPlace.place.longitude], {
       icon: customIcon
     });
 
     // הוסף חלונית popup עם פרטי התורם
-    const popupContent = this.createPopupContent(donor);
+    const popupContent = this.createPopupContent(donorData);
     marker.bindPopup(popupContent);
 
     return marker;
@@ -385,18 +485,10 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  createPopupContent(donor: Donor): string {
-    const lastDonationDate = this.donorLastDonationDateMap.get(donor.id);
-    const lastDonationText = lastDonationDate
-      ? new Date(lastDonationDate).toLocaleDateString(this.i18n.lang.RTL ? 'he-IL' : 'en-US')
+  createPopupContent(donorData: DonorMapData): string {
+    const lastDonationText = donorData.stats.lastDonationDate
+      ? new Date(donorData.stats.lastDonationDate).toLocaleDateString(this.i18n.lang.RTL ? 'he-IL' : 'en-US')
       : this.i18n.terms.noDataAvailable;
-
-    const fullAddress = this.donorFullAddressMap.get(donor.id);
-    const primaryEmail = this.donorEmailMap.get(donor.id);
-    const primaryPhone = this.donorPhoneMap.get(donor.id);
-    const totalDonations = this.donorTotalDonationsMap.get(donor.id) || 0;
-    const donationCount = this.donorDonationCountMap.get(donor.id) || 0;
-    const averageDonation = this.donorAverageDonationMap.get(donor.id) || 0;
 
     const direction = this.i18n.lang.RTL ? 'rtl' : 'ltr';
     const textAlign = this.i18n.lang.RTL ? 'right' : 'left';
@@ -404,8 +496,8 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     return `
       <div style="direction: ${direction}; font-family: Arial, sans-serif; min-width: 250px; text-align: ${textAlign};">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-          <h4 style="margin: 0; color: #2c3e50; cursor: pointer; text-decoration: underline;" onclick="window.openDonorDetails('${donor.id}')">
-            ${donor.displayName}
+          <h4 style="margin: 0; color: #2c3e50; cursor: pointer; text-decoration: underline;" onclick="window.openDonorDetails('${donorData.donor.id}')">
+            ${donorData.donor.displayName}
           </h4>
           <button style="
             background: #27ae60;
@@ -416,7 +508,7 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
             font-size: 12px;
             cursor: pointer;
             transition: background-color 0.3s;
-          " onclick="window.addDonationForDonor('${donor.id}')" onmouseover="this.style.backgroundColor='#229954'" onmouseout="this.style.backgroundColor='#27ae60'">
+          " onclick="window.addDonationForDonor('${donorData.donor.id}')" onmouseover="this.style.backgroundColor='#229954'" onmouseout="this.style.backgroundColor='#27ae60'">
             + הוסף תרומה
           </button>
         </div>
@@ -425,26 +517,26 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
         <div style="margin-bottom: 8px;">
           <strong>📍 ${this.i18n.terms.addressLabel}:</strong><br>
-          ${fullAddress || this.i18n.terms.notSpecifiedAddress}
+          ${donorData.fullAddress || this.i18n.terms.notSpecifiedAddress}
         </div>
         <div style="margin-bottom: 8px;">
-          <strong>📧 ${this.i18n.terms.emailLabel}:</strong> ${primaryEmail || this.i18n.terms.mapNotSpecified}
+          <strong>📧 ${this.i18n.terms.emailLabel}:</strong> ${donorData.email || this.i18n.terms.mapNotSpecified}
         </div>
         <div style="margin-bottom: 8px;">
-          <strong>📞 ${this.i18n.terms.phoneLabel}:</strong> ${primaryPhone || this.i18n.terms.mapNotSpecified}
+          <strong>📞 ${this.i18n.terms.phoneLabel}:</strong> ${donorData.phone || this.i18n.terms.mapNotSpecified}
         </div>
         <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin-top: 10px;">
           <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
             <span><strong>💰 ${this.i18n.terms.totalDonationsLabel}:</strong></span>
-            <span>₪${totalDonations.toLocaleString()}</span>
+            <span>₪${donorData.stats.totalDonations.toLocaleString()}</span>
           </div>
           <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
             <span><strong>📊 ${this.i18n.terms.donationCountLabel}:</strong></span>
-            <span>${donationCount}</span>
+            <span>${donorData.stats.donationCount}</span>
           </div>
           <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
             <span><strong>📈 ${this.i18n.terms.averageDonationLabel}:</strong></span>
-            <span>₪${averageDonation.toLocaleString()}</span>
+            <span>₪${donorData.stats.averageDonation.toLocaleString()}</span>
           </div>
           <div style="display: flex; justify-content: space-between;">
             <span><strong>📅 ${this.i18n.terms.lastDonationLabel}:</strong></span>
@@ -466,6 +558,16 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   toggleFullscreen() {
     this.isFullscreen = !this.isFullscreen;
+
+    // Notify sidebar service about fullscreen state change
+    if (this.isFullscreen) {
+      this.sidebarService.enterFullscreen();
+    } else {
+      this.sidebarService.exitFullscreen();
+    }
+
+    // Save fullscreen preference
+    this.saveMapSettings();
 
     // Wait for DOM to update, then resize map
     setTimeout(() => {
@@ -519,67 +621,6 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  // Legacy method - keeping for reference (not used anymore)
-  async geocodeMissingAddresses_OLD() {
-    const donorsWithoutCoords = this.donors.filter(d => {
-      const place = this.donorPlaceMap.get(d.id);
-      const fullAddress = this.donorFullAddressMap.get(d.id);
-      return !place?.latitude && !place?.longitude && fullAddress && fullAddress.trim() !== '';
-    });
-
-    if (donorsWithoutCoords.length === 0) {
-      alert(this.i18n.terms.allDonorsHaveCoordinates);
-      return;
-    }
-
-    this.loading = true;
-    let updatedCount = 0;
-
-    for (const donor of donorsWithoutCoords) {
-      try {
-        const fullAddress = this.donorFullAddressMap.get(donor.id);
-        const place = this.donorPlaceMap.get(donor.id);
-
-        if (!fullAddress) continue;
-
-        const coords = await this.geocodingService.geocodeAddress(
-          fullAddress,
-          place?.city || '',
-          place?.country?.name || ''
-        );
-
-        if (coords && place) {
-          place.latitude = coords.latitude;
-          place.longitude = coords.longitude;
-
-          // Save the updated place to database
-          try {
-            const placeRepo = remult.repo(Place);
-            await placeRepo.save(place);
-            updatedCount++;
-          } catch (error) {
-            console.error(`Error saving place for ${donor.displayName}:`, error);
-          }
-        }
-
-        // הוסף delay קטן כדי לא להעמיס על השרת
-        await new Promise(resolve => setTimeout(resolve, 200));
-      } catch (error) {
-        console.error(`Error geocoding address for ${donor.displayName}:`, error);
-      }
-    }
-
-    this.loading = false;
-    const message = this.i18n.terms.convertedAddresses
-      .replace('{count}', updatedCount.toString())
-      .replace('{total}', donorsWithoutCoords.length.toString());
-    alert(message);
-
-    if (updatedCount > 0) {
-      this.addMarkersToMap();
-    }
-  }
-
   // Navigation and action methods for popup buttons
   async openDonorDetails(donorId: string) {
     // Open donor details modal instead of navigating
@@ -598,11 +639,10 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     // Open donation modal directly with pre-selected donor
     const changed = await this.ui.donationDetailsDialog('new', { donorId });
     if (changed) {
-      // Reload donations if needed to refresh the map data
+      // Reload all data if needed to refresh the map with updated stats
       // Use setTimeout to avoid ExpressionChangedAfterItHasBeenCheckedError
       setTimeout(async () => {
-        await this.loadDonations();
-        this.calculateDonorStats();
+        await this.loadData();
         this.addMarkersToMap();
       });
     }
