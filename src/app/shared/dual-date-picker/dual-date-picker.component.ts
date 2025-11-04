@@ -24,11 +24,11 @@ export class DualDatePickerComponent implements OnInit, ControlValueAccessor {
   hebrewDay: number = 1;
   hebrewMonth: number = 1;
   hebrewYear: number = 5785;
-  
+
   hebrewMonths: { value: number; name: string }[] = [];
   hebrewDays: number[] = [];
   hebrewYears: number[] = [];
-  
+
   private onChange: (value: any) => void = () => {};
   private onTouched: () => void = () => {};
   disabled = false;
@@ -158,7 +158,8 @@ export class DualDatePickerComponent implements OnInit, ControlValueAccessor {
     if (!this.gregorianDate) return '';
     try {
       const date = new Date(this.gregorianDate);
-      return this.hebrewDateService.convertGregorianToHebrew(date).formatted;
+      const hebrew = this.hebrewDateService.convertGregorianToHebrew(date);
+      return hebrew.formatted;
     } catch {
       return '';
     }

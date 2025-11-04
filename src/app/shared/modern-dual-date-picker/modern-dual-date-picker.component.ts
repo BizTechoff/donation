@@ -1,6 +1,5 @@
 import { Component, ElementRef, EventEmitter, forwardRef, Input, OnDestroy, OnInit, Output, ViewChild } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { months } from '@hebcal/core';
 import { HebrewDateService } from '../../services/hebrew-date.service';
 import { I18nService } from '../../i18n/i18n.service';
 
@@ -41,7 +40,7 @@ export class ModernDualDatePickerComponent implements OnInit, OnDestroy, Control
 
   // Hebrew calendar state
   hebrewSelectedDay: number = 1;
-  hebrewSelectedMonth: number = months.TISHREI;
+  hebrewSelectedMonth: number = 7; // Will be set to TISHREI constant in ngOnInit
   hebrewSelectedYear: number = 5785;
   hebrewMonths: { value: number; name: string }[] = [];
   hebrewYearsList: number[] = [];
@@ -62,6 +61,12 @@ export class ModernDualDatePickerComponent implements OnInit, OnDestroy, Control
   pastYearInterval = 100
   futureYearInterval = 13
 
+  // Cache for isCurrentMonth to avoid async in template
+  _isCurrentMonth: boolean = false;
+
+  // Cache for Hebrew year strings to avoid async in template
+  hebrewYearStringsCache: Map<number, string> = new Map();
+
   private onChange: (value: any) => void = () => { };
   private onTouched: () => void = () => { };
 
@@ -77,6 +82,10 @@ export class ModernDualDatePickerComponent implements OnInit, OnDestroy, Control
   }
 
   ngOnInit() {
+    // Load TISHREI constant from service
+    const monthConstants = this.hebrewDateService.getMonthConstants();
+    this.hebrewSelectedMonth = monthConstants['TISHREI'];
+
     this.initializeI18nLabels();
     this.initializeCalendars();
     this.setupClickOutsideListener();
@@ -224,6 +233,19 @@ export class ModernDualDatePickerComponent implements OnInit, OnDestroy, Control
     for (let year = currentYear - this.pastYearInterval; year <= currentYear + this.futureYearInterval; ++year) {
       this.hebrewYearsList.push(year);
     }
+
+    // Pre-load Hebrew year strings for all years in the list
+    this.preloadHebrewYearStrings();
+  }
+
+  preloadHebrewYearStrings() {
+    // Load year strings for all years
+    this.hebrewYearsList.forEach(year => {
+      if (!this.hebrewYearStringsCache.has(year)) {
+        const yearString = this.hebrewDateService.formatHebrewYear(year);
+        this.hebrewYearStringsCache.set(year, yearString);
+      }
+    });
   }
 
   generateGregorianYearsList() {
@@ -241,6 +263,7 @@ export class ModernDualDatePickerComponent implements OnInit, OnDestroy, Control
   }
 
   generateHebrewCalendar() {
+    this.updateIsCurrentMonth();
     const daysInMonth = this.hebrewDateService.getDaysInMonth(this.hebrewSelectedMonth, this.hebrewSelectedYear);
     const weeks: number[][] = [];
     let week: number[] = [];
@@ -532,11 +555,11 @@ export class ModernDualDatePickerComponent implements OnInit, OnDestroy, Control
   }
 
   getCurrentHebrewYearString(): string {
-    return this.hebrewDateService.getHebrewYearString(this.hebrewSelectedYear);
+    return this.hebrewYearStringsCache.get(this.hebrewSelectedYear) || this.hebrewSelectedYear.toString();
   }
 
   getHebrewYearString(year: number): string {
-    return this.hebrewDateService.getHebrewYearString(year);
+    return this.hebrewYearStringsCache.get(year) || year.toString();
   }
 
   getHebrewDayString(day: number): string {
@@ -575,9 +598,13 @@ export class ModernDualDatePickerComponent implements OnInit, OnDestroy, Control
   }
 
   isCurrentMonth(): boolean {
+    return this._isCurrentMonth;
+  }
+
+  private updateIsCurrentMonth() {
     const today = new Date();
     const hebrewToday = this.hebrewDateService.convertGregorianToHebrew(today);
-    return this.hebrewSelectedMonth === hebrewToday.month &&
+    this._isCurrentMonth = this.hebrewSelectedMonth === hebrewToday.month &&
       this.hebrewSelectedYear === hebrewToday.year;
   }
 
