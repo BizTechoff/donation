@@ -9,6 +9,7 @@ import { I18nService } from '../../../i18n/i18n.service';
 import { GlobalFilterService } from '../../../services/global-filter.service';
 import { HebrewDateService } from '../../../services/hebrew-date.service';
 import { DonorService } from '../../../services/donor.service';
+import { ReminderService } from '../../../services/reminder.service';
 
 export interface ReminderDetailsModalArgs {
   reminderId?: string; // 'new' for new reminder or reminder ID for editing
@@ -64,7 +65,7 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
   // Options will be populated with i18n values
   typeOptions: { value: string, label: string }[] = [];
   priorityOptions: { value: string, label: string }[] = [];
-  alertMethodOptions: { value: string, label: string }[] = [];
+  alertMethodOptions: { value: string, label: string, disabled?: boolean }[] = [];
   recurringPatternOptions: { value: string, label: string }[] = [];
   weekDayOptions: { value: number, label: string }[] = [];
   monthOptions: { value: number, label: string }[] = [];
@@ -90,7 +91,8 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
     private hebrewDateService: HebrewDateService,
     private cdr: ChangeDetectorRef,
     public dialogRef: MatDialogRef<ReminderDetailsModalComponent>,
-    private donorService: DonorService
+    private donorService: DonorService,
+    private reminderService: ReminderService
   ) { }
 
   async ngOnInit() {
@@ -130,7 +132,7 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
         if (this.args.isRecurringYearly) {
           this.reminder.isRecurring = true;
           this.reminder.recurringPattern = 'yearly';
-          const hebDate = this.hebrewDateService.convertGregorianToHebrew(this.reminder.dueDate)
+          const hebDate = await this.hebrewDateService.convertGregorianToHebrew(this.reminder.dueDate)
           // console.log('this.reminder.dueDate',this.reminder.dueDate, 'hebDate',hebDate)
           this.reminder.recurringMonth = hebDate.month
           this.reminder.recurringDayOfMonth = hebDate.day
@@ -430,8 +432,18 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
       }
 
       // Calculate next reminder date if recurring
-      if (this.reminder.isRecurring && this.reminder.recurringPattern !== 'none') {
-        this.reminder.nextReminderDate = this.reminder.calculateNextReminderDate();
+      if (this.reminder.isRecurring) {
+        this.reminder.nextReminderDate = await this.reminderService.calculateNextReminderDate({
+          isRecurring: this.reminder.isRecurring,
+          recurringPattern: this.reminder.recurringPattern,
+          dueDate: this.reminder.dueDate,
+          completedDate: this.reminder.completedDate,
+          recurringWeekDay: this.reminder.recurringWeekDay,
+          recurringDayOfMonth: this.reminder.recurringDayOfMonth,
+          recurringMonth: this.reminder.recurringMonth,
+          yearlyRecurringType: this.reminder.yearlyRecurringType,
+          specialOccasion: this.reminder.specialOccasion
+        });
       }
 
       await this.reminder.save();
@@ -483,6 +495,97 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
     if (event.target === event.currentTarget) {
       this.cancel();
     }
+  }
+
+  onDueTimeChange() {
+    if (!this.reminder?.dueTime) return;
+
+    // Round dueTime to nearest 5-minute interval in real-time
+    const [hours, minutes] = this.reminder.dueTime.split(':').map(Number);
+    if (isNaN(hours) || isNaN(minutes)) return;
+
+    const totalMinutes = hours * 60 + minutes;
+    // Round to nearest 5 minutes
+    const roundedMinutes = Math.round(totalMinutes / 5) * 5;
+    const roundedHours = Math.floor(roundedMinutes / 60) % 24;
+    const roundedMins = roundedMinutes % 60;
+
+    const roundedTime = `${String(roundedHours).padStart(2, '0')}:${String(roundedMins).padStart(2, '0')}`;
+
+    // Only update if value changed to avoid infinite loop
+    if (this.reminder.dueTime !== roundedTime) {
+      this.reminder.dueTime = roundedTime;
+    }
+  }
+
+  async onHebrewMonthChange() {
+    console.log('[onHebrewMonthChange] Selected month:', this.reminder?.recurringMonth);
+
+    // Update Hebrew day options based on selected month
+    await this.updateHebrewDayOptions();
+
+    // If current selected day is invalid for new month, reset it
+    if (this.reminder?.recurringDayOfMonth) {
+      const maxDays = await this.getHebrewMonthDays(this.reminder.recurringMonth);
+      console.log('[onHebrewMonthChange] Max days:', maxDays, 'Current day:', this.reminder.recurringDayOfMonth);
+      if (this.reminder.recurringDayOfMonth > maxDays) {
+        this.reminder.recurringDayOfMonth = undefined;
+      }
+    }
+  }
+
+  async updateHebrewDayOptions() {
+    const maxDays = await this.getHebrewMonthDays(this.reminder?.recurringMonth);
+    console.log('[updateHebrewDayOptions] Updating to', maxDays, 'days for month', this.reminder?.recurringMonth);
+    this.hebrewDayOfMonthOptions = Array.from({ length: maxDays }, (_, i) => ({
+      value: i + 1,
+      label: this.hebrewDateService.getHebrewDayString(i + 1)
+    }));
+    console.log('[updateHebrewDayOptions] New options length:', this.hebrewDayOfMonthOptions.length);
+  }
+
+  async getHebrewMonthDays(month?: number): Promise<number> {
+    if (!month) return 30; // Default to 30 days if no month selected
+
+    // Convert to number if it's a string (from select element)
+    const monthNum = typeof month === 'string' ? parseInt(month, 10) : month;
+
+    // Use hebcal to get the correct number of days for the current Hebrew year
+    const currentHebrewYear = await this.hebrewDateService.getCurrentHebrewYear();
+
+    // Convert our internal month numbering (1-13) to hebcal month numbers
+    const hebcalMonth = this.getHebcalMonthNumber(monthNum);
+
+    if (!hebcalMonth) {
+      console.warn('[getHebrewMonthDays] Invalid month:', month);
+      return 30;
+    }
+
+    const daysInMonth = await this.hebrewDateService.getDaysInMonth(hebcalMonth, currentHebrewYear);
+    console.log('[getHebrewMonthDays] month:', month, 'monthNum:', monthNum, 'hebcalMonth:', hebcalMonth, 'days:', daysInMonth);
+
+    return daysInMonth;
+  }
+
+  getHebcalMonthNumber(internalMonth: number): number | null {
+    // Map our internal numbering (1-13) to hebcal month numbers
+    const mapping: { [key: number]: number } = {
+      1: 7,   // תשרי = TISHREI
+      2: 8,   // חשון = CHESHVAN
+      3: 9,   // כסלו = KISLEV
+      4: 10,  // טבת = TEVET
+      5: 11,  // שבט = SHVAT
+      6: 12,  // אדר = ADAR_I
+      7: 13,  // אדר ב' = ADAR_II
+      8: 1,   // ניסן = NISAN
+      9: 2,   // אייר = IYYAR
+      10: 3,  // סיון = SIVAN
+      11: 4,  // תמוז = TAMUZ
+      12: 5,  // אב = AV
+      13: 6   // אלול = ELUL
+    };
+
+    return mapping[internalMonth] || null;
   }
 
   get formattedDueDate(): string {
@@ -686,11 +789,12 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
 
     this.alertMethodOptions = [
       { value: 'email', label: terms.emailAlert },
+      { value: 'sms', label: terms.smsAlert, disabled: true },
       { value: 'popup', label: terms.popupAlert }
     ];
 
     this.recurringPatternOptions = [
-      { value: 'none', label: terms.noRepeat },
+      // { value: 'none', label: terms.noRepeat },
       { value: 'daily', label: terms.dailyRepeat },
       { value: 'weekly', label: terms.weeklyRepeat },
       { value: 'monthly', label: terms.monthlyRepeat },
@@ -738,11 +842,8 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
       { value: 13, label: 'אלול' }
     ];
 
-    // Initialize Hebrew day of month options with Hebrew letters
-    this.hebrewDayOfMonthOptions = Array.from({ length: 30 }, (_, i) => ({
-      value: i + 1,
-      label: this.hebrewDateService.getHebrewDayString(i + 1)
-    }));
+    // Initialize Hebrew day of month options with Hebrew letters (will be updated based on selected month)
+    this.updateHebrewDayOptions();
 
     this.specialOccasionOptions = [
       { value: '', label: '-- בחר זמן מיוחד --' },

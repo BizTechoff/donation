@@ -1,4 +1,3 @@
-import { HDate } from '@hebcal/core';
 import { Allow, BackendMethod, Controller, remult } from 'remult';
 import { Donation, DonorPlace } from '../entity';
 import { Letter } from '../enum/letter';

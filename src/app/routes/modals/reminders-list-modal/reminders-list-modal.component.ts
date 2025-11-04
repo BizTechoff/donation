@@ -5,6 +5,7 @@ import { remult } from 'remult';
 import { Reminder } from '../../../../shared/entity';
 import { I18nService } from '../../../i18n/i18n.service';
 import { UIToolsService } from '../../../common/UIToolsService';
+import { ReminderService } from '../../../services/reminder.service';
 
 @DialogConfig({
   hasBackdrop: true,
@@ -25,7 +26,8 @@ export class RemindersListModalComponent implements OnInit {
   constructor(
     public i18n: I18nService,
     private ui: UIToolsService,
-    public dialogRef: MatDialogRef<RemindersListModalComponent>
+    public dialogRef: MatDialogRef<RemindersListModalComponent>,
+    private reminderService: ReminderService
   ) {}
 
   async ngOnInit() {
@@ -86,7 +88,17 @@ export class RemindersListModalComponent implements OnInit {
     try {
       if (reminder.isRecurring) {
         // Calculate next reminder date
-        const nextDate = reminder.calculateNextReminderDate();
+        const nextDate = await this.reminderService.calculateNextReminderDate({
+          isRecurring: reminder.isRecurring,
+          recurringPattern: reminder.recurringPattern,
+          dueDate: reminder.dueDate,
+          completedDate: reminder.completedDate,
+          recurringWeekDay: reminder.recurringWeekDay,
+          recurringDayOfMonth: reminder.recurringDayOfMonth,
+          recurringMonth: reminder.recurringMonth,
+          yearlyRecurringType: reminder.yearlyRecurringType,
+          specialOccasion: reminder.specialOccasion
+        });
         if (nextDate) {
           reminder.nextReminderDate = nextDate;
           await reminder.save();

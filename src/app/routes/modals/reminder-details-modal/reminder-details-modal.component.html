@@ -98,7 +98,7 @@
             <div class="form-row" *ngIf="true || !(reminder.isRecurring && reminder.recurringPattern === 'yearly')">
               <div class="form-group">
                 <label>{{ (i18n.terms$ | async)?.dueTime }}</label>
-                <input type="time" class="form-control" [(ngModel)]="reminder.dueTime">
+                <input type="time" class="form-control" [(ngModel)]="reminder.dueTime" (blur)="onDueTimeChange()" step="300">
               </div>
             </div>
 
@@ -127,7 +127,7 @@
               <div class="form-group">
                 <label>{{ (i18n.terms$ | async)?.alertMethod }}</label>
                 <select class="form-control" [(ngModel)]="reminder.alertMethod">
-                  <option *ngFor="let method of alertMethodOptions" [value]="method.value">
+                  <option *ngFor="let method of alertMethodOptions" [value]="method.value" [disabled]="method.disabled">
                     {{ method.label }}
                   </option>
                 </select>
@@ -209,7 +209,7 @@
             <div class="form-row" *ngIf="reminder.isRecurring && reminder.recurringPattern === 'yearly' && reminder.yearlyRecurringType === 'date'">
               <div class="form-group">
                 <label>{{ i18n.terms.hebrewMonth }}</label>
-                <select class="form-control" [(ngModel)]="reminder.recurringMonth">
+                <select class="form-control" [(ngModel)]="reminder.recurringMonth" (ngModelChange)="onHebrewMonthChange()">
                   <option value="">בחר חודש</option>
                   <option *ngFor="let month of hebrewMonthOptions" [value]="month.value">
                     {{ month.label }}

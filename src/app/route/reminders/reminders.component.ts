@@ -1,5 +1,4 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { HDate, Sedra } from '@hebcal/core';
 import { remult } from 'remult';
 import { Subscription } from 'rxjs';
 import { Donor, Reminder, DonorContact, DonorEvent, Event } from '../../../shared/entity';
@@ -8,6 +7,7 @@ import { UIToolsService } from '../../common/UIToolsService';
 import { I18nService } from '../../i18n/i18n.service';
 import { GlobalFilterService } from '../../services/global-filter.service';
 import { DonorService } from '../../services/donor.service';
+import { HebrewDateService } from '../../services/hebrew-date.service';
 
 @DialogConfig({
   hasBackdrop: true
@@ -52,7 +52,8 @@ export class RemindersComponent implements OnInit, OnDestroy {
     public i18n: I18nService,
     private ui: UIToolsService,
     private globalFilterService: GlobalFilterService,
-    private donorService: DonorService
+    private donorService: DonorService,
+    private hebrewDateService: HebrewDateService
   ) { }
 
   async ngOnInit() {
@@ -320,7 +321,7 @@ export class RemindersComponent implements OnInit, OnDestroy {
     this.applyTabFilter();
   }
 
-  applyTabFilter() {
+  async applyTabFilter() {
     let filtered = [...this.reminders];
 
     // Apply tab filter
@@ -343,7 +344,7 @@ export class RemindersComponent implements OnInit, OnDestroy {
     // Apply parasha filter
     if (this.fromParasha !== '') {// || this.toParasha !== '') {
       this.toParasha = this.fromParasha
-      filtered = this.filterByParasha(filtered);
+      filtered = await this.filterByParasha(filtered);
     }
 
     this.filteredReminders = filtered;
@@ -356,7 +357,7 @@ export class RemindersComponent implements OnInit, OnDestroy {
   /**
    * Calculate parasha index for a date using Hebrew calendar
    */
-  protected getParashaIndex(date: Date): number {
+  protected async getParashaIndex(date: Date): Promise<number> {
     if (!date) return 0;
 
     try {
@@ -368,21 +369,11 @@ export class RemindersComponent implements OnInit, OnDestroy {
       const saturday = new Date(date);
       saturday.setDate(date.getDate() + daysUntilSaturday);
 
-      // Convert Saturday to Hebrew date
-      const hSaturday = new HDate(saturday);
-      const hyear = hSaturday.getFullYear();
+      // Get the parsha for that Saturday using the service
+      const parshaName = await this.hebrewDateService.getParshaForDate(saturday, false);
 
-      // Create Sedra for that year
-      const sedra = new Sedra(hyear, false); // false = diaspora
-
-      // Get the parsha for that Saturday
-      const parsha = sedra.get(hSaturday);
-
-      // console.log('Date:', date, 'Saturday:', saturday, 'Parsha:', parsha);
-
-      if (parsha && parsha.length > 0) {
-        // parsha is an array of parsha names (in English)
-        const parshaEnglish = parsha[0];
+      if (parshaName) {
+        // parshaName might be in English or Hebrew, depending on hebcal's output
 
         // Map English parsha names to Hebrew
         const englishToHebrewMap: { [key: string]: string } = {
@@ -442,8 +433,9 @@ export class RemindersComponent implements OnInit, OnDestroy {
           'Vezot Haberakhah': 'וזאת הברכה'
         };
 
-        const hebrewName = englishToHebrewMap[parshaEnglish];
-        // console.log('English:', parshaEnglish, 'Hebrew:', hebrewName);
+        // Try to get Hebrew name from map, or use the name directly if already in Hebrew
+        const hebrewName = englishToHebrewMap[parshaName] || parshaName;
+        // console.log('Parsha name:', parshaName, 'Hebrew:', hebrewName);
 
         if (hebrewName) {
           const index = this.torahPortions.indexOf(hebrewName);
@@ -459,14 +451,18 @@ export class RemindersComponent implements OnInit, OnDestroy {
     }
   }
 
-  private filterByParasha(reminders: Reminder[]): Reminder[] {
+  private async filterByParasha(reminders: Reminder[]): Promise<Reminder[]> {
     const fromIndex = this.fromParasha !== '' ? parseInt(this.fromParasha) : 0;
     const toIndex = this.toParasha !== '' ? parseInt(this.toParasha) : 53;
 
-    return reminders.filter(reminder => {
-      const parashaIndex = this.getParashaIndex(reminder.dueDate);
-      return parashaIndex >= fromIndex && parashaIndex <= toIndex;
-    });
+    const filtered: Reminder[] = [];
+    for (const reminder of reminders) {
+      const parashaIndex = await this.getParashaIndex(reminder.dueDate);
+      if (parashaIndex >= fromIndex && parashaIndex <= toIndex) {
+        filtered.push(reminder);
+      }
+    }
+    return filtered;
   }
 
 }

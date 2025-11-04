@@ -13,6 +13,7 @@ import { Donor } from './donor'
 import { User } from './user'
 import { Donation } from './donation'
 import { Roles } from '../enum/roles'
+import { ReminderController } from '../controllers/reminder.controller'
 
 @Entity<Reminder>('reminders', {
   allowApiCrud: Allow.authenticated,
@@ -26,6 +27,17 @@ import { Roles } from '../enum/roles'
         reminder.createdDate = new Date()
       }
       reminder.updatedDate = new Date()
+
+      // Round dueTime to nearest 5-minute interval for cron scheduler sync
+      if (reminder.dueTime) {
+        const [hours, minutes] = reminder.dueTime.split(':').map(Number)
+        const totalMinutes = hours * 60 + minutes
+        // Round to nearest 5 minutes
+        const roundedMinutes = Math.round(totalMinutes / 5) * 5
+        const roundedHours = Math.floor(roundedMinutes / 60) % 24
+        const roundedMins = roundedMinutes % 60
+        reminder.dueTime = `${String(roundedHours).padStart(2, '0')}:${String(roundedMins).padStart(2, '0')}`
+      }
     }
   },
 })
@@ -81,7 +93,7 @@ export class Reminder extends IdEntity {
   })
   relatedDonationId = ''
 
-  @Fields.date({
+  @Fields.dateOnly({
     caption: 'תאריך יעד',
     validate: Validators.required,
   })
@@ -91,7 +103,7 @@ export class Reminder extends IdEntity {
     caption: 'שעת יעד',
     allowNull: true
   })
-  dueTime?: string
+  dueTime?: string = '10:00'
 
   @Fields.date({
     caption: 'תאריך התראה',
@@ -153,7 +165,7 @@ export class Reminder extends IdEntity {
   @Fields.string({
     caption: 'תדירות חזרה',
   })
-  recurringPattern: 'daily' | 'weekly' | 'monthly' | 'yearly' | 'none' = 'none'
+  recurringPattern: 'daily' | 'weekly' | 'monthly' | 'yearly' = 'monthly'
 
   @Fields.string({
     caption: 'סוג חזרה שנתית',
@@ -279,63 +291,6 @@ export class Reminder extends IdEntity {
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
   }
 
-  calculateNextReminderDate(): Date | undefined {
-    if (!this.isRecurring || this.recurringPattern === 'none') return undefined
-
-    const baseDate = this.completedDate || this.dueDate
-    const nextDate = new Date(baseDate)
-
-    switch (this.recurringPattern) {
-      case 'daily':
-        nextDate.setDate(nextDate.getDate() + 1)
-        break
-      case 'weekly':
-        nextDate.setDate(nextDate.getDate() + 7)
-        // If specific weekday is set, adjust to that day
-        if (this.recurringWeekDay !== undefined) {
-          const currentDay = nextDate.getDay()
-          const targetDay = this.recurringWeekDay
-          const daysToAdd = (targetDay - currentDay + 7) % 7
-          if (daysToAdd === 0 && currentDay === targetDay) {
-            // If it's the same day, move to next week
-            nextDate.setDate(nextDate.getDate() + 7)
-          } else {
-            nextDate.setDate(nextDate.getDate() + daysToAdd)
-          }
-        }
-        break
-      case 'monthly':
-        nextDate.setMonth(nextDate.getMonth() + 1)
-        // If specific day of month is set, adjust to that day
-        if (this.recurringDayOfMonth !== undefined) {
-          nextDate.setDate(this.recurringDayOfMonth)
-          // Handle edge case where the day doesn't exist in the month (e.g., Feb 31)
-          if (nextDate.getDate() !== this.recurringDayOfMonth) {
-            nextDate.setDate(0) // Go to last day of previous month
-          }
-        }
-        break
-      case 'yearly':
-        nextDate.setFullYear(nextDate.getFullYear() + 1)
-        // If specific month is set, adjust to that month
-        if (this.recurringMonth !== undefined) {
-          nextDate.setMonth(this.recurringMonth - 1) // Month is 0-based
-          if (this.recurringDayOfMonth !== undefined) {
-            nextDate.setDate(this.recurringDayOfMonth)
-            // Handle edge case for Feb 29 in non-leap years
-            if (nextDate.getDate() !== this.recurringDayOfMonth) {
-              nextDate.setDate(0) // Go to last day of previous month
-            }
-          }
-        }
-        break
-      default:
-        return undefined
-    }
-
-    return nextDate
-  }
-
   @BackendMethod({ allowed: Allow.authenticated })
   async complete(notes?: string) {
     this.isCompleted = true
@@ -343,12 +298,22 @@ export class Reminder extends IdEntity {
     if (notes) {
       this.completionNotes = notes
     }
-    
+
     // Create next reminder if recurring
     if (this.isRecurring) {
-      this.nextReminderDate = this.calculateNextReminderDate()
+      this.nextReminderDate = await ReminderController.calculateNextReminderDate({
+        isRecurring: this.isRecurring,
+        recurringPattern: this.recurringPattern,
+        dueDate: this.dueDate,
+        completedDate: this.completedDate,
+        recurringWeekDay: this.recurringWeekDay,
+        recurringDayOfMonth: this.recurringDayOfMonth,
+        recurringMonth: this.recurringMonth,
+        yearlyRecurringType: this.yearlyRecurringType,
+        specialOccasion: this.specialOccasion
+      })
     }
-    
+
     await this.save()
   }
 

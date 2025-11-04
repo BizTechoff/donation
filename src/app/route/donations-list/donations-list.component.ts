@@ -439,7 +439,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   }
 
   getCampaignName(donation: Donation): string {
-    return donation.campaign?.name || this.i18n.currentTerms.withoutCampaign || '';
+    return donation.campaign?.name || '-';
   }
 
   getCurrencyName(currencyCode: string): string {
@@ -455,7 +455,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   }
 
   getMethodName(donation: Donation): string {
-    if (!donation.donationMethod) return this.i18n.currentTerms.notSpecified || '';
+    if (!donation.donationMethod) return '-';
 
     const typeLabels: { [key: string]: string } = {
       cash: this.i18n.terms.cash,

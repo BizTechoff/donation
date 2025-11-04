@@ -113,7 +113,7 @@
             <span class="method-badge method-{{donation.donationMethod?.type}}">{{ getMethodName(donation) }}</span>
           </td>
           <td class="campaign-col">{{ getCampaignName(donation) }}</td>
-          <td class="fundraiser-col">{{ donation.donor?.fundraiser?.name || '-' || (i18n.terms$ | async)?.createdByUnknown }}</td>
+          <td class="fundraiser-col">{{ donation.donor?.fundraiser?.name || '-' }}</td>
           <td class="actions">
             <!-- <button class="btn-icon btn-view" (click)="editDonation(donation)"
               [title]="(i18n.terms$ | async)?.viewDetails">👁</button> -->

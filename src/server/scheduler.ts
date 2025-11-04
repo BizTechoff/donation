@@ -1,6 +1,7 @@
 import { remult } from 'remult'
 import { Reminder } from '../shared/entity/reminder'
 import { User } from '../shared/entity/user'
+import { ReminderController } from '../shared/controllers/reminder.controller'
 
 /**
  * Scheduler for checking and sending reminder notifications
@@ -81,7 +82,17 @@ async function sendReminderNotification(reminder: Reminder) {
   // Update the reminder to mark that notification was sent
   // Only update nextReminderDate if it's a recurring reminder
   if (reminder.isRecurring) {
-    const nextDate = reminder.calculateNextReminderDate()
+    const nextDate = await ReminderController.calculateNextReminderDate({
+      isRecurring: reminder.isRecurring,
+      recurringPattern: reminder.recurringPattern,
+      dueDate: reminder.dueDate,
+      completedDate: reminder.completedDate,
+      recurringWeekDay: reminder.recurringWeekDay,
+      recurringDayOfMonth: reminder.recurringDayOfMonth,
+      recurringMonth: reminder.recurringMonth,
+      yearlyRecurringType: reminder.yearlyRecurringType,
+      specialOccasion: reminder.specialOccasion
+    })
     if (nextDate) {
       reminder.nextReminderDate = nextDate
       await reminder.save()
