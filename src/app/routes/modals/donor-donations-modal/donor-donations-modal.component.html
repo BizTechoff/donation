@@ -73,9 +73,12 @@
           </div> -->
 
           <div class="filter-actions">
-            <button mat-stroked-button (click)="exportToExcel()" class="export-btn">
-              <mat-icon>download</mat-icon>
-              ייצוא לאקסל
+            <button mat-raised-button
+                    color="primary"
+                    (click)="addNew()"
+                    class="add-btn">
+              <mat-icon>add</mat-icon>
+              {{isGiftsMode ? 'הוסף מתנה חדשה' : 'הוסף תרומה חדשה'}}
             </button>
           </div>
         </div>

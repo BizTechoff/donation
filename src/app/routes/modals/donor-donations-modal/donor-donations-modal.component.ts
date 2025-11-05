@@ -277,9 +277,26 @@ export class DonorDonationsModalComponent implements OnInit {
   }
 
 
-  exportToExcel() {
-    // TODO: Implement Excel export
-    this.ui.info('ייצוא לאקסל יבוצע בהמשך');
+  async addNew() {
+    if (this.isGiftsMode) {
+      // Add new gift
+      const result = await this.ui.donorGiftDetailsDialog('new', {
+        donorId: this.args.donorId
+      });
+      if (result) {
+        await this.loadDonorGifts();
+        this.calculateTotals();
+      }
+    } else {
+      // Add new donation
+      const result = await this.ui.donationDetailsDialog('new', {
+        donorId: this.args.donorId
+      });
+      if (result) {
+        await this.loadDonations();
+        this.calculateTotals();
+      }
+    }
   }
 
   getPaymentMethodDisplayName(method: DonationMethod): string {

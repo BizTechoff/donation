@@ -24,6 +24,8 @@ export interface DonorBlessing {
   blessingStatus: 'pending' | 'sent' | 'received' | 'none';
   totalDonated: number;
   matchingDonationsCount: number; // Number of donations matching blessing type amount and campaign
+  email?: string; // Email from DonorContact for UI display
+  phone?: string; // Phone from DonorContact for UI display
 }
 
 @DialogConfig({
@@ -151,7 +153,9 @@ export class CampaignBlessingBookModalComponent implements OnInit {
             blessing: undefined,
             blessingStatus: 'none',
             totalDonated: 0,
-            matchingDonationsCount: 0
+            matchingDonationsCount: 0,
+            email: this.donorEmailMap.get(donor.id),
+            phone: this.donorPhoneMap.get(donor.id)
           });
         }
 
@@ -506,6 +510,78 @@ export class CampaignBlessingBookModalComponent implements OnInit {
     return text.substring(0, maxLength) + '...';
   }
 
+  async exportSummaryToExcel() {
+    if (!this.campaign) return;
+
+    const dataToExport = this.filteredDonorBlessings;
+
+    if (dataToExport.length === 0) {
+      this.snackBar.open('אין נתונים לייצוא', 'סגור', { duration: 3000 });
+      return;
+    }
+
+    // יצירת סיכום לפי סוג ברכה
+    interface BlessingSummary {
+      blessingType: string;
+      price: number;
+      count: number;
+    }
+
+    const summaryMap = new Map<string, BlessingSummary>();
+
+    // סיכום הברכות
+    for (const db of dataToExport) {
+      if (db.blessing?.blessingBookType) {
+        const typeId = db.blessing.blessingBookType.id;
+        const existing = summaryMap.get(typeId);
+
+        if (existing) {
+          existing.count++;
+        } else {
+          summaryMap.set(typeId, {
+            blessingType: db.blessing.blessingBookType.type,
+            price: db.blessing.blessingBookType.price,
+            count: 1
+          });
+        }
+      }
+    }
+
+    // המרה למערך וממוין לפי מחיר
+    const summaryData = Array.from(summaryMap.values()).sort((a, b) => a.price - b.price);
+
+    if (summaryData.length === 0) {
+      this.snackBar.open('אין סוגי ברכות לסיכום', 'סגור', { duration: 3000 });
+      return;
+    }
+
+    // הגדרת עמודות לסיכום (ללא עמודת מחיר - מיון לפי מחיר בלבד)
+    const columns: ExcelColumn<BlessingSummary>[] = [
+      { header: 'סוג ברכה', mapper: (s) => s.blessingType, width: 25 },
+      { header: 'כמות', mapper: (s) => s.count, width: 12 }
+    ];
+
+    // חישוב סה"כ
+    const totalBlessings = summaryData.reduce((sum, s) => sum + s.count, 0);
+    const totalAmount = summaryData.reduce((sum, s) => sum + (s.price * s.count), 0);
+
+    // ייצוא
+    await this.excelService.export({
+      data: summaryData,
+      columns: columns,
+      sheetName: 'סיכום ספר ברכות',
+      fileName: this.excelService.generateFileName(`סיכום_ספר_ברכות_${this.campaign.name}`),
+      includeStats: true,
+      stats: [
+        { label: 'שם קמפיין', value: this.campaign.name },
+        { label: 'סה"כ ברכות', value: totalBlessings },
+        { label: 'סה"כ סכום', value: `${totalAmount.toLocaleString('he-IL')} ₪` },
+        { label: 'מס\' סוגי ברכות', value: summaryData.length },
+        { label: 'תאריך ייצוא', value: new Date().toLocaleDateString('he-IL') }
+      ]
+    });
+  }
+
   async exportToExcel() {
     if (!this.campaign) return;
 
@@ -559,6 +635,82 @@ export class CampaignBlessingBookModalComponent implements OnInit {
     if (confirmed) {
       // TODO: Implement bulk reminder sending
       this.ui.info(`תזכורות נשלחו ל-${pendingCount} תורמים`);
+    }
+  }
+
+  // Open phone dialer
+  callPhone(phone: string) {
+    if (!phone) return;
+    // Remove all non-digit characters except + at the beginning
+    const cleanPhone = phone.replace(/[^\d+]/g, '');
+    window.location.href = `tel:${cleanPhone}`;
+  }
+
+  // Send blessing request email
+  async sendBlessingEmail(donorBlessing: DonorBlessing) {
+    if (!donorBlessing.email) {
+      this.snackBar.open('אין כתובת אימייל לתורם זה', 'סגור', { duration: 3000 });
+      return;
+    }
+
+    if (!this.campaign) {
+      this.snackBar.open('שגיאה: לא נמצא קמפיין', 'סגור', { duration: 3000 });
+      return;
+    }
+
+    // Generate email content
+    const subject = `בקשה לברכה לספר ברכות - ${this.campaign.name}`;
+
+    const htmlBody = `
+      <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; direction: rtl;">
+        <h2 style="color: #2c3e50; text-align: center;">שלום ${donorBlessing.donor.fullName},</h2>
+
+        <p style="font-size: 16px; line-height: 1.6; color: #34495e;">
+          אנו שמחים לפנות אליך במסגרת <strong>${this.campaign.name}</strong>.
+        </p>
+
+        <p style="font-size: 16px; line-height: 1.6; color: #34495e;">
+          נשמח אם תוכל לשלוח לנו ברכה אישית שתיכלל בספר הברכות המיוחד שלנו.
+        </p>
+
+        <p style="font-size: 16px; line-height: 1.6; color: #34495e;">
+          הברכה יכולה לכלול מילות תודה, ברכות לעתיד, או כל מסר אישי שתרצה לשתף.
+        </p>
+
+        <div style="text-align: center; margin: 30px 0;">
+          <p style="font-size: 16px; color: #7f8c8d;">
+            אנא השב לאימייל זה עם הברכה שלך, ואנחנו נדאג להכליל אותה בספר הברכות.
+          </p>
+        </div>
+
+        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 20px;">
+          <p style="margin: 0; color: #7f8c8d; font-size: 14px; text-align: center;">
+            תודה על שיתוף הפעולה והמשך הצלחה!
+          </p>
+        </div>
+
+        <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 30px 0;">
+
+        <p style="font-size: 12px; color: #95a5a6; text-align: center;">
+          אימייל זה נשלח אוטומטית ממערכת ניהול התרומות
+        </p>
+      </div>
+    `;
+
+    // Open send email modal
+    const { SendEmailModalComponent } = await import('../send-email-modal/send-email-modal.component');
+    const result = await SendEmailModalComponent.open({
+      to: [donorBlessing.email],
+      subject,
+      htmlBody,
+      from: 'המערכת',
+      blessingId: donorBlessing.blessing?.id
+    });
+
+    if (result) {
+      // Reload data to reflect email sent status
+      await this.loadData();
+      this.snackBar.open('האימייל נשלח בהצלחה!', 'סגור', { duration: 3000 });
     }
   }
 
