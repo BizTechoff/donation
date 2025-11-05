@@ -4,56 +4,57 @@
   <div class="module-header">
     <div class="header-top">
       <h1>{{ (i18n.terms$ | async)?.remindersAndTracking }}</h1>
-      <button class="btn btn-primary add-reminder-btn" (click)="createReminder()">{{ (i18n.terms$ | async)?.addReminder }}</button>
+      <button class="btn btn-primary add-reminder-btn" (click)="createReminder()">{{ (i18n.terms$ | async)?.addReminder
+        }}</button>
     </div>
 
     <div class="summary-cards">
-    <div class="summary-card today">
-      <div class="card-icon">🔔</div>
-      <div class="card-content">
-        <h3>{{ (i18n.terms$ | async)?.todayReminders }}</h3>
-        <span class="count urgent">{{todayReminders.length}}</span>
+      <div class="summary-card today">
+        <div class="card-icon">🔔</div>
+        <div class="card-content">
+          <h3>{{ (i18n.terms$ | async)?.todayReminders }}</h3>
+          <span class="count urgent">{{todayReminders.length}}</span>
+        </div>
+      </div>
+      <div class="summary-card this-week">
+        <div class="card-icon">📅</div>
+        <div class="card-content">
+          <h3>{{ (i18n.terms$ | async)?.thisWeekReminders }}</h3>
+          <span class="count">{{pendingReminders.length}}</span>
+        </div>
+      </div>
+      <div class="summary-card overdue">
+        <div class="card-icon">⚠️</div>
+        <div class="card-content">
+          <h3>{{ (i18n.terms$ | async)?.overdueReminders }}</h3>
+          <span class="count urgent">{{overdueReminders.length}}</span>
+        </div>
+      </div>
+      <div class="summary-card completed">
+        <div class="card-icon">✅</div>
+        <div class="card-content">
+          <h3>{{ (i18n.terms$ | async)?.completedThisMonth }}</h3>
+          <span class="count">{{completedRemindersCount}}</span>
+        </div>
       </div>
     </div>
-    <div class="summary-card this-week">
-      <div class="card-icon">📅</div>
-      <div class="card-content">
-        <h3>{{ (i18n.terms$ | async)?.thisWeekReminders }}</h3>
-        <span class="count">{{pendingReminders.length}}</span>
-      </div>
-    </div>
-    <div class="summary-card overdue">
-      <div class="card-icon">⚠️</div>
-      <div class="card-content">
-        <h3>{{ (i18n.terms$ | async)?.overdueReminders }}</h3>
-        <span class="count urgent">{{overdueReminders.length}}</span>
-      </div>
-    </div>
-    <div class="summary-card completed">
-      <div class="card-icon">✅</div>
-      <div class="card-content">
-        <h3>{{ (i18n.terms$ | async)?.completedThisMonth }}</h3>
-        <span class="count">{{completedRemindersCount}}</span>
-      </div>
-    </div>
-  </div>
 
-  <div class="filters-section">
-    <div class="filter-row">
-      <div class="filter-group">
-        <label>{{ (i18n.terms$ | async)?.reminderTypeFilter }}</label>
-        <select class="form-control">
-          <option value="">{{ (i18n.terms$ | async)?.everything }}</option>
-          <option value="donation">{{ (i18n.terms$ | async)?.donationReminder }}</option>
-          <option value="contact">{{ (i18n.terms$ | async)?.contactReminder }}</option>
-          <option value="birthday">{{ (i18n.terms$ | async)?.birthdayReminder }}</option>
-          <option value="memorial">{{ (i18n.terms$ | async)?.memorialReminder }}</option>
-          <option value="meeting">{{ (i18n.terms$ | async)?.meetingReminder }}</option>
-          <option value="follow-up">{{ (i18n.terms$ | async)?.followUpReminder }}</option>
-        </select>
-      </div>
-      
-      <!-- <div class="filter-group">
+    <div class="filters-section">
+      <div class="filter-row">
+        <div class="filter-group">
+          <label>{{ (i18n.terms$ | async)?.reminderTypeFilter }}</label>
+          <select class="form-control">
+            <option value="">{{ (i18n.terms$ | async)?.everything }}</option>
+            <option value="donation">{{ (i18n.terms$ | async)?.donationReminder }}</option>
+            <option value="contact">{{ (i18n.terms$ | async)?.contactReminder }}</option>
+            <option value="birthday">{{ (i18n.terms$ | async)?.birthdayReminder }}</option>
+            <option value="memorial">{{ (i18n.terms$ | async)?.memorialReminder }}</option>
+            <option value="meeting">{{ (i18n.terms$ | async)?.meetingReminder }}</option>
+            <option value="follow-up">{{ (i18n.terms$ | async)?.followUpReminder }}</option>
+          </select>
+        </div>
+
+        <!-- <div class="filter-group">
         <label>{{ (i18n.terms$ | async)?.reminderStatusFilter }}</label>
         <select class="form-control">
           <option value="">{{ (i18n.terms$ | async)?.everything }}</option>
@@ -64,22 +65,22 @@
         </select>
       </div> -->
 
-      <div class="filter-group">
-        <label>{{ (i18n.terms$ | async)?.dateFromReminder }}</label>
-        <input type="date" class="form-control">
-      </div>
+        <div class="filter-group">
+          <label>{{ (i18n.terms$ | async)?.dateFromReminder }}</label>
+          <input type="date" class="form-control">
+        </div>
 
-      <div class="filter-group">
-        <label>{{ (i18n.terms$ | async)?.dateToReminder }}</label>
-        <input type="date" class="form-control">
-      </div>
+        <div class="filter-group">
+          <label>{{ (i18n.terms$ | async)?.dateToReminder }}</label>
+          <input type="date" class="form-control">
+        </div>
 
-      <div class="filter-group">
-        <label>{{ (i18n.terms$ | async)?.donorSearchReminder }}</label>
-        <input type="text" class="form-control" [placeholder]="(i18n.terms$ | async)?.donorNamePlaceholder">
-      </div>
+        <div class="filter-group">
+          <label>{{ (i18n.terms$ | async)?.donorSearchReminder }}</label>
+          <input type="text" class="form-control" [placeholder]="(i18n.terms$ | async)?.donorNamePlaceholder">
+        </div>
 
-      <!-- <div class="filter-group">
+        <!-- <div class="filter-group">
         <label>{{ (i18n.terms$ | async)?.regionFilter }}</label>
         <select class="form-control">
           <option value="">{{ (i18n.terms$ | async)?.everything }}</option>
@@ -90,119 +91,122 @@
         </select>
       </div> -->
 
-      <div class="filter-group">
-        <label>פרשה</label>
-        <select class="form-control" [(ngModel)]="fromParasha" (change)="applyParashaFilter()">
-          <option value="">בחר פרשה</option>
-          <option *ngFor="let parasha of torahPortions; let i = index" [value]="i">{{parasha}} ({{i}})</option>
-        </select>
-      </div>
+        <div class="filter-group">
+          <label>פרשה</label>
+          <select class="form-control" [(ngModel)]="fromParasha" (change)="applyParashaFilter()">
+            <option value="">בחר פרשה</option>
+            <option *ngFor="let parasha of torahPortions; let i = index" [value]="i">{{parasha}}</option>
+          </select>
+        </div>
 
-      <!-- <div class="filter-group">
+        <!-- <div class="filter-group">
         <label>עד פרשה</label>
         <select class="form-control" [(ngModel)]="toParasha" (change)="applyParashaFilter()">
           <option value="">בחר פרשה</option>
           <option *ngFor="let parasha of torahPortions; let i = index" [value]="i">{{parasha}} ({{i}})</option>
         </select>
       </div> -->
+      </div>
     </div>
-  </div>
   </div>
 
   <!-- CONTENT: Main scrollable area -->
   <div class="module-content">
 
-    <div class="reminders-tabs">
-    <button class="tab-btn" [class.active]="activeTab === 'today'" (click)="switchTab('today')">
-      {{ (i18n.terms$ | async)?.todayTab }} ({{todayReminders.length}})
-    </button>
-    <button class="tab-btn" [class.active]="activeTab === 'week'" (click)="switchTab('week')">
-      {{ (i18n.terms$ | async)?.weekTab }} ({{thisWeekReminders.length}})
-    </button>
-    <button class="tab-btn" [class.active]="activeTab === 'overdue'" (click)="switchTab('overdue')">
-      {{ (i18n.terms$ | async)?.overdueTab }} ({{overdueReminders.length}})
-    </button>
-    <button class="tab-btn" [class.active]="activeTab === 'all'" (click)="switchTab('all')">
-      {{ (i18n.terms$ | async)?.allTab }}
-    </button>
-  </div>
+    <!-- <div class="reminders-tabs">
+      <button class="tab-btn" [class.active]="activeTab === 'today'" (click)="switchTab('today')">
+        {{ (i18n.terms$ | async)?.todayTab }} ({{todayReminders.length}})
+      </button>
+      <button class="tab-btn" [class.active]="activeTab === 'week'" (click)="switchTab('week')">
+        {{ (i18n.terms$ | async)?.weekTab }} ({{thisWeekReminders.length}})
+      </button>
+      <button class="tab-btn" [class.active]="activeTab === 'overdue'" (click)="switchTab('overdue')">
+        {{ (i18n.terms$ | async)?.overdueTab }} ({{overdueReminders.length}})
+      </button>
+      <button class="tab-btn" [class.active]="activeTab === 'all'" (click)="switchTab('all')">
+        {{ (i18n.terms$ | async)?.allTab }}
+      </button>
+    </div> -->
 
-  <div class="reminders-table-container">
-    <table class="reminders-table">
-      <thead>
-        <tr>
-          <th class="sortable" [class.sorted]="isSorted('dueDate')" (click)="toggleSort('dueDate', $event)">
-            {{ (i18n.terms$ | async)?.reminderDateHeader }}
-            <span class="sort-icon">{{ getSortIcon('dueDate') }}</span>
-          </th>
-          <th class="sortable" [class.sorted]="isSorted('type')" (click)="toggleSort('type', $event)">
-            {{ (i18n.terms$ | async)?.typeHeader }}
-            <span class="sort-icon">{{ getSortIcon('type') }}</span>
-          </th>
-          <th>{{ (i18n.terms$ | async)?.donorHeader }}</th>
-          <th class="sortable" [class.sorted]="isSorted('title')" (click)="toggleSort('title', $event)">
-            {{ (i18n.terms$ | async)?.subjectHeader }}
-            <span class="sort-icon">{{ getSortIcon('title') }}</span>
-          </th>
-          <th class="sortable" [class.sorted]="isSorted('priority')" (click)="toggleSort('priority', $event)">
-            {{ (i18n.terms$ | async)?.priorityHeader }}
-            <span class="sort-icon">{{ getSortIcon('priority') }}</span>
-          </th>
-          <!-- <th>{{ (i18n.terms$ | async)?.statusHeaderReminder }}</th> -->
-          <th>{{ (i18n.terms$ | async)?.actionsHeaderReminder }}</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let reminder of filteredReminders"
-           [class.overdue]="reminder.isOverdue"
-           [class.today]="reminder.isDueToday"
-           [class.completed]="reminder.isCompleted">
-          
-          <td class="date-col">
-            <div class="date-display">
-              {{this.getParashaIndex(reminder.dueDate)}}
-              <span class="reminder-date">{{reminder.dueDate | date:'dd/MM/yyyy'}}</span>
-            </div>
-          </td>
-          
-          <td class="type-col">
-            <span class="type-badge type-{{reminder.type}}">{{getTypeText(reminder.type)}}</span>
-          </td>
-          
-          <td class="donor-col">
-            <div class="donor-info">
-              <strong>{{getDonorName(reminder)}}</strong>
-              <small *ngIf="getReminderDonorPhone(reminder)">{{getReminderDonorPhone(reminder)}}</small>
-            </div>
-          </td>
-          
-          <td class="subject-col">
-            <div class="subject-info">
-              <span class="subject">{{reminder.title}}</span>
-              <small class="notes" *ngIf="reminder.description">{{reminder.description | slice:0:50}}<span *ngIf="reminder.description && reminder.description.length > 50">...</span></small>
-            </div>
-          </td>
-          
-          <td class="priority-col">
-            <span class="priority-badge" [class]="getPriorityBadgeClass(reminder.priority)">{{getPriorityText(reminder.priority)}}</span>
-          </td>
-          
-          <!-- <td class="status-col">
+    <div class="reminders-table-container">
+      <table class="reminders-table">
+        <thead>
+          <tr>
+            <th class="sortable" [class.sorted]="isSorted('dueDate')" (click)="toggleSort('dueDate', $event)">
+              {{ (i18n.terms$ | async)?.reminderDateHeader }}
+              <span class="sort-icon">{{ getSortIcon('dueDate') }}</span>
+            </th>
+            <th class="sortable" [class.sorted]="isSorted('type')" (click)="toggleSort('type', $event)">
+              {{ (i18n.terms$ | async)?.typeHeader }}
+              <span class="sort-icon">{{ getSortIcon('type') }}</span>
+            </th>
+            <th>{{ (i18n.terms$ | async)?.donorHeader }}</th>
+            <th class="sortable" [class.sorted]="isSorted('title')" (click)="toggleSort('title', $event)">
+              {{ (i18n.terms$ | async)?.subjectHeader }}
+              <span class="sort-icon">{{ getSortIcon('title') }}</span>
+            </th>
+            <th class="sortable" [class.sorted]="isSorted('priority')" (click)="toggleSort('priority', $event)">
+              {{ (i18n.terms$ | async)?.priorityHeader }}
+              <span class="sort-icon">{{ getSortIcon('priority') }}</span>
+            </th>
+            <!-- <th>{{ (i18n.terms$ | async)?.statusHeaderReminder }}</th> -->
+            <th>{{ (i18n.terms$ | async)?.actionsHeaderReminder }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let reminder of filteredReminders" [class.overdue]="reminder.isOverdue"
+            [class.today]="reminder.isDueToday" [class.completed]="reminder.isCompleted">
+
+            <td class="date-col">
+              <div class="date-display">
+                <!-- {{this.getParashaIndex(reminder.dueDate)}} -->
+                <span class="reminder-date">{{reminder.dueDate | date:'dd/MM/yyyy'}}</span>
+              </div>
+            </td>
+
+            <td class="type-col">
+              <span class="type-badge type-{{reminder.type}}">{{getTypeText(reminder.type)}}</span>
+            </td>
+
+            <td class="donor-col">
+              <div class="donor-info">
+                <strong>{{getDonorName(reminder)}}</strong>
+                <small *ngIf="getReminderDonorPhone(reminder)">{{getReminderDonorPhone(reminder)}}</small>
+              </div>
+            </td>
+
+            <td class="subject-col">
+              <div class="subject-info">
+                <span class="subject">{{reminder.title}}</span>
+                <small class="notes" *ngIf="reminder.description">{{reminder.description | slice:0:50}}<span
+                    *ngIf="reminder.description && reminder.description.length > 50">...</span></small>
+              </div>
+            </td>
+
+            <td class="priority-col">
+              <span class="priority-badge"
+                [class]="getPriorityBadgeClass(reminder.priority)">{{getPriorityText(reminder.priority)}}</span>
+            </td>
+
+            <!-- <td class="status-col">
             <span class="status-badge" [class]="getStatusBadgeClass(reminder.status)">{{reminder.statusText}}</span>
           </td> -->
-          
-          <td class="actions">
-            <!-- <button class="btn-icon btn-complete" [title]="(i18n.terms$ | async)?.markAsCompleted" *ngIf="!reminder.isCompleted" (click)="completeReminder(reminder)">✅</button> -->
-            <button class="btn-icon btn-edit" [title]="(i18n.terms$ | async)?.editReminder" (click)="editReminder(reminder)">✏</button>
-            <button class="btn-icon btn-postpone" [title]="(i18n.terms$ | async)?.snoozeReminder" *ngIf="!reminder.isCompleted" (click)="snoozeReminder(reminder, 1)">⏰</button>
-            <button class="btn-icon btn-delete" [title]="(i18n.terms$ | async)?.deleteReminder" (click)="deleteReminder(reminder)">🗑</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
 
-  <!-- <div class="quick-reminders">
+            <td class="actions">
+              <!-- <button class="btn-icon btn-complete" [title]="(i18n.terms$ | async)?.markAsCompleted" *ngIf="!reminder.isCompleted" (click)="completeReminder(reminder)">✅</button> -->
+              <button class="btn-icon btn-edit" [title]="(i18n.terms$ | async)?.editReminder"
+                (click)="editReminder(reminder)">✏</button>
+              <button class="btn-icon btn-postpone" [title]="(i18n.terms$ | async)?.snoozeReminder"
+                *ngIf="!reminder.isCompleted" (click)="snoozeReminder(reminder, 1)">⏰</button>
+              <button class="btn-icon btn-delete" [title]="(i18n.terms$ | async)?.deleteReminder"
+                (click)="deleteReminder(reminder)">🗑</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- <div class="quick-reminders">
     <h2>{{ (i18n.terms$ | async)?.quickReminders }}</h2>
     <div class="quick-reminder-cards">
       <div class="quick-card birthdays">
@@ -265,12 +269,19 @@
 
   <!-- FOOTER: Sticky bottom -->
   <div class="module-footer">
-    <div class="pagination">
-      <button class="btn-page" (click)="firstPage()" [disabled]="currentPage === 1">
-        <mat-icon>first_page</mat-icon>
+    <div class="pagination-controls">
+      <button
+        class="btn-page"
+        (click)="firstPage()"
+        [disabled]="currentPage === 1 || loading">
+        ⏮ {{ (i18n.terms$ | async)?.first }}
       </button>
-      <button class="btn-page" (click)="previousPage()" [disabled]="currentPage === 1">
-        <mat-icon>chevron_right</mat-icon>
+
+      <button
+        class="btn-page"
+        (click)="previousPage()"
+        [disabled]="currentPage === 1 || loading">
+        ← {{ (i18n.terms$ | async)?.previous }}
       </button>
 
       <div class="page-numbers">
@@ -284,19 +295,23 @@
         </button>
       </div>
 
-      <button class="btn-page" (click)="nextPage()" [disabled]="currentPage === totalPages">
-        <mat-icon>chevron_left</mat-icon>
-      </button>
-      <button class="btn-page" (click)="lastPage()" [disabled]="currentPage === totalPages">
-        <mat-icon>last_page</mat-icon>
+      <button
+        class="btn-page"
+        (click)="nextPage()"
+        [disabled]="currentPage === totalPages || loading">
+        {{ (i18n.terms$ | async)?.next }} →
       </button>
 
-      <span class="page-info">
-        {{ (i18n.terms$ | async)?.showing }}
-        {{ Math.min((currentPage - 1) * pageSize + 1, totalCount) }}-{{ Math.min(currentPage * pageSize, totalCount) }}
-        {{ (i18n.terms$ | async)?.of }}
-        {{ totalCount }}
-      </span>
+      <button
+        class="btn-page"
+        (click)="lastPage()"
+        [disabled]="currentPage === totalPages || loading">
+        {{ (i18n.terms$ | async)?.last }} ⏭
+      </button>
+    </div>
+
+    <div class="pagination-info">
+      <span>{{ (i18n.terms$ | async)?.showing }} {{(currentPage - 1) * pageSize + 1}} - {{Math.min(currentPage * pageSize, totalCount)}} {{ (i18n.terms$ | async)?.of }} {{totalCount}}</span>
     </div>
   </div>
 
