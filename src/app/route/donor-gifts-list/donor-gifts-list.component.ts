@@ -15,7 +15,6 @@ import { GiftCatalogModalComponent } from '../../routes/modals/gift-catalog-moda
 export class DonorGiftsListComponent implements OnInit {
 
   donorGifts: DonorGift[] = [];
-  allDonorGifts: DonorGift[] = [];
   donors: Donor[] = [];
   gifts: Gift[] = [];
 
@@ -33,24 +32,36 @@ export class DonorGiftsListComponent implements OnInit {
 
   years: number[] = [];
 
+  // Pagination
+  currentPage = 1;
+  pageSize = 50;
+  totalCount = 0;
+  totalPages = 0;
+  Math = Math;
+
+  // Sorting
+  sortColumns: Array<{ field: string; direction: 'asc' | 'desc' }> = [];
+
+  // Stats
+  deliveredCount = 0;
+  pendingCount = 0;
+
   constructor(
     public i18n: I18nService,
     private ui: UIToolsService
   ) {}
 
   async ngOnInit() {
-    await this.loadData();
+    await this.loadGifts();
+    await this.loadDonors();
     this.generateYearsList();
+    await this.loadData();
   }
 
   async loadData() {
     this.loading = true;
     try {
-      await Promise.all([
-        this.loadDonorGifts(),
-        this.loadDonors(),
-        this.loadGifts()
-      ]);
+      await this.loadDonorGifts();
     } catch (error) {
       console.error('Error loading data:', error);
       this.ui.error('שגיאה בטעינת נתונים');
@@ -60,14 +71,75 @@ export class DonorGiftsListComponent implements OnInit {
   }
 
   async loadDonorGifts() {
-    this.allDonorGifts = await this.donorGiftRepo.find({
-      orderBy: { deliveryDate: 'desc' },
+    // Build where clause (simple filters only)
+    const where: any = {};
+
+    if (this.selectedDonorId) {
+      where.donorId = this.selectedDonorId;
+    }
+
+    if (this.selectedGiftId) {
+      where.giftId = this.selectedGiftId;
+    }
+
+    if (this.selectedYear) {
+      // Filter by year - we'll need to do this on client side
+    }
+
+    // Build orderBy
+    const orderBy: any = {};
+    if (this.sortColumns.length > 0) {
+      this.sortColumns.forEach(sort => {
+        if (sort.field === 'donor') {
+          orderBy['donor.lastName'] = sort.direction;
+        } else if (sort.field === 'gift') {
+          orderBy['gift.name'] = sort.direction;
+        } else {
+          orderBy[sort.field] = sort.direction;
+        }
+      });
+    } else {
+      orderBy.deliveryDate = 'desc';
+    }
+
+    // Get all data with filters
+    let allData = await this.donorGiftRepo.find({
+      where,
+      orderBy,
       include: {
         donor: true,
         gift: true
       }
     });
-    this.donorGifts = [...this.allDonorGifts];
+
+    // Apply client-side filters
+    if (this.searchDonorName) {
+      const searchLower = this.searchDonorName.toLowerCase();
+      allData = allData.filter(dg => {
+        const donorName = `${dg.donor?.firstName || ''} ${dg.donor?.lastName || ''}`.toLowerCase();
+        return donorName.includes(searchLower);
+      });
+    }
+
+    if (this.selectedYear) {
+      const yearNum = parseInt(this.selectedYear);
+      allData = allData.filter(dg => {
+        return new Date(dg.deliveryDate).getFullYear() === yearNum;
+      });
+    }
+
+    // Update stats
+    this.totalCount = allData.length;
+    this.deliveredCount = allData.filter(dg => dg.isDelivered).length;
+    this.pendingCount = allData.filter(dg => !dg.isDelivered).length;
+
+    // Calculate pagination
+    this.totalPages = Math.ceil(this.totalCount / this.pageSize);
+
+    // Apply pagination
+    const startIndex = (this.currentPage - 1) * this.pageSize;
+    const endIndex = startIndex + this.pageSize;
+    this.donorGifts = allData.slice(startIndex, endIndex);
   }
 
   async loadDonors() {
@@ -93,36 +165,8 @@ export class DonorGiftsListComponent implements OnInit {
   }
 
   applyFilters() {
-    this.donorGifts = this.allDonorGifts.filter(dg => {
-      // Filter by donor
-      if (this.selectedDonorId && dg.donorId !== this.selectedDonorId) {
-        return false;
-      }
-
-      // Filter by donor name search
-      if (this.searchDonorName) {
-        const searchLower = this.searchDonorName.toLowerCase();
-        const donorName = `${dg.donor?.firstName || ''} ${dg.donor?.lastName || ''}`.toLowerCase();
-        if (!donorName.includes(searchLower)) {
-          return false;
-        }
-      }
-
-      // Filter by gift
-      if (this.selectedGiftId && dg.giftId !== this.selectedGiftId) {
-        return false;
-      }
-
-      // Filter by year
-      if (this.selectedYear) {
-        const giftYear = new Date(dg.deliveryDate).getFullYear();
-        if (giftYear !== parseInt(this.selectedYear)) {
-          return false;
-        }
-      }
-
-      return true;
-    });
+    this.currentPage = 1;
+    this.loadData();
   }
 
   clearFilters() {
@@ -130,7 +174,117 @@ export class DonorGiftsListComponent implements OnInit {
     this.selectedGiftId = '';
     this.selectedYear = '';
     this.searchDonorName = '';
-    this.applyFilters();
+    this.currentPage = 1;
+    this.loadData();
+  }
+
+  // Sorting methods
+  toggleSort(field: string, event: MouseEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const existingSort = this.sortColumns.find(s => s.field === field);
+
+    if (existingSort) {
+      if (existingSort.direction === 'asc') {
+        existingSort.direction = 'desc';
+      } else {
+        this.sortColumns = this.sortColumns.filter(s => s.field !== field);
+      }
+    } else {
+      this.sortColumns.push({ field, direction: 'asc' });
+    }
+
+    this.loadData();
+  }
+
+  isSorted(field: string): boolean {
+    return this.sortColumns.some(s => s.field === field);
+  }
+
+  getSortIcon(field: string): string {
+    const sort = this.sortColumns.find(s => s.field === field);
+    if (!sort) return '';
+    return sort.direction === 'asc' ? '↑' : '↓';
+  }
+
+  // Pagination methods
+  firstPage() {
+    if (this.currentPage !== 1) {
+      this.currentPage = 1;
+      this.loadData();
+    }
+  }
+
+  previousPage() {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+      this.loadData();
+    }
+  }
+
+  nextPage() {
+    if (this.currentPage < this.totalPages) {
+      this.currentPage++;
+      this.loadData();
+    }
+  }
+
+  lastPage() {
+    if (this.currentPage !== this.totalPages) {
+      this.currentPage = this.totalPages;
+      this.loadData();
+    }
+  }
+
+  goToPage(page: number) {
+    if (page >= 1 && page <= this.totalPages && page !== this.currentPage) {
+      this.currentPage = page;
+      this.loadData();
+    }
+  }
+
+  getPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxPagesToShow = 7;
+    const halfWindow = Math.floor(maxPagesToShow / 2);
+
+    if (this.totalPages <= maxPagesToShow) {
+      for (let i = 1; i <= this.totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      let startPage = Math.max(1, this.currentPage - halfWindow);
+      let endPage = Math.min(this.totalPages, this.currentPage + halfWindow);
+
+      if (this.currentPage - halfWindow < 1) {
+        endPage = Math.min(this.totalPages, endPage + (halfWindow - this.currentPage + 1));
+      }
+
+      if (this.currentPage + halfWindow > this.totalPages) {
+        startPage = Math.max(1, startPage - (this.currentPage + halfWindow - this.totalPages));
+      }
+
+      if (startPage > 1) {
+        pages.push(1);
+        if (startPage > 2) {
+          pages.push(-1);
+        }
+      }
+
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(i);
+      }
+
+      if (endPage < this.totalPages) {
+        if (endPage < this.totalPages - 1) {
+          pages.push(-1);
+        }
+        pages.push(this.totalPages);
+      }
+    }
+
+    return pages;
   }
 
   async manageGiftCatalog() {
@@ -145,8 +299,7 @@ export class DonorGiftsListComponent implements OnInit {
     });
 
     if (result) {
-      await this.loadDonorGifts();
-      this.applyFilters();
+      await this.loadData();
     }
   }
 
@@ -156,8 +309,7 @@ export class DonorGiftsListComponent implements OnInit {
     });
 
     if (result) {
-      await this.loadDonorGifts();
-      this.applyFilters();
+      await this.loadData();
     }
   }
 
@@ -169,8 +321,7 @@ export class DonorGiftsListComponent implements OnInit {
     if (confirmed) {
       try {
         await this.donorGiftRepo.delete(donorGift);
-        await this.loadDonorGifts();
-        this.applyFilters();
+        await this.loadData();
         this.ui.info('המתנה נמחקה בהצלחה');
       } catch (error) {
         console.error('Error deleting donor gift:', error);
@@ -187,13 +338,5 @@ export class DonorGiftsListComponent implements OnInit {
   formatDate(date: Date | undefined): string {
     if (!date) return '';
     return new Date(date).toLocaleDateString('he-IL');
-  }
-
-  get deliveredCount(): number {
-    return this.donorGifts.filter(dg => dg.isDelivered).length;
-  }
-
-  get pendingCount(): number {
-    return this.donorGifts.filter(dg => !dg.isDelivered).length;
   }
 }

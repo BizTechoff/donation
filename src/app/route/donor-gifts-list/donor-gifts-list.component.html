@@ -1,134 +1,195 @@
-<div class="donor-gifts-container">
-  <div class="page-header">
-    <h1>{{ (i18n.terms$ | async)?.donorGifts }}</h1>
-    <div class="header-actions">
-      <button class="btn btn-secondary manage-catalog-btn" (click)="manageGiftCatalog()">
-        <mat-icon>inventory_2</mat-icon>
-        {{ (i18n.terms$ | async)?.manageGiftCatalog }}
-      </button>
-      <button class="btn btn-primary add-btn" (click)="createDonorGift()">
-        <mat-icon>add</mat-icon>
-        {{ (i18n.terms$ | async)?.addGiftToDonor }}
-      </button>
-    </div>
-  </div>
+<div class="module-container">
 
-  <div class="summary-cards">
-    <div class="summary-card">
-      <div class="card-icon">🎁</div>
-      <div class="card-content">
-        <h3>{{ (i18n.terms$ | async)?.totalGifts }}</h3>
-        <span class="count">{{ donorGifts.length }}</span>
-      </div>
-    </div>
-    <div class="summary-card">
-      <div class="card-icon">📦</div>
-      <div class="card-content">
-        <h3>{{ (i18n.terms$ | async)?.deliveredGifts }}</h3>
-        <span class="count">{{ deliveredCount }}</span>
-      </div>
-    </div>
-    <div class="summary-card">
-      <div class="card-icon">⏳</div>
-      <div class="card-content">
-        <h3>{{ (i18n.terms$ | async)?.pendingGifts }}</h3>
-        <span class="count">{{ pendingCount }}</span>
-      </div>
-    </div>
-  </div>
-
-  <div class="filters-section">
-    <div class="filter-row">
-      <div class="filter-group">
-        <label>{{ (i18n.terms$ | async)?.searchDonor }}</label>
-        <input type="text" class="form-control"
-               [(ngModel)]="searchDonorName"
-               (ngModelChange)="applyFilters()"
-               [placeholder]="(i18n.terms$ | async)?.donorNamePlaceholder">
-      </div>
-
-      <div class="filter-group">
-        <label>{{ (i18n.terms$ | async)?.donor }}</label>
-        <select class="form-control" [(ngModel)]="selectedDonorId" (ngModelChange)="applyFilters()">
-          <option value="">{{ (i18n.terms$ | async)?.allDonors }}</option>
-          <option *ngFor="let donor of donors" [value]="donor.id">
-            {{ donor.firstName }} {{ donor.lastName }}
-          </option>
-        </select>
-      </div>
-
-      <div class="filter-group">
-        <label>{{ (i18n.terms$ | async)?.giftType }}</label>
-        <select class="form-control" [(ngModel)]="selectedGiftId" (ngModelChange)="applyFilters()">
-          <option value="">{{ (i18n.terms$ | async)?.allGifts }}</option>
-          <option *ngFor="let gift of gifts" [value]="gift.id">
-            {{ gift.name }}
-          </option>
-        </select>
-      </div>
-
-      <div class="filter-group">
-        <label>{{ (i18n.terms$ | async)?.year }}</label>
-        <select class="form-control" [(ngModel)]="selectedYear" (ngModelChange)="applyFilters()">
-          <option value="">{{ (i18n.terms$ | async)?.allYears }}</option>
-          <option *ngFor="let year of years" [value]="year">{{ year }}</option>
-        </select>
-      </div>
-
-      <div class="filter-group">
-        <button class="btn btn-secondary" (click)="clearFilters()">
-          <mat-icon>clear</mat-icon>
-          {{ (i18n.terms$ | async)?.clearFilters }}
+  <!-- HEADER: Sticky top -->
+  <div class="module-header">
+    <div class="header-top">
+      <h1>{{ (i18n.terms$ | async)?.donorGifts }}</h1>
+      <div class="header-actions">
+        <button class="btn btn-secondary manage-catalog-btn" (click)="manageGiftCatalog()">
+          {{ (i18n.terms$ | async)?.manageGiftCatalog }}
+        </button>
+        <button class="btn btn-primary add-btn" (click)="createDonorGift()">
+          {{ (i18n.terms$ | async)?.addGiftToDonor }}
         </button>
       </div>
     </div>
+
+    <div class="summary-cards">
+      <div class="summary-card">
+        <div class="card-icon">🎁</div>
+        <div class="card-content">
+          <h3>{{ (i18n.terms$ | async)?.totalGifts }}</h3>
+          <span class="count">{{ totalCount }}</span>
+        </div>
+      </div>
+      <div class="summary-card">
+        <div class="card-icon">📦</div>
+        <div class="card-content">
+          <h3>{{ (i18n.terms$ | async)?.deliveredGifts }}</h3>
+          <span class="count">{{ deliveredCount }}</span>
+        </div>
+      </div>
+      <div class="summary-card">
+        <div class="card-icon">⏳</div>
+        <div class="card-content">
+          <h3>{{ (i18n.terms$ | async)?.pendingGifts }}</h3>
+          <span class="count">{{ pendingCount }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="filters-section">
+      <div class="filter-row">
+        <div class="filter-group">
+          <label>{{ (i18n.terms$ | async)?.searchDonor }}</label>
+          <input type="text" class="form-control"
+                 [(ngModel)]="searchDonorName"
+                 (ngModelChange)="applyFilters()"
+                 [placeholder]="(i18n.terms$ | async)?.donorNamePlaceholder">
+        </div>
+
+        <div class="filter-group">
+          <label>{{ (i18n.terms$ | async)?.donor }}</label>
+          <select class="form-control" [(ngModel)]="selectedDonorId" (ngModelChange)="applyFilters()">
+            <option value="">{{ (i18n.terms$ | async)?.allDonors }}</option>
+            <option *ngFor="let donor of donors" [value]="donor.id">
+              {{ donor.firstName }} {{ donor.lastName }}
+            </option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label>{{ (i18n.terms$ | async)?.giftType }}</label>
+          <select class="form-control" [(ngModel)]="selectedGiftId" (ngModelChange)="applyFilters()">
+            <option value="">{{ (i18n.terms$ | async)?.allGifts }}</option>
+            <option *ngFor="let gift of gifts" [value]="gift.id">
+              {{ gift.name }}
+            </option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label>{{ (i18n.terms$ | async)?.year }}</label>
+          <select class="form-control" [(ngModel)]="selectedYear" (ngModelChange)="applyFilters()">
+            <option value="">{{ (i18n.terms$ | async)?.allYears }}</option>
+            <option *ngFor="let year of years" [value]="year">{{ year }}</option>
+          </select>
+        </div>
+
+        <!-- <div class="filter-group">
+          <button class="btn btn-secondary" (click)="clearFilters()">
+            {{ (i18n.terms$ | async)?.clearFilters }}
+          </button>
+        </div> -->
+      </div>
+    </div>
   </div>
 
-  <div class="table-wrapper" *ngIf="!loading && donorGifts.length > 0">
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>{{ (i18n.terms$ | async)?.donor }}</th>
-          <th>{{ (i18n.terms$ | async)?.gift }}</th>
-          <th>{{ (i18n.terms$ | async)?.deliveryDate }}</th>
-          <th>{{ (i18n.terms$ | async)?.reminderDate }}</th>
-          <th>{{ (i18n.terms$ | async)?.status }}</th>
-          <th>{{ (i18n.terms$ | async)?.notes }}</th>
-          <th>{{ (i18n.terms$ | async)?.actions }}</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let donorGift of donorGifts" (click)="editDonorGift(donorGift)" class="clickable-row">
-          <td>{{ getDonorName(donorGift) }}</td>
-          <td>{{ donorGift.gift?.name }}</td>
-          <td>{{ formatDate(donorGift.deliveryDate) }}</td>
-          <td>{{ formatDate(donorGift.reminderDate) }}</td>
-          <td>
-            <span class="status-badge" [class.delivered]="donorGift.isDelivered" [class.pending]="!donorGift.isDelivered">
-              {{ donorGift.isDelivered ? (i18n.terms$ | async)?.delivered : (i18n.terms$ | async)?.pending }}
-            </span>
-          </td>
-          <td>{{ donorGift.notes }}</td>
-          <td class="actions" (click)="$event.stopPropagation()">
-            <button class="btn-icon btn-edit" (click)="editDonorGift(donorGift)" [title]="(i18n.terms$ | async)?.edit">✏</button>
-            <button class="btn-icon btn-delete" (click)="deleteDonorGift(donorGift)" [title]="(i18n.terms$ | async)?.delete">🗑</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+  <!-- CONTENT: Main scrollable area -->
+  <div class="module-content">
+
+    <!-- Table Header: Sticky -->
+    <div class="table-header">
+      <div class="grid-col sortable" [class.sorted]="isSorted('donor')" (click)="toggleSort('donor', $event)">
+        {{ (i18n.terms$ | async)?.donor }}
+        <span class="sort-icon">{{ getSortIcon('donor') }}</span>
+      </div>
+      <div class="grid-col sortable" [class.sorted]="isSorted('gift')" (click)="toggleSort('gift', $event)">
+        {{ (i18n.terms$ | async)?.gift }}
+        <span class="sort-icon">{{ getSortIcon('gift') }}</span>
+      </div>
+      <div class="grid-col sortable" [class.sorted]="isSorted('deliveryDate')" (click)="toggleSort('deliveryDate', $event)">
+        {{ (i18n.terms$ | async)?.deliveryDate }}
+        <span class="sort-icon">{{ getSortIcon('deliveryDate') }}</span>
+      </div>
+      <div class="grid-col sortable" [class.sorted]="isSorted('reminderDate')" (click)="toggleSort('reminderDate', $event)">
+        {{ (i18n.terms$ | async)?.reminderDate }}
+        <span class="sort-icon">{{ getSortIcon('reminderDate') }}</span>
+      </div>
+      <div class="grid-col sortable" [class.sorted]="isSorted('isDelivered')" (click)="toggleSort('isDelivered', $event)">
+        {{ (i18n.terms$ | async)?.status }}
+        <span class="sort-icon">{{ getSortIcon('isDelivered') }}</span>
+      </div>
+      <div class="grid-col">{{ (i18n.terms$ | async)?.notes }}</div>
+      <div class="grid-col">{{ (i18n.terms$ | async)?.actions }}</div>
+    </div>
+
+    <!-- Table Body: Scrollable -->
+    <div class="table-body">
+      <div class="loading-overlay" *ngIf="loading">
+        <div class="spinner">{{ (i18n.terms$ | async)?.loading }}</div>
+      </div>
+
+      <div class="grid-row" *ngFor="let donorGift of donorGifts">
+        <div class="grid-col">{{ getDonorName(donorGift) }}</div>
+        <div class="grid-col">{{ donorGift.gift?.name }}</div>
+        <div class="grid-col">{{ formatDate(donorGift.deliveryDate) }}</div>
+        <div class="grid-col">{{ formatDate(donorGift.reminderDate) }}</div>
+        <div class="grid-col">
+          <span class="status-badge" [class.delivered]="donorGift.isDelivered" [class.pending]="!donorGift.isDelivered">
+            {{ donorGift.isDelivered ? (i18n.terms$ | async)?.delivered : (i18n.terms$ | async)?.pending }}
+          </span>
+        </div>
+        <div class="grid-col">{{ donorGift.notes }}</div>
+        <div class="grid-col actions" (click)="$event.stopPropagation()">
+          <button class="btn-icon btn-edit" (click)="editDonorGift(donorGift)" [title]="(i18n.terms$ | async)?.edit">✏</button>
+          <button class="btn-icon btn-delete" (click)="deleteDonorGift(donorGift)" [title]="(i18n.terms$ | async)?.delete">🗑</button>
+        </div>
+      </div>
+
+      <div class="no-data" *ngIf="!loading && donorGifts.length === 0">
+        <p>{{ (i18n.terms$ | async)?.noGiftsFound }}</p>
+      </div>
+    </div>
+
+    <!-- Table Footer: Sticky pagination -->
+    <div class="table-footer">
+      <div class="pagination-controls">
+        <button
+          class="btn-page"
+          (click)="firstPage()"
+          [disabled]="currentPage === 1 || loading">
+          ⏮ {{ (i18n.terms$ | async)?.first }}
+        </button>
+
+        <button
+          class="btn-page"
+          (click)="previousPage()"
+          [disabled]="currentPage === 1 || loading">
+          ← {{ (i18n.terms$ | async)?.previous }}
+        </button>
+
+        <div class="page-numbers">
+          <button
+            *ngFor="let page of getPageNumbers()"
+            class="btn-page-number"
+            [class.active]="page === currentPage"
+            [disabled]="page === -1"
+            (click)="page !== -1 && goToPage(page)">
+            {{ page === -1 ? '...' : page }}
+          </button>
+        </div>
+
+        <button
+          class="btn-page"
+          (click)="nextPage()"
+          [disabled]="currentPage === totalPages || loading">
+          {{ (i18n.terms$ | async)?.next }} →
+        </button>
+
+        <button
+          class="btn-page"
+          (click)="lastPage()"
+          [disabled]="currentPage === totalPages || loading">
+          {{ (i18n.terms$ | async)?.last }} ⏭
+        </button>
+      </div>
+
+      <div class="pagination-info">
+        <span>{{ (i18n.terms$ | async)?.showing }} {{(currentPage - 1) * pageSize + 1}} - {{Math.min(currentPage * pageSize, totalCount)}} {{ (i18n.terms$ | async)?.of }} {{totalCount}}</span>
+      </div>
+    </div>
+
   </div>
 
-  <div class="empty-state" *ngIf="!loading && donorGifts.length === 0">
-    <mat-icon>card_giftcard</mat-icon>
-    <h3>{{ (i18n.terms$ | async)?.noGiftsFound }}</h3>
-    <p>{{ (i18n.terms$ | async)?.addFirstGift }}</p>
-    <button class="btn btn-primary" (click)="createDonorGift()">
-      <mat-icon>add</mat-icon>
-      {{ (i18n.terms$ | async)?.addNewGift }}
-    </button>
-  </div>
-
-  <div class="loading-spinner" *ngIf="loading">
-    <mat-spinner></mat-spinner>
-  </div>
 </div>
