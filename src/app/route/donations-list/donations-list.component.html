@@ -185,14 +185,14 @@
           class="btn-page"
           (click)="firstPage()"
           [disabled]="currentPage === 1 || loading">
-          ⏮ ראשון
+          ⏮ {{ (i18n.terms$ | async)?.first }}
         </button>
 
         <button
           class="btn-page"
           (click)="previousPage()"
           [disabled]="currentPage === 1 || loading">
-          ← {{ (i18n.terms$ | async)?.previousPage }}
+          ← {{ (i18n.terms$ | async)?.previous }}
         </button>
 
         <div class="page-numbers">
@@ -210,19 +210,19 @@
           class="btn-page"
           (click)="nextPage()"
           [disabled]="currentPage === totalPages || loading">
-          {{ (i18n.terms$ | async)?.nextPage }} →
+          {{ (i18n.terms$ | async)?.next }} →
         </button>
 
         <button
           class="btn-page"
           (click)="lastPage()"
           [disabled]="currentPage === totalPages || loading">
-          אחרון ⏭
+          {{ (i18n.terms$ | async)?.last }} ⏭
         </button>
       </div>
 
       <div class="pagination-info">
-        <span>מציג {{(currentPage - 1) * pageSize + 1}} - {{Math.min(currentPage * pageSize, totalCount)}} מתוך {{totalCount}}</span>
+        <span>{{ (i18n.terms$ | async)?.showing }} {{(currentPage - 1) * pageSize + 1}} - {{Math.min(currentPage * pageSize, totalCount)}} {{ (i18n.terms$ | async)?.of }} {{totalCount}}</span>
       </div>
     </div>
 
