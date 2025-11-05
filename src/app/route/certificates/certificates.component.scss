@@ -1,28 +1,40 @@
-.certificates-container {
-  padding: 20px;
-  max-width: 1400px;
-  margin: 0 auto;
+// Module Container: Header-Content-Footer Layout
+.module-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
   direction: rtl;
   font-family: 'Segoe UI', Arial, sans-serif;
+  background: #f5f7fa;
+  overflow: hidden;
 }
 
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 30px;
-  
-  h1 {
-    font-size: 2rem;
-    margin: 0;
-    font-weight: 700;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-  
-  .create-certificate-btn {
+// MODULE HEADER: Sticky top
+.module-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: white;
+  border-bottom: 2px solid #e1e8ed;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 30px;
+
+    h1 {
+      margin: 0;
+      font-size: 1.8rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .create-certificate-btn {
     background: #e67e22;
     color: white;
     padding: 12px 24px;
@@ -30,11 +42,12 @@
     border-radius: 6px;
     font-size: 14px;
     cursor: pointer;
-    transition: all 0.3s ease;
-    
-    &:hover {
-      background: #d35400;
-      transform: translateY(-1px);
+      transition: all 0.3s ease;
+
+      &:hover {
+        background: #d35400;
+        transform: translateY(-1px);
+      }
     }
   }
 }
@@ -1184,7 +1197,7 @@
       .certificate-preview {
         .certificate-paper {
           transform: scale(0.6);
-          
+
           &.landscape {
             transform: scale(0.5);
           }
@@ -1192,4 +1205,26 @@
       }
     }
   }
+}
+
+// MODULE CONTENT: Main scrollable area
+.module-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: white;
+  padding: 20px;
+}
+
+// MODULE FOOTER: Sticky bottom
+.module-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 90;
+  background: white;
+  border-top: 2px solid #e1e8ed;
+  padding: 15px 30px;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
 }

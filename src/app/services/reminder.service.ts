@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { Reminder } from '../../shared/entity';
 import { ReminderController } from '../../shared/controllers/reminder.controller';
 import { HebrewDateController } from '../../shared/controllers/hebrew-date.controller';
 
@@ -10,6 +11,37 @@ import { HebrewDateController } from '../../shared/controllers/hebrew-date.contr
   providedIn: 'root'
 })
 export class ReminderService {
+  /**
+   * Find reminders with filters, pagination, and sorting
+   */
+  async findFiltered(
+    filters: {
+      countryIds?: string[]
+      dateFrom?: Date
+      dateTo?: Date
+      searchTerm?: string
+    } = {},
+    page: number = 1,
+    pageSize: number = 50,
+    sortColumns: Array<{ field: string; direction: 'asc' | 'desc' }> = []
+  ): Promise<Reminder[]> {
+    return await ReminderController.findFiltered(filters, page, pageSize, sortColumns);
+  }
+
+  /**
+   * Count reminders with filters
+   */
+  async countFiltered(
+    filters: {
+      countryIds?: string[]
+      dateFrom?: Date
+      dateTo?: Date
+      searchTerm?: string
+    } = {}
+  ): Promise<number> {
+    return await ReminderController.countFiltered(filters);
+  }
+
   /**
    * Calculate next reminder date for recurring reminders
    */

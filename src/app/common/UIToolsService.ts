@@ -226,6 +226,13 @@ export class UIToolsService implements UITools {
     )
   }
 
+  async mapSelectedDonorsDialog(donors: any[], polygonPoints?: { lat: number; lng: number }[]): Promise<void> {
+    return await openDialog(
+      (await import('../routes/modals/map-selected-donors-modal/map-selected-donors-modal.component')).MapSelectedDonorsModalComponent,
+      (dlg) => dlg.args = { donors, polygonPoints }
+    )
+  }
+
   private enhanceFieldOptionsAndDataControlOptions(
     commonUIPlugin: CommonUIElementsPluginsService
   ) {

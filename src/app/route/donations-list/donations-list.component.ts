@@ -1,8 +1,8 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { remult } from 'remult';
-import { Subject, Subscription } from 'rxjs';
-import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
+import { DonationController, DonationFilters } from '../../../shared/controllers/donation.controller';
 import { Campaign, Donation, DonationMethod, Donor, DonorPlace } from '../../../shared/entity';
 import { UIToolsService } from '../../common/UIToolsService';
 import { I18nService } from '../../i18n/i18n.service';
@@ -34,14 +34,29 @@ export class DonationsListComponent implements OnInit, OnDestroy {
 
   completedDonationsCountCache = 0;
 
+  // Pagination
+  currentPage = 1;
+  pageSize = 50;
+  totalCount = 0;
+  totalPages = 0;
+  Math = Math; // Make Math available in template
+
+  // Sorting
+  sortColumns: Array<{ field: string; direction: 'asc' | 'desc' }> = [];
+
   // תצוגה מקדימה ונתונים נוספים
   showPreview = false;
   hebrewDate = '';
   fundraiserName = '';
 
-  // חיפוש תורם
-  donorSearchText = '';
-  private donorSearchSubject = new Subject<string>();
+  // Filter variables
+  searchTerm = '';
+  dateFrom = '';
+  dateTo = '';
+  selectedMethodId = '';
+  amountFrom: number | undefined;
+  selectedCampaignId = '';
+  private filterTimeout: any;
   private subscriptions = new Subscription();
 
   constructor(
@@ -52,16 +67,6 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   ) {}
 
   async ngOnInit() {
-    // הגדרת debounce לחיפוש תורם
-    this.subscriptions.add(
-      this.donorSearchSubject.pipe(
-        debounceTime(300),
-        distinctUntilChanged()
-      ).subscribe(searchText => {
-        this.filterDonationsByDonorName(searchText);
-      })
-    );
-
     // Set CSS variables for mobile labels
     this.updateMobileLabels();
 
@@ -94,8 +99,10 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    this.donorSearchSubject.complete();
     this.subscriptions.unsubscribe();
+    if (this.filterTimeout) {
+      clearTimeout(this.filterTimeout);
+    }
   }
 
   async loadData() {
@@ -115,53 +122,50 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   }
 
   async loadDonations() {
-    // בנה query עם פילטרים גלובליים
-    const globalFilters = this.globalFilterService.currentFilters;
-    const where: any = {};
+    try {
+      // Build filters object for server-side filtering
+      const filters: DonationFilters = {
+        searchTerm: this.searchTerm?.trim() || undefined,
+        dateFrom: this.dateFrom?.trim() || undefined,
+        dateTo: this.dateTo?.trim() || undefined,
+        selectedMethodId: this.selectedMethodId?.trim() || undefined,
+        amountFrom: this.amountFrom,
+        selectedCampaignId: this.selectedCampaignId?.trim() || undefined
+      };
 
-    // הוסף פילטר קמפיין אם קיים
-    if (globalFilters.campaignIds && globalFilters.campaignIds.length > 0) {
-      where.campaignId = { $in: globalFilters.campaignIds };
+      // Get total count and donations from server
+      [this.totalCount, this.donations] = await Promise.all([
+        DonationController.countFilteredDonations(filters),
+        DonationController.findFilteredDonations(filters, this.currentPage, this.pageSize, this.sortColumns)
+      ]);
+
+      this.totalPages = Math.ceil(this.totalCount / this.pageSize);
+
+      // Load donor home addresses
+      await this.loadDonorAddresses();
+
+      // Calculate completed donations count
+      this.completedDonationsCountCache = this.donations.length;
+    } catch (error) {
+      console.error('Error in loadDonations:', error);
+      this.donations = [];
+      this.totalCount = 0;
+      this.totalPages = 0;
+    }
+  }
+
+  onFilterChange() {
+    // Clear any existing timeout
+    if (this.filterTimeout) {
+      clearTimeout(this.filterTimeout);
     }
 
-    // הוסף פילטר תאריכים אם קיים
-    if (globalFilters.dateFrom || globalFilters.dateTo) {
-      where.donationDate = {};
-      if (globalFilters.dateFrom) {
-        where.donationDate.$gte = globalFilters.dateFrom;
-      }
-      if (globalFilters.dateTo) {
-        where.donationDate.$lte = globalFilters.dateTo;
-      }
-    }
-
-    // הוסף פילטר סכומים אם קיים
-    if (globalFilters.amountMin !== undefined || globalFilters.amountMax !== undefined) {
-      where.amount = {};
-      if (globalFilters.amountMin !== undefined) {
-        where.amount.$gte = globalFilters.amountMin;
-      }
-      if (globalFilters.amountMax !== undefined) {
-        where.amount.$lte = globalFilters.amountMax;
-      }
-    }
-
-    this.donations = await this.donationRepo.find({
-      orderBy: { donationDate: 'desc' },
-      include: {
-        donor: true,
-        campaign: true,
-        donationMethod: true,
-        createdBy: true
-      },
-      where: Object.keys(where).length > 0 ? where : undefined
-    });
-
-    // Load donor home addresses
-    await this.loadDonorAddresses();
-
-    // Calculate completed donations count once after loading
-    this.completedDonationsCountCache = this.donations.length;
+    // Set a new timeout to reload data after user stops typing/changing filters
+    this.filterTimeout = setTimeout(() => {
+      console.log('Filter changed, reloading donations');
+      this.currentPage = 1; // Reset to first page when filters change
+      this.loadDonations();
+    }, 300); // 300ms debounce
   }
 
   async loadDonors() {
@@ -426,6 +430,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   }
 
   getDonorName(donation: Donation): string {
+    // console.log('getDonorName',donation?.donor?.fullName)
     return donation.donor?.displayName || this.i18n.currentTerms.unknown || '';
   }
 
@@ -451,6 +456,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
       'JPY': '¥',
       'CHF': 'Fr'
     };
+    // console.log('getCurrencyName',currencyCode,currencyMap[currencyCode] )
     return currencyMap[currencyCode] || currencyCode;
   }
 
@@ -490,89 +496,104 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   }
 
   // מטפל בשינוי בשדה חיפוש תורם
-  onDonorSearchChange(searchText: string) {
-    this.donorSearchSubject.next(searchText);
+
+  // Pagination methods
+  async goToPage(page: number) {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+      await this.loadDonations();
+    }
   }
 
-  // מסנן תרומות לפי שם תורם
-  async filterDonationsByDonorName(searchText: string) {
-    if (!searchText || searchText.trim().length === 0) {
-      // אם אין טקסט חיפוש, טען את כל התרומות
+  async nextPage() {
+    if (this.currentPage < this.totalPages) {
+      this.currentPage++;
       await this.loadDonations();
-      return;
     }
+  }
 
-    const searchLower = searchText.toLowerCase().trim();
+  async previousPage() {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+      await this.loadDonations();
+    }
+  }
 
-    // שלב 1: מצא תורמים מתאימים
-    const matchingDonors = await this.donorRepo.find({
-      where: {
-        $or: [
-          { firstName: { $contains: searchLower } },
-          { lastName: { $contains: searchLower } },
-          { firstNameEnglish: { $contains: searchLower } },
-          { lastNameEnglish: { $contains: searchLower } }
-        ]
+  async firstPage() {
+    this.currentPage = 1;
+    await this.loadDonations();
+  }
+
+  async lastPage() {
+    this.currentPage = this.totalPages;
+    await this.loadDonations();
+  }
+
+  getPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxPagesToShow = 5;
+
+    if (this.totalPages <= maxPagesToShow) {
+      for (let i = 1; i <= this.totalPages; i++) {
+        pages.push(i);
       }
-    });
+    } else {
+      const halfWindow = Math.floor(maxPagesToShow / 2);
+      let startPage = Math.max(1, this.currentPage - halfWindow);
+      let endPage = Math.min(this.totalPages, startPage + maxPagesToShow - 1);
 
-    // אם לא נמצאו תורמים, החזר רשימה רקה
-    if (matchingDonors.length === 0) {
-      this.donations = [];
-      this.completedDonationsCountCache = 0;
-      return;
-    }
-
-    // שלב 2: מצא תרומות של התורמים המתאימים
-    const donorIds = matchingDonors.map(d => d.id);
-
-    // בנה query עם פילטרים גלובליים
-    const globalFilters = this.globalFilterService.currentFilters;
-    const where: any = {
-      donorId: { $in: donorIds }
-    };
-
-    // הוסף פילטר קמפיין אם קיים
-    if (globalFilters.campaignIds && globalFilters.campaignIds.length > 0) {
-      where.campaignId = { $in: globalFilters.campaignIds };
-    }
-
-    // הוסף פילטר תאריכים אם קיים
-    if (globalFilters.dateFrom || globalFilters.dateTo) {
-      where.donationDate = {};
-      if (globalFilters.dateFrom) {
-        where.donationDate.$gte = globalFilters.dateFrom;
+      if (endPage - startPage < maxPagesToShow - 1) {
+        startPage = Math.max(1, endPage - maxPagesToShow + 1);
       }
-      if (globalFilters.dateTo) {
-        where.donationDate.$lte = globalFilters.dateTo;
+
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(i);
       }
     }
 
-    // הוסף פילטר סכומים אם קיים
-    if (globalFilters.amountMin !== undefined || globalFilters.amountMax !== undefined) {
-      where.amount = {};
-      if (globalFilters.amountMin !== undefined) {
-        where.amount.$gte = globalFilters.amountMin;
+    return pages;
+  }
+
+  // Sorting methods
+  toggleSort(field: string, event: Event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    console.log('toggleSort called with field:', field);
+
+    // Find existing sort for this field
+    const existingIndex = this.sortColumns.findIndex(s => s.field === field);
+
+    if (existingIndex !== -1) {
+      // Toggle direction or remove if descending
+      const current = this.sortColumns[existingIndex];
+      if (current.direction === 'asc') {
+        this.sortColumns[existingIndex].direction = 'desc';
+      } else {
+        // Remove sort
+        this.sortColumns.splice(existingIndex, 1);
       }
-      if (globalFilters.amountMax !== undefined) {
-        where.amount.$lte = globalFilters.amountMax;
-      }
+    } else {
+      // Add new sort (ascending first)
+      this.sortColumns.push({ field, direction: 'asc' });
     }
 
-    this.donations = await this.donationRepo.find({
-      orderBy: { donationDate: 'desc' },
-      include: {
-        donor: true,
-        campaign: true,
-        donationMethod: true,
-        createdBy: true
-      },
-      where
-    });
+    console.log('sortColumns after toggle:', this.sortColumns);
 
-    // Load donor addresses after filtering
-    await this.loadDonorAddresses();
+    // Reset to first page when sorting changes
+    this.currentPage = 1;
 
-    this.completedDonationsCountCache = this.donations.length;
+    // Reload with new sort
+    this.loadDonations();
+  }
+
+  isSorted(field: string): boolean {
+    return this.sortColumns.some(s => s.field === field);
+  }
+
+  getSortIcon(field: string): string {
+    const sort = this.sortColumns.find(s => s.field === field);
+    if (!sort) return '';
+    return sort.direction === 'asc' ? '↑' : '↓';
   }
 }

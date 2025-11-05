@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Subscription } from 'rxjs';
-import { Donor, DonorContact, DonorPlace, Place } from '../../../shared/entity';
+import { Donor, DonorContact, DonorPlace, Place, User } from '../../../shared/entity';
 import { I18nService } from '../../i18n/i18n.service';
 import { UIToolsService } from '../../common/UIToolsService';
 import { DonorService } from '../../services/donor.service';
@@ -20,6 +20,9 @@ export class DonorListComponent implements OnInit, OnDestroy {
   loading = false;
   private subscription = new Subscription();
 
+  // Expose Math to template
+  Math = Math;
+
   // Maps for donor-related data
   donorEmailMap = new Map<string, string>();
   donorPhoneMap = new Map<string, string>();
@@ -34,6 +37,16 @@ export class DonorListComponent implements OnInit, OnDestroy {
   // Local filter properties
   searchTerm = '';
 
+  // Pagination
+  currentPage = 1;
+  pageSize = 50;
+  totalCount = 0;
+  totalPages = 0;
+
+  // Sorting
+  sortColumns: Array<{ field: string; direction: 'asc' | 'desc' }> = [];
+  private currentUser?: User;
+
   constructor(
     public i18n: I18nService,
     private ui: UIToolsService,
@@ -42,6 +55,9 @@ export class DonorListComponent implements OnInit, OnDestroy {
   ) {}
 
   async ngOnInit() {
+    // Load current user and their settings
+    await this.loadUserSettings();
+
     // Subscribe to filter changes
     this.subscription.add(
       this.filterService.filters$.subscribe(() => {
@@ -74,13 +90,22 @@ export class DonorListComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.subscription.unsubscribe();
+    if (this.searchTermTimeout) {
+      clearTimeout(this.searchTermTimeout);
+    }
   }
 
   async loadDonors() {
     this.loading = true;
     try {
-      // Use the new service which automatically applies global filters
-      this.donors = await this.donorService.findFiltered();
+      // Get total count for pagination
+      this.totalCount = await this.donorService.countFiltered();
+      this.totalPages = Math.ceil(this.totalCount / this.pageSize);
+
+      console.log('loadDonors..')
+      // Use the new service which automatically applies global filters with pagination and sorting
+      this.donors = await this.donorService.findFiltered(undefined, this.currentPage, this.pageSize, this.sortColumns);
+      console.log('loadDonors..', this.donors.length)
 
       // Load all related data efficiently using DonorService
       const relatedData = await this.donorService.loadDonorRelatedData(
@@ -93,7 +118,10 @@ export class DonorListComponent implements OnInit, OnDestroy {
       this.donorFullAddressMap = relatedData.donorFullAddressMap;
       this.donorTotalDonationsMap = relatedData.donorTotalDonationsMap;
 
-      // Apply local filters
+      // Initialize filteredDonors before applying local filters
+      this.filteredDonors = [...this.donors];
+
+      // Apply local filters (search term)
       this.applyLocalFilters();
 
     } catch (error) {
@@ -124,11 +152,25 @@ export class DonorListComponent implements OnInit, OnDestroy {
       });
     }
 
+    // Set filtered donors before sorting
     this.filteredDonors = filtered;
+
+    // Apply sorting after filtering
+    this.applySorting();
   }
+
+  private searchTermTimeout: any;
 
   onLocalFilterChange() {
     this.applyLocalFilters();
+
+    // Debounce save searchTerm to avoid saving on every keystroke
+    if (this.searchTermTimeout) {
+      clearTimeout(this.searchTermTimeout);
+    }
+    this.searchTermTimeout = setTimeout(() => {
+      this.saveSearchTerm();
+    }, 500); // Save after 500ms of no typing
   }
 
   async createDonor() {
@@ -312,5 +354,246 @@ export class DonorListComponent implements OnInit, OnDestroy {
   onNavigatePrevious() {
     // Implement navigation logic
     console.log('Navigate to previous');
+  }
+
+  // Pagination methods
+  async goToPage(page: number) {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+      await this.loadDonors();
+    }
+  }
+
+  async nextPage() {
+    if (this.currentPage < this.totalPages) {
+      this.currentPage++;
+      await this.loadDonors();
+    }
+  }
+
+  async previousPage() {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+      await this.loadDonors();
+    }
+  }
+
+  async firstPage() {
+    this.currentPage = 1;
+    await this.loadDonors();
+  }
+
+  async lastPage() {
+    this.currentPage = this.totalPages;
+    await this.loadDonors();
+  }
+
+  getPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxPagesToShow = 5;
+
+    if (this.totalPages <= maxPagesToShow) {
+      for (let i = 1; i <= this.totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      const halfWindow = Math.floor(maxPagesToShow / 2);
+      let startPage = Math.max(1, this.currentPage - halfWindow);
+      let endPage = Math.min(this.totalPages, startPage + maxPagesToShow - 1);
+
+      if (endPage - startPage < maxPagesToShow - 1) {
+        startPage = Math.max(1, endPage - maxPagesToShow + 1);
+      }
+
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(i);
+      }
+    }
+
+    return pages;
+  }
+
+  // Sorting methods
+  async loadUserSettings() {
+    try {
+      const userRepo = remult.repo(User);
+      const userId = remult.user?.id;
+      if (userId) {
+        const user = await userRepo.findId(userId);
+        if (user) {
+          this.currentUser = user;
+          // Load saved sort settings
+          if (this.currentUser?.settings?.donorList?.sort) {
+            this.sortColumns = this.currentUser.settings.donorList.sort;
+          }
+          // Load saved search term
+          if (this.currentUser?.settings?.donorList?.searchTerm !== undefined) {
+            this.searchTerm = this.currentUser.settings.donorList.searchTerm;
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error loading user settings:', error);
+    }
+  }
+
+  async saveSortSettings() {
+    if (!this.currentUser) return;
+
+    try {
+      if (!this.currentUser.settings) {
+        this.currentUser.settings = {} as any;
+      }
+      if (this.currentUser.settings && !this.currentUser.settings.donorList) {
+        this.currentUser.settings.donorList = {};
+      }
+      if (this.currentUser.settings && this.currentUser.settings.donorList) {
+        this.currentUser.settings.donorList.sort = this.sortColumns;
+      }
+
+      await remult.repo(User).save(this.currentUser);
+    } catch (error) {
+      console.error('Error saving sort settings:', error);
+    }
+  }
+
+  async saveSearchTerm() {
+    if (!this.currentUser) return;
+
+    try {
+      if (!this.currentUser.settings) {
+        this.currentUser.settings = {} as any;
+      }
+      if (this.currentUser.settings && !this.currentUser.settings.donorList) {
+        this.currentUser.settings.donorList = {};
+      }
+      if (this.currentUser.settings && this.currentUser.settings.donorList) {
+        this.currentUser.settings.donorList.searchTerm = this.searchTerm;
+      }
+
+      await remult.repo(User).save(this.currentUser);
+    } catch (error) {
+      console.error('Error saving search term:', error);
+    }
+  }
+
+  async toggleSort(field: string, event: MouseEvent) {
+    if (event.ctrlKey || event.metaKey) {
+      // CTRL/CMD pressed - multi-column sort
+      const existingIndex = this.sortColumns.findIndex(s => s.field === field);
+      if (existingIndex >= 0) {
+        // Toggle direction or remove
+        const current = this.sortColumns[existingIndex];
+        if (current.direction === 'asc') {
+          this.sortColumns[existingIndex].direction = 'desc';
+        } else {
+          // Remove from sort
+          this.sortColumns.splice(existingIndex, 1);
+        }
+      } else {
+        // Add new sort column
+        this.sortColumns.push({ field, direction: 'asc' });
+      }
+    } else {
+      // Single column sort
+      const existing = this.sortColumns.find(s => s.field === field);
+      if (existing && this.sortColumns.length === 1) {
+        // Toggle direction
+        existing.direction = existing.direction === 'asc' ? 'desc' : 'asc';
+      } else {
+        // Set as only sort column
+        this.sortColumns = [{ field, direction: 'asc' }];
+      }
+    }
+
+    // Check if we need to reload from server (for server-side sorted columns)
+    const serverSideColumns = ['fullName', 'createdDate'];
+    const hasServerSideSort = this.sortColumns.some(s => serverSideColumns.includes(s.field));
+
+    if (hasServerSideSort) {
+      // Reload from server with new sort
+      await this.loadDonors();
+    } else {
+      // Only client-side sorting needed
+      this.applySorting();
+    }
+
+    this.saveSortSettings();
+  }
+
+  applySorting() {
+    // Server-side sorting is applied for: fullName, createdDate
+    // Client-side sorting is needed only for: address, phone, email, totalDonations (require joins)
+
+    // Check if we have any client-side sort columns
+    const clientSideColumns = this.sortColumns.filter(s =>
+      ['address', 'phone', 'email', 'totalDonations'].includes(s.field)
+    );
+
+    if (clientSideColumns.length === 0) {
+      // All sorting is server-side, no additional sorting needed
+      // filteredDonors is already set by applyLocalFilters()
+      return;
+    }
+
+    // Apply client-side sorting to current filtered list
+    this.filteredDonors = [...this.filteredDonors].sort((a, b) => {
+      for (const sort of clientSideColumns) {
+        let valueA: any;
+        let valueB: any;
+
+        switch (sort.field) {
+          case 'address':
+            valueA = this.getDonorAddress(a.id);
+            valueB = this.getDonorAddress(b.id);
+            break;
+          case 'phone':
+            valueA = this.getDonorPhone(a.id);
+            valueB = this.getDonorPhone(b.id);
+            break;
+          case 'email':
+            valueA = this.getDonorEmail(a.id);
+            valueB = this.getDonorEmail(b.id);
+            break;
+          case 'totalDonations':
+            valueA = this.getDonorTotalDonations(a.id);
+            valueB = this.getDonorTotalDonations(b.id);
+            break;
+          default:
+            continue;
+        }
+
+        // Compare values
+        let comparison = 0;
+        if (typeof valueA === 'string') {
+          comparison = valueA.localeCompare(valueB);
+        } else {
+          comparison = valueA - valueB;
+        }
+
+        if (comparison !== 0) {
+          return sort.direction === 'asc' ? comparison : -comparison;
+        }
+      }
+      return 0;
+    });
+  }
+
+  getSortIcon(field: string): string {
+    const sortIndex = this.sortColumns.findIndex(s => s.field === field);
+    if (sortIndex === -1) return '';
+
+    const sort = this.sortColumns[sortIndex];
+    const arrow = sort.direction === 'asc' ? '↑' : '↓';
+
+    // Show number if multiple sorts
+    if (this.sortColumns.length > 1) {
+      return `${arrow}${sortIndex + 1}`;
+    }
+    return arrow;
+  }
+
+  isSorted(field: string): boolean {
+    return this.sortColumns.some(s => s.field === field);
   }
 }

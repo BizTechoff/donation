@@ -163,8 +163,8 @@ export class Place {
     if (this.neighborhood) parts.push(this.neighborhood);
     if (this.city) parts.push(this.city);
 
-    // Use country entity name if exists, otherwise use country string
-    const countryDisplay = this.country?.name //|| this.country?.nameEn || this.country || this.countryName;
+    // Use country entity English name if exists, otherwise use Hebrew name
+    const countryDisplay = this.country?.nameEn || this.country?.name;
     if (countryDisplay) parts.push(countryDisplay);
 
     return parts.filter(p => p).join(', ');

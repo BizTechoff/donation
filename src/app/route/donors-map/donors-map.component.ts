@@ -46,6 +46,9 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private map!: L.Map;
   private markersLayer!: L.FeatureGroup;
+  private polygonLayer!: L.FeatureGroup;
+  private currentPolygonPoints: L.LatLng[] = [];
+  private tempPolyline?: L.Polyline;
   private subscription = new Subscription();
 
   // All donor map data loaded from server
@@ -55,6 +58,7 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
   loading = false;
   showSummary = true;
   isFullscreen = false;
+  isPolygonMode = false;
 
   // Map filters
   mapFilters: MapFilters = {
@@ -147,15 +151,28 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
   async loadData() {
     this.loading = true;
     try {
-      // Use DonorService to get filtered donor IDs
+      console.time('Total map load time');
+
+      // Use DonorService to get filtered donor IDs efficiently
       const currentFilters = this.filterService.currentFilters;
       console.log('DonorsMap: Loading donors with filters:', currentFilters);
 
-      const filteredDonors = await this.donorService.findFiltered();
-      const donorIds = filteredDonors.map(d => d.id);
+      console.time('Get donor IDs');
+      // Get only donor IDs without loading full donor objects - much faster!
+      const donorIds = await this.donorService.findFilteredIds();
+      console.timeEnd('Get donor IDs');
 
+      console.log('DonorsMap: Found', donorIds.length, 'donor IDs to load on map');
+
+      // Limit to first 200 donors for performance
+      const limitedDonorIds = donorIds.slice(0, 200);
+      console.log('DonorsMap: Limited to', limitedDonorIds.length, 'donors for map performance');
+
+      console.time('Load map data from server');
       // Load all map data from server in a single call
-      this.donorsMapData = await DonorMapController.loadDonorsMapData(donorIds);
+      // This loads donations and calculates stats for these donors
+      this.donorsMapData = await DonorMapController.loadDonorsMapData(limitedDonorIds);
+      console.timeEnd('Load map data from server');
 
       // Apply local map filters
       this.applyMapFilters();
@@ -163,6 +180,8 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
       console.log('DonorsMap: Loaded donor map data:', this.donorsMapData.length);
       console.log('DonorsMap: Filtered donors:', this.filteredDonorsMapData.length);
       console.log('DonorsMap: Donors with locations:', this.donorsOnMap);
+
+      console.timeEnd('Total map load time');
 
       // Update map markers if map is initialized
       if (this.map && this.markersLayer) {
@@ -359,6 +378,9 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
       // יצירת שכבת סימנים
       this.markersLayer = L.featureGroup().addTo(this.map);
+
+      // יצירת שכבת פוליגון
+      this.polygonLayer = L.featureGroup().addTo(this.map);
 
       // הוספת אירוע click למפה
       this.map.on('click', async (e: L.LeafletMouseEvent) => {
@@ -569,23 +591,37 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     // Save fullscreen preference
     this.saveMapSettings();
 
-    // Wait for DOM to update, then resize map
-    setTimeout(() => {
-      if (this.map) {
-        this.map.invalidateSize();
+    // Trigger change detection
+    this.cdr.detectChanges();
 
-        // Re-fit to bounds if we have markers
-        if (this.markersLayer && this.markersLayer.getLayers().length > 0) {
-          const bounds = this.markersLayer.getBounds();
-          if (bounds.isValid()) {
-            this.map.fitBounds(bounds, {
-              padding: [50, 50],
-              maxZoom: 15
-            });
-          }
+    // Use requestAnimationFrame to ensure DOM updates are complete
+    requestAnimationFrame(() => {
+      // Wait for sidebar animation and DOM reflow
+      setTimeout(() => {
+        if (this.map) {
+          // Force map to recalculate its size
+          this.map.invalidateSize({ pan: false });
+
+          // Add another invalidate after a short delay to ensure complete reflow
+          setTimeout(() => {
+            if (this.map) {
+              this.map.invalidateSize();
+
+              // Re-fit to bounds if we have markers
+              if (this.markersLayer && this.markersLayer.getLayers().length > 0) {
+                const bounds = this.markersLayer.getBounds();
+                if (bounds.isValid()) {
+                  this.map.fitBounds(bounds, {
+                    padding: [50, 50],
+                    maxZoom: 15
+                  });
+                }
+              }
+            }
+          }, 100);
         }
-      }
-    }, 100);
+      }, 350);
+    });
   }
 
   // פונקציה להמרת כתובות תורמים שחסרים להם קואורדינטות
@@ -648,9 +684,191 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  async togglePolygonMode() {
+    this.isPolygonMode = !this.isPolygonMode;
+
+    if (!this.isPolygonMode) {
+      // If turning off and we have points, close the polygon
+      if (this.currentPolygonPoints.length >= 3) {
+        await this.closePolygon();
+      } else {
+        // Just clear if less than 3 points
+        this.clearPolygonDrawing();
+      }
+    } else {
+      // Show instructions
+      this.ui.info('לחץ על המפה כדי להתחיל לצייר פוליגון. כבה את הכפתור או לחץ על הנקודה האדומה לסיום.');
+    }
+  }
+
+  clearPolygonDrawing() {
+    this.currentPolygonPoints = [];
+    if (this.tempPolyline) {
+      this.polygonLayer.removeLayer(this.tempPolyline);
+      this.tempPolyline = undefined;
+    }
+    this.polygonLayer.clearLayers();
+  }
+
+  handlePolygonClick(e: L.LeafletMouseEvent) {
+    const { lat, lng } = e.latlng;
+
+    // Check if clicked near the first point to close the polygon
+    if (this.currentPolygonPoints.length >= 3) {
+      const firstPoint = this.currentPolygonPoints[0];
+      const distance = this.map.distance(firstPoint, e.latlng);
+
+      // If within 100 meters of first point, close the polygon
+      if (distance < 100) {
+        this.closePolygon();
+        return;
+      }
+    }
+
+    // Add point to polygon
+    this.currentPolygonPoints.push(e.latlng);
+
+    // Update visual representation
+    if (this.tempPolyline) {
+      this.polygonLayer.removeLayer(this.tempPolyline);
+    }
+
+    // Draw polyline connecting all points
+    this.tempPolyline = L.polyline(this.currentPolygonPoints, {
+      color: '#3498db',
+      weight: 3,
+      opacity: 0.7,
+      dashArray: '10, 10'
+    }).addTo(this.polygonLayer);
+
+    // Add marker at each point
+    const marker = L.circleMarker(e.latlng, {
+      radius: 5,
+      fillColor: '#3498db',
+      color: '#fff',
+      weight: 2,
+      opacity: 1,
+      fillOpacity: 0.8
+    }).addTo(this.polygonLayer);
+
+    // Make first point more visible and clickable
+    if (this.currentPolygonPoints.length === 1) {
+      const firstMarker = L.circleMarker(e.latlng, {
+        radius: 10,
+        fillColor: '#e74c3c',
+        color: '#fff',
+        weight: 3,
+        opacity: 1,
+        fillOpacity: 0.9
+      }).addTo(this.polygonLayer);
+
+      // Add tooltip to first marker
+      firstMarker.bindTooltip('לחץ כאן לסגירת הפוליגון', {
+        permanent: false,
+        direction: 'top'
+      });
+    }
+
+    // Show instruction after first point
+    if (this.currentPolygonPoints.length === 1) {
+      this.ui.info('המשך לסמן נקודות. לחץ על הנקודה האדומה או כבה את מצב הפוליגון לסיום.');
+    }
+  }
+
+  async closePolygon() {
+    if (this.currentPolygonPoints.length < 3) {
+      this.ui.error('יש צורך לפחות ב-3 נקודות כדי ליצור פוליגון');
+      return;
+    }
+
+    // Save polygon points for later use
+    const polygonPoints = this.currentPolygonPoints.map(point => ({
+      lat: point.lat,
+      lng: point.lng
+    }));
+
+    // Create polygon
+    const polygon = L.polygon(this.currentPolygonPoints, {
+      color: '#3498db',
+      weight: 2,
+      opacity: 0.8,
+      fillColor: '#3498db',
+      fillOpacity: 0.2
+    });
+
+    // Clear temporary drawing
+    this.clearPolygonDrawing();
+
+    // Add polygon to layer temporarily
+    polygon.addTo(this.polygonLayer);
+
+    // Find donors inside polygon
+    const donorsInPolygon = this.findDonorsInPolygon(polygon);
+
+    // Exit polygon mode
+    this.isPolygonMode = false;
+
+    // Show modal with donors and polygon points
+    if (donorsInPolygon.length > 0) {
+      await this.showDonorsInPolygonModal(donorsInPolygon, polygonPoints);
+    } else {
+      this.ui.info('לא נמצאו תורמים בתוך הפוליגון שנבחר');
+    }
+
+    // Remove polygon from map
+    this.polygonLayer.removeLayer(polygon);
+  }
+
+  findDonorsInPolygon(polygon: L.Polygon): DonorMapData[] {
+    const donorsInside: DonorMapData[] = [];
+
+    for (const donorData of this.filteredDonorsMapData) {
+      if (donorData.donorPlace?.place?.latitude && donorData.donorPlace?.place?.longitude) {
+        const point = L.latLng(donorData.donorPlace.place.latitude, donorData.donorPlace.place.longitude);
+
+        // Check if point is inside polygon using ray casting algorithm
+        if (this.isPointInPolygon(point, polygon.getLatLngs()[0] as L.LatLng[])) {
+          donorsInside.push(donorData);
+        }
+      }
+    }
+
+    return donorsInside;
+  }
+
+  isPointInPolygon(point: L.LatLng, polygon: L.LatLng[]): boolean {
+    let inside = false;
+    const x = point.lng;
+    const y = point.lat;
+
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+      const xi = polygon[i].lng;
+      const yi = polygon[i].lat;
+      const xj = polygon[j].lng;
+      const yj = polygon[j].lat;
+
+      const intersect = ((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+      if (intersect) inside = !inside;
+    }
+
+    return inside;
+  }
+
+  async showDonorsInPolygonModal(donors: DonorMapData[], polygonPoints: { lat: number; lng: number }[]) {
+    // Show the modal with selected donors and polygon points
+    await this.ui.mapSelectedDonorsDialog(donors, polygonPoints);
+  }
+
   async onMapClick(e: L.LeafletMouseEvent) {
     const { lat, lng } = e.latlng;
     console.log('Map clicked at:', lat, lng);
+
+    // Handle polygon drawing mode
+    if (this.isPolygonMode) {
+      this.handlePolygonClick(e);
+      return;
+    }
+
     if (!e.originalEvent.ctrlKey) return
     
     try {

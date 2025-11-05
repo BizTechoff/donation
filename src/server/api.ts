@@ -11,7 +11,8 @@ import { LetterController } from '../shared/controllers/letter.controller'
 import { PaymentController } from '../shared/controllers/payment.controller'
 import { ReminderController } from '../shared/controllers/reminder.controller'
 import { HebrewDateController } from '../shared/controllers/hebrew-date.controller'
-import { Bank, Circle, Company, DonationBank, DonationOrganization, DonorAddressType, DonorContact, DonorGift, DonorNote, DonorPlace, DonorReceptionHour, DonorRelation, Gift, LetterTitle, NoteType, Organization, Payment } from '../shared/entity'
+import { TargetAudienceController } from '../shared/controllers/target-audience.controller'
+import { Bank, Circle, Company, DonationBank, DonationOrganization, DonorAddressType, DonorContact, DonorGift, DonorNote, DonorPlace, DonorReceptionHour, DonorRelation, Gift, LetterTitle, NoteType, Organization, Payment, TargetAudience } from '../shared/entity'
 import { Blessing } from '../shared/entity/blessing'
 import { BlessingBookType } from '../shared/entity/blessing-book-type'
 import { Campaign } from '../shared/entity/campaign'
@@ -32,10 +33,10 @@ import { checkAndSendReminders } from './scheduler'
 export const entities = [
   User, Donor, Donation, Campaign, DonationMethod, Reminder,
   Certificate, Event, DonorEvent, Blessing, Country, Place, DonationPartner,
-  DonationFile, Bank, Organization, Company, Circle, DonorRelation, DonorContact, DonorPlace, DonorNote, DonorReceptionHour, NoteType, DonationBank, DonationOrganization, Payment, DonorAddressType, BlessingBookType, LetterTitle, Gift, DonorGift]
+  DonationFile, Bank, Organization, Company, Circle, DonorRelation, DonorContact, DonorPlace, DonorNote, DonorReceptionHour, NoteType, DonationBank, DonationOrganization, Payment, DonorAddressType, BlessingBookType, LetterTitle, Gift, DonorGift, TargetAudience]
 export const api = remultExpress({
   admin: true,
-  controllers: [SignInController, UpdatePasswordController, DonorController, DonationController, LetterController, FileController, PaymentController, DonorMapController, ReminderController, HebrewDateController],
+  controllers: [SignInController, UpdatePasswordController, DonorController, DonationController, LetterController, FileController, PaymentController, DonorMapController, ReminderController, HebrewDateController, TargetAudienceController],
   entities,
   getUser,
   dataProvider: async () => {

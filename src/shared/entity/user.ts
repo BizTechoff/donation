@@ -113,6 +113,14 @@ export class User extends IdEntity {
         searchTerm?: string;
       };
     };
+    donorList?: {
+      sort?: Array<{ field: string; direction: 'asc' | 'desc' }>;
+      searchTerm?: string;
+    };
+    reminderList?: {
+      sort?: Array<{ field: string; direction: 'asc' | 'desc' }>;
+      searchTerm?: string;
+    };
   };
 
   @Fields.number({

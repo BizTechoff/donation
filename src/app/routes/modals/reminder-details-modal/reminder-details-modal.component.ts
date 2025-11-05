@@ -17,7 +17,7 @@ export interface ReminderDetailsModalArgs {
   donorId?: string; // Optional donor ID to link
   donationId?: string; // Optional donation ID to link
   certificateId?: string; // Optional certificate ID to link
-  reminderType?: 'donation_followup' | 'thank_you' | 'receipt' | 'birthday' | 'holiday' | 'general' | 'meeting' | 'phone_call' | 'memorialDay' | 'memorial'; // Optional reminder type to initialize
+  reminderType?: 'donation_followup' | 'thank_you' | 'receipt' | 'birthday' | 'holiday' | 'general' | 'meeting' | 'phone_call' | 'memorialDay' | 'memorial' | 'yahrzeit'; // Optional reminder type to initialize
   reminderDate?: Date; // Optional date to initialize
   isRecurringYearly?: boolean; // Optional flag for yearly recurring reminder
 }
@@ -304,6 +304,9 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
             case 'memorial':
               this.reminder!.title = `נציב זכרון - ${donorName}`;
               break;
+            case 'yahrzeit':
+              this.reminder!.title = `יוארצהייט - ${donorName}`;
+              break;
             case 'thank_you':
               this.reminder!.title = `מכתב תודה - ${donorName}`;
               break;
@@ -425,7 +428,7 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
     this.loading = true;
     try {
       // Set alert date if needed
-      if (this.reminder.sendAlert && this.reminder.alertMethod !== 'none') {
+      if (this.reminder.sendAlert) {
         const alertDate = new Date(this.reminder.dueDate);
         alertDate.setHours(alertDate.getHours() - 1); // Alert 1 hour before
         this.reminder.alertDate = alertDate;
@@ -777,7 +780,8 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
       { value: 'meeting', label: terms.meetingType },
       { value: 'phone_call', label: terms.phoneCallType },
       { value: 'memorialDay', label: 'נציב יום' },
-      { value: 'memorial', label: 'נציב זכרון' }
+      { value: 'memorial', label: 'נציב זכרון' },
+      { value: 'yahrzeit', label: 'יוארצהייט' }
     ];
 
     this.priorityOptions = [
@@ -794,7 +798,6 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
     ];
 
     this.recurringPatternOptions = [
-      // { value: 'none', label: terms.noRepeat },
       { value: 'daily', label: terms.dailyRepeat },
       { value: 'weekly', label: terms.weeklyRepeat },
       { value: 'monthly', label: terms.monthlyRepeat },

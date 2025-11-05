@@ -95,6 +95,8 @@ import { DonorGiftsListComponent } from './route/donor-gifts-list/donor-gifts-li
 import { DonorGiftDetailsModalComponent } from './routes/modals/donor-gift-details-modal/donor-gift-details-modal.component'
 import { GiftDetailsModalComponent } from './routes/modals/gift-details-modal/gift-details-modal.component'
 import { GiftCatalogModalComponent } from './routes/modals/gift-catalog-modal/gift-catalog-modal.component'
+import { MapSelectedDonorsModalComponent } from './routes/modals/map-selected-donors-modal/map-selected-donors-modal.component'
+import { SaveTargetAudienceModalComponent } from './routes/modals/save-target-audience-modal/save-target-audience-modal.component'
 
 @NgModule({
   declarations: [
@@ -157,7 +159,9 @@ import { GiftCatalogModalComponent } from './routes/modals/gift-catalog-modal/gi
     DonorGiftsListComponent,
     DonorGiftDetailsModalComponent,
     GiftDetailsModalComponent,
-    GiftCatalogModalComponent
+    GiftCatalogModalComponent,
+    MapSelectedDonorsModalComponent,
+    SaveTargetAudienceModalComponent
   ],
   imports: [
     BrowserModule,

@@ -1,55 +1,143 @@
-<div class="donor-list-container">
+<div class="module-container">
 
-  <div class="page-header">
-    <h1>{{ (i18n.terms$ | async)?.donorListTitle }}</h1>
-    <button class="btn btn-primary add-donor-btn" (click)="createDonor()">{{ (i18n.terms$ | async)?.addNewDonor }}</button>
-  </div>
+  <!-- HEADER: Sticky top - כותרת + כפתור הוספה + פילטרים -->
+  <div class="module-header">
+    <div class="header-top">
+      <h1>{{ (i18n.terms$ | async)?.donorListTitle }}</h1>
+      <button class="btn btn-primary add-donor-btn" (click)="createDonor()">
+        {{ (i18n.terms$ | async)?.addNewDonor }}
+      </button>
+    </div>
 
-  <div class="filters-section">
-    <div class="filter-row">
-      <div class="filter-group">
-        <label>{{ (i18n.terms$ | async)?.generalSearch }}</label>
-        <input type="text" class="form-control" [placeholder]="(i18n.terms$ | async)?.searchNameAddressPhone" [(ngModel)]="searchTerm" (ngModelChange)="onLocalFilterChange()">
+    <div class="filters-section">
+      <div class="filter-row">
+        <div class="filter-group">
+          <label>{{ (i18n.terms$ | async)?.generalSearch }}</label>
+          <input
+            type="text"
+            class="form-control"
+            [placeholder]="(i18n.terms$ | async)?.searchNameAddressPhone"
+            [(ngModel)]="searchTerm"
+            (ngModelChange)="onLocalFilterChange()">
+        </div>
       </div>
     </div>
   </div>
 
-  <div class="donors-grid">
-    <div class="grid-header">
-      <div class="grid-col">{{ (i18n.terms$ | async)?.name }}</div>
-      <div class="grid-col">{{ (i18n.terms$ | async)?.address }}</div>
-      <div class="grid-col">{{ (i18n.terms$ | async)?.phone }}</div>
-      <div class="grid-col">{{ (i18n.terms$ | async)?.email }}</div>
-      <div class="grid-col">{{ (i18n.terms$ | async)?.totalDonationsHeader }}</div>
-      <div class="grid-col">{{ (i18n.terms$ | async)?.lastDonation }}</div>
+  <!-- CONTENT: אזור התוכן המרכזי -->
+  <div class="module-content">
+
+    <!-- Table Header: Sticky top של הטבלה -->
+    <div class="table-header">
+      <div class="grid-col sortable" [class.sorted]="isSorted('fullName')" (click)="toggleSort('fullName', $event)">
+        {{ (i18n.terms$ | async)?.name }}
+        <span class="sort-icon" *ngIf="getSortIcon('fullName')">{{ getSortIcon('fullName') }}</span>
+      </div>
+      <div class="grid-col sortable" [class.sorted]="isSorted('address')" (click)="toggleSort('address', $event)">
+        {{ (i18n.terms$ | async)?.address }}
+        <span class="sort-icon" *ngIf="getSortIcon('address')">{{ getSortIcon('address') }}</span>
+      </div>
+      <div class="grid-col sortable" [class.sorted]="isSorted('phone')" (click)="toggleSort('phone', $event)">
+        {{ (i18n.terms$ | async)?.phone }}
+        <span class="sort-icon" *ngIf="getSortIcon('phone')">{{ getSortIcon('phone') }}</span>
+      </div>
+      <div class="grid-col sortable" [class.sorted]="isSorted('email')" (click)="toggleSort('email', $event)">
+        {{ (i18n.terms$ | async)?.email }}
+        <span class="sort-icon" *ngIf="getSortIcon('email')">{{ getSortIcon('email') }}</span>
+      </div>
+      <div class="grid-col sortable" [class.sorted]="isSorted('totalDonations')" (click)="toggleSort('totalDonations', $event)">
+        {{ (i18n.terms$ | async)?.totalDonationsHeader }}
+        <span class="sort-icon" *ngIf="getSortIcon('totalDonations')">{{ getSortIcon('totalDonations') }}</span>
+      </div>
+      <div class="grid-col sortable" [class.sorted]="isSorted('createdDate')" (click)="toggleSort('createdDate', $event)">
+        {{ (i18n.terms$ | async)?.lastDonation }}
+        <span class="sort-icon" *ngIf="getSortIcon('createdDate')">{{ getSortIcon('createdDate') }}</span>
+      </div>
       <div class="grid-col">{{ (i18n.terms$ | async)?.actions }}</div>
     </div>
 
-    <div class="grid-row" *ngFor="let donor of filteredDonors">
-      <div class="grid-col">
-        <div class="donor-name">
-          <strong>{{donor.fullName}}</strong>
-          <small *ngIf="donor.idNumber">({{ (i18n.terms$ | async)?.idNumberShort }}: {{donor.idNumber}})</small>
+    <!-- Table Body: החלק היחיד שנגלל -->
+    <div class="table-body">
+      <div class="loading-overlay" *ngIf="loading">
+        <div class="spinner">טוען...</div>
+      </div>
+
+      <div class="grid-row" *ngFor="let donor of filteredDonors">
+        <div class="grid-col">
+          <div class="donor-name">
+            <strong>{{donor.fullName}}</strong>
+            <small *ngIf="donor.idNumber">({{ (i18n.terms$ | async)?.idNumberShort }}: {{donor.idNumber}})</small>
+          </div>
+        </div>
+        <div class="grid-col">{{getDonorAddress(donor.id)}}</div>
+        <div class="grid-col">{{getDonorPhone(donor.id)}}</div>
+        <div class="grid-col">{{getDonorEmail(donor.id)}}</div>
+        <div class="grid-col">{{getDonorTotalDonations(donor.id) | number:'1.2-2'}}</div>
+        <div class="grid-col">{{donor.createdDate | date:'dd/MM/yyyy'}}</div>
+        <div class="grid-col actions">
+          <button class="btn-icon btn-edit" (click)="editDonor(donor)" [title]="(i18n.terms$ | async)?.edit">✏</button>
+          <button class="btn-icon btn-delete" (click)="deleteDonor(donor)" [title]="(i18n.terms$ | async)?.delete">🗑</button>
         </div>
       </div>
-      <div class="grid-col">{{getDonorAddress(donor.id)}}</div>
-      <div class="grid-col">{{getDonorPhone(donor.id)}}</div>
-      <div class="grid-col">{{getDonorEmail(donor.id)}}</div>
-      <div class="grid-col">{{getDonorTotalDonations(donor.id) | number:'1.2-2'}}</div>
-      <div class="grid-col">{{donor.createdDate | date:'dd/MM/yyyy'}}</div>
-      <div class="grid-col actions">
-        <!-- <button class="btn-icon btn-view" (click)="viewDonor(donor)" [title]="(i18n.terms$ | async)?.viewDetails">👁</button> -->
-        <button class="btn-icon btn-edit" (click)="editDonor(donor)" [title]="(i18n.terms$ | async)?.edit">✏</button>
-        <button class="btn-icon btn-delete" (click)="deleteDonor(donor)" [title]="(i18n.terms$ | async)?.delete">🗑</button>
-        <!-- <button class="btn-icon btn-toggle" (click)="deactivateDonor(donor)" *ngIf="donor.isActive" [title]="(i18n.terms$ | async)?.deactivate">⏸</button> -->
+
+      <div class="no-data" *ngIf="!loading && filteredDonors.length === 0">
+        <p>{{ (i18n.terms$ | async)?.noDataFound }}</p>
       </div>
     </div>
+
+    <!-- Table Footer: Sticky bottom - Pagination -->
+    <div class="table-footer">
+      <div class="pagination-controls">
+        <button
+          class="btn-page"
+          (click)="firstPage()"
+          [disabled]="currentPage === 1 || loading">
+          ⏮ {{ (i18n.terms$ | async)?.first }}
+        </button>
+
+        <button
+          class="btn-page"
+          (click)="previousPage()"
+          [disabled]="currentPage === 1 || loading">
+          ← {{ (i18n.terms$ | async)?.previous }}
+        </button>
+
+        <div class="page-numbers">
+          <button
+            *ngFor="let page of getPageNumbers()"
+            class="btn-page-number"
+            [class.active]="page === currentPage"
+            (click)="goToPage(page)"
+            [disabled]="loading">
+            {{page}}
+          </button>
+        </div>
+
+        <button
+          class="btn-page"
+          (click)="nextPage()"
+          [disabled]="currentPage === totalPages || loading">
+          {{ (i18n.terms$ | async)?.next }} →
+        </button>
+
+        <button
+          class="btn-page"
+          (click)="lastPage()"
+          [disabled]="currentPage === totalPages || loading">
+          {{ (i18n.terms$ | async)?.last }} ⏭
+        </button>
+      </div>
+
+      <div class="pagination-info">
+        <span>{{ (i18n.terms$ | async)?.showing }} {{(currentPage - 1) * pageSize + 1}} - {{Math.min(currentPage * pageSize, totalCount)}} {{ (i18n.terms$ | async)?.of }} {{totalCount}}</span>
+      </div>
+    </div>
+
   </div>
 
-  <div class="pagination">
-    <button class="btn-page">{{ (i18n.terms$ | async)?.previous }}</button>
-    <span class="page-info">{{ (i18n.terms$ | async)?.pageOf?.replace('{current}', '1')?.replace('{total}', filteredDonors.length + '') }}</span>
-    <button class="btn-page">{{ (i18n.terms$ | async)?.next }}</button>
+  <!-- FOOTER: Sticky bottom - (ריק כרגע, לעתיד) -->
+  <div class="module-footer">
+    <!-- מקום לסיכומים, סטטיסטיקות, וכו' -->
   </div>
+
 </div>
-

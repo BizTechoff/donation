@@ -1,19 +1,19 @@
-import { BackendMethod, Allow, remult } from 'remult';
-import { Donor } from '../entity/donor';
-import { Place } from '../entity/place';
-import { Country } from '../entity/country';
-import { Event } from '../entity/event';
-import { User } from '../entity/user';
-import { Company } from '../entity/company';
+import { Allow, BackendMethod, remult } from 'remult';
+import { GlobalFilters } from '../../app/services/global-filter.service';
 import { Circle } from '../entity/circle';
-import { NoteType } from '../entity/note-type';
+import { Company } from '../entity/company';
+import { Country } from '../entity/country';
+import { Donor } from '../entity/donor';
+import { DonorContact } from '../entity/donor-contact';
 import { DonorEvent } from '../entity/donor-event';
 import { DonorNote } from '../entity/donor-note';
 import { DonorPlace } from '../entity/donor-place';
 import { DonorReceptionHour } from '../entity/donor-reception-hour';
-import { DonorContact } from '../entity/donor-contact';
 import { DonorRelation } from '../entity/donor-relation';
-import { GlobalFilters } from '../../app/services/global-filter.service';
+import { Event } from '../entity/event';
+import { NoteType } from '../entity/note-type';
+import { Place } from '../entity/place';
+import { User } from '../entity/user';
 
 export interface DonorDetailsData {
   donor: Donor | null | undefined;
@@ -146,10 +146,42 @@ export class DonorController {
     });
   }
 
+  /**
+   * Get only donor IDs without loading full donor objects - much faster for maps
+   */
   @BackendMethod({ allowed: Allow.authenticated })
-  static async findFiltered(filters: GlobalFilters): Promise<Donor[]> {
-    // console.log('DonorController.findFiltered called with filters:', filters);
+  static async findFilteredIds(filters: GlobalFilters): Promise<string[]> {
+    const donors = await DonorController.findFiltered(filters);
+    return donors.map(d => d.id);
+  }
+
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async findFiltered(
+    filters: GlobalFilters,
+    page?: number,
+    pageSize?: number,
+    sortColumns?: Array<{ field: string; direction: 'asc' | 'desc' }>
+  ): Promise<Donor[]> {
+    console.log('DonorController.findFiltered');
     let whereClause: any = { isActive: true };
+
+    // Build orderBy from sortColumns or use default
+    let orderBy: any = { lastName: 'asc' as 'asc' }; // Default sort
+    if (sortColumns && sortColumns.length > 0) {
+      orderBy = {};
+      sortColumns.forEach(sort => {
+        // Map frontend field names to backend entity fields
+        let fieldName = sort.field;
+        if (fieldName === 'fullName') {
+          // Sort by lastName, then firstName
+          orderBy.lastName = sort.direction;
+          orderBy.firstName = sort.direction;
+        } else if (fieldName === 'createdDate') {
+          orderBy.createdDate = sort.direction;
+        }
+        // Note: address, phone, email sorting would require joins and are done client-side
+      });
+    }
 
     // Apply country filter by country ID
     if (filters.countryIds && filters.countryIds.length > 0) {
@@ -188,7 +220,8 @@ export class DonorController {
           id: { $in: donorIds },
           isActive: true
         },
-        orderBy: { lastName: 'asc' as 'asc' }
+        orderBy,
+        ...(page && pageSize ? { page, limit: pageSize } : {})
       });
 
       console.log(`DonorController: Found ${donorsWithMatchingCountries.length} donors with matching countries`);
@@ -197,7 +230,8 @@ export class DonorController {
 
     return await remult.repo(Donor).find({
       where: whereClause,
-      orderBy: { lastName: 'asc' as 'asc' }
+      orderBy,
+      ...(page && pageSize ? { page, limit: pageSize } : {})
     });
   }
 

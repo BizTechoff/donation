@@ -25,12 +25,26 @@ export class DonorService {
   }
 
   /**
-   * Find donors with global filters applied automatically
+   * Get only donor IDs with filters - much faster for maps
    */
-  async findFiltered(additionalFilters?: Partial<GlobalFilters>): Promise<Donor[]> {
+  async findFilteredIds(additionalFilters?: Partial<GlobalFilters>): Promise<string[]> {
     const globalFilters = this.globalFilterService.currentFilters;
     const combinedFilters = { ...globalFilters, ...additionalFilters };
-    return await DonorController.findFiltered(combinedFilters);
+    return await DonorController.findFilteredIds(combinedFilters);
+  }
+
+  /**
+   * Find donors with global filters applied automatically
+   */
+  async findFiltered(
+    additionalFilters?: Partial<GlobalFilters>,
+    page?: number,
+    pageSize?: number,
+    sortColumns?: Array<{ field: string; direction: 'asc' | 'desc' }>
+  ): Promise<Donor[]> {
+    const globalFilters = this.globalFilterService.currentFilters;
+    const combinedFilters = { ...globalFilters, ...additionalFilters };
+    return await DonorController.findFiltered(combinedFilters, page, pageSize, sortColumns);
   }
 
   async findById(id: string): Promise<Donor | null> {

@@ -1,0 +1,128 @@
+<div class="modal-backdrop" (click)="closeDialog()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>תורמים שנבחרו מהמפה ({{ selectedDonors.length }})</h2>
+      <button class="close-btn" (click)="closeDialog()" title="סגור">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <!-- Search and Actions Section -->
+      <div class="search-section">
+        <div class="search-input-group">
+          <mat-icon class="search-icon">search</mat-icon>
+          <input
+            type="text"
+            class="form-control search-input"
+            [(ngModel)]="searchTerm"
+            placeholder="חפש תורם...">
+          <button *ngIf="searchTerm" class="clear-search-btn" (click)="clearSearch()">
+            <mat-icon>clear</mat-icon>
+          </button>
+        </div>
+        <button class="btn btn-export" (click)="exportToExcel()">
+          <mat-icon>download</mat-icon>
+          ייצוא לאקסל
+        </button>
+        <button class="btn btn-save-audience" (click)="saveAsTargetAudience()">
+          <mat-icon>bookmark</mat-icon>
+          שמור כקהל יעד
+        </button>
+      </div>
+
+      <!-- Donors List -->
+      <div class="donors-list-section">
+        <div class="donors-list" *ngIf="getFilteredDonors().length > 0">
+          <div class="donor-item"
+               *ngFor="let donorData of getFilteredDonors()">
+            <div class="donor-item-content">
+              <!-- Status indicator -->
+              <div class="donor-status-indicator"
+                   [style.background-color]="getMarkerColor(donorData.stats.status)"
+                   [title]="getStatusLabel(donorData.stats.status)">
+              </div>
+
+              <div class="donor-info">
+                <div class="donor-name" (click)="openDonorDetails(donorData.donor.id)">
+                  {{ donorData.donor.displayName }}
+                </div>
+
+                <div class="donor-stats">
+                  <span class="stat-item">
+                    <mat-icon class="stat-icon">attach_money</mat-icon>
+                    סה"כ: ₪{{ donorData.stats.totalDonations.toLocaleString() }}
+                  </span>
+                  <span class="stat-item">
+                    <mat-icon class="stat-icon">card_giftcard</mat-icon>
+                    {{ donorData.stats.donationCount }} תרומות
+                  </span>
+                  <span class="stat-item">
+                    <mat-icon class="stat-icon">trending_up</mat-icon>
+                    ממוצע: ₪{{ donorData.stats.averageDonation.toLocaleString() }}
+                  </span>
+                </div>
+
+                <div class="donor-details" *ngIf="donorData.email || donorData.phone">
+                  <span *ngIf="donorData.phone">
+                    <mat-icon class="detail-icon">phone</mat-icon>
+                    {{ donorData.phone }}
+                  </span>
+                  <span *ngIf="donorData.email" style="margin-right: 12px;">
+                    <mat-icon class="detail-icon">email</mat-icon>
+                    {{ donorData.email }}
+                  </span>
+                </div>
+
+                <div class="donor-address" *ngIf="donorData.fullAddress">
+                  <mat-icon class="location-icon">location_on</mat-icon>
+                  {{ donorData.fullAddress }}
+                </div>
+
+                <div class="donor-last-donation" *ngIf="donorData.stats.lastDonationDate">
+                  <mat-icon class="detail-icon">calendar_today</mat-icon>
+                  תרומה אחרונה: {{ donorData.stats.lastDonationDate | date:'dd/MM/yyyy' }}
+                </div>
+              </div>
+            </div>
+
+            <div class="donor-actions">
+              <button class="btn btn-sm btn-view"
+                      (click)="openDonorDetails(donorData.donor.id)"
+                      title="הצג פרטים">
+                <mat-icon>visibility</mat-icon>
+              </button>
+              <button class="btn btn-sm btn-add-donation"
+                      (click)="addDonation(donorData.donor.id)"
+                      title="הוסף תרומה">
+                <mat-icon>add_circle</mat-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty state when no donors found -->
+        <div class="no-donors-found" *ngIf="getFilteredDonors().length === 0">
+          <mat-icon class="empty-icon">search_off</mat-icon>
+          <p *ngIf="searchTerm">לא נמצאו תורמים התואמים לחיפוש "{{ searchTerm }}"</p>
+          <p *ngIf="!searchTerm">לא נבחרו תורמים</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <div class="summary-info">
+        <span class="summary-item">
+          <strong>סה"כ תורמים:</strong> {{ selectedDonors.length }}
+        </span>
+        <span class="summary-item">
+          <strong>סה"כ תרומות:</strong>
+          ₪{{ getTotalDonationsSum() | number }}
+        </span>
+      </div>
+      <button class="btn btn-primary" (click)="closeDialog()">
+        סגור
+      </button>
+    </div>
+  </div>
+</div>

@@ -44,6 +44,19 @@
       </mat-select>
     </mat-form-field>
 
+    <!-- Target Audience Filter -->
+    <mat-form-field appearance="outline" class="filter-field">
+      <mat-label>קהל יעד</mat-label>
+      <mat-select [value]="currentFilters.targetAudienceIds || []"
+                  (valueChange)="updateFilter('targetAudienceIds', $event.length > 0 ? $event : undefined)"
+                  multiple
+                  disableOptionCentering>
+        <mat-option *ngFor="let targetAudience of targetAudiences" [value]="targetAudience.id">
+          {{ targetAudience.name }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
     <!-- Date Range -->
     <div class="date-range-container">
       <mat-form-field appearance="outline" class="filter-field date-field">
@@ -105,6 +118,13 @@
                   [removable]="true"
                   (removed)="removeCountryFilter(countryId)">
           {{ (i18n.terms$ | async)?.country }}: {{ getCountryDisplayName(countryId) }}
+          <mat-icon matChipRemove>cancel</mat-icon>
+        </mat-chip>
+
+        <mat-chip *ngFor="let targetAudienceId of currentFilters.targetAudienceIds || []"
+                  [removable]="true"
+                  (removed)="removeTargetAudienceFilter(targetAudienceId)">
+          קהל יעד: {{ getTargetAudienceName(targetAudienceId) }}
           <mat-icon matChipRemove>cancel</mat-icon>
         </mat-chip>
 

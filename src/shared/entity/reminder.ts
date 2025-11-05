@@ -57,7 +57,7 @@ export class Reminder extends IdEntity {
     caption: 'סוג תזכורת',
     validate: Validators.required,
   })
-  type: 'donation_followup' | 'thank_you' | 'receipt' | 'birthday' | 'holiday' | 'general' | 'meeting' | 'phone_call' | 'memorialDay' | 'memorial' = 'general'
+  type: 'donation_followup' | 'thank_you' | 'receipt' | 'birthday' | 'holiday' | 'general' | 'meeting' | 'phone_call' | 'memorialDay' | 'memorial' | 'yahrzeit' = 'general'
 
   @Fields.string({
     caption: 'עדיפות',
@@ -155,7 +155,7 @@ export class Reminder extends IdEntity {
   @Fields.string({
     caption: 'אמצעי התראה',
   })
-  alertMethod: 'email' | 'sms' | 'popup' | 'none' = 'popup'
+  alertMethod: 'email' | 'sms' | 'popup' = 'popup'
 
   @Fields.boolean({
     caption: 'תזכורת חוזרת',
@@ -235,6 +235,7 @@ export class Reminder extends IdEntity {
       case 'phone_call': return 'שיחת טלפון'
       case 'memorialDay': return 'נציב יום'
       case 'memorial': return 'נציב זכרון'
+      case 'yahrzeit': return 'יוארצהייט'
       default: return this.type
     }
   }

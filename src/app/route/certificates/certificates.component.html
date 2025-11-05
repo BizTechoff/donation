@@ -1,10 +1,13 @@
-<div class="certificates-container">
-  <div class="page-header">
-    <h1>{{ (i18n.terms$ | async)?.certificatesAndMemorials }}</h1>
-    <button class="btn btn-primary create-certificate-btn" (click)="openCreateModal()">{{ (i18n.terms$ | async)?.createNewCertificate }}</button>
-  </div>
+<div class="module-container">
 
-  <div class="certificate-types">
+  <!-- HEADER: Sticky top -->
+  <div class="module-header">
+    <div class="header-top">
+      <h1>{{ (i18n.terms$ | async)?.certificatesAndMemorials }}</h1>
+      <button class="btn btn-primary create-certificate-btn" (click)="openCreateModal()">{{ (i18n.terms$ | async)?.createNewCertificate }}</button>
+    </div>
+
+    <div class="certificate-types">
     <div class="type-card memorial-cert">
       <div class="card-icon">🕯️</div>
       <h3>{{ (i18n.terms$ | async)?.memorialCertificatesCard }}</h3>
@@ -72,9 +75,12 @@
       </div>
     </div>
   </div>
+  </div>
 
+  <!-- CONTENT: Main scrollable area -->
+  <div class="module-content">
 
-  <div class="certificates-grid">
+    <div class="certificates-grid">
     <div class="grid-header">
       <div class="grid-col">{{ (i18n.terms$ | async)?.donorRecipient }}</div>
       <div class="grid-col">{{ (i18n.terms$ | async)?.certificateTypeHeader }}</div>
@@ -121,10 +127,16 @@
     </div>
   </div>
 
-  <div class="pagination">
-    <button class="btn-page">{{ (i18n.terms$ | async)?.previousPage }}</button>
-    <span class="page-info">{{ (i18n.terms$ | async)?.pageOf?.replace('{current}', '1')?.replace('{total}', '6') }}</span>
-    <button class="btn-page">{{ (i18n.terms$ | async)?.nextPage }}</button>
   </div>
+
+  <!-- FOOTER: Sticky bottom -->
+  <div class="module-footer">
+    <div class="pagination">
+      <button class="btn-page">{{ (i18n.terms$ | async)?.previousPage }}</button>
+      <span class="page-info">{{ (i18n.terms$ | async)?.pageOf?.replace('{current}', '1')?.replace('{total}', '6') }}</span>
+      <button class="btn-page">{{ (i18n.terms$ | async)?.nextPage }}</button>
+    </div>
+  </div>
+
 </div>
 

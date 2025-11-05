@@ -658,6 +658,7 @@ export class DonorDetailsModalComponent implements OnInit {
           donorEvent.donorId = this.donor.id;
           await this.donorEventRepo.save(donorEvent);
           // No need to update ID back as donorEvent is saved directly
+          // TODO-REMINDER: add here event-yearly-reminder if not already exists.
         }
 
         // Save donor contacts
@@ -940,6 +941,7 @@ export class DonorDetailsModalComponent implements OnInit {
         // If the event has an ID, it was already saved to DB and needs to be deleted
         if (donorEvent.id) {
           await this.donorEventRepo.delete(donorEvent);
+          // TODO-REMINDER: remove here event-yearly-reminder if exists.
         }
 
         // Remove from local array

@@ -1,12 +1,13 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { remult } from 'remult';
 import { Subscription } from 'rxjs';
-import { Donor, Reminder, DonorContact, DonorEvent, Event } from '../../../shared/entity';
+import { Donor, Reminder, DonorContact, DonorEvent, Event, User } from '../../../shared/entity';
 import { DialogConfig } from '../../common-ui-elements';
 import { UIToolsService } from '../../common/UIToolsService';
 import { I18nService } from '../../i18n/i18n.service';
 import { GlobalFilterService } from '../../services/global-filter.service';
 import { DonorService } from '../../services/donor.service';
+import { ReminderService } from '../../services/reminder.service';
 import { HebrewDateService } from '../../services/hebrew-date.service';
 
 @DialogConfig({
@@ -20,19 +21,30 @@ import { HebrewDateService } from '../../services/hebrew-date.service';
 export class RemindersComponent implements OnInit, OnDestroy {
 
   reminders: Reminder[] = [];
-  donors: Donor[] = [];
   filteredReminders: Reminder[] = [];
-
-  reminderRepo = remult.repo(Reminder);
-  donorRepo = remult.repo(Donor);
-
   loading = false;
-  activeTab: 'today' | 'week' | 'overdue' | 'all' = 'all';
+
+  // Expose Math to template
+  Math = Math;
 
   // Maps for donor-related data
   donorPhoneMap = new Map<string, string>();
-  donorBirthDateMap = new Map<string, Date>();
   donorCountryIdMap = new Map<string, string>();
+
+  // Local filter properties
+  searchTerm = '';
+  filterDateFrom?: Date;
+  filterDateTo?: Date;
+
+  // Pagination
+  currentPage = 1;
+  pageSize = 50;
+  totalCount = 0;
+  totalPages = 0;
+
+  // Sorting
+  sortColumns: Array<{ field: string; direction: 'asc' | 'desc' }> = [];
+  private currentUser?: User;
 
   // Parasha filter
   fromParasha: string = '';
@@ -46,132 +58,147 @@ export class RemindersComponent implements OnInit, OnDestroy {
     'דברים', 'ואתחנן', 'עקב', 'ראה', 'שופטים', 'כי תצא', 'כי תבוא', 'נצבים', 'וילך', 'האזינו', 'וזאת הברכה'
   ];
 
+  activeTab: 'today' | 'week' | 'overdue' | 'all' = 'all';
+
   private filterSubscription?: Subscription;
+  private searchTermTimeout: any;
 
   constructor(
     public i18n: I18nService,
     private ui: UIToolsService,
     private globalFilterService: GlobalFilterService,
     private donorService: DonorService,
+    private reminderService: ReminderService,
     private hebrewDateService: HebrewDateService
   ) { }
 
   async ngOnInit() {
-    await this.loadData();
+    // Load current user and their settings
+    await this.loadUserSettings();
 
     // Subscribe to global filter changes
     this.filterSubscription = this.globalFilterService.filters$.subscribe(() => {
-      this.applyGlobalFilters();
+      this.loadReminders();
     });
+
+    await this.loadReminders();
   }
 
   ngOnDestroy() {
     if (this.filterSubscription) {
       this.filterSubscription.unsubscribe();
     }
+    if (this.searchTermTimeout) {
+      clearTimeout(this.searchTermTimeout);
+    }
   }
 
-  async loadData() {
+  async loadReminders() {
     this.loading = true;
     try {
-      await Promise.all([
-        this.loadReminders(),
-        this.loadDonors()
-      ]);
+      // Build filters
+      const filters: any = {};
+
+      if (this.filterDateFrom) {
+        filters.dateFrom = this.filterDateFrom;
+      }
+      if (this.filterDateTo) {
+        filters.dateTo = this.filterDateTo;
+      }
+      if (this.searchTerm && this.searchTerm.trim() !== '') {
+        filters.searchTerm = this.searchTerm;
+      }
+
+      // Get total count for pagination
+      this.totalCount = await this.reminderService.countFiltered(filters);
+      this.totalPages = Math.ceil(this.totalCount / this.pageSize);
+
+      // Load reminders with pagination and sorting
+      this.reminders = await this.reminderService.findFiltered(
+        filters,
+        this.currentPage,
+        this.pageSize,
+        this.sortColumns
+      );
+
+      // Load phone data for related donors
+      const donorIds = this.reminders
+        .filter(r => r.relatedDonor?.id)
+        .map(r => r.relatedDonor!.id);
+
+      if (donorIds.length > 0) {
+        const relatedData = await this.donorService.loadDonorRelatedData(donorIds);
+        this.donorPhoneMap = relatedData.donorPhoneMap;
+        this.donorCountryIdMap = relatedData.donorCountryIdMap;
+      }
+
+      // Initialize filteredReminders
+      this.filteredReminders = [...this.reminders];
+
+      // Apply local filters (tabs, parasha)
+      this.applyLocalFilters();
+
     } catch (error) {
-      console.error('Error loading data:', error);
+      console.error('Error loading reminders:', error);
     } finally {
       this.loading = false;
     }
   }
 
-  async loadReminders() {
-    this.reminders = await this.reminderRepo.find({
-      orderBy: { dueDate: 'asc', dueTime: 'asc' },
-      include: {
-        relatedDonor: true
-      }
-    });
-
-    // Load phone for all related donors efficiently
-    const donorIds = this.reminders
-      .filter(r => r.relatedDonor?.id)
-      .map(r => r.relatedDonor!.id);
-
-    if (donorIds.length > 0) {
-      const relatedData = await this.donorService.loadDonorRelatedData(donorIds);
-      // Merge phone map (don't overwrite existing data)
-      relatedData.donorPhoneMap.forEach((value, key) => {
-        if (!this.donorPhoneMap.has(key)) {
-          this.donorPhoneMap.set(key, value);
-        }
-      });
-      // Merge country ID map
-      relatedData.donorCountryIdMap.forEach((value, key) => {
-        if (!this.donorCountryIdMap.has(key)) {
-          this.donorCountryIdMap.set(key, value);
-        }
-      });
-    }
-
-    this.applyGlobalFilters();
-  }
-
-  applyGlobalFilters() {
-    const filters = this.globalFilterService.currentFilters;
+  applyLocalFilters() {
     let filtered = [...this.reminders];
 
-    // Apply country filter - filter by donor's country ID from Map
-    if (filters.countryIds && filters.countryIds.length > 0) {
-      filtered = filtered.filter(reminder => {
-        if (!reminder.relatedDonor?.id) return false;
-        const countryId = this.donorCountryIdMap.get(reminder.relatedDonor.id);
-        return countryId && filters.countryIds!.includes(countryId);
-      });
+    // Apply tab filter
+    switch (this.activeTab) {
+      case 'today':
+        filtered = filtered.filter(r => r.isDueToday && !r.isCompleted);
+        break;
+      case 'week':
+        const today = new Date();
+        const oneWeekFromNow = new Date(today.getTime() + (7 * 24 * 60 * 60 * 1000));
+        filtered = filtered.filter(r =>
+          !r.isCompleted &&
+          r.dueDate >= today &&
+          r.dueDate <= oneWeekFromNow
+        );
+        break;
+      case 'overdue':
+        filtered = filtered.filter(r => r.isOverdue);
+        break;
+      case 'all':
+      default:
+        // No additional filter
+        break;
     }
 
-    this.reminders = filtered;
-    this.applyTabFilter();
+    this.filteredReminders = filtered;
   }
 
-  async loadDonors() {
-    this.donors = await this.donorRepo.find({
-      where: { isActive: true },
-      orderBy: { lastName: 'asc' }
-    });
+  onLocalFilterChange() {
+    // Reset to page 1 when filter changes
+    this.currentPage = 1;
+    this.loadReminders();
 
-    // Load all related data efficiently using DonorService
-    const relatedData = await this.donorService.loadDonorRelatedData(
-      this.donors.map(d => d.id)
-    );
-
-    // Store in maps for easy lookup
-    this.donorPhoneMap = relatedData.donorPhoneMap;
-    this.donorBirthDateMap = relatedData.donorBirthDateMap;
-  }
-
-  // Helper methods to get donor-related data from maps
-  getDonorPhone(donorId: string): string {
-    return this.donorPhoneMap.get(donorId) || '';
-  }
-
-  getDonorBirthDate(donorId: string): Date | undefined {
-    return this.donorBirthDateMap.get(donorId);
+    // Debounce save searchTerm
+    if (this.searchTermTimeout) {
+      clearTimeout(this.searchTermTimeout);
+    }
+    this.searchTermTimeout = setTimeout(() => {
+      this.saveSearchTerm();
+    }, 500);
   }
 
   async createReminder() {
     const reminderCreated = await this.ui.reminderDetailsDialog('new');
-
     if (reminderCreated) {
-      await this.loadData(); // Refresh the list
+      await this.loadReminders();
     }
   }
 
   async editReminder(reminder: Reminder) {
     const reminderEdited = await this.ui.reminderDetailsDialog(reminder.id);
-
     if (reminderEdited) {
-      await this.loadData(); // Refresh the list
+      await this.loadReminders();
     }
   }
 
@@ -278,21 +305,12 @@ export class RemindersComponent implements OnInit, OnDestroy {
   }
 
   get upcomingBirthdays(): Donor[] {
-    const today = new Date();
-    const nextWeek = new Date(today.getTime() + (7 * 24 * 60 * 60 * 1000));
-
-    return this.donors.filter(donor => {
-      const birthDate = this.donorBirthDateMap.get(donor.id);
-      if (!birthDate) return false;
-      const thisYearBirthday = new Date(today.getFullYear(), birthDate.getMonth(), birthDate.getDate());
-      return thisYearBirthday >= today && thisYearBirthday <= nextWeek;
-    });
+    // This would need to be implemented with donor birthdate data
+    // For now returning empty array
+    return [];
   }
 
   get donationCandidates(): Donor[] {
-    const sixMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-
     // This would need to be implemented with actual donation data
     // For now returning empty array as we'd need to join with donations
     return [];
@@ -318,40 +336,11 @@ export class RemindersComponent implements OnInit, OnDestroy {
 
   switchTab(tab: 'today' | 'week' | 'overdue' | 'all') {
     this.activeTab = tab;
-    this.applyTabFilter();
-  }
-
-  async applyTabFilter() {
-    let filtered = [...this.reminders];
-
-    // Apply tab filter
-    switch (this.activeTab) {
-      case 'today':
-        filtered = filtered.filter(r => r.isDueToday && !r.isCompleted);
-        break;
-      case 'week':
-        filtered = this.thisWeekReminders;
-        break;
-      case 'overdue':
-        filtered = this.overdueReminders;
-        break;
-      case 'all':
-      default:
-        // No additional filter
-        break;
-    }
-
-    // Apply parasha filter
-    if (this.fromParasha !== '') {// || this.toParasha !== '') {
-      this.toParasha = this.fromParasha
-      filtered = await this.filterByParasha(filtered);
-    }
-
-    this.filteredReminders = filtered;
+    this.applyLocalFilters();
   }
 
   applyParashaFilter() {
-    this.applyTabFilter();
+    this.applyLocalFilters();
   }
 
   /**
@@ -451,18 +440,171 @@ export class RemindersComponent implements OnInit, OnDestroy {
     }
   }
 
-  private async filterByParasha(reminders: Reminder[]): Promise<Reminder[]> {
-    const fromIndex = this.fromParasha !== '' ? parseInt(this.fromParasha) : 0;
-    const toIndex = this.toParasha !== '' ? parseInt(this.toParasha) : 53;
+  // Pagination methods
+  async goToPage(page: number) {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+      await this.loadReminders();
+    }
+  }
 
-    const filtered: Reminder[] = [];
-    for (const reminder of reminders) {
-      const parashaIndex = await this.getParashaIndex(reminder.dueDate);
-      if (parashaIndex >= fromIndex && parashaIndex <= toIndex) {
-        filtered.push(reminder);
+  async nextPage() {
+    if (this.currentPage < this.totalPages) {
+      this.currentPage++;
+      await this.loadReminders();
+    }
+  }
+
+  async previousPage() {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+      await this.loadReminders();
+    }
+  }
+
+  async firstPage() {
+    this.currentPage = 1;
+    await this.loadReminders();
+  }
+
+  async lastPage() {
+    this.currentPage = this.totalPages;
+    await this.loadReminders();
+  }
+
+  getPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxPagesToShow = 5;
+
+    if (this.totalPages <= maxPagesToShow) {
+      for (let i = 1; i <= this.totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      const halfWindow = Math.floor(maxPagesToShow / 2);
+      let startPage = Math.max(1, this.currentPage - halfWindow);
+      let endPage = Math.min(this.totalPages, startPage + maxPagesToShow - 1);
+
+      if (endPage - startPage < maxPagesToShow - 1) {
+        startPage = Math.max(1, endPage - maxPagesToShow + 1);
+      }
+
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(i);
       }
     }
-    return filtered;
+
+    return pages;
+  }
+
+  // Sorting methods
+  async loadUserSettings() {
+    try {
+      const userRepo = remult.repo(User);
+      const userId = remult.user?.id;
+      if (userId) {
+        const user = await userRepo.findId(userId);
+        if (user) {
+          this.currentUser = user;
+          // Load saved sort settings
+          if (this.currentUser?.settings?.reminderList?.sort) {
+            this.sortColumns = this.currentUser.settings.reminderList.sort;
+          }
+          // Load saved search term
+          if (this.currentUser?.settings?.reminderList?.searchTerm !== undefined) {
+            this.searchTerm = this.currentUser.settings.reminderList.searchTerm;
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error loading user settings:', error);
+    }
+  }
+
+  async saveSortSettings() {
+    if (!this.currentUser) return;
+
+    try {
+      if (!this.currentUser.settings) {
+        this.currentUser.settings = {} as any;
+      }
+      if (this.currentUser.settings && !this.currentUser.settings.reminderList) {
+        this.currentUser.settings.reminderList = {};
+      }
+      if (this.currentUser.settings && this.currentUser.settings.reminderList) {
+        this.currentUser.settings.reminderList.sort = this.sortColumns;
+      }
+
+      await remult.repo(User).save(this.currentUser);
+    } catch (error) {
+      console.error('Error saving sort settings:', error);
+    }
+  }
+
+  async saveSearchTerm() {
+    if (!this.currentUser) return;
+
+    try {
+      if (!this.currentUser.settings) {
+        this.currentUser.settings = {} as any;
+      }
+      if (this.currentUser.settings && !this.currentUser.settings.reminderList) {
+        this.currentUser.settings.reminderList = {};
+      }
+      if (this.currentUser.settings && this.currentUser.settings.reminderList) {
+        this.currentUser.settings.reminderList.searchTerm = this.searchTerm;
+      }
+
+      await remult.repo(User).save(this.currentUser);
+    } catch (error) {
+      console.error('Error saving search term:', error);
+    }
+  }
+
+  async toggleSort(field: string, event: MouseEvent) {
+    if (event.ctrlKey || event.metaKey) {
+      // CTRL/CMD pressed - multi-column sort
+      const existingIndex = this.sortColumns.findIndex(s => s.field === field);
+      if (existingIndex >= 0) {
+        const current = this.sortColumns[existingIndex];
+        if (current.direction === 'asc') {
+          this.sortColumns[existingIndex].direction = 'desc';
+        } else {
+          this.sortColumns.splice(existingIndex, 1);
+        }
+      } else {
+        this.sortColumns.push({ field, direction: 'asc' });
+      }
+    } else {
+      // Single column sort
+      const existing = this.sortColumns.find(s => s.field === field);
+      if (existing && this.sortColumns.length === 1) {
+        existing.direction = existing.direction === 'asc' ? 'desc' : 'asc';
+      } else {
+        this.sortColumns = [{ field, direction: 'asc' }];
+      }
+    }
+
+    // Reload from server with new sort
+    await this.loadReminders();
+    this.saveSortSettings();
+  }
+
+  getSortIcon(field: string): string {
+    const sortIndex = this.sortColumns.findIndex(s => s.field === field);
+    if (sortIndex === -1) return '';
+
+    const sort = this.sortColumns[sortIndex];
+    const arrow = sort.direction === 'asc' ? '↑' : '↓';
+
+    if (this.sortColumns.length > 1) {
+      return `${arrow}${sortIndex + 1}`;
+    }
+    return arrow;
+  }
+
+  isSorted(field: string): boolean {
+    return this.sortColumns.some(s => s.field === field);
   }
 
 }

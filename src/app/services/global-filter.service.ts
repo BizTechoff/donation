@@ -7,6 +7,7 @@ export interface GlobalFilters {
   campaignIds?: string[];
   donorTypeIds?: string[];
   countryIds?: string[];
+  targetAudienceIds?: string[];
   dateFrom?: Date;
   dateTo?: Date;
   amountMin?: number;

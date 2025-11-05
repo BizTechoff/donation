@@ -1,10 +1,13 @@
-<div class="reminders-container">
-  <div class="page-header">
-    <h1>{{ (i18n.terms$ | async)?.remindersAndTracking }}</h1>
-    <button class="btn btn-primary add-reminder-btn" (click)="createReminder()">{{ (i18n.terms$ | async)?.addReminder }}</button>
-  </div>
+<div class="module-container">
 
-  <div class="summary-cards">
+  <!-- HEADER: Sticky top -->
+  <div class="module-header">
+    <div class="header-top">
+      <h1>{{ (i18n.terms$ | async)?.remindersAndTracking }}</h1>
+      <button class="btn btn-primary add-reminder-btn" (click)="createReminder()">{{ (i18n.terms$ | async)?.addReminder }}</button>
+    </div>
+
+    <div class="summary-cards">
     <div class="summary-card today">
       <div class="card-icon">🔔</div>
       <div class="card-content">
@@ -104,8 +107,12 @@
       </div> -->
     </div>
   </div>
+  </div>
 
-  <div class="reminders-tabs">
+  <!-- CONTENT: Main scrollable area -->
+  <div class="module-content">
+
+    <div class="reminders-tabs">
     <button class="tab-btn" [class.active]="activeTab === 'today'" (click)="switchTab('today')">
       {{ (i18n.terms$ | async)?.todayTab }} ({{todayReminders.length}})
     </button>
@@ -124,11 +131,23 @@
     <table class="reminders-table">
       <thead>
         <tr>
-          <th>{{ (i18n.terms$ | async)?.reminderDateHeader }}</th>
-          <th>{{ (i18n.terms$ | async)?.typeHeader }}</th>
+          <th class="sortable" [class.sorted]="isSorted('dueDate')" (click)="toggleSort('dueDate', $event)">
+            {{ (i18n.terms$ | async)?.reminderDateHeader }}
+            <span class="sort-icon">{{ getSortIcon('dueDate') }}</span>
+          </th>
+          <th class="sortable" [class.sorted]="isSorted('type')" (click)="toggleSort('type', $event)">
+            {{ (i18n.terms$ | async)?.typeHeader }}
+            <span class="sort-icon">{{ getSortIcon('type') }}</span>
+          </th>
           <th>{{ (i18n.terms$ | async)?.donorHeader }}</th>
-          <th>{{ (i18n.terms$ | async)?.subjectHeader }}</th>
-          <th>{{ (i18n.terms$ | async)?.priorityHeader }}</th>
+          <th class="sortable" [class.sorted]="isSorted('title')" (click)="toggleSort('title', $event)">
+            {{ (i18n.terms$ | async)?.subjectHeader }}
+            <span class="sort-icon">{{ getSortIcon('title') }}</span>
+          </th>
+          <th class="sortable" [class.sorted]="isSorted('priority')" (click)="toggleSort('priority', $event)">
+            {{ (i18n.terms$ | async)?.priorityHeader }}
+            <span class="sort-icon">{{ getSortIcon('priority') }}</span>
+          </th>
           <!-- <th>{{ (i18n.terms$ | async)?.statusHeaderReminder }}</th> -->
           <th>{{ (i18n.terms$ | async)?.actionsHeaderReminder }}</th>
         </tr>
@@ -242,9 +261,43 @@
     </div>
   </div> -->
 
-  <div class="pagination">
-    <button class="btn-page">{{ (i18n.terms$ | async)?.previousPage }}</button>
-    <span class="page-info">{{ (i18n.terms$ | async)?.pageOf?.replace('{current}', '1')?.replace('{total}', '12') }}</span>
-    <button class="btn-page">{{ (i18n.terms$ | async)?.nextPage }}</button>
   </div>
+
+  <!-- FOOTER: Sticky bottom -->
+  <div class="module-footer">
+    <div class="pagination">
+      <button class="btn-page" (click)="firstPage()" [disabled]="currentPage === 1">
+        <mat-icon>first_page</mat-icon>
+      </button>
+      <button class="btn-page" (click)="previousPage()" [disabled]="currentPage === 1">
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+
+      <div class="page-numbers">
+        <button
+          *ngFor="let page of getPageNumbers()"
+          class="btn-page-number"
+          [class.active]="page === currentPage"
+          [disabled]="page === -1"
+          (click)="page !== -1 && goToPage(page)">
+          {{ page === -1 ? '...' : page }}
+        </button>
+      </div>
+
+      <button class="btn-page" (click)="nextPage()" [disabled]="currentPage === totalPages">
+        <mat-icon>chevron_left</mat-icon>
+      </button>
+      <button class="btn-page" (click)="lastPage()" [disabled]="currentPage === totalPages">
+        <mat-icon>last_page</mat-icon>
+      </button>
+
+      <span class="page-info">
+        {{ (i18n.terms$ | async)?.showing }}
+        {{ Math.min((currentPage - 1) * pageSize + 1, totalCount) }}-{{ Math.min(currentPage * pageSize, totalCount) }}
+        {{ (i18n.terms$ | async)?.of }}
+        {{ totalCount }}
+      </span>
+    </div>
+  </div>
+
 </div>

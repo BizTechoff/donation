@@ -1,134 +1,187 @@
-<div class="campaigns-container">
-  <div class="page-header">
-    <h1>{{ (i18n.terms$ | async)?.campaignsManagement }}</h1>
-    <button class="btn btn-primary add-campaign-btn" (click)="createCampaign()">{{ (i18n.terms$ | async)?.newCampaign }}</button>
+<div class="module-container">
+
+  <!-- HEADER: Sticky top - כותרת + כפתור הוספה + פילטרים -->
+  <div class="module-header">
+    <div class="header-top">
+      <h1>{{ (i18n.terms$ | async)?.campaignsManagement }}</h1>
+      <button class="btn btn-primary add-campaign-btn" (click)="createCampaign()">
+        {{ (i18n.terms$ | async)?.newCampaign }}
+      </button>
+    </div>
+
+    <!-- כרטיסי סיכום -->
+    <div class="summary-cards">
+      <div class="summary-card active-campaigns">
+        <div class="card-icon">🎯</div>
+        <div class="card-content">
+          <h3>{{ (i18n.terms$ | async)?.activeCampaignsCard }}</h3>
+          <span class="count">{{activeCampaigns}}</span>
+        </div>
+      </div>
+      <div class="summary-card target-amount">
+        <div class="card-icon">💰</div>
+        <div class="card-content">
+          <h3>{{ (i18n.terms$ | async)?.totalTargetAmountCard }}</h3>
+          <span class="amount">{{formatCurrency(totalTargetAmount)}}</span>
+        </div>
+      </div>
+      <div class="summary-card raised-amount">
+        <div class="card-icon">📊</div>
+        <div class="card-content">
+          <h3>{{ (i18n.terms$ | async)?.collectedSoFar }}</h3>
+          <span class="amount">{{formatCurrency(totalRaisedAmount)}}</span>
+        </div>
+      </div>
+      <div class="summary-card success-rate">
+        <div class="card-icon">📈</div>
+        <div class="card-content">
+          <h3>{{ (i18n.terms$ | async)?.successRate }}</h3>
+          <span class="percentage">{{totalTargetAmount > 0 ? ((totalRaisedAmount / totalTargetAmount) * 100).toFixed(1) : 0}}%</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="filters-section">
+      <div class="filter-row">
+        <div class="filter-group">
+          <label>{{ (i18n.terms$ | async)?.campaignName }}</label>
+          <input type="text" class="form-control"
+                 [(ngModel)]="filterName"
+                 (ngModelChange)="applyFilters()"
+                 [placeholder]="(i18n.terms$ | async)?.searchByName">
+        </div>
+
+        <div class="filter-group">
+          <label>{{ (i18n.terms$ | async)?.activeInactive }}</label>
+          <select class="form-control"
+                  [(ngModel)]="filterActive"
+                  (ngModelChange)="applyFilters()">
+            <option value="">{{ (i18n.terms$ | async)?.everything }}</option>
+            <option value="true">{{ (i18n.terms$ | async)?.activeStatus }}</option>
+            <option value="false">{{ (i18n.terms$ | async)?.inactiveStatus }}</option>
+          </select>
+        </div>
+
+        <div class="filter-actions">
+          <button class="btn btn-secondary" (click)="clearFilters()">{{ (i18n.terms$ | async)?.clearFilters }}</button>
+          <button class="btn btn-info" (click)="loadData()" [disabled]="loading">{{ (i18n.terms$ | async)?.refresh }}</button>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <!-- כרטיסי סיכום -->
-  <div class="summary-cards">
-    <div class="summary-card active-campaigns">
-      <div class="card-icon">🎯</div>
-      <div class="card-content">
-        <h3>{{ (i18n.terms$ | async)?.activeCampaignsCard }}</h3>
-        <span class="count">{{activeCampaigns}}</span>
-      </div>
-    </div>
-    <div class="summary-card target-amount">
-      <div class="card-icon">💰</div>
-      <div class="card-content">
-        <h3>{{ (i18n.terms$ | async)?.totalTargetAmountCard }}</h3>
-        <span class="amount">{{formatCurrency(totalTargetAmount)}}</span>
-      </div>
-    </div>
-    <div class="summary-card raised-amount">
-      <div class="card-icon">📊</div>
-      <div class="card-content">
-        <h3>{{ (i18n.terms$ | async)?.collectedSoFar }}</h3>
-        <span class="amount">{{formatCurrency(totalRaisedAmount)}}</span>
-      </div>
-    </div>
-    <div class="summary-card success-rate">
-      <div class="card-icon">📈</div>
-      <div class="card-content">
-        <h3>{{ (i18n.terms$ | async)?.successRate }}</h3>
-        <span class="percentage">{{totalTargetAmount > 0 ? ((totalRaisedAmount / totalTargetAmount) * 100).toFixed(1) : 0}}%</span>
-      </div>
-    </div>
-  </div>
+  <!-- CONTENT: אזור התוכן המרכזי -->
+  <div class="module-content">
 
-  <!-- מפיינים -->
-  <div class="filters-section">
-    <div class="filter-row">
-      <div class="filter-group">
-        <label>{{ (i18n.terms$ | async)?.campaignName }}</label>
-        <input type="text" class="form-control" 
-               [(ngModel)]="filterName" 
-               (ngModelChange)="applyFilters()"
-               [placeholder]="(i18n.terms$ | async)?.searchByName">
-      </div>
-      
-      <div class="filter-group">
-        <label>{{ (i18n.terms$ | async)?.activeInactive }}</label>
-        <select class="form-control"
-                [(ngModel)]="filterActive"
-                (ngModelChange)="applyFilters()">
-          <option value="">{{ (i18n.terms$ | async)?.everything }}</option>
-          <option value="true">{{ (i18n.terms$ | async)?.activeStatus }}</option>
-          <option value="false">{{ (i18n.terms$ | async)?.inactiveStatus }}</option>
-        </select>
+    <!-- Table Header: Sticky top של הטבלה -->
+    <div class="table-header">
+      <div class="grid-col">{{ (i18n.terms$ | async)?.campaignName }}</div>
+      <div class="grid-col">{{ (i18n.terms$ | async)?.financialTarget }}</div>
+      <div class="grid-col">{{ (i18n.terms$ | async)?.collected }}</div>
+      <div class="grid-col">{{ (i18n.terms$ | async)?.progressPercentage }}</div>
+      <div class="grid-col">{{ (i18n.terms$ | async)?.startDate }}</div>
+      <div class="grid-col">{{ (i18n.terms$ | async)?.endDate }}</div>
+      <div class="grid-col">{{ (i18n.terms$ | async)?.actions }}</div>
+    </div>
+
+    <!-- Table Body: החלק היחיד שנגלל -->
+    <div class="table-body">
+      <div class="loading-overlay" *ngIf="loading">
+        <div class="spinner">{{ (i18n.terms$ | async)?.loadingCampaigns }}</div>
       </div>
 
-      <div class="filter-actions">
-        <button class="btn btn-secondary" (click)="clearFilters()">{{ (i18n.terms$ | async)?.clearFilters }}</button>
-        <button class="btn btn-info" (click)="loadData()" [disabled]="loading">{{ (i18n.terms$ | async)?.refresh }}</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- טבלת קמפיינים -->
-  <div class="campaigns-table-container">
-    <div *ngIf="loading" class="loading-overlay">
-      <div class="loading-spinner">{{ (i18n.terms$ | async)?.loadingCampaigns }}</div>
-    </div>
-    
-    <table class="campaigns-table">
-      <thead>
-        <tr>
-          <th>{{ (i18n.terms$ | async)?.campaignName }}</th>
-          <th>{{ (i18n.terms$ | async)?.financialTarget }}</th>
-          <th>{{ (i18n.terms$ | async)?.collected }}</th>
-          <th>{{ (i18n.terms$ | async)?.progressPercentage }}</th>
-          <th>{{ (i18n.terms$ | async)?.startDate }}</th>
-          <th>{{ (i18n.terms$ | async)?.endDate }}</th>
-          <th>{{ (i18n.terms$ | async)?.actions }}</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let campaign of campaigns" [class.inactive]="!campaign.isActive">
-          <td class="campaign-name-col">
-            <div class="campaign-info">
-              <strong>{{campaign.name}}</strong>
-              <small *ngIf="campaign.description">{{campaign.description}}</small>
+      <div class="grid-row" *ngFor="let campaign of campaigns" [class.inactive]="!campaign.isActive">
+        <div class="grid-col campaign-name-col">
+          <div class="campaign-info">
+            <strong>{{campaign.name}}</strong>
+            <small *ngIf="campaign.description">{{campaign.description}}</small>
+          </div>
+        </div>
+        <div class="grid-col amount-col">
+          <span class="amount">{{formatCurrency(campaign.targetAmount)}}</span>
+        </div>
+        <div class="grid-col amount-col">
+          <span class="amount raised">{{formatCurrency(campaign.raisedAmount)}}</span>
+        </div>
+        <div class="grid-col progress-col">
+          <div class="progress-container">
+            <div class="progress-bar">
+              <div class="progress-fill" [style.width.%]="campaign.progressPercentage"></div>
             </div>
-          </td>
-          <td class="amount-col">
-            <span class="amount">{{formatCurrency(campaign.targetAmount)}}</span>
-          </td>
-          <td class="amount-col">
-            <span class="amount raised">{{formatCurrency(campaign.raisedAmount)}}</span>
-          </td>
-          <td class="progress-col">
-            <div class="progress-container">
-              <div class="progress-bar">
-                <div class="progress-fill" [style.width.%]="campaign.progressPercentage"></div>
-              </div>
-              <span class="progress-text">{{campaign.progressPercentage}}%</span>
-            </div>
-          </td>
-          <td>{{formatDate(campaign.startDate)}}</td>
-          <td>{{formatDate(campaign.endDate)}}</td>
-          <td class="actions">
-            <!-- <button class="btn-icon btn-view" [title]="(i18n.terms$ | async)?.viewDetails" (click)="editCampaign(campaign)">👁</button> -->
-            <button class="btn-icon btn-edit" [title]="(i18n.terms$ | async)?.edit" (click)="editCampaign(campaign)">✏</button>
-            <!-- <button class="btn-icon btn-activate" [title]="(i18n.terms$ | async)?.activate" (click)="activateCampaign(campaign)" 
-                    *ngIf="campaign.status === 'draft'">▶</button> -->
-            <!-- <button class="btn-icon btn-complete" [title]="(i18n.terms$ | async)?.markAsCompleted" (click)="completeCampaign(campaign)" 
-                    *ngIf="campaign.status === 'active'">✅</button> -->
-            <!-- <button class="btn-icon btn-cancel" [title]="(i18n.terms$ | async)?.cancel" (click)="cancelCampaign(campaign)" 
-                    *ngIf="campaign.status === 'active' || campaign.status === 'draft'">❌</button> -->
-            <button class="btn-icon btn-delete" [title]="(i18n.terms$ | async)?.delete" (click)="deleteCampaign(campaign)">🗑</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+            <span class="progress-text">{{campaign.progressPercentage}}%</span>
+          </div>
+        </div>
+        <div class="grid-col">{{formatDate(campaign.startDate)}}</div>
+        <div class="grid-col">{{formatDate(campaign.endDate)}}</div>
+        <div class="grid-col actions">
+          <button class="btn-icon btn-edit" [title]="(i18n.terms$ | async)?.edit" (click)="editCampaign(campaign)">✏</button>
+          <button class="btn-icon btn-delete" [title]="(i18n.terms$ | async)?.delete" (click)="deleteCampaign(campaign)">🗑</button>
+        </div>
+      </div>
+
+      <div class="no-data" *ngIf="!loading && campaigns.length === 0">
+        <div class="no-campaigns-icon">🎯</div>
+        <h3>{{ (i18n.terms$ | async)?.noCampaigns }}</h3>
+        <p>{{ (i18n.terms$ | async)?.noCampaignsMatchingCriteria }}</p>
+        <button class="btn btn-primary" (click)="createCampaign()">{{ (i18n.terms$ | async)?.createFirstCampaign }}</button>
+      </div>
+    </div>
+
+    <!-- Table Footer: Sticky bottom - Pagination -->
+    <div class="table-footer">
+      <div class="pagination-controls">
+        <button
+          class="btn-page"
+          (click)="firstPage()"
+          [disabled]="currentPage === 1 || loading">
+          ⏮ {{ (i18n.terms$ | async)?.first }}
+        </button>
+
+        <button
+          class="btn-page"
+          (click)="previousPage()"
+          [disabled]="currentPage === 1 || loading">
+          ← {{ (i18n.terms$ | async)?.previous }}
+        </button>
+
+        <div class="page-numbers">
+          <button
+            *ngFor="let page of getPageNumbers()"
+            class="btn-page-number"
+            [class.active]="page === currentPage"
+            (click)="goToPage(page)"
+            [disabled]="loading">
+            {{page}}
+          </button>
+        </div>
+
+        <button
+          class="btn-page"
+          (click)="nextPage()"
+          [disabled]="currentPage === totalPages || loading">
+          {{ (i18n.terms$ | async)?.next }} →
+        </button>
+
+        <button
+          class="btn-page"
+          (click)="lastPage()"
+          [disabled]="currentPage === totalPages || loading">
+          {{ (i18n.terms$ | async)?.last }} ⏭
+        </button>
+      </div>
+
+      <div class="pagination-info">
+        <span>{{ (i18n.terms$ | async)?.showing }} {{(currentPage - 1) * pageSize + 1}} - {{Math.min(currentPage * pageSize, totalCount)}} {{ (i18n.terms$ | async)?.of }} {{totalCount}}</span>
+      </div>
+    </div>
+
   </div>
 
-  <div *ngIf="!loading && campaigns.length === 0" class="no-campaigns">
-    <div class="no-campaigns-icon">🎯</div>
-    <h3>{{ (i18n.terms$ | async)?.noCampaigns }}</h3>
-    <p>{{ (i18n.terms$ | async)?.noCampaignsMatchingCriteria }}</p>
-    <button class="btn btn-primary" (click)="createCampaign()">{{ (i18n.terms$ | async)?.createFirstCampaign }}</button>
+  <!-- FOOTER: Sticky bottom - (ריק כרגע, לעתיד) -->
+  <div class="module-footer">
+    <!-- מקום לסיכומים, סטטיסטיקות, וכו' -->
   </div>
+
 </div>
 
 <div class="modal-overlay" *ngIf="showAddCampaignModal">
@@ -152,7 +205,7 @@
                  [(ngModel)]="editingCampaign!.targetAmount"
                  placeholder="0">
         </div>
-        
+
         <div class="form-group">
           <label>{{ (i18n.terms$ | async)?.currency }}</label>
           <select class="form-control" [(ngModel)]="editingCampaign!.currency" (change)="onLocationChange()">
@@ -161,7 +214,7 @@
             <option value="EUR">{{ (i18n.terms$ | async)?.euroOption }}</option>
           </select>
         </div>
-        
+
         <!-- New fields -->
         <div class="form-group">
           <label>מיקום האירוע</label>
@@ -178,7 +231,7 @@
             <option value="דינער">דינער</option>
           </select>
         </div>
-        
+
         <!-- Start Date with Hebrew-Gregorian picker -->
         <div class="form-group full-width">
           <app-modern-dual-date-picker
@@ -187,7 +240,7 @@
             (dateChange)="onStartDateChange($event)">
           </app-modern-dual-date-picker>
         </div>
-        
+
         <!-- End Date with Hebrew-Gregorian picker -->
         <div class="form-group full-width">
           <app-modern-dual-date-picker
@@ -196,38 +249,38 @@
             (dateChange)="onEndDateChange($event)">
           </app-modern-dual-date-picker>
         </div>
-        
+
         <div class="form-group checkbox-group">
           <label class="checkbox-label">
             <input type="checkbox" [(ngModel)]="editingCampaign!.isActive"> {{ (i18n.terms$ | async)?.activeCampaign }}
           </label>
         </div>
-        
+
         <div class="form-group">
           <label>{{ (i18n.terms$ | async)?.imageLink }}</label>
-          <input type="url" class="form-control" 
-                 [(ngModel)]="editingCampaign!.imageUrl" 
+          <input type="url" class="form-control"
+                 [(ngModel)]="editingCampaign!.imageUrl"
                  [placeholder]="(i18n.terms$ | async)?.imageLinkPlaceholder">
         </div>
-        
+
         <div class="form-group">
           <label>{{ (i18n.terms$ | async)?.pageLink }}</label>
-          <input type="url" class="form-control" 
-                 [(ngModel)]="editingCampaign!.websiteUrl" 
+          <input type="url" class="form-control"
+                 [(ngModel)]="editingCampaign!.websiteUrl"
                  [placeholder]="(i18n.terms$ | async)?.pageLinkPlaceholder">
         </div>
-        
+
         <div class="form-group full-width">
           <label>{{ (i18n.terms$ | async)?.campaignDescription }}</label>
-          <textarea class="form-control" rows="3" 
-                    [(ngModel)]="editingCampaign!.description" 
+          <textarea class="form-control" rows="3"
+                    [(ngModel)]="editingCampaign!.description"
                     [placeholder]="(i18n.terms$ | async)?.describeCampaignGoals"></textarea>
         </div>
-        
+
         <div class="form-group full-width">
           <label>{{ (i18n.terms$ | async)?.internalNotes }}</label>
-          <textarea class="form-control" rows="2" 
-                    [(ngModel)]="editingCampaign!.internalNotes" 
+          <textarea class="form-control" rows="2"
+                    [(ngModel)]="editingCampaign!.internalNotes"
                     [placeholder]="(i18n.terms$ | async)?.notesForTeam"></textarea>
         </div>
       </div>
@@ -239,7 +292,7 @@
           📖 ספר ברכות
         </button>
       </div>
-      
+
       <!-- Regular action buttons -->
       <div class="action-buttons" *ngIf="editingCampaign && !editingCampaign._.isNew()">
         <button class="btn btn-outline-primary" (click)="openDonors()" title="תורמים">
@@ -249,7 +302,7 @@
           📞 אנשי קשר ופעילים
         </button>
       </div>
-      
+
       <div class="main-buttons">
         <button class="btn btn-secondary" (click)="closeModal()">{{ (i18n.terms$ | async)?.cancel }}</button>
         <button class="btn btn-primary" (click)="saveCampaign()">{{ (i18n.terms$ | async)?.saveCampaign }}</button>

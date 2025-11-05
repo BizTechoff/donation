@@ -54,7 +54,7 @@
       <!-- Sidenav Header with Logo and User -->
       <div class="sidenav-header" *ngIf="remult.authenticated()">
         <div class="user-profile">
-          <div class="user-avatar">
+          <div class="user-avatar" (click)="sidenav.toggle()" style="cursor: pointer;">
             <img src="./assets/yyg.logo.png" alt="Logo" class="avatar-logo">
           </div>
           <!-- <div class="user-info">

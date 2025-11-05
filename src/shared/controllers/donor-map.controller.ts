@@ -35,10 +35,19 @@ export class DonorMapController {
     const donorPlaceRepo = remult.repo(DonorPlace);
     const donorContactRepo = remult.repo(DonorContact);
 
+    console.time('DonorMapController.loadDonorsMapData');
+
     // טען תורמים לפי IDs או את כולם
+    // הגבל למקסימום 1000 תורמים למפה
+    const MAX_DONORS = 1000;
     const donors = donorIds && donorIds.length > 0
-      ? await donorRepo.find({ where: { id: donorIds } })
-      : await donorRepo.find();
+      ? await donorRepo.find({
+          where: { id: donorIds },
+          limit: MAX_DONORS
+        })
+      : await donorRepo.find({ limit: MAX_DONORS });
+
+    console.log(`DonorMapController: Loading ${donors.length} donors for map`);
 
     if (donors.length === 0) {
       return [];
@@ -46,12 +55,9 @@ export class DonorMapController {
 
     const donorIdsList = donors.map(d => d.id);
 
+    console.time('Load related data (places & contacts)');
     // טען את כל הנתונים הקשורים במקביל
-    const [donations, donorPlaces, contacts] = await Promise.all([
-      // טען תרומות רק של התורמים הרלוונטיים
-      donationRepo.find({
-        where: { donorId: donorIdsList }
-      }),
+    const [donorPlaces, contacts] = await Promise.all([
       // טען מקומות עם פרטי המקום
       donorPlaceRepo.find({
         where: {
@@ -71,6 +77,9 @@ export class DonorMapController {
       })
     ]);
 
+    console.timeEnd('Load related data (places & contacts)');
+    console.log(`Loaded ${donorPlaces.length} places and ${contacts.length} contacts`);
+
     // צור מפות לגישה מהירה
     const donorPlaceMap = new Map(donorPlaces.map(dp => [dp.donorId, dp]));
     const emailMap = new Map<string, string>();
@@ -88,29 +97,47 @@ export class DonorMapController {
       }
     });
 
-    // קבץ תרומות לפי תורם
-    const donationsByDonor = new Map<string, Donation[]>();
-    donations.forEach(donation => {
-      const existing = donationsByDonor.get(donation.donorId) || [];
-      existing.push(donation);
-      donationsByDonor.set(donation.donorId, existing);
-    });
+    console.time('Load donations');
+    // טען סטטיסטיקות תרומות
+    const donationsByDonor = new Map<string, { count: number; total: number; lastDate: Date | null }>();
 
+    const donationStats = await donationRepo.find({
+      where: { donorId: donorIdsList }
+    });
+    console.timeEnd('Load donations');
+    console.log(`Loaded ${donationStats.length} donations for ${donorIdsList.length} donors`);
+
+    console.time('Calculate donation stats');
+    // Calculate stats efficiently using a single pass
+    donationStats.forEach(donation => {
+      const existing = donationsByDonor.get(donation.donorId);
+      if (!existing) {
+        donationsByDonor.set(donation.donorId, {
+          count: 1,
+          total: donation.amount,
+          lastDate: donation.donationDate
+        });
+      } else {
+        existing.count++;
+        existing.total += donation.amount;
+        if (!existing.lastDate || (donation.donationDate && new Date(donation.donationDate) > new Date(existing.lastDate))) {
+          existing.lastDate = donation.donationDate;
+        }
+      }
+    });
+    console.timeEnd('Calculate donation stats');
+
+    console.time('Build result objects');
     // בנה את התוצאה עם כל הנתונים והסטטיסטיקות
     const result: DonorMapData[] = donors.map(donor => {
-      const donorDonations = donationsByDonor.get(donor.id) || [];
+      const stats = donationsByDonor.get(donor.id);
       const donorPlace = donorPlaceMap.get(donor.id) || null;
 
       // חשב סטטיסטיקות
-      const donationCount = donorDonations.length;
-      const totalDonations = donorDonations.reduce((sum, d) => sum + d.amount, 0);
+      const donationCount = stats?.count || 0;
+      const totalDonations = stats?.total || 0;
       const averageDonation = donationCount > 0 ? totalDonations / donationCount : 0;
-
-      // מצא תאריך תרומה אחרונה
-      const sortedDonations = donorDonations.sort((a, b) =>
-        new Date(b.donationDate).getTime() - new Date(a.donationDate).getTime()
-      );
-      const lastDonationDate = sortedDonations.length > 0 ? sortedDonations[0].donationDate : null;
+      const lastDonationDate = stats?.lastDate || null;
 
       // קבע סטטוס
       let status: 'active' | 'inactive' | 'high-donor' | 'recent-donor' = 'inactive';
@@ -161,6 +188,10 @@ export class DonorMapController {
         }
       };
     });
+    console.timeEnd('Build result objects');
+
+    console.timeEnd('DonorMapController.loadDonorsMapData');
+    console.log(`DonorMapController: Returning ${result.length} donors with complete data`);
 
     return result;
   }

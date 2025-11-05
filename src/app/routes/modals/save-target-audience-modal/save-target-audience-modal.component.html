@@ -1,0 +1,62 @@
+<div class="modal-backdrop" (click)="cancel()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>שמור כקהל יעד</h2>
+      <button class="close-btn" (click)="cancel()" title="סגור">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="info-section">
+        <mat-icon class="info-icon">group</mat-icon>
+        <p>שמירת {{ args.donorIds.length }} תורמים כקהל יעד מאפשרת גישה מהירה לקבוצה זו בעתיד</p>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">שם קהל היעד <span class="required">*</span></label>
+        <input
+          type="text"
+          class="form-control"
+          [(ngModel)]="name"
+          placeholder="לדוגמה: תורמים גדולים 2024"
+          [disabled]="loading">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">תיאור (אופציונלי)</label>
+        <textarea
+          class="form-control"
+          [(ngModel)]="description"
+          placeholder="תאר את קהל היעד, למשל: תורמים שנבחרו מאזור תל אביב"
+          rows="3"
+          [disabled]="loading"></textarea>
+      </div>
+
+      <div class="summary-box">
+        <div class="summary-row">
+          <span class="summary-label">מספר תורמים:</span>
+          <span class="summary-value">{{ args.donorIds.length }}</span>
+        </div>
+        <div class="summary-row" *ngIf="args.metadata?.source">
+          <span class="summary-label">מקור:</span>
+          <span class="summary-value">
+            <span *ngIf="args.metadata.source === 'map_polygon'">בחירה ממפה</span>
+            <span *ngIf="args.metadata.source !== 'map_polygon'">{{ args.metadata.source }}</span>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-cancel" (click)="cancel()" [disabled]="loading">
+        ביטול
+      </button>
+      <button class="btn btn-save" (click)="save()" [disabled]="loading || !name.trim()">
+        <mat-icon *ngIf="!loading">save</mat-icon>
+        <mat-icon *ngIf="loading" class="spinning">hourglass_empty</mat-icon>
+        {{ loading ? 'שומר...' : 'שמור' }}
+      </button>
+    </div>
+  </div>
+</div>

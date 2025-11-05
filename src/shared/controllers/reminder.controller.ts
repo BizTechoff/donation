@@ -1,4 +1,5 @@
-import { BackendMethod, Allow } from 'remult'
+import { BackendMethod, Allow, remult } from 'remult'
+import { Reminder } from '../entity/reminder'
 import { HebrewDateController } from './hebrew-date.controller'
 
 /**
@@ -6,6 +7,111 @@ import { HebrewDateController } from './hebrew-date.controller'
  * Uses HebrewDateController for all Hebrew date operations
  */
 export class ReminderController {
+  /**
+   * Find reminders with filters, pagination, and sorting
+   */
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async findFiltered(
+    filters: {
+      countryIds?: string[]
+      dateFrom?: Date
+      dateTo?: Date
+      searchTerm?: string
+    } = {},
+    page: number = 1,
+    pageSize: number = 50,
+    sortColumns: Array<{ field: string; direction: 'asc' | 'desc' }> = []
+  ): Promise<Reminder[]> {
+    console.log('ReminderController.findFiltered')
+    const reminderRepo = remult.repo(Reminder)
+
+    // Build where clause
+    const where: any = { isActive: true }
+
+    // Date range filter
+    if (filters.dateFrom || filters.dateTo) {
+      where.dueDate = {}
+      if (filters.dateFrom) {
+        where.dueDate.$gte = filters.dateFrom
+      }
+      if (filters.dateTo) {
+        where.dueDate.$lte = filters.dateTo
+      }
+    }
+
+    // Search term filter (title, description)
+    if (filters.searchTerm && filters.searchTerm.trim() !== '') {
+      const searchLower = filters.searchTerm.toLowerCase().trim()
+      where.$or = [
+        { title: { $contains: searchLower } },
+        { description: { $contains: searchLower } }
+      ]
+    }
+
+    // Build orderBy clause
+    const orderBy: any = {}
+    if (sortColumns.length > 0) {
+      for (const sort of sortColumns) {
+        orderBy[sort.field] = sort.direction
+      }
+    } else {
+      // Default sort
+      orderBy.dueDate = 'asc'
+      orderBy.dueTime = 'asc'
+    }
+
+    // Apply pagination
+    const skip = (page - 1) * pageSize
+
+    return await reminderRepo.find({
+      where,
+      orderBy,
+      limit: pageSize,
+      page: skip,
+      include: { relatedDonor: true }
+    })
+  }
+
+  /**
+   * Count reminders with filters
+   */
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async countFiltered(
+    filters: {
+      countryIds?: string[]
+      dateFrom?: Date
+      dateTo?: Date
+      searchTerm?: string
+    } = {}
+  ): Promise<number> {
+    const reminderRepo = remult.repo(Reminder)
+
+    // Build where clause (same as findFiltered)
+    const where: any = { isActive: true }
+
+    // Date range filter
+    if (filters.dateFrom || filters.dateTo) {
+      where.dueDate = {}
+      if (filters.dateFrom) {
+        where.dueDate.$gte = filters.dateFrom
+      }
+      if (filters.dateTo) {
+        where.dueDate.$lte = filters.dateTo
+      }
+    }
+
+    // Search term filter
+    if (filters.searchTerm && filters.searchTerm.trim() !== '') {
+      const searchLower = filters.searchTerm.toLowerCase().trim()
+      where.$or = [
+        { title: { $contains: searchLower } },
+        { description: { $contains: searchLower } }
+      ]
+    }
+
+    return await reminderRepo.count(where)
+  }
+
   /**
    * Calculate next reminder date for recurring reminders
    * @param reminderData Reminder configuration

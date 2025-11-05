@@ -1,0 +1,145 @@
+import { Component, OnInit } from '@angular/core';
+import { MatDialogRef } from '@angular/material/dialog';
+import { DialogConfig, openDialog } from 'common-ui-elements';
+import { I18nService } from '../../../i18n/i18n.service';
+import { UIToolsService } from '../../../common/UIToolsService';
+import { DonorMapData } from '../../../../shared/controllers/donor-map.controller';
+import { SaveTargetAudienceModalComponent } from '../save-target-audience-modal/save-target-audience-modal.component';
+
+export interface MapSelectedDonorsModalArgs {
+  donors: DonorMapData[];
+  polygonPoints?: { lat: number; lng: number }[];
+}
+
+@DialogConfig({
+  hasBackdrop: true,
+  maxWidth: '900px',
+  maxHeight: '90vh'
+})
+@Component({
+  selector: 'app-map-selected-donors-modal',
+  templateUrl: './map-selected-donors-modal.component.html',
+  styleUrls: ['./map-selected-donors-modal.component.scss']
+})
+export class MapSelectedDonorsModalComponent implements OnInit {
+  args!: MapSelectedDonorsModalArgs;
+  selectedDonors: DonorMapData[] = [];
+
+  // Search
+  searchTerm = '';
+
+  constructor(
+    public i18n: I18nService,
+    private ui: UIToolsService,
+    public dialogRef: MatDialogRef<any>
+  ) {}
+
+  async ngOnInit() {
+    this.selectedDonors = this.args.donors || [];
+  }
+
+  // Filter donors based on search term
+  getFilteredDonors(): DonorMapData[] {
+    if (!this.searchTerm.trim()) {
+      return this.selectedDonors;
+    }
+
+    const term = this.searchTerm.toLowerCase();
+    return this.selectedDonors.filter(donorData =>
+      donorData.donor.firstName?.toLowerCase().includes(term) ||
+      donorData.donor.lastName?.toLowerCase().includes(term) ||
+      donorData.donor.fullName?.toLowerCase().includes(term) ||
+      donorData.fullAddress?.toLowerCase().includes(term) ||
+      donorData.email?.toLowerCase().includes(term)
+    );
+  }
+
+  // Open donor details
+  async openDonorDetails(donorId: string) {
+    const changed = await this.ui.donorDetailsDialog(donorId);
+    if (changed) {
+      // Optionally close the modal or refresh data
+      // For now, just keep it open
+    }
+  }
+
+  // Add donation for donor
+  async addDonation(donorId: string) {
+    const changed = await this.ui.donationDetailsDialog('new', { donorId });
+    if (changed) {
+      // Donation added successfully
+      this.ui.info('התרומה נוספה בהצלחה');
+    }
+  }
+
+  // Clear search
+  clearSearch() {
+    this.searchTerm = '';
+  }
+
+  // Close dialog
+  closeDialog() {
+    this.dialogRef.close();
+  }
+
+  // Get marker color based on status
+  getMarkerColor(status: string): string {
+    switch (status) {
+      case 'active': return '#27ae60';
+      case 'inactive': return '#95a5a6';
+      case 'high-donor': return '#f39c12';
+      case 'recent-donor': return '#e74c3c';
+      default: return '#27ae60';
+    }
+  }
+
+  // Get status label
+  getStatusLabel(status: string): string {
+    switch (status) {
+      case 'active': return 'פעיל';
+      case 'inactive': return 'לא פעיל';
+      case 'high-donor': return 'תורם גדול';
+      case 'recent-donor': return 'תרם לאחרונה';
+      default: return status;
+    }
+  }
+
+  // Export to Excel (future feature)
+  exportToExcel() {
+    this.ui.info('פיצ׳ר בפיתוח - ייצוא לאקסל');
+    // TODO: Implement Excel export
+  }
+
+  // Get total donations sum
+  getTotalDonationsSum(): number {
+    return this.selectedDonors.reduce((sum, d) => sum + d.stats.totalDonations, 0);
+  }
+
+  // Save as target audience
+  async saveAsTargetAudience() {
+    const donorIds = this.selectedDonors.map(d => d.donor.id);
+
+    const targetAudience = await openDialog(
+      SaveTargetAudienceModalComponent,
+      (modal) => {
+        modal.args = {
+          donorIds,
+          polygonPoints: this.args.polygonPoints,
+          metadata: {
+            source: 'map_polygon',
+            totalDonations: this.getTotalDonationsSum(),
+            averageDonation: this.getTotalDonationsSum() / donorIds.length,
+            createdFrom: 'Map Selection',
+            hasPolygonData: !!this.args.polygonPoints
+          }
+        };
+      }
+    );
+
+    if (targetAudience) {
+      // Successfully saved
+      // Optionally close the current modal
+      this.ui.info(`קהל היעד נשמר בהצלחה`);
+    }
+  }
+}

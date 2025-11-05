@@ -1,17 +1,27 @@
-<div class="donors-map-container" [attr.dir]="i18n.lang.RTL ? 'rtl' : 'ltr'" [class.fullscreen]="isFullscreen">
-  <div class="page-header">
-    <h1>{{ i18n.terms.mapTitle }}</h1>
-    <div class="map-controls">
+<div class="module-container" [attr.dir]="i18n.lang.RTL ? 'rtl' : 'ltr'" [class.fullscreen]="isFullscreen">
+
+  <!-- HEADER: Sticky top -->
+  <div class="module-header">
+    <div class="header-top">
+      <h1>{{ i18n.terms.mapTitle }}</h1>
+      <div class="map-controls">
       <button class="btn btn-primary" (click)="refreshMap()">{{ i18n.terms.refreshMap }}</button>
+      <button class="btn btn-polygon"
+              (click)="togglePolygonMode()"
+              [class.active]="isPolygonMode"
+              [matTooltip]="isPolygonMode ? 'צא ממצב ציור פוליגון' : 'צייר פוליגון על המפה'"
+              *ngIf="isFullscreen">
+        <mat-icon>pentagon</mat-icon>
+      </button>
       <button class="btn btn-secondary" (click)="toggleSummary()" *ngIf="!isFullscreen">{{ showSummary ? i18n.terms.hideSummary : i18n.terms.showSummary }}</button>
       <button class="btn btn-info" (click)="geocodeMissingAddresses()" [disabled]="loading" *ngIf="!isFullscreen">{{ i18n.terms.convertAddresses }}</button>
       <button class="btn btn-fullscreen" (click)="toggleFullscreen()" [matTooltip]="isFullscreen ? 'יציאה ממסך מלא' : 'מסך מלא'">
         <mat-icon>{{ isFullscreen ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
       </button>
     </div>
-  </div>
+    </div>
 
-  <!-- Summary panel -->
+    <!-- Summary panel -->
   <div class="summary-panel" [class.visible]="showSummary" *ngIf="!isFullscreen">
     <h3>{{ i18n.terms.dataSummary }}</h3>
     <div class="summary-stats">
@@ -45,9 +55,13 @@
       </div>
     </div>
   </div>
+  </div>
 
-  <!-- Donors map -->
-  <div class="map-container">
+  <!-- CONTENT: Main scrollable area -->
+  <div class="module-content">
+
+    <!-- Donors map -->
+    <div class="map-container">
     <div id="donors-map" class="leaflet-map" #mapElement></div>
 
     <!-- Color legend - inside map container when fullscreen -->
@@ -160,4 +174,7 @@
   <div *ngIf="loading" class="loading-overlay">
     <div class="loading-spinner">{{ i18n.terms.loadingMap }}</div>
   </div>
+
+  </div>
+
 </div>

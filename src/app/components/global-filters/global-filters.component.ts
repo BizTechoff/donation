@@ -5,6 +5,7 @@ import { Subscription } from 'rxjs';
 import { GlobalFilterService, GlobalFilters } from '../../services/global-filter.service';
 import { Campaign } from '../../../shared/entity/campaign';
 import { Country } from '../../../shared/entity/country';
+import { TargetAudience } from '../../../shared/entity/target-audience';
 import { I18nService } from '../../i18n/i18n.service';
 
 @Component({
@@ -19,9 +20,11 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
   currentFilters: GlobalFilters = {};
   campaigns: Campaign[] = [];
   countries: Country[] = [];
+  targetAudiences: TargetAudience[] = [];
 
   campaignRepo = remult.repo(Campaign);
   countryRepo = remult.repo(Country);
+  targetAudienceRepo = remult.repo(TargetAudience);
 
   private subscription = new Subscription();
 
@@ -60,6 +63,12 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
         where: { isActive: true },
         orderBy: { name: 'asc' as 'asc' }
       });
+
+      // Load target audiences
+      this.targetAudiences = await this.targetAudienceRepo.find({
+        where: { isActive: true },
+        orderBy: { name: 'asc' as 'asc' }
+      });
     } catch (error) {
       console.error('Error loading filter data:', error);
     }
@@ -82,6 +91,7 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
     const hasValues =
       (this.currentFilters.campaignIds && this.currentFilters.campaignIds.length > 0) ||
       (this.currentFilters.countryIds && this.currentFilters.countryIds.length > 0) ||
+      (this.currentFilters.targetAudienceIds && this.currentFilters.targetAudienceIds.length > 0) ||
       (this.currentFilters.dateFrom !== undefined && this.currentFilters.dateFrom !== null) ||
       (this.currentFilters.dateTo !== undefined && this.currentFilters.dateTo !== null) ||
       (this.currentFilters.amountMin !== undefined && this.currentFilters.amountMin !== null) ||
@@ -94,6 +104,7 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
     let count = 0;
     if (this.currentFilters.campaignIds && this.currentFilters.campaignIds.length > 0) count += this.currentFilters.campaignIds.length;
     if (this.currentFilters.countryIds && this.currentFilters.countryIds.length > 0) count += this.currentFilters.countryIds.length;
+    if (this.currentFilters.targetAudienceIds && this.currentFilters.targetAudienceIds.length > 0) count += this.currentFilters.targetAudienceIds.length;
     if (this.currentFilters.dateFrom) count++;
     if (this.currentFilters.dateTo) count++;
     if (this.currentFilters.amountMin !== undefined) count++;
@@ -110,7 +121,12 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
     const country = this.countries.find(c => c.id === countryId);
     return country?.displayName || countryId;
   }
-  
+
+  getTargetAudienceName(targetAudienceId: string): string {
+    const targetAudience = this.targetAudiences.find(ta => ta.id === targetAudienceId);
+    return targetAudience?.name || targetAudienceId;
+  }
+
   removeCampaignFilter(campaignId: string) {
     const currentIds = this.currentFilters.campaignIds || [];
     const updatedIds = currentIds.filter(id => id !== campaignId);
@@ -121,6 +137,12 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
     const currentIds = this.currentFilters.countryIds || [];
     const updatedIds = currentIds.filter(id => id !== countryId);
     this.updateFilter('countryIds', updatedIds.length > 0 ? updatedIds : undefined);
+  }
+
+  removeTargetAudienceFilter(targetAudienceId: string) {
+    const currentIds = this.currentFilters.targetAudienceIds || [];
+    const updatedIds = currentIds.filter(id => id !== targetAudienceId);
+    this.updateFilter('targetAudienceIds', updatedIds.length > 0 ? updatedIds : undefined);
   }
   
   onDateFromChange(date: Date | null) {

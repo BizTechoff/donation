@@ -29,6 +29,15 @@ export class CampaignsListComponent implements OnInit {
   sortField = 'name';
   sortDirection = 'asc';
 
+  // Expose Math to template
+  Math = Math;
+
+  // Pagination
+  currentPage = 1;
+  pageSize = 50;
+  totalCount = 0;
+  totalPages = 0;
+
   constructor(public i18n: I18nService, private ui: UIToolsService) {}
 
   async ngOnInit() {
@@ -60,12 +69,19 @@ export class CampaignsListComponent implements OnInit {
       where.isActive = this.filterActive === 'true';
     }
 
+    // Get total count for pagination
+    this.totalCount = await this.campaignRepo.count(where);
+    this.totalPages = Math.ceil(this.totalCount / this.pageSize);
+
+    // Fetch paginated data
     this.campaigns = await this.campaignRepo.find({
       where,
       orderBy: { [this.sortField]: this.sortDirection },
       include: {
         createdBy: true
-      }
+      },
+      limit: this.pageSize,
+      page: this.currentPage
     });
   }
 
@@ -150,13 +166,72 @@ export class CampaignsListComponent implements OnInit {
   }
 
   async applyFilters() {
+    this.currentPage = 1; // Reset to first page when filtering
     await this.loadCampaigns();
   }
 
   async clearFilters() {
     this.filterName = '';
     this.filterActive = '';
+    this.currentPage = 1; // Reset to first page when clearing filters
     await this.loadCampaigns();
+  }
+
+  // Pagination methods
+  async goToPage(page: number) {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+      await this.loadCampaigns();
+    }
+  }
+
+  async nextPage() {
+    if (this.currentPage < this.totalPages) {
+      this.currentPage++;
+      await this.loadCampaigns();
+    }
+  }
+
+  async previousPage() {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+      await this.loadCampaigns();
+    }
+  }
+
+  async firstPage() {
+    this.currentPage = 1;
+    await this.loadCampaigns();
+  }
+
+  async lastPage() {
+    this.currentPage = this.totalPages;
+    await this.loadCampaigns();
+  }
+
+  getPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxPagesToShow = 5;
+
+    if (this.totalPages <= maxPagesToShow) {
+      for (let i = 1; i <= this.totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      const halfWindow = Math.floor(maxPagesToShow / 2);
+      let startPage = Math.max(1, this.currentPage - halfWindow);
+      let endPage = Math.min(this.totalPages, startPage + maxPagesToShow - 1);
+
+      if (endPage - startPage < maxPagesToShow - 1) {
+        startPage = Math.max(1, endPage - maxPagesToShow + 1);
+      }
+
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(i);
+      }
+    }
+
+    return pages;
   }
 
   getStatusBadgeClass(status: string): string {
