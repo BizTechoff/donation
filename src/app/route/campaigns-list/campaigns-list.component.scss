@@ -20,7 +20,7 @@
   position: sticky;
   top: 0;
   z-index: 100;
-  background: white;
+  // background: white;
   border-bottom: 2px solid #e1e8ed;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 
@@ -29,13 +29,15 @@
     justify-content: space-between;
     align-items: center;
     padding: 20px 30px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    // background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
 
     h1 {
       margin: 0;
       font-size: 1.8rem;
       font-weight: 600;
+      background: white;
+      color: #667eea;
     }
 
     .add-campaign-btn {

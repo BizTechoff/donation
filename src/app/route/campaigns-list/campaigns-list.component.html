@@ -62,10 +62,10 @@
           </select>
         </div>
 
-        <div class="filter-actions">
+        <!-- <div class="filter-actions">
           <button class="btn btn-secondary" (click)="clearFilters()">{{ (i18n.terms$ | async)?.clearFilters }}</button>
           <button class="btn btn-info" (click)="loadData()" [disabled]="loading">{{ (i18n.terms$ | async)?.refresh }}</button>
-        </div>
+        </div> -->
       </div>
     </div>
   </div>
@@ -75,12 +75,30 @@
 
     <!-- Table Header: Sticky top של הטבלה -->
     <div class="table-header">
-      <div class="grid-col">{{ (i18n.terms$ | async)?.campaignName }}</div>
-      <div class="grid-col">{{ (i18n.terms$ | async)?.financialTarget }}</div>
-      <div class="grid-col">{{ (i18n.terms$ | async)?.collected }}</div>
-      <div class="grid-col">{{ (i18n.terms$ | async)?.progressPercentage }}</div>
-      <div class="grid-col">{{ (i18n.terms$ | async)?.startDate }}</div>
-      <div class="grid-col">{{ (i18n.terms$ | async)?.endDate }}</div>
+      <div class="grid-col sortable" [class.sorted]="isSorted('name')" (click)="toggleSort('name', $event)">
+        {{ (i18n.terms$ | async)?.campaignName }}
+        <span class="sort-icon" *ngIf="getSortIcon('name')">{{ getSortIcon('name') }}</span>
+      </div>
+      <div class="grid-col sortable" [class.sorted]="isSorted('targetAmount')" (click)="toggleSort('targetAmount', $event)">
+        {{ (i18n.terms$ | async)?.financialTarget }}
+        <span class="sort-icon" *ngIf="getSortIcon('targetAmount')">{{ getSortIcon('targetAmount') }}</span>
+      </div>
+      <div class="grid-col sortable" [class.sorted]="isSorted('raisedAmount')" (click)="toggleSort('raisedAmount', $event)">
+        {{ (i18n.terms$ | async)?.collected }}
+        <span class="sort-icon" *ngIf="getSortIcon('raisedAmount')">{{ getSortIcon('raisedAmount') }}</span>
+      </div>
+      <div class="grid-col sortable" [class.sorted]="isSorted('progressPercentage')" (click)="toggleSort('progressPercentage', $event)">
+        {{ (i18n.terms$ | async)?.progressPercentage }}
+        <span class="sort-icon" *ngIf="getSortIcon('progressPercentage')">{{ getSortIcon('progressPercentage') }}</span>
+      </div>
+      <div class="grid-col sortable" [class.sorted]="isSorted('startDate')" (click)="toggleSort('startDate', $event)">
+        {{ (i18n.terms$ | async)?.startDate }}
+        <span class="sort-icon" *ngIf="getSortIcon('startDate')">{{ getSortIcon('startDate') }}</span>
+      </div>
+      <div class="grid-col sortable" [class.sorted]="isSorted('endDate')" (click)="toggleSort('endDate', $event)">
+        {{ (i18n.terms$ | async)?.endDate }}
+        <span class="sort-icon" *ngIf="getSortIcon('endDate')">{{ getSortIcon('endDate') }}</span>
+      </div>
       <div class="grid-col">{{ (i18n.terms$ | async)?.actions }}</div>
     </div>
 

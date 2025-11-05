@@ -330,10 +330,55 @@ export class CampaignsListComponent implements OnInit {
 
   openContacts() {
     if (!this.editingCampaign?.id) return;
-    
+
     // TODO: Implement contacts functionality
     console.log('Opening contacts for campaign:', this.editingCampaign.id);
     alert(`אנשי קשר ופעילים עבור קמפיין "${this.editingCampaign.name}" יפתח בקרוב`);
+  }
+
+  // Sorting functionality
+  sortColumns: Array<{ field: string; direction: 'asc' | 'desc' }> = [];
+
+  toggleSort(field: string, event: MouseEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const existingSort = this.sortColumns.find(s => s.field === field);
+
+    if (existingSort) {
+      if (existingSort.direction === 'asc') {
+        existingSort.direction = 'desc';
+      } else {
+        this.sortColumns = this.sortColumns.filter(s => s.field !== field);
+      }
+    } else {
+      this.sortColumns.push({ field, direction: 'asc' });
+    }
+
+    this.applySorting();
+  }
+
+  isSorted(field: string): boolean {
+    return this.sortColumns.some(s => s.field === field);
+  }
+
+  getSortIcon(field: string): string {
+    const sort = this.sortColumns.find(s => s.field === field);
+    if (!sort) return '';
+    return sort.direction === 'asc' ? '↑' : '↓';
+  }
+
+  applySorting() {
+    if (this.sortColumns.length === 0) {
+      this.sortField = 'name';
+      this.sortDirection = 'asc';
+    } else {
+      // Use the first sort column for the simple orderBy
+      const firstSort = this.sortColumns[0];
+      this.sortField = firstSort.field;
+      this.sortDirection = firstSort.direction;
+    }
+    this.loadCampaigns();
   }
 
 }
