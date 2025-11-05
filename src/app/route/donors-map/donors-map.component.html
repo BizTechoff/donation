@@ -5,176 +5,153 @@
     <div class="header-top">
       <h1>{{ i18n.terms.mapTitle }}</h1>
       <div class="map-controls">
-      <button class="btn btn-primary" (click)="refreshMap()">{{ i18n.terms.refreshMap }}</button>
-      <button class="btn btn-polygon"
-              (click)="togglePolygonMode()"
-              [class.active]="isPolygonMode"
-              [matTooltip]="isPolygonMode ? 'צא ממצב ציור פוליגון' : 'צייר פוליגון על המפה'"
-              *ngIf="isFullscreen">
-        <mat-icon>pentagon</mat-icon>
-      </button>
-      <button class="btn btn-secondary" (click)="toggleSummary()" *ngIf="!isFullscreen">{{ showSummary ? i18n.terms.hideSummary : i18n.terms.showSummary }}</button>
-      <button class="btn btn-info" (click)="geocodeMissingAddresses()" [disabled]="loading" *ngIf="!isFullscreen">{{ i18n.terms.convertAddresses }}</button>
-      <button class="btn btn-fullscreen" (click)="toggleFullscreen()" [matTooltip]="isFullscreen ? 'יציאה ממסך מלא' : 'מסך מלא'">
-        <mat-icon>{{ isFullscreen ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
-      </button>
-    </div>
+        <button class="btn btn-primary" (click)="refreshMap()">{{ i18n.terms.refreshMap }}</button>
+        <button class="btn btn-polygon"
+                (click)="togglePolygonMode()"
+                [class.active]="isPolygonMode"
+                [matTooltip]="isPolygonMode ? 'צא ממצב ציור פוליגון' : 'צייר פוליגון על המפה'"
+                *ngIf="isFullscreen">
+          <mat-icon>pentagon</mat-icon>
+        </button>
+        <!-- <button class="btn btn-info" (click)="geocodeMissingAddresses()" [disabled]="loading">{{ i18n.terms.convertAddresses }}</button> -->
+        <button class="btn btn-fullscreen" (click)="toggleFullscreen()" [matTooltip]="isFullscreen ? 'יציאה ממסך מלא' : 'מסך מלא'">
+          <mat-icon>{{ isFullscreen ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
+        </button>
+      </div>
     </div>
 
-    <!-- Summary panel -->
-  <div class="summary-panel" [class.visible]="showSummary" *ngIf="!isFullscreen">
-    <h3>{{ i18n.terms.dataSummary }}</h3>
-    <div class="summary-stats">
-      <div class="stat-card">
-        <div class="stat-icon">👥</div>
-        <div class="stat-content">
-          <h4>{{ i18n.terms.totalDonors }}</h4>
-          <span class="stat-number">{{ totalDonors }}</span>
+    <!-- Summary Cards -->
+    <div class="summary-cards">
+      <div class="summary-card">
+        <div class="card-icon">👥</div>
+        <div class="card-content">
+          <h3>{{ i18n.terms.totalDonors }}</h3>
+          <span class="count">{{ totalDonors }}</span>
         </div>
       </div>
-      <div class="stat-card">
-        <div class="stat-icon">🎯</div>
-        <div class="stat-content">
-          <h4>{{ i18n.terms.activeDonors }}</h4>
-          <span class="stat-number">{{ activeDonors }}</span>
+      <div class="summary-card">
+        <div class="card-icon">🎯</div>
+        <div class="card-content">
+          <h3>{{ i18n.terms.activeDonors }}</h3>
+          <span class="count">{{ activeDonors }}</span>
         </div>
       </div>
-      <div class="stat-card">
-        <div class="stat-icon">💰</div>
-        <div class="stat-content">
-          <h4>{{ i18n.terms.mapAverageDonation }}</h4>
-          <span class="stat-number">₪{{ averageDonation | number }}</span>
+      <div class="summary-card">
+        <div class="card-icon">💰</div>
+        <div class="card-content">
+          <h3>{{ i18n.terms.mapAverageDonation }}</h3>
+          <span class="count">₪{{ averageDonation | number }}</span>
         </div>
       </div>
-      <div class="stat-card">
-        <div class="stat-icon">📍</div>
-        <div class="stat-content">
-          <h4>{{ i18n.terms.donorsOnMap }}</h4>
-          <span class="stat-number">{{ donorsOnMap }}</span>
+      <div class="summary-card">
+        <div class="card-icon">📍</div>
+        <div class="card-content">
+          <h3>{{ i18n.terms.donorsOnMap }}</h3>
+          <span class="count">{{ donorsOnMap }}</span>
         </div>
       </div>
     </div>
-  </div>
+
+    <!-- Filters Section -->
+    <div class="filters-section">
+      <div class="filter-row">
+        <!-- Status Filter -->
+        <div class="filter-group">
+          <label>{{ i18n.terms.filterByStatus || 'סינון לפי סטטוס' }}</label>
+          <div class="status-chips">
+            <div *ngFor="let option of statusOptions"
+                 class="status-chip"
+                 [class.selected]="mapFilters.statusFilter.includes(option.value)"
+                 (click)="toggleStatusFilter(option.value)">
+              <div class="chip-color" [style.background-color]="option.color"></div>
+              <span>{{ option.label }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Search Filter -->
+        <div class="filter-group">
+          <label>{{ i18n.terms.search || 'חיפוש' }}</label>
+          <input type="text"
+                 class="form-control"
+                 [(ngModel)]="mapFilters.searchTerm"
+                 (ngModelChange)="onFilterChange()"
+                 [placeholder]="i18n.terms.searchDonorNameAddress || 'חפש לפי שם או כתובת'">
+        </div>
+
+        <!-- Coordinates Filter -->
+        <!-- <div class="filter-group">
+          <label>{{ i18n.terms.filterByLocation || 'מיקום' }}</label>
+          <select class="form-control" [(ngModel)]="mapFilters.hasCoordinates" (ngModelChange)="onFilterChange()">
+            <option [ngValue]="null">{{ i18n.terms.all || 'הכל' }}</option>
+            <option [ngValue]="true">{{ i18n.terms.withCoordinates || 'עם קואורדינטות' }}</option>
+            <option [ngValue]="false">{{ i18n.terms.withoutCoordinates || 'ללא קואורדינטות' }}</option>
+          </select>
+        </div> -->
+
+        <!-- Donation Count Filter -->
+        <div class="filter-group">
+          <label>{{ i18n.terms.minDonationCount || 'מינימום תרומות' }}</label>
+          <input type="number"
+                 class="form-control"
+                 min="0"
+                 [(ngModel)]="mapFilters.minDonationCount"
+                 (ngModelChange)="onFilterChange()">
+        </div>
+
+        <!-- Clear Filters Button -->
+        <!-- <div class="filter-group">
+          <button class="btn btn-secondary" (click)="clearMapFilters()" [disabled]="!hasActiveFilters()">
+            {{ i18n.terms.clearFilters || 'נקה פילטרים' }}
+          </button>
+        </div> -->
+      </div>
+
+      <!-- Results Counter -->
+      <div class="results-counter">
+        {{ i18n.terms.showing || 'מציג' }}:
+        <strong>{{ filteredDonorsMapData.length }}</strong>
+        {{ i18n.terms.outOf || 'מתוך' }}
+        <strong>{{ donorsMapData.length }}</strong>
+        {{ i18n.terms.donors || 'תורמים' }}
+      </div>
+    </div>
   </div>
 
   <!-- CONTENT: Main scrollable area -->
   <div class="module-content">
-
-    <!-- Donors map -->
+    <!-- Map Container - Full screen -->
     <div class="map-container">
-    <div id="donors-map" class="leaflet-map" #mapElement></div>
+      <div id="donors-map" class="leaflet-map" #mapElement></div>
 
-    <!-- Color legend - inside map container when fullscreen -->
-    <div class="map-legend" [class.fullscreen-legend]="isFullscreen" *ngIf="isFullscreen">
-      <h4>{{ i18n.terms.legend }}</h4>
-      <div class="legend-items">
-        <div class="legend-item">
-          <div class="legend-color active"></div>
-          <span>{{ i18n.terms.activeDonor }}</span>
-        </div>
-        <div class="legend-item">
-          <div class="legend-color inactive"></div>
-          <span>{{ i18n.terms.inactiveDonor }}</span>
-        </div>
-        <div class="legend-item">
-          <div class="legend-color high-donor"></div>
-          <span>{{ i18n.terms.highDonor }}</span>
-        </div>
-        <div class="legend-item">
-          <div class="legend-color recent-donor"></div>
-          <span>{{ i18n.terms.recentDonor }}</span>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Filters and legend panel - outside map container when not fullscreen -->
-  <div class="map-filters-panel" *ngIf="!isFullscreen">
-    <div class="panel-header">
-      <h4>{{ i18n.terms.filtersAndLegend || 'פילטרים ומקרא' }}</h4>
-      <button class="btn btn-clear" (click)="clearMapFilters()" [disabled]="!hasActiveFilters()">
-        {{ i18n.terms.clearFilters || 'נקה פילטרים' }}
-      </button>
-    </div>
-
-    <!-- Status Filter -->
-    <div class="filter-group">
-      <label class="filter-label">{{ i18n.terms.filterByStatus || 'סינון לפי סטטוס' }}:</label>
-      <div class="status-chips">
-        <div *ngFor="let option of statusOptions"
-             class="status-chip"
-             [class.selected]="mapFilters.statusFilter.includes(option.value)"
-             (click)="toggleStatusFilter(option.value)">
-          <div class="chip-color" [style.background-color]="option.color"></div>
-          <span>{{ option.label }}</span>
+      <!-- Color legend - always visible on map -->
+      <div class="map-legend">
+        <h4>{{ i18n.terms.legend }}</h4>
+        <div class="legend-items">
+          <div class="legend-item">
+            <div class="legend-color active"></div>
+            <span>{{ i18n.terms.activeDonor }}</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color inactive"></div>
+            <span>{{ i18n.terms.inactiveDonor }}</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color high-donor"></div>
+            <span>{{ i18n.terms.highDonor }}</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color recent-donor"></div>
+            <span>{{ i18n.terms.recentDonor }}</span>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- Search Filter -->
-    <div class="filter-group">
-      <label class="filter-label">{{ i18n.terms.search || 'חיפוש' }}:</label>
-      <input type="text"
-             class="filter-input"
-             [(ngModel)]="mapFilters.searchTerm"
-             (ngModelChange)="onFilterChange()"
-             [placeholder]="i18n.terms.searchDonorNameAddress || 'חפש לפי שם או כתובת'">
-    </div>
-
-    <!-- Coordinates Filter -->
-    <div class="filter-group">
-      <label class="filter-label">{{ i18n.terms.filterByLocation || 'מיקום' }}:</label>
-      <select class="filter-select" [(ngModel)]="mapFilters.hasCoordinates" (ngModelChange)="onFilterChange()">
-        <option [ngValue]="null">{{ i18n.terms.all || 'הכל' }}</option>
-        <option [ngValue]="true">{{ i18n.terms.withCoordinates || 'עם קואורדינטות' }}</option>
-        <option [ngValue]="false">{{ i18n.terms.withoutCoordinates || 'ללא קואורדינטות' }}</option>
-      </select>
-    </div>
-
-    <!-- Donation Count Filter -->
-    <div class="filter-group">
-      <label class="filter-label">{{ i18n.terms.minDonationCount || 'מינימום תרומות' }}:</label>
-      <input type="number"
-             class="filter-input"
-             min="0"
-             [(ngModel)]="mapFilters.minDonationCount"
-             (ngModelChange)="onFilterChange()">
-    </div>
-
-    <!-- Total Donations Filter -->
-    <div class="filter-group">
-      <label class="filter-label">{{ i18n.terms.totalDonationsRange || 'טווח סכום תרומות' }}:</label>
-      <div class="range-inputs">
-        <input type="number"
-               class="filter-input filter-input-small"
-               min="0"
-               [(ngModel)]="mapFilters.minTotalDonations"
-               (ngModelChange)="onFilterChange()"
-               [placeholder]="i18n.terms.from || 'מ-'">
-        <span class="range-separator">-</span>
-        <input type="number"
-               class="filter-input filter-input-small"
-               min="0"
-               [(ngModel)]="mapFilters.maxTotalDonations"
-               (ngModelChange)="onFilterChange()"
-               [placeholder]="i18n.terms.to || 'עד'">
+      <!-- Loading Overlay -->
+      <div *ngIf="loading" class="loading-overlay">
+        <div class="loading-spinner">{{ i18n.terms.loadingMap }}</div>
       </div>
     </div>
-
-    <!-- Results Counter -->
-    <div class="results-counter">
-      {{ i18n.terms.showing || 'מציג' }}:
-      <strong>{{ filteredDonorsMapData.length }}</strong>
-      {{ i18n.terms.outOf || 'מתוך' }}
-      <strong>{{ donorsMapData.length }}</strong>
-      {{ i18n.terms.donors || 'תורמים' }}
-    </div>
-  </div>
-
-  <div *ngIf="loading" class="loading-overlay">
-    <div class="loading-spinner">{{ i18n.terms.loadingMap }}</div>
-  </div>
-
   </div>
 
 </div>

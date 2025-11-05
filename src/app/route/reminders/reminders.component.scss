@@ -204,6 +204,9 @@
     table-layout: fixed;
 
     thead {
+      position: sticky;
+      top: 0;
+      z-index: 50;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
       color: white;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -217,7 +220,7 @@
           border-left: 1px solid rgba(255, 255, 255, 0.2);
           white-space: nowrap;
           width: auto;
-          background: transparent !important;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
 
           &:last-child {
             border-left: none;
