@@ -1,15 +1,21 @@
+// ===================================
 // Module Container: Header-Content-Footer Layout
+// ===================================
+
 .module-container {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  height: 100%; // Take full height of parent container
   direction: rtl;
   font-family: 'Segoe UI', Arial, sans-serif;
   background: #f5f7fa;
-  overflow: hidden;
+  overflow: hidden; // Prevent scrollbar on container itself
 }
 
+// ===================================
 // MODULE HEADER: Sticky top
+// ===================================
+
 .module-header {
   position: sticky;
   top: 0;
@@ -23,6 +29,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 20px 30px;
+    background: transparent;
 
     h1 {
       margin: 0;
@@ -35,1196 +42,586 @@
     }
 
     .create-certificate-btn {
-    background: #e67e22;
-    color: white;
-    padding: 12px 24px;
-    border: none;
-    border-radius: 6px;
-    font-size: 14px;
-    cursor: pointer;
+      background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+      color: white;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
       transition: all 0.3s ease;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 
       &:hover {
-        background: #d35400;
-        transform: translateY(-1px);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      }
+
+      &:active {
+        transform: translateY(0);
       }
     }
   }
-}
 
-.filters-section {
-  background: #f8f9fa;
-  padding: 20px;
-  border-radius: 8px;
-  margin-bottom: 30px;
-
-  .filter-row {
+  // Summary cards in header
+  .certificate-types {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 15px;
-  }
+    padding: 15px 30px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e1e8ed;
 
-  .filter-group {
-    display: flex;
-    flex-direction: column;
-
-    label {
-      font-weight: 600;
-      margin-bottom: 5px;
-      color: #2c3e50;
-      font-size: 14px;
-    }
-
-    .form-control {
-      padding: 10px;
-      border: 2px solid #e0e0e0;
-      border-radius: 6px;
-      font-size: 14px;
-      transition: border-color 0.3s ease;
-
-      &:focus {
-        outline: none;
-        border-color: #3498db;
-      }
-    }
-  }
-}
-
-.certificate-types {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 20px;
-  margin-bottom: 30px;
-
-  .type-card {
-    background: white;
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    border: 2px solid transparent;
-    transition: all 0.3s ease;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-
-    &:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-    }
-
-    &.donation-cert {
-      border-color: #3498db;
-
-      &:hover {
-        background: linear-gradient(135deg, #f8fbff 0%, #e3f2fd 100%);
-      }
-    }
-
-    &.memorial-cert {
-      border-color: #95a5a6;
-    }
-
-    .card-icon {
-      font-size: 2rem;
+    .type-card {
+      background: white;
+      border-radius: 10px;
       padding: 15px;
-      border-radius: 50%;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
       display: flex;
       align-items: center;
-      justify-content: center;
-      background: #f8f9fa;
-      flex-shrink: 0;
-    }
+      gap: 12px;
+      border: 2px solid transparent;
+      transition: all 0.3s ease;
 
-    h3 {
-      color: #2c3e50;
-      font-size: 14px;
-      font-weight: 600;
-      margin: 0 0 5px 0;
-    }
-
-    p {
-      color: #7f8c8d;
-      font-size: 12px;
-      margin: 0;
-      line-height: 1.4;
-    }
-
-    .stats {
-      text-align: left;
-      flex-shrink: 0;
-
-      .count {
-        display: block;
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: #2c3e50;
-        margin-bottom: 0;
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
       }
 
-      .label {
+      &.memorial-cert {
+        border-color: #95a5a6;
+        .card-icon { background: #ecf0f1; }
+      }
+
+      .card-icon {
+        font-size: 1.8rem;
+        padding: 12px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      h3 {
+        margin: 0 0 4px 0;
         font-size: 12px;
         color: #7f8c8d;
         font-weight: 600;
       }
-    }
-  }
-}
 
-.certificates-grid {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-  margin-bottom: 30px;
-
-  .grid-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    display: grid;
-    grid-template-columns: 2fr 1.5fr 1.5fr 2fr 2.5fr 1.5fr;
-    padding: 0;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-
-    .grid-col {
-      padding: 15px 10px;
-      font-weight: 600;
-      font-size: 14px;
-      text-align: center;
-      border-left: 1px solid rgba(255, 255, 255, 0.2);
-
-      &:last-child {
-        border-left: none;
-      }
-    }
-  }
-
-  .grid-row {
-    display: grid;
-    grid-template-columns: 2fr 1.5fr 1.5fr 2fr 2.5fr 1.5fr;
-    border-bottom: 1px solid #ecf0f1;
-    transition: background-color 0.2s ease;
-
-    &:hover {
-      background-color: #f7f9fc;
-    }
-
-    &:last-child {
-      border-bottom: none;
-    }
-
-    .grid-col {
-      padding: 15px 10px;
-      font-size: 14px;
-      display: flex;
-      align-items: center;
-      border-left: 1px solid #ecf0f1;
-
-      &:last-child {
-        border-left: none;
+      p {
+        margin: 0 0 8px 0;
+        font-size: 11px;
+        color: #95a5a6;
       }
 
-      &.actions {
-        justify-content: center;
-        gap: 8px;
-      }
-    }
-  }
-}
-
-.date-col {
-  .creation-date {
-    font-weight: 600;
-    color: #2c3e50;
-  }
-}
-
-.cert-type-badge {
-  padding: 6px 12px;
-  border-radius: 16px;
-  font-size: 12px;
-  font-weight: 600;
-  text-align: center;
-
-  &.type-donation {
-    background: #e3f2fd;
-    color: #1976d2;
-  }
-
-  &.type-memorial {
-    background: #f5f5f5;
-    color: #616161;
-  }
-
-  &.type-memorialDay {
-    background: #fff9c4;
-    color: #f57f17;
-  }
-
-  &.type-dedication {
-    background: #f3e5f5;
-    color: #7b1fa2;
-  }
-
-  &.type-appreciation {
-    background: #fff3e0;
-    color: #f57c00;
-  }
-}
-
-.recipient-col {
-  flex-direction: column;
-  align-items: flex-start !important;
-
-  strong {
-    display: block;
-    color: #2c3e50;
-    font-size: 15px;
-  }
-
-  small {
-    color: #7f8c8d;
-    font-size: 12px;
-    margin-top: 2px;
-  }
-}
-
-.amount-col {
-  .amount {
-    font-weight: 700;
-    color: #27ae60;
-    font-size: 15px;
-  }
-
-  .event {
-    font-weight: 600;
-    color: #8e44ad;
-    font-size: 13px;
-  }
-}
-
-.text-col {
-  .special-text {
-    font-style: italic;
-    color: #7f8c8d;
-    font-size: 13px;
-    line-height: 1.4;
-  }
-}
-
-.status-badge {
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 600;
-  
-  &.status-draft {
-    background: #fef9e7;
-    color: #f39c12;
-  }
-  
-  &.status-ready {
-    background: #e3f2fd;
-    color: #1976d2;
-  }
-  
-  &.status-printed {
-    background: #f3e5f5;
-    color: #7b1fa2;
-  }
-  
-  &.status-delivered {
-    background: #d5f4e6;
-    color: #27ae60;
-  }
-}
-
-.btn-icon {
-  background: none;
-  border: none;
-  font-size: 16px;
-  cursor: pointer;
-  padding: 6px;
-  border-radius: 4px;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: #ecf0f1;
-    transform: scale(1.1);
-  }
-
-  &.btn-view:hover { background: #e3f2fd; }
-  &.btn-edit:hover { background: #fff3e0; }
-  &.btn-reminder:hover { background: #f3e5f5; }
-  &.btn-print:hover { background: #e8f5e9; }
-  &.btn-download:hover { background: #e0f2f1; }
-  &.btn-delivered:hover { background: #d5f4e6; }
-  &.btn-delete:hover { background: #ffebee; }
-}
-
-.pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 20px;
-  margin-top: 30px;
-
-  .btn-page {
-    background: #3498db;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 14px;
-    transition: background-color 0.3s ease;
-
-    &:hover {
-      background: #2980b9;
-    }
-
-    &:disabled {
-      background: #bdc3c7;
-      cursor: not-allowed;
-    }
-  }
-
-  .page-info {
-    color: #7f8c8d;
-    font-size: 14px;
-    font-weight: 500;
-  }
-}
-
-// Modal styles
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-  
-  .modal-content {
-    background: white;
-    border-radius: 12px;
-    width: 90%;
-    max-width: 900px;
-    max-height: 90vh;
-    overflow: hidden;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-    
-    &.large-modal {
-      max-width: 1100px;
-    }
-  }
-  
-  .modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 20px 25px;
-    border-bottom: 2px solid #ecf0f1;
-    background: #f8f9fa;
-    
-    h2 {
-      margin: 0;
-      color: #2c3e50;
-      font-size: 1.5rem;
-    }
-    
-    .modal-close {
-      background: none;
-      border: none;
-      font-size: 24px;
-      cursor: pointer;
-      color: #7f8c8d;
-      
-      &:hover {
-        color: #2c3e50;
-      }
-    }
-  }
-  
-  .modal-body {
-    padding: 0;
-    max-height: 70vh;
-    overflow-y: auto;
-    
-    .form-sections {
-      .section {
-        padding: 25px;
-        border-bottom: 1px solid #ecf0f1;
-        
-        &:last-child {
-          border-bottom: none;
-        }
-        
-        h3 {
+      .stats {
+        .count {
+          font-size: 1.3rem;
+          font-weight: 700;
           color: #2c3e50;
-          margin-bottom: 20px;
-          font-size: 1.2rem;
-          border-bottom: 2px solid #e67e22;
-          padding-bottom: 8px;
-        }
-      }
-    }
-    
-    .form-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 20px;
-      
-      .form-group {
-        display: flex;
-        flex-direction: column;
-        
-        &.full-width {
-          grid-column: 1 / -1;
-        }
-        
-        label {
-          font-weight: 600;
-          margin-bottom: 8px;
-          color: #2c3e50;
-          font-size: 14px;
-        }
-        
-        .form-control {
-          padding: 12px;
-          border: 2px solid #e0e0e0;
-          border-radius: 6px;
-          font-size: 14px;
-          transition: border-color 0.3s ease;
-          
-          &:focus {
-            outline: none;
-            border-color: #e67e22;
-          }
-          
-          &.certificate-type-select {
-            font-weight: 600;
-            
-            &:focus {
-              box-shadow: 0 0 0 3px rgba(230, 126, 34, 0.1);
-            }
-          }
-        }
-        
-        textarea.form-control {
-          resize: vertical;
-          min-height: 80px;
-          font-family: inherit;
-          line-height: 1.5;
-        }
-      }
-    }
-    
-    .design-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 20px;
-      margin-bottom: 25px;
-      
-      .template-option {
-        cursor: pointer;
-        transition: all 0.3s ease;
-        
-        &:hover {
-          transform: translateY(-2px);
-        }
-        
-        &.selected .template-preview {
-          border-color: #e67e22;
-          box-shadow: 0 4px 15px rgba(230, 126, 34, 0.3);
-        }
-        
-        .template-preview {
-          background: white;
-          border: 3px solid #e0e0e0;
-          border-radius: 8px;
-          padding: 20px;
-          margin-bottom: 10px;
-          min-height: 150px;
-          position: relative;
-          transition: all 0.3s ease;
-          
-          &.classic {
-            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-            
-            .preview-header {
-              border-bottom: 2px solid #2c3e50;
-              font-family: serif;
-            }
-          }
-          
-          &.modern {
-            background: linear-gradient(135deg, #e3f2fd 0%, #ffffff 100%);
-            
-            .preview-header {
-              background: #3498db;
-              color: white;
-              margin: -20px -20px 15px -20px;
-              padding: 15px 20px;
-            }
-          }
-          
-          &.elegant {
-            background: linear-gradient(135deg, #fef9e7 0%, #ffffff 100%);
-            
-            .preview-header {
-              font-family: serif;
-              color: #8e44ad;
-              font-style: italic;
-            }
-          }
-          
-          .preview-content {
-            text-align: center;
-            font-size: 12px;
-            
-            .preview-header {
-              font-weight: 700;
-              margin-bottom: 10px;
-              padding-bottom: 8px;
-            }
-            
-            .preview-body {
-              color: #7f8c8d;
-              margin-bottom: 10px;
-              font-size: 10px;
-            }
-            
-            .preview-footer {
-              font-size: 10px;
-              color: #2c3e50;
-              font-weight: 600;
-            }
-          }
-        }
-        
-        .template-name {
           display: block;
-          text-align: center;
-          font-weight: 600;
-          color: #2c3e50;
-          font-size: 14px;
         }
-      }
-    }
-  }
-  
-  .modal-footer {
-    display: flex;
-    justify-content: center;
-    gap: 15px;
-    padding: 20px 25px;
-    border-top: 2px solid #ecf0f1;
-    background: #f8f9fa;
-    
-    .btn {
-      padding: 12px 25px;
-      border: none;
-      border-radius: 6px;
-      font-size: 14px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      font-weight: 600;
-      
-      &.btn-primary {
-        background: #e67e22;
-        color: white;
-        
-        &:hover {
-          background: #d35400;
-        }
-      }
-      
-      &.btn-info {
-        background: #3498db;
-        color: white;
-        
-        &:hover {
-          background: #2980b9;
-        }
-      }
-      
-      &.btn-secondary {
-        background: #95a5a6;
-        color: white;
-        
-        &:hover {
-          background: #7f8c8d;
-        }
-      }
-    }
-  }
-}
 
-@media (max-width: 1200px) {
-  .certificates-grid {
-    .grid-header {
-      display: none;
-    }
-
-    .grid-row {
-      display: block;
-      margin-bottom: 15px;
-      border: 1px solid #ecf0f1;
-      border-radius: 8px;
-      padding: 15px;
-
-      &:hover {
-        background: #fef9e7;
-      }
-
-      .grid-col {
-        display: block;
-        border: none;
-        padding: 8px 0;
-
-        &::before {
-          content: attr(data-label);
-          font-weight: 600;
+        .label {
+          font-size: 11px;
           color: #7f8c8d;
-          font-size: 13px;
-          display: block;
-          margin-bottom: 5px;
-        }
-
-        &:nth-child(1)::before { content: var(--label-number, 'מספר: '); }
-        &:nth-child(2)::before { content: var(--label-date, 'תאריך: '); }
-        &:nth-child(3)::before { content: var(--label-recipient, 'נמען: '); }
-        &:nth-child(4)::before { content: var(--label-donor, 'תורם: '); }
-        &:nth-child(5)::before { content: var(--label-type, 'סוג: '); }
-        &:nth-child(6)::before { content: var(--label-event-amount, 'אירוע/סכום: '); }
-        &:nth-child(7)::before { content: var(--label-status, 'סטטוס: '); }
-
-        &.actions {
-          border-top: 1px solid #ecf0f1;
-          padding-top: 12px;
-          margin-top: 10px;
-          display: flex;
-          justify-content: flex-start;
-          flex-wrap: wrap;
-          gap: 10px;
-
-          &::before {
-            content: 'פעולות: ';
-            flex: 1 1 100%;
-          }
+          font-weight: 600;
         }
       }
-    }
-  }
-
-  .certificate-types {
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  }
-}
-
-@media (max-width: 768px) {
-  .certificates-container {
-    padding: 15px;
-  }
-
-  .page-header {
-    flex-direction: column;
-    gap: 15px;
-    align-items: stretch;
-
-    h1 {
-      font-size: 1.5rem;
-      text-align: center;
-    }
-
-    .create-certificate-btn {
-      width: 100%;
     }
   }
 
   .filters-section {
-    padding: 15px;
+    background: #f8f9fa;
+    padding: 15px 30px;
+    border-bottom: 1px solid #e1e8ed;
 
     .filter-row {
-      grid-template-columns: 1fr;
-      gap: 12px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 15px;
     }
 
     .filter-group {
-      .form-control {
-        width: 100%;
-      }
-    }
-  }
-
-  .certificate-types {
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-
-    .type-card {
-      padding: 12px;
-
-      .card-icon {
-        font-size: 1.3rem;
-        padding: 8px;
-      }
-
-      h3 {
-        font-size: 11px;
-        line-height: 1.3;
-        margin-bottom: 4px;
-      }
-
-      p {
-        font-size: 10px;
-        margin-bottom: 8px;
-      }
-
-      .stats {
-        .count {
-          font-size: 1.1rem;
-        }
-
-        .label {
-          font-size: 10px;
-        }
-      }
-    }
-  }
-
-  .pagination {
-    flex-direction: column;
-    gap: 12px;
-
-    .btn-page {
-      width: 100%;
-      max-width: 200px;
-    }
-  }
-
-  .modal-overlay .modal-content {
-    width: 95%;
-    margin: 20px;
-
-    .modal-body {
-      .form-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .design-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .modal-footer {
-      flex-wrap: wrap;
-
-      .btn {
-        flex: 1 1 auto;
-        min-width: 120px;
-      }
-    }
-  }
-}
-
-@media (max-width: 480px) {
-  .certificates-container {
-    padding: 10px;
-  }
-
-  .page-header {
-    h1 {
-      font-size: 1.3rem;
-    }
-
-    .create-certificate-btn {
-      padding: 10px 20px;
-      font-size: 13px;
-    }
-  }
-
-  .filters-section {
-    padding: 12px;
-
-    .filter-group {
-      label {
-        font-size: 13px;
-      }
-
-      .form-control {
-        padding: 8px;
-        font-size: 13px;
-      }
-    }
-  }
-
-  .certificate-types {
-    grid-template-columns: 1fr;
-    gap: 8px;
-
-    .type-card {
-      flex-direction: row;
-      justify-content: flex-start;
-      padding: 10px;
-
-      .card-icon {
-        font-size: 1.4rem;
-        padding: 10px;
-      }
-
-      h3 {
-        font-size: 12px;
-      }
-
-      p {
-        font-size: 11px;
-        margin-bottom: 5px;
-      }
-
-      .stats {
-        .count {
-          font-size: 1.15rem;
-        }
-
-        .label {
-          font-size: 10px;
-        }
-      }
-    }
-  }
-
-  .certificates-grid {
-    .grid-row {
-      padding: 12px;
-
-      .grid-col {
-        font-size: 13px;
-
-        &::before {
-          font-size: 12px;
-        }
-
-        &.actions {
-          .btn-icon {
-            font-size: 13px;
-            padding: 3px;
-          }
-        }
-      }
-    }
-  }
-
-  .modal-overlay .modal-content {
-    .modal-header {
-      padding: 12px 15px;
-
-      h2 {
-        font-size: 1.2rem;
-      }
-    }
-
-    .modal-body {
-      .form-sections .section {
-        padding: 15px;
-
-        h3 {
-          font-size: 1.1rem;
-        }
-      }
-    }
-
-    .modal-footer {
-      padding: 12px 15px;
-
-      .btn {
-        padding: 10px 20px;
-        font-size: 13px;
-      }
-    }
-  }
-}
-
-// Preview Modal Styles
-.preview-overlay {
-  background: rgba(0, 0, 0, 0.8);
-  
-  .preview-modal {
-    max-width: 1000px;
-    max-height: 95vh;
-    
-    .preview-body {
-      padding: 20px;
       display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 500px;
-      background: #f0f0f0;
-      
-      .certificate-preview {
-        width: 100%;
-        max-width: 700px;
-        display: flex;
-        justify-content: center;
-        
-        .certificate-paper {
-          background: white;
-          width: 600px;
-          height: 850px;
-          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-          position: relative;
-          padding: 40px;
-          font-family: 'Times New Roman', serif;
-          direction: rtl;
-          
-          &.landscape {
-            width: 850px;
-            height: 600px;
-          }
-          
-          .certificate-border {
-            border: 3px solid #8B4513;
-            height: 100%;
-            padding: 30px;
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            
-            &::before {
-              content: '';
-              position: absolute;
-              top: 10px;
-              left: 10px;
-              right: 10px;
-              bottom: 10px;
-              border: 1px solid #D2691E;
-              pointer-events: none;
-            }
-            
-            .certificate-header {
-              text-align: center;
-              margin-bottom: 40px;
-              
-              .main-title {
-                font-size: 28px;
-                font-weight: bold;
-                color: #2c3e50;
-                margin-bottom: 10px;
-                text-decoration: underline;
-                text-decoration-color: #8B4513;
-              }
-            }
-            
-            .certificate-body {
-              flex: 1;
-              display: flex;
-              flex-direction: column;
-              justify-content: center;
-              text-align: center;
-              
-              .main-text {
-                font-size: 18px;
-                line-height: 1.8;
-                color: #2c3e50;
-                margin-bottom: 30px;
-              }
-              
-              .recipient-section {
-                margin-bottom: 25px;
-                
-                .recipient-name {
-                  font-size: 24px;
-                  font-weight: bold;
-                  color: #8B4513;
-                  margin-bottom: 10px;
-                }
-                
-                .donor-info {
-                  font-size: 16px;
-                  color: #555;
-                }
-              }
-              
-              .details-section {
-                margin-bottom: 25px;
-                
-                .amount, .event-name, .event-date, .hebrew-date {
-                  font-size: 16px;
-                  color: #2c3e50;
-                  margin-bottom: 8px;
-                }
-                
-                .amount {
-                  font-weight: bold;
-                  color: #27ae60;
-                }
-              }
-              
-              .special-text {
-                font-size: 16px;
-                font-style: italic;
-                color: #8B4513;
-                line-height: 1.6;
-                padding: 15px;
-                border-top: 1px solid #D2691E;
-                border-bottom: 1px solid #D2691E;
-                margin: 20px 0;
-              }
-            }
-            
-            .certificate-footer {
-              display: flex;
-              justify-content: space-between;
-              align-items: end;
-              margin-top: 30px;
-              
-              .signature {
-                font-size: 16px;
-                font-weight: bold;
-                color: #2c3e50;
-                border-top: 1px solid #2c3e50;
-                padding-top: 5px;
-                min-width: 150px;
-                text-align: center;
-              }
-              
-              .creation-date {
-                font-size: 14px;
-                color: #7f8c8d;
-              }
-            }
-          }
-        }
-        
-        // Template variations
-        &.template-classic .certificate-paper {
-          font-family: 'Times New Roman', serif;
-          
-          .certificate-border {
-            border-color: #8B4513;
-            
-            .main-title {
-              text-decoration: underline;
-              text-decoration-color: #8B4513;
-            }
-          }
-        }
-        
-        &.template-modern .certificate-paper {
-          font-family: 'Arial', sans-serif;
-          
-          .certificate-border {
-            border: 2px solid #3498db;
-            border-radius: 8px;
-            
-            &::before {
-              border-color: #3498db;
-              border-radius: 4px;
-            }
-            
-            .main-title {
-              color: #3498db;
-              text-decoration: none;
-              border-bottom: 2px solid #3498db;
-              display: inline-block;
-              padding-bottom: 8px;
-            }
-            
-            .special-text {
-              border-color: #3498db;
-              color: #2c3e50;
-            }
-          }
-        }
-        
-        &.template-elegant .certificate-paper {
-          font-family: 'Times New Roman', serif;
-          
-          .certificate-border {
-            border: 3px solid #8e44ad;
-            
-            &::before {
-              border-color: #8e44ad;
-            }
-            
-            .main-title {
-              color: #8e44ad;
-              font-style: italic;
-              text-decoration: none;
-            }
-            
-            .recipient-name {
-              color: #8e44ad;
-            }
-            
-            .special-text {
-              border-color: #8e44ad;
-              color: #8e44ad;
-              background: linear-gradient(135deg, #faf8ff 0%, #f3e5f5 100%);
-            }
-          }
+      flex-direction: column;
+
+      label {
+        font-weight: 600;
+        margin-bottom: 6px;
+        color: #2c3e50;
+        font-size: 13px;
+      }
+
+      .form-control {
+        padding: 10px 12px;
+        border: 2px solid #e0e0e0;
+        border-radius: 6px;
+        font-size: 14px;
+        transition: border-color 0.3s ease;
+
+        &:focus {
+          outline: none;
+          border-color: #667eea;
+          box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
       }
     }
   }
 }
 
-@media (max-width: 1200px) {
-  .preview-overlay .preview-modal {
-    .preview-body {
-      .certificate-preview {
-        .certificate-paper {
-          transform: scale(0.8);
-          
-          &.landscape {
-            transform: scale(0.7);
-          }
-        }
-      }
-    }
-  }
-}
-
-@media (max-width: 768px) {
-  .preview-overlay .preview-modal {
-    .preview-body {
-      padding: 10px;
-      
-      .certificate-preview {
-        .certificate-paper {
-          transform: scale(0.6);
-
-          &.landscape {
-            transform: scale(0.5);
-          }
-        }
-      }
-    }
-  }
-}
-
+// ===================================
 // MODULE CONTENT: Main scrollable area
+// ===================================
+
 .module-content {
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden; // Important: prevents content from overflowing
   background: white;
-  padding: 20px;
+  margin: 0;
+  position: relative;
+
+  .loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+
+    .spinner {
+      font-size: 18px;
+      font-weight: 600;
+      color: #667eea;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
 }
 
-// MODULE FOOTER: Sticky bottom
+// ===================================
+// TABLE HEADER: Sticky top inside content
+// ===================================
+
+.certificates-grid {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  .grid-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: grid;
+    grid-template-columns: 2fr 1.5fr 1.5fr 2fr 2.5fr 1.5fr;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+    .grid-col {
+      padding: 15px 12px;
+      font-weight: 600;
+      font-size: 14px;
+      border-left: 1px solid rgba(255, 255, 255, 0.2);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      &:last-child {
+        border-left: none;
+      }
+
+      &.sortable {
+        cursor: pointer;
+        user-select: none;
+        transition: all 0.2s ease;
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.1);
+        }
+
+        &.sorted {
+          background: rgba(255, 255, 255, 0.15);
+          font-weight: 700;
+        }
+      }
+
+      .sort-icon {
+        font-size: 12px;
+        font-weight: bold;
+        opacity: 0.9;
+      }
+    }
+  }
+
+  // Grid body - scrollable
+  .grid-body {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    // Custom scrollbar
+    &::-webkit-scrollbar {
+      width: 10px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: #667eea;
+      border-radius: 5px;
+
+      &:hover {
+        background: #764ba2;
+      }
+    }
+
+    .grid-row {
+      display: grid;
+      grid-template-columns: 2fr 1.5fr 1.5fr 2fr 2.5fr 1.5fr;
+      border-bottom: 1px solid #ecf0f1;
+      transition: background-color 0.2s ease;
+
+      &:hover {
+        background-color: #f7f9fc;
+      }
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      .grid-col {
+        padding: 15px 12px;
+        font-size: 14px;
+        border-left: 1px solid #ecf0f1;
+        display: flex;
+        align-items: center;
+        overflow: hidden;
+        text-overflow: ellipsis;
+
+        &:last-child {
+          border-left: none;
+        }
+
+        &.recipient-col {
+          flex-direction: column;
+          align-items: flex-start;
+
+          strong {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 4px;
+          }
+
+          small {
+            font-size: 12px;
+            color: #7f8c8d;
+          }
+        }
+
+        &.type-col {
+          .cert-type-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            text-align: center;
+            white-space: nowrap;
+
+            &.type-memorial {
+              background: #ecf0f1;
+              color: #7f8c8d;
+            }
+
+            &.type-memorialDay {
+              background: #e3f2fd;
+              color: #3498db;
+            }
+          }
+        }
+
+        &.amount-col {
+          .amount {
+            font-weight: 700;
+            color: #27ae60;
+            font-size: 15px;
+          }
+
+          .event {
+            font-size: 13px;
+            color: #7f8c8d;
+          }
+        }
+
+        &.text-col {
+          .special-text {
+            color: #34495e;
+            font-size: 13px;
+          }
+        }
+
+        &.actions {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          gap: 6px;
+
+          .btn-icon {
+            background: none;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+
+            &:hover {
+              transform: scale(1.15);
+            }
+
+            &.btn-view:hover { background: #e8f5e9; }
+            &.btn-edit:hover { background: #fff3e0; }
+            &.btn-reminder:hover { background: #e3f2fd; }
+            &.btn-delete:hover { background: #ffebee; }
+          }
+        }
+      }
+    }
+
+    .no-data {
+      padding: 60px 20px;
+      text-align: center;
+      color: #7f8c8d;
+      font-size: 16px;
+
+      p {
+        margin: 0;
+      }
+    }
+  }
+}
+
+// ===================================
+// MODULE FOOTER: Sticky bottom with pagination
+// ===================================
+
 .module-footer {
   position: sticky;
   bottom: 0;
-  z-index: 90;
+  z-index: 50;
   background: white;
   border-top: 2px solid #e1e8ed;
-  padding: 15px 30px;
   box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
+  padding: 15px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+
+  .pagination-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+
+    .btn-page {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+      &:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+      }
+
+      &:disabled {
+        background: #bdc3c7;
+        cursor: not-allowed;
+        box-shadow: none;
+      }
+    }
+
+    .page-numbers {
+      display: flex;
+      gap: 5px;
+
+      .btn-page-number {
+        background: white;
+        color: #667eea;
+        border: 2px solid #667eea;
+        padding: 6px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 600;
+        transition: all 0.2s ease;
+        min-width: 36px;
+
+        &:hover:not(:disabled) {
+          background: #667eea;
+          color: white;
+        }
+
+        &.active {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          border-color: #764ba2;
+        }
+
+        &:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+      }
+    }
+  }
+
+  .pagination-info {
+    color: #7f8c8d;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+}
+
+// ===================================
+// RESPONSIVE DESIGN
+// ===================================
+
+@media (max-width: 768px) {
+  .module-header {
+    .header-top {
+      flex-direction: column;
+      gap: 12px;
+      padding: 15px 20px;
+
+      h1 {
+        font-size: 1.5rem;
+        text-align: center;
+      }
+
+      .create-certificate-btn {
+        width: 100%;
+      }
+    }
+
+    .certificate-types {
+      grid-template-columns: 1fr;
+      gap: 10px;
+      padding: 15px 20px;
+
+      .type-card {
+        padding: 12px;
+        gap: 10px;
+      }
+    }
+
+    .filters-section {
+      padding: 15px 20px;
+
+      .filter-row {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+    }
+  }
+
+  .certificates-grid {
+    .grid-header {
+      display: none; // Hide on mobile
+    }
+
+    .grid-body {
+      .grid-row {
+        display: block;
+        padding: 15px;
+        margin-bottom: 12px;
+        border: 1px solid #e0e0e0;
+        border-radius: 10px;
+        background: white;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+
+        .grid-col {
+          display: flex;
+          padding: 8px 0;
+          border: none;
+          justify-content: space-between;
+          align-items: center;
+
+          &::before {
+            content: attr(data-label);
+            font-weight: 700;
+            color: #7f8c8d;
+            font-size: 12px;
+            margin-left: 10px;
+          }
+
+          &.actions {
+            justify-content: center;
+            padding-top: 12px;
+            margin-top: 12px;
+            border-top: 1px solid #ecf0f1;
+          }
+        }
+      }
+    }
+  }
+
+  .module-footer {
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px 15px;
+
+    .pagination-controls {
+      flex-wrap: wrap;
+      gap: 8px;
+      width: 100%;
+
+      .btn-page {
+        flex: 1;
+        min-width: 80px;
+        padding: 8px 12px;
+        font-size: 12px;
+      }
+
+      .page-numbers {
+        flex-basis: 100%;
+        justify-content: center;
+        margin-top: 8px;
+
+        .btn-page-number {
+          padding: 6px 10px;
+          min-width: 32px;
+          font-size: 12px;
+        }
+      }
+    }
+
+    .pagination-info {
+      font-size: 12px;
+    }
+  }
 }
