@@ -180,7 +180,7 @@ export class Donor extends IdEntity {
   isAnash = false
 
   @Fields.boolean({
-    caption: 'בוגר',
+    caption: 'תלמידנו',
   })
   isAlumni = false
 

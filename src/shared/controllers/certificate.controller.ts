@@ -20,6 +20,7 @@ export class CertificateController {
     pageSize?: number,
     sortColumns?: Array<{ field: string; direction: 'asc' | 'desc' }>
   ): Promise<Certificate[]> {
+    console.log('CertificateController.findFilteredCertificates');
     let whereClause: any = {};
 
     // Apply certificate type filter

@@ -393,7 +393,7 @@ export class CampaignInvitedListModalComponent implements OnInit {
       { header: 'שכונה', mapper: (d) => this.getDonorNeighborhood(d), width: 15 },
       { header: 'מדינה', mapper: (d) => this.getDonorCountryName(d), width: 15 },
       { header: 'אנ"ש', mapper: (d) => this.excelService.booleanToHebrew(d.isAnash), width: 8 },
-      { header: 'בוגר', mapper: (d) => this.excelService.booleanToHebrew(d.isAlumni), width: 8 },
+      { header: 'תלמידנו', mapper: (d) => this.excelService.booleanToHebrew(d.isAlumni), width: 8 },
       { header: 'מסומן', mapper: (d) => this.isSelected(d.id) ? '✓' : '', width: 8 }
     ];
 

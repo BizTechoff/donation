@@ -7,5 +7,5 @@
     "noEmit": false,
     "outDir": "dist"
   },
-  "include": ["src/server/index.ts", "src/server/seed-fine-tuning.ts", "./src/app/common/UITools.ts"]
+  "include": ["src/server/index.ts", "src/server/seed-fine-tuning.ts", "src/server/email.ts", "./src/app/common/UITools.ts"]
 }

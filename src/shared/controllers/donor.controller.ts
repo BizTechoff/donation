@@ -162,7 +162,7 @@ export class DonorController {
     pageSize?: number,
     sortColumns?: Array<{ field: string; direction: 'asc' | 'desc' }>
   ): Promise<Donor[]> {
-    console.log('DonorController.findFiltered');
+    console.log('DonorController.findFilteredDonors');
     let whereClause: any = { isActive: true };
 
     // Build orderBy from sortColumns or use default

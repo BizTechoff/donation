@@ -12,14 +12,14 @@ import { CircleDetailsModalComponent } from '../circle-details-modal/circle-deta
 import { CircleSelectionModalComponent } from '../circle-selection-modal/circle-selection-modal.component';
 import { CompanyDetailsModalComponent } from '../company-details-modal/company-details-modal.component';
 import { CompanySelectionModalComponent } from '../company-selection-modal/company-selection-modal.component';
+import { DonorAddressTypeSelectionModalComponent } from '../donor-address-type-selection-modal/donor-address-type-selection-modal.component';
 import { DonorDonationsModalArgs, DonorDonationsModalComponent } from '../donor-donations-modal/donor-donations-modal.component';
 import { FamilyRelationDetailsModalComponent } from '../family-relation-details-modal/family-relation-details-modal.component';
 import { NotesSelectionModalArgs, NotesSelectionModalComponent } from '../notes-selection-modal/notes-selection-modal.component';
-import { DonorAddressTypeSelectionModalComponent } from '../donor-address-type-selection-modal/donor-address-type-selection-modal.component';
 
 export interface DonorDetailsModalArgs {
   donorId: string; // Can be 'new' for new donor or donor ID
-  initialPlace?: Place; // Optional Place to pre-fill for new donors
+  initialPlace?: Place; // Optional saved Place to pre-fill for new donors
 }
 
 // PersonalEvent interface is no longer needed - using DonorEvent entity instead
@@ -51,6 +51,7 @@ export class DonorDetailsModalComponent implements OnInit {
   donorContactRepo = remult.repo(DonorContact);
   donorContacts: DonorContact[] = [];
   donorPlaceRepo = remult.repo(DonorPlace);
+  placeRepo = remult.repo(Place);
   donorPlaces: DonorPlace[] = [];
   donorNoteRepo = remult.repo(DonorNote);
   donorNotes: DonorNote[] = [];
@@ -160,32 +161,33 @@ export class DonorDetailsModalComponent implements OnInit {
           const homeDonorPlace = new DonorPlace();
           homeDonorPlace.donorId = '';
           homeDonorPlace.placeId = this.args.initialPlace.id;
+          homeDonorPlace.place = this.args.initialPlace;
           // Don't set relation objects, only IDs to avoid Remult relation processing issues
           homeDonorPlace.addressTypeId = undefined;
           homeDonorPlace.isPrimary = true;
           homeDonorPlace.isActive = true;
-          homeDonorPlace.description = 'בית';
+          homeDonorPlace.description = 'כתובת מגורים';
           this.donorPlaces.push(homeDonorPlace);
         }
 
         // Create default birth date event
-        const birthDateEvent = this.availableEvents.find(e => e.description === 'יום הולדת');
-        if (birthDateEvent) {
-          const donorEvent = this.donorEventRepo.create({
-            donorId: '',
-            eventId: birthDateEvent.id,
-            date: undefined,
-            isActive: true
-          });
-          donorEvent.event = birthDateEvent;
-          this.donorEvents.push(donorEvent);
-        }
+        // const birthDateEvent = this.availableEvents.find(e => e.description === 'יום הולדת');
+        // if (birthDateEvent) {
+        //   const donorEvent = this.donorEventRepo.create({
+        //     donorId: '',
+        //     eventId: birthDateEvent.id,
+        //     date: undefined,
+        //     isActive: true
+        //   });
+        //   donorEvent.event = birthDateEvent;
+        //   this.donorEvents.push(donorEvent);
+        // }
 
         // Create default contacts
-        this.createDefaultContacts();
+        // this.createDefaultContacts();
 
         // Create default places
-        this.createDefaultPlaces();
+        // this.createDefaultPlaces();
       } else {
         // Existing donor
         this.donor = data.donor || undefined;
@@ -361,14 +363,22 @@ export class DonorDetailsModalComponent implements OnInit {
   }
 
   private createDefaultPlaces() {
-    // Create default "כתובת מגורים" place
-    const homePlace = this.donorPlaceRepo.create({
-      donorId: '', // Will be set when donor is saved
-      description: 'כתובת מגורים',
-      isPrimary: true,
-      isActive: true
-    });
-    this.donorPlaces.push(homePlace);
+    // Skip creating default place if initialPlace was already added
+    if (this.donorPlaces.length > 0) {
+      console.log('Skipping default place creation - initialPlace already set');
+      return;
+    }
+
+    if (this.args?.initialPlace) {// Create default "כתובת מגורים" place
+      const homePlace = this.donorPlaceRepo.create({
+        donorId: '', // Will be set when donor is saved
+        description: 'כתובת מגורים',
+        isPrimary: true,
+        isActive: true,
+        place: this.args.initialPlace
+      });
+      this.donorPlaces.push(homePlace);
+    }
 
     console.log('Created default place for new donor');
   }
@@ -392,28 +402,28 @@ export class DonorDetailsModalComponent implements OnInit {
         // Set default Israel country if available
         await this.setDefaultCountry();
 
-        // If initial place is provided, create DonorPlace
+        // If initial place is provided, create DonorPlace with the saved Place
         if (this.args.initialPlace) {
           const homeDonorPlace = new DonorPlace();
           homeDonorPlace.donorId = '';
           homeDonorPlace.placeId = this.args.initialPlace.id;
-          // Don't set relation objects, only IDs to avoid Remult relation processing issues
+          homeDonorPlace.place = this.args.initialPlace; // Set both ID and relation
           homeDonorPlace.addressTypeId = undefined;
           homeDonorPlace.isPrimary = true;
           homeDonorPlace.isActive = true;
           homeDonorPlace.description = 'בית';
           this.donorPlaces.push(homeDonorPlace);
-          console.log('Set initial place for new donor:', this.args.initialPlace.id);
+          console.log('Set initial place for new donor:', this.args.initialPlace.fullAddress);
         }
 
         // Create default birth date event for new donor
-        await this.createDefaultBirthDateEvent();
+        // await this.createDefaultBirthDateEvent();
 
         // Create default empty phone and email contacts for new donor
-        this.createDefaultContacts();
+        // this.createDefaultContacts();
 
         // Create default places for new donor
-        this.createDefaultPlaces();
+        // this.createDefaultPlaces();
 
         this.originalDonorData = JSON.stringify(this.donor);
       } else {
@@ -888,13 +898,19 @@ export class DonorDetailsModalComponent implements OnInit {
       return;
     }
 
-    try {
-      const selectedEvent = await this.ui.selectEventDialog(availableEvents, 'בחר אירוע להוספה');
-      if (selectedEvent) {
-        await this.addEventFromDialog(selectedEvent);
+    if (this.donorEvents.length === 0) {
+      // Create default birth date event for new donor
+      await this.createDefaultBirthDateEvent();
+    }
+    else {
+      try {
+        const selectedEvent = await this.ui.selectEventDialog(availableEvents, 'בחר אירוע להוספה');
+        if (selectedEvent) {
+          await this.addEventFromDialog(selectedEvent);
+        }
+      } catch (error) {
+        console.error('Error in openAddDateDialog:', error);
       }
-    } catch (error) {
-      console.error('Error in openAddDateDialog:', error);
     }
   }
 
@@ -970,6 +986,18 @@ export class DonorDetailsModalComponent implements OnInit {
 
   async addNewContact(type: 'phone' | 'email') {
     try {
+      var description = ''
+      if (type === 'phone') {
+        if (this.donorContacts.filter(c => c.type === type).length === 0) {
+          description = 'נייד'
+        }
+      }
+      else if (type === 'email') {
+        if (this.donorContacts.filter(c => c.type === type).length === 0) {
+          description = 'אישי'
+        }
+      }
+
       const newContact = this.donorContactRepo.create({
         donorId: this.donor?.id || '',
         type: type,
@@ -977,13 +1005,7 @@ export class DonorDetailsModalComponent implements OnInit {
         email: type === 'email' ? '' : undefined,
         prefix: type === 'phone' ? '+972' : undefined,
         isPrimary: this.donorContacts.filter(c => c.type === type).length === 0,
-        description: type === 'email'
-          ? (this.donorContacts.filter(c => c.type === type).length
-            ? ''
-            : 'אישי')
-          : (this.donorContacts.filter(c => c.type === type).length
-            ? ''
-            : 'נייד'),
+        description: description,
         isActive: true
       });
 
@@ -1041,29 +1063,41 @@ export class DonorDetailsModalComponent implements OnInit {
   // DonorPlace methods
   async addNewPlace() {
     try {
-      // Open address type selection modal
-      const selectedAddressType: DonorAddressType | undefined = await openDialog(
-        DonorAddressTypeSelectionModalComponent,
-        (modal: DonorAddressTypeSelectionModalComponent) => {
-          modal.args = { title: 'בחר סוג כתובת' };
-        }
-      );
+      if (this.donorPlaces.length === 0) {
+        const homeDonorPlace = new DonorPlace();
+        homeDonorPlace.donorId = this.donor?.id || '';
+        homeDonorPlace.donor = this.donor
+        homeDonorPlace.isPrimary = true;
+        homeDonorPlace.isActive = true;
+        homeDonorPlace.description = 'כתובת מגורים';
+        this.donorPlaces.push(homeDonorPlace);
+      }
+      else {
+        // Open address type selection modal
+        const selectedAddressType: DonorAddressType | undefined = await openDialog(
+          DonorAddressTypeSelectionModalComponent,
+          (modal: DonorAddressTypeSelectionModalComponent) => {
+            modal.args = { title: 'בחר סוג כתובת' };
+          }
+        );
 
-      if (!selectedAddressType) {
-        return; // User cancelled
+        if (!selectedAddressType) {
+          return; // User cancelled
+        }
+
+        const newPlace = this.donorPlaceRepo.create({
+          donorId: this.donor?.id || '',
+          addressTypeId: selectedAddressType.id,
+          addressType: selectedAddressType,
+          description: selectedAddressType.name, // For backwards compatibility
+          isPrimary: this.donorPlaces.length === 0,
+          isActive: true
+        });
+
+        // Add to local array - will be saved when donor is saved
+        this.donorPlaces.push(newPlace);
       }
 
-      const newPlace = this.donorPlaceRepo.create({
-        donorId: this.donor?.id || '',
-        addressTypeId: selectedAddressType.id,
-        addressType: selectedAddressType,
-        description: selectedAddressType.name, // For backwards compatibility
-        isPrimary: this.donorPlaces.length === 0,
-        isActive: true
-      });
-
-      // Add to local array - will be saved when donor is saved
-      this.donorPlaces.push(newPlace);
       this.changed = true;
     } catch (error) {
       console.error('Error adding place:', error);
@@ -1397,7 +1431,7 @@ export class DonorDetailsModalComponent implements OnInit {
       },
       {
         key: 'isAlumni',
-        label: 'בוגר',
+        label: 'תלמידנו',
         type: 'boolean'
       },
       {
@@ -2218,31 +2252,31 @@ export class DonorDetailsModalComponent implements OnInit {
   }
 
   private getReverseRelationshipType(relationshipType: string, donorGender: 'male' | 'female' | ''): string {
-    
-  const reverseMap: { [key: string]: { male: string; female: string } } = {
-    'בן': { male: 'אב', female: 'אם' },
-    'בת': { male: 'אב', female: 'אם' },
-    'אב': { male: 'בן', female: 'בת' },
-    'אם': { male: 'בן', female: 'בת' },
-    'נכד': { male: 'סבא', female: 'סבתא' },
-    'נכדה': { male: 'סבא', female: 'סבתא' },
-    'סבא': { male: 'נכד', female: 'נכדה' },
-    'סבתא': { male: 'נכד', female: 'נכדה' },
-    'אח': { male: 'אח', female: 'אחות' },
-    'אחות': { male: 'אח', female: 'אחות' },
-    'דוד': { male: 'אחיין', female: 'אחיינית' },
-    'דודה': { male: 'אחיין', female: 'אחיינית' },
-    'אחיין': { male: 'דוד', female: 'דודה' },
-    'אחיינית': { male: 'דוד', female: 'דודה' },
-    'חתן': { male: 'חותן', female: 'חותנת' },
-    'כלה': { male: 'חותן', female: 'חותנת' },
-    'חותן': { male: 'חתן', female: 'כלה' },
-    'חותנת': { male: 'חתן', female: 'כלה' },
-    'בעל': { male: '', female: 'אישה' },
-    'אישה': { male: 'בעל', female: '' },
-    'גיס': { male: 'גיס', female: 'גיסה' },
-    'גיסה': { male: 'גיס', female: 'גיסה' },
-  };
+
+    const reverseMap: { [key: string]: { male: string; female: string } } = {
+      'בן': { male: 'אב', female: 'אם' },
+      'בת': { male: 'אב', female: 'אם' },
+      'אב': { male: 'בן', female: 'בת' },
+      'אם': { male: 'בן', female: 'בת' },
+      'נכד': { male: 'סבא', female: 'סבתא' },
+      'נכדה': { male: 'סבא', female: 'סבתא' },
+      'סבא': { male: 'נכד', female: 'נכדה' },
+      'סבתא': { male: 'נכד', female: 'נכדה' },
+      'אח': { male: 'אח', female: 'אחות' },
+      'אחות': { male: 'אח', female: 'אחות' },
+      'דוד': { male: 'אחיין', female: 'אחיינית' },
+      'דודה': { male: 'אחיין', female: 'אחיינית' },
+      'אחיין': { male: 'דוד', female: 'דודה' },
+      'אחיינית': { male: 'דוד', female: 'דודה' },
+      'חתן': { male: 'חותן', female: 'חותנת' },
+      'כלה': { male: 'חותן', female: 'חותנת' },
+      'חותן': { male: 'חתן', female: 'כלה' },
+      'חותנת': { male: 'חתן', female: 'כלה' },
+      'בעל': { male: '', female: 'אישה' },
+      'אישה': { male: 'בעל', female: '' },
+      'גיס': { male: 'גיס', female: 'גיסה' },
+      'גיסה': { male: 'גיס', female: 'גיסה' },
+    };
 
     const mapping = reverseMap[relationshipType];
     if (!mapping) return 'אחר';
@@ -2276,7 +2310,7 @@ export class DonorDetailsModalComponent implements OnInit {
       });
 
       // await this.donorRelationRepo.save(newRelation);
-console.log(' newRelation.id', newRelation.id)
+      console.log(' newRelation.id', newRelation.id)
       // Add to selectedFamilyRelationships for display
       this.selectedFamilyRelationships.push({
         donor: selectedDonor,

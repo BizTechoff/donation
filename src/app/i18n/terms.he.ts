@@ -1347,7 +1347,7 @@ export const termsHe = {
 
   // Donor Types & Connections
   anash: 'אנ"ש',
-  alumni: 'בוגר',
+  alumni: 'תלמידנו',
   otherConnection: 'קשר אחר',
 
   // Company Actions

@@ -45,6 +45,7 @@
     "leaflet": "^1.9.4",
     "node-cron": "^4.2.1",
     "node-fetch": "^2.7.0",
+    "nodemailer": "^7.0.10",
     "password-hash": "^1.2.2",
     "pg": "^8.7.3",
     "pizzip": "^3.2.0",
@@ -67,6 +68,7 @@
     "@types/jsonwebtoken": "^8.5.8",
     "@types/node": "^12.11.1",
     "@types/node-cron": "^3.0.11",
+    "@types/nodemailer": "^7.0.3",
     "@types/password-hash": "^1.2.20",
     "@types/pg": "^8.6.5",
     "@types/xlsx": "^0.0.36",
@@ -83,6 +85,7 @@
   "browser": {
     "jsonwebtoken": false,
     "password-hash": false,
-    "node-fetch": false
+    "node-fetch": false,
+    "nodemailer": false
   }
 }

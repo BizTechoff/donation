@@ -6,6 +6,7 @@ import { UpdatePasswordController } from '../app/users/UpdatePasswordController'
 import { DonationController } from '../shared/controllers/donation.controller'
 import { DonorMapController } from '../shared/controllers/donor-map.controller'
 import { DonorController } from '../shared/controllers/donor.controller'
+import { EmailController } from '../shared/controllers/email.controller'
 import { FileController } from '../shared/controllers/file.controller'
 import { LetterController } from '../shared/controllers/letter.controller'
 import { PaymentController } from '../shared/controllers/payment.controller'
@@ -39,9 +40,10 @@ export const entities = [
   Payment, DonorAddressType, BlessingBookType, LetterTitle, Gift, DonorGift, TargetAudience]
 export const api = remultExpress({
   admin: true,
-  controllers: [SignInController, UpdatePasswordController, DonorController, 
-    DonationController, LetterController, FileController, PaymentController, 
-    DonorMapController, ReminderController, HebrewDateController, TargetAudienceController, CertificateController],
+  controllers: [SignInController, UpdatePasswordController, DonorController,
+    DonationController, LetterController, FileController, PaymentController,
+    DonorMapController, ReminderController, HebrewDateController, TargetAudienceController,
+    CertificateController, EmailController],
   entities,
   getUser,
   dataProvider: async () => {

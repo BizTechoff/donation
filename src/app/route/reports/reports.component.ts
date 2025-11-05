@@ -110,7 +110,7 @@ export class ReportsComponent implements OnInit {
   availableDonors: Donor[] = [];
   availableYears: number[] = [];
   availableCampaigns: Campaign[] = [];
-  donorTypes = ['אנ"ש', 'בוגר', 'קשר אחר'];
+  donorTypes = ['אנ"ש', 'תלמידנו', 'קשר אחר'];
   currencies = ['ILS', 'USD', 'EUR'];
 
   // Print settings
@@ -533,7 +533,7 @@ export class ReportsComponent implements OnInit {
   private checkDonorType(donor: Donor, type: string): boolean {
     switch (type) {
       case 'אנ"ש': return donor.isAnash || false;
-      case 'בוגר': return donor.isAlumni || false;
+      case 'תלמידנו': return donor.isAlumni || false;
       case 'קשר אחר': return donor.isOtherConnection || false;
       default: return true;
     }
@@ -544,7 +544,7 @@ export class ReportsComponent implements OnInit {
     
     const types: string[] = [];
     if (donor.isAnash) types.push('אנ"ש');
-    if (donor.isAlumni) types.push('בוגר');
+    if (donor.isAlumni) types.push('תלמידנו');
     if (donor.isOtherConnection) types.push('קשר אחר');
     
     return types.length > 0 ? types.join(', ') : 'לא צוין';

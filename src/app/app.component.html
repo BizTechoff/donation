@@ -65,7 +65,7 @@
       </div>
 
       <mat-nav-list role="list">
-        <ng-container *ngFor="let m of router.config">
+        <ng-container *ngFor="let m of router.config; let i = index">
           <mat-divider  style="opacity: .2; color: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"
             *ngIf="shouldDisplayRoute(m) && [terms.userAccounts, terms.reminders, terms.certificates].includes(m.path)"></mat-divider>
           <a mat-list-item *ngIf="shouldDisplayRoute(m)" routerLinkActive="active-route" [routerLink]="m.path"

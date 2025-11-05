@@ -86,6 +86,7 @@ import { CampaignDonorsModalComponent } from './routes/modals/campaign-donors-mo
 import { CampaignBlessingBookModalComponent } from './routes/modals/campaign-blessing-book-modal/campaign-blessing-book-modal.component'
 import { BlessingTypeSelectionModalComponent } from './routes/modals/blessing-type-selection-modal/blessing-type-selection-modal.component'
 import { BlessingTextEditModalComponent } from './routes/modals/blessing-text-edit-modal/blessing-text-edit-modal.component'
+import { SendEmailModalComponent } from './routes/modals/send-email-modal/send-email-modal.component'
 import { ToggleSwitchComponent } from './shared/toggle-switch/toggle-switch.component'
 import { UserDetailsComponent } from './route/user-details/user-details.component'
 import { FileUploadComponent } from './components/file-upload/file-upload.component'
@@ -146,6 +147,7 @@ import { SaveTargetAudienceModalComponent } from './routes/modals/save-target-au
     CampaignBlessingBookModalComponent,
     BlessingTypeSelectionModalComponent,
     BlessingTextEditModalComponent,
+    SendEmailModalComponent,
     ModalNavigationHeaderComponent,
     GlobalFiltersComponent,
     QuickActionsComponent,

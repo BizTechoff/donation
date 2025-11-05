@@ -79,6 +79,9 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     { value: 'recent-donor', label: 'תרם לאחרונה', color: '#e74c3c' }
   ];
 
+  placeRepo = remult.repo(Place);
+  countryRepo = remult.repo(Country);
+
   constructor(
     private geocodingService: GeocodingService,
     public i18n: I18nService,
@@ -246,7 +249,12 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
         };
 
         await userRepo.save(user);
-        remult.user = user;
+
+        // Update only the settings property of remult.user, not the entire user object
+        // to avoid breaking remult's permission system
+        if (remult.user) {
+          (remult.user as any).settings = user.settings;
+        }
 
         console.log('Map settings saved successfully');
       }
@@ -420,7 +428,7 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     let addedCount = 0;
     this.filteredDonorsMapData.forEach((donorData, index) => {
       if (donorData.donorPlace?.place?.latitude && donorData.donorPlace?.place?.longitude) {
-        console.log(`Adding marker ${index + 1}:`, donorData.donor.displayName, donorData.donorPlace.place.latitude, donorData.donorPlace.place.longitude);
+        // console.log(`Adding marker ${index + 1}:`, donorData.donor.displayName, donorData.donorPlace.place.latitude, donorData.donorPlace.place.longitude);
         try {
           const marker = this.createMarkerForDonor(donorData);
           this.markersLayer.addLayer(marker);
@@ -885,7 +893,7 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
         const message = this.i18n.terms.createNewDonorAtLocationQuestion
           .replace('{address}', result.formattedAddress);
 
-        const shouldCreate = await this.ui.yesNoQuestion(message);
+        const shouldCreate = await this.ui.yesNoQuestion(message, true);
 
         if (shouldCreate) {
           // פתיחת דיאלוג תורם חדש עם הכתובת
@@ -917,14 +925,14 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
       // טעינת ישות Country מהמסד נתונים
       let countryEntity: Country | undefined;
       try {
-        countryEntity = await remult.repo(Country).findFirst({
+        countryEntity = await this.countryRepo.findFirst({
           code: countryCode
         });
 
         if (!countryEntity) {
           console.warn(`Country with code ${countryCode} not found, creating new...`);
           const countryName = placeDto.countryName || placeDto.country || countryCode;
-          countryEntity = await remult.repo(Country).insert({
+          countryEntity = await this.countryRepo.insert({
             name: countryName,
             nameEn: countryName,
             code: countryCode.toUpperCase(),
@@ -938,10 +946,10 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
         console.error('Error loading/creating country:', error);
       }
 
-      // יצירת Place מ-placeDto
+      // יצירת ושמירת Place במסד הנתונים לפני פתיחת פרטי התורם
       const placeData: Partial<Place> = {
         placeId: geocodeResult.placeId,
-        fullAddress: geocodeResult.formattedAddress,
+        fullAddress: geocodeResult.formattedAddress || '',
         placeName: placeDto.name || '',
         street: placeDto.streetname || '',
         houseNumber: placeDto.homenumber ? String(placeDto.homenumber) : '',
@@ -954,13 +962,14 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
         longitude: placeDto.x
       };
 
-      console.log('Creating Place from map click:', placeData);
+      console.log('Creating and saving Place to database:', placeData);
 
-      // findOrCreate returns Place with country relation already loaded
-      const place = await Place.findOrCreate(placeData, remult.repo(Place));
+      // שמירת ה-Place במסד הנתונים מיד
+      const savedPlace = await Place.findOrCreate(placeData, this.placeRepo);
+      console.log('Place saved successfully with ID:', savedPlace.id);
 
-      // פתיחת דיאלוג תורם חדש עם המקום
-      const changed = await this.ui.donorDetailsDialog('new', { initialPlace: place });
+      // פתיחת דיאלוג תורם חדש עם ה-Place השמור
+      const changed = await this.ui.donorDetailsDialog('new', { initialPlace: savedPlace });
 
       if (changed) {
         // רענן את המפה

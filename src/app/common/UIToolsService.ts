@@ -7,6 +7,7 @@ import {
   openDialog,
   SelectValueDialogComponent,
 } from 'common-ui-elements'
+import { Place } from '../../shared/entity/place'
 import { terms } from '../terms'
 import {
   AreaDialogArgs,
@@ -97,10 +98,13 @@ export class UIToolsService implements UITools {
     await openDialog(SelectValueDialogComponent, (x) => x.args(args))
   }
 
-  async donorDetailsDialog(donorId: string, options?: { initialPlace?: any }): Promise<boolean> {
+  async donorDetailsDialog(donorId: string, options?: { initialPlace?: Place }): Promise<boolean> {
     return await openDialog(
       (await import('../routes/modals/donor-details-modal/donor-details-modal.component')).DonorDetailsModalComponent,
-      (dlg) => dlg.args = { donorId, initialPlace: options?.initialPlace }
+      (dlg) => dlg.args = {
+        donorId,
+        initialPlace: options?.initialPlace
+      }
     )
   }
 

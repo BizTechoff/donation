@@ -117,6 +117,16 @@ export class Blessing extends IdEntity {
   })
   donorId = ''
 
+  @Fields.boolean({
+    caption: 'האם נשלח אימייל',
+  })
+  isEmailSent = false
+
+  @Fields.date({
+    caption: 'תאריך שליחת אימייל',
+  })
+  emailSentAt?: Date
+
   @Fields.date({
     allowApiUpdate: false,
     caption: 'תאריך יצירה',

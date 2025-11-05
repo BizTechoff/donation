@@ -129,6 +129,7 @@ export class DonationController {
     pageSize?: number,
     sortColumns?: Array<{ field: string; direction: 'asc' | 'desc' }>
   ): Promise<Donation[]> {
+    console.log('DonationController.findFilteredDonations');
     let whereClause: any = {};
 
     // Apply campaign filter

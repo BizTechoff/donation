@@ -6,8 +6,8 @@ import { DonationController } from '../../../../shared/controllers/donation.cont
 import { Bank, Campaign, Company, Country, Donation, DonationBank, DonationFile, DonationMethod, DonationOrganization, DonationPartner, Donor, Organization, User } from '../../../../shared/entity';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
-import { LetterService } from '../../../services/letter.service';
 import { DonorService } from '../../../services/donor.service';
+import { LetterService } from '../../../services/letter.service';
 import { BankSelectionModalComponent } from '../bank-selection-modal/bank-selection-modal.component';
 import { DonorDetailsModalComponent } from '../donor-details-modal/donor-details-modal.component';
 import { DonorSelectionModalComponent } from '../donor-selection-modal/donor-selection-modal.component';
@@ -237,6 +237,8 @@ export class DonationDetailsModalComponent implements OnInit {
           this.donation.dayOfMonth = 10;
           this.donation.unlimitedPayments = false;
           this.donation.numberOfPayments = 12;
+          this.donation.donationMethod = data.donationMethods.find(itm => itm.name === 'מזומן')
+          this.donation.donationMethodId = this.donation.donationMethod?.id || ''
 
           // Pre-select donor if donorId is provided
           if (this.args.donorId) {
@@ -1180,10 +1182,10 @@ export class DonationDetailsModalComponent implements OnInit {
           };
         }
       ) as Organization | null;
-console.log('addOrganizationToDonation',1)
+      console.log('addOrganizationToDonation', 1)
       // If an organization was selected, create a new DonationOrganization record
       if (selectedOrganization) {
-        console.log('addOrganizationToDonation',2,selectedOrganization.id)
+        console.log('addOrganizationToDonation', 2, selectedOrganization.id)
         const donationOrganization = this.donationOrganizationRepo.create();
         donationOrganization.donationId = this.donation.id;
         donationOrganization.organizationId = selectedOrganization.id;
@@ -1459,10 +1461,10 @@ console.log('addOrganizationToDonation',1)
       return '';
     }
 
-    const amountPerPayment =     this.donation.unlimitedPayments 
-    ?this.donation.amount
-    :this.donation.amount / this.donation.numberOfPayments;
+    const amountPerPayment = this.donation.unlimitedPayments
+      ? this.donation.amount
+      : this.donation.amount / this.donation.numberOfPayments;
     return amountPerPayment.toFixed(2);
   }
-  
+
 }

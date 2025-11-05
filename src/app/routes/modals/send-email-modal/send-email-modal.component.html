@@ -1,0 +1,84 @@
+<div class="modal-overlay" (click)="onClose()">
+  <div class="modal-content send-email-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="header-content">
+        <h2>שליחת אימייל</h2>
+        <p class="header-subtitle">עריכה ושליחת אימייל לתורם</p>
+      </div>
+      <button class="modal-close" (click)="onClose()">&times;</button>
+    </div>
+
+    <div class="modal-body">
+      <!-- From Field -->
+      <div class="form-field">
+        <label class="field-label">מאת:</label>
+        <input
+          type="text"
+          class="field-input"
+          [(ngModel)]="from"
+          placeholder="שם השולח"
+          readonly
+        />
+      </div>
+
+      <!-- To Field with chips -->
+      <div class="form-field">
+        <label class="field-label">אל:</label>
+        <div class="email-chips-container">
+          <div class="email-chip" *ngFor="let email of to; let i = index">
+            <span class="chip-text">{{email}}</span>
+            <button class="chip-remove" (click)="removeEmail(i)" type="button">&times;</button>
+          </div>
+          <button class="add-email-btn" (click)="addEmail()" type="button">
+            <mat-icon>add</mat-icon>
+            הוסף נמען
+          </button>
+        </div>
+      </div>
+
+      <!-- Subject Field -->
+      <div class="form-field">
+        <label class="field-label">נושא:</label>
+        <input
+          type="text"
+          class="field-input"
+          [(ngModel)]="subject"
+          placeholder="נושא האימייל"
+        />
+      </div>
+
+      <!-- Body Field -->
+      <div class="form-field">
+        <label class="field-label">תוכן האימייל:</label>
+        <textarea
+          class="field-textarea"
+          [(ngModel)]="htmlBody"
+          placeholder="הקלד/י כאן את תוכן האימייל..."
+          rows="12"
+        ></textarea>
+        <div class="field-hint">
+          * ניתן להשתמש בתגיות HTML לעיצוב התוכן
+        </div>
+      </div>
+
+      <!-- Preview Section -->
+      <div class="preview-section">
+        <h4 class="preview-title">תצוגה מקדימה:</h4>
+        <div class="preview-container" [innerHTML]="htmlBody"></div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="onClose()" [disabled]="sending">
+        ביטול
+      </button>
+      <button class="btn btn-primary" (click)="sendEmail()" [disabled]="sending">
+        <mat-icon *ngIf="sending">
+          <mat-spinner diameter="20"></mat-spinner>
+        </mat-icon>
+        <mat-icon *ngIf="!sending">send</mat-icon>
+        {{sending ? 'שולח...' : 'שלח אימייל'}}
+      </button>
+    </div>
+  </div>
+</div>

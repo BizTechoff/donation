@@ -267,7 +267,7 @@ For each new modal in the platform:
    - Always include status/active filters
    - Include date ranges where relevant
    - Include amount filters for financial entities
-   - Include relationship filters (אנ"ש, בוגר, etc.)
+   - Include relationship filters (אנ"ש, תלמידנו, etc.)
 
 3. **Performance**: 
    - Load all records once on init

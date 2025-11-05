@@ -22,7 +22,7 @@ export class ReminderController {
     pageSize: number = 50,
     sortColumns: Array<{ field: string; direction: 'asc' | 'desc' }> = []
   ): Promise<Reminder[]> {
-    console.log('ReminderController.findFiltered')
+    console.log('ReminderController.findFilteredReminders');
     const reminderRepo = remult.repo(Reminder)
 
     // Build where clause
