@@ -1,13 +1,15 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Certificate } from '../../../shared/entity/certificate';
 import { Donor } from '../../../shared/entity/donor';
-import { repo } from 'remult';
+import { User } from '../../../shared/entity/user';
+import { repo, remult } from 'remult';
 import { I18nService } from '../../i18n/i18n.service';
 import { UIToolsService } from '../../common/UIToolsService';
 import { ReminderDetailsModalComponent } from '../../routes/modals/reminder-details-modal/reminder-details-modal.component';
 import { GlobalFilterService } from '../../services/global-filter.service';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { CertificateController, CertificateFilters } from '../../../shared/controllers/certificate.controller';
 
 @Component({
   selector: 'app-certificates',
@@ -17,7 +19,12 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 export class CertificatesComponent implements OnInit, OnDestroy {
 
   certificates: Certificate[] = [];
-  allCertificates: Certificate[] = [];
+  loading = false;
+
+  // Expose Math to template
+  Math = Math;
+
+  // Filters
   filterFromParasha = '';
   filterToParasha = '';
   filterCertificateType = '';
@@ -25,6 +32,17 @@ export class CertificatesComponent implements OnInit, OnDestroy {
   filterDateTo = '';
   donorSearchText = '';
   private donorSearchSubject = new Subject<string>();
+  private filterTimeout: any;
+
+  // Pagination
+  currentPage = 1;
+  pageSize = 50;
+  totalCount = 0;
+  totalPages = 0;
+
+  // Sorting
+  sortColumns: Array<{ field: string; direction: 'asc' | 'desc' }> = [];
+  private currentUser?: User;
 
   parashotList = [
     'בראשית', 'נח', 'לך לך', 'וירא', 'חיי שרה', 'תולדות', 'ויצא', 'וישלח', 'וישב', 'מקץ', 'ויגש', 'ויחי',
@@ -41,12 +59,15 @@ export class CertificatesComponent implements OnInit, OnDestroy {
   ) { }
 
   async ngOnInit() {
+    // Load user settings
+    await this.loadUserSettings();
+
     // הגדרת debounce לחיפוש תורם
     this.donorSearchSubject.pipe(
       debounceTime(300),
       distinctUntilChanged()
     ).subscribe(searchText => {
-      this.filterCertificates();
+      this.onFilterChange();
     });
 
     // Set CSS variables for mobile labels
@@ -76,15 +97,33 @@ export class CertificatesComponent implements OnInit, OnDestroy {
   }
 
   async loadCertificates() {
-    this.allCertificates = await repo(Certificate).find({
-      include: {
-        donor: true,
-        createdBy: true,
-        reminder: true
-      },
-      orderBy: { createdDate: 'desc' }
-    });
-    this.filterCertificates();
+    this.loading = true;
+    try {
+      // Build filters object for server-side filtering
+      const filters: CertificateFilters = {
+        certificateType: this.filterCertificateType?.trim() || undefined,
+        dateFrom: this.filterDateFrom?.trim() || undefined,
+        dateTo: this.filterDateTo?.trim() || undefined,
+        donorSearchText: this.donorSearchText?.trim() || undefined,
+        fromParasha: this.filterFromParasha?.trim() || undefined,
+        toParasha: this.filterToParasha?.trim() || undefined
+      };
+
+      // Get total count and certificates from server
+      [this.totalCount, this.certificates] = await Promise.all([
+        CertificateController.countFilteredCertificates(filters),
+        CertificateController.findFilteredCertificates(filters, this.currentPage, this.pageSize, this.sortColumns)
+      ]);
+
+      this.totalPages = Math.ceil(this.totalCount / this.pageSize);
+    } catch (error) {
+      console.error('Error in loadCertificates:', error);
+      this.certificates = [];
+      this.totalCount = 0;
+      this.totalPages = 0;
+    } finally {
+      this.loading = false;
+    }
   }
 
   onDonorSearchChange(searchText: string) {
@@ -92,46 +131,19 @@ export class CertificatesComponent implements OnInit, OnDestroy {
     this.donorSearchSubject.next(searchText);
   }
 
-  filterCertificates() {
-    let filtered = [...this.allCertificates];
-
-    // סינון לפי סוג תעודה
-    if (this.filterCertificateType) {
-      filtered = filtered.filter(cert => cert.type === this.filterCertificateType);
+  onFilterChange() {
+    // Clear any existing timeout
+    if (this.filterTimeout) {
+      clearTimeout(this.filterTimeout);
     }
 
-    // סינון לפי תאריך מ
-    if (this.filterDateFrom) {
-      const dateFrom = new Date(this.filterDateFrom);
-      filtered = filtered.filter(cert =>
-        cert.eventDate && new Date(cert.eventDate) >= dateFrom
-      );
-    }
+    // Reset to page 1 when filter changes
+    this.currentPage = 1;
 
-    // סינון לפי תאריך עד
-    if (this.filterDateTo) {
-      const dateTo = new Date(this.filterDateTo);
-      filtered = filtered.filter(cert =>
-        cert.eventDate && new Date(cert.eventDate) <= dateTo
-      );
-    }
-
-    // חיפוש לפי שם תורם (שם פרטי, משפחה, עברי ואנגלי)
-    if (this.donorSearchText && this.donorSearchText.trim()) {
-      const searchLower = this.donorSearchText.toLowerCase().trim();
-      filtered = filtered.filter(cert => {
-        if (!cert.donor) return false;
-        const donor = cert.donor;
-        return (
-          donor.firstName?.toLowerCase().includes(searchLower) ||
-          donor.lastName?.toLowerCase().includes(searchLower) ||
-          donor.fullName?.toLowerCase().includes(searchLower) ||
-          (donor.firstName + ' ' + donor.lastName)?.toLowerCase().includes(searchLower)
-        );
-      });
-    }
-
-    this.certificates = filtered;
+    // Debounce the filter change
+    this.filterTimeout = setTimeout(() => {
+      this.loadCertificates();
+    }, 300);
   }
 
   async openCreateModal() {
@@ -206,7 +218,7 @@ export class CertificatesComponent implements OnInit, OnDestroy {
     if (this.filterFromParasha && !this.filterToParasha) {
       this.filterToParasha = this.filterFromParasha;
     }
-    // Note: Parasha filtering will work once the Certificate entity has a parasha field
+    this.onFilterChange();
   }
 
   onToParashaChange() {
@@ -214,7 +226,150 @@ export class CertificatesComponent implements OnInit, OnDestroy {
     if (this.filterToParasha && !this.filterFromParasha) {
       this.filterFromParasha = this.filterToParasha;
     }
-    // Note: Parasha filtering will work once the Certificate entity has a parasha field
+    this.onFilterChange();
+  }
+
+  // Pagination methods
+  async goToPage(page: number) {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+      await this.loadCertificates();
+    }
+  }
+
+  async nextPage() {
+    if (this.currentPage < this.totalPages) {
+      this.currentPage++;
+      await this.loadCertificates();
+    }
+  }
+
+  async previousPage() {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+      await this.loadCertificates();
+    }
+  }
+
+  async firstPage() {
+    this.currentPage = 1;
+    await this.loadCertificates();
+  }
+
+  async lastPage() {
+    this.currentPage = this.totalPages;
+    await this.loadCertificates();
+  }
+
+  getPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxPagesToShow = 5;
+
+    if (this.totalPages <= maxPagesToShow) {
+      for (let i = 1; i <= this.totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      const halfWindow = Math.floor(maxPagesToShow / 2);
+      let startPage = Math.max(1, this.currentPage - halfWindow);
+      let endPage = Math.min(this.totalPages, startPage + maxPagesToShow - 1);
+
+      if (endPage - startPage < maxPagesToShow - 1) {
+        startPage = Math.max(1, endPage - maxPagesToShow + 1);
+      }
+
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(i);
+      }
+    }
+
+    return pages;
+  }
+
+  // Sorting methods
+  async loadUserSettings() {
+    try {
+      const userRepo = remult.repo(User);
+      const userId = remult.user?.id;
+      if (userId) {
+        const user = await userRepo.findId(userId);
+        if (user) {
+          this.currentUser = user;
+          // Load saved sort settings
+          if (this.currentUser?.settings?.certificateList?.sort) {
+            this.sortColumns = this.currentUser.settings.certificateList.sort;
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error loading user settings:', error);
+    }
+  }
+
+  async saveSortSettings() {
+    if (!this.currentUser) return;
+
+    try {
+      if (!this.currentUser.settings) {
+        this.currentUser.settings = {} as any;
+      }
+      if (this.currentUser.settings && !this.currentUser.settings.certificateList) {
+        this.currentUser.settings.certificateList = {};
+      }
+      if (this.currentUser.settings && this.currentUser.settings.certificateList) {
+        this.currentUser.settings.certificateList.sort = this.sortColumns;
+      }
+
+      await remult.repo(User).save(this.currentUser);
+    } catch (error) {
+      console.error('Error saving sort settings:', error);
+    }
+  }
+
+  async toggleSort(field: string, event: MouseEvent) {
+    if (event.ctrlKey || event.metaKey) {
+      // CTRL/CMD pressed - multi-column sort
+      const existingIndex = this.sortColumns.findIndex(s => s.field === field);
+      if (existingIndex >= 0) {
+        const current = this.sortColumns[existingIndex];
+        if (current.direction === 'asc') {
+          this.sortColumns[existingIndex].direction = 'desc';
+        } else {
+          this.sortColumns.splice(existingIndex, 1);
+        }
+      } else {
+        this.sortColumns.push({ field, direction: 'asc' });
+      }
+    } else {
+      // Single column sort
+      const existing = this.sortColumns.find(s => s.field === field);
+      if (existing && this.sortColumns.length === 1) {
+        existing.direction = existing.direction === 'asc' ? 'desc' : 'asc';
+      } else {
+        this.sortColumns = [{ field, direction: 'asc' }];
+      }
+    }
+
+    // Reload from server with new sort
+    await this.loadCertificates();
+    this.saveSortSettings();
+  }
+
+  getSortIcon(field: string): string {
+    const sortIndex = this.sortColumns.findIndex(s => s.field === field);
+    if (sortIndex === -1) return '';
+
+    const sort = this.sortColumns[sortIndex];
+    const arrow = sort.direction === 'asc' ? '↑' : '↓';
+
+    if (this.sortColumns.length > 1) {
+      return `${arrow}${sortIndex + 1}`;
+    }
+    return arrow;
+  }
+
+  isSorted(field: string): boolean {
+    return this.sortColumns.some(s => s.field === field);
   }
 
 }

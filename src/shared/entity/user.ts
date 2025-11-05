@@ -121,6 +121,9 @@ export class User extends IdEntity {
       sort?: Array<{ field: string; direction: 'asc' | 'desc' }>;
       searchTerm?: string;
     };
+    certificateList?: {
+      sort?: Array<{ field: string; direction: 'asc' | 'desc' }>;
+    };
   };
 
   @Fields.number({

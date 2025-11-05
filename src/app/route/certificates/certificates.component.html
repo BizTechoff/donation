@@ -33,7 +33,7 @@
     <div class="filter-row">
       <div class="filter-group">
         <label>{{ (i18n.terms$ | async)?.certificateType }}</label>
-        <select class="form-control" [(ngModel)]="filterCertificateType" (ngModelChange)="filterCertificates()">
+        <select class="form-control" [(ngModel)]="filterCertificateType" (ngModelChange)="onFilterChange()">
           <option value="">{{ (i18n.terms$ | async)?.everything }}</option>
           <option value="memorial">{{ (i18n.terms$ | async)?.memorialCertificate }}</option>
           <option value="memorialDay">{{ (i18n.terms$ | async)?.memorialDay }}</option>
@@ -42,12 +42,12 @@
 
       <div class="filter-group">
         <label>{{ (i18n.terms$ | async)?.dateFromFilter }}</label>
-        <input type="date" class="form-control" [(ngModel)]="filterDateFrom" (ngModelChange)="filterCertificates()">
+        <input type="date" class="form-control" [(ngModel)]="filterDateFrom" (ngModelChange)="onFilterChange()">
       </div>
 
       <div class="filter-group">
         <label>{{ (i18n.terms$ | async)?.dateToFilter }}</label>
-        <input type="date" class="form-control" [(ngModel)]="filterDateTo" (ngModelChange)="filterCertificates()">
+        <input type="date" class="form-control" [(ngModel)]="filterDateTo" (ngModelChange)="onFilterChange()">
       </div>
 
       <div class="filter-group">
@@ -80,15 +80,30 @@
   <!-- CONTENT: Main scrollable area -->
   <div class="module-content">
 
+    <!-- Loading overlay -->
+    <div class="loading-overlay" *ngIf="loading">
+      <div class="spinner">טוען...</div>
+    </div>
+
     <div class="certificates-grid">
     <div class="grid-header">
-      <div class="grid-col">{{ (i18n.terms$ | async)?.donorRecipient }}</div>
-      <div class="grid-col">{{ (i18n.terms$ | async)?.certificateTypeHeader }}</div>
-      <!-- <div class="grid-col">{{ (i18n.terms$ | async)?.creationDate }}</div> -->
-      <div class="grid-col">{{ (i18n.terms$ | async)?.eventDate }}</div>
-      <div class="grid-col">{{ (i18n.terms$ | async)?.amountEvent }}</div>
+      <div class="grid-col sortable" [class.sorted]="isSorted('recipientName')" (click)="toggleSort('recipientName', $event)">
+        {{ (i18n.terms$ | async)?.donorRecipient }}
+        <span class="sort-icon" *ngIf="getSortIcon('recipientName')">{{ getSortIcon('recipientName') }}</span>
+      </div>
+      <div class="grid-col sortable" [class.sorted]="isSorted('type')" (click)="toggleSort('type', $event)">
+        {{ (i18n.terms$ | async)?.certificateTypeHeader }}
+        <span class="sort-icon" *ngIf="getSortIcon('type')">{{ getSortIcon('type') }}</span>
+      </div>
+      <div class="grid-col sortable" [class.sorted]="isSorted('eventDate')" (click)="toggleSort('eventDate', $event)">
+        {{ (i18n.terms$ | async)?.eventDate }}
+        <span class="sort-icon" *ngIf="getSortIcon('eventDate')">{{ getSortIcon('eventDate') }}</span>
+      </div>
+      <div class="grid-col sortable" [class.sorted]="isSorted('amount')" (click)="toggleSort('amount', $event)">
+        {{ (i18n.terms$ | async)?.amountEvent }}
+        <span class="sort-icon" *ngIf="getSortIcon('amount')">{{ getSortIcon('amount') }}</span>
+      </div>
       <div class="grid-col">{{ (i18n.terms$ | async)?.mainText }}</div>
-      <!-- <div class="grid-col">{{ (i18n.terms$ | async)?.statusHeaderCert }}</div> -->
       <div class="grid-col">{{ (i18n.terms$ | async)?.actionsHeaderCert }}</div>
     </div>
 
@@ -131,10 +146,49 @@
 
   <!-- FOOTER: Sticky bottom -->
   <div class="module-footer">
-    <div class="pagination">
-      <button class="btn-page">{{ (i18n.terms$ | async)?.previousPage }}</button>
-      <span class="page-info">{{ (i18n.terms$ | async)?.pageOf?.replace('{current}', '1')?.replace('{total}', '6') }}</span>
-      <button class="btn-page">{{ (i18n.terms$ | async)?.nextPage }}</button>
+    <div class="pagination-controls">
+      <button
+        class="btn-page"
+        (click)="firstPage()"
+        [disabled]="currentPage === 1 || loading">
+        ⏮ ראשון
+      </button>
+
+      <button
+        class="btn-page"
+        (click)="previousPage()"
+        [disabled]="currentPage === 1 || loading">
+        ← {{ (i18n.terms$ | async)?.previousPage }}
+      </button>
+
+      <div class="page-numbers">
+        <button
+          *ngFor="let page of getPageNumbers()"
+          class="btn-page-number"
+          [class.active]="page === currentPage"
+          (click)="goToPage(page)"
+          [disabled]="loading">
+          {{page}}
+        </button>
+      </div>
+
+      <button
+        class="btn-page"
+        (click)="nextPage()"
+        [disabled]="currentPage === totalPages || loading">
+        {{ (i18n.terms$ | async)?.nextPage }} →
+      </button>
+
+      <button
+        class="btn-page"
+        (click)="lastPage()"
+        [disabled]="currentPage === totalPages || loading">
+        אחרון ⏭
+      </button>
+    </div>
+
+    <div class="pagination-info">
+      <span>מציג {{(currentPage - 1) * pageSize + 1}} - {{Math.min(currentPage * pageSize, totalCount)}} מתוך {{totalCount}}</span>
     </div>
   </div>
 
