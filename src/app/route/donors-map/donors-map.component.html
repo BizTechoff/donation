@@ -56,7 +56,7 @@
     <div class="filters-section">
       <div class="filter-row">
         <!-- Status Filter -->
-        <div class="filter-group">
+        <!-- <div class="filter-group">
           <label>{{ i18n.terms.filterByStatus || 'סינון לפי סטטוס' }}</label>
           <div class="status-chips">
             <div *ngFor="let option of statusOptions"
@@ -67,7 +67,7 @@
               <span>{{ option.label }}</span>
             </div>
           </div>
-        </div>
+        </div> -->
 
         <!-- Search Filter -->
         <div class="filter-group">
@@ -128,21 +128,12 @@
       <div class="map-legend">
         <h4>{{ i18n.terms.legend }}</h4>
         <div class="legend-items">
-          <div class="legend-item">
-            <div class="legend-color active"></div>
-            <span>{{ i18n.terms.activeDonor }}</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-color inactive"></div>
-            <span>{{ i18n.terms.inactiveDonor }}</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-color high-donor"></div>
-            <span>{{ i18n.terms.highDonor }}</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-color recent-donor"></div>
-            <span>{{ i18n.terms.recentDonor }}</span>
+          <div *ngFor="let option of statusOptions"
+               class="legend-item"
+               [class.selected]="mapFilters.statusFilter.includes(option.value)"
+               (click)="toggleStatusFilter(option.value)">
+            <div class="legend-color" [style.background-color]="option.color"></div>
+            <span>{{ option.label }}</span>
           </div>
         </div>
       </div>
