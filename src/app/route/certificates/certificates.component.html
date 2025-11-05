@@ -66,13 +66,13 @@
         </select>
       </div>
 
-      <div class="filter-group">
+      <!-- <div class="filter-group">
         <label>{{ (i18n.terms$ | async)?.toParasha }}</label>
         <select class="form-control" [(ngModel)]="filterToParasha" (ngModelChange)="onToParashaChange()">
           <option value="">{{ (i18n.terms$ | async)?.everything }}</option>
           <option *ngFor="let parasha of parashotList" [value]="parasha">{{ parasha }}</option>
         </select>
-      </div>
+      </div> -->
     </div>
   </div>
   </div>

@@ -11,7 +11,7 @@ export class ReminderController {
    * Find reminders with filters, pagination, and sorting
    */
   @BackendMethod({ allowed: Allow.authenticated })
-  static async findFiltered(
+  static async findFilteredReminders(
     filters: {
       countryIds?: string[]
       dateFrom?: Date
@@ -76,7 +76,7 @@ export class ReminderController {
    * Count reminders with filters
    */
   @BackendMethod({ allowed: Allow.authenticated })
-  static async countFiltered(
+  static async countFilteredReminders(
     filters: {
       countryIds?: string[]
       dateFrom?: Date

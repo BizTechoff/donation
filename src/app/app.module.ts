@@ -3,7 +3,7 @@ import { BrowserModule } from '@angular/platform-browser'
 import { CommonModule } from '@angular/common'
 import { AppRoutingModule } from './app-routing.module'
 import { AppComponent } from './app.component'
-import { FormsModule } from '@angular/forms'
+import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { MatSidenavModule } from '@angular/material/sidenav'
 import { MatListModule } from '@angular/material/list'
 import { MatToolbarModule } from '@angular/material/toolbar'
@@ -169,6 +169,7 @@ import { SaveTargetAudienceModalComponent } from './routes/modals/save-target-au
     SharedComponentsModule,
     AppRoutingModule,
     FormsModule,
+    ReactiveFormsModule,
     MatSidenavModule,
     MatListModule,
     MatToolbarModule,

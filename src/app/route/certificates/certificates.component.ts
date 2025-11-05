@@ -1,15 +1,13 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { Certificate } from '../../../shared/entity/certificate';
-import { Donor } from '../../../shared/entity/donor';
-import { User } from '../../../shared/entity/user';
-import { repo, remult } from 'remult';
-import { I18nService } from '../../i18n/i18n.service';
-import { UIToolsService } from '../../common/UIToolsService';
-import { ReminderDetailsModalComponent } from '../../routes/modals/reminder-details-modal/reminder-details-modal.component';
-import { GlobalFilterService } from '../../services/global-filter.service';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { remult, repo } from 'remult';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { CertificateController, CertificateFilters } from '../../../shared/controllers/certificate.controller';
+import { Certificate } from '../../../shared/entity/certificate';
+import { User } from '../../../shared/entity/user';
+import { UIToolsService } from '../../common/UIToolsService';
+import { I18nService } from '../../i18n/i18n.service';
+import { GlobalFilterService } from '../../services/global-filter.service';
 
 @Component({
   selector: 'app-certificates',

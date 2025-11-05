@@ -25,7 +25,7 @@ export class ReminderService {
     pageSize: number = 50,
     sortColumns: Array<{ field: string; direction: 'asc' | 'desc' }> = []
   ): Promise<Reminder[]> {
-    return await ReminderController.findFiltered(filters, page, pageSize, sortColumns);
+    return await ReminderController.findFilteredReminders(filters, page, pageSize, sortColumns);
   }
 
   /**
@@ -39,7 +39,7 @@ export class ReminderService {
       searchTerm?: string
     } = {}
   ): Promise<number> {
-    return await ReminderController.countFiltered(filters);
+    return await ReminderController.countFilteredReminders(filters);
   }
 
   /**

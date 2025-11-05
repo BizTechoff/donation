@@ -44,7 +44,7 @@ export class DonorService {
   ): Promise<Donor[]> {
     const globalFilters = this.globalFilterService.currentFilters;
     const combinedFilters = { ...globalFilters, ...additionalFilters };
-    return await DonorController.findFiltered(combinedFilters, page, pageSize, sortColumns);
+    return await DonorController.findFilteredDonors(combinedFilters, page, pageSize, sortColumns);
   }
 
   async findById(id: string): Promise<Donor | null> {
@@ -65,7 +65,7 @@ export class DonorService {
   async countFiltered(additionalFilters?: Partial<GlobalFilters>): Promise<number> {
     const globalFilters = this.globalFilterService.currentFilters;
     const combinedFilters = { ...globalFilters, ...additionalFilters };
-    return await DonorController.countFiltered(combinedFilters);
+    return await DonorController.countFilteredDonors(combinedFilters);
   }
 
   /**

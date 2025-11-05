@@ -151,12 +151,12 @@ export class DonorController {
    */
   @BackendMethod({ allowed: Allow.authenticated })
   static async findFilteredIds(filters: GlobalFilters): Promise<string[]> {
-    const donors = await DonorController.findFiltered(filters);
+    const donors = await DonorController.findFilteredDonors(filters);
     return donors.map(d => d.id);
   }
 
   @BackendMethod({ allowed: Allow.authenticated })
-  static async findFiltered(
+  static async findFilteredDonors(
     filters: GlobalFilters,
     page?: number,
     pageSize?: number,
@@ -252,7 +252,7 @@ export class DonorController {
   }
 
   @BackendMethod({ allowed: Allow.authenticated })
-  static async countFiltered(filters: GlobalFilters): Promise<number> {
+  static async countFilteredDonors(filters: GlobalFilters): Promise<number> {
     let whereClause: any = { isActive: true };
 
     // Apply country filter by country ID
