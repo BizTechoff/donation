@@ -244,6 +244,29 @@ export class HebrewDateController {
   }
 
   /**
+   * Parse Hebrew year string back to number
+   * @param hebrewYearStr Hebrew year string (e.g., 'תשפ"ה')
+   * @returns Hebrew year number (e.g., 5785)
+   */
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async parseHebrewYear(hebrewYearStr: string): Promise<number> {
+    // Try to find a matching year by iterating through recent years
+    // This is a simple approach that works for recent years
+    const currentYear = new HDate().getFullYear()
+
+    // Search in range of current year ± 20 years
+    for (let year = currentYear + 20; year >= currentYear - 20; year--) {
+      const formatted = await HebrewDateController.formatHebrewYear(year)
+      if (formatted === hebrewYearStr) {
+        return year
+      }
+    }
+
+    // If not found, throw error
+    throw new Error(`Could not parse Hebrew year: ${hebrewYearStr}`)
+  }
+
+  /**
    * Get month constants for client-side use
    * @returns Object with month constant values
    */
@@ -360,6 +383,29 @@ export class HebrewDateController {
     } catch (e) {
       console.error(`Failed to create Hebrew date: ${day}/${month}/${year}`, e)
       return null
+    }
+  }
+
+  /**
+   * Get Gregorian date range for a Hebrew year
+   * A Hebrew year starts on 1 Tishrei and ends on 29 Elul
+   * @param hebrewYear Hebrew year
+   * @returns Object with start and end Gregorian dates
+   */
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async getHebrewYearDateRange(hebrewYear: number): Promise<{
+    startDate: Date
+    endDate: Date
+  }> {
+    // Hebrew year starts on 1 Tishrei
+    const startHDate = new HDate(1, months.TISHREI, hebrewYear)
+
+    // Hebrew year ends on 29 Elul of the same Hebrew year
+    const endHDate = new HDate(29, months.ELUL, hebrewYear)
+
+    return {
+      startDate: startHDate.greg(),
+      endDate: endHDate.greg()
     }
   }
 

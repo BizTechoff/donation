@@ -101,6 +101,11 @@ export class User extends IdEntity {
     calendar_open_heb_and_eng_parallel: boolean;
     globalFilters?: any; // Store global filter preferences
     sidebarMode?: 'open' | 'close'; // Sidebar state preference
+    currencyRates?: {
+      USD?: number; // Default: 3.7
+      EUR?: number; // Default: 4.0
+      GBP?: number; // Default: 4.5
+    };
     mapSettings?: {
       fullscreen?: boolean;
       filters?: {

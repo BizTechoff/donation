@@ -5,7 +5,11 @@ import { Donor } from '../../../shared/entity/donor';
 import { DonorPlace } from '../../../shared/entity/donor-place';
 import { Campaign } from '../../../shared/entity/campaign';
 import { Blessing } from '../../../shared/entity/blessing';
+import { User } from '../../../shared/entity/user';
+import { HebrewDateController } from '../../../shared/controllers/hebrew-date.controller';
+import { ReportService } from '../../services/report.service';
 import { I18nService } from '../../i18n/i18n.service';
+import { BusyService } from 'common-ui-elements';
 
 interface ChartData {
   label: string;
@@ -53,14 +57,38 @@ interface BlessingReportData {
   campaignName: string;
 }
 
+interface GroupedDonationReport {
+  donorId?: string;
+  donorName: string;
+  donorDetails?: {
+    address?: string;
+    phones?: string[];
+    emails?: string[];
+  };
+  yearlyTotals: {
+    [hebrewYear: string]: {
+      [currency: string]: number;
+    };
+  };
+  actualPayments?: {
+    [hebrewYear: string]: number; // in shekel
+  };
+}
+
+interface CurrencySummary {
+  currency: string;
+  totalAmount: number;
+  totalInShekel: number;
+}
+
+type GroupByOption = 'donor' | 'campaign' | 'paymentMethod' | 'fundraiser';
+
 @Component({
   selector: 'app-reports',
   templateUrl: './reports.component.html',
   styleUrls: ['./reports.component.scss']
 })
 export class ReportsComponent implements OnInit {
-  
-  loading = true;
   dateRange = {
     from: new Date(new Date().getFullYear(), 0, 1), // תחילת השנה
     to: new Date() // היום
@@ -97,18 +125,34 @@ export class ReportsComponent implements OnInit {
   yearlySummaryData: YearlySummaryData[] = [];
   blessingReportData: BlessingReportData[] = [];
 
+  // Grouped donation report data
+  groupedDonationReport: GroupedDonationReport[] = [];
+  currencySummaryData: CurrencySummary[] = [];
+  hebrewYears: string[] = []; // תשפ"א, תשפ"ב, תשפ"ג, תשפ"ד, תשפ"ה
+  currentHebrewYear = 5785; // Will be calculated
+  conversionRates: { [key: string]: number } = {
+    'ILS': 1,
+    'USD': 3.2530,
+    'EUR': 3.7468,
+    'GBP': 4.2582
+  };
+  
   // Filters
   filters = {
     selectedDonor: '',
     selectedDonorType: '',
-    selectedYear: new Date().getFullYear(),
+    selectedYear: 'last4' as string | number, // 'last4' or specific year number
     selectedCampaign: '',
-    selectedCurrency: 'all'
+    selectedCurrency: 'all',
+    groupBy: 'donor' as GroupByOption,
+    showDonorDetails: false,
+    showActualPayments: false,
+    showCurrencySummary: true
   };
 
   // Available options for filters
   availableDonors: Donor[] = [];
-  availableYears: number[] = [];
+  availableYears: string[] = []; // Hebrew years like תשפ"א, תשפ"ב
   availableCampaigns: Campaign[] = [];
   donorTypes = ['אנ"ש', 'תלמידנו', 'קשר אחר'];
   currencies = ['ILS', 'USD', 'EUR'];
@@ -124,28 +168,49 @@ export class ReportsComponent implements OnInit {
   private campaignRepo = remult.repo(Campaign);
   private blessingRepo = remult.repo(Blessing);
 
-  constructor(public i18n: I18nService) {}
+  constructor(
+    public i18n: I18nService,
+    private reportService: ReportService,
+    private busy: BusyService
+  ) {}
 
   async ngOnInit() {
-    await this.loadFilterOptions();
-    await this.loadReportsData();
-    this.loading = false;
+    await this.refreshData();
   }
 
-  async loadReportsData() {
+  async loadCurrentHebrewYear() {
     try {
-      await Promise.all([
-        this.loadGeneralStats(),
-        this.loadMonthlyTrends(),
-        this.loadCampaignAnalysis(),
-        this.loadDonorAnalysis(),
-        this.loadTopPerformers(),
-        this.loadRecentActivity()
-      ]);
+      this.currentHebrewYear = await HebrewDateController.getCurrentHebrewYear();
+      // Generate last 4 Hebrew years (including current): current-3, current-2, current-1, current
+      this.hebrewYears = [];
+      for (let i = 3; i >= 0; i--) {
+        const year = this.currentHebrewYear - i;
+        const formatted = await HebrewDateController.formatHebrewYear(year);
+        this.hebrewYears.push(formatted);
+      }
     } catch (error) {
-      console.error('Error loading reports data:', error);
+      console.error('Error loading Hebrew year:', error);
+      // Fallback
+      this.hebrewYears = ['תשפ"ג', 'תשפ"ד', 'תשפ"ה', 'תשפ"ו'];
     }
   }
+
+  async loadCurrencyRates() {
+    try {
+      const currentUser = await remult.repo(User).findId(remult.user!.id!);
+      if (currentUser?.settings?.currencyRates) {
+        this.conversionRates = {
+          'ILS': 1,
+          'USD': currentUser.settings.currencyRates.USD || 3.2530,
+          'EUR': currentUser.settings.currencyRates.EUR || 3.7468,
+          'GBP': currentUser.settings.currencyRates.GBP || 4.2582
+        };
+      }
+    } catch (error) {
+      console.error('Error loading currency rates:', error);
+    }
+  }
+
 
   private async loadGeneralStats() {
     const donations = await this.donationRepo.find();
@@ -324,6 +389,17 @@ export class ReportsComponent implements OnInit {
     return `₪${amount.toLocaleString()}`;
   }
 
+  formatCurrencyWithSymbol(amount: number, currency: string): string {
+    const symbols: { [key: string]: string } = {
+      'ILS': '₪',
+      'USD': '$',
+      'EUR': '€',
+      'GBP': '£'
+    };
+    const symbol = symbols[currency] || currency;
+    return `${symbol}${amount.toLocaleString()}`;
+  }
+
   formatDate(date: Date): string {
     return new Date(date).toLocaleDateString('he-IL');
   }
@@ -338,9 +414,71 @@ export class ReportsComponent implements OnInit {
   }
 
   async refreshData() {
-    this.loading = true;
-    await this.loadReportsData();
-    this.loading = false;
+    await this.busy.doWhileShowingBusy(async () => {
+      try {
+        // שלב 1: טעינת נתוני בסיס (רק אם לא נטענו)
+        await this.loadBaseData();
+
+        // שלב 2: טעינת הדוח המתאים
+        await this.loadActiveReport();
+
+      } catch (error) {
+        console.error('Error refreshing data:', error);
+      }
+    });
+  }
+
+  /**
+   * טעינת נתוני בסיס - שנה עברית, מטבעות, אפשרויות סינון
+   * נטען רק פעם אחת בהתחלה
+   */
+  private async loadBaseData() {
+    // בדיקה אם נתוני בסיס כבר נטענו
+    const isBaseDataLoaded = this.currentHebrewYear > 0 &&
+                              this.hebrewYears.length > 0 &&
+                              this.availableDonors.length > 0;
+
+    if (isBaseDataLoaded) {
+      console.log('📦 Base data already loaded, skipping...');
+      return;
+    }
+
+    console.log('📦 Loading base data...');
+    await Promise.all([
+      this.loadCurrentHebrewYear(),
+      this.loadCurrencyRates(),
+      this.loadFilterOptions()
+    ]);
+    console.log('✅ Base data loaded successfully');
+  }
+
+  /**
+   * טעינת הדוח הפעיל בהתאם לבחירת המשתמש
+   */
+  private async loadActiveReport() {
+    console.log(`📊 Loading active report: ${this.activeReport}`);
+
+    if (this.activeReport === 'general') {
+      await this.loadGeneralReportData();
+    } else {
+      await this.loadSpecificReportDataWithoutLoading();
+    }
+
+    console.log(`✅ Report '${this.activeReport}' loaded successfully`);
+  }
+
+  /**
+   * טעינת נתוני דוח כללי
+   */
+  private async loadGeneralReportData() {
+    await Promise.all([
+      this.loadGeneralStats(),
+      this.loadMonthlyTrends(),
+      this.loadCampaignAnalysis(),
+      this.loadDonorAnalysis(),
+      this.loadTopPerformers(),
+      this.loadRecentActivity()
+    ]);
   }
 
   onDateRangeChange() {
@@ -377,91 +515,134 @@ export class ReportsComponent implements OnInit {
         orderBy: { name: 'asc' }
       });
 
-      // Generate available years from donations data
+      // Generate available Hebrew years from donations data
       const donations = await this.donationRepo.find({
         orderBy: { donationDate: 'desc' }
       });
-      
-      const years = new Set(donations.map(d => new Date(d.donationDate).getFullYear()));
-      this.availableYears = Array.from(years).sort((a, b) => b - a);
+
+      const hebrewYearsSet = new Set<number>();
+      for (const donation of donations) {
+        const hebrewDate = await HebrewDateController.convertGregorianToHebrew(donation.donationDate);
+        hebrewYearsSet.add(hebrewDate.year);
+      }
+
+      // Convert to Hebrew formatted strings and sort descending
+      const sortedYears = Array.from(hebrewYearsSet).sort((a, b) => b - a);
+      this.availableYears = [];
+      for (const year of sortedYears) {
+        const formatted = await HebrewDateController.formatHebrewYear(year);
+        this.availableYears.push(formatted);
+      }
     } catch (error) {
       console.error('Error loading filter options:', error);
     }
   }
 
-  switchReport(reportType: 'general' | 'donations' | 'payments' | 'yearly' | 'blessings') {
+  async switchReport(reportType: 'general' | 'donations' | 'payments' | 'yearly' | 'blessings') {
     this.activeReport = reportType;
-    this.loadSpecificReportData();
+    await this.refreshData();
   }
 
-  async loadSpecificReportData() {
-    this.loading = true;
-    try {
-      switch (this.activeReport) {
-        case 'donations':
-          await this.loadDonationsReport();
-          break;
-        case 'payments':
-          await this.loadPaymentsReport();
-          break;
-        case 'yearly':
-          await this.loadYearlySummaryReport();
-          break;
-        case 'blessings':
-          await this.loadBlessingsReport();
-          break;
-      }
-    } catch (error) {
-      console.error('Error loading specific report data:', error);
-    } finally {
-      this.loading = false;
+  /**
+   * טעינת דוחות ספציפיים (תרומות, תשלומים, שנתי, ברכות)
+   */
+  private async loadSpecificReportDataWithoutLoading() {
+    switch (this.activeReport) {
+      case 'donations':
+        await this.loadDonationsReport();
+        break;
+      case 'payments':
+        await this.loadPaymentsReport();
+        break;
+      case 'yearly':
+        await this.loadYearlySummaryReport();
+        break;
+      case 'blessings':
+        await this.loadBlessingsReport();
+        break;
     }
   }
 
   async loadDonationsReport() {
-    let where: any = {};
-    
-    if (this.filters.selectedDonor) {
-      where.donorId = this.filters.selectedDonor;
+    // Load grouped report by default (new behavior)
+    await this.loadGroupedDonationsReport();
+  }
+
+  async loadGroupedDonationsReport() {
+    try {
+      console.log('🔍 CLIENT: Requesting report with filters:', {
+        groupBy: this.filters.groupBy,
+        selectedYear: this.filters.selectedYear,
+        selectedDonor: this.filters.selectedDonor,
+        selectedCampaign: this.filters.selectedCampaign,
+        selectedDonorType: this.filters.selectedDonorType
+      });
+
+      const reportResponse = await this.reportService.getGroupedDonationsReport({
+        groupBy: this.filters.groupBy,
+        showDonorDetails: this.filters.showDonorDetails,
+        showActualPayments: this.filters.showActualPayments,
+        showCurrencySummary: this.filters.showCurrencySummary,
+        selectedDonor: this.filters.selectedDonor || undefined,
+        selectedCampaign: this.filters.selectedCampaign || undefined,
+        selectedDonorType: this.filters.selectedDonorType || undefined,
+        selectedYear: this.filters.selectedYear,
+        conversionRates: this.conversionRates
+      });
+
+      console.log('✅ CLIENT: Received report response:', {
+        hebrewYears: reportResponse.hebrewYears,
+        reportDataLength: reportResponse.reportData.length,
+        currencySummaryLength: reportResponse.currencySummary.length,
+        totalInShekel: reportResponse.totalInShekel
+      });
+
+      // Update component data with response
+      this.hebrewYears = reportResponse.hebrewYears;
+      this.groupedDonationReport = reportResponse.reportData;
+      this.currencySummaryData = reportResponse.currencySummary;
+
+      console.log('📊 CLIENT: Component data updated:', {
+        hebrewYears: this.hebrewYears,
+        groupedReportLength: this.groupedDonationReport.length,
+        currencySummaryLength: this.currencySummaryData.length
+      });
+
+    } catch (error) {
+      console.error('❌ CLIENT: Error loading grouped donations report:', error);
     }
-    
-    if (this.filters.selectedCampaign) {
-      where.campaignId = this.filters.selectedCampaign;
+  }
+
+
+  getTotalInShekel(): number {
+    return this.currencySummaryData.reduce((sum, curr) => sum + curr.totalInShekel, 0);
+  }
+
+  getYearTotal(yearlyTotals: { [hebrewYear: string]: { [currency: string]: number } }, hebrewYear: string): number {
+    const yearData = yearlyTotals[hebrewYear];
+    if (!yearData) return 0;
+
+    let total = 0;
+    for (const [currency, amount] of Object.entries(yearData)) {
+      total += amount * (this.conversionRates[currency] || 1);
+    }
+    return total;
+  }
+
+  formatYearTotal(yearlyTotals: { [hebrewYear: string]: { [currency: string]: number } }, hebrewYear: string): string {
+    const yearData = yearlyTotals[hebrewYear];
+    if (!yearData) return '0';
+
+    const currencies = Object.entries(yearData);
+    if (currencies.length === 0) return '0';
+    if (currencies.length === 1) {
+      const [currency, amount] = currencies[0];
+      return this.formatCurrencyWithSymbol(amount, currency);
     }
 
-    if (this.filters.selectedYear) {
-      const yearStart = new Date(this.filters.selectedYear, 0, 1);
-      const yearEnd = new Date(this.filters.selectedYear, 11, 31);
-      where.donationDate = { $gte: yearStart, $lte: yearEnd };
-    }
-
-    const donations = await this.donationRepo.find({
-      where,
-      include: {
-        donor: true,
-        campaign: true
-      },
-      orderBy: { donationDate: 'desc' }
-    });
-
-    this.donationReportData = donations
-      .filter(d => {
-        if (this.filters.selectedDonorType && d.donor) {
-          return this.checkDonorType(d.donor, this.filters.selectedDonorType);
-        }
-        return true;
-      })
-      .map(donation => ({
-        id: donation.id!,
-        donorName: donation.donor?.displayName || 'תורם אלמוני',
-        donorType: this.getDonorTypeString(donation.donor),
-        amount: donation.amount,
-        currency: donation.currency,
-        date: donation.donationDate,
-        campaign: donation.campaign?.name || 'ללא קמפיין',
-        year: new Date(donation.donationDate).getFullYear(),
-        attachedFiles: [] // TODO: Add attachment support
-      }));
+    // Multiple currencies - show in shekel
+    const total = this.getYearTotal(yearlyTotals, hebrewYear);
+    return `₪${total.toLocaleString()}`;
   }
 
   async loadPaymentsReport() {
@@ -495,10 +676,9 @@ export class ReportsComponent implements OnInit {
         // Simple conversion to shekel (would need real exchange rates)
         const conversionRates: { [key: string]: number } = {
           'ILS': 1,
-          'USD': 3.7,
-          'EUR': 4.0
+          'USD': 4.2582,
+          'EUR': 3.7468
         };
-
         let totalInShekel = 0;
         Object.entries(currencies).forEach(([currency, amount]) => {
           totalInShekel += amount * (conversionRates[currency] || 1);
@@ -551,9 +731,8 @@ export class ReportsComponent implements OnInit {
   }
 
   async applyFilters() {
-    if (this.activeReport !== 'general') {
-      await this.loadSpecificReportData();
-    }
+    // רענון הדוח הנוכחי עם הפילטרים החדשים
+    await this.refreshData();
   }
 
   async printReport() {
