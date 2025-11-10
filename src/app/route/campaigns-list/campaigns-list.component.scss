@@ -240,6 +240,7 @@
   display: grid;
   grid-template-columns: 2fr 1.5fr 1.5fr 1.5fr 1fr 1fr 1fr;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding-left: 10px; // Compensate for scrollbar width
 
   .grid-col {
     padding: 15px 12px;
@@ -308,6 +309,7 @@
     grid-template-columns: 2fr 1.5fr 1.5fr 1.5fr 1fr 1fr 1fr;
     border-bottom: 1px solid #ecf0f1;
     transition: all 0.2s ease;
+    padding-left: 10px; // Match header padding for scrollbar
 
     &:hover {
       background-color: #f7f9fc;

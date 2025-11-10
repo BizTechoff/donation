@@ -1,0 +1,80 @@
+<div class="audience-selection-modal">
+  <h2 mat-dialog-title>
+    {{ args.title || 'בחירת קהל יעד' }}
+    <button mat-icon-button class="close-button" (click)="closeDialog()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </h2>
+
+  <mat-dialog-content>
+    <!-- Search and Create New -->
+    <div class="search-section">
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-label>חיפוש</mat-label>
+        <input matInput [(ngModel)]="searchTerm" placeholder="חפש לפי שם או תיאור...">
+        <button mat-icon-button matSuffix *ngIf="searchTerm" (click)="clearSearch()">
+          <mat-icon>clear</mat-icon>
+        </button>
+        <mat-icon matPrefix>search</mat-icon>
+      </mat-form-field>
+
+      <button mat-raised-button color="accent" (click)="createNewAudience()">
+        <mat-icon>add</mat-icon>
+        קהל יעד חדש
+      </button>
+    </div>
+
+    <!-- Audiences List -->
+    <div class="audiences-list">
+      <div *ngIf="getFilteredAudiences().length === 0" class="no-results">
+        לא נמצאו קהלי יעד
+      </div>
+
+      <mat-list>
+        <mat-list-item
+          *ngFor="let audience of getFilteredAudiences()"
+          class="audience-item"
+          [class.selected]="isAudienceSelected(audience)"
+          (click)="selectAudience(audience)">
+
+          <div class="audience-content">
+            <div class="audience-header">
+              <mat-icon *ngIf="args.multiSelect" class="checkbox-icon">
+                {{ isAudienceSelected(audience) ? 'check_box' : 'check_box_outline_blank' }}
+              </mat-icon>
+              <span class="audience-name">{{ audience.name }}</span>
+              <span class="donor-count">({{ audience.donorCount || 0 }} תורמים)</span>
+            </div>
+
+            <div class="audience-description" *ngIf="audience.description">
+              {{ audience.description }}
+            </div>
+
+            <div class="audience-meta">
+              <span class="created-date">נוצר: {{ audience.createdDate | date:'short' }}</span>
+            </div>
+
+            <div class="audience-actions" (click)="$event.stopPropagation()">
+              <button mat-icon-button (click)="editAudience(audience, $event)" matTooltip="עריכה">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button mat-icon-button (click)="deleteAudience(audience, $event)" matTooltip="מחיקה" color="warn">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          </div>
+        </mat-list-item>
+      </mat-list>
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions *ngIf="args.multiSelect">
+    <button mat-raised-button color="primary" (click)="finishMultiSelect()">
+      <mat-icon>done</mat-icon>
+      בחר ({{ selectedAudiences.length }})
+    </button>
+    <button mat-button (click)="closeDialog()">
+      ביטול
+    </button>
+  </mat-dialog-actions>
+</div>

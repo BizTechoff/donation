@@ -53,6 +53,26 @@
   &.amount-field {
     width: calc(50% - 8px);
   }
+
+  &.clickable-field {
+    cursor: pointer;
+
+    input {
+      cursor: pointer;
+    }
+
+    mat-icon {
+      pointer-events: none;
+    }
+
+    .clear-filter-btn {
+      pointer-events: all;
+
+      &:hover {
+        background-color: rgba(0, 0, 0, 0.04);
+      }
+    }
+  }
 }
 
 .date-range-container,

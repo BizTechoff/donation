@@ -1,10 +1,25 @@
 <div class="modal-backdrop" (click)="closeDialog()">
   <div class="modal-content" (click)="$event.stopPropagation()">
     <div class="modal-header">
-      <h2>{{ args.title || 'בחר שותף לתרומה' }}</h2>
-      <button class="close-btn" (click)="closeDialog()" title="סגור">
-        <mat-icon>close</mat-icon>
-      </button>
+      <div class="header-content">
+        <h2>{{ args.title || 'בחר שותף לתרומה' }}</h2>
+        <div class="selection-counter" *ngIf="args.multiSelect && selectedDonors.length > 0">
+          <mat-icon>check_circle</mat-icon>
+          <span>{{ selectedDonors.length }} נבחרו</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="btn-finish-selection"
+                *ngIf="args.multiSelect && selectedDonors.length > 0"
+                (click)="finishMultiSelect()"
+                title="סיים בחירה">
+          <mat-icon>done_all</mat-icon>
+          סיים בחירה
+        </button>
+        <button class="close-btn" (click)="closeDialog()" title="סגור">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
     </div>
 
     <div class="modal-body">
@@ -27,19 +42,13 @@
         </button>
       </div>
 
-      <!-- Loading state -->
-      <div class="loading-section" *ngIf="loading">
-        <mat-icon class="loading-icon">hourglass_empty</mat-icon>
-        <p>טוען תורמים...</p>
-      </div>
-
       <!-- Donors List -->
-      <div class="donors-list-section" *ngIf="!loading">
+      <div class="donors-list-section">
         <div class="donors-list" *ngIf="getFilteredDonors().length > 0">
           <div class="donor-item"
                *ngFor="let donor of getFilteredDonors()"
                (click)="selectDonor(donor)"
-               [class.selected]="selectedDonor?.id === donor.id">
+               [class.selected]="args.multiSelect ? isDonorSelected(donor) : selectedDonor?.id === donor.id">
             <div class="donor-item-content">
               <div class="donor-icon-wrapper">
                 <mat-icon>person</mat-icon>
@@ -62,8 +71,13 @@
                 </div>
               </div>
             </div>
-            <div class="select-indicator">
+            <div class="select-indicator" *ngIf="!args.multiSelect">
               <mat-icon>check_circle</mat-icon>
+            </div>
+            <div class="multi-select-indicator" *ngIf="args.multiSelect">
+              <div class="checkbox-wrapper" [class.checked]="isDonorSelected(donor)">
+                <mat-icon *ngIf="isDonorSelected(donor)">check</mat-icon>
+              </div>
             </div>
           </div>
         </div>

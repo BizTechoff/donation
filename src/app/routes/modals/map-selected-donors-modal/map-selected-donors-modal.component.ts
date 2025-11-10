@@ -4,7 +4,8 @@ import { DialogConfig, openDialog } from 'common-ui-elements';
 import { I18nService } from '../../../i18n/i18n.service';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { DonorMapData } from '../../../../shared/controllers/donor-map.controller';
-import { SaveTargetAudienceModalComponent } from '../save-target-audience-modal/save-target-audience-modal.component';
+import { Donor } from '../../../../shared/entity/donor';
+import { DonorService } from '../../../services/donor.service';
 
 export interface MapSelectedDonorsModalArgs {
   donors: DonorMapData[];
@@ -31,7 +32,8 @@ export class MapSelectedDonorsModalComponent implements OnInit {
   constructor(
     public i18n: I18nService,
     private ui: UIToolsService,
-    public dialogRef: MatDialogRef<any>
+    public dialogRef: MatDialogRef<any>,
+    private donorService: DonorService
   ) {}
 
   async ngOnInit() {
@@ -70,6 +72,39 @@ export class MapSelectedDonorsModalComponent implements OnInit {
       // Donation added successfully
       this.ui.info('התרומה נוספה בהצלחה');
     }
+  }
+
+  // Add donors to the list
+  async addDonors() {
+    // Open donor selection modal
+    const donors = await openDialog(
+      (await import('../donor-selection-modal/donor-selection-modal.component')).DonorSelectionModalComponent,
+      (modal) => {
+        modal.args = {
+          title: 'בחר תורמים להוספה',
+          multiSelect: true,
+          excludeIds: this.selectedDonors.map(d => d.donor.id)
+        };
+      }
+    );
+
+    if (donors && Array.isArray(donors) && donors.length > 0) {
+      // Get donor IDs
+      const donorIds = donors.map((d: Donor) => d.id);
+
+      // Load full donor data with stats
+      const newDonorsData = await this.donorService.loadDonorsMapData(donorIds);
+
+      // Add to existing list
+      this.selectedDonors = [...this.selectedDonors, ...newDonorsData];
+
+      this.ui.info(`נוספו ${donors.length} תורמים`);
+    }
+  }
+
+  // Remove donor from list
+  removeDonor(donorId: string) {
+    this.selectedDonors = this.selectedDonors.filter(d => d.donor.id !== donorId);
   }
 
   // Clear search
@@ -117,29 +152,30 @@ export class MapSelectedDonorsModalComponent implements OnInit {
 
   // Save as target audience
   async saveAsTargetAudience() {
-    const donorIds = this.selectedDonors.map(d => d.donor.id);
+    // Calculate metadata
+    const totalDonations = this.getTotalDonationsSum();
+    const donorCount = this.selectedDonors.length;
 
-    const targetAudience = await openDialog(
-      SaveTargetAudienceModalComponent,
-      (modal) => {
-        modal.args = {
-          donorIds,
-          polygonPoints: this.args.polygonPoints,
-          metadata: {
-            source: 'map_polygon',
-            totalDonations: this.getTotalDonationsSum(),
-            averageDonation: this.getTotalDonationsSum() / donorIds.length,
-            createdFrom: 'Map Selection',
-            hasPolygonData: !!this.args.polygonPoints
-          }
-        };
-      }
-    );
+    const metadata = {
+      source: 'map_polygon',
+      totalDonations,
+      averageDonation: donorCount > 0 ? totalDonations / donorCount : 0,
+      createdFrom: 'Map Selection',
+      hasPolygonData: !!this.args.polygonPoints
+    };
 
-    if (targetAudience) {
+    // Open TargetAudienceDetailsModal with the current donors
+    const result = await this.ui.targetAudienceDetailsDialog('new', {
+      initialDonors: this.selectedDonors,
+      polygonPoints: this.args.polygonPoints,
+      metadata
+    });
+
+    if (result) {
       // Successfully saved
+      this.ui.info('קהל היעד נשמר בהצלחה');
       // Optionally close the current modal
-      this.ui.info(`קהל היעד נשמר בהצלחה`);
+      this.dialogRef.close(result);
     }
   }
 }

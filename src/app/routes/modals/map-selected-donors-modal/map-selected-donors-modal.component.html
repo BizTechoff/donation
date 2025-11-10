@@ -21,6 +21,10 @@
             <mat-icon>clear</mat-icon>
           </button>
         </div>
+        <button class="btn btn-add-donors" (click)="addDonors()">
+          <mat-icon>person_add</mat-icon>
+          הוסף תורמים
+        </button>
         <!-- <button class="btn btn-export" (click)="exportToExcel()">
           <mat-icon>download</mat-icon>
           ייצוא לאקסל
@@ -96,6 +100,11 @@
                       (click)="addDonation(donorData.donor.id)"
                       title="הוסף תרומה">
                 <mat-icon>add_circle</mat-icon>
+              </button>
+              <button class="btn btn-sm btn-remove"
+                      (click)="removeDonor(donorData.donor.id)"
+                      title="הסר מהרשימה">
+                <mat-icon>remove_circle</mat-icon>
               </button>
             </div>
           </div>

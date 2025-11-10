@@ -7,6 +7,8 @@ export interface GlobalFilters {
   campaignIds?: string[];
   donorTypeIds?: string[];
   countryIds?: string[];
+  cityIds?: string[];
+  neighborhoodIds?: string[];
   targetAudienceIds?: string[];
   dateFrom?: Date;
   dateTo?: Date;
@@ -131,6 +133,20 @@ export class GlobalFilterService {
     if (filters.countryIds && filters.countryIds.length > 0) {
       // Filter by country IDs (UUID)
       where.countryId = { $in: filters.countryIds };
+    }
+
+    if (filters.cityIds && filters.cityIds.length > 0) {
+      // Filter by city IDs (UUID)
+      where.cityId = { $in: filters.cityIds };
+    }
+
+    if (filters.neighborhoodIds && filters.neighborhoodIds.length > 0) {
+      // Filter by neighborhood IDs (UUID)
+      where.neighborhoodId = { $in: filters.neighborhoodIds };
+    }
+
+    if (filters.targetAudienceIds && filters.targetAudienceIds.length > 0) {
+      where.targetAudienceId = { $in: filters.targetAudienceIds };
     }
 
     if (filters.dateFrom || filters.dateTo) {

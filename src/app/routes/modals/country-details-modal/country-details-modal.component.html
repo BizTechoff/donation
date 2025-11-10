@@ -1,0 +1,121 @@
+<div class="modal-overlay" (click)="closeDialog()">
+  <div class="modal-content country-details-modal" (click)="$event.stopPropagation()" *ngIf="country">
+
+    <div class="modal-header">
+      <div class="header-content">
+        <div class="header-icon">
+          <mat-icon>public</mat-icon>
+        </div>
+        <div class="header-text">
+          <h2>{{isNew ? 'מדינה חדשה' : 'עריכת מדינה'}}</h2>
+          <p class="header-subtitle" *ngIf="!isNew && country">
+            {{country.displayName}}
+          </p>
+        </div>
+      </div>
+      <button class="modal-close" (click)="closeDialog()" matTooltip="סגור">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-overlay" *ngIf="loading">
+      <mat-spinner diameter="40"></mat-spinner>
+    </div>
+
+    <div class="modal-body" *ngIf="!loading">
+      <!-- Basic Information -->
+      <div class="section">
+        <h3>מידע בסיסי</h3>
+        <div class="form-grid">
+          <div class="form-group full-width">
+            <label>שם מדינה *</label>
+            <input type="text"
+                   class="form-control"
+                   [(ngModel)]="country.name"
+                   placeholder="הזן שם מדינה">
+          </div>
+
+          <div class="form-group full-width">
+            <label>שם מדינה באנגלית</label>
+            <input type="text"
+                   class="form-control"
+                   [(ngModel)]="country.nameEn"
+                   placeholder="Enter country name">
+          </div>
+
+          <div class="form-group">
+            <label>קוד מדינה</label>
+            <input type="text"
+                   class="form-control"
+                   [(ngModel)]="country.code"
+                   placeholder="IL">
+          </div>
+
+          <div class="form-group">
+            <label>קידומת טלפון</label>
+            <input type="text"
+                   class="form-control"
+                   [(ngModel)]="country.phonePrefix"
+                   placeholder="+972">
+          </div>
+
+          <div class="form-group">
+            <label>מטבע</label>
+            <input type="text"
+                   class="form-control"
+                   [(ngModel)]="country.currency"
+                   placeholder="ILS">
+          </div>
+
+          <div class="form-group">
+            <label>סמל מטבע</label>
+            <input type="text"
+                   class="form-control"
+                   [(ngModel)]="country.currencySymbol"
+                   placeholder="₪">
+          </div>
+
+          <div class="form-group full-width">
+            <mat-checkbox [(ngModel)]="country.isActive">
+              פעיל
+            </mat-checkbox>
+          </div>
+        </div>
+      </div>
+
+      <!-- Metadata (for edit mode) -->
+      <div class="section" *ngIf="!isNew">
+        <h3>מידע נוסף</h3>
+        <div class="metadata-grid">
+          <div class="metadata-item">
+            <span class="metadata-label">תאריך יצירה:</span>
+            <span class="metadata-value">{{ country.createdDate | date:'short' }}</span>
+          </div>
+          <div class="metadata-item">
+            <span class="metadata-label">תאריך עדכון:</span>
+            <span class="metadata-value">{{ country.updatedDate | date:'short' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer Actions -->
+    <div class="modal-footer">
+      <button class="btn btn-delete" *ngIf="!isNew" (click)="delete()">
+        <mat-icon>delete</mat-icon>
+        מחק
+      </button>
+      <div class="footer-spacer"></div>
+      <button class="btn btn-cancel" (click)="closeDialog()">
+        <mat-icon>close</mat-icon>
+        ביטול
+      </button>
+      <button class="btn btn-save" (click)="save()">
+        <mat-icon>save</mat-icon>
+        שמור
+      </button>
+    </div>
+
+  </div>
+</div>

@@ -177,6 +177,37 @@
     }
   }
 
+  .btn-add-donors {
+    background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(155, 89, 182, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+
+    mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(155, 89, 182, 0.4);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+  }
+
   .btn-export {
     background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
     color: white;
@@ -416,6 +447,17 @@
 
           &:hover {
             background: #4caf50;
+            color: white;
+            transform: scale(1.1);
+          }
+        }
+
+        &.btn-remove {
+          background: #ffebee;
+          color: #f44336;
+
+          &:hover {
+            background: #f44336;
             color: white;
             transform: scale(1.1);
           }

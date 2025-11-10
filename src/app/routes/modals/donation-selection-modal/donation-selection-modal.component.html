@@ -1,0 +1,97 @@
+<div class="modal-backdrop" (click)="closeDialog()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="header-content">
+        <h2>{{ args.title || 'בחר תרומה' }}</h2>
+        <div class="selection-counter" *ngIf="args.multiSelect && selectedDonations.length > 0">
+          <mat-icon>check_circle</mat-icon>
+          <span>{{ selectedDonations.length }} נבחרו</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="btn-finish-selection"
+                *ngIf="args.multiSelect && selectedDonations.length > 0"
+                (click)="finishMultiSelect()"
+                title="סיים בחירה">
+          <mat-icon>done_all</mat-icon>
+          סיים בחירה
+        </button>
+        <button class="close-btn" (click)="closeDialog()" title="סגור">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+    </div>
+
+    <div class="modal-body">
+      <!-- Search Section -->
+      <div class="search-section">
+        <div class="search-input-group">
+          <mat-icon class="search-icon">search</mat-icon>
+          <input
+            type="text"
+            class="form-control search-input"
+            [(ngModel)]="searchTerm"
+            placeholder="חפש תרומה (לפי תורם, קמפיין או סכום)...">
+          <button *ngIf="searchTerm" class="clear-search-btn" (click)="clearSearch()">
+            <mat-icon>clear</mat-icon>
+          </button>
+        </div>
+        <button class="btn btn-create-new" (click)="createNewDonation()">
+          <mat-icon>add</mat-icon>
+          יצירת תרומה חדשה
+        </button>
+      </div>
+
+      <!-- Donations List -->
+      <div class="donations-list-section">
+        <div class="donations-list" *ngIf="getFilteredDonations().length > 0">
+          <div class="donation-item"
+               *ngFor="let donation of getFilteredDonations()"
+               (click)="selectDonation(donation)"
+               [class.selected]="args.multiSelect ? isDonationSelected(donation) : selectedDonation?.id === donation.id">
+            <div class="donation-item-content">
+              <div class="donation-icon-wrapper">
+                <mat-icon>volunteer_activism</mat-icon>
+              </div>
+              <div class="donation-info">
+                <div class="donation-main">
+                  <span class="donor-name">{{ getDonor(donation.donorId)?.fullName || 'תורם לא ידוע' }}</span>
+                  <span class="donation-amount">{{ donation.amount | number }} {{ donation.currency }}</span>
+                </div>
+                <div class="donation-details">
+                  <span *ngIf="donation.campaignId && getCampaign(donation.campaignId)">
+                    <mat-icon class="detail-icon">campaign</mat-icon>
+                    {{ getCampaign(donation.campaignId)?.name }}
+                  </span>
+                  <span *ngIf="donation.donationDate">
+                    <mat-icon class="detail-icon">event</mat-icon>
+                    {{ formatDate(donation.donationDate) }}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div class="select-indicator" *ngIf="!args.multiSelect">
+              <mat-icon>check_circle</mat-icon>
+            </div>
+            <div class="multi-select-indicator" *ngIf="args.multiSelect">
+              <div class="checkbox-wrapper" [class.checked]="isDonationSelected(donation)">
+                <mat-icon *ngIf="isDonationSelected(donation)">check</mat-icon>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty state when no donations found -->
+        <div class="no-donations-found" *ngIf="getFilteredDonations().length === 0">
+          <mat-icon class="empty-icon">volunteer_activism</mat-icon>
+          <p *ngIf="searchTerm">לא נמצאו תרומות התואמות לחיפוש "{{ searchTerm }}"</p>
+          <p *ngIf="!searchTerm">אין תרומות זמינות</p>
+          <button class="btn btn-primary" (click)="createNewDonation()">
+            <mat-icon>add</mat-icon>
+            יצירת תרומה חדשה
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

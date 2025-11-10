@@ -1,0 +1,86 @@
+.campaign-selectable-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  .field-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #2c3e50;
+    margin: 0;
+  }
+
+  .input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+
+    .selectable-input {
+      flex: 1;
+      padding-left: 80px; // Space for buttons
+      cursor: pointer;
+      background: white;
+      border: 2px solid #e1e8ed;
+      border-radius: 8px;
+      padding: 12px 80px 12px 16px;
+      font-size: 14px;
+      transition: all 0.3s ease;
+
+      &:hover {
+        border-color: #667eea;
+      }
+
+      &:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      }
+
+      &::placeholder {
+        color: #95a5a6;
+      }
+    }
+
+    .search-btn,
+    .clear-btn {
+      position: absolute;
+      left: 4px;
+      background: none;
+      border: none;
+      padding: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+
+      mat-icon {
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+        color: #667eea;
+      }
+
+      &:hover {
+        background: rgba(102, 126, 234, 0.1);
+      }
+
+      &:active {
+        transform: scale(0.95);
+      }
+    }
+
+    .clear-btn {
+      left: 40px;
+
+      mat-icon {
+        color: #e74c3c;
+      }
+
+      &:hover {
+        background: rgba(231, 76, 60, 0.1);
+      }
+    }
+  }
+}

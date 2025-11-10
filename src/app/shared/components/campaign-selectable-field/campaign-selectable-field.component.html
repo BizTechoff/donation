@@ -1,0 +1,30 @@
+<div class="campaign-selectable-field">
+  <label *ngIf="label" class="field-label">{{ label }}</label>
+  <div class="input-wrapper">
+    <input
+      type="text"
+      class="form-control selectable-input"
+      [value]="displayText"
+      [placeholder]="placeholder"
+      readonly
+      (click)="openSelectionModal()"
+    />
+    <button
+      class="search-btn"
+      (click)="openSelectionModal()"
+      [matTooltip]="title"
+      [dir]="'rtl'"
+      type="button">
+      <mat-icon>search</mat-icon>
+    </button>
+    <button
+      *ngIf="selectedIds && selectedIds.length > 0"
+      class="clear-btn"
+      (click)="clearSelection(); $event.stopPropagation()"
+      [matTooltip]="'נקה בחירה'"
+      [dir]="'rtl'"
+      type="button">
+      <mat-icon>clear</mat-icon>
+    </button>
+  </div>
+</div>

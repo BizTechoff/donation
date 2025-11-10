@@ -16,4 +16,12 @@ export class ReportService {
   async getGroupedDonationsReport(filters: ReportFilters): Promise<GroupedReportResponse> {
     return await ReportController.getGroupedDonationsReport(filters);
   }
+
+  /**
+   * Get available Hebrew years from donations
+   * @returns Promise with array of formatted Hebrew years sorted descending
+   */
+  async getAvailableHebrewYears(): Promise<string[]> {
+    return await ReportController.getAvailableHebrewYears();
+  }
 }

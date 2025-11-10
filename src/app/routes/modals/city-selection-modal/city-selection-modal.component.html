@@ -1,0 +1,96 @@
+<div class="modal-backdrop" (click)="closeDialog()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="header-content">
+        <h2>{{ args.title || 'בחר עיר' }}</h2>
+        <div class="selection-counter" *ngIf="args.multiSelect && selectedCities.length > 0">
+          <mat-icon>check_circle</mat-icon>
+          <span>{{ selectedCities.length }} נבחרו</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="btn-finish-selection"
+                *ngIf="args.multiSelect && selectedCities.length > 0"
+                (click)="finishMultiSelect()"
+                title="סיים בחירה">
+          <mat-icon>done_all</mat-icon>
+          סיים בחירה
+        </button>
+        <button class="close-btn" (click)="closeDialog()" title="סגור">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+    </div>
+
+    <div class="modal-body">
+      <!-- Search Section -->
+      <div class="search-section">
+        <div class="search-input-group">
+          <mat-icon class="search-icon">search</mat-icon>
+          <input
+            type="text"
+            class="form-control search-input"
+            [(ngModel)]="searchTerm"
+            placeholder="חפש עיר...">
+          <button *ngIf="searchTerm" class="clear-search-btn" (click)="clearSearch()">
+            <mat-icon>clear</mat-icon>
+          </button>
+        </div>
+        <!-- <button class="btn btn-create-new" (click)="createNewCity()">
+          <mat-icon>add</mat-icon>
+          יצירת עיר חדשה
+        </button> -->
+      </div>
+
+      <!-- Cities List -->
+      <div class="cities-list-section">
+        <div class="cities-list" *ngIf="getFilteredCities().length > 0">
+          <div class="city-item"
+               *ngFor="let cityData of getFilteredCities()"
+               (click)="selectCity(cityData)"
+               [class.selected]="args.multiSelect ? isCitySelected(cityData.city) : selectedCity === cityData.city">
+            <div class="city-item-content">
+              <div class="city-icon-wrapper">
+                <mat-icon>location_city</mat-icon>
+              </div>
+              <div class="city-info">
+                <div class="city-name">{{ cityData.city }}</div>
+                <div class="city-details">
+                  <span class="detail-item">
+                    <mat-icon class="detail-icon">place</mat-icon>
+                    {{ cityData.placeCount }} מקומות
+                  </span>
+                </div>
+              </div>
+            </div>
+            <!-- <div class="action-buttons">
+              <button class="btn-edit" (click)="editCity(cityData, $event)" title="ערוך">
+                <mat-icon>edit</mat-icon>
+              </button>
+            </div> -->
+            <div class="select-indicator" *ngIf="!args.multiSelect">
+              <mat-icon>check_circle</mat-icon>
+            </div>
+            <div class="multi-select-indicator" *ngIf="args.multiSelect">
+              <div class="checkbox-wrapper" [class.checked]="isCitySelected(cityData.city)">
+                <mat-icon *ngIf="isCitySelected(cityData.city)">check</mat-icon>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty state when no cities found -->
+        <div class="no-cities-found" *ngIf="getFilteredCities().length === 0">
+          <mat-icon class="empty-icon">location_city</mat-icon>
+          <p *ngIf="searchTerm">לא נמצאו ערים התואמות לחיפוש "{{ searchTerm }}"</p>
+          <p *ngIf="!searchTerm && args.countryId">אין ערים זמינות למדינה זו</p>
+          <p *ngIf="!searchTerm && !args.countryId">אין ערים זמינות</p>
+          <button class="btn btn-primary" (click)="createNewCity()">
+            <mat-icon>add</mat-icon>
+            יצירת עיר חדשה
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

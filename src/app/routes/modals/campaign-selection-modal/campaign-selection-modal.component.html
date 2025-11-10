@@ -1,0 +1,91 @@
+<div class="modal-backdrop" (click)="closeDialog()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="header-content">
+        <h2>{{ args.title || 'בחר קמפיין' }}</h2>
+        <div class="selection-counter" *ngIf="args.multiSelect && selectedCampaigns.length > 0">
+          <mat-icon>check_circle</mat-icon>
+          <span>{{ selectedCampaigns.length }} נבחרו</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="btn-finish-selection"
+                *ngIf="args.multiSelect && selectedCampaigns.length > 0"
+                (click)="finishMultiSelect()"
+                title="סיים בחירה">
+          <mat-icon>done_all</mat-icon>
+          סיים בחירה
+        </button>
+        <button class="close-btn" (click)="closeDialog()" title="סגור">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+    </div>
+
+    <div class="modal-body">
+      <!-- Search Section -->
+      <div class="search-section">
+        <div class="search-input-group">
+          <mat-icon class="search-icon">search</mat-icon>
+          <input
+            type="text"
+            class="form-control search-input"
+            [(ngModel)]="searchTerm"
+            placeholder="חפש קמפיין...">
+          <button *ngIf="searchTerm" class="clear-search-btn" (click)="clearSearch()">
+            <mat-icon>clear</mat-icon>
+          </button>
+        </div>
+        <button class="btn btn-create-new" (click)="createNewCampaign()">
+          <mat-icon>add</mat-icon>
+          יצירת קמפיין חדש
+        </button>
+      </div>
+
+      <!-- Campaigns List -->
+      <div class="campaigns-list-section">
+        <div class="campaigns-list" *ngIf="getFilteredCampaigns().length > 0">
+          <div class="campaign-item"
+               *ngFor="let campaign of getFilteredCampaigns()"
+               (click)="selectCampaign(campaign)"
+               [class.selected]="args.multiSelect ? isCampaignSelected(campaign) : selectedCampaign?.id === campaign.id">
+            <div class="campaign-item-content">
+              <div class="campaign-icon-wrapper">
+                <mat-icon>campaign</mat-icon>
+              </div>
+              <div class="campaign-info">
+                <div class="campaign-name">{{ getCampaignDisplayName(campaign) }}</div>
+                <div class="campaign-description" *ngIf="campaign.description">
+                  {{ campaign.description }}
+                </div>
+                <div class="campaign-target" *ngIf="campaign.targetAmount > 0">
+                  <mat-icon class="detail-icon">track_changes</mat-icon>
+                  יעד: {{ campaign.targetAmount | number }} ₪
+                </div>
+              </div>
+            </div>
+            <div class="select-indicator" *ngIf="!args.multiSelect">
+              <mat-icon>check_circle</mat-icon>
+            </div>
+            <div class="multi-select-indicator" *ngIf="args.multiSelect">
+              <div class="checkbox-wrapper" [class.checked]="isCampaignSelected(campaign)">
+                <mat-icon *ngIf="isCampaignSelected(campaign)">check</mat-icon>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty state when no campaigns found -->
+        <div class="no-campaigns-found" *ngIf="getFilteredCampaigns().length === 0">
+          <mat-icon class="empty-icon">campaign</mat-icon>
+          <p *ngIf="searchTerm">לא נמצאו קמפיינים התואמים לחיפוש "{{ searchTerm }}"</p>
+          <p *ngIf="!searchTerm">אין קמפיינים זמינים</p>
+          <button class="btn btn-primary" (click)="createNewCampaign()">
+            <mat-icon>add</mat-icon>
+            יצירת קמפיין חדש
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

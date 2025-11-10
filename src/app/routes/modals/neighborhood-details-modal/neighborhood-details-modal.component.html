@@ -1,0 +1,75 @@
+<div class="modal-overlay" (click)="closeDialog()">
+  <div class="modal-content neighborhood-details-modal" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+      <div class="header-content">
+        <div class="header-icon">
+          <mat-icon>home</mat-icon>
+        </div>
+        <div class="header-text">
+          <h2>{{isNew ? 'שכונה חדשה' : 'עריכת שכונה'}}</h2>
+          <p class="header-subtitle" *ngIf="!isNew && oldNeighborhoodName">
+            {{oldNeighborhoodName}}
+          </p>
+        </div>
+      </div>
+      <button class="modal-close" (click)="closeDialog()" matTooltip="סגור">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-overlay" *ngIf="loading">
+      <mat-spinner diameter="40"></mat-spinner>
+    </div>
+
+    <div class="modal-body" *ngIf="!loading">
+      <!-- Basic Information -->
+      <div class="section">
+        <h3>מידע בסיסי</h3>
+        <div class="form-grid">
+          <div class="form-group full-width">
+            <label>שם שכונה *</label>
+            <input type="text"
+                   class="form-control"
+                   [(ngModel)]="newNeighborhoodName"
+                   placeholder="הזן שם שכונה">
+          </div>
+        </div>
+      </div>
+
+      <!-- Metadata (for edit mode) -->
+      <div class="section" *ngIf="!isNew && placesWithThisNeighborhood.length > 0">
+        <h3>מידע נוסף</h3>
+        <div class="metadata-grid">
+          <div class="metadata-item">
+            <span class="metadata-label">מספר מקומות:</span>
+            <span class="metadata-value">{{ placesWithThisNeighborhood.length }}</span>
+          </div>
+        </div>
+        <div class="info-message">
+          <mat-icon>info</mat-icon>
+          <span>שינוי שם השכונה יעדכן את כל {{ placesWithThisNeighborhood.length }} המקומות המשויכים לשכונה זו</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer Actions -->
+    <div class="modal-footer">
+      <button class="btn btn-delete" *ngIf="!isNew" (click)="delete()">
+        <mat-icon>delete</mat-icon>
+        מחק
+      </button>
+      <div class="footer-spacer"></div>
+      <button class="btn btn-cancel" (click)="closeDialog()">
+        <mat-icon>close</mat-icon>
+        ביטול
+      </button>
+      <button class="btn btn-save" (click)="save()">
+        <mat-icon>save</mat-icon>
+        שמור
+      </button>
+    </div>
+
+  </div>
+</div>

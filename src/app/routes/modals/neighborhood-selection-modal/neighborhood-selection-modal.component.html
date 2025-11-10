@@ -1,0 +1,97 @@
+<div class="modal-backdrop" (click)="closeDialog()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="header-content">
+        <h2>{{ args.title || 'בחר שכונה' }}</h2>
+        <div class="selection-counter" *ngIf="args.multiSelect && selectedNeighborhoods.length > 0">
+          <mat-icon>check_circle</mat-icon>
+          <span>{{ selectedNeighborhoods.length }} נבחרו</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="btn-finish-selection"
+                *ngIf="args.multiSelect && selectedNeighborhoods.length > 0"
+                (click)="finishMultiSelect()"
+                title="סיים בחירה">
+          <mat-icon>done_all</mat-icon>
+          סיים בחירה
+        </button>
+        <button class="close-btn" (click)="closeDialog()" title="סגור">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+    </div>
+
+    <div class="modal-body">
+      <!-- Search Section -->
+      <div class="search-section">
+        <div class="search-input-group">
+          <mat-icon class="search-icon">search</mat-icon>
+          <input
+            type="text"
+            class="form-control search-input"
+            [(ngModel)]="searchTerm"
+            placeholder="חפש שכונה...">
+          <button *ngIf="searchTerm" class="clear-search-btn" (click)="clearSearch()">
+            <mat-icon>clear</mat-icon>
+          </button>
+        </div>
+        <!-- <button class="btn btn-create-new" (click)="createNewNeighborhood()">
+          <mat-icon>add</mat-icon>
+          יצירת שכונה חדשה
+        </button> -->
+      </div>
+
+      <!-- Neighborhoods List -->
+      <div class="neighborhoods-list-section">
+        <div class="neighborhoods-list" *ngIf="getFilteredNeighborhoods().length > 0">
+          <div class="neighborhood-item"
+               *ngFor="let neighborhoodData of getFilteredNeighborhoods()"
+               (click)="selectNeighborhood(neighborhoodData)"
+               [class.selected]="args.multiSelect ? isNeighborhoodSelected(neighborhoodData.neighborhood) : selectedNeighborhood === neighborhoodData.neighborhood">
+            <div class="neighborhood-item-content">
+              <div class="neighborhood-icon-wrapper">
+                <mat-icon>home</mat-icon>
+              </div>
+              <div class="neighborhood-info">
+                <div class="neighborhood-name">{{ neighborhoodData.neighborhood }}</div>
+                <div class="neighborhood-details">
+                  <span class="detail-item">
+                    <mat-icon class="detail-icon">place</mat-icon>
+                    {{ neighborhoodData.placeCount }} מקומות
+                  </span>
+                </div>
+              </div>
+            </div>
+            <!-- <div class="action-buttons">
+              <button class="btn-edit" (click)="editNeighborhood(neighborhoodData, $event)" title="ערוך">
+                <mat-icon>edit</mat-icon>
+              </button>
+            </div> -->
+            <div class="select-indicator" *ngIf="!args.multiSelect">
+              <mat-icon>check_circle</mat-icon>
+            </div>
+            <div class="multi-select-indicator" *ngIf="args.multiSelect">
+              <div class="checkbox-wrapper" [class.checked]="isNeighborhoodSelected(neighborhoodData.neighborhood)">
+                <mat-icon *ngIf="isNeighborhoodSelected(neighborhoodData.neighborhood)">check</mat-icon>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty state when no neighborhoods found -->
+        <div class="no-neighborhoods-found" *ngIf="getFilteredNeighborhoods().length === 0">
+          <mat-icon class="empty-icon">home</mat-icon>
+          <p *ngIf="searchTerm">לא נמצאו שכונות התואמות לחיפוש "{{ searchTerm }}"</p>
+          <p *ngIf="!searchTerm && args.city">אין שכונות זמינות לעיר זו</p>
+          <p *ngIf="!searchTerm && !args.city && args.countryId">אין שכונות זמינות למדינה זו</p>
+          <p *ngIf="!searchTerm && !args.city && !args.countryId">אין שכונות זמינות</p>
+          <button class="btn btn-primary" (click)="createNewNeighborhood()">
+            <mat-icon>add</mat-icon>
+            יצירת שכונה חדשה
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

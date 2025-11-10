@@ -9,7 +9,10 @@ import { User } from '../../../shared/entity/user';
 import { HebrewDateController } from '../../../shared/controllers/hebrew-date.controller';
 import { ReportService } from '../../services/report.service';
 import { I18nService } from '../../i18n/i18n.service';
-import { BusyService } from 'common-ui-elements';
+import { BusyService, openDialog } from 'common-ui-elements';
+import { ExcelExportService } from '../../services/excel-export.service';
+import { DonorSelectionModalComponent } from '../../routes/modals/donor-selection-modal/donor-selection-modal.component';
+import { GlobalFilterService } from '../../services/global-filter.service';
 
 interface ChartData {
   label: string;
@@ -77,8 +80,14 @@ interface GroupedDonationReport {
 
 interface CurrencySummary {
   currency: string;
-  totalAmount: number;
-  totalInShekel: number;
+  yearlyTotals: {
+    [hebrewYear: string]: number; // Amount in original currency
+  };
+  yearlyTotalsInShekel: {
+    [hebrewYear: string]: number; // Amount converted to shekel
+  };
+  totalAmount: number; // Total across all years in original currency
+  totalInShekel: number; // Total across all years in shekel
 }
 
 type GroupByOption = 'donor' | 'campaign' | 'paymentMethod' | 'fundraiser';
@@ -89,6 +98,9 @@ type GroupByOption = 'donor' | 'campaign' | 'paymentMethod' | 'fundraiser';
   styleUrls: ['./reports.component.scss']
 })
 export class ReportsComponent implements OnInit {
+  Math = Math; // Make Math available in template
+  isExpandedView = false;
+
   dateRange = {
     from: new Date(new Date().getFullYear(), 0, 1), // תחילת השנה
     to: new Date() // היום
@@ -136,16 +148,27 @@ export class ReportsComponent implements OnInit {
     'EUR': 3.7468,
     'GBP': 4.2582
   };
+
+  // Pagination data
+  totalRecords = 0;
+  totalPages = 0;
+  currentPage = 1;
+  pageSize = 10;
+  pageSizeOptions = [5, 10, 25, 50, 100];
+
+  // Sorting data
+  sortBy = 'donorName';
+  sortDirection: 'asc' | 'desc' = 'asc';
   
   // Filters
   filters = {
-    selectedDonor: '',
     selectedDonorType: '',
+    selectedDonorIds: [] as string[], // For multi-select donor filter (replaces selectedDonor)
     selectedYear: 'last4' as string | number, // 'last4' or specific year number
     selectedCampaign: '',
     selectedCurrency: 'all',
     groupBy: 'donor' as GroupByOption,
-    showDonorDetails: false,
+    showDonorDetails: true,
     showActualPayments: false,
     showCurrencySummary: true
   };
@@ -171,7 +194,9 @@ export class ReportsComponent implements OnInit {
   constructor(
     public i18n: I18nService,
     private reportService: ReportService,
-    private busy: BusyService
+    private busy: BusyService,
+    private excelService: ExcelExportService,
+    private globalFilterService: GlobalFilterService
   ) {}
 
   async ngOnInit() {
@@ -213,7 +238,8 @@ export class ReportsComponent implements OnInit {
 
 
   private async loadGeneralStats() {
-    const donations = await this.donationRepo.find();
+    const donationsQuery = this.globalFilterService.applyFiltersToQuery({ where: {} });
+    const donations = await this.donationRepo.find(donationsQuery);
     console.log('📊 Donations loaded:', donations.length);
 
     const donors = await this.donorRepo.find();
@@ -232,9 +258,11 @@ export class ReportsComponent implements OnInit {
   }
 
   private async loadMonthlyTrends() {
-    const donations = await this.donationRepo.find({
+    const query = this.globalFilterService.applyFiltersToQuery({
+      where: {},
       orderBy: { donationDate: 'asc' }
     });
+    const donations = await this.donationRepo.find(query);
 
     const monthlyMap = new Map<string, { donations: number, amount: number }>();
     
@@ -275,9 +303,11 @@ export class ReportsComponent implements OnInit {
   }
 
   private async loadDonorAnalysis() {
-    const donations = await this.donationRepo.find({
+    const query = this.globalFilterService.applyFiltersToQuery({
+      where: {},
       include: { donor: true }
     });
+    const donations = await this.donationRepo.find(query);
 
     // Load donor places for all donors
     const uniqueDonorIds = [...new Set(donations.map(d => d.donorId).filter(Boolean))];
@@ -334,9 +364,11 @@ export class ReportsComponent implements OnInit {
 
   private async loadTopPerformers() {
     // תורמים מובילים
-    const donations = await this.donationRepo.find({
+    const query = this.globalFilterService.applyFiltersToQuery({
+      where: {},
       include: { donor: true }
     });
+    const donations = await this.donationRepo.find(query);
 
     const donorMap = new Map<string, { donor: any, total: number, count: number }>();
     donations.forEach(donation => {
@@ -366,7 +398,8 @@ export class ReportsComponent implements OnInit {
   }
 
   private async loadRecentActivity() {
-    const recentDonations = await this.donationRepo.find({
+    const query = this.globalFilterService.applyFiltersToQuery({
+      where: {},
       orderBy: { donationDate: 'desc' },
       limit: 20,
       include: {
@@ -374,6 +407,7 @@ export class ReportsComponent implements OnInit {
         campaign: true
       }
     });
+    const recentDonations = await this.donationRepo.find(query);
 
     this.recentActivity = recentDonations.map(donation => ({
       type: 'donation',
@@ -389,15 +423,37 @@ export class ReportsComponent implements OnInit {
     return `₪${amount.toLocaleString()}`;
   }
 
-  formatCurrencyWithSymbol(amount: number, currency: string): string {
+  getCurrencySymbol(currency: string): string {
+    // Map Hebrew currency names to codes
+    const hebrewToCode: { [key: string]: string } = {
+      'דולר': 'USD',
+      'אירו': 'EUR',
+      'יורו': 'EUR',
+      'שקל': 'ILS',
+      'שקלים': 'ILS',
+      'לירה': 'GBP',
+      'לירה שטרלינג': 'GBP',
+      'פאונד': 'GBP'
+    };
+
+    // Get currency code (convert from Hebrew if needed)
+    const currencyCode = hebrewToCode[currency] || currency;
+
+    // Map currency codes to symbols
     const symbols: { [key: string]: string } = {
       'ILS': '₪',
       'USD': '$',
       'EUR': '€',
       'GBP': '£'
     };
-    const symbol = symbols[currency] || currency;
-    return `${symbol}${amount.toLocaleString()}`;
+
+    return symbols[currencyCode] || currencyCode;
+  }
+
+  formatCurrencyWithSymbol(amount: number, currency: string): string {
+    const symbol = this.getCurrencySymbol(currency);
+    const formattedAmount = Math.round(amount).toLocaleString('he-IL');
+    return `${symbol}${formattedAmount}`;
   }
 
   formatDate(date: Date): string {
@@ -436,7 +492,7 @@ export class ReportsComponent implements OnInit {
     // בדיקה אם נתוני בסיס כבר נטענו
     const isBaseDataLoaded = this.currentHebrewYear > 0 &&
                               this.hebrewYears.length > 0 &&
-                              this.availableDonors.length > 0;
+                              this.availableCampaigns.length > 0;
 
     if (isBaseDataLoaded) {
       console.log('📦 Base data already loaded, skipping...');
@@ -507,32 +563,18 @@ export class ReportsComponent implements OnInit {
 
   async loadFilterOptions() {
     try {
-      this.availableDonors = await this.donorRepo.find({
-        orderBy: { lastName: 'asc' }
-      });
+      // Note: availableDonors are no longer loaded here - they load only when opening the donor selection modal
 
-      this.availableCampaigns = await this.campaignRepo.find({
-        orderBy: { name: 'asc' }
-      });
+      // Load campaigns and available years in parallel
+      const [campaigns, hebrewYears] = await Promise.all([
+        this.campaignRepo.find({
+          orderBy: { name: 'asc' }
+        }),
+        this.reportService.getAvailableHebrewYears()
+      ]);
 
-      // Generate available Hebrew years from donations data
-      const donations = await this.donationRepo.find({
-        orderBy: { donationDate: 'desc' }
-      });
-
-      const hebrewYearsSet = new Set<number>();
-      for (const donation of donations) {
-        const hebrewDate = await HebrewDateController.convertGregorianToHebrew(donation.donationDate);
-        hebrewYearsSet.add(hebrewDate.year);
-      }
-
-      // Convert to Hebrew formatted strings and sort descending
-      const sortedYears = Array.from(hebrewYearsSet).sort((a, b) => b - a);
-      this.availableYears = [];
-      for (const year of sortedYears) {
-        const formatted = await HebrewDateController.formatHebrewYear(year);
-        this.availableYears.push(formatted);
-      }
+      this.availableCampaigns = campaigns;
+      this.availableYears = hebrewYears;
     } catch (error) {
       console.error('Error loading filter options:', error);
     }
@@ -573,39 +615,63 @@ export class ReportsComponent implements OnInit {
       console.log('🔍 CLIENT: Requesting report with filters:', {
         groupBy: this.filters.groupBy,
         selectedYear: this.filters.selectedYear,
-        selectedDonor: this.filters.selectedDonor,
+        selectedDonorIds: this.filters.selectedDonorIds,
         selectedCampaign: this.filters.selectedCampaign,
-        selectedDonorType: this.filters.selectedDonorType
+        selectedDonorType: this.filters.selectedDonorType,
+        page: this.currentPage,
+        pageSize: this.pageSize,
+        sortBy: this.sortBy,
+        sortDirection: this.sortDirection
       });
 
+      const globalFilters = this.globalFilterService.currentFilters;
       const reportResponse = await this.reportService.getGroupedDonationsReport({
         groupBy: this.filters.groupBy,
         showDonorDetails: this.filters.showDonorDetails,
         showActualPayments: this.filters.showActualPayments,
         showCurrencySummary: this.filters.showCurrencySummary,
-        selectedDonor: this.filters.selectedDonor || undefined,
+        selectedDonorIds: this.filters.selectedDonorIds.length > 0 ? this.filters.selectedDonorIds : undefined,
         selectedCampaign: this.filters.selectedCampaign || undefined,
         selectedDonorType: this.filters.selectedDonorType || undefined,
         selectedYear: this.filters.selectedYear,
-        conversionRates: this.conversionRates
+        conversionRates: this.conversionRates,
+        page: this.currentPage,
+        pageSize: this.pageSize,
+        sortBy: this.sortBy,
+        sortDirection: this.sortDirection,
+        // Add global filters
+        globalFilterCampaignIds: globalFilters.campaignIds,
+        globalFilterDateFrom: globalFilters.dateFrom,
+        globalFilterDateTo: globalFilters.dateTo,
+        globalFilterAmountMin: globalFilters.amountMin,
+        globalFilterAmountMax: globalFilters.amountMax
       });
 
       console.log('✅ CLIENT: Received report response:', {
         hebrewYears: reportResponse.hebrewYears,
         reportDataLength: reportResponse.reportData.length,
         currencySummaryLength: reportResponse.currencySummary.length,
-        totalInShekel: reportResponse.totalInShekel
+        totalInShekel: reportResponse.totalInShekel,
+        totalRecords: reportResponse.totalRecords,
+        totalPages: reportResponse.totalPages,
+        currentPage: reportResponse.currentPage
       });
 
       // Update component data with response
       this.hebrewYears = reportResponse.hebrewYears;
       this.groupedDonationReport = reportResponse.reportData;
       this.currencySummaryData = reportResponse.currencySummary;
+      this.totalRecords = reportResponse.totalRecords;
+      this.totalPages = reportResponse.totalPages;
+      this.currentPage = reportResponse.currentPage;
 
       console.log('📊 CLIENT: Component data updated:', {
         hebrewYears: this.hebrewYears,
         groupedReportLength: this.groupedDonationReport.length,
-        currencySummaryLength: this.currencySummaryData.length
+        currencySummaryLength: this.currencySummaryData.length,
+        totalRecords: this.totalRecords,
+        totalPages: this.totalPages,
+        currentPage: this.currentPage
       });
 
     } catch (error) {
@@ -616,6 +682,12 @@ export class ReportsComponent implements OnInit {
 
   getTotalInShekel(): number {
     return this.currencySummaryData.reduce((sum, curr) => sum + curr.totalInShekel, 0);
+  }
+
+  getCurrencySummaryYearTotal(year: string): number {
+    return this.currencySummaryData.reduce((sum, curr) => {
+      return sum + (curr.yearlyTotalsInShekel?.[year] || 0);
+    }, 0);
   }
 
   getYearTotal(yearlyTotals: { [hebrewYear: string]: { [currency: string]: number } }, hebrewYear: string): number {
@@ -635,14 +707,21 @@ export class ReportsComponent implements OnInit {
 
     const currencies = Object.entries(yearData);
     if (currencies.length === 0) return '0';
+
+    // Debug: check what currencies we have
+    console.log(`Year ${hebrewYear} currencies:`, currencies);
+
+    // If only one currency - show with its symbol
     if (currencies.length === 1) {
       const [currency, amount] = currencies[0];
+      // console.log(`Formatting: currency="${currency}", amount=${amount}`);
       return this.formatCurrencyWithSymbol(amount, currency);
     }
 
-    // Multiple currencies - show in shekel
+    // Multiple currencies - convert all to shekel and show total
     const total = this.getYearTotal(yearlyTotals, hebrewYear);
-    return `₪${total.toLocaleString()}`;
+    const formattedTotal = Math.round(total).toLocaleString('he-IL');
+    return `₪${formattedTotal}`;
   }
 
   async loadPaymentsReport() {
@@ -651,9 +730,11 @@ export class ReportsComponent implements OnInit {
   }
 
   async loadYearlySummaryReport() {
-    const donations = await this.donationRepo.find({
+    const query = this.globalFilterService.applyFiltersToQuery({
+      where: {},
       orderBy: { donationDate: 'desc' }
     });
+    const donations = await this.donationRepo.find(query);
 
     const yearlyMap = new Map<number, { [currency: string]: number }>();
 
@@ -694,13 +775,23 @@ export class ReportsComponent implements OnInit {
   }
 
   async loadBlessingsReport() {
-    const blessings = await this.blessingRepo.find({
+    // Note: Blessings don't have campaign/date filters in globalFilters structure
+    // but we'll apply what we can (campaignIds)
+    let query: any = {
       include: {
         donor: true,
         campaign: true
       },
       orderBy: { createdDate: 'desc' }
-    });
+    };
+
+    // Apply campaign filter if exists
+    const filters = this.globalFilterService.currentFilters;
+    if (filters.campaignIds && filters.campaignIds.length > 0) {
+      query.where = { campaignId: { $in: filters.campaignIds } };
+    }
+
+    const blessings = await this.blessingRepo.find(query);
 
     this.blessingReportData = blessings.map(blessing => ({
       donorName: blessing.donor?.displayName || blessing.name,
@@ -740,9 +831,182 @@ export class ReportsComponent implements OnInit {
     alert('פונקצית הדפסה - בפיתוח');
   }
 
+  toggleExpandedView() {
+    this.isExpandedView = !this.isExpandedView;
+  }
+
   async exportSpecificReport(format: 'excel' | 'pdf' | 'csv') {
-    // TODO: Implement export functionality for specific reports
-    alert(`ייצוא דוח ${this.activeReport} בפורמט ${format} - בפיתוח`);
+    if (this.activeReport === 'donations' && format === 'excel') {
+      await this.exportDonationsReportToExcel();
+    } else {
+      alert(`ייצוא דוח ${this.activeReport} בפורמט ${format} - בפיתוח`);
+    }
+  }
+
+  async exportDonationsReportToExcel() {
+    try {
+      // Load all data without pagination for export
+      const globalFilters = this.globalFilterService.currentFilters;
+      const fullReportResponse = await this.reportService.getGroupedDonationsReport({
+        groupBy: this.filters.groupBy,
+        showDonorDetails: this.filters.showDonorDetails,
+        showActualPayments: this.filters.showActualPayments,
+        showCurrencySummary: this.filters.showCurrencySummary,
+        selectedDonorIds: this.filters.selectedDonorIds.length > 0 ? this.filters.selectedDonorIds : undefined,
+        selectedCampaign: this.filters.selectedCampaign || undefined,
+        selectedDonorType: this.filters.selectedDonorType || undefined,
+        selectedYear: this.filters.selectedYear,
+        conversionRates: this.conversionRates,
+        page: 1,
+        pageSize: 999999, // Get all records
+        sortBy: this.sortBy,
+        sortDirection: this.sortDirection,
+        // Add global filters
+        globalFilterCampaignIds: globalFilters.campaignIds,
+        globalFilterDateFrom: globalFilters.dateFrom,
+        globalFilterDateTo: globalFilters.dateTo,
+        globalFilterAmountMin: globalFilters.amountMin,
+        globalFilterAmountMax: globalFilters.amountMax
+      });
+
+      const XLSX = await import('xlsx');
+
+      // Create workbook
+      const wb = XLSX.utils.book_new();
+
+      // ===== Sheet 1: Main Report =====
+      const reportTitle = `דוח תרומות מקובץ לפי ${this.getGroupByLabel()}`;
+      const yearSubtitle = this.filters.selectedYear === 'last4'
+        ? `שנים עבריות: ${fullReportResponse.hebrewYears.join(', ')}`
+        : `שנה עברית: ${fullReportResponse.hebrewYears[0]}`;
+
+      // Build data array for main report
+      const reportData: any[] = [];
+
+      // Add title row
+      reportData.push([reportTitle]);
+      reportData.push([yearSubtitle]);
+      reportData.push([]); // Empty row
+
+      // Add headers
+      const headers = ['שם'];
+      if (this.filters.showDonorDetails && this.filters.groupBy === 'donor') {
+        headers.push('כתובת', 'טלפונים', 'אימיילים');
+      }
+      fullReportResponse.hebrewYears.forEach(year => headers.push(year));
+      if (this.filters.showActualPayments) {
+        headers.push('תשלומים בפועל');
+      }
+      reportData.push(headers);
+
+      // Add data rows
+      fullReportResponse.reportData.forEach(row => {
+        const dataRow: any[] = [row.donorName];
+
+        if (this.filters.showDonorDetails && this.filters.groupBy === 'donor') {
+          dataRow.push(
+            row.donorDetails?.address || '-',
+            row.donorDetails?.phones?.join(', ') || '-',
+            row.donorDetails?.emails?.join(', ') || '-'
+          );
+        }
+
+        fullReportResponse.hebrewYears.forEach(year => {
+          dataRow.push(this.formatYearTotal(row.yearlyTotals, year));
+        });
+
+        if (this.filters.showActualPayments && row.actualPayments) {
+          const payments = fullReportResponse.hebrewYears
+            .map(year => row.actualPayments![year] ? `${year}: ₪${row.actualPayments![year].toLocaleString()}` : '')
+            .filter(p => p)
+            .join('\n');
+          dataRow.push(payments || '-');
+        }
+
+        reportData.push(dataRow);
+      });
+
+      const ws = XLSX.utils.aoa_to_sheet(reportData);
+
+      // Set column widths
+      const colWidths = [{ wch: 25 }]; // Name column
+      if (this.filters.showDonorDetails && this.filters.groupBy === 'donor') {
+        colWidths.push({ wch: 30 }, { wch: 20 }, { wch: 30 }); // Address, Phones, Emails
+      }
+      fullReportResponse.hebrewYears.forEach(() => colWidths.push({ wch: 15 })); // Year columns
+      if (this.filters.showActualPayments) {
+        colWidths.push({ wch: 30 }); // Payments column
+      }
+      ws['!cols'] = colWidths;
+
+      XLSX.utils.book_append_sheet(wb, ws, 'דוח תרומות');
+
+      // ===== Sheet 2: Currency Summary =====
+      if (this.filters.showCurrencySummary && fullReportResponse.currencySummary.length > 0) {
+        const summaryData: any[] = [];
+
+        summaryData.push(['סיכום לפי מטבעות']);
+        summaryData.push([]); // Empty row
+
+        // Headers
+        const summaryHeaders = ['מטבע'];
+        fullReportResponse.hebrewYears.forEach(year => summaryHeaders.push(year));
+        summaryHeaders.push('סה"כ');
+        summaryData.push(summaryHeaders);
+
+        // Currency rows
+        fullReportResponse.currencySummary.forEach(curr => {
+          const row: any[] = [curr.currency];
+          fullReportResponse.hebrewYears.forEach(year => {
+            row.push(this.formatCurrencyWithSymbol(curr.yearlyTotals[year] || 0, curr.currency));
+          });
+          row.push(this.formatCurrencyWithSymbol(curr.totalAmount, curr.currency));
+          summaryData.push(row);
+        });
+
+        // Shekel totals row
+        const shekelRow: any[] = ['בשקלים'];
+        fullReportResponse.hebrewYears.forEach(year => {
+          shekelRow.push(`₪${this.getCurrencySummaryYearTotalForExport(fullReportResponse.currencySummary, year).toLocaleString()}`);
+        });
+        shekelRow.push(`₪${fullReportResponse.currencySummary.reduce((sum, curr) => sum + curr.totalInShekel, 0).toLocaleString()}`);
+        summaryData.push(shekelRow);
+
+        const summaryWs = XLSX.utils.aoa_to_sheet(summaryData);
+
+        // Set column widths for summary
+        const summaryColWidths = [{ wch: 15 }]; // Currency column
+        fullReportResponse.hebrewYears.forEach(() => summaryColWidths.push({ wch: 15 }));
+        summaryColWidths.push({ wch: 20 }); // Total column
+        summaryWs['!cols'] = summaryColWidths;
+
+        XLSX.utils.book_append_sheet(wb, summaryWs, 'סיכום מטבעות');
+      }
+
+      // Save file
+      const fileName = this.excelService.generateFileName(`דוח_תרומות_${this.getGroupByLabel()}`);
+      XLSX.writeFile(wb, fileName);
+
+    } catch (error) {
+      console.error('Error exporting donations report:', error);
+      alert('שגיאה בייצוא הדוח');
+    }
+  }
+
+  private getGroupByLabel(): string {
+    switch (this.filters.groupBy) {
+      case 'donor': return 'תורם';
+      case 'campaign': return 'קמפיין';
+      case 'paymentMethod': return 'אמצעי_תשלום';
+      case 'fundraiser': return 'מתרים';
+      default: return 'תורם';
+    }
+  }
+
+  private getCurrencySummaryYearTotalForExport(currencySummary: any[], year: string): number {
+    return currencySummary.reduce((sum, curr) => {
+      return sum + (curr.yearlyTotalsInShekel?.[year] || 0);
+    }, 0);
   }
 
   getBlessingSummary() {
@@ -767,5 +1031,91 @@ export class ReportsComponent implements OnInit {
 
   getTotalDonationAmount(): number {
     return this.donationReportData.reduce((sum, d) => sum + d.amount, 0);
+  }
+
+  // Pagination handlers
+  async onPageChange(page: number) {
+    this.currentPage = page;
+    await this.refreshData();
+  }
+
+  async onPageSizeChange(size: number) {
+    this.pageSize = size;
+    this.currentPage = 1; // Reset to first page
+    await this.refreshData();
+  }
+
+  // Sorting handlers
+  async onSortChange(sortBy: string) {
+    if (this.sortBy === sortBy) {
+      // Toggle direction if same column
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      // New column - default to ascending
+      this.sortBy = sortBy;
+      this.sortDirection = 'asc';
+    }
+    await this.refreshData();
+  }
+
+  getSortIcon(column: string): string {
+    if (this.sortBy !== column) return 'unfold_more';
+    return this.sortDirection === 'asc' ? 'arrow_upward' : 'arrow_downward';
+  }
+
+  getPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxPagesToShow = 5;
+    let startPage = Math.max(1, this.currentPage - Math.floor(maxPagesToShow / 2));
+    let endPage = Math.min(this.totalPages, startPage + maxPagesToShow - 1);
+
+    // Adjust start if we're near the end
+    if (endPage - startPage < maxPagesToShow - 1) {
+      startPage = Math.max(1, endPage - maxPagesToShow + 1);
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+    return pages;
+  }
+
+  async openDonorSelectionModal() {
+    try {
+      const selectedDonors = await openDialog(
+        DonorSelectionModalComponent,
+        (modal: DonorSelectionModalComponent) => {
+          modal.args = {
+            title: 'בחר תורמים לסינון',
+            multiSelect: true,
+            selectedIds: this.filters.selectedDonorIds
+          };
+        }
+      );
+
+      if (selectedDonors && Array.isArray(selectedDonors)) {
+        this.filters.selectedDonorIds = selectedDonors.map((d: Donor) => d.id);
+        await this.applyFilters();
+      }
+    } catch (error) {
+      console.error('Error opening donor selection modal:', error);
+    }
+  }
+
+  getSelectedDonorsText(): string {
+    if (this.filters.selectedDonorIds.length === 0) {
+      return 'כל התורמים';
+    }
+
+    if (this.filters.selectedDonorIds.length === 1) {
+      return 'תורם אחד נבחר';
+    }
+
+    return `${this.filters.selectedDonorIds.length} תורמים נבחרו`;
+  }
+
+  clearSelectedDonors() {
+    this.filters.selectedDonorIds = [];
+    this.applyFilters();
   }
 }

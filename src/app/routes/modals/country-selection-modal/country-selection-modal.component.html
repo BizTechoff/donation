@@ -1,0 +1,103 @@
+<div class="modal-backdrop" (click)="closeDialog()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="header-content">
+        <h2>{{ args.title || 'בחר מדינה' }}</h2>
+        <div class="selection-counter" *ngIf="args.multiSelect && selectedCountries.length > 0">
+          <mat-icon>check_circle</mat-icon>
+          <span>{{ selectedCountries.length }} נבחרו</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="btn-finish-selection"
+                *ngIf="args.multiSelect && selectedCountries.length > 0"
+                (click)="finishMultiSelect()"
+                title="סיים בחירה">
+          <mat-icon>done_all</mat-icon>
+          סיים בחירה
+        </button>
+        <button class="close-btn" (click)="closeDialog()" title="סגור">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+    </div>
+
+    <div class="modal-body">
+      <!-- Search Section -->
+      <div class="search-section">
+        <div class="search-input-group">
+          <mat-icon class="search-icon">search</mat-icon>
+          <input
+            type="text"
+            class="form-control search-input"
+            [(ngModel)]="searchTerm"
+            placeholder="חפש מדינה...">
+          <button *ngIf="searchTerm" class="clear-search-btn" (click)="clearSearch()">
+            <mat-icon>clear</mat-icon>
+          </button>
+        </div>
+        <!-- <button class="btn btn-create-new" (click)="createNewCountry()">
+          <mat-icon>add</mat-icon>
+          יצירת מדינה חדשה
+        </button> -->
+      </div>
+
+      <!-- Countries List -->
+      <div class="countries-list-section">
+        <div class="countries-list" *ngIf="getFilteredCountries().length > 0">
+          <div class="country-item"
+               *ngFor="let country of getFilteredCountries()"
+               (click)="selectCountry(country)"
+               [class.selected]="args.multiSelect ? isCountrySelected(country) : selectedCountry?.id === country.id">
+            <div class="country-item-content">
+              <div class="country-icon-wrapper">
+                <mat-icon>public</mat-icon>
+              </div>
+              <div class="country-info">
+                <div class="country-name">{{ getCountryDisplayName(country) }}</div>
+                <div class="country-details">
+                  <span *ngIf="country.code" class="detail-item">
+                    <mat-icon class="detail-icon">flag</mat-icon>
+                    {{ country.code }}
+                  </span>
+                  <span *ngIf="country.phonePrefix" class="detail-item">
+                    <mat-icon class="detail-icon">phone</mat-icon>
+                    {{ country.phonePrefix }}
+                  </span>
+                  <span *ngIf="country.currencySymbol" class="detail-item">
+                    <mat-icon class="detail-icon">attach_money</mat-icon>
+                    {{ country.currencySymbol }}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <!-- <div class="action-buttons">
+              <button class="btn-edit" (click)="editCountry(country, $event)" title="ערוך">
+                <mat-icon>edit</mat-icon>
+              </button>
+            </div> -->
+            <div class="select-indicator" *ngIf="!args.multiSelect">
+              <mat-icon>check_circle</mat-icon>
+            </div>
+            <div class="multi-select-indicator" *ngIf="args.multiSelect">
+              <div class="checkbox-wrapper" [class.checked]="isCountrySelected(country)">
+                <mat-icon *ngIf="isCountrySelected(country)">check</mat-icon>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty state when no countries found -->
+        <div class="no-countries-found" *ngIf="getFilteredCountries().length === 0">
+          <mat-icon class="empty-icon">public</mat-icon>
+          <p *ngIf="searchTerm">לא נמצאו מדינות התואמות לחיפוש "{{ searchTerm }}"</p>
+          <p *ngIf="!searchTerm">אין מדינות זמינות</p>
+          <button class="btn btn-primary" (click)="createNewCountry()">
+            <mat-icon>add</mat-icon>
+            יצירת מדינה חדשה
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

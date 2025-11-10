@@ -5,7 +5,7 @@ import { Campaign, Donor, Circle, Place } from '../../../../shared/entity';
 import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
 import { UIToolsService } from '../../../common/UIToolsService';
-import { openDialog, DialogConfig } from 'common-ui-elements';
+import { openDialog, DialogConfig, BusyService } from 'common-ui-elements';
 import { ExcelExportService, ExcelColumn } from '../../../services/excel-export.service';
 import { DonorService } from '../../../services/donor.service';
 
@@ -61,11 +61,27 @@ export class CampaignInvitedListModalComponent implements OnInit {
   // Display options
   showOnlySelected = false;
   showSelectedFirst = false;
+  freeSearchText = ''; // חיפוש חופשי
+
+  // Pagination
+  currentPage = 1;
+  pageSize = 50;
+  totalPages = 0;
+
+  // Sorting
+  sortField = 'firstName';
+  sortDirection: 'asc' | 'desc' = 'asc';
 
   // Filter stats
   totalDonors = 0;
   filteredByAnash = 0;
   filteredByAge = 0;
+
+  // Expose Math to template
+  Math = Math;
+
+  // Base data loaded flag
+  private baseDataLoaded = false;
 
   constructor(
     public i18n: I18nService,
@@ -74,22 +90,66 @@ export class CampaignInvitedListModalComponent implements OnInit {
     private cdr: ChangeDetectorRef,
     public dialogRef: MatDialogRef<CampaignInvitedListModalComponent>,
     private excelService: ExcelExportService,
-    private donorService: DonorService
+    private donorService: DonorService,
+    private busy: BusyService
   ) {}
 
   async ngOnInit() {
-    await this.loadCampaign();
-    await this.loadCircles();
-    await this.loadAllDonorsForFilters();
+    await this.refreshData();
+  }
+
+  /**
+   * ✅ Main data loading method - wrapped with BusyService
+   * Calls loadBaseData if not loaded yet, then loads other data
+   */
+  async refreshData() {
+    await this.busy.doWhileShowingBusy(async () => {
+      // Step 1: Load campaign (always first)
+      await this.loadCampaign();
+      if (!this.campaign) return;
+
+      // Step 2: Load base data if not loaded yet
+      if (!this.baseDataLoaded) {
+        await this.loadBaseData();
+        this.baseDataLoaded = true;
+      }
+
+      // Step 3: Load dynamic data
+      await this.loadDynamicData();
+
+      // Step 4: Apply saved selections
+      if (this.campaign?.invitedDonorIds && this.campaign.invitedDonorIds.length > 0) {
+        this.selectedDonors = new Set(this.campaign.invitedDonorIds);
+      }
+    });
+  }
+
+  /**
+   * Load base data - called once (circles, donors with related data)
+   */
+  private async loadBaseData() {
+    // Load in parallel
+    await Promise.all([
+      this.loadCircles(),
+      this.loadInvitedDonors()
+    ]);
+
+    // Set allDonors from invitedDonors
+    this.allDonors = this.invitedDonors;
+
+    // Extract filter data from loaded donors
     this.extractFilterData();
+  }
+
+  /**
+   * Load dynamic data - can be called multiple times
+   */
+  private async loadDynamicData() {
     // Load previously saved filters
     this.loadFiltersFromCampaign();
-    await this.loadInvitedDonors();
-    // Load previously saved invited donors - only if not empty
-    // Otherwise keep the selection from filters (applyFiltersAsSelection)
-    if (this.campaign?.invitedDonorIds && this.campaign.invitedDonorIds.length > 0) {
-      this.selectedDonors = new Set(this.campaign.invitedDonorIds);
-    }
+
+    // Apply filters as selection
+    this.applyFiltersAsSelection();
   }
 
   async loadCircles() {
@@ -103,29 +163,7 @@ export class CampaignInvitedListModalComponent implements OnInit {
     }
   }
 
-  async loadAllDonorsForFilters() {
-    try {
-      // Load all donors
-      const baseAllDonors = await this.donorRepo.find({
-        orderBy: { firstName: 'asc', lastName: 'asc' }
-      });
-
-      // Use DonorService to load all related data
-      const relatedData = await this.donorService.loadDonorRelatedData(
-        baseAllDonors.map(d => d.id)
-      );
-
-      // Populate maps from service
-      this.donorPlaceMap = relatedData.donorPlaceMap;
-      this.donorEmailMap = relatedData.donorEmailMap;
-      this.donorPhoneMap = relatedData.donorPhoneMap;
-      this.donorBirthDateMap = relatedData.donorBirthDateMap;
-
-      this.allDonors = baseAllDonors;
-    } catch (error) {
-      console.error('Error loading all donors for filters:', error);
-    }
-  }
+  // ✅ REMOVED: loadAllDonorsForFilters - מיותר, allDonors מגיע מ-invitedDonors
 
   extractFilterData() {
     // Extract unique values from ALL donors (not just filtered ones)
@@ -158,7 +196,6 @@ export class CampaignInvitedListModalComponent implements OnInit {
       return;
     }
 
-    this.loading = true;
     try {
       const foundCampaign = await this.campaignRepo.findId(this.args.campaignId, {
         include: {
@@ -174,20 +211,24 @@ export class CampaignInvitedListModalComponent implements OnInit {
       console.error('Error loading campaign:', error);
       this.ui.error('שגיאה בטעינת הקמפיין');
       this.closeModal();
-    } finally {
-      this.loading = false;
     }
   }
 
   async loadInvitedDonors() {
     if (!this.campaign) return;
 
-    this.loading = true;
     try {
-      // Load ALL donors without filtering - filters will only affect selection
-      const baseAllDonors = await this.donorRepo.find({});
+      // ✅ OPTIMIZATION: טען רק תורמים פעילים עם limit ראשוני
+      // במקום כל התורמים במערכת
+      const baseAllDonors = await this.donorRepo.find({
+        where: {
+          isActive: true  // רק פעילים
+        },
+        limit: 1000,  // הגבלה ראשונית
+        orderBy: { firstName: 'asc' }
+      });
 
-      // Use DonorService to load all related data
+      // ✅ OPTIMIZATION: טען נתונים קשורים רק עבור התורמים שנטענו
       const relatedData = await this.donorService.loadDonorRelatedData(
         baseAllDonors.map(d => d.id)
       );
@@ -207,8 +248,6 @@ export class CampaignInvitedListModalComponent implements OnInit {
     } catch (error: any) {
       console.error('Error loading invited donors:', error);
       this.ui.error('שגיאה בטעינת רשימת המוזמנים: ' + (error.message || error));
-    } finally {
-      this.loading = false;
     }
   }
 
@@ -542,21 +581,21 @@ export class CampaignInvitedListModalComponent implements OnInit {
   async saveCampaign() {
     if (!this.campaign) return;
 
-    try {
-      this.loading = true;
-      // Save selected donors to campaign
-      this.campaign.invitedDonorIds = Array.from(this.selectedDonors);
-      // Save current filters to campaign
-      this.campaign.invitedDonorFilters = this.getCurrentFilters();
-      await remult.repo(Campaign).update(this.campaign.id, this.campaign);
-      this.snackBar.open('הקמפיין נשמר בהצלחה', 'סגור', { duration: 3000 });
-      await this.loadInvitedDonors();
-    } catch (error: any) {
-      console.error('Error saving campaign:', error);
-      this.ui.error('שגיאה בשמירת הקמפיין: ' + (error.message || error));
-    } finally {
-      this.loading = false;
-    }
+    await this.busy.doWhileShowingBusy(async () => {
+      try {
+        // Save selected donors to campaign
+        this.campaign.invitedDonorIds = Array.from(this.selectedDonors);
+        // Save current filters to campaign
+        this.campaign.invitedDonorFilters = this.getCurrentFilters();
+        await remult.repo(Campaign).update(this.campaign.id, this.campaign);
+        this.snackBar.open('הקמפיין נשמר בהצלחה', 'סגור', { duration: 3000 });
+        // Refresh data after save
+        await this.refreshData();
+      } catch (error: any) {
+        console.error('Error saving campaign:', error);
+        this.ui.error('שגיאה בשמירת הקמפיין: ' + (error.message || error));
+      }
+    });
   }
 
   getDonorDisplayName(donor: Donor): string {
@@ -663,35 +702,193 @@ export class CampaignInvitedListModalComponent implements OnInit {
   get displayedDonors(): Donor[] {
     let result = [...this.invitedDonors];
 
-    // Filter: show only selected
+    // Filter 1: Free text search across all visible columns
+    if (this.freeSearchText && this.freeSearchText.trim()) {
+      const searchLower = this.freeSearchText.trim().toLowerCase();
+      result = result.filter(donor => {
+        const name = this.getDonorDisplayName(donor).toLowerCase();
+        const phone = this.getDonorPhone(donor).toLowerCase();
+        const email = this.getDonorEmail(donor).toLowerCase();
+        const level = this.getDonorLevel(donor).toLowerCase();
+        const city = this.getDonorCity(donor).toLowerCase();
+        const neighborhood = this.getDonorNeighborhood(donor).toLowerCase();
+        const country = this.getDonorCountryName(donor).toLowerCase();
+
+        return name.includes(searchLower) ||
+               phone.includes(searchLower) ||
+               email.includes(searchLower) ||
+               level.includes(searchLower) ||
+               city.includes(searchLower) ||
+               neighborhood.includes(searchLower) ||
+               country.includes(searchLower);
+      });
+    }
+
+    // Filter 2: Show only selected
     if (this.showOnlySelected) {
       result = result.filter(donor => this.selectedDonors.has(donor.id));
     }
 
-    // Sort: selected first, then alphabetically
-    if (this.showSelectedFirst) {
-      result.sort((a, b) => {
+    // Calculate total pages based on filtered results
+    this.totalPages = Math.ceil(result.length / this.pageSize);
+
+    // Sort: selected first (if enabled), then by sort field
+    result.sort((a, b) => {
+      // First: selected first (if enabled)
+      if (this.showSelectedFirst) {
         const aSelected = this.selectedDonors.has(a.id);
         const bSelected = this.selectedDonors.has(b.id);
-
-        // First by selection status
         if (aSelected && !bSelected) return -1;
         if (!aSelected && bSelected) return 1;
+      }
 
-        // Then alphabetically by first name, then last name
-        const aName = `${a.firstName || ''} ${a.lastName || ''}`.trim().toLowerCase();
-        const bName = `${b.firstName || ''} ${b.lastName || ''}`.trim().toLowerCase();
-        return aName.localeCompare(bName, 'he');
-      });
+      // Second: by sort field
+      let aValue: any;
+      let bValue: any;
+
+      switch (this.sortField) {
+        case 'firstName':
+          aValue = a.firstName?.toLowerCase() || '';
+          bValue = b.firstName?.toLowerCase() || '';
+          break;
+        case 'lastName':
+          aValue = a.lastName?.toLowerCase() || '';
+          bValue = b.lastName?.toLowerCase() || '';
+          break;
+        case 'phone':
+          aValue = this.getDonorPhone(a).toLowerCase();
+          bValue = this.getDonorPhone(b).toLowerCase();
+          break;
+        case 'email':
+          aValue = this.getDonorEmail(a).toLowerCase();
+          bValue = this.getDonorEmail(b).toLowerCase();
+          break;
+        case 'level':
+          aValue = this.getDonorLevel(a).toLowerCase();
+          bValue = this.getDonorLevel(b).toLowerCase();
+          break;
+        case 'city':
+          aValue = this.getDonorCity(a).toLowerCase();
+          bValue = this.getDonorCity(b).toLowerCase();
+          break;
+        default:
+          aValue = a.firstName?.toLowerCase() || '';
+          bValue = b.firstName?.toLowerCase() || '';
+      }
+
+      const comparison = aValue.localeCompare(bValue, 'he');
+      return this.sortDirection === 'asc' ? comparison : -comparison;
+    });
+
+    // Apply pagination - return only current page
+    const startIndex = (this.currentPage - 1) * this.pageSize;
+    const endIndex = startIndex + this.pageSize;
+    return result.slice(startIndex, endIndex);
+  }
+
+  // Pagination methods
+  goToPage(page: number) {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+      // Auto-select donors on this page if they're in selectedDonors
+      this.autoSelectDisplayedDonors();
+    }
+  }
+
+  nextPage() {
+    if (this.currentPage < this.totalPages) {
+      this.currentPage++;
+      this.autoSelectDisplayedDonors();
+    }
+  }
+
+  previousPage() {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+      this.autoSelectDisplayedDonors();
+    }
+  }
+
+  firstPage() {
+    this.currentPage = 1;
+    this.autoSelectDisplayedDonors();
+  }
+
+  lastPage() {
+    this.currentPage = this.totalPages;
+    this.autoSelectDisplayedDonors();
+  }
+
+  getPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxPagesToShow = 5;
+    let startPage = Math.max(1, this.currentPage - Math.floor(maxPagesToShow / 2));
+    let endPage = Math.min(this.totalPages, startPage + maxPagesToShow - 1);
+
+    if (endPage - startPage < maxPagesToShow - 1) {
+      startPage = Math.max(1, endPage - maxPagesToShow + 1);
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+    return pages;
+  }
+
+  // Auto-select displayed donors if they're in selectedDonors (master list)
+  private autoSelectDisplayedDonors() {
+    // This is automatic - displayedDonors already checks isSelected()
+    // which checks against this.selectedDonors Set
+    // No action needed - the UI will reflect the selection state
+  }
+
+  // Sorting methods
+  sortBy(field: string) {
+    if (this.sortField === field) {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
     } else {
-      // Just alphabetically
-      result.sort((a, b) => {
-        const aName = `${a.firstName || ''} ${a.lastName || ''}`.trim().toLowerCase();
-        const bName = `${b.firstName || ''} ${b.lastName || ''}`.trim().toLowerCase();
-        return aName.localeCompare(bName, 'he');
+      this.sortField = field;
+      this.sortDirection = 'asc';
+    }
+    this.currentPage = 1; // Reset to first page after sorting
+  }
+
+  getSortIcon(field: string): string {
+    if (this.sortField !== field) return '';
+    return this.sortDirection === 'asc' ? '↑' : '↓';
+  }
+
+  // Free search change handler
+  onFreeSearchChange() {
+    this.currentPage = 1; // Reset to first page on search
+  }
+
+  get totalFilteredCount(): number {
+    let result = [...this.invitedDonors];
+
+    // Apply free text search
+    if (this.freeSearchText && this.freeSearchText.trim()) {
+      const searchLower = this.freeSearchText.trim().toLowerCase();
+      result = result.filter(donor => {
+        const name = this.getDonorDisplayName(donor).toLowerCase();
+        const phone = this.getDonorPhone(donor).toLowerCase();
+        const email = this.getDonorEmail(donor).toLowerCase();
+        const level = this.getDonorLevel(donor).toLowerCase();
+        const city = this.getDonorCity(donor).toLowerCase();
+
+        return name.includes(searchLower) ||
+               phone.includes(searchLower) ||
+               email.includes(searchLower) ||
+               level.includes(searchLower) ||
+               city.includes(searchLower);
       });
     }
 
-    return result;
+    // Apply show only selected
+    if (this.showOnlySelected) {
+      result = result.filter(donor => this.selectedDonors.has(donor.id));
+    }
+
+    return result.length;
   }
 }

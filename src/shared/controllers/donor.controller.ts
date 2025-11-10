@@ -1,4 +1,4 @@
-import { Allow, BackendMethod, remult } from 'remult';
+import { Allow, BackendMethod, Controller, remult } from 'remult';
 import { GlobalFilters } from '../../app/services/global-filter.service';
 import { Circle } from '../entity/circle';
 import { Company } from '../entity/company';
@@ -33,6 +33,14 @@ export interface DonorDetailsData {
   allDonors: Donor[];
 }
 
+export interface DonorSelectionData {
+  donors: Donor[];
+  donorEmailMap: Record<string, string>;
+  donorPhoneMap: Record<string, string>;
+  donorPlaceMap: Record<string, Place>;
+}
+
+@Controller('donor')
 export class DonorController {
 
   @BackendMethod({ allowed: Allow.authenticated })
@@ -158,12 +166,12 @@ export class DonorController {
   @BackendMethod({ allowed: Allow.authenticated })
   static async findFilteredDonors(
     filters: GlobalFilters,
+    searchTerm?: string,
     page?: number,
     pageSize?: number,
     sortColumns?: Array<{ field: string; direction: 'asc' | 'desc' }>
   ): Promise<Donor[]> {
-    console.log('DonorController.findFilteredDonors');
-    let whereClause: any = { isActive: true };
+    console.log('DonorController.findFilteredDonors', filters, 'searchTerm:', searchTerm);
 
     // Build orderBy from sortColumns or use default
     let orderBy: any = { lastName: 'asc' as 'asc' }; // Default sort
@@ -183,20 +191,32 @@ export class DonorController {
       });
     }
 
-    // Apply country filter by country ID
-    if (filters.countryIds && filters.countryIds.length > 0) {
-      console.log('DonorController: Applying country filter for IDs:', filters.countryIds);
+    // Start with all active donors
+    let donorIds: string[] | undefined = undefined;
 
-      // Find places with matching country IDs
-      const matchingPlaces = await remult.repo(Place).find({
-        where: { countryId: { $in: filters.countryIds } }
-      });
+    // Apply place-based filters (country, city, neighborhood)
+    if (filters.countryIds?.length || filters.cityIds?.length || filters.neighborhoodIds?.length) {
+      const placeWhere: any = {};
 
+      if (filters.countryIds && filters.countryIds.length > 0) {
+        placeWhere.countryId = { $in: filters.countryIds };
+      }
+
+      if (filters.cityIds && filters.cityIds.length > 0) {
+        placeWhere.city = { $in: filters.cityIds };
+      }
+
+      if (filters.neighborhoodIds && filters.neighborhoodIds.length > 0) {
+        placeWhere.neighborhood = { $in: filters.neighborhoodIds };
+      }
+
+      // Find matching places
+      const matchingPlaces = await remult.repo(Place).find({ where: placeWhere });
       const matchingPlaceIds = matchingPlaces.map(p => p.id);
-      console.log(`DonorController: Found ${matchingPlaces.length} places matching countries`);
+
+      console.log(`DonorController: Found ${matchingPlaces.length} places matching location filters`);
 
       if (matchingPlaceIds.length === 0) {
-        console.log('DonorController: No matching places found');
         return []; // No matching places found
       }
 
@@ -208,24 +228,79 @@ export class DonorController {
         }
       });
 
-      const donorIds = [...new Set(donorPlaces.map(dp => dp.donorId).filter(id => id))];
-      console.log(`DonorController: Found ${donorIds.length} unique donors with matching countries`);
+      donorIds = [...new Set(donorPlaces.map(dp => dp.donorId).filter((id): id is string => !!id))];
+      console.log(`DonorController: Found ${donorIds?.length || 0} unique donors with matching locations`);
 
       if (donorIds.length === 0) {
         return [];
       }
+    }
 
-      const donorsWithMatchingCountries = await remult.repo(Donor).find({
-        where: {
-          id: { $in: donorIds },
-          isActive: true
-        },
-        orderBy,
-        ...(page && pageSize ? { page, limit: pageSize } : {})
+    // Apply campaign filter
+    if (filters.campaignIds && filters.campaignIds.length > 0) {
+      const Donation = (await import('../entity/donation')).Donation;
+      const donations = await remult.repo(Donation).find({
+        where: { campaignId: { $in: filters.campaignIds } }
       });
 
-      console.log(`DonorController: Found ${donorsWithMatchingCountries.length} donors with matching countries`);
-      return donorsWithMatchingCountries;
+      const campaignDonorIds = [...new Set(donations.map(d => d.donorId).filter(id => id))];
+
+      if (donorIds) {
+        // Intersect with existing donor IDs
+        donorIds = donorIds.filter(id => campaignDonorIds.includes(id));
+      } else {
+        donorIds = campaignDonorIds;
+      }
+
+      console.log(`DonorController: After campaign filter: ${donorIds.length} donors`);
+
+      if (donorIds.length === 0) {
+        return [];
+      }
+    }
+
+    // Apply target audience filter
+    if (filters.targetAudienceIds && filters.targetAudienceIds.length > 0) {
+      const TargetAudience = (await import('../entity/target-audience')).TargetAudience;
+      const targetAudiences = await remult.repo(TargetAudience).find({
+        where: { id: { $in: filters.targetAudienceIds } }
+      });
+
+      // Collect all donor IDs from all matching target audiences
+      const audienceDonorIds = [
+        ...new Set(
+          targetAudiences.flatMap(ta => ta.donorIds || [])
+        )
+      ];
+
+      if (donorIds) {
+        // Intersect with existing donor IDs
+        donorIds = donorIds.filter(id => audienceDonorIds.includes(id));
+      } else {
+        donorIds = audienceDonorIds;
+      }
+
+      console.log(`DonorController: After target audience filter: ${donorIds.length} donors`);
+
+      if (donorIds.length === 0) {
+        return [];
+      }
+    }
+
+    // Build final where clause
+    let whereClause: any = { isActive: true };
+    if (donorIds) {
+      whereClause.id = { $in: donorIds };
+    }
+
+    // Apply search term filter
+    if (searchTerm && searchTerm.trim()) {
+      const search = searchTerm.trim();
+      whereClause.$or = [
+        { firstName: { $contains: search } },
+        { lastName: { $contains: search } },
+        { idNumber: { $contains: search } }
+      ];
     }
 
     return await remult.repo(Donor).find({
@@ -252,24 +327,34 @@ export class DonorController {
   }
 
   @BackendMethod({ allowed: Allow.authenticated })
-  static async countFilteredDonors(filters: GlobalFilters): Promise<number> {
-    let whereClause: any = { isActive: true };
+  static async countFilteredDonors(filters: GlobalFilters, searchTerm?: string): Promise<number> {
+    // Start with all active donors
+    let donorIds: string[] | undefined = undefined;
 
-    // Apply country filter by country ID
-    if (filters.countryIds && filters.countryIds.length > 0) {
-      console.log('DonorController.countFiltered: Applying country filter for IDs:', filters.countryIds);
+    // Apply place-based filters (country, city, neighborhood)
+    if (filters.countryIds?.length || filters.cityIds?.length || filters.neighborhoodIds?.length) {
+      const placeWhere: any = {};
 
-      // Find places with matching country IDs
-      const matchingPlaces = await remult.repo(Place).find({
-        where: { countryId: { $in: filters.countryIds } }
-      });
+      if (filters.countryIds && filters.countryIds.length > 0) {
+        placeWhere.countryId = { $in: filters.countryIds };
+      }
 
+      if (filters.cityIds && filters.cityIds.length > 0) {
+        placeWhere.city = { $in: filters.cityIds };
+      }
+
+      if (filters.neighborhoodIds && filters.neighborhoodIds.length > 0) {
+        placeWhere.neighborhood = { $in: filters.neighborhoodIds };
+      }
+
+      // Find matching places
+      const matchingPlaces = await remult.repo(Place).find({ where: placeWhere });
       const matchingPlaceIds = matchingPlaces.map(p => p.id);
-      console.log(`DonorController.countFiltered: Found ${matchingPlaces.length} places matching countries`);
+
+      console.log(`DonorController.countFiltered: Found ${matchingPlaces.length} places matching location filters`);
 
       if (matchingPlaceIds.length === 0) {
-        console.log('DonorController.countFiltered: No matching places found');
-        return 0; // No matching places found - return 0 count
+        return 0;
       }
 
       // Find DonorPlace entries with matching places
@@ -280,19 +365,142 @@ export class DonorController {
         }
       });
 
-      const donorIds = [...new Set(donorPlaces.map(dp => dp.donorId).filter(id => id))];
-      console.log(`DonorController.countFiltered: Found ${donorIds.length} unique donors with matching countries`);
+      donorIds = [...new Set(donorPlaces.map(dp => dp.donorId).filter((id): id is string => !!id))];
+      console.log(`DonorController.countFiltered: Found ${donorIds?.length || 0} unique donors with matching locations`);
 
       if (donorIds.length === 0) {
         return 0;
       }
+    }
 
-      return await remult.repo(Donor).count({
-        id: { $in: donorIds },
-        isActive: true
+    // Apply campaign filter
+    if (filters.campaignIds && filters.campaignIds.length > 0) {
+      const Donation = (await import('../entity/donation')).Donation;
+      const donations = await remult.repo(Donation).find({
+        where: { campaignId: { $in: filters.campaignIds } }
       });
+
+      const campaignDonorIds = [...new Set(donations.map(d => d.donorId).filter(id => id))];
+
+      if (donorIds) {
+        // Intersect with existing donor IDs
+        donorIds = donorIds.filter(id => campaignDonorIds.includes(id));
+      } else {
+        donorIds = campaignDonorIds;
+      }
+
+      if (donorIds.length === 0) {
+        return 0;
+      }
+    }
+
+    // Apply target audience filter
+    if (filters.targetAudienceIds && filters.targetAudienceIds.length > 0) {
+      const TargetAudience = (await import('../entity/target-audience')).TargetAudience;
+      const targetAudiences = await remult.repo(TargetAudience).find({
+        where: { id: { $in: filters.targetAudienceIds } }
+      });
+
+      // Collect all donor IDs from all matching target audiences
+      const audienceDonorIds = [
+        ...new Set(
+          targetAudiences.flatMap(ta => ta.donorIds || [])
+        )
+      ];
+
+      if (donorIds) {
+        // Intersect with existing donor IDs
+        donorIds = donorIds.filter(id => audienceDonorIds.includes(id));
+      } else {
+        donorIds = audienceDonorIds;
+      }
+
+      if (donorIds.length === 0) {
+        return 0;
+      }
+    }
+
+    // Build final where clause
+    let whereClause: any = { isActive: true };
+    if (donorIds) {
+      whereClause.id = { $in: donorIds };
+    }
+
+    // Apply search term filter
+    if (searchTerm && searchTerm.trim()) {
+      const search = searchTerm.trim();
+      whereClause.$or = [
+        { firstName: { $contains: search } },
+        { lastName: { $contains: search } },
+        { idNumber: { $contains: search } }
+      ];
     }
 
     return await remult.repo(Donor).count(whereClause);
+  }
+
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async getDonorsForSelection(excludeIds?: string[]): Promise<DonorSelectionData> {
+    // Load active donors
+    let donors = await remult.repo(Donor).find({
+      where: { isActive: true },
+      orderBy: { firstName: 'asc' }
+    });
+
+    // Filter out excluded IDs
+    if (excludeIds && excludeIds.length > 0) {
+      donors = donors.filter(donor => !excludeIds.includes(donor.id));
+    }
+
+    const donorIds = donors.map(d => d.id);
+
+    // Load all related data in parallel
+    const [donorContacts, donorPlaces, places] = await Promise.all([
+      remult.repo(DonorContact).find({
+        where: { donorId: { $in: donorIds } }
+      }),
+      remult.repo(DonorPlace).find({
+        where: { donorId: { $in: donorIds } }
+      }),
+      remult.repo(Place).find()
+    ]);
+
+    // Build maps for efficient lookup
+    const donorEmailMap: Record<string, string> = {};
+    const donorPhoneMap: Record<string, string> = {};
+    const donorPlaceMap: Record<string, Place> = {};
+
+    // Create place lookup map
+    const placesMap = new Map<string, Place>();
+    places.forEach(place => placesMap.set(place.id, place));
+
+    // Populate email and phone maps
+    donorContacts.forEach(contact => {
+      if (contact.donorId) {
+        if (contact.email && !donorEmailMap[contact.donorId]) {
+          donorEmailMap[contact.donorId] = contact.email;
+        }
+        if (contact.phoneNumber && !donorPhoneMap[contact.donorId]) {
+          donorPhoneMap[contact.donorId] = contact.phoneNumber;
+        }
+      }
+    });
+
+    // Populate place map
+    donorPlaces.forEach(dp => {
+      if (dp.donorId && dp.placeId) {
+        const place = placesMap.get(dp.placeId);
+        if (place && !donorPlaceMap[dp.donorId]) {
+          donorPlaceMap[dp.donorId] = place;
+        }
+      }
+    });
+
+    return {
+      donors,
+      donorEmailMap,
+      donorPhoneMap,
+      donorPlaceMap
+    };
   }
 }

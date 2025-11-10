@@ -187,6 +187,21 @@
           <input type="checkbox" [(ngModel)]="showSelectedFirst">
           <span class="checkbox-label">הצג מסומנים ראשונים ברשימה</span>
         </label>
+        <div class="free-search-container">
+          <mat-icon class="search-icon">search</mat-icon>
+          <input type="text"
+                 class="free-search-input"
+                 [(ngModel)]="freeSearchText"
+                 (ngModelChange)="onFreeSearchChange()"
+                 placeholder="חיפוש חופשי...">
+          <button *ngIf="freeSearchText"
+                  class="clear-search-btn"
+                  (click)="freeSearchText = ''; onFreeSearchChange()"
+                  [matTooltip]="'נקה חיפוש'"
+                  [dir]="'rtl'">
+            <mat-icon>clear</mat-icon>
+          </button>
+        </div>
       </div>
 
     </div>
@@ -210,11 +225,26 @@
                        [checked]="isAllSelected()"
                        (change)="toggleAllSelection()">
               </th>
-              <th>{{ (i18n.terms$ | async)?.name }}</th>
-              <th>{{ (i18n.terms$ | async)?.phone }}</th>
-              <th>{{ (i18n.terms$ | async)?.email }}</th>
-              <th>{{ (i18n.terms$ | async)?.level }}</th>
-              <th>{{ (i18n.terms$ | async)?.city }}</th>
+              <th class="sortable" (click)="sortBy('firstName')">
+                {{ (i18n.terms$ | async)?.name }}
+                <span class="sort-icon">{{getSortIcon('firstName')}}</span>
+              </th>
+              <th class="sortable" (click)="sortBy('phone')">
+                {{ (i18n.terms$ | async)?.phone }}
+                <span class="sort-icon">{{getSortIcon('phone')}}</span>
+              </th>
+              <th class="sortable" (click)="sortBy('email')">
+                {{ (i18n.terms$ | async)?.email }}
+                <span class="sort-icon">{{getSortIcon('email')}}</span>
+              </th>
+              <!-- <th class="sortable" (click)="sortBy('level')">
+                {{ (i18n.terms$ | async)?.level }}
+                <span class="sort-icon">{{getSortIcon('level')}}</span>
+              </th> -->
+              <th class="sortable" (click)="sortBy('city')">
+                {{ (i18n.terms$ | async)?.city }}
+                <span class="sort-icon">{{getSortIcon('city')}}</span>
+              </th>
               <!-- <th>{{ (i18n.terms$ | async)?.actions }}</th> -->
             </tr>
           </thead>
@@ -230,9 +260,9 @@
               </td>
               <td>{{getDonorPhone(donor)}}</td>
               <td>{{getDonorEmail(donor)}}</td>
-              <td>
+              <!-- <td>
                 <span class="level-badge">{{getDonorLevel(donor)}}</span>
-              </td>
+              </td> -->
               <td>{{getDonorCity(donor)}}</td>
               <!-- <td class="actions">
                 <button mat-icon-button
@@ -250,6 +280,34 @@
         <div class="empty-state" *ngIf="displayedDonors.length === 0">
           <mat-icon>people_outline</mat-icon>
           <p>{{ (i18n.terms$ | async)?.noInviteesFound }}</p>
+        </div>
+
+        <!-- Pagination Controls -->
+        <div class="pagination-controls" *ngIf="totalPages > 1">
+          <button class="btn-page" (click)="firstPage()" [disabled]="currentPage === 1 || loading">
+            ⏮ ראשון
+          </button>
+          <button class="btn-page" (click)="previousPage()" [disabled]="currentPage === 1 || loading">
+            ← הקודם
+          </button>
+          <div class="page-numbers">
+            <button *ngFor="let page of getPageNumbers()"
+                    class="btn-page-number"
+                    [class.active]="page === currentPage"
+                    (click)="goToPage(page)"
+                    [disabled]="loading">
+              {{page}}
+            </button>
+          </div>
+          <button class="btn-page" (click)="nextPage()" [disabled]="currentPage === totalPages || loading">
+            הבא →
+          </button>
+          <button class="btn-page" (click)="lastPage()" [disabled]="currentPage === totalPages || loading">
+            אחרון ⏭
+          </button>
+          <div class="pagination-info">
+            <span>מוצג {{(currentPage - 1) * pageSize + 1}}-{{Math.min(currentPage * pageSize, totalFilteredCount)}} מתוך {{totalFilteredCount}}</span>
+          </div>
         </div>
       </div>
     </div>

@@ -132,6 +132,8 @@
         <div class="grid-col">{{formatDate(campaign.startDate)}}</div>
         <div class="grid-col">{{formatDate(campaign.endDate)}}</div>
         <div class="grid-col actions">
+          <button class="btn-icon btn-invited" title="רשימת מוזמנים" (click)="openInvitedList(campaign)">👥</button>
+          <button class="btn-icon btn-blessings" title="ספר ברכות" (click)="openBlessingsBook(campaign)">📖</button>
           <button class="btn-icon btn-edit" [title]="(i18n.terms$ | async)?.edit" (click)="editCampaign(campaign)">✏</button>
           <button class="btn-icon btn-delete" [title]="(i18n.terms$ | async)?.delete" (click)="deleteCampaign(campaign)">🗑</button>
         </div>

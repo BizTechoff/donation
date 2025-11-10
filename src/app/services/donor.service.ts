@@ -3,6 +3,7 @@ import { remult } from 'remult';
 import { Donor,  DonorPlace, DonorContact, DonorEvent, Event, Place, Donation } from '../../shared/entity';
 import { DonorController } from '../../shared/controllers/donor.controller';
 import { GlobalFilters, GlobalFilterService } from './global-filter.service';
+import { DonorMapController, DonorMapData } from '../../shared/controllers/donor-map.controller';
 
 @Injectable({
   providedIn: 'root'
@@ -37,6 +38,7 @@ export class DonorService {
    * Find donors with global filters applied automatically
    */
   async findFiltered(
+    searchTerm?: string,
     additionalFilters?: Partial<GlobalFilters>,
     page?: number,
     pageSize?: number,
@@ -44,7 +46,7 @@ export class DonorService {
   ): Promise<Donor[]> {
     const globalFilters = this.globalFilterService.currentFilters;
     const combinedFilters = { ...globalFilters, ...additionalFilters };
-    return await DonorController.findFilteredDonors(combinedFilters, page, pageSize, sortColumns);
+    return await DonorController.findFilteredDonors(combinedFilters, searchTerm, page, pageSize, sortColumns);
   }
 
   async findById(id: string): Promise<Donor | null> {
@@ -62,10 +64,18 @@ export class DonorService {
   /**
    * Count donors with global filters applied automatically
    */
-  async countFiltered(additionalFilters?: Partial<GlobalFilters>): Promise<number> {
+  async countFiltered(searchTerm?: string, additionalFilters?: Partial<GlobalFilters>): Promise<number> {
     const globalFilters = this.globalFilterService.currentFilters;
     const combinedFilters = { ...globalFilters, ...additionalFilters };
-    return await DonorController.countFilteredDonors(combinedFilters);
+    return await DonorController.countFilteredDonors(combinedFilters, searchTerm);
+  }
+
+  /**
+   * Load donors map data with full stats
+   * Used for map visualization and target audience management
+   */
+  async loadDonorsMapData(donorIds?: string[]): Promise<DonorMapData[]> {
+    return await DonorMapController.loadDonorsMapData(donorIds);
   }
 
   /**

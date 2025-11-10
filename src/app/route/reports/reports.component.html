@@ -1,6 +1,6 @@
 <div class="reports-container">
   <!-- כותרת -->
-  <div class="page-header">
+  <div class="page-header" *ngIf="!isExpandedView">
     <div class="header-content">
       <h1>{{ (i18n.terms$ | async)?.reportsAnalyticsTitle }}</h1>
       <p>{{ (i18n.terms$ | async)?.systemActivityInfo }}</p>
@@ -11,24 +11,24 @@
         {{ (i18n.terms$ | async)?.refreshData }}
       </button>
       <div class="export-buttons" *ngIf="activeReport !== 'general'">
-        <button class="btn btn-outline" (click)="printReport()">
+        <!-- <button class="btn btn-outline" (click)="printReport()">
           <span class="btn-icon">🖨️</span>
           {{ (i18n.terms$ | async)?.print }}
-        </button>
+        </button> -->
         <button class="btn btn-outline" (click)="exportSpecificReport('excel')">
           <span class="btn-icon">📊</span>
           Excel
         </button>
-        <button class="btn btn-outline" (click)="exportSpecificReport('pdf')">
+        <!-- <button class="btn btn-outline" (click)="exportSpecificReport('pdf')">
           <span class="btn-icon">📄</span>
           PDF
-        </button>
+        </button> -->
       </div>
     </div>
   </div>
 
   <!-- תפריט טאבים -->
-  <div class="reports-tabs">
+  <div class="reports-tabs" *ngIf="!isExpandedView">
     <!-- <button class="tab-button" [class.active]="activeReport === 'general'" (click)="switchReport('general')">
       <span class="tab-icon">📊</span>
       {{ (i18n.terms$ | async)?.generalReports }}
@@ -69,42 +69,15 @@
 
   <!-- מסננים ספציפיים לדוחות -->
   <div class="specific-filters" *ngIf="activeReport !== 'general'">
+    <!-- כפתור הרחבה -->
+    <button class="expand-toggle-btn"
+            (click)="toggleExpandedView()"
+            [matTooltip]="isExpandedView ? 'תצוגה רגילה' : 'הרחב דוח'"
+            [dir]="'rtl'">
+      <mat-icon>{{ isExpandedView ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
+    </button>
+
     <div class="filter-row">
-      <!-- מסנן שנים -->
-      <div class="filter-group" *ngIf="activeReport === 'donations' || activeReport === 'yearly'">
-        <label>{{ (i18n.terms$ | async)?.filterByYears }}</label>
-        <select class="form-control" [(ngModel)]="filters.selectedYear" (ngModelChange)="applyFilters()">
-          <option value="last4">4 שנים אחורנות</option>
-          <option *ngFor="let year of availableYears" [value]="year">{{year}}</option>
-        </select>
-      </div>
-
-      <!-- מסנן תורם -->
-      <div class="filter-group" *ngIf="activeReport === 'donations' || activeReport === 'payments'">
-        <label>{{ (i18n.terms$ | async)?.filterByDonor }}</label>
-        <select class="form-control" [(ngModel)]="filters.selectedDonor" (ngModelChange)="applyFilters()">
-          <option value="">{{ (i18n.terms$ | async)?.all }}</option>
-          <option *ngFor="let donor of availableDonors" [value]="donor.id">{{donor.displayName}}</option>
-        </select>
-      </div>
-
-      <!-- מסנן סוג תורם -->
-      <div class="filter-group" *ngIf="activeReport === 'donations'">
-        <label>{{ (i18n.terms$ | async)?.filterByDonorType }}</label>
-        <select class="form-control" [(ngModel)]="filters.selectedDonorType" (ngModelChange)="applyFilters()">
-          <option value="">{{ (i18n.terms$ | async)?.all }}</option>
-          <option *ngFor="let type of donorTypes" [value]="type">{{type}}</option>
-        </select>
-      </div>
-
-      <!-- מסנן קמפיין -->
-      <div class="filter-group" *ngIf="activeReport === 'donations'">
-        <label>{{ (i18n.terms$ | async)?.filterByCampaign }}</label>
-        <select class="form-control" [(ngModel)]="filters.selectedCampaign" (ngModelChange)="applyFilters()">
-          <option value="">{{ (i18n.terms$ | async)?.all }}</option>
-          <option *ngFor="let campaign of availableCampaigns" [value]="campaign.id">{{campaign.name}}</option>
-        </select>
-      </div>
 
       <!-- סוג קיבוץ -->
       <div class="filter-group" *ngIf="activeReport === 'donations'">
@@ -114,6 +87,53 @@
           <option value="campaign">קמפיין</option>
           <option value="paymentMethod">אמצעי תשלום</option>
           <option value="fundraiser">מתרים</option>
+        </select>
+      </div>
+
+      <!-- מסנן שנים -->
+      <div class="filter-group" *ngIf="activeReport === 'donations' || activeReport === 'yearly'">
+        <label>{{ (i18n.terms$ | async)?.filterByYears }}</label>
+        <select class="form-control" [(ngModel)]="filters.selectedYear" (ngModelChange)="applyFilters()">
+          <option value="last4">4 שנים אחורנות</option>
+          <option *ngFor="let year of availableYears" [value]="year">{{year}}</option>
+        </select>
+      </div>
+
+      <!-- מסנן בחירת תורמים (משותף לתרומות ותשלומים) -->
+      <div class="filter-group donor-filter-group" *ngIf="activeReport === 'donations' || activeReport === 'payments'">
+        <label>{{ (i18n.terms$ | async)?.filterByDonor }}</label>
+        <div class="donor-filter-input-wrapper">
+          <input
+            type="text"
+            class="form-control donor-filter-input"
+            [value]="getSelectedDonorsText()"
+            readonly
+            (click)="openDonorSelectionModal()"
+            placeholder="לחץ לבחירת תורמים">
+          <button
+            class="donor-filter-search-btn"
+            (click)="openDonorSelectionModal()"
+            [matTooltip]="'בחר תורמים'"
+            [dir]="'rtl'">
+            <mat-icon>search</mat-icon>
+          </button>
+          <button
+            *ngIf="filters.selectedDonorIds.length > 0"
+            class="donor-filter-clear-btn"
+            (click)="clearSelectedDonors(); $event.stopPropagation()"
+            [matTooltip]="'נקה בחירה'"
+            [dir]="'rtl'">
+            <mat-icon>clear</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      <!-- מסנן קמפיין -->
+      <div class="filter-group" *ngIf="activeReport === 'donations'">
+        <label>{{ (i18n.terms$ | async)?.filterByCampaign }}</label>
+        <select class="form-control" [(ngModel)]="filters.selectedCampaign" (ngModelChange)="applyFilters()">
+          <option value="">{{ (i18n.terms$ | async)?.all }}</option>
+          <option *ngFor="let campaign of availableCampaigns" [value]="campaign.id">{{campaign.name}}</option>
         </select>
       </div>
 
@@ -339,20 +359,32 @@
 
     <!-- דוח תרומות -->
     <div *ngIf="activeReport === 'donations'" class="donations-report">
-      <h2>דוח תרומות מקובץ לפי {{filters.groupBy === 'donor' ? 'תורם' : filters.groupBy === 'campaign' ? 'קמפיין' : filters.groupBy === 'paymentMethod' ? 'אמצעי תשלום' : 'מתרים'}}</h2>
-      <p class="report-subtitle" *ngIf="filters.selectedYear === 'last4'">שנים עבריות: {{hebrewYears.join(', ')}}</p>
-      <p class="report-subtitle" *ngIf="filters.selectedYear !== 'last4'">שנה עברית: {{hebrewYears[0]}}</p>
+      <div *ngIf="!isExpandedView">
+        <h2>דוח תרומות מקובץ לפי {{filters.groupBy === 'donor' ? 'תורם' : filters.groupBy === 'campaign' ? 'קמפיין' : filters.groupBy === 'paymentMethod' ? 'אמצעי תשלום' : 'מתרים'}}</h2>
+        <p class="report-subtitle" *ngIf="filters.selectedYear === 'last4'">שנים עבריות: {{hebrewYears.join(', ')}}</p>
+        <p class="report-subtitle" *ngIf="filters.selectedYear !== 'last4'">שנה עברית: {{hebrewYears[0]}}</p>
+      </div>
 
       <!-- טבלה מקובצת -->
       <div class="report-table grouped-report">
         <table class="data-table">
           <thead>
             <tr>
-              <th>שם</th>
-              <th *ngIf="filters.showDonorDetails && filters.groupBy === 'donor'">כתובת</th>
-              <th *ngIf="filters.showDonorDetails && filters.groupBy === 'donor'">טלפונים</th>
-              <th *ngIf="filters.showDonorDetails && filters.groupBy === 'donor'">אימיילים</th>
-              <th *ngFor="let year of hebrewYears">{{year}}</th>
+              <th class="sortable-header" (click)="onSortChange('donorName')">
+                שם <mat-icon class="sort-icon">{{getSortIcon('donorName')}}</mat-icon>
+              </th>
+              <th *ngIf="filters.showDonorDetails && filters.groupBy === 'donor'" class="sortable-header" (click)="onSortChange('address')">
+                כתובת <mat-icon class="sort-icon">{{getSortIcon('address')}}</mat-icon>
+              </th>
+              <th *ngIf="filters.showDonorDetails && filters.groupBy === 'donor'" class="sortable-header" (click)="onSortChange('phones')">
+                טלפונים <mat-icon class="sort-icon">{{getSortIcon('phones')}}</mat-icon>
+              </th>
+              <th *ngIf="filters.showDonorDetails && filters.groupBy === 'donor'" class="sortable-header" (click)="onSortChange('emails')">
+                אימיילים <mat-icon class="sort-icon">{{getSortIcon('emails')}}</mat-icon>
+              </th>
+              <th *ngFor="let year of hebrewYears" class="sortable-header" (click)="onSortChange('year_' + year)">
+                {{year}} <mat-icon class="sort-icon">{{getSortIcon('year_' + year)}}</mat-icon>
+              </th>
               <th *ngIf="filters.showActualPayments">תשלומים בפועל</th>
             </tr>
           </thead>
@@ -385,6 +417,43 @@
             </tr>
           </tbody>
         </table>
+
+        <!-- Pagination Controls -->
+        <div class="pagination-container" *ngIf="totalRecords > 0">
+          <div class="pagination-info">
+            <span>מציג {{(currentPage - 1) * pageSize + 1}} - {{Math.min(currentPage * pageSize, totalRecords)}} מתוך {{totalRecords}} תוצאות</span>
+          </div>
+
+          <div class="pagination-controls">
+            <button class="page-btn" (click)="onPageChange(1)" [disabled]="currentPage === 1">
+              <mat-icon>first_page</mat-icon>
+            </button>
+            <button class="page-btn" (click)="onPageChange(currentPage - 1)" [disabled]="currentPage === 1">
+              <mat-icon>chevron_right</mat-icon>
+            </button>
+
+            <button *ngFor="let page of getPageNumbers()"
+                    class="page-btn"
+                    [class.active]="page === currentPage"
+                    (click)="onPageChange(page)">
+              {{page}}
+            </button>
+
+            <button class="page-btn" (click)="onPageChange(currentPage + 1)" [disabled]="currentPage === totalPages">
+              <mat-icon>chevron_left</mat-icon>
+            </button>
+            <button class="page-btn" (click)="onPageChange(totalPages)" [disabled]="currentPage === totalPages">
+              <mat-icon>last_page</mat-icon>
+            </button>
+          </div>
+
+          <div class="page-size-selector">
+            <label>שורות לעמוד:</label>
+            <select class="form-control-sm" [(ngModel)]="pageSize" (ngModelChange)="onPageSizeChange($event)">
+              <option *ngFor="let size of pageSizeOptions" [value]="size">{{size}}</option>
+            </select>
+          </div>
+        </div>
       </div>
 
       <!-- טבלת סיכום מטבעות -->
@@ -394,18 +463,23 @@
           <thead>
             <tr>
               <th>מטבע</th>
-              <th>סה"כ סכום</th>
-              <th>סה"כ בשקלים</th>
+              <th *ngFor="let year of hebrewYears">{{year}}</th>
+              <th>סה"כ</th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let curr of currencySummaryData">
-              <td>{{curr.currency}}</td>
-              <td>{{formatCurrencyWithSymbol(curr.totalAmount, curr.currency)}}</td>
-              <td>₪{{curr.totalInShekel.toLocaleString()}}</td>
+              <td><strong>{{curr.currency}}</strong></td>
+              <td *ngFor="let year of hebrewYears">
+                {{formatCurrencyWithSymbol(curr.yearlyTotals[year] || 0, curr.currency)}}
+              </td>
+              <td><strong>{{formatCurrencyWithSymbol(curr.totalAmount, curr.currency)}}</strong></td>
             </tr>
-            <tr class="total-row">
-              <td colspan="2"><strong>סה"כ כולל</strong></td>
+            <tr class="shekel-row">
+              <td><strong>בשקלים</strong></td>
+              <td *ngFor="let year of hebrewYears">
+                ₪{{getCurrencySummaryYearTotal(year).toLocaleString()}}
+              </td>
               <td><strong>₪{{getTotalInShekel().toLocaleString()}}</strong></td>
             </tr>
           </tbody>

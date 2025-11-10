@@ -7,6 +7,7 @@ import { DonorService } from '../../services/donor.service';
 import { GlobalFilterService } from '../../services/global-filter.service';
 import { NavigationRecord, FilterOption, ActiveFilter } from '../../shared/modal-navigation-header/modal-navigation-header.component';
 import { remult } from 'remult';
+import { BusyService } from '../../common-ui-elements/src/angular/wait/busy-service';
 
 @Component({
   selector: 'app-donor-list',
@@ -51,19 +52,31 @@ export class DonorListComponent implements OnInit, OnDestroy {
     public i18n: I18nService,
     private ui: UIToolsService,
     private donorService: DonorService,
-    private filterService: GlobalFilterService
+    private filterService: GlobalFilterService,
+    private busy: BusyService
   ) {}
 
   async ngOnInit() {
-    // Load current user and their settings
-    await this.loadUserSettings();
+    // Load base data once (user settings, mobile labels, etc.)
+    await this.loadBase();
 
     // Subscribe to filter changes
     this.subscription.add(
       this.filterService.filters$.subscribe(() => {
-        this.loadDonors();
+        this.refreshData();
       })
     );
+
+    // Initial data load
+    await this.refreshData();
+  }
+
+  /**
+   * Load base data once - called only on component initialization
+   */
+  private async loadBase() {
+    // Load current user and their settings
+    await this.loadUserSettings();
 
     // Set CSS variables for mobile labels
     this.updateMobileLabels();
@@ -73,9 +86,56 @@ export class DonorListComponent implements OnInit, OnDestroy {
       this.updateMobileLabels();
     });
 
-    await this.loadDonors();
+    // Load all donors for navigation header
     await this.loadAllDonors();
     this.setupFilterOptions();
+  }
+
+  /**
+   * Refresh data based on current filters and sorting
+   * Called whenever filters or sorting changes
+   */
+  private async refreshData() {
+    await this.busy.doWhileShowingBusy(async () => {
+      try {
+        // Prepare search term (trim and undefined if empty)
+        const searchTerm = this.searchTerm?.trim() || undefined;
+
+        console.log('refreshData: Fetching donors with searchTerm:', searchTerm, 'page:', this.currentPage, 'sorting:', this.sortColumns);
+
+        // Get total count for pagination with search term
+        this.totalCount = await this.donorService.countFiltered(searchTerm);
+        this.totalPages = Math.ceil(this.totalCount / this.pageSize);
+
+        // Fetch donors with current filters: global filters (auto), searchTerm, pagination, and sorting
+        this.donors = await this.donorService.findFiltered(
+          searchTerm,
+          undefined,
+          this.currentPage,
+          this.pageSize,
+          this.sortColumns
+        );
+
+        console.log('refreshData: Loaded', this.donors.length, 'donors');
+
+        // Load all related data efficiently using DonorService
+        const relatedData = await this.donorService.loadDonorRelatedData(
+          this.donors.map(d => d.id)
+        );
+
+        // Store in maps for easy lookup
+        this.donorEmailMap = relatedData.donorEmailMap;
+        this.donorPhoneMap = relatedData.donorPhoneMap;
+        this.donorFullAddressMap = relatedData.donorFullAddressMap;
+        this.donorTotalDonationsMap = relatedData.donorTotalDonationsMap;
+
+        // No need for local filtering anymore - all done on server
+        this.filteredDonors = [...this.donors];
+
+      } catch (error) {
+        console.error('Error refreshing donors:', error);
+      }
+    });
   }
 
   private updateMobileLabels() {
@@ -95,102 +155,46 @@ export class DonorListComponent implements OnInit, OnDestroy {
     }
   }
 
-  async loadDonors() {
-    this.loading = true;
-    try {
-      // Get total count for pagination
-      this.totalCount = await this.donorService.countFiltered();
-      this.totalPages = Math.ceil(this.totalCount / this.pageSize);
 
-      console.log('loadDonors..')
-      // Use the new service which automatically applies global filters with pagination and sorting
-      this.donors = await this.donorService.findFiltered(undefined, this.currentPage, this.pageSize, this.sortColumns);
-      console.log('loadDonors..', this.donors.length)
-
-      // Load all related data efficiently using DonorService
-      const relatedData = await this.donorService.loadDonorRelatedData(
-        this.donors.map(d => d.id)
-      );
-
-      // Store in maps for easy lookup
-      this.donorEmailMap = relatedData.donorEmailMap;
-      this.donorPhoneMap = relatedData.donorPhoneMap;
-      this.donorFullAddressMap = relatedData.donorFullAddressMap;
-      this.donorTotalDonationsMap = relatedData.donorTotalDonationsMap;
-
-      // Initialize filteredDonors before applying local filters
-      this.filteredDonors = [...this.donors];
-
-      // Apply local filters (search term)
-      this.applyLocalFilters();
-
-    } catch (error) {
-      console.error('Error loading donors:', error);
-    } finally {
-      this.loading = false;
-    }
-  }
-
-  applyLocalFilters() {
-    let filtered = [...this.donors];
-
-    // Apply search term filter
-    if (this.searchTerm && this.searchTerm.trim() !== '') {
-      const searchLower = this.searchTerm.toLowerCase().trim();
-      filtered = filtered.filter(donor => {
-        const name = (donor.fullName || '').toLowerCase();
-        const idNumber = (donor.idNumber || '').toLowerCase();
-        const address = (this.getDonorAddress(donor.id) || '').toLowerCase();
-        const phone = (this.getDonorPhone(donor.id) || '').toLowerCase();
-        const email = (this.getDonorEmail(donor.id) || '').toLowerCase();
-
-        return name.includes(searchLower) ||
-               idNumber.includes(searchLower) ||
-               address.includes(searchLower) ||
-               phone.includes(searchLower) ||
-               email.includes(searchLower);
-      });
-    }
-
-    // Set filtered donors before sorting
-    this.filteredDonors = filtered;
-
-    // Apply sorting after filtering
-    this.applySorting();
-  }
 
   private searchTermTimeout: any;
 
   onLocalFilterChange() {
-    this.applyLocalFilters();
-
-    // Debounce save searchTerm to avoid saving on every keystroke
+    // Debounce to avoid calling server on every keystroke
     if (this.searchTermTimeout) {
       clearTimeout(this.searchTermTimeout);
     }
+
     this.searchTermTimeout = setTimeout(() => {
+      // Reset to first page when search changes
+      this.currentPage = 1;
+
+      // Refresh data with new search term
+      this.refreshData();
+
+      // Save search term to user settings
       this.saveSearchTerm();
-    }, 500); // Save after 500ms of no typing
+    }, 500); // Wait 500ms after user stops typing
   }
 
   async createDonor() {
     const changed = await this.ui.donorDetailsDialog('new');
     if (changed) {
-      await this.loadDonors();
+      await this.refreshData();
     }
   }
 
   async viewDonor(donor: Donor) {
     const changed = await this.ui.donorDetailsDialog(donor.id);
     if (changed) {
-      await this.loadDonors();
+      await this.refreshData();
     }
   }
 
   async editDonor(donor: Donor) {
     const changed = await this.ui.donorDetailsDialog(donor.id);
     if (changed) {
-      await this.loadDonors();
+      await this.refreshData();
     }
   }
 
@@ -209,7 +213,7 @@ export class DonorListComponent implements OnInit, OnDestroy {
   async deactivateDonor(donor: Donor) {
     try {
       await donor.deactivate();
-      await this.loadDonors();
+      await this.refreshData();
     } catch (error) {
       console.error('Error deactivating donor:', error);
     }
@@ -360,32 +364,32 @@ export class DonorListComponent implements OnInit, OnDestroy {
   async goToPage(page: number) {
     if (page >= 1 && page <= this.totalPages) {
       this.currentPage = page;
-      await this.loadDonors();
+      await this.refreshData();
     }
   }
 
   async nextPage() {
     if (this.currentPage < this.totalPages) {
       this.currentPage++;
-      await this.loadDonors();
+      await this.refreshData();
     }
   }
 
   async previousPage() {
     if (this.currentPage > 1) {
       this.currentPage--;
-      await this.loadDonors();
+      await this.refreshData();
     }
   }
 
   async firstPage() {
     this.currentPage = 1;
-    await this.loadDonors();
+    await this.refreshData();
   }
 
   async lastPage() {
     this.currentPage = this.totalPages;
-    await this.loadDonors();
+    await this.refreshData();
   }
 
   getPageNumbers(): number[] {
@@ -506,77 +510,9 @@ export class DonorListComponent implements OnInit, OnDestroy {
       }
     }
 
-    // Check if we need to reload from server (for server-side sorted columns)
-    const serverSideColumns = ['fullName', 'createdDate'];
-    const hasServerSideSort = this.sortColumns.some(s => serverSideColumns.includes(s.field));
-
-    if (hasServerSideSort) {
-      // Reload from server with new sort
-      await this.loadDonors();
-    } else {
-      // Only client-side sorting needed
-      this.applySorting();
-    }
-
+    // All sorting is now handled on server - just reload with new sort
+    await this.refreshData();
     this.saveSortSettings();
-  }
-
-  applySorting() {
-    // Server-side sorting is applied for: fullName, createdDate
-    // Client-side sorting is needed only for: address, phone, email, totalDonations (require joins)
-
-    // Check if we have any client-side sort columns
-    const clientSideColumns = this.sortColumns.filter(s =>
-      ['address', 'phone', 'email', 'totalDonations'].includes(s.field)
-    );
-
-    if (clientSideColumns.length === 0) {
-      // All sorting is server-side, no additional sorting needed
-      // filteredDonors is already set by applyLocalFilters()
-      return;
-    }
-
-    // Apply client-side sorting to current filtered list
-    this.filteredDonors = [...this.filteredDonors].sort((a, b) => {
-      for (const sort of clientSideColumns) {
-        let valueA: any;
-        let valueB: any;
-
-        switch (sort.field) {
-          case 'address':
-            valueA = this.getDonorAddress(a.id);
-            valueB = this.getDonorAddress(b.id);
-            break;
-          case 'phone':
-            valueA = this.getDonorPhone(a.id);
-            valueB = this.getDonorPhone(b.id);
-            break;
-          case 'email':
-            valueA = this.getDonorEmail(a.id);
-            valueB = this.getDonorEmail(b.id);
-            break;
-          case 'totalDonations':
-            valueA = this.getDonorTotalDonations(a.id);
-            valueB = this.getDonorTotalDonations(b.id);
-            break;
-          default:
-            continue;
-        }
-
-        // Compare values
-        let comparison = 0;
-        if (typeof valueA === 'string') {
-          comparison = valueA.localeCompare(valueB);
-        } else {
-          comparison = valueA - valueB;
-        }
-
-        if (comparison !== 0) {
-          return sort.direction === 'asc' ? comparison : -comparison;
-        }
-      }
-      return 0;
-    });
   }
 
   getSortIcon(field: string): string {

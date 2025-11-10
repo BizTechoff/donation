@@ -1,17 +1,20 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { remult } from 'remult';
 import { Campaign } from '../../../shared/entity/campaign';
 import { User } from '../../../shared/entity/user';
-import { Blessing } from '../../../shared/entity/blessing';
 import { I18nService } from '../../i18n/i18n.service';
 import { UIToolsService } from '../../common/UIToolsService';
+import { GlobalFilterService } from '../../services/global-filter.service';
+import { BusyService } from '../../common-ui-elements/src/angular/wait/busy-service';
+import { CampaignController, CampaignFilters } from '../../../shared/controllers/campaign.controller';
 
 @Component({
   selector: 'app-campaigns-list',
   templateUrl: './campaigns-list.component.html',
   styleUrls: ['./campaigns-list.component.scss']
 })
-export class CampaignsListComponent implements OnInit {
+export class CampaignsListComponent implements OnInit, OnDestroy {
 
   campaigns: Campaign[] = [];
   users: User[] = [];
@@ -19,18 +22,26 @@ export class CampaignsListComponent implements OnInit {
   campaignRepo = remult.repo(Campaign);
   userRepo = remult.repo(User);
 
-  loading = false;
   showAddCampaignModal = false;
   editingCampaign?: Campaign;
 
-  // מפיינים
+  // Local filters
+  searchTerm = '';
   filterName = '';
   filterActive = '';
-  sortField = 'name';
-  sortDirection = 'asc';
+  private filterTimeout: any;
+  private subscriptions = new Subscription();
 
   // Expose Math to template
   Math = Math;
+
+  // Loading state
+  loading = false;
+
+  // Summary cards data
+  activeCampaigns = 0;
+  totalTargetAmount = 0;
+  totalRaisedAmount = 0;
 
   // Pagination
   currentPage = 1;
@@ -38,50 +49,84 @@ export class CampaignsListComponent implements OnInit {
   totalCount = 0;
   totalPages = 0;
 
-  constructor(public i18n: I18nService, private ui: UIToolsService) {}
+  // Sorting
+  sortColumns: Array<{ field: string; direction: 'asc' | 'desc' }> = [{ field: 'name', direction: 'asc' }];
+
+  constructor(
+    public i18n: I18nService,
+    private ui: UIToolsService,
+    private globalFilterService: GlobalFilterService,
+    private busy: BusyService
+  ) {}
 
   async ngOnInit() {
-    await this.loadData();
+    await this.loadBase();
+
+    // Subscribe to global filter changes
+    this.subscriptions.add(
+      this.globalFilterService.filters$.subscribe(() => {
+        this.refreshData();
+      })
+    );
+
+    await this.refreshData();
   }
 
-  async loadData() {
+  ngOnDestroy() {
+    this.subscriptions.unsubscribe();
+    if (this.filterTimeout) {
+      clearTimeout(this.filterTimeout);
+    }
+  }
+
+  /**
+   * Load base data once - called only on component initialization
+   */
+  private async loadBase() {
+    await this.loadUsers();
+  }
+
+  /**
+   * Refresh data based on current filters and sorting
+   * Called whenever filters or sorting changes
+   */
+  private async refreshData() {
     this.loading = true;
-    try {
-      await Promise.all([
-        this.loadCampaigns(),
-        this.loadUsers()
-      ]);
-    } catch (error) {
-      console.error('Error loading data:', error);
-    } finally {
-      this.loading = false;
-    }
-  }
+    await this.busy.doWhileShowingBusy(async () => {
+      try {
+        // Build local filters
+        const localFilters: CampaignFilters = {
+          searchTerm: this.filterName?.trim() || this.searchTerm?.trim() || undefined,
+          isActive: this.filterActive ? this.filterActive === 'true' : undefined
+        };
 
-  async loadCampaigns() {
-    let where: any = {};
+        const globalFilters = this.globalFilterService.currentFilters;
 
-    if (this.filterName) {
-      where.name = { $contains: this.filterName };
-    }
+        console.log('refreshData: Fetching campaigns with globalFilters:', globalFilters, 'localFilters:', localFilters, 'page:', this.currentPage, 'sorting:', this.sortColumns);
 
-    if (this.filterActive) {
-      where.isActive = this.filterActive === 'true';
-    }
+        // Get total count and campaigns from server
+        [this.totalCount, this.campaigns] = await Promise.all([
+          CampaignController.countFilteredCampaigns(globalFilters, localFilters),
+          CampaignController.findFilteredCampaigns(globalFilters, localFilters, this.currentPage, this.pageSize, this.sortColumns)
+        ]);
 
-    // Get total count for pagination
-    this.totalCount = await this.campaignRepo.count(where);
-    this.totalPages = Math.ceil(this.totalCount / this.pageSize);
+        this.totalPages = Math.ceil(this.totalCount / this.pageSize);
 
-    // Fetch paginated data
-    this.campaigns = await this.campaignRepo.find({
-      where,
-      orderBy: { [this.sortField]: this.sortDirection },
-      include: {
-        createdBy: true
-      },
-      limit: this.pageSize,
-      page: this.currentPage
+        // Calculate summary data
+        this.activeCampaigns = this.campaigns.filter(c => c.isActive).length;
+        this.totalTargetAmount = this.campaigns.reduce((sum, c) => sum + (c.targetAmount || 0), 0);
+        this.totalRaisedAmount = this.campaigns.reduce((sum, c) => sum + (c.raisedAmount || 0), 0);
+
+        console.log('refreshData: Loaded', this.campaigns.length, 'campaigns, total:', this.totalCount);
+
+      } catch (error) {
+        console.error('Error refreshing campaigns:', error);
+        this.campaigns = [];
+        this.totalCount = 0;
+        this.totalPages = 0;
+      } finally {
+        this.loading = false;
+      }
     });
   }
 
@@ -92,17 +137,85 @@ export class CampaignsListComponent implements OnInit {
     });
   }
 
+  applyFilters() {
+    // Clear any existing timeout
+    if (this.filterTimeout) {
+      clearTimeout(this.filterTimeout);
+    }
+
+    // Set a new timeout to reload data after user stops typing/changing filters
+    this.filterTimeout = setTimeout(() => {
+      console.log('Filter changed, reloading campaigns');
+      this.currentPage = 1; // Reset to first page when filters change
+      this.refreshData();
+    }, 300); // 300ms debounce
+  }
+
+  onFilterChange() {
+    this.applyFilters();
+  }
+
+  // Format helpers for template
+  formatCurrency(amount: number | undefined): string {
+    if (!amount) return '₪0';
+    return `₪${amount.toLocaleString('he-IL')}`;
+  }
+
+  formatDate(date: Date | undefined): string {
+    if (!date) return '';
+    return new Date(date).toLocaleDateString('he-IL');
+  }
+
+  // Modal event handlers
+  onLocationChange() {
+    // Handle location change if needed
+  }
+
+  onCampaignTypeChange() {
+    // Handle campaign type change if needed
+  }
+
+  onStartDateChange(event: any) {
+    // Handle start date change if needed
+  }
+
+  onEndDateChange(event: any) {
+    // Handle end date change if needed
+  }
+
+  // Navigation methods for modal
+  openBlessingsBook(campaign?: Campaign) {
+    const campaignToUse = campaign || this.editingCampaign;
+    if (campaignToUse) {
+      this.ui.campaignBlessingBookDialog(campaignToUse.id);
+    }
+  }
+
+  openDonors() {
+    if (this.editingCampaign) {
+      // Navigate to donors filtered by this campaign
+      console.log('Open donors for campaign:', this.editingCampaign.id);
+    }
+  }
+
+  openContacts() {
+    if (this.editingCampaign) {
+      // Navigate to contacts for this campaign
+      console.log('Open contacts for campaign:', this.editingCampaign.id);
+    }
+  }
+
   async createCampaign() {
     const changed = await this.ui.campaignDetailsDialog('new');
     if (changed) {
-      await this.loadCampaigns();
+      await this.refreshData();
     }
   }
 
   async editCampaign(campaign: Campaign) {
     const changed = await this.ui.campaignDetailsDialog(campaign.id);
     if (changed) {
-      await this.loadCampaigns();
+      await this.refreshData();
     }
   }
 
@@ -111,7 +224,7 @@ export class CampaignsListComponent implements OnInit {
 
     try {
       await this.editingCampaign.save();
-      await this.loadCampaigns();
+      await this.refreshData();
       this.closeModal();
     } catch (error) {
       console.error('Error saving campaign:', error);
@@ -123,7 +236,7 @@ export class CampaignsListComponent implements OnInit {
     if (confirm(`${this.i18n.currentTerms.deleteCampaignConfirm || 'Are you sure you want to delete campaign'} ${campaign.name}?`)) {
       try {
         await campaign.delete();
-        await this.loadCampaigns();
+        await this.refreshData();
       } catch (error) {
         console.error('Error deleting campaign:', error);
         alert(this.i18n.currentTerms.campaignDeletionError || 'Error deleting campaign');
@@ -134,7 +247,7 @@ export class CampaignsListComponent implements OnInit {
   async activateCampaign(campaign: Campaign) {
     try {
       await campaign.activate();
-      await this.loadCampaigns();
+      await this.refreshData();
     } catch (error) {
       console.error('Error activating campaign:', error);
     }
@@ -143,70 +256,42 @@ export class CampaignsListComponent implements OnInit {
   async completeCampaign(campaign: Campaign) {
     try {
       await campaign.complete();
-      await this.loadCampaigns();
+      await this.refreshData();
     } catch (error) {
       console.error('Error completing campaign:', error);
     }
-  }
-
-  async cancelCampaign(campaign: Campaign) {
-    if (confirm(`${this.i18n.currentTerms.cancelCampaignConfirm || 'Are you sure you want to cancel campaign'} ${campaign.name}?`)) {
-      try {
-        await campaign.cancel();
-        await this.loadCampaigns();
-      } catch (error) {
-        console.error('Error canceling campaign:', error);
-      }
-    }
-  }
-
-  closeModal() {
-    this.showAddCampaignModal = false;
-    this.editingCampaign = undefined;
-  }
-
-  async applyFilters() {
-    this.currentPage = 1; // Reset to first page when filtering
-    await this.loadCampaigns();
-  }
-
-  async clearFilters() {
-    this.filterName = '';
-    this.filterActive = '';
-    this.currentPage = 1; // Reset to first page when clearing filters
-    await this.loadCampaigns();
   }
 
   // Pagination methods
   async goToPage(page: number) {
     if (page >= 1 && page <= this.totalPages) {
       this.currentPage = page;
-      await this.loadCampaigns();
+      await this.refreshData();
     }
   }
 
   async nextPage() {
     if (this.currentPage < this.totalPages) {
       this.currentPage++;
-      await this.loadCampaigns();
+      await this.refreshData();
     }
   }
 
   async previousPage() {
     if (this.currentPage > 1) {
       this.currentPage--;
-      await this.loadCampaigns();
+      await this.refreshData();
     }
   }
 
   async firstPage() {
     this.currentPage = 1;
-    await this.loadCampaigns();
+    await this.refreshData();
   }
 
   async lastPage() {
     this.currentPage = this.totalPages;
-    await this.loadCampaigns();
+    await this.refreshData();
   }
 
   getPageNumbers(): number[] {
@@ -234,151 +319,78 @@ export class CampaignsListComponent implements OnInit {
     return pages;
   }
 
-  getStatusBadgeClass(status: string): string {
-    switch (status) {
-      case 'active': return 'status-active';
-      case 'completed': return 'status-completed';
-      case 'cancelled': return 'status-cancelled';
-      case 'draft': return 'status-draft';
-      default: return 'status-default';
-    }
-  }
-
-  getStatusText(status: string): string {
-    switch (status) {
-      case 'active': return this.i18n.currentTerms.activeStatus || 'Active';
-      case 'completed': return this.i18n.currentTerms.completedStatus || 'Completed';
-      case 'cancelled': return this.i18n.currentTerms.cancelledStatus || 'Cancelled';
-      case 'draft': return this.i18n.currentTerms.draft || 'Draft';
-      default: return status;
-    }
-  }
-
-  formatDate(date?: Date): string {
-    if (!date) return this.i18n.currentTerms.notSpecified || 'Not specified';
-    return new Date(date).toLocaleDateString('he-IL');
-  }
-
-  formatCurrency(amount: number): string {
-    return `₪${amount.toLocaleString()}`;
-  }
-
-  get activeCampaigns(): number {
-    return this.campaigns.filter(c => c.isActive).length;
-  }
-
-  get totalTargetAmount(): number {
-    return this.campaigns
-      .filter(c => c.isActive)
-      .reduce((sum, c) => sum + c.targetAmount, 0);
-  }
-
-  get totalRaisedAmount(): number {
-    return this.campaigns
-      .filter(c => c.isActive)
-      .reduce((sum, c) => sum + c.raisedAmount, 0);
-  }
-
-  // New methods for enhanced campaign functionality
-  onStartDateChange(date: Date | null) {
-    if (this.editingCampaign) {
-      this.editingCampaign.startDate = date || new Date();
-    }
-  }
-
-  onEndDateChange(date: Date | null) {
-    if (this.editingCampaign) {
-      this.editingCampaign.endDate = date || undefined;
-    }
-  }
-
-  onLocationChange() {
-    if (this.editingCampaign && this.editingCampaign.eventLocation) {
-      // Auto-set currency based on location (example logic)
-      const location = this.editingCampaign.eventLocation?.fullAddress?.toLowerCase() || '';
-      if (location.includes('ארה"ב') || location.includes('america') || location.includes('usa')) {
-        this.editingCampaign.currency = 'USD';
-      } else if (location.includes('אירופה') || location.includes('europe')) {
-        this.editingCampaign.currency = 'EUR';
+  // Sorting methods
+  async toggleSort(field: string, event?: MouseEvent) {
+    if (event && (event.ctrlKey || event.metaKey)) {
+      // CTRL/CMD pressed - multi-column sort
+      const existingIndex = this.sortColumns.findIndex(s => s.field === field);
+      if (existingIndex >= 0) {
+        // Toggle direction or remove
+        const current = this.sortColumns[existingIndex];
+        if (current.direction === 'asc') {
+          this.sortColumns[existingIndex].direction = 'desc';
+        } else {
+          // Remove from sort
+          this.sortColumns.splice(existingIndex, 1);
+        }
       } else {
-        this.editingCampaign.currency = 'ILS';
-      }
-    }
-  }
-
-  onCampaignTypeChange() {
-    // Any specific logic when campaign type changes
-    console.log('Campaign type changed to:', this.editingCampaign?.campaignType);
-  }
-
-  // Action button methods
-  openBlessingsBook() {
-    if (!this.editingCampaign?.id) return;
-    
-    // TODO: Implement blessings book functionality
-    console.log('Opening blessings book for campaign:', this.editingCampaign.id);
-    alert(`ספר ברכות עבור קמפיין "${this.editingCampaign.name}" יפתח בקרוב`);
-  }
-
-  openDonors() {
-    if (!this.editingCampaign?.id) return;
-    
-    // TODO: Implement donors functionality
-    console.log('Opening donors for campaign:', this.editingCampaign.id);
-    alert(`רשימת תורמים עבור קמפיין "${this.editingCampaign.name}" תפתח בקרוב`);
-  }
-
-  openContacts() {
-    if (!this.editingCampaign?.id) return;
-
-    // TODO: Implement contacts functionality
-    console.log('Opening contacts for campaign:', this.editingCampaign.id);
-    alert(`אנשי קשר ופעילים עבור קמפיין "${this.editingCampaign.name}" יפתח בקרוב`);
-  }
-
-  // Sorting functionality
-  sortColumns: Array<{ field: string; direction: 'asc' | 'desc' }> = [];
-
-  toggleSort(field: string, event: MouseEvent) {
-    event.preventDefault();
-    event.stopPropagation();
-
-    const existingSort = this.sortColumns.find(s => s.field === field);
-
-    if (existingSort) {
-      if (existingSort.direction === 'asc') {
-        existingSort.direction = 'desc';
-      } else {
-        this.sortColumns = this.sortColumns.filter(s => s.field !== field);
+        // Add new sort column
+        this.sortColumns.push({ field, direction: 'asc' });
       }
     } else {
-      this.sortColumns.push({ field, direction: 'asc' });
+      // Single column sort
+      const existing = this.sortColumns.find(s => s.field === field);
+      if (existing && this.sortColumns.length === 1) {
+        // Toggle direction
+        existing.direction = existing.direction === 'asc' ? 'desc' : 'asc';
+      } else {
+        // Set as only sort column
+        this.sortColumns = [{ field, direction: 'asc' }];
+      }
     }
 
-    this.applySorting();
+    // Reload with new sort
+    await this.refreshData();
+  }
+
+  getSortIcon(field: string): string {
+    const sortIndex = this.sortColumns.findIndex(s => s.field === field);
+    if (sortIndex === -1) return '';
+
+    const sort = this.sortColumns[sortIndex];
+    const arrow = sort.direction === 'asc' ? '↑' : '↓';
+
+    // Show number if multiple sorts
+    if (this.sortColumns.length > 1) {
+      return `${arrow}${sortIndex + 1}`;
+    }
+    return arrow;
   }
 
   isSorted(field: string): boolean {
     return this.sortColumns.some(s => s.field === field);
   }
 
-  getSortIcon(field: string): string {
-    const sort = this.sortColumns.find(s => s.field === field);
-    if (!sort) return '';
-    return sort.direction === 'asc' ? '↑' : '↓';
-  }
-
-  applySorting() {
-    if (this.sortColumns.length === 0) {
-      this.sortField = 'name';
-      this.sortDirection = 'asc';
+  // Modal methods
+  openModal(campaign?: Campaign) {
+    if (campaign) {
+      this.editingCampaign = campaign;
     } else {
-      // Use the first sort column for the simple orderBy
-      const firstSort = this.sortColumns[0];
-      this.sortField = firstSort.field;
-      this.sortDirection = firstSort.direction;
+      this.editingCampaign = remult.repo(Campaign).create();
     }
-    this.loadCampaigns();
+    this.showAddCampaignModal = true;
   }
 
+  closeModal() {
+    this.showAddCampaignModal = false;
+    this.editingCampaign = undefined;
+  }
+
+  async openBlessingBook(campaign: Campaign) {
+    await this.ui.campaignBlessingBookDialog(campaign.id);
+  }
+
+  async openInvitedList(campaign: Campaign) {
+    await this.ui.campaignInvitedListDialog(campaign.id);
+  }
 }

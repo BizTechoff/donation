@@ -198,7 +198,7 @@ export const termsHe = {
   isAnonymous: 'תרומה אנונימית',
 
   // Donation Status
-  pending: 'ממתין',
+  pending: 'ממתין למסירה',
   completed: 'הושלם',
   cancelled: 'בוטל',
 

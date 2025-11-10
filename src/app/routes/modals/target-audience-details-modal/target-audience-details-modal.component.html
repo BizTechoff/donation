@@ -1,0 +1,235 @@
+<div class="modal-backdrop" (click)="closeDialog()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ isNewAudience ? 'קהל יעד חדש' : 'עריכת קהל יעד' }}</h2>
+      <button class="close-btn" (click)="closeDialog()" title="סגור">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <div class="modal-body" *ngIf="!isLoading">
+      <!-- Tabs -->
+      <mat-tab-group [(selectedIndex)]="selectedTabIndex">
+
+        <!-- Tab 1: General Information -->
+        <mat-tab label="מידע כללי">
+          <div class="tab-content">
+            <div class="form-section">
+              <div class="form-group">
+                <label for="name">שם קהל היעד *</label>
+                <input
+                  type="text"
+                  id="name"
+                  class="form-control"
+                  [(ngModel)]="name"
+                  placeholder="הזן שם לקהל היעד">
+              </div>
+
+              <div class="form-group">
+                <label for="description">תיאור</label>
+                <textarea
+                  id="description"
+                  class="form-control"
+                  [(ngModel)]="description"
+                  rows="4"
+                  placeholder="הזן תיאור לקהל היעד (אופציונלי)"></textarea>
+              </div>
+
+              <div class="info-section" *ngIf="!isNewAudience && targetAudience">
+                <div class="info-item">
+                  <mat-icon>event</mat-icon>
+                  <span>נוצר בתאריך: {{ targetAudience.createdDate | date:'dd/MM/yyyy HH:mm' }}</span>
+                </div>
+                <div class="info-item">
+                  <mat-icon>update</mat-icon>
+                  <span>עודכן לאחרונה: {{ targetAudience.updatedDate | date:'dd/MM/yyyy HH:mm' }}</span>
+                </div>
+                <div class="info-item" *ngIf="args.polygonPoints">
+                  <mat-icon>location_on</mat-icon>
+                  <span>נוצר ממפה ({{ args.polygonPoints.length }} נקודות)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+
+        <!-- Tab 2: Donors List -->
+        <mat-tab label="תורמים ({{ donorMapData.length }})">
+          <div class="tab-content">
+            <!-- Search and Actions -->
+            <div class="search-section">
+              <div class="search-input-group">
+                <mat-icon class="search-icon">search</mat-icon>
+                <input
+                  type="text"
+                  class="form-control search-input"
+                  [(ngModel)]="searchTerm"
+                  placeholder="חפש תורם...">
+                <button *ngIf="searchTerm" class="clear-search-btn" (click)="clearSearch()">
+                  <mat-icon>clear</mat-icon>
+                </button>
+              </div>
+              <button class="btn btn-add-donors" (click)="addDonors()">
+                <mat-icon>person_add</mat-icon>
+                הוסף תורמים
+              </button>
+            </div>
+
+            <!-- Donors List -->
+            <div class="donors-list-section">
+              <div class="donors-list" *ngIf="getFilteredDonors().length > 0">
+                <div class="donor-item"
+                     *ngFor="let donorData of getFilteredDonors()">
+                  <div class="donor-item-content">
+                    <!-- Status indicator -->
+                    <div class="donor-status-indicator"
+                         [style.background-color]="getMarkerColor(donorData.stats.status)"
+                         [title]="getStatusLabel(donorData.stats.status)">
+                    </div>
+
+                    <div class="donor-info">
+                      <div class="donor-name" (click)="openDonorDetails(donorData.donor.id)">
+                        {{ donorData.donor.displayName }}
+                      </div>
+
+                      <div class="donor-stats">
+                        <span class="stat-item">
+                          <mat-icon class="stat-icon">attach_money</mat-icon>
+                          סה"כ: ₪{{ donorData.stats.totalDonations.toLocaleString() }}
+                        </span>
+                        <span class="stat-item">
+                          <mat-icon class="stat-icon">card_giftcard</mat-icon>
+                          {{ donorData.stats.donationCount }} תרומות
+                        </span>
+                        <span class="stat-item">
+                          <mat-icon class="stat-icon">trending_up</mat-icon>
+                          ממוצע: ₪{{ donorData.stats.averageDonation.toLocaleString() }}
+                        </span>
+                      </div>
+
+                      <div class="donor-details" *ngIf="donorData.email || donorData.phone">
+                        <span *ngIf="donorData.phone">
+                          <mat-icon class="detail-icon">phone</mat-icon>
+                          {{ donorData.phone }}
+                        </span>
+                        <span *ngIf="donorData.email" style="margin-right: 12px;">
+                          <mat-icon class="detail-icon">email</mat-icon>
+                          {{ donorData.email }}
+                        </span>
+                      </div>
+
+                      <div class="donor-address" *ngIf="donorData.fullAddress">
+                        <mat-icon class="location-icon">location_on</mat-icon>
+                        {{ donorData.fullAddress }}
+                      </div>
+
+                      <div class="donor-last-donation" *ngIf="donorData.stats.lastDonationDate">
+                        <mat-icon class="detail-icon">calendar_today</mat-icon>
+                        תרומה אחרונה: {{ donorData.stats.lastDonationDate | date:'dd/MM/yyyy' }}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="donor-actions">
+                    <button class="btn btn-sm btn-view"
+                            (click)="openDonorDetails(donorData.donor.id)"
+                            title="הצג פרטים">
+                      <mat-icon>visibility</mat-icon>
+                    </button>
+                    <button class="btn btn-sm btn-add-donation"
+                            (click)="addDonation(donorData.donor.id)"
+                            title="הוסף תרומה">
+                      <mat-icon>add_circle</mat-icon>
+                    </button>
+                    <button class="btn btn-sm btn-remove"
+                            (click)="removeDonor(donorData.donor.id)"
+                            title="הסר מהרשימה">
+                      <mat-icon>remove_circle</mat-icon>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Empty state -->
+              <div class="no-donors-found" *ngIf="getFilteredDonors().length === 0">
+                <mat-icon class="empty-icon">search_off</mat-icon>
+                <p *ngIf="searchTerm">לא נמצאו תורמים התואמים לחיפוש "{{ searchTerm }}"</p>
+                <p *ngIf="!searchTerm && donorMapData.length === 0">לא נוספו תורמים לקהל היעד</p>
+                <button *ngIf="!searchTerm && donorMapData.length === 0" class="btn btn-add-donors-empty" (click)="addDonors()">
+                  <mat-icon>person_add</mat-icon>
+                  הוסף תורמים
+                </button>
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+
+        <!-- Tab 3: Statistics -->
+        <mat-tab label="סטטיסטיקות">
+          <div class="tab-content">
+            <div class="stats-section">
+              <div class="stat-card">
+                <div class="stat-icon-wrapper">
+                  <mat-icon class="stat-icon-large">people</mat-icon>
+                </div>
+                <div class="stat-content">
+                  <div class="stat-label">מספר תורמים</div>
+                  <div class="stat-value">{{ donorMapData.length }}</div>
+                </div>
+              </div>
+
+              <div class="stat-card">
+                <div class="stat-icon-wrapper">
+                  <mat-icon class="stat-icon-large">attach_money</mat-icon>
+                </div>
+                <div class="stat-content">
+                  <div class="stat-label">סך כל התרומות</div>
+                  <div class="stat-value">₪{{ getTotalDonationsSum().toLocaleString() }}</div>
+                </div>
+              </div>
+
+              <div class="stat-card">
+                <div class="stat-icon-wrapper">
+                  <mat-icon class="stat-icon-large">trending_up</mat-icon>
+                </div>
+                <div class="stat-content">
+                  <div class="stat-label">ממוצע תרומה לתורם</div>
+                  <div class="stat-value">₪{{ getAverageDonation().toLocaleString() }}</div>
+                </div>
+              </div>
+
+              <div class="stat-card">
+                <div class="stat-icon-wrapper">
+                  <mat-icon class="stat-icon-large">card_giftcard</mat-icon>
+                </div>
+                <div class="stat-content">
+                  <div class="stat-label">סך כל התרומות (מספר)</div>
+                  <div class="stat-value">{{ getTotalDonationCount().toLocaleString() }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+
+      </mat-tab-group>
+    </div>
+
+    <!-- Loading state -->
+    <div class="modal-body" *ngIf="isLoading">
+      <div class="loading-section">
+        <mat-spinner></mat-spinner>
+        <p>טוען נתונים...</p>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeDialog()" [disabled]="isSaving">
+        ביטול
+      </button>
+      <button class="btn btn-primary" (click)="save()" [disabled]="isSaving || !name.trim() || donorMapData.length === 0">
+        <mat-spinner *ngIf="isSaving" diameter="20"></mat-spinner>
+        <span *ngIf="!isSaving">{{ isNewAudience ? 'שמור' : 'עדכן' }}</span>
+      </button>
+    </div>
+  </div>
+</div>

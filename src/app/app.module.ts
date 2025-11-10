@@ -28,6 +28,7 @@ import { MatSortModule } from '@angular/material/sort'
 import { MatPaginatorModule } from '@angular/material/paginator'
 import { MatProgressBarModule } from '@angular/material/progress-bar'
 import { MatSlideToggleModule } from '@angular/material/slide-toggle'
+import { MatTabsModule } from '@angular/material/tabs'
 import { DragDropModule } from '@angular/cdk/drag-drop'
 import { CommonUIElementsModule } from 'common-ui-elements'
 import { UsersComponent } from './users/users.component'
@@ -68,6 +69,7 @@ import { BankSelectionModalComponent } from './routes/modals/bank-selection-moda
 import { OrganizationSelectionModalComponent } from './routes/modals/organization-selection-modal/organization-selection-modal.component'
 import { DonorSelectionModalComponent } from './routes/modals/donor-selection-modal/donor-selection-modal.component'
 import { DonorAddressTypeSelectionModalComponent } from './routes/modals/donor-address-type-selection-modal/donor-address-type-selection-modal.component'
+import { CampaignSelectionModalComponent } from './routes/modals/campaign-selection-modal/campaign-selection-modal.component'
 import { OsmAddressInputComponent } from './common/osm-address-input/osm-address-input.component'
 import { LetterPropertiesModalComponent } from './routes/modals/letter-properties-modal/letter-properties-modal.component'
 import { LetterTitleSelectionModalComponent } from './routes/modals/letter-title-selection-modal/letter-title-selection-modal.component'
@@ -98,6 +100,14 @@ import { GiftDetailsModalComponent } from './routes/modals/gift-details-modal/gi
 import { GiftCatalogModalComponent } from './routes/modals/gift-catalog-modal/gift-catalog-modal.component'
 import { MapSelectedDonorsModalComponent } from './routes/modals/map-selected-donors-modal/map-selected-donors-modal.component'
 import { SaveTargetAudienceModalComponent } from './routes/modals/save-target-audience-modal/save-target-audience-modal.component'
+import { AudienceSelectionModalComponent } from './routes/modals/audience-selection-modal/audience-selection-modal.component'
+import { TargetAudienceDetailsModalComponent } from './routes/modals/target-audience-details-modal/target-audience-details-modal.component'
+import { CountrySelectionModalComponent } from './routes/modals/country-selection-modal/country-selection-modal.component'
+import { CountryDetailsModalComponent } from './routes/modals/country-details-modal/country-details-modal.component'
+import { CitySelectionModalComponent } from './routes/modals/city-selection-modal/city-selection-modal.component'
+import { CityDetailsModalComponent } from './routes/modals/city-details-modal/city-details-modal.component'
+import { NeighborhoodSelectionModalComponent } from './routes/modals/neighborhood-selection-modal/neighborhood-selection-modal.component'
+import { NeighborhoodDetailsModalComponent } from './routes/modals/neighborhood-details-modal/neighborhood-details-modal.component'
 
 @NgModule({
   declarations: [
@@ -128,6 +138,7 @@ import { SaveTargetAudienceModalComponent } from './routes/modals/save-target-au
     OrganizationSelectionModalComponent,
     DonorSelectionModalComponent,
     DonorAddressTypeSelectionModalComponent,
+    CampaignSelectionModalComponent,
     DonorDetailsModalComponent,
     FamilyRelationDetailsModalComponent,
     LetterPropertiesModalComponent,
@@ -163,7 +174,15 @@ import { SaveTargetAudienceModalComponent } from './routes/modals/save-target-au
     GiftDetailsModalComponent,
     GiftCatalogModalComponent,
     MapSelectedDonorsModalComponent,
-    SaveTargetAudienceModalComponent
+    SaveTargetAudienceModalComponent,
+    AudienceSelectionModalComponent,
+    TargetAudienceDetailsModalComponent,
+    CountrySelectionModalComponent,
+    CountryDetailsModalComponent,
+    CitySelectionModalComponent,
+    CityDetailsModalComponent,
+    NeighborhoodSelectionModalComponent,
+    NeighborhoodDetailsModalComponent
   ],
   imports: [
     BrowserModule,
@@ -196,6 +215,7 @@ import { SaveTargetAudienceModalComponent } from './routes/modals/save-target-au
     MatPaginatorModule,
     MatProgressBarModule,
     MatSlideToggleModule,
+    MatTabsModule,
     DragDropModule,
     CommonUIElementsModule
   ],

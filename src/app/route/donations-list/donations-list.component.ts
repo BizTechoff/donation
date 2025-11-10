@@ -7,6 +7,7 @@ import { Campaign, Donation, DonationMethod, Donor, DonorPlace } from '../../../
 import { UIToolsService } from '../../common/UIToolsService';
 import { I18nService } from '../../i18n/i18n.service';
 import { GlobalFilterService } from '../../services/global-filter.service';
+import { BusyService } from '../../common-ui-elements/src/angular/wait/busy-service';
 
 @Component({
   selector: 'app-donations-list',
@@ -63,10 +64,29 @@ export class DonationsListComponent implements OnInit, OnDestroy {
     public i18n: I18nService,
     private ui: UIToolsService,
     private route: ActivatedRoute,
-    private globalFilterService: GlobalFilterService
+    private globalFilterService: GlobalFilterService,
+    private busy: BusyService
   ) {}
 
   async ngOnInit() {
+    // Load base data once
+    await this.loadBase();
+
+    // Listen for global filter changes
+    this.subscriptions.add(
+      this.globalFilterService.filters$.subscribe(() => {
+        this.refreshData();
+      })
+    );
+
+    // Initial data load
+    await this.refreshData();
+  }
+
+  /**
+   * Load base data once - called only on component initialization
+   */
+  private async loadBase() {
     // Set CSS variables for mobile labels
     this.updateMobileLabels();
 
@@ -77,14 +97,56 @@ export class DonationsListComponent implements OnInit, OnDestroy {
       })
     );
 
-    // Listen for global filter changes
-    this.subscriptions.add(
-      this.globalFilterService.filters$.subscribe(() => {
-        this.loadDonations();
-      })
-    );
+    // Load reference data (donors, campaigns, methods)
+    await Promise.all([
+      this.loadDonors(),
+      this.loadCampaigns(),
+      this.loadDonationMethods()
+    ]);
+  }
 
-    await this.loadData();
+  /**
+   * Refresh data based on current filters and sorting
+   * Called whenever filters or sorting changes
+   */
+  private async refreshData() {
+    await this.busy.doWhileShowingBusy(async () => {
+      try {
+        // Build filters object with both local and global filters
+        const filters: DonationFilters = {
+          searchTerm: this.searchTerm?.trim() || undefined,
+          dateFrom: this.dateFrom?.trim() || undefined,
+          dateTo: this.dateTo?.trim() || undefined,
+          selectedMethodId: this.selectedMethodId?.trim() || undefined,
+          amountFrom: this.amountFrom,
+          selectedCampaignId: this.selectedCampaignId?.trim() || undefined,
+          globalFilters: this.globalFilterService.currentFilters
+        };
+
+        console.log('refreshData: Fetching donations with filters:', filters, 'page:', this.currentPage, 'sorting:', this.sortColumns);
+
+        // Get total count and donations from server with all filters and sorting
+        [this.totalCount, this.donations] = await Promise.all([
+          DonationController.countFilteredDonations(filters),
+          DonationController.findFilteredDonations(filters, this.currentPage, this.pageSize, this.sortColumns)
+        ]);
+
+        this.totalPages = Math.ceil(this.totalCount / this.pageSize);
+
+        console.log('refreshData: Loaded', this.donations.length, 'donations, total:', this.totalCount);
+
+        // Load donor home addresses
+        await this.loadDonorAddresses();
+
+        // Calculate completed donations count
+        this.completedDonationsCountCache = this.donations.length;
+      } catch (error) {
+        console.error('Error refreshing donations:', error);
+        this.donations = [];
+        this.totalCount = 0;
+        this.totalPages = 0;
+      }
+    });
   }
 
   private updateMobileLabels() {
@@ -105,54 +167,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
     }
   }
 
-  async loadData() {
-    this.loading = true;
-    try {
-      await Promise.all([
-        this.loadDonations(),
-        this.loadDonors(),
-        this.loadCampaigns(),
-        this.loadDonationMethods()
-      ]);
-    } catch (error) {
-      console.error('Error loading data:', error);
-    } finally {
-      this.loading = false;
-    }
-  }
 
-  async loadDonations() {
-    try {
-      // Build filters object for server-side filtering
-      const filters: DonationFilters = {
-        searchTerm: this.searchTerm?.trim() || undefined,
-        dateFrom: this.dateFrom?.trim() || undefined,
-        dateTo: this.dateTo?.trim() || undefined,
-        selectedMethodId: this.selectedMethodId?.trim() || undefined,
-        amountFrom: this.amountFrom,
-        selectedCampaignId: this.selectedCampaignId?.trim() || undefined
-      };
-
-      // Get total count and donations from server
-      [this.totalCount, this.donations] = await Promise.all([
-        DonationController.countFilteredDonations(filters),
-        DonationController.findFilteredDonations(filters, this.currentPage, this.pageSize, this.sortColumns)
-      ]);
-
-      this.totalPages = Math.ceil(this.totalCount / this.pageSize);
-
-      // Load donor home addresses
-      await this.loadDonorAddresses();
-
-      // Calculate completed donations count
-      this.completedDonationsCountCache = this.donations.length;
-    } catch (error) {
-      console.error('Error in loadDonations:', error);
-      this.donations = [];
-      this.totalCount = 0;
-      this.totalPages = 0;
-    }
-  }
 
   onFilterChange() {
     // Clear any existing timeout
@@ -164,7 +179,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
     this.filterTimeout = setTimeout(() => {
       console.log('Filter changed, reloading donations');
       this.currentPage = 1; // Reset to first page when filters change
-      this.loadDonations();
+      this.refreshData();
     }, 300); // 300ms debounce
   }
 
@@ -219,14 +234,14 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   async createDonation() {
     const changed = await this.ui.donationDetailsDialog('new');
     if (changed) {
-      await this.loadDonations();
+      await this.refreshData();
     }
   }
 
   async editDonation(donation: Donation) {
     const changed = await this.ui.donationDetailsDialog(donation.id);
     if (changed) {
-      await this.loadDonations();
+      await this.refreshData();
     }
   }
 
@@ -244,7 +259,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
         await this.editingDonation.campaign.updateRaisedAmount(this.editingDonation.amount);
       }
 
-      await this.loadDonations(); // This will also update the cache
+      await this.refreshData(); // This will also update the cache
       this.closeModal();
     } catch (error) {
       console.error('Error saving donation:', error);
@@ -256,7 +271,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
     if (confirm(confirmMessage)) {
       try {
         await donation.delete();
-        await this.loadDonations(); // This will also update the cache
+        await this.refreshData(); // This will also update the cache
       } catch (error) {
         console.error('Error deleting donation:', error);
       }
@@ -501,32 +516,32 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   async goToPage(page: number) {
     if (page >= 1 && page <= this.totalPages) {
       this.currentPage = page;
-      await this.loadDonations();
+      await this.refreshData();
     }
   }
 
   async nextPage() {
     if (this.currentPage < this.totalPages) {
       this.currentPage++;
-      await this.loadDonations();
+      await this.refreshData();
     }
   }
 
   async previousPage() {
     if (this.currentPage > 1) {
       this.currentPage--;
-      await this.loadDonations();
+      await this.refreshData();
     }
   }
 
   async firstPage() {
     this.currentPage = 1;
-    await this.loadDonations();
+    await this.refreshData();
   }
 
   async lastPage() {
     this.currentPage = this.totalPages;
-    await this.loadDonations();
+    await this.refreshData();
   }
 
   getPageNumbers(): number[] {
@@ -584,7 +599,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
     this.currentPage = 1;
 
     // Reload with new sort
-    this.loadDonations();
+    this.refreshData();
   }
 
   isSorted(field: string): boolean {

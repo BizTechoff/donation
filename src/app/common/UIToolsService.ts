@@ -216,6 +216,13 @@ export class UIToolsService implements UITools {
     )
   }
 
+  async campaignInvitedListDialog(campaignId: string): Promise<void> {
+    return await openDialog(
+      (await import('../routes/modals/campaign-invited-list-modal/campaign-invited-list-modal.component')).CampaignInvitedListModalComponent,
+      (dlg) => dlg.args = { campaignId }
+    )
+  }
+
   async paymentListDialog(donationId: string, donationAmount?: number): Promise<void> {
     return await openDialog(
       (await import('../routes/modals/payment-list-modal/payment-list-modal.component')).PaymentListModalComponent,
@@ -230,10 +237,37 @@ export class UIToolsService implements UITools {
     )
   }
 
-  async mapSelectedDonorsDialog(donors: any[], polygonPoints?: { lat: number; lng: number }[]): Promise<void> {
+  async mapSelectedDonorsDialog(donors: any[], polygonPoints?: { lat: number; lng: number }[]): Promise<any> {
     return await openDialog(
       (await import('../routes/modals/map-selected-donors-modal/map-selected-donors-modal.component')).MapSelectedDonorsModalComponent,
       (dlg) => dlg.args = { donors, polygonPoints }
+    )
+  }
+
+  async openAudienceSelection(options?: { title?: string; multiSelect?: boolean; selectedIds?: string[] }): Promise<any> {
+    return await openDialog(
+      (await import('../routes/modals/audience-selection-modal/audience-selection-modal.component')).AudienceSelectionModalComponent,
+      (dlg) => dlg.args = {
+        title: options?.title,
+        multiSelect: options?.multiSelect,
+        selectedIds: options?.selectedIds
+      }
+    )
+  }
+
+  async targetAudienceDetailsDialog(targetAudienceId?: string, options?: {
+    initialDonors?: any[];
+    polygonPoints?: { lat: number; lng: number }[];
+    metadata?: any;
+  }): Promise<any> {
+    return await openDialog(
+      (await import('../routes/modals/target-audience-details-modal/target-audience-details-modal.component')).TargetAudienceDetailsModalComponent,
+      (dlg) => dlg.args = {
+        targetAudienceId,
+        initialDonors: options?.initialDonors,
+        polygonPoints: options?.polygonPoints,
+        metadata: options?.metadata
+      }
     )
   }
 

@@ -55,35 +55,103 @@
   border-radius: 16px 16px 0 0;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 
-  h2 {
-    margin: 0;
-    font-size: 24px;
-    font-weight: 600;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  }
-
-  .close-btn {
-    background: rgba(255, 255, 255, 0.2);
-    border: none;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
+  .header-content {
     display: flex;
     align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.3s ease;
+    gap: 16px;
+    flex: 1;
 
-    mat-icon {
-      color: white;
-      font-size: 20px;
-      width: 20px;
-      height: 20px;
+    h2 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 600;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     }
 
-    &:hover {
-      background: rgba(255, 255, 255, 0.3);
-      transform: scale(1.1);
+    .selection-counter {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.2);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 500;
+      backdrop-filter: blur(4px);
+
+      mat-icon {
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+        color: #10b981;
+      }
+
+      span {
+        color: white;
+      }
+    }
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    .btn-finish-selection {
+      background: rgba(16, 185, 129, 0.9);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 500;
+      font-size: 14px;
+      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+
+      mat-icon {
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+      }
+
+      &:hover {
+        background: rgba(16, 185, 129, 1);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+      }
+
+      &:active {
+        transform: translateY(0);
+      }
+    }
+
+    .close-btn {
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+
+      mat-icon {
+        color: white;
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+      }
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: scale(1.1);
+      }
     }
   }
 }
@@ -367,6 +435,36 @@
         height: 20px;
       }
     }
+
+    .multi-select-indicator {
+      flex-shrink: 0;
+
+      .checkbox-wrapper {
+        width: 24px;
+        height: 24px;
+        border: 2px solid #667eea;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        transition: all 0.3s ease;
+        cursor: pointer;
+
+        mat-icon {
+          font-size: 18px;
+          width: 18px;
+          height: 18px;
+          color: white;
+        }
+
+        &.checked {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          border-color: #667eea;
+          box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+        }
+      }
+    }
   }
 }
 
@@ -428,9 +526,42 @@
 
   .modal-header {
     padding: 16px 20px;
+    flex-wrap: wrap;
 
-    h2 {
-      font-size: 20px;
+    .header-content {
+      flex: 1 1 100%;
+      margin-bottom: 8px;
+
+      h2 {
+        font-size: 18px;
+      }
+
+      .selection-counter {
+        font-size: 12px;
+        padding: 4px 10px;
+
+        mat-icon {
+          font-size: 16px;
+          width: 16px;
+          height: 16px;
+        }
+      }
+    }
+
+    .header-actions {
+      flex: 1 1 100%;
+      justify-content: flex-end;
+
+      .btn-finish-selection {
+        font-size: 13px;
+        padding: 8px 14px;
+
+        mat-icon {
+          font-size: 18px;
+          width: 18px;
+          height: 18px;
+        }
+      }
     }
   }
 

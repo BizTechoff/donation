@@ -1,12 +1,15 @@
-import { Component, OnInit, OnDestroy, ViewChild, HostListener, ElementRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, HostListener, ElementRef, ChangeDetectorRef } from '@angular/core';
 import { MatMenuTrigger } from '@angular/material/menu';
 import { remult } from 'remult';
 import { Subscription } from 'rxjs';
+import { openDialog } from 'common-ui-elements';
 import { GlobalFilterService, GlobalFilters } from '../../services/global-filter.service';
 import { Campaign } from '../../../shared/entity/campaign';
 import { Country } from '../../../shared/entity/country';
 import { TargetAudience } from '../../../shared/entity/target-audience';
 import { I18nService } from '../../i18n/i18n.service';
+import { PlaceController } from '../../../shared/controllers/place.controller';
+import { UIToolsService } from '../../common/UIToolsService';
 
 @Component({
   selector: 'app-global-filters',
@@ -20,6 +23,8 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
   currentFilters: GlobalFilters = {};
   campaigns: Campaign[] = [];
   countries: Country[] = [];
+  cities: string[] = [];
+  neighborhoods: string[] = [];
   targetAudiences: TargetAudience[] = [];
 
   campaignRepo = remult.repo(Campaign);
@@ -31,19 +36,26 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
   constructor(
     private filterService: GlobalFilterService,
     public i18n: I18nService,
-    private elementRef: ElementRef
+    private elementRef: ElementRef,
+    private ui: UIToolsService,
+    private cdr: ChangeDetectorRef
   ) {}
   
   async ngOnInit() {
-    // Subscribe to filter changes
+    // Subscribe to filter changes first
     this.subscription.add(
       this.filterService.filters$.subscribe(filters => {
         this.currentFilters = filters;
+        // Trigger change detection after filters update
+        this.cdr.detectChanges();
       })
     );
-    
+
     // Load dropdown data
     await this.loadData();
+
+    // Force change detection after data is loaded to update display
+    this.cdr.detectChanges();
   }
   
   ngOnDestroy() {
@@ -64,9 +76,13 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
         orderBy: { name: 'asc' as 'asc' }
       });
 
-      // Load target audiences
+      // Load cities and neighborhoods from backend
+      const placeData = await PlaceController.loadBase();
+      this.cities = placeData.cities;
+      this.neighborhoods = placeData.neighborhoods;
+
+      // Load target audiences (including inactive ones to display their names in filters)
       this.targetAudiences = await this.targetAudienceRepo.find({
-        where: { isActive: true },
         orderBy: { name: 'asc' as 'asc' }
       });
     } catch (error) {
@@ -91,6 +107,8 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
     const hasValues =
       (this.currentFilters.campaignIds && this.currentFilters.campaignIds.length > 0) ||
       (this.currentFilters.countryIds && this.currentFilters.countryIds.length > 0) ||
+      (this.currentFilters.cityIds && this.currentFilters.cityIds.length > 0) ||
+      (this.currentFilters.neighborhoodIds && this.currentFilters.neighborhoodIds.length > 0) ||
       (this.currentFilters.targetAudienceIds && this.currentFilters.targetAudienceIds.length > 0) ||
       (this.currentFilters.dateFrom !== undefined && this.currentFilters.dateFrom !== null) ||
       (this.currentFilters.dateTo !== undefined && this.currentFilters.dateTo !== null) ||
@@ -104,6 +122,8 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
     let count = 0;
     if (this.currentFilters.campaignIds && this.currentFilters.campaignIds.length > 0) count += this.currentFilters.campaignIds.length;
     if (this.currentFilters.countryIds && this.currentFilters.countryIds.length > 0) count += this.currentFilters.countryIds.length;
+    if (this.currentFilters.cityIds && this.currentFilters.cityIds.length > 0) count += this.currentFilters.cityIds.length;
+    if (this.currentFilters.neighborhoodIds && this.currentFilters.neighborhoodIds.length > 0) count += this.currentFilters.neighborhoodIds.length;
     if (this.currentFilters.targetAudienceIds && this.currentFilters.targetAudienceIds.length > 0) count += this.currentFilters.targetAudienceIds.length;
     if (this.currentFilters.dateFrom) count++;
     if (this.currentFilters.dateTo) count++;
@@ -124,7 +144,55 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
 
   getTargetAudienceName(targetAudienceId: string): string {
     const targetAudience = this.targetAudiences.find(ta => ta.id === targetAudienceId);
-    return targetAudience?.name || targetAudienceId;
+    return targetAudience?.name || `קהל יעד (לא נמצא)`;
+  }
+
+  getSelectedTargetAudiencesDisplay(): string {
+    const selectedIds = this.currentFilters.targetAudienceIds || [];
+    if (selectedIds.length === 0) {
+      return '';
+    }
+
+    const names = selectedIds.map(id => this.getTargetAudienceName(id));
+    return names.join(', ');
+  }
+
+  getSelectedCampaignsDisplay(): string {
+    const selectedIds = this.currentFilters.campaignIds || [];
+    if (selectedIds.length === 0) {
+      return '';
+    }
+
+    const names = selectedIds.map(id => this.getCampaignName(id));
+    return names.join(', ');
+  }
+
+  getSelectedCountriesDisplay(): string {
+    const selectedIds = this.currentFilters.countryIds || [];
+    if (selectedIds.length === 0) {
+      return '';
+    }
+
+    const names = selectedIds.map(id => this.getCountryDisplayName(id));
+    return names.join(', ');
+  }
+
+  getSelectedCitiesDisplay(): string {
+    const selectedIds = this.currentFilters.cityIds || [];
+    if (selectedIds.length === 0) {
+      return '';
+    }
+
+    return selectedIds.join(', ');
+  }
+
+  getSelectedNeighborhoodsDisplay(): string {
+    const selectedIds = this.currentFilters.neighborhoodIds || [];
+    if (selectedIds.length === 0) {
+      return '';
+    }
+
+    return selectedIds.join(', ');
   }
 
   removeCampaignFilter(campaignId: string) {
@@ -143,6 +211,18 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
     const currentIds = this.currentFilters.targetAudienceIds || [];
     const updatedIds = currentIds.filter(id => id !== targetAudienceId);
     this.updateFilter('targetAudienceIds', updatedIds.length > 0 ? updatedIds : undefined);
+  }
+
+  removeCityFilter(city: string) {
+    const currentIds = this.currentFilters.cityIds || [];
+    const updatedIds = currentIds.filter(id => id !== city);
+    this.updateFilter('cityIds', updatedIds.length > 0 ? updatedIds : undefined);
+  }
+
+  removeNeighborhoodFilter(neighborhood: string) {
+    const currentIds = this.currentFilters.neighborhoodIds || [];
+    const updatedIds = currentIds.filter(id => id !== neighborhood);
+    this.updateFilter('neighborhoodIds', updatedIds.length > 0 ? updatedIds : undefined);
   }
   
   onDateFromChange(date: Date | null) {
@@ -163,6 +243,124 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
     const input = event.target as HTMLInputElement;
     const value = input.value ? +input.value : undefined;
     this.updateFilter('amountMax', value);
+  }
+
+  async openCampaignSelectionModal(event: Event) {
+    event.stopPropagation();
+
+    const result = await openDialog(
+      (await import('../../routes/modals/campaign-selection-modal/campaign-selection-modal.component')).CampaignSelectionModalComponent,
+      (modal: any) => {
+        modal.args = {
+          title: 'בחירת קמפיין',
+          multiSelect: true,
+          selectedIds: this.currentFilters.campaignIds || []
+        };
+      }
+    );
+
+    // Always reload to reflect any changes
+    await this.loadData();
+
+    if (result && Array.isArray(result) && result.length > 0) {
+      const selectedIds = result.map((c: Campaign) => c.id);
+      this.updateFilter('campaignIds', selectedIds.length > 0 ? selectedIds : undefined);
+    }
+  }
+
+  async openCountrySelectionModal(event: Event) {
+    event.stopPropagation();
+
+    const result = await openDialog(
+      (await import('../../routes/modals/country-selection-modal/country-selection-modal.component')).CountrySelectionModalComponent,
+      (modal: any) => {
+        modal.args = {
+          title: 'בחירת מדינה',
+          multiSelect: true,
+          selectedIds: this.currentFilters.countryIds || []
+        };
+      }
+    );
+
+    // Always reload to reflect any changes
+    await this.loadData();
+
+    if (result && Array.isArray(result) && result.length > 0) {
+      const selectedIds = result.map((c: Country) => c.id);
+      this.updateFilter('countryIds', selectedIds.length > 0 ? selectedIds : undefined);
+    }
+  }
+
+  async openCitySelectionModal(event: Event) {
+    event.stopPropagation();
+
+    const result = await openDialog(
+      (await import('../../routes/modals/city-selection-modal/city-selection-modal.component')).CitySelectionModalComponent,
+      (modal: any) => {
+        modal.args = {
+          title: 'בחירת עיר',
+          multiSelect: true,
+          selectedCities: this.currentFilters.cityIds || [],
+          countryId: this.currentFilters.countryIds && this.currentFilters.countryIds.length === 1
+            ? this.currentFilters.countryIds[0]
+            : undefined
+        };
+      }
+    );
+
+    // Always reload to reflect any changes
+    await this.loadData();
+
+    if (result && Array.isArray(result) && result.length > 0) {
+      this.updateFilter('cityIds', result);
+    }
+  }
+
+  async openNeighborhoodSelectionModal(event: Event) {
+    event.stopPropagation();
+
+    const result = await openDialog(
+      (await import('../../routes/modals/neighborhood-selection-modal/neighborhood-selection-modal.component')).NeighborhoodSelectionModalComponent,
+      (modal: any) => {
+        modal.args = {
+          title: 'בחירת שכונה',
+          multiSelect: true,
+          selectedNeighborhoods: this.currentFilters.neighborhoodIds || [],
+          city: this.currentFilters.cityIds && this.currentFilters.cityIds.length === 1
+            ? this.currentFilters.cityIds[0]
+            : undefined,
+          countryId: this.currentFilters.countryIds && this.currentFilters.countryIds.length === 1
+            ? this.currentFilters.countryIds[0]
+            : undefined
+        };
+      }
+    );
+
+    // Always reload to reflect any changes
+    await this.loadData();
+
+    if (result && Array.isArray(result) && result.length > 0) {
+      this.updateFilter('neighborhoodIds', result);
+    }
+  }
+
+  async openAudienceSelectionModal(event: Event) {
+    event.stopPropagation();
+
+    const result = await this.ui.openAudienceSelection({
+      title: 'ניהול קהלי יעד',
+      multiSelect: true,
+      selectedIds: this.currentFilters.targetAudienceIds || []
+    });
+
+    // Always reload audiences list to reflect any changes (even if cancelled)
+    await this.loadData();
+
+    if (result) {
+      // Update filter with selected audiences
+      const selectedIds = Array.isArray(result) ? result.map((a: TargetAudience) => a.id) : [result.id];
+      this.updateFilter('targetAudienceIds', selectedIds.length > 0 ? selectedIds : undefined);
+    }
   }
 
   @HostListener('document:click', ['$event'])

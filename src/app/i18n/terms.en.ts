@@ -197,7 +197,7 @@ export const termsEn = {
   isAnonymous: 'Anonymous Donation',
 
   // Donation Status
-  pending: 'Pending',
+  pending: 'Awaiting delivery',
   completed: 'Completed',
   cancelled: 'Cancelled',
 

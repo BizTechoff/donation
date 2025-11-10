@@ -39,10 +39,11 @@ export class QuickActionsComponent {
     });
   }
   
-  createNewCertificate() {
-    this.router.navigate(['/תעודות'], { 
-      queryParams: { action: 'add' }
-    });
+  async createNewCertificate() {
+    const changed = await this.ui.certificateDetailsDialog('new');
+    // this.router.navigate(['/תעודות'], { 
+    //   queryParams: { action: 'add' }
+    // });
   }
   
   openBlessingsBook() {

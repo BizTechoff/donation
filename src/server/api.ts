@@ -32,6 +32,10 @@ import { User } from '../shared/entity/user'
 import { checkAndSendReminders } from './scheduler'
 import { CertificateController } from '../shared/controllers/certificate.controller'
 import { ReportController } from '../shared/controllers/report.controller'
+import { CountryController } from '../shared/controllers/country.controller'
+import { PlaceController } from '../shared/controllers/place.controller'
+import { CampaignController } from '../shared/controllers/campaign.controller'
+import { DonorGiftController } from '../shared/controllers/donor-gift.controller'
 
 export const entities = [
   User, Donor, Donation, Campaign, DonationMethod, Reminder,
@@ -44,7 +48,8 @@ export const api = remultExpress({
   controllers: [SignInController, UpdatePasswordController, DonorController,
     DonationController, LetterController, FileController, PaymentController,
     DonorMapController, ReminderController, HebrewDateController, TargetAudienceController,
-    CertificateController, EmailController, ReportController],
+    CertificateController, EmailController, ReportController, CountryController, PlaceController,
+    CampaignController, DonorGiftController],
   entities,
   getUser,
   dataProvider: async () => {
