@@ -88,58 +88,63 @@
   <!-- CONTENT: Main scrollable area -->
   <div class="module-content">
 
-    <!-- Table Header: Sticky -->
-    <div class="table-header">
-      <div class="grid-col sortable" [class.sorted]="isSorted('donor')" (click)="toggleSort('donor', $event)">
-        {{ (i18n.terms$ | async)?.donor }}
-        <span class="sort-icon">{{ getSortIcon('donor') }}</span>
-      </div>
-      <div class="grid-col sortable" [class.sorted]="isSorted('gift')" (click)="toggleSort('gift', $event)">
-        {{ (i18n.terms$ | async)?.gift }}
-        <span class="sort-icon">{{ getSortIcon('gift') }}</span>
-      </div>
-      <div class="grid-col sortable" [class.sorted]="isSorted('deliveryDate')" (click)="toggleSort('deliveryDate', $event)">
-        {{ (i18n.terms$ | async)?.deliveryDate }}
-        <span class="sort-icon">{{ getSortIcon('deliveryDate') }}</span>
-      </div>
-      <div class="grid-col sortable" [class.sorted]="isSorted('reminderDate')" (click)="toggleSort('reminderDate', $event)">
-        {{ (i18n.terms$ | async)?.reminderDate }}
-        <span class="sort-icon">{{ getSortIcon('reminderDate') }}</span>
-      </div>
-      <div class="grid-col sortable" [class.sorted]="isSorted('isDelivered')" (click)="toggleSort('isDelivered', $event)">
-        {{ (i18n.terms$ | async)?.status }}
-        <span class="sort-icon">{{ getSortIcon('isDelivered') }}</span>
-      </div>
-      <div class="grid-col">{{ (i18n.terms$ | async)?.notes }}</div>
-      <div class="grid-col">{{ (i18n.terms$ | async)?.actions }}</div>
-    </div>
-
-    <!-- Table Body: Scrollable -->
+    <!-- Table Body: Scrollable area -->
     <div class="table-body">
       <div class="loading-overlay" *ngIf="loading">
         <div class="spinner">{{ (i18n.terms$ | async)?.loading }}</div>
       </div>
 
-      <div class="grid-row" *ngFor="let donorGift of donorGifts">
-        <div class="grid-col">{{ getDonorName(donorGift) }}</div>
-        <div class="grid-col">{{ donorGift.gift?.name }}</div>
-        <div class="grid-col">{{ formatDate(donorGift.deliveryDate) }}</div>
-        <div class="grid-col">{{ formatDate(donorGift.reminderDate) }}</div>
-        <div class="grid-col">
-          <span class="status-badge" [class.delivered]="donorGift.isDelivered" [class.pending]="!donorGift.isDelivered">
-            {{ donorGift.isDelivered ? (i18n.terms$ | async)?.delivered : (i18n.terms$ | async)?.pending }}
-          </span>
-        </div>
-        <div class="grid-col">{{ donorGift.notes }}</div>
-        <div class="grid-col actions" (click)="$event.stopPropagation()">
-          <button class="btn-icon btn-edit" (click)="editDonorGift(donorGift)" [title]="(i18n.terms$ | async)?.edit">✏</button>
-          <button class="btn-icon btn-delete" (click)="deleteDonorGift(donorGift)" [title]="(i18n.terms$ | async)?.delete">🗑</button>
-        </div>
-      </div>
-
-      <div class="no-data" *ngIf="!loading && donorGifts.length === 0">
-        <p>{{ (i18n.terms$ | async)?.noGiftsFound }}</p>
-      </div>
+      <table class="data-table">
+      <thead>
+        <tr>
+          <th class="sortable" [class.sorted]="isSorted('donor')" (click)="toggleSort('donor', $event)">
+            {{ (i18n.terms$ | async)?.donor }}
+            <span class="sort-icon">{{ getSortIcon('donor') }}</span>
+          </th>
+          <th class="sortable" [class.sorted]="isSorted('gift')" (click)="toggleSort('gift', $event)">
+            {{ (i18n.terms$ | async)?.gift }}
+            <span class="sort-icon">{{ getSortIcon('gift') }}</span>
+          </th>
+          <th class="sortable" [class.sorted]="isSorted('deliveryDate')" (click)="toggleSort('deliveryDate', $event)">
+            {{ (i18n.terms$ | async)?.deliveryDate }}
+            <span class="sort-icon">{{ getSortIcon('deliveryDate') }}</span>
+          </th>
+          <th class="sortable" [class.sorted]="isSorted('reminderDate')" (click)="toggleSort('reminderDate', $event)">
+            {{ (i18n.terms$ | async)?.reminderDate }}
+            <span class="sort-icon">{{ getSortIcon('reminderDate') }}</span>
+          </th>
+          <th class="sortable" [class.sorted]="isSorted('isDelivered')" (click)="toggleSort('isDelivered', $event)">
+            {{ (i18n.terms$ | async)?.status }}
+            <span class="sort-icon">{{ getSortIcon('isDelivered') }}</span>
+          </th>
+          <th>{{ (i18n.terms$ | async)?.notes }}</th>
+          <th>{{ (i18n.terms$ | async)?.actions }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let donorGift of donorGifts">
+          <td>{{ getDonorName(donorGift) }}</td>
+          <td>{{ donorGift.gift?.name || '-' }}</td>
+          <td>{{ formatHebrewDate(donorGift.deliveryDate) }}</td>
+          <td>{{ formatHebrewDate(donorGift.reminderDate) }}</td>
+          <td>
+            <span class="status-badge" [class.delivered]="donorGift.isDelivered" [class.pending]="!donorGift.isDelivered">
+              {{ donorGift.isDelivered ? (i18n.terms$ | async)?.delivered : (i18n.terms$ | async)?.pending }}
+            </span>
+          </td>
+          <td>{{ donorGift.notes || '-' }}</td>
+          <td class="actions" (click)="$event.stopPropagation()">
+            <button class="btn-icon btn-edit" (click)="editDonorGift(donorGift)" [title]="(i18n.terms$ | async)?.edit">✏</button>
+            <button class="btn-icon btn-delete" (click)="deleteDonorGift(donorGift)" [title]="(i18n.terms$ | async)?.delete">🗑</button>
+          </td>
+        </tr>
+        <tr *ngIf="!loading && donorGifts.length === 0">
+          <td colspan="7" class="no-data">
+            <p>{{ (i18n.terms$ | async)?.noGiftsFound }}</p>
+          </td>
+        </tr>
+      </tbody>
+    </table>
     </div>
 
     <!-- Table Footer: Sticky pagination -->
@@ -189,7 +194,6 @@
         <span>{{ (i18n.terms$ | async)?.showing }} {{(currentPage - 1) * pageSize + 1}} - {{Math.min(currentPage * pageSize, totalCount)}} {{ (i18n.terms$ | async)?.of }} {{totalCount}}</span>
       </div>
     </div>
-
   </div>
 
 </div>

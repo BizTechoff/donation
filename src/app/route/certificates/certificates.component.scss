@@ -183,7 +183,35 @@
   overflow: hidden; // Important: prevents content from overflowing
   background: white;
   margin: 0;
+}
+
+// ===================================
+// TABLE BODY: Scrollable rows
+// ===================================
+
+.table-body {
+  flex: 1;
+  overflow-y: auto; // Only this part scrolls!
+  overflow-x: hidden;
   position: relative;
+
+  // Custom scrollbar
+  &::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #667eea;
+    border-radius: 5px;
+
+    &:hover {
+      background: #764ba2;
+    }
+  }
 
   .loading-overlay {
     position: absolute;
@@ -195,7 +223,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 100;
+    z-index: 10;
 
     .spinner {
       font-size: 18px;
@@ -228,7 +256,7 @@
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     display: grid;
-    grid-template-columns: 2fr 1.5fr 1.5fr 2fr 2.5fr 1.5fr;
+    grid-template-columns: auto auto auto auto auto auto auto auto;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 
     .grid-col {
@@ -293,7 +321,7 @@
 
     .grid-row {
       display: grid;
-      grid-template-columns: 2fr 1.5fr 1.5fr 2fr 2.5fr 1.5fr;
+      grid-template-columns: auto auto auto auto auto auto auto auto;
       border-bottom: 1px solid #ecf0f1;
       transition: background-color 0.2s ease;
 
@@ -417,93 +445,93 @@
 }
 
 // ===================================
-// MODULE FOOTER: Sticky bottom with pagination
+// TABLE FOOTER: Sticky bottom - Pagination
 // ===================================
 
-.module-footer {
+.table-footer {
   position: sticky;
   bottom: 0;
   z-index: 50;
-  background: white;
+  background: #f8f9fa;
   border-top: 2px solid #e1e8ed;
-  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
-  padding: 15px 30px;
+  padding: 15px 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 20px;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
 
   .pagination-controls {
     display: flex;
-    justify-content: center;
     align-items: center;
-    gap: 10px;
-    flex: 1;
+    gap: 8px;
 
     .btn-page {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      border: none;
+      background: white;
+      color: #667eea;
+      border: 2px solid #667eea;
       padding: 8px 16px;
       border-radius: 6px;
       cursor: pointer;
       font-size: 13px;
       font-weight: 600;
-      transition: all 0.3s ease;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      transition: all 0.2s ease;
 
       &:hover:not(:disabled) {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        background: #667eea;
+        color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 6px rgba(102, 126, 234, 0.3);
       }
 
       &:disabled {
-        background: #bdc3c7;
+        background: #e9ecef;
+        border-color: #dee2e6;
+        color: #adb5bd;
         cursor: not-allowed;
-        box-shadow: none;
       }
     }
 
     .page-numbers {
       display: flex;
-      gap: 5px;
+      gap: 4px;
+      margin: 0 8px;
 
       .btn-page-number {
         background: white;
         color: #667eea;
-        border: 2px solid #667eea;
-        padding: 6px 12px;
+        border: 2px solid #e1e8ed;
+        padding: 8px 14px;
         border-radius: 6px;
         cursor: pointer;
-        font-size: 13px;
+        font-size: 14px;
         font-weight: 600;
+        min-width: 40px;
         transition: all 0.2s ease;
-        min-width: 36px;
 
         &:hover:not(:disabled) {
-          background: #667eea;
-          color: white;
+          border-color: #667eea;
+          background: #f7f9fc;
         }
 
         &.active {
           background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
           color: white;
-          border-color: #764ba2;
+          border-color: #667eea;
+          box-shadow: 0 2px 6px rgba(102, 126, 234, 0.4);
         }
 
         &:disabled {
-          opacity: 0.5;
           cursor: not-allowed;
+          opacity: 0.5;
         }
       }
     }
   }
 
   .pagination-info {
-    color: #7f8c8d;
+    color: #6c757d;
     font-size: 13px;
     font-weight: 500;
-    white-space: nowrap;
   }
 }
 

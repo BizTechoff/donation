@@ -27,62 +27,67 @@
   <!-- CONTENT: אזור התוכן המרכזי -->
   <div class="module-content">
 
-    <!-- Table Header: Sticky top של הטבלה -->
-    <div class="table-header">
-      <div class="grid-col sortable" [class.sorted]="isSorted('fullName')" (click)="toggleSort('fullName', $event)">
-        {{ (i18n.terms$ | async)?.name }}
-        <span class="sort-icon" *ngIf="getSortIcon('fullName')">{{ getSortIcon('fullName') }}</span>
-      </div>
-      <div class="grid-col sortable" [class.sorted]="isSorted('address')" (click)="toggleSort('address', $event)">
-        {{ (i18n.terms$ | async)?.address }}
-        <span class="sort-icon" *ngIf="getSortIcon('address')">{{ getSortIcon('address') }}</span>
-      </div>
-      <div class="grid-col sortable" [class.sorted]="isSorted('phone')" (click)="toggleSort('phone', $event)">
-        {{ (i18n.terms$ | async)?.phone }}
-        <span class="sort-icon" *ngIf="getSortIcon('phone')">{{ getSortIcon('phone') }}</span>
-      </div>
-      <div class="grid-col sortable" [class.sorted]="isSorted('email')" (click)="toggleSort('email', $event)">
-        {{ (i18n.terms$ | async)?.email }}
-        <span class="sort-icon" *ngIf="getSortIcon('email')">{{ getSortIcon('email') }}</span>
-      </div>
-      <div class="grid-col sortable" [class.sorted]="isSorted('totalDonations')" (click)="toggleSort('totalDonations', $event)">
-        {{ (i18n.terms$ | async)?.totalDonationsHeader }}
-        <span class="sort-icon" *ngIf="getSortIcon('totalDonations')">{{ getSortIcon('totalDonations') }}</span>
-      </div>
-      <div class="grid-col sortable" [class.sorted]="isSorted('createdDate')" (click)="toggleSort('createdDate', $event)">
-        {{ (i18n.terms$ | async)?.lastDonation }}
-        <span class="sort-icon" *ngIf="getSortIcon('createdDate')">{{ getSortIcon('createdDate') }}</span>
-      </div>
-      <div class="grid-col">{{ (i18n.terms$ | async)?.actions }}</div>
-    </div>
-
-    <!-- Table Body: החלק היחיד שנגלל -->
+    <!-- Table Body: Scrollable area -->
     <div class="table-body">
       <div class="loading-overlay" *ngIf="loading">
         <div class="spinner">טוען...</div>
       </div>
 
-      <div class="grid-row" *ngFor="let donor of filteredDonors">
-        <div class="grid-col">
-          <div class="donor-name">
-            <strong>{{donor.fullName}}</strong>
-            <small *ngIf="donor.idNumber">({{ (i18n.terms$ | async)?.idNumberShort }}: {{donor.idNumber}})</small>
-          </div>
-        </div>
-        <div class="grid-col">{{getDonorAddress(donor.id)}}</div>
-        <div class="grid-col">{{getDonorPhone(donor.id)}}</div>
-        <div class="grid-col">{{getDonorEmail(donor.id)}}</div>
-        <div class="grid-col">{{getDonorTotalDonations(donor.id) | number:'1.2-2'}}</div>
-        <div class="grid-col">{{donor.createdDate | date:'dd/MM/yyyy'}}</div>
-        <div class="grid-col actions">
-          <button class="btn-icon btn-edit" (click)="editDonor(donor)" [title]="(i18n.terms$ | async)?.edit">✏</button>
-          <button class="btn-icon btn-delete" (click)="deleteDonor(donor)" [title]="(i18n.terms$ | async)?.delete">🗑</button>
-        </div>
-      </div>
-
-      <div class="no-data" *ngIf="!loading && filteredDonors.length === 0">
-        <p>{{ (i18n.terms$ | async)?.noDataFound }}</p>
-      </div>
+      <table class="data-table">
+      <thead>
+        <tr>
+          <th class="sortable" [class.sorted]="isSorted('fullName')" (click)="toggleSort('fullName', $event)">
+            {{ (i18n.terms$ | async)?.name }}
+            <span class="sort-icon" *ngIf="getSortIcon('fullName')">{{ getSortIcon('fullName') }}</span>
+          </th>
+          <th class="sortable" [class.sorted]="isSorted('address')" (click)="toggleSort('address', $event)">
+            {{ (i18n.terms$ | async)?.address }}
+            <span class="sort-icon" *ngIf="getSortIcon('address')">{{ getSortIcon('address') }}</span>
+          </th>
+          <th class="sortable" [class.sorted]="isSorted('phone')" (click)="toggleSort('phone', $event)">
+            {{ (i18n.terms$ | async)?.phone }}
+            <span class="sort-icon" *ngIf="getSortIcon('phone')">{{ getSortIcon('phone') }}</span>
+          </th>
+          <th class="sortable" [class.sorted]="isSorted('email')" (click)="toggleSort('email', $event)">
+            {{ (i18n.terms$ | async)?.email }}
+            <span class="sort-icon" *ngIf="getSortIcon('email')">{{ getSortIcon('email') }}</span>
+          </th>
+          <th class="sortable" [class.sorted]="isSorted('totalDonations')" (click)="toggleSort('totalDonations', $event)">
+            {{ (i18n.terms$ | async)?.totalDonationsHeader }}
+            <span class="sort-icon" *ngIf="getSortIcon('totalDonations')">{{ getSortIcon('totalDonations') }}</span>
+          </th>
+          <th class="sortable" [class.sorted]="isSorted('lastDonationDate')" (click)="toggleSort('lastDonationDate', $event)">
+            {{ (i18n.terms$ | async)?.lastDonation }}
+            <span class="sort-icon" *ngIf="getSortIcon('lastDonationDate')">{{ getSortIcon('lastDonationDate') }}</span>
+          </th>
+          <th>{{ (i18n.terms$ | async)?.actions }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let donor of filteredDonors">
+          <td>
+            <div class="donor-name">
+              <strong>{{donor.fullName}}</strong>
+              <small *ngIf="donor.idNumber">({{ (i18n.terms$ | async)?.idNumberShort }}: {{donor.idNumber}})</small>
+            </div>
+          </td>
+          <td>{{getDonorAddress(donor.id)}}</td>
+          <td>{{getDonorPhone(donor.id)}}</td>
+          <td>{{getDonorEmail(donor.id)}}</td>
+          <td>{{getDonorTotalDonations(donor.id) | number:'1.2-2'}}</td>
+          <td>{{ formatHebrewDate(getDonorLastDonationDate(donor.id)) }}</td>
+          <td class="actions">
+            <button class="btn-icon btn-edit" (click)="editDonor(donor)" [title]="(i18n.terms$ | async)?.edit">✏</button>
+            <button class="btn-icon btn-delete" (click)="deleteDonor(donor)" [title]="(i18n.terms$ | async)?.delete">🗑</button>
+          </td>
+        </tr>
+        <tr *ngIf="!loading && filteredDonors.length === 0">
+          <td colspan="7" class="no-data">
+            <p>{{ (i18n.terms$ | async)?.noDataFound }}</p>
+          </td>
+        </tr>
+      </tbody>
+    </table>
     </div>
 
     <!-- Table Footer: Sticky bottom - Pagination -->
@@ -132,7 +137,6 @@
         <span>{{ (i18n.terms$ | async)?.showing }} {{(currentPage - 1) * pageSize + 1}} - {{Math.min(currentPage * pageSize, totalCount)}} {{ (i18n.terms$ | async)?.of }} {{totalCount}}</span>
       </div>
     </div>
-
   </div>
 
   <!-- FOOTER: Sticky bottom - (ריק כרגע, לעתיד) -->

@@ -28,9 +28,11 @@ export class DonorSelectionModalComponent implements OnInit {
   args!: DonorSelectionModalArgs;
   selectedDonor: Donor | null = null;
   selectedDonors: Donor[] = []; // For multi-select mode
+  selectedDonorIds: Set<string> = new Set(); // Track selected donor IDs
 
   // Donors system
   availableDonors: Donor[] = [];
+  filteredDonors: Donor[] = [];
   donorRepo = remult.repo(Donor);
 
   // Maps for donor-related data
@@ -38,8 +40,18 @@ export class DonorSelectionModalComponent implements OnInit {
   donorPhoneMap = new Map<string, string>();
   donorPlaceMap = new Map<string, Place>();
 
-  // Search
-  searchTerm = '';
+  // Search/Filter
+  filterText = '';
+
+  // Pagination
+  currentPage = 1;
+  pageSize = 20;
+  totalCount = 0;
+  totalPages = 0;
+  Math = Math;
+
+  // Sorting
+  sortColumns: Array<{ field: string; direction: 'asc' | 'desc' }> = [];
 
   constructor(
     public i18n: I18nService,
@@ -67,10 +79,14 @@ export class DonorSelectionModalComponent implements OnInit {
 
         // Pre-select donors if selectedIds provided (in multi-select mode)
         if (this.args?.multiSelect && this.args?.selectedIds && this.args.selectedIds.length > 0) {
+          this.selectedDonorIds = new Set(this.args.selectedIds);
           this.selectedDonors = this.availableDonors.filter(donor =>
-            this.args.selectedIds!.includes(donor.id)
+            this.selectedDonorIds.has(donor.id)
           );
         }
+
+        // Apply filters and sorting
+        this.applyFilters();
 
       } catch (error) {
         console.error('Error loading donors:', error);
@@ -78,18 +94,172 @@ export class DonorSelectionModalComponent implements OnInit {
     });
   }
 
-  // Filter donors based on search term
-  getFilteredDonors(): Donor[] {
-    if (!this.searchTerm.trim()) {
-      return this.availableDonors;
+  // Apply filters to donors
+  applyFilters() {
+    let filtered = [...this.availableDonors];
+
+    // Apply text filter
+    if (this.filterText.trim()) {
+      const term = this.filterText.toLowerCase();
+      filtered = filtered.filter(donor =>
+        donor.firstName?.toLowerCase().includes(term) ||
+        donor.lastName?.toLowerCase().includes(term) ||
+        donor.fullName?.toLowerCase().includes(term) ||
+        this.getDonorPhone(donor.id)?.toLowerCase().includes(term) ||
+        this.getDonorEmail(donor.id)?.toLowerCase().includes(term)
+      );
     }
 
-    const term = this.searchTerm.toLowerCase();
-    return this.availableDonors.filter(donor =>
-      donor.firstName?.toLowerCase().includes(term) ||
-      donor.lastName?.toLowerCase().includes(term) ||
-      donor.fullName?.toLowerCase().includes(term)
-    );
+    this.filteredDonors = filtered;
+    this.totalCount = this.filteredDonors.length;
+    this.totalPages = Math.ceil(this.totalCount / this.pageSize);
+
+    // Reset to first page when filters change
+    if (this.currentPage > this.totalPages && this.totalPages > 0) {
+      this.currentPage = 1;
+    }
+
+    // Apply sorting
+    this.applySorting();
+  }
+
+  // Apply sorting to filtered donors
+  applySorting() {
+    if (this.sortColumns.length === 0) {
+      return;
+    }
+
+    this.filteredDonors.sort((a, b) => {
+      for (const sort of this.sortColumns) {
+        let aValue: any;
+        let bValue: any;
+
+        switch (sort.field) {
+          case 'fullName':
+            aValue = a.fullName?.toLowerCase() || '';
+            bValue = b.fullName?.toLowerCase() || '';
+            break;
+          case 'phone':
+            aValue = this.getDonorPhone(a.id)?.toLowerCase() || '';
+            bValue = this.getDonorPhone(b.id)?.toLowerCase() || '';
+            break;
+          case 'email':
+            aValue = this.getDonorEmail(a.id)?.toLowerCase() || '';
+            bValue = this.getDonorEmail(b.id)?.toLowerCase() || '';
+            break;
+          default:
+            continue;
+        }
+
+        if (aValue < bValue) return sort.direction === 'asc' ? -1 : 1;
+        if (aValue > bValue) return sort.direction === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
+  }
+
+  // Toggle sort on column
+  toggleSort(field: string, event: MouseEvent) {
+    if (event.ctrlKey || event.metaKey) {
+      // CTRL/CMD pressed - multi-column sort
+      const existingIndex = this.sortColumns.findIndex(s => s.field === field);
+      if (existingIndex >= 0) {
+        const current = this.sortColumns[existingIndex];
+        if (current.direction === 'asc') {
+          this.sortColumns[existingIndex].direction = 'desc';
+        } else {
+          this.sortColumns.splice(existingIndex, 1);
+        }
+      } else {
+        this.sortColumns.push({ field, direction: 'asc' });
+      }
+    } else {
+      // Single column sort
+      const existing = this.sortColumns.find(s => s.field === field);
+      if (existing && this.sortColumns.length === 1) {
+        existing.direction = existing.direction === 'asc' ? 'desc' : 'asc';
+      } else {
+        this.sortColumns = [{ field, direction: 'asc' }];
+      }
+    }
+
+    this.applySorting();
+  }
+
+  isSorted(field: string): boolean {
+    return this.sortColumns.some(s => s.field === field);
+  }
+
+  getSortIcon(field: string): string {
+    const sortIndex = this.sortColumns.findIndex(s => s.field === field);
+    if (sortIndex === -1) return '';
+
+    const sort = this.sortColumns[sortIndex];
+    const arrow = sort.direction === 'asc' ? '↑' : '↓';
+
+    if (this.sortColumns.length > 1) {
+      return `${arrow}${sortIndex + 1}`;
+    }
+    return arrow;
+  }
+
+  // Get paginated donors
+  get paginatedDonors(): Donor[] {
+    const startIndex = (this.currentPage - 1) * this.pageSize;
+    const endIndex = startIndex + this.pageSize;
+    return this.filteredDonors.slice(startIndex, endIndex);
+  }
+
+  // Pagination methods
+  goToPage(page: number) {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+    }
+  }
+
+  nextPage() {
+    if (this.currentPage < this.totalPages) {
+      this.currentPage++;
+    }
+  }
+
+  previousPage() {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+    }
+  }
+
+  firstPage() {
+    this.currentPage = 1;
+  }
+
+  lastPage() {
+    this.currentPage = this.totalPages;
+  }
+
+  getPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxPagesToShow = 5;
+
+    if (this.totalPages <= maxPagesToShow) {
+      for (let i = 1; i <= this.totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      const halfWindow = Math.floor(maxPagesToShow / 2);
+      let startPage = Math.max(1, this.currentPage - halfWindow);
+      let endPage = Math.min(this.totalPages, startPage + maxPagesToShow - 1);
+
+      if (endPage - startPage < maxPagesToShow - 1) {
+        startPage = Math.max(1, endPage - maxPagesToShow + 1);
+      }
+
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(i);
+      }
+    }
+
+    return pages;
   }
 
   // Helper methods to get donor-related data from maps
@@ -122,17 +292,21 @@ export class DonorSelectionModalComponent implements OnInit {
 
   // Toggle donor selection in multi-select mode
   toggleDonorSelection(donor: Donor) {
-    const index = this.selectedDonors.findIndex(d => d.id === donor.id);
-    if (index === -1) {
-      this.selectedDonors.push(donor);
+    if (this.selectedDonorIds.has(donor.id)) {
+      this.selectedDonorIds.delete(donor.id);
+      const index = this.selectedDonors.findIndex(d => d.id === donor.id);
+      if (index !== -1) {
+        this.selectedDonors.splice(index, 1);
+      }
     } else {
-      this.selectedDonors.splice(index, 1);
+      this.selectedDonorIds.add(donor.id);
+      this.selectedDonors.push(donor);
     }
   }
 
   // Check if donor is selected (for multi-select mode)
   isDonorSelected(donor: Donor): boolean {
-    return this.selectedDonors.some(d => d.id === donor.id);
+    return this.selectedDonorIds.has(donor.id);
   }
 
   // Finish multi-select and close dialog with selected donors
@@ -169,7 +343,8 @@ export class DonorSelectionModalComponent implements OnInit {
 
   // Clear search
   clearSearch() {
-    this.searchTerm = '';
+    this.filterText = '';
+    this.applyFilters();
   }
 
   // Close dialog without selection

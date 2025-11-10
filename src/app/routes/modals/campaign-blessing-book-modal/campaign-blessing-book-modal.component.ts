@@ -294,10 +294,10 @@ export class CampaignBlessingBookModalComponent implements OnInit {
     if (!blessing.blessingContent || blessing.blessingContent.trim() === '') {
       return 'pending';
     }
-    if (blessing.status === 'אישר') {
+    if (blessing.status === 'מאושר') {
       return 'received';
     }
-    if (blessing.status === 'בתהליך') {
+    if (blessing.status === 'בטיפול') {
       return 'sent';
     }
     return 'pending';
@@ -425,7 +425,7 @@ export class CampaignBlessingBookModalComponent implements OnInit {
     if (text !== undefined && text !== null) {
       blessing.blessingContent = text;
       if (typeof text === 'string' && text.trim() !== '') {
-        blessing.status = 'אישר';
+        blessing.status = 'מאושר';
       }
 
       try {
@@ -448,7 +448,7 @@ export class CampaignBlessingBookModalComponent implements OnInit {
     }
 
     try {
-      donorBlessing.blessing.status = 'בתהליך';
+      donorBlessing.blessing.status = 'בטיפול';
       await donorBlessing.blessing.save();
       donorBlessing.blessingStatus = this.getBlessingStatus(donorBlessing.blessing);
       this.calculateStatistics();

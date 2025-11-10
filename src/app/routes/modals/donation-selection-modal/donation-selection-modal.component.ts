@@ -12,6 +12,7 @@ export interface DonationSelectionModalArgs {
   excludeIds?: string[];
   multiSelect?: boolean;
   selectedIds?: string[];
+  filterByDonorId?: string; // Filter to show only donations of this donor
 }
 
 @DialogConfig({
@@ -28,17 +29,29 @@ export class DonationSelectionModalComponent implements OnInit {
   args!: DonationSelectionModalArgs;
   selectedDonation: Donation | null = null;
   selectedDonations: Donation[] = [];
+  selectedDonationIds: Set<string> = new Set(); // Track selected donation IDs
 
   // Donations system
   availableDonations: Donation[] = [];
+  filteredDonations: Donation[] = [];
   donationRepo = remult.repo(Donation);
 
   // Maps for donation-related data
   donorMap = new Map<string, Donor>();
   campaignMap = new Map<string, Campaign>();
 
-  // Search
-  searchTerm = '';
+  // Search/Filter
+  filterText = '';
+
+  // Pagination
+  currentPage = 1;
+  pageSize = 20;
+  totalCount = 0;
+  totalPages = 0;
+  Math = Math;
+
+  // Sorting
+  sortColumns: Array<{ field: string; direction: 'asc' | 'desc' }> = [];
 
   constructor(
     public i18n: I18nService,
@@ -60,35 +73,202 @@ export class DonationSelectionModalComponent implements OnInit {
         this.donorMap = new Map(Object.entries(data.donorMap));
         this.campaignMap = new Map(Object.entries(data.campaignMap));
 
-        // Pre-select donations if selectedIds provided (in multi-select mode)
-        if (this.args?.multiSelect && this.args?.selectedIds && this.args.selectedIds.length > 0) {
-          this.selectedDonations = this.availableDonations.filter(donation =>
-            this.args.selectedIds!.includes(donation.id)
+        // Apply donor filter if specified
+        if (this.args?.filterByDonorId) {
+          this.availableDonations = this.availableDonations.filter(
+            donation => donation.donorId === this.args.filterByDonorId
           );
         }
+
+        // Pre-select donations if selectedIds provided (in multi-select mode)
+        if (this.args?.multiSelect && this.args?.selectedIds && this.args.selectedIds.length > 0) {
+          this.selectedDonationIds = new Set(this.args.selectedIds);
+          this.selectedDonations = this.availableDonations.filter(donation =>
+            this.selectedDonationIds.has(donation.id)
+          );
+        }
+
+        // Apply filters and sorting
+        this.applyFilters();
       } catch (error) {
         console.error('Error loading donations:', error);
       }
     });
   }
 
-  // Filter donations based on search term
-  getFilteredDonations(): Donation[] {
-    if (!this.searchTerm.trim()) {
-      return this.availableDonations;
+  // Apply filters to donations
+  applyFilters() {
+    let filtered = [...this.availableDonations];
+
+    // Apply text filter
+    if (this.filterText.trim()) {
+      const term = this.filterText.toLowerCase();
+      filtered = filtered.filter(donation => {
+        const donor = this.getDonor(donation.donorId);
+        const campaign = this.getCampaign(donation.campaignId);
+
+        return donor?.fullName?.toLowerCase().includes(term) ||
+               donor?.firstName?.toLowerCase().includes(term) ||
+               donor?.lastName?.toLowerCase().includes(term) ||
+               campaign?.name?.toLowerCase().includes(term) ||
+               donation.amount.toString().includes(term);
+      });
     }
 
-    const term = this.searchTerm.toLowerCase();
-    return this.availableDonations.filter(donation => {
-      const donor = this.getDonor(donation.donorId);
-      const campaign = this.getCampaign(donation.campaignId);
+    this.filteredDonations = filtered;
+    this.totalCount = this.filteredDonations.length;
+    this.totalPages = Math.ceil(this.totalCount / this.pageSize);
 
-      return donor?.fullName?.toLowerCase().includes(term) ||
-             donor?.firstName?.toLowerCase().includes(term) ||
-             donor?.lastName?.toLowerCase().includes(term) ||
-             campaign?.name?.toLowerCase().includes(term) ||
-             donation.amount.toString().includes(term);
+    // Reset to first page when filters change
+    if (this.currentPage > this.totalPages && this.totalPages > 0) {
+      this.currentPage = 1;
+    }
+
+    // Apply sorting
+    this.applySorting();
+  }
+
+  // Apply sorting to filtered donations
+  applySorting() {
+    if (this.sortColumns.length === 0) {
+      return;
+    }
+
+    this.filteredDonations.sort((a, b) => {
+      for (const sort of this.sortColumns) {
+        let aValue: any;
+        let bValue: any;
+
+        switch (sort.field) {
+          case 'donorName':
+            aValue = this.getDonor(a.donorId)?.fullName?.toLowerCase() || '';
+            bValue = this.getDonor(b.donorId)?.fullName?.toLowerCase() || '';
+            break;
+          case 'amount':
+            aValue = a.amount;
+            bValue = b.amount;
+            break;
+          case 'date':
+            aValue = new Date(a.donationDate).getTime();
+            bValue = new Date(b.donationDate).getTime();
+            break;
+          case 'campaign':
+            aValue = this.getCampaign(a.campaignId)?.name?.toLowerCase() || '';
+            bValue = this.getCampaign(b.campaignId)?.name?.toLowerCase() || '';
+            break;
+          default:
+            continue;
+        }
+
+        if (aValue < bValue) return sort.direction === 'asc' ? -1 : 1;
+        if (aValue > bValue) return sort.direction === 'asc' ? 1 : -1;
+      }
+      return 0;
     });
+  }
+
+  // Toggle sort on column
+  toggleSort(field: string, event: MouseEvent) {
+    if (event.ctrlKey || event.metaKey) {
+      // CTRL/CMD pressed - multi-column sort
+      const existingIndex = this.sortColumns.findIndex(s => s.field === field);
+      if (existingIndex >= 0) {
+        const current = this.sortColumns[existingIndex];
+        if (current.direction === 'asc') {
+          this.sortColumns[existingIndex].direction = 'desc';
+        } else {
+          this.sortColumns.splice(existingIndex, 1);
+        }
+      } else {
+        this.sortColumns.push({ field, direction: 'asc' });
+      }
+    } else {
+      // Single column sort
+      const existing = this.sortColumns.find(s => s.field === field);
+      if (existing && this.sortColumns.length === 1) {
+        existing.direction = existing.direction === 'asc' ? 'desc' : 'asc';
+      } else {
+        this.sortColumns = [{ field, direction: 'asc' }];
+      }
+    }
+
+    this.applySorting();
+  }
+
+  isSorted(field: string): boolean {
+    return this.sortColumns.some(s => s.field === field);
+  }
+
+  getSortIcon(field: string): string {
+    const sortIndex = this.sortColumns.findIndex(s => s.field === field);
+    if (sortIndex === -1) return '';
+
+    const sort = this.sortColumns[sortIndex];
+    const arrow = sort.direction === 'asc' ? '↑' : '↓';
+
+    if (this.sortColumns.length > 1) {
+      return `${arrow}${sortIndex + 1}`;
+    }
+    return arrow;
+  }
+
+  // Get paginated donations
+  get paginatedDonations(): Donation[] {
+    const startIndex = (this.currentPage - 1) * this.pageSize;
+    const endIndex = startIndex + this.pageSize;
+    return this.filteredDonations.slice(startIndex, endIndex);
+  }
+
+  // Pagination methods
+  goToPage(page: number) {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+    }
+  }
+
+  nextPage() {
+    if (this.currentPage < this.totalPages) {
+      this.currentPage++;
+    }
+  }
+
+  previousPage() {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+    }
+  }
+
+  firstPage() {
+    this.currentPage = 1;
+  }
+
+  lastPage() {
+    this.currentPage = this.totalPages;
+  }
+
+  getPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxPagesToShow = 5;
+
+    if (this.totalPages <= maxPagesToShow) {
+      for (let i = 1; i <= this.totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      const halfWindow = Math.floor(maxPagesToShow / 2);
+      let startPage = Math.max(1, this.currentPage - halfWindow);
+      let endPage = Math.min(this.totalPages, startPage + maxPagesToShow - 1);
+
+      if (endPage - startPage < maxPagesToShow - 1) {
+        startPage = Math.max(1, endPage - maxPagesToShow + 1);
+      }
+
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(i);
+      }
+    }
+
+    return pages;
   }
 
   // Helper methods to get donation-related data from maps
@@ -115,17 +295,21 @@ export class DonationSelectionModalComponent implements OnInit {
 
   // Toggle donation selection in multi-select mode
   toggleDonationSelection(donation: Donation) {
-    const index = this.selectedDonations.findIndex(d => d.id === donation.id);
-    if (index === -1) {
-      this.selectedDonations.push(donation);
+    if (this.selectedDonationIds.has(donation.id)) {
+      this.selectedDonationIds.delete(donation.id);
+      const index = this.selectedDonations.findIndex(d => d.id === donation.id);
+      if (index !== -1) {
+        this.selectedDonations.splice(index, 1);
+      }
     } else {
-      this.selectedDonations.splice(index, 1);
+      this.selectedDonationIds.add(donation.id);
+      this.selectedDonations.push(donation);
     }
   }
 
   // Check if donation is selected (for multi-select mode)
   isDonationSelected(donation: Donation): boolean {
-    return this.selectedDonations.some(d => d.id === donation.id);
+    return this.selectedDonationIds.has(donation.id);
   }
 
   // Finish multi-select and close dialog with selected donations
@@ -160,7 +344,8 @@ export class DonationSelectionModalComponent implements OnInit {
 
   // Clear search
   clearSearch() {
-    this.searchTerm = '';
+    this.filterText = '';
+    this.applyFilters();
   }
 
   // Close dialog without selection

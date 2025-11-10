@@ -68,6 +68,7 @@ import { CompanySelectionModalComponent } from './routes/modals/company-selectio
 import { BankSelectionModalComponent } from './routes/modals/bank-selection-modal/bank-selection-modal.component'
 import { OrganizationSelectionModalComponent } from './routes/modals/organization-selection-modal/organization-selection-modal.component'
 import { DonorSelectionModalComponent } from './routes/modals/donor-selection-modal/donor-selection-modal.component'
+import { DonationSelectionModalComponent } from './routes/modals/donation-selection-modal/donation-selection-modal.component'
 import { DonorAddressTypeSelectionModalComponent } from './routes/modals/donor-address-type-selection-modal/donor-address-type-selection-modal.component'
 import { CampaignSelectionModalComponent } from './routes/modals/campaign-selection-modal/campaign-selection-modal.component'
 import { OsmAddressInputComponent } from './common/osm-address-input/osm-address-input.component'
@@ -137,6 +138,7 @@ import { NeighborhoodDetailsModalComponent } from './routes/modals/neighborhood-
     BankSelectionModalComponent,
     OrganizationSelectionModalComponent,
     DonorSelectionModalComponent,
+    DonationSelectionModalComponent,
     DonorAddressTypeSelectionModalComponent,
     CampaignSelectionModalComponent,
     DonorDetailsModalComponent,

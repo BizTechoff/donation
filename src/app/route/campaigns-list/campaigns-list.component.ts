@@ -8,6 +8,8 @@ import { UIToolsService } from '../../common/UIToolsService';
 import { GlobalFilterService } from '../../services/global-filter.service';
 import { BusyService } from '../../common-ui-elements/src/angular/wait/busy-service';
 import { CampaignController, CampaignFilters } from '../../../shared/controllers/campaign.controller';
+import { HebrewDateService } from '../../services/hebrew-date.service';
+import { Blessing } from '../../../shared/entity/blessing';
 
 @Component({
   selector: 'app-campaigns-list',
@@ -52,11 +54,15 @@ export class CampaignsListComponent implements OnInit, OnDestroy {
   // Sorting
   sortColumns: Array<{ field: string; direction: 'asc' | 'desc' }> = [{ field: 'name', direction: 'asc' }];
 
+  // Maps for campaign-related data
+  campaignBlessingCountMap = new Map<string, number>();
+
   constructor(
     public i18n: I18nService,
     private ui: UIToolsService,
     private globalFilterService: GlobalFilterService,
-    private busy: BusyService
+    private busy: BusyService,
+    private hebrewDateService: HebrewDateService
   ) {}
 
   async ngOnInit() {
@@ -119,6 +125,9 @@ export class CampaignsListComponent implements OnInit, OnDestroy {
 
         console.log('refreshData: Loaded', this.campaigns.length, 'campaigns, total:', this.totalCount);
 
+        // Load blessing counts for all campaigns
+        await this.loadBlessingCounts();
+
       } catch (error) {
         console.error('Error refreshing campaigns:', error);
         this.campaigns = [];
@@ -128,6 +137,31 @@ export class CampaignsListComponent implements OnInit, OnDestroy {
         this.loading = false;
       }
     });
+  }
+
+  /**
+   * Load blessing counts for all campaigns in the current page
+   */
+  private async loadBlessingCounts() {
+    if (this.campaigns.length === 0) return;
+
+    const campaignIds = this.campaigns.map(c => c.id);
+    const blessingRepo = remult.repo(Blessing);
+
+    // Get all blessings for these campaigns with status 'אישר'
+    const blessings = await blessingRepo.find({
+      where: {
+        campaignId: { $in: campaignIds },
+        status: 'מאושר'
+      }
+    });
+
+    // Count blessings per campaign
+    this.campaignBlessingCountMap.clear();
+    for (const blessing of blessings) {
+      const count = this.campaignBlessingCountMap.get(blessing.campaignId) || 0;
+      this.campaignBlessingCountMap.set(blessing.campaignId, count + 1);
+    }
   }
 
   async loadUsers() {
@@ -164,6 +198,25 @@ export class CampaignsListComponent implements OnInit, OnDestroy {
   formatDate(date: Date | undefined): string {
     if (!date) return '';
     return new Date(date).toLocaleDateString('he-IL');
+  }
+
+  formatHebrewDate(date: Date | undefined): string {
+    if (!date) return '-';
+    try {
+      const hebrewDate = this.hebrewDateService.convertGregorianToHebrew(new Date(date));
+      return hebrewDate.formatted;
+    } catch (error) {
+      console.error('Error formatting Hebrew date:', error);
+      return '-';
+    }
+  }
+
+  getInviteesCount(campaign: Campaign): number {
+    return campaign.invitedDonorIds?.length || 0;
+  }
+
+  getBlessingCount(campaign: Campaign): number {
+    return this.campaignBlessingCountMap.get(campaign.id) || 0;
   }
 
   // Modal event handlers

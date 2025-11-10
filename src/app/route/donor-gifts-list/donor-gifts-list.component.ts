@@ -6,6 +6,7 @@ import { I18nService } from '../../i18n/i18n.service';
 import { UIToolsService } from '../../common/UIToolsService';
 import { GlobalFilterService } from '../../services/global-filter.service';
 import { BusyService } from '../../common-ui-elements/src/angular/wait/busy-service';
+import { HebrewDateService } from '../../services/hebrew-date.service';
 import { DonorGiftController, DonorGiftFilters } from '../../../shared/controllers/donor-gift.controller';
 import { openDialog } from 'common-ui-elements';
 import { DonorGiftDetailsModalComponent } from '../../routes/modals/donor-gift-details-modal/donor-gift-details-modal.component';
@@ -56,7 +57,8 @@ export class DonorGiftsListComponent implements OnInit, OnDestroy {
     public i18n: I18nService,
     private ui: UIToolsService,
     private globalFilterService: GlobalFilterService,
-    private busy: BusyService
+    private busy: BusyService,
+    private hebrewDateService: HebrewDateService
   ) {}
 
   async ngOnInit() {
@@ -359,12 +361,23 @@ export class DonorGiftsListComponent implements OnInit, OnDestroy {
   }
 
   getDonorName(donorGift: DonorGift): string {
-    if (!donorGift.donor) return '';
-    return `${donorGift.donor.firstName || ''} ${donorGift.donor.lastName || ''}`.trim();
+    if (!donorGift.donor) return '-';
+    return `${donorGift.donor.firstName || ''} ${donorGift.donor.lastName || ''}`.trim() || '-';
   }
 
   formatDate(date: Date | undefined): string {
-    if (!date) return '';
+    if (!date) return '-';
     return new Date(date).toLocaleDateString('he-IL');
+  }
+
+  formatHebrewDate(date: Date | undefined): string {
+    if (!date) return '-';
+    try {
+      const hebrewDate = this.hebrewDateService.convertGregorianToHebrew(new Date(date));
+      return hebrewDate.formatted;
+    } catch (error) {
+      console.error('Error formatting Hebrew date:', error);
+      return '-';
+    }
   }
 }

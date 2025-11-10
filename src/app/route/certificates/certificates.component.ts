@@ -8,6 +8,9 @@ import { User } from '../../../shared/entity/user';
 import { UIToolsService } from '../../common/UIToolsService';
 import { I18nService } from '../../i18n/i18n.service';
 import { GlobalFilterService } from '../../services/global-filter.service';
+import { HebrewDateService } from '../../services/hebrew-date.service';
+import { Reminder } from '../../../shared/entity/reminder';
+import { Blessing } from '../../../shared/entity/blessing';
 
 @Component({
   selector: 'app-certificates',
@@ -42,6 +45,10 @@ export class CertificatesComponent implements OnInit, OnDestroy {
   sortColumns: Array<{ field: string; direction: 'asc' | 'desc' }> = [];
   private currentUser?: User;
 
+  // Maps for certificate-related data
+  certificateReminderMap = new Map<string, Date>();
+  certificateBlessingCountMap = new Map<string, { received: number; total: number }>();
+
   parashotList = [
     'בראשית', 'נח', 'לך לך', 'וירא', 'חיי שרה', 'תולדות', 'ויצא', 'וישלח', 'וישב', 'מקץ', 'ויגש', 'ויחי',
     'שמות', 'וארא', 'בא', 'בשלח', 'יתרו', 'משפטים', 'תרומה', 'תצוה', 'כי תשא', 'ויקהל', 'פקודי',
@@ -53,10 +60,22 @@ export class CertificatesComponent implements OnInit, OnDestroy {
   constructor(
     public i18n: I18nService,
     private ui: UIToolsService,
-    private globalFilterService: GlobalFilterService
+    private globalFilterService: GlobalFilterService,
+    private hebrewDateService: HebrewDateService
   ) { }
 
   async ngOnInit() {
+    // Load base data once
+    await this.loadBase();
+
+    // Initial data load
+    await this.refreshData();
+  }
+
+  /**
+   * Load base data once - called only on component initialization
+   */
+  private async loadBase() {
     // Load user settings
     await this.loadUserSettings();
 
@@ -75,7 +94,13 @@ export class CertificatesComponent implements OnInit, OnDestroy {
     this.i18n.terms$.subscribe(() => {
       this.updateMobileLabels();
     });
+  }
 
+  /**
+   * Refresh data based on current filters and sorting
+   * Called whenever filters or sorting changes
+   */
+  private async refreshData() {
     await this.loadCertificates();
   }
 
@@ -114,6 +139,9 @@ export class CertificatesComponent implements OnInit, OnDestroy {
       ]);
 
       this.totalPages = Math.ceil(this.totalCount / this.pageSize);
+
+      // Load related data for certificates
+      await this.loadRelatedData();
     } catch (error) {
       console.error('Error in loadCertificates:', error);
       this.certificates = [];
@@ -121,6 +149,76 @@ export class CertificatesComponent implements OnInit, OnDestroy {
       this.totalPages = 0;
     } finally {
       this.loading = false;
+    }
+  }
+
+  /**
+   * Load reminders and blessing counts for all certificates
+   */
+  private async loadRelatedData() {
+    if (this.certificates.length === 0) return;
+
+    // Load reminders
+    await this.loadReminders();
+
+    // Load blessing counts
+    await this.loadBlessingCounts();
+  }
+
+  /**
+   * Load reminders for certificates that have reminderId
+   */
+  private async loadReminders() {
+    const certificatesWithReminders = this.certificates.filter(c => c.reminderId);
+    if (certificatesWithReminders.length === 0) return;
+
+    const reminderIds = certificatesWithReminders.map(c => c.reminderId);
+    const reminderRepo = remult.repo(Reminder);
+
+    const reminders = await reminderRepo.find({
+      where: { id: { $in: reminderIds } }
+    });
+
+    // Store reminder dates
+    this.certificateReminderMap.clear();
+    for (const reminder of reminders) {
+      const certificate = this.certificates.find(c => c.reminderId === reminder.id);
+      if (certificate) {
+        this.certificateReminderMap.set(certificate.id, reminder.dueDate);
+      }
+    }
+  }
+
+  /**
+   * Load blessing counts for donors related to certificates
+   */
+  private async loadBlessingCounts() {
+    const donorIds = [...new Set(this.certificates.map(c => c.donorId).filter(id => id))];
+    if (donorIds.length === 0) return;
+
+    const blessingRepo = remult.repo(Blessing);
+
+    // Get all blessings for these donors
+    const blessings = await blessingRepo.find({
+      where: { donorId: { $in: donorIds } }
+    });
+
+    // Count blessings per donor
+    this.certificateBlessingCountMap.clear();
+    for (const donorId of donorIds) {
+      const donorBlessings = blessings.filter(b => b.donorId === donorId);
+      const receivedCount = donorBlessings.filter(b => b.status === 'מאושר').length;
+      const totalCount = donorBlessings.length;
+
+      // Store for all certificates with this donor
+      this.certificates
+        .filter(c => c.donorId === donorId)
+        .forEach(c => {
+          this.certificateBlessingCountMap.set(c.id, {
+            received: receivedCount,
+            total: totalCount
+          });
+        });
     }
   }
 
@@ -140,19 +238,19 @@ export class CertificatesComponent implements OnInit, OnDestroy {
 
     // Debounce the filter change
     this.filterTimeout = setTimeout(() => {
-      this.loadCertificates();
+      this.refreshData();
     }, 300);
   }
 
   async openCreateModal() {
     if (await this.ui.certificateDetailsDialog('new')) {
-      await this.loadCertificates();
+      await this.refreshData();
     }
   }
 
   async openEditModal(certificate: Certificate) {
     if (await this.ui.certificateDetailsDialog(certificate.id)) {
-      await this.loadCertificates();
+      await this.refreshData();
     }
   }
 
@@ -172,14 +270,14 @@ export class CertificatesComponent implements OnInit, OnDestroy {
           await certificate.backToDraft();
           break;
       }
-      await this.loadCertificates();
+      await this.refreshData();
     } catch (error) {
       console.error('Error updating certificate status:', error);
     }
   }
 
   getDonorName(certificate: Certificate): string {
-    return certificate.donor?.fullName || this.i18n.terms.unknown;
+    return certificate.donor?.fullName || '-';
   }
 
   async createReminder(certificate: Certificate) {
@@ -191,7 +289,7 @@ export class CertificatesComponent implements OnInit, OnDestroy {
     });
 
     if (reminderSaved) {
-      await this.loadCertificates(); // Reload to get updated reminder
+      await this.refreshData(); // Reload to get updated reminder
       if (reminderId === 'new') {
         this.ui.info('תזכורת נוצרה בהצלחה');
       }
@@ -203,7 +301,7 @@ export class CertificatesComponent implements OnInit, OnDestroy {
       try {
         await repo(Certificate).delete(certificate);
         this.ui.info(this.i18n.terms.deleteSuccess || 'נמחק בהצלחה');
-        await this.loadCertificates();
+        await this.refreshData();
       } catch (error) {
         console.error('Error deleting certificate:', error);
         this.ui.error(this.i18n.terms.deleteError || 'שגיאה במחיקה');
@@ -231,32 +329,32 @@ export class CertificatesComponent implements OnInit, OnDestroy {
   async goToPage(page: number) {
     if (page >= 1 && page <= this.totalPages) {
       this.currentPage = page;
-      await this.loadCertificates();
+      await this.refreshData();
     }
   }
 
   async nextPage() {
     if (this.currentPage < this.totalPages) {
       this.currentPage++;
-      await this.loadCertificates();
+      await this.refreshData();
     }
   }
 
   async previousPage() {
     if (this.currentPage > 1) {
       this.currentPage--;
-      await this.loadCertificates();
+      await this.refreshData();
     }
   }
 
   async firstPage() {
     this.currentPage = 1;
-    await this.loadCertificates();
+    await this.refreshData();
   }
 
   async lastPage() {
     this.currentPage = this.totalPages;
-    await this.loadCertificates();
+    await this.refreshData();
   }
 
   getPageNumbers(): number[] {
@@ -349,7 +447,7 @@ export class CertificatesComponent implements OnInit, OnDestroy {
     }
 
     // Reload from server with new sort
-    await this.loadCertificates();
+    await this.refreshData();
     this.saveSortSettings();
   }
 
@@ -368,6 +466,28 @@ export class CertificatesComponent implements OnInit, OnDestroy {
 
   isSorted(field: string): boolean {
     return this.sortColumns.some(s => s.field === field);
+  }
+
+  formatHebrewDate(date: Date | undefined): string {
+    if (!date) return '-';
+    try {
+      const hebrewDate = this.hebrewDateService.convertGregorianToHebrew(new Date(date));
+      return hebrewDate.formatted;
+    } catch (error) {
+      console.error('Error formatting Hebrew date:', error);
+      return '-';
+    }
+  }
+
+  getNextReminderDate(certificate: Certificate): string {
+    const reminderDate = this.certificateReminderMap.get(certificate.id);
+    return this.formatHebrewDate(reminderDate);
+  }
+
+  getBlessingCount(certificate: Certificate): string {
+    const counts = this.certificateBlessingCountMap.get(certificate.id);
+    if (!counts || counts.total === 0) return '-';
+    return `${counts.received}/${counts.total}`;
   }
 
 }

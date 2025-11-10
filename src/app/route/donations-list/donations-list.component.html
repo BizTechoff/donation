@@ -32,13 +32,13 @@
           <span class="count">{{ totalCount }}</span>
         </div>
       </div>
-      <div class="summary-card avg">
+      <!-- <div class="summary-card avg">
         <div class="card-icon">📊</div>
         <div class="card-content">
           <h3>{{ (i18n.terms$ | async)?.completedDonationsCount }}</h3>
           <span class="count">{{ completedDonationsCount }}</span>
         </div>
-      </div>
+      </div> -->
     </div>
 
     <!-- פילטרים -->
@@ -110,72 +110,81 @@
   <!-- CONTENT: אזור התוכן המרכזי -->
   <div class="module-content">
 
-    <!-- Table Header: Sticky top של הטבלה -->
-    <div class="table-header">
-      <div class="grid-col sortable" [class.sorted]="isSorted('donorName')" (click)="toggleSort('donorName', $event)">
-        {{ (i18n.terms$ | async)?.donorColumn }}
-        <span class="sort-icon" *ngIf="getSortIcon('donorName')">{{ getSortIcon('donorName') }}</span>
-      </div>
-      <div class="grid-col sortable" [class.sorted]="isSorted('address')" (click)="toggleSort('address', $event)">
-        כתובת מגורים
-        <span class="sort-icon" *ngIf="getSortIcon('address')">{{ getSortIcon('address') }}</span>
-      </div>
-      <div class="grid-col sortable" [class.sorted]="isSorted('amount')" (click)="toggleSort('amount', $event)">
-        {{ (i18n.terms$ | async)?.amountColumn }}
-        <span class="sort-icon" *ngIf="getSortIcon('amount')">{{ getSortIcon('amount') }}</span>
-      </div>
-      <div class="grid-col sortable" [class.sorted]="isSorted('currency')" (click)="toggleSort('currency', $event)">
-        {{ (i18n.terms$ | async)?.currencyColumn }}
-        <span class="sort-icon" *ngIf="getSortIcon('currency')">{{ getSortIcon('currency') }}</span>
-      </div>
-      <div class="grid-col sortable" [class.sorted]="isSorted('method')" (click)="toggleSort('method', $event)">
-        {{ (i18n.terms$ | async)?.methodColumn }}
-        <span class="sort-icon" *ngIf="getSortIcon('method')">{{ getSortIcon('method') }}</span>
-      </div>
-      <div class="grid-col sortable" [class.sorted]="isSorted('campaign')" (click)="toggleSort('campaign', $event)">
-        {{ (i18n.terms$ | async)?.campaign }}
-        <span class="sort-icon" *ngIf="getSortIcon('campaign')">{{ getSortIcon('campaign') }}</span>
-      </div>
-      <div class="grid-col sortable" [class.sorted]="isSorted('fundraiser')" (click)="toggleSort('fundraiser', $event)">
-        {{ (i18n.terms$ | async)?.fundraiserColumn }}
-        <span class="sort-icon" *ngIf="getSortIcon('fundraiser')">{{ getSortIcon('fundraiser') }}</span>
-      </div>
-      <div class="grid-col">{{ (i18n.terms$ | async)?.actionsColumn }}</div>
-    </div>
-
-    <!-- Table Body: החלק היחיד שנגלל -->
+    <!-- Table Body: Scrollable area -->
     <div class="table-body">
       <div class="loading-overlay" *ngIf="loading">
         <div class="spinner">טוען...</div>
       </div>
 
-      <div class="grid-row" *ngFor="let donation of donations">
-        <div class="grid-col donor-col">
-          <strong>{{ getDonorName(donation) }}</strong>
-        </div>
-        <div class="grid-col address-col">
-          <span>{{ getDonorHomeAddress(donation) }}</span>
-        </div>
-        <div class="grid-col amount-col">
-          <span class="amount">{{donation.amount | number}}</span>
-        </div>
-        <div class="grid-col currency-col">{{ getCurrencyName(donation.currency) }}</div>
-        <div class="grid-col method-col">
-          <span class="method-badge method-{{donation.donationMethod?.type}}">{{ getMethodName(donation) }}</span>
-        </div>
-        <div class="grid-col campaign-col">{{ getCampaignName(donation) }}</div>
-        <div class="grid-col fundraiser-col">{{ donation.donor?.fundraiser?.name || '-' }}</div>
-        <div class="grid-col actions">
-          <button class="btn-icon btn-edit" (click)="editDonation(donation)"
-            [title]="(i18n.terms$ | async)?.edit">✏</button>
-          <button class="btn-icon btn-delete" (click)="deleteDonation(donation)"
-            [title]="(i18n.terms$ | async)?.delete">🗑</button>
-        </div>
-      </div>
-
-      <div class="no-data" *ngIf="!loading && donations.length === 0">
-        <p>{{ (i18n.terms$ | async)?.noDataFound }}</p>
-      </div>
+      <table class="data-table">
+      <thead>
+        <tr>
+          <th class="sortable" [class.sorted]="isSorted('donorName')" (click)="toggleSort('donorName', $event)">
+            {{ (i18n.terms$ | async)?.donorColumn }}
+            <span class="sort-icon" *ngIf="getSortIcon('donorName')">{{ getSortIcon('donorName') }}</span>
+          </th>
+          <th class="sortable" [class.sorted]="isSorted('address')" (click)="toggleSort('address', $event)">
+            כתובת מגורים
+            <span class="sort-icon" *ngIf="getSortIcon('address')">{{ getSortIcon('address') }}</span>
+          </th>
+          <th class="sortable" [class.sorted]="isSorted('amount')" (click)="toggleSort('amount', $event)">
+            {{ (i18n.terms$ | async)?.amountColumn }}
+            <span class="sort-icon" *ngIf="getSortIcon('amount')">{{ getSortIcon('amount') }}</span>
+          </th>
+          <th class="sortable" [class.sorted]="isSorted('currency')" (click)="toggleSort('currency', $event)">
+            {{ (i18n.terms$ | async)?.currencyColumn }}
+            <span class="sort-icon" *ngIf="getSortIcon('currency')">{{ getSortIcon('currency') }}</span>
+          </th>
+          <th class="sortable" [class.sorted]="isSorted('amountInShekel')" (click)="toggleSort('amountInShekel', $event)">
+            סכום בשקלים
+            <span class="sort-icon" *ngIf="getSortIcon('amountInShekel')">{{ getSortIcon('amountInShekel') }}</span>
+          </th>
+          <th class="sortable" [class.sorted]="isSorted('donationDate')" (click)="toggleSort('donationDate', $event)">
+            תאריך
+            <span class="sort-icon" *ngIf="getSortIcon('donationDate')">{{ getSortIcon('donationDate') }}</span>
+          </th>
+          <th class="sortable" [class.sorted]="isSorted('method')" (click)="toggleSort('method', $event)">
+            {{ (i18n.terms$ | async)?.methodColumn }}
+            <span class="sort-icon" *ngIf="getSortIcon('method')">{{ getSortIcon('method') }}</span>
+          </th>
+          <th class="sortable" [class.sorted]="isSorted('campaign')" (click)="toggleSort('campaign', $event)">
+            {{ (i18n.terms$ | async)?.campaign }}
+            <span class="sort-icon" *ngIf="getSortIcon('campaign')">{{ getSortIcon('campaign') }}</span>
+          </th>
+          <th class="sortable" [class.sorted]="isSorted('fundraiser')" (click)="toggleSort('fundraiser', $event)">
+            {{ (i18n.terms$ | async)?.fundraiserColumn }}
+            <span class="sort-icon" *ngIf="getSortIcon('fundraiser')">{{ getSortIcon('fundraiser') }}</span>
+          </th>
+          <th>{{ (i18n.terms$ | async)?.actionsColumn }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let donation of donations">
+          <td><strong>{{ getDonorName(donation) }}</strong></td>
+          <td>{{ getDonorHomeAddress(donation) }}</td>
+          <td class="amount">{{donation.amount | number}}</td>
+          <td>{{ getCurrencyName(donation.currency) }}</td>
+          <td class="amount">{{ formatAmountInShekel(donation) }}</td>
+          <td>{{ formatHebrewDate(donation.donationDate) }}</td>
+          <td>
+            <span class="method-badge method-{{donation.donationMethod?.type}}">{{ getMethodName(donation) }}</span>
+          </td>
+          <td>{{ getCampaignName(donation) }}</td>
+          <td>{{ donation.donor?.fundraiser?.name || '-' }}</td>
+          <td class="actions">
+            <button class="btn-icon btn-edit" (click)="editDonation(donation)"
+              [title]="(i18n.terms$ | async)?.edit">✏</button>
+            <button class="btn-icon btn-delete" (click)="deleteDonation(donation)"
+              [title]="(i18n.terms$ | async)?.delete">🗑</button>
+          </td>
+        </tr>
+        <tr *ngIf="!loading && donations.length === 0">
+          <td colspan="10" class="no-data">
+            <p>{{ (i18n.terms$ | async)?.noDataFound }}</p>
+          </td>
+        </tr>
+      </tbody>
+    </table>
     </div>
 
     <!-- Table Footer: Sticky bottom - Pagination -->
@@ -225,7 +234,6 @@
         <span>{{ (i18n.terms$ | async)?.showing }} {{(currentPage - 1) * pageSize + 1}} - {{Math.min(currentPage * pageSize, totalCount)}} {{ (i18n.terms$ | async)?.of }} {{totalCount}}</span>
       </div>
     </div>
-
   </div>
 
   <!-- FOOTER: Sticky bottom - (ריק כרגע, לעתיד) -->

@@ -137,22 +137,20 @@
   }
 }
 
-// Modal Body
+// Modal Body - Container with flex layout
 .modal-body {
   flex: 1;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  padding: 1.5rem 2rem;
+  padding: 0;
 }
 
-// Filters Section
+// Filters Section - Fixed at top
 .filters-section {
-  margin-bottom: 1.5rem;
-  padding: 1rem;
-  background: #f8f9ff;
-  border-radius: 12px;
-  border: 1px solid #e1e5f2;
+  padding: 1.5rem 2rem 1rem 2rem;
+  background: white;
+  border-bottom: 1px solid #e1e5f2;
 
   .filters-grid {
     display: grid;
@@ -164,7 +162,7 @@
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      background: white;
+      background: #f8f9ff;
       border-radius: 8px;
       padding: 0.5rem;
       border: 1px solid #e1e5f2;
@@ -208,13 +206,31 @@
   }
 }
 
-// Table Container
+// Table Container - Scrollable area
 .table-container {
   flex: 1;
-  overflow: auto;
-  border: 1px solid #e1e5f2;
-  border-radius: 12px;
+  overflow-y: auto;
+  overflow-x: hidden;
   background: white;
+  position: relative;
+
+  // Custom scrollbar
+  &::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #667eea;
+    border-radius: 5px;
+
+    &:hover {
+      background: #764ba2;
+    }
+  }
 
   .donations-table {
     width: 100%;
@@ -376,6 +392,94 @@
       margin: 0;
       font-size: 0.875rem;
     }
+  }
+}
+
+// Table Footer - Sticky at bottom of modal-body
+.table-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 50;
+  background: #f8f9fa;
+  border-top: 2px solid #e1e8ed;
+  padding: 15px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
+
+  .pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .btn-page {
+      background: white;
+      color: #667eea;
+      border: 2px solid #667eea;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.2s ease;
+
+      &:hover:not(:disabled) {
+        background: #667eea;
+        color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 6px rgba(102, 126, 234, 0.3);
+      }
+
+      &:disabled {
+        background: #e9ecef;
+        border-color: #dee2e6;
+        color: #adb5bd;
+        cursor: not-allowed;
+      }
+    }
+
+    .page-numbers {
+      display: flex;
+      gap: 4px;
+      margin: 0 8px;
+
+      .btn-page-number {
+        background: white;
+        color: #667eea;
+        border: 2px solid #e1e8ed;
+        padding: 8px 14px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        min-width: 40px;
+        transition: all 0.2s ease;
+
+        &:hover:not(:disabled) {
+          border-color: #667eea;
+          background: #f7f9fc;
+        }
+
+        &.active {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          border-color: #667eea;
+          box-shadow: 0 2px 6px rgba(102, 126, 234, 0.4);
+        }
+
+        &:disabled {
+          cursor: not-allowed;
+          opacity: 0.5;
+        }
+      }
+    }
+  }
+
+  .pagination-info {
+    color: #6c757d;
+    font-size: 13px;
+    font-weight: 500;
   }
 }
 

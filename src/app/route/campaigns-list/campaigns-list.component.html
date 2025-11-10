@@ -73,78 +73,83 @@
   <!-- CONTENT: אזור התוכן המרכזי -->
   <div class="module-content">
 
-    <!-- Table Header: Sticky top של הטבלה -->
-    <div class="table-header">
-      <div class="grid-col sortable" [class.sorted]="isSorted('name')" (click)="toggleSort('name', $event)">
-        {{ (i18n.terms$ | async)?.campaignName }}
-        <span class="sort-icon" *ngIf="getSortIcon('name')">{{ getSortIcon('name') }}</span>
-      </div>
-      <div class="grid-col sortable" [class.sorted]="isSorted('targetAmount')" (click)="toggleSort('targetAmount', $event)">
-        {{ (i18n.terms$ | async)?.financialTarget }}
-        <span class="sort-icon" *ngIf="getSortIcon('targetAmount')">{{ getSortIcon('targetAmount') }}</span>
-      </div>
-      <div class="grid-col sortable" [class.sorted]="isSorted('raisedAmount')" (click)="toggleSort('raisedAmount', $event)">
-        {{ (i18n.terms$ | async)?.collected }}
-        <span class="sort-icon" *ngIf="getSortIcon('raisedAmount')">{{ getSortIcon('raisedAmount') }}</span>
-      </div>
-      <div class="grid-col sortable" [class.sorted]="isSorted('progressPercentage')" (click)="toggleSort('progressPercentage', $event)">
-        {{ (i18n.terms$ | async)?.progressPercentage }}
-        <span class="sort-icon" *ngIf="getSortIcon('progressPercentage')">{{ getSortIcon('progressPercentage') }}</span>
-      </div>
-      <div class="grid-col sortable" [class.sorted]="isSorted('startDate')" (click)="toggleSort('startDate', $event)">
-        {{ (i18n.terms$ | async)?.startDate }}
-        <span class="sort-icon" *ngIf="getSortIcon('startDate')">{{ getSortIcon('startDate') }}</span>
-      </div>
-      <div class="grid-col sortable" [class.sorted]="isSorted('endDate')" (click)="toggleSort('endDate', $event)">
-        {{ (i18n.terms$ | async)?.endDate }}
-        <span class="sort-icon" *ngIf="getSortIcon('endDate')">{{ getSortIcon('endDate') }}</span>
-      </div>
-      <div class="grid-col">{{ (i18n.terms$ | async)?.actions }}</div>
-    </div>
-
-    <!-- Table Body: החלק היחיד שנגלל -->
+    <!-- Table Body: Scrollable area -->
     <div class="table-body">
       <div class="loading-overlay" *ngIf="loading">
         <div class="spinner">{{ (i18n.terms$ | async)?.loadingCampaigns }}</div>
       </div>
 
-      <div class="grid-row" *ngFor="let campaign of campaigns" [class.inactive]="!campaign.isActive">
-        <div class="grid-col campaign-name-col">
-          <div class="campaign-info">
-            <strong>{{campaign.name}}</strong>
-            <small *ngIf="campaign.description">{{campaign.description}}</small>
-          </div>
-        </div>
-        <div class="grid-col amount-col">
-          <span class="amount">{{formatCurrency(campaign.targetAmount)}}</span>
-        </div>
-        <div class="grid-col amount-col">
-          <span class="amount raised">{{formatCurrency(campaign.raisedAmount)}}</span>
-        </div>
-        <div class="grid-col progress-col">
-          <div class="progress-container">
-            <div class="progress-bar">
-              <div class="progress-fill" [style.width.%]="campaign.progressPercentage"></div>
+      <table class="data-table">
+      <thead>
+        <tr>
+          <th class="sortable" [class.sorted]="isSorted('name')" (click)="toggleSort('name', $event)">
+            {{ (i18n.terms$ | async)?.campaignName }}
+            <span class="sort-icon" *ngIf="getSortIcon('name')">{{ getSortIcon('name') }}</span>
+          </th>
+          <th class="sortable" [class.sorted]="isSorted('targetAmount')" (click)="toggleSort('targetAmount', $event)">
+            {{ (i18n.terms$ | async)?.financialTarget }}
+            <span class="sort-icon" *ngIf="getSortIcon('targetAmount')">{{ getSortIcon('targetAmount') }}</span>
+          </th>
+          <th class="sortable" [class.sorted]="isSorted('raisedAmount')" (click)="toggleSort('raisedAmount', $event)">
+            {{ (i18n.terms$ | async)?.collected }}
+            <span class="sort-icon" *ngIf="getSortIcon('raisedAmount')">{{ getSortIcon('raisedAmount') }}</span>
+          </th>
+          <th class="sortable" [class.sorted]="isSorted('progressPercentage')" (click)="toggleSort('progressPercentage', $event)">
+            {{ (i18n.terms$ | async)?.progressPercentage }}
+            <span class="sort-icon" *ngIf="getSortIcon('progressPercentage')">{{ getSortIcon('progressPercentage') }}</span>
+          </th>
+          <th>מוזמנים</th>
+          <th>ברכות</th>
+          <th class="sortable" [class.sorted]="isSorted('startDate')" (click)="toggleSort('startDate', $event)">
+            {{ (i18n.terms$ | async)?.startDate }}
+            <span class="sort-icon" *ngIf="getSortIcon('startDate')">{{ getSortIcon('startDate') }}</span>
+          </th>
+          <th class="sortable" [class.sorted]="isSorted('endDate')" (click)="toggleSort('endDate', $event)">
+            {{ (i18n.terms$ | async)?.endDate }}
+            <span class="sort-icon" *ngIf="getSortIcon('endDate')">{{ getSortIcon('endDate') }}</span>
+          </th>
+          <th>{{ (i18n.terms$ | async)?.actions }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let campaign of campaigns" [class.inactive]="!campaign.isActive">
+          <td>
+            <div class="campaign-info">
+              <strong>{{campaign.name}}</strong>
+              <small *ngIf="campaign.description">{{campaign.description}}</small>
             </div>
-            <span class="progress-text">{{campaign.progressPercentage}}%</span>
-          </div>
-        </div>
-        <div class="grid-col">{{formatDate(campaign.startDate)}}</div>
-        <div class="grid-col">{{formatDate(campaign.endDate)}}</div>
-        <div class="grid-col actions">
-          <button class="btn-icon btn-invited" title="רשימת מוזמנים" (click)="openInvitedList(campaign)">👥</button>
-          <button class="btn-icon btn-blessings" title="ספר ברכות" (click)="openBlessingsBook(campaign)">📖</button>
-          <button class="btn-icon btn-edit" [title]="(i18n.terms$ | async)?.edit" (click)="editCampaign(campaign)">✏</button>
-          <button class="btn-icon btn-delete" [title]="(i18n.terms$ | async)?.delete" (click)="deleteCampaign(campaign)">🗑</button>
-        </div>
-      </div>
-
-      <div class="no-data" *ngIf="!loading && campaigns.length === 0">
-        <div class="no-campaigns-icon">🎯</div>
-        <h3>{{ (i18n.terms$ | async)?.noCampaigns }}</h3>
-        <p>{{ (i18n.terms$ | async)?.noCampaignsMatchingCriteria }}</p>
-        <button class="btn btn-primary" (click)="createCampaign()">{{ (i18n.terms$ | async)?.createFirstCampaign }}</button>
-      </div>
+          </td>
+          <td class="amount">{{formatCurrency(campaign.targetAmount)}}</td>
+          <td class="amount raised">{{formatCurrency(campaign.raisedAmount)}}</td>
+          <td>
+            <div class="progress-container">
+              <div class="progress-bar">
+                <div class="progress-fill" [style.width.%]="campaign.progressPercentage"></div>
+              </div>
+              <span class="progress-text">{{campaign.progressPercentage}}%</span>
+            </div>
+          </td>
+          <td>{{getInviteesCount(campaign)}}</td>
+          <td>{{getBlessingCount(campaign)}}</td>
+          <td>{{formatHebrewDate(campaign.startDate)}}</td>
+          <td>{{formatHebrewDate(campaign.endDate)}}</td>
+          <td class="actions">
+            <button class="btn-icon btn-invited" title="רשימת מוזמנים" (click)="openInvitedList(campaign)">👥</button>
+            <button class="btn-icon btn-blessings" title="ספר ברכות" (click)="openBlessingsBook(campaign)">📖</button>
+            <button class="btn-icon btn-edit" [title]="(i18n.terms$ | async)?.edit" (click)="editCampaign(campaign)">✏</button>
+            <button class="btn-icon btn-delete" [title]="(i18n.terms$ | async)?.delete" (click)="deleteCampaign(campaign)">🗑</button>
+          </td>
+        </tr>
+        <tr *ngIf="!loading && campaigns.length === 0">
+          <td colspan="9" class="no-data">
+            <div class="no-campaigns-icon">🎯</div>
+            <h3>{{ (i18n.terms$ | async)?.noCampaigns }}</h3>
+            <p>{{ (i18n.terms$ | async)?.noCampaignsMatchingCriteria }}</p>
+            <button class="btn btn-primary" (click)="createCampaign()">{{ (i18n.terms$ | async)?.createFirstCampaign }}</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
     </div>
 
     <!-- Table Footer: Sticky bottom - Pagination -->
@@ -194,7 +199,6 @@
         <span>{{ (i18n.terms$ | async)?.showing }} {{(currentPage - 1) * pageSize + 1}} - {{Math.min(currentPage * pageSize, totalCount)}} {{ (i18n.terms$ | async)?.of }} {{totalCount}}</span>
       </div>
     </div>
-
   </div>
 
   <!-- FOOTER: Sticky bottom - (ריק כרגע, לעתיד) -->

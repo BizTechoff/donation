@@ -264,29 +264,40 @@
             </div>
 
             <div class="form-row">
-              <div class="form-group">
+              <div class="form-group full-width">
                 <label>{{ (i18n.terms$ | async)?.assignToDonor }}</label>
-                <select class="form-control" [(ngModel)]="reminder.relatedDonorId"
-                  (ngModelChange)="onDonorSelectionChange($event)"
-                  (focus)="onDonorDropdownOpen()">
-                  <option value="">{{ (i18n.terms$ | async)?.noAssignment }}</option>
-                  <option *ngFor="let donor of donors" [value]="donor.id">
-                    {{ donor.fullName }}
-                  </option>
-                </select>
+                <div class="donor-selection-field">
+                  <div class="selected-donor-display" *ngIf="reminder.relatedDonor">
+                    <div class="donor-info" (click)="openDonorSelectionModal()">
+                      <strong>{{ reminder.relatedDonor.fullName }}</strong>
+                    </div>
+                    <button type="button" class="btn-clear" (click)="clearDonorSelection()" title="נקה בחירה">
+                      <mat-icon>close</mat-icon>
+                    </button>
+                  </div>
+                  <div class="empty-selection-field" *ngIf="!reminder.relatedDonor" (click)="openDonorSelectionModal()">
+                    <span>בחר תורם...</span>
+                  </div>
+                </div>
               </div>
             </div>
 
             <div class="form-row">
-              <div class="form-group">
+              <div class="form-group full-width">
                 <label>{{ (i18n.terms$ | async)?.assignToDonation }}</label>
-                <select class="form-control" [(ngModel)]="reminder.relatedDonationId"
-                  (focus)="onDonationDropdownOpen()">
-                  <option value="">{{ (i18n.terms$ | async)?.noAssignment }}</option>
-                  <option *ngFor="let donation of filteredDonations" [value]="donation.id">
-                    {{ getDonationDisplayText(donation) }}
-                  </option>
-                </select>
+                <div class="donor-selection-field">
+                  <div class="selected-donor-display" *ngIf="reminder.relatedDonation">
+                    <div class="donor-info" (click)="openDonationSelectionModal()">
+                      <strong>{{ getDonationDisplayText(reminder.relatedDonation) }}</strong>
+                    </div>
+                    <button type="button" class="btn-clear" (click)="clearDonationSelection()" title="נקה בחירה">
+                      <mat-icon>close</mat-icon>
+                    </button>
+                  </div>
+                  <div class="empty-selection-field" *ngIf="!reminder.relatedDonation" (click)="openDonationSelectionModal()">
+                    <span>בחר תרומה...</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

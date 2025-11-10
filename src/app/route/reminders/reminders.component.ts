@@ -73,14 +73,31 @@ export class RemindersComponent implements OnInit, OnDestroy {
   ) { }
 
   async ngOnInit() {
+    // Load base data once
+    await this.loadBase();
+
+    // Initial data load
+    await this.refreshData();
+  }
+
+  /**
+   * Load base data once - called only on component initialization
+   */
+  private async loadBase() {
     // Load current user and their settings
     await this.loadUserSettings();
 
     // Subscribe to global filter changes
     this.filterSubscription = this.globalFilterService.filters$.subscribe(() => {
-      this.loadReminders();
+      this.refreshData();
     });
+  }
 
+  /**
+   * Refresh data based on current filters and sorting
+   * Called whenever filters or sorting changes
+   */
+  private async refreshData() {
     await this.loadReminders();
   }
 
@@ -107,6 +124,12 @@ export class RemindersComponent implements OnInit, OnDestroy {
       }
       if (this.searchTerm && this.searchTerm.trim() !== '') {
         filters.searchTerm = this.searchTerm;
+      }
+
+      // Add global filters (country filter)
+      const globalFilters = this.globalFilterService.currentFilters;
+      if (globalFilters.countryIds && globalFilters.countryIds.length > 0) {
+        filters.countryIds = globalFilters.countryIds;
       }
 
       // Get total count for pagination
@@ -444,32 +467,32 @@ export class RemindersComponent implements OnInit, OnDestroy {
   async goToPage(page: number) {
     if (page >= 1 && page <= this.totalPages) {
       this.currentPage = page;
-      await this.loadReminders();
+      await this.refreshData();
     }
   }
 
   async nextPage() {
     if (this.currentPage < this.totalPages) {
       this.currentPage++;
-      await this.loadReminders();
+      await this.refreshData();
     }
   }
 
   async previousPage() {
     if (this.currentPage > 1) {
       this.currentPage--;
-      await this.loadReminders();
+      await this.refreshData();
     }
   }
 
   async firstPage() {
     this.currentPage = 1;
-    await this.loadReminders();
+    await this.refreshData();
   }
 
   async lastPage() {
     this.currentPage = this.totalPages;
-    await this.loadReminders();
+    await this.refreshData();
   }
 
   getPageNumbers(): number[] {
@@ -586,7 +609,7 @@ export class RemindersComponent implements OnInit, OnDestroy {
     }
 
     // Reload from server with new sort
-    await this.loadReminders();
+    await this.refreshData();
     this.saveSortSettings();
   }
 
@@ -605,6 +628,28 @@ export class RemindersComponent implements OnInit, OnDestroy {
 
   isSorted(field: string): boolean {
     return this.sortColumns.some(s => s.field === field);
+  }
+
+  formatHebrewDate(date: Date | undefined): string {
+    if (!date) return '-';
+    try {
+      const hebrewDate = this.hebrewDateService.convertGregorianToHebrew(new Date(date));
+      return hebrewDate.formatted;
+    } catch (error) {
+      console.error('Error formatting Hebrew date:', error);
+      return '-';
+    }
+  }
+
+  getMoedName(date: Date | undefined): string {
+    if (!date) return '';
+    try {
+      const hebrewDate = this.hebrewDateService.convertGregorianToHebrew(new Date(date));
+      return hebrewDate.moed || '';
+    } catch (error) {
+      console.error('Error getting moed name:', error);
+      return '';
+    }
   }
 
 }

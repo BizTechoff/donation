@@ -48,6 +48,16 @@ export class DonorDonationsModalComponent implements OnInit {
   filterMethod = '';
   filterStatus = '';
 
+  // Sorting
+  sortColumns: Array<{ field: string; direction: 'asc' | 'desc' }> = [];
+
+  // Pagination
+  currentPage = 1;
+  pageSize = 50;
+  totalCount = 0;
+  totalPages = 0;
+  Math = Math; // Expose Math to template
+
   // Table configuration
   displayedColumns: string[] = ['donationDate', 'amount', 'currency', 'campaign', 'method', 'actions'];
 
@@ -119,6 +129,7 @@ export class DonorDonationsModalComponent implements OnInit {
       }
 
       this.calculateTotals();
+      this.updatePaginatedData();
     } catch (error) {
       console.error('Error loading donor donations:', error);
       this.ui.error('שגיאה בטעינת נתוני התרומות');
@@ -346,6 +357,158 @@ export class DonorDonationsModalComponent implements OnInit {
   formatDate(date: Date | undefined): string {
     if (!date) return '';
     return new Date(date).toLocaleDateString('he-IL');
+  }
+
+  // Sorting methods
+  async toggleSort(field: string, event: MouseEvent) {
+    if (event.ctrlKey || event.metaKey) {
+      // Multi-column sort
+      const existingIndex = this.sortColumns.findIndex(s => s.field === field);
+      if (existingIndex >= 0) {
+        const current = this.sortColumns[existingIndex];
+        if (current.direction === 'asc') {
+          this.sortColumns[existingIndex].direction = 'desc';
+        } else {
+          this.sortColumns.splice(existingIndex, 1);
+        }
+      } else {
+        this.sortColumns.push({ field, direction: 'asc' });
+      }
+    } else {
+      // Single column sort
+      const existing = this.sortColumns.find(s => s.field === field);
+      if (existing && this.sortColumns.length === 1) {
+        existing.direction = existing.direction === 'asc' ? 'desc' : 'asc';
+      } else {
+        this.sortColumns = [{ field, direction: 'asc' }];
+      }
+    }
+
+    this.applySorting();
+  }
+
+  applySorting() {
+    if (this.sortColumns.length === 0) return;
+
+    const sortedData = this.isGiftsMode ? [...this.donorGifts] : [...this.donations];
+
+    sortedData.sort((a: any, b: any) => {
+      for (const sort of this.sortColumns) {
+        let aVal = a[sort.field];
+        let bVal = b[sort.field];
+
+        // Handle nested properties for gifts
+        if (sort.field === 'giftName' && this.isGiftsMode) {
+          aVal = a.gift?.name || '';
+          bVal = b.gift?.name || '';
+        }
+
+        if (aVal === bVal) continue;
+
+        const comparison = aVal < bVal ? -1 : 1;
+        return sort.direction === 'asc' ? comparison : -comparison;
+      }
+      return 0;
+    });
+
+    if (this.isGiftsMode) {
+      this.donorGifts = sortedData as DonorGift[];
+    } else {
+      this.donations = sortedData as Donation[];
+    }
+  }
+
+  isSorted(field: string): boolean {
+    return this.sortColumns.some(s => s.field === field);
+  }
+
+  getSortIcon(field: string): string {
+    const sortIndex = this.sortColumns.findIndex(s => s.field === field);
+    if (sortIndex === -1) return '';
+
+    const sort = this.sortColumns[sortIndex];
+    const arrow = sort.direction === 'asc' ? '↑' : '↓';
+
+    if (this.sortColumns.length > 1) {
+      return `${arrow}${sortIndex + 1}`;
+    }
+    return arrow;
+  }
+
+  // Pagination methods
+  async goToPage(page: number) {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+      this.updatePaginatedData();
+    }
+  }
+
+  async nextPage() {
+    if (this.currentPage < this.totalPages) {
+      this.currentPage++;
+      this.updatePaginatedData();
+    }
+  }
+
+  async previousPage() {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+      this.updatePaginatedData();
+    }
+  }
+
+  async firstPage() {
+    this.currentPage = 1;
+    this.updatePaginatedData();
+  }
+
+  async lastPage() {
+    this.currentPage = this.totalPages;
+    this.updatePaginatedData();
+  }
+
+  updatePaginatedData() {
+    // Update total count and pages
+    const dataLength = this.isGiftsMode ? this.donorGifts.length : this.donations.length;
+    this.totalCount = dataLength;
+    this.totalPages = Math.ceil(dataLength / this.pageSize);
+  }
+
+  getPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxPagesToShow = 5;
+
+    if (this.totalPages <= maxPagesToShow) {
+      for (let i = 1; i <= this.totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      const halfWindow = Math.floor(maxPagesToShow / 2);
+      let startPage = Math.max(1, this.currentPage - halfWindow);
+      let endPage = Math.min(this.totalPages, startPage + maxPagesToShow - 1);
+
+      if (endPage - startPage < maxPagesToShow - 1) {
+        startPage = Math.max(1, endPage - maxPagesToShow + 1);
+      }
+
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(i);
+      }
+    }
+
+    return pages;
+  }
+
+  get paginatedDonations(): Donation[] {
+    const start = (this.currentPage - 1) * this.pageSize;
+    const end = start + this.pageSize;
+    return this.filteredDonations.slice(start, end);
+  }
+
+  get paginatedDonorGifts(): DonorGift[] {
+    const start = (this.currentPage - 1) * this.pageSize;
+    const end = start + this.pageSize;
+    return this.filteredDonorGifts.slice(start, end);
   }
 
   closeModal() {

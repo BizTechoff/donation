@@ -8,6 +8,8 @@ import { UIToolsService } from '../../common/UIToolsService';
 import { I18nService } from '../../i18n/i18n.service';
 import { GlobalFilterService } from '../../services/global-filter.service';
 import { BusyService } from '../../common-ui-elements/src/angular/wait/busy-service';
+import { PayerService } from '../../services/payer.service';
+import { HebrewDateService } from '../../services/hebrew-date.service';
 
 @Component({
   selector: 'app-donations-list',
@@ -60,12 +62,17 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   private filterTimeout: any;
   private subscriptions = new Subscription();
 
+  // Exchange rates
+  rates: Record<string, number> = {};
+
   constructor(
     public i18n: I18nService,
     private ui: UIToolsService,
     private route: ActivatedRoute,
     private globalFilterService: GlobalFilterService,
-    private busy: BusyService
+    private busy: BusyService,
+    private payerService: PayerService,
+    private hebrewDateService: HebrewDateService
   ) {}
 
   async ngOnInit() {
@@ -87,22 +94,28 @@ export class DonationsListComponent implements OnInit, OnDestroy {
    * Load base data once - called only on component initialization
    */
   private async loadBase() {
-    // Set CSS variables for mobile labels
-    this.updateMobileLabels();
+    await this.busy.doWhileShowingBusy(async () => {
+      // Set CSS variables for mobile labels
+      this.updateMobileLabels();
 
-    // Listen for language changes
-    this.subscriptions.add(
-      this.i18n.terms$.subscribe(() => {
-        this.updateMobileLabels();
-      })
-    );
+      // Listen for language changes
+      this.subscriptions.add(
+        this.i18n.terms$.subscribe(() => {
+          this.updateMobileLabels();
+        })
+      );
 
-    // Load reference data (donors, campaigns, methods)
-    await Promise.all([
-      this.loadDonors(),
-      this.loadCampaigns(),
-      this.loadDonationMethods()
-    ]);
+      // Load exchange rates from server
+      const { PayerController } = await import('../../../shared/controllers/payer.controller');
+      this.rates = await PayerController.getRatesInShekels();
+
+      // Load reference data (donors, campaigns, methods)
+      await Promise.all([
+        this.loadDonors(),
+        this.loadCampaigns(),
+        this.loadDonationMethods()
+      ]);
+    });
   }
 
   /**
@@ -134,9 +147,6 @@ export class DonationsListComponent implements OnInit, OnDestroy {
         this.totalPages = Math.ceil(this.totalCount / this.pageSize);
 
         console.log('refreshData: Loaded', this.donations.length, 'donations, total:', this.totalCount);
-
-        // Load donor home addresses
-        await this.loadDonorAddresses();
 
         // Calculate completed donations count
         this.completedDonationsCountCache = this.donations.length;
@@ -202,33 +212,6 @@ export class DonationsListComponent implements OnInit, OnDestroy {
       where: { isActive: true },
       orderBy: { name: 'asc' }
     });
-  }
-
-  async loadDonorAddresses() {
-    // Get unique donor IDs from donations
-    const donorIds = [...new Set(this.donations.map(d => d.donorId).filter(id => id))];
-
-    if (donorIds.length === 0) return;
-
-    // Load home addresses (בית) for all donors
-    const donorPlaces = await this.donorPlaceRepo.find({
-      where: {
-        donorId: { $in: donorIds },
-        isActive: true
-      },
-      include: {
-        place: { include: { country: true } },
-        addressType: true
-      }
-    });
-
-    // Create map of donor ID to home address
-    this.donorPlacesMap.clear();
-    for (const dp of donorPlaces) {
-      if (dp.donorId && dp.addressType?.name === 'בית') {
-        this.donorPlacesMap.set(dp.donorId, dp);
-      }
-    }
   }
 
   async createDonation() {
@@ -363,25 +346,25 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   }
 
   getMethodDisplayName(method: string): string {
-    if (!method) return this.i18n.currentTerms.notSpecified || '';
+    if (!method) return '-';
     switch (method) {
       case 'cash': return this.i18n.currentTerms.cash || '';
       case 'check': return this.i18n.currentTerms.check || '';
       case 'credit': return this.i18n.currentTerms.creditCard || '';
       case 'transfer': return this.i18n.currentTerms.bankTransfer || '';
       case 'standing': return this.i18n.currentTerms.standingOrder || '';
-      default: return this.i18n.currentTerms.notSpecified || '';
+      default: return '-';
     }
   }
 
   getCampaignDisplayName(campaign: string): string {
-    if (!campaign) return this.i18n.currentTerms.notSpecified || '';
+    if (!campaign) return '-';
     switch (campaign) {
       case 'general': return this.i18n.currentTerms.general || '';
       case 'torah': return this.i18n.currentTerms.torah || '';
       case 'charity': return this.i18n.currentTerms.charity || '';
       case 'building': return this.i18n.currentTerms.building || '';
-      default: return this.i18n.currentTerms.notSpecified || '';
+      default: return '-';
     }
   }
 
@@ -393,9 +376,9 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   }
 
   getSelectedMethodName(): string {
-    if (!this.editingDonation?.donationMethodId) return this.i18n.currentTerms.notSpecified || '';
+    if (!this.editingDonation?.donationMethodId) return '-';
     const method = this.donationMethods.find(m => m.id === this.editingDonation!.donationMethodId);
-    if (!method) return this.i18n.currentTerms.notSpecified || '';
+    if (!method) return '-';
 
     const typeLabels: { [key: string]: string } = {
       cash: this.i18n.terms.cash,
@@ -410,9 +393,9 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   }
 
   getSelectedCampaignName(): string {
-    if (!this.editingDonation?.campaignId) return this.i18n.currentTerms.notSpecified || '';
+    if (!this.editingDonation?.campaignId) return '-';
     const campaign = this.campaigns.find(c => c.id === this.editingDonation!.campaignId);
-    return campaign?.name || this.i18n.currentTerms.notSpecified || '';
+    return campaign?.name || '-';
   }
 
   getCurrencySymbol(): string {
@@ -445,17 +428,33 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   }
 
   getDonorName(donation: Donation): string {
-    // console.log('getDonorName',donation?.donor?.fullName)
-    return donation.donor?.displayName || this.i18n.currentTerms.unknown || '';
+    return donation.donor?.displayName || '-';
   }
 
   getDonorHomeAddress(donation: Donation): string {
-    if (!donation.donorId) return '-';
+    if (!donation.donor) return '-';
+    return (donation.donor as any).homeAddress || '-';
+  }
 
-    const donorPlace = this.donorPlacesMap.get(donation.donorId);
-    if (!donorPlace?.place) return '-';
+  getAmountInShekel(donation: Donation): number {
+    const rate = this.rates[donation.currency] || 1;
+    return donation.amount * rate;
+  }
 
-    return donorPlace.place.getDisplayAddress() || '-';
+  formatAmountInShekel(donation: Donation): string {
+    const shekelAmount = this.getAmountInShekel(donation);
+    return `₪${shekelAmount.toLocaleString('he-IL', { maximumFractionDigits: 2 })}`;
+  }
+
+  formatHebrewDate(date: Date | undefined): string {
+    if (!date) return '-';
+    try {
+      const hebrewDate = this.hebrewDateService.convertGregorianToHebrew(new Date(date));
+      return hebrewDate.formatted;
+    } catch (error) {
+      console.error('Error formatting Hebrew date:', error);
+      return '-';
+    }
   }
 
   getCampaignName(donation: Donation): string {

@@ -47,7 +47,7 @@ export class Blessing extends IdEntity {
   @Fields.string({
     caption: 'מצב',
   })
-  status: 'ממתין' | 'אישר' | 'סירב' | 'בתהליך' | '' = 'ממתין'
+  status: 'בהמתנה' | 'מאושר' | 'סירב' | 'בטיפול' | '' = 'בהמתנה'
 
   @Fields.string({
     caption: 'טלפון',
@@ -145,10 +145,10 @@ export class Blessing extends IdEntity {
 
   get statusDisplay() {
     switch (this.status) {
-      case 'ממתין': return 'ממתין לתגובה'
-      case 'אישר': return 'אישר השתתפות'
+      case 'בהמתנה': return 'ממתין לתגובה'
+      case 'מאושר': return 'אישר השתתפות'
       case 'סירב': return 'סירב להשתתף'
-      case 'בתהליך': return 'בתהליך עריכה'
+      case 'בטיפול': return 'בתהליך עריכה'
       default: return 'לא צוין'
     }
   }

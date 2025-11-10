@@ -8,6 +8,7 @@ import { GlobalFilterService } from '../../services/global-filter.service';
 import { NavigationRecord, FilterOption, ActiveFilter } from '../../shared/modal-navigation-header/modal-navigation-header.component';
 import { remult } from 'remult';
 import { BusyService } from '../../common-ui-elements/src/angular/wait/busy-service';
+import { HebrewDateService } from '../../services/hebrew-date.service';
 
 @Component({
   selector: 'app-donor-list',
@@ -29,6 +30,7 @@ export class DonorListComponent implements OnInit, OnDestroy {
   donorPhoneMap = new Map<string, string>();
   donorFullAddressMap = new Map<string, string>();
   donorTotalDonationsMap = new Map<string, number>();
+  donorLastDonationDateMap = new Map<string, Date>();
 
   // Navigation header properties
   allDonors: NavigationRecord[] = [];
@@ -53,7 +55,8 @@ export class DonorListComponent implements OnInit, OnDestroy {
     private ui: UIToolsService,
     private donorService: DonorService,
     private filterService: GlobalFilterService,
-    private busy: BusyService
+    private busy: BusyService,
+    private hebrewDateService: HebrewDateService
   ) {}
 
   async ngOnInit() {
@@ -128,6 +131,7 @@ export class DonorListComponent implements OnInit, OnDestroy {
         this.donorPhoneMap = relatedData.donorPhoneMap;
         this.donorFullAddressMap = relatedData.donorFullAddressMap;
         this.donorTotalDonationsMap = relatedData.donorTotalDonationsMap;
+        this.donorLastDonationDateMap = relatedData.donorLastDonationDateMap;
 
         // No need for local filtering anymore - all done on server
         this.filteredDonors = [...this.donors];
@@ -221,19 +225,23 @@ export class DonorListComponent implements OnInit, OnDestroy {
 
   // Helper methods to get donor-related data from maps
   getDonorEmail(donorId: string): string {
-    return this.donorEmailMap.get(donorId) || '';
+    return this.donorEmailMap.get(donorId) || '-';
   }
 
   getDonorPhone(donorId: string): string {
-    return this.donorPhoneMap.get(donorId) || '';
+    return this.donorPhoneMap.get(donorId) || '-';
   }
 
   getDonorAddress(donorId: string): string {
-    return this.donorFullAddressMap.get(donorId) || '';
+    return this.donorFullAddressMap.get(donorId) || '-';
   }
 
   getDonorTotalDonations(donorId: string): number {
     return this.donorTotalDonationsMap.get(donorId) || 0;
+  }
+
+  getDonorLastDonationDate(donorId: string): Date | undefined {
+    return this.donorLastDonationDateMap.get(donorId);
   }
 
   private async loadAllDonors() {
@@ -531,5 +539,16 @@ export class DonorListComponent implements OnInit, OnDestroy {
 
   isSorted(field: string): boolean {
     return this.sortColumns.some(s => s.field === field);
+  }
+
+  formatHebrewDate(date: Date | undefined): string {
+    if (!date) return '-';
+    try {
+      const hebrewDate = this.hebrewDateService.convertGregorianToHebrew(new Date(date));
+      return hebrewDate.formatted;
+    } catch (error) {
+      console.error('Error formatting Hebrew date:', error);
+      return '-';
+    }
   }
 }

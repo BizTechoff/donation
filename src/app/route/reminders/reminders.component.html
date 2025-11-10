@@ -159,8 +159,8 @@
 
             <td class="date-col">
               <div class="date-display">
-                <!-- {{this.getParashaIndex(reminder.dueDate)}} -->
-                <span class="reminder-date">{{reminder.dueDate | date:'dd/MM/yyyy'}}</span>
+                <span class="reminder-date">{{ formatHebrewDate(reminder.dueDate) }}</span>
+                <small class="moed-name" *ngIf="getMoedName(reminder.dueDate)">{{getMoedName(reminder.dueDate)}}</small>
               </div>
             </td>
 
@@ -193,11 +193,17 @@
           </td> -->
 
             <td class="actions">
-              <!-- <button class="btn-icon btn-complete" [title]="(i18n.terms$ | async)?.markAsCompleted" *ngIf="!reminder.isCompleted" (click)="completeReminder(reminder)">✅</button> -->
+              <button class="btn-icon btn-complete" [title]="(i18n.terms$ | async)?.markAsCompleted" *ngIf="!reminder.isCompleted" (click)="completeReminder(reminder)">✅</button>
               <button class="btn-icon btn-edit" [title]="(i18n.terms$ | async)?.editReminder"
                 (click)="editReminder(reminder)">✏</button>
-              <button class="btn-icon btn-postpone" [title]="(i18n.terms$ | async)?.snoozeReminder"
-                *ngIf="!reminder.isCompleted" (click)="snoozeReminder(reminder, 1)">⏰</button>
+              <div class="snooze-dropdown" *ngIf="!reminder.isCompleted">
+                <button class="btn-icon btn-postpone" [title]="(i18n.terms$ | async)?.snoozeReminder">⏰</button>
+                <div class="snooze-menu">
+                  <button (click)="snoozeReminder(reminder, 1)">יום אחד</button>
+                  <button (click)="snoozeReminder(reminder, 7)">שבוע</button>
+                  <button (click)="snoozeReminder(reminder, 30)">חודש</button>
+                </div>
+              </div>
               <button class="btn-icon btn-delete" [title]="(i18n.terms$ | async)?.deleteReminder"
                 (click)="deleteReminder(reminder)">🗑</button>
             </td>

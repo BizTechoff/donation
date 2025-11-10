@@ -10,6 +10,8 @@ import { GlobalFilterService } from '../../../services/global-filter.service';
 import { HebrewDateService } from '../../../services/hebrew-date.service';
 import { DonorService } from '../../../services/donor.service';
 import { ReminderService } from '../../../services/reminder.service';
+import { DonorSelectionModalComponent } from '../donor-selection-modal/donor-selection-modal.component';
+import { DonationSelectionModalComponent } from '../donation-selection-modal/donation-selection-modal.component';
 
 export interface ReminderDetailsModalArgs {
   reminderId?: string; // 'new' for new reminder or reminder ID for editing
@@ -712,6 +714,118 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
   async onDonorDropdownOpen() {
     if (!this.donorsLoaded) {
       await this.loadDonors();
+    }
+  }
+
+  async openDonorSelectionModal() {
+    try {
+      const selectedDonor = await openDialog(
+        DonorSelectionModalComponent,
+        (modal: DonorSelectionModalComponent) => {
+          modal.args = {
+            title: 'בחירת תורם',
+            multiSelect: false
+          };
+        }
+      ) as Donor | null;
+
+      if (selectedDonor) {
+        // Update the reminder with the selected donor
+        this.reminder!.relatedDonorId = selectedDonor.id;
+        this.reminder!.relatedDonor = selectedDonor;
+
+        // Auto-fill fundraiser (assignedTo) from donor's fundraiser if exists
+        if (selectedDonor.fundraiserId) {
+          // Load the full donor with fundraiser relation
+          const donorWithFundraiser = await this.donorRepo.findId(selectedDonor.id, {
+            include: { fundraiser: true }
+          });
+          if (donorWithFundraiser?.fundraiser) {
+            this.reminder!.assignedToId = donorWithFundraiser.fundraiser.id;
+            this.reminder!.assignedTo = donorWithFundraiser.fundraiser;
+          }
+        }
+
+        // Filter donations to show only those of the selected donor
+        if (this.donationsLoaded) {
+          this.filteredDonations = this.donations.filter(donation => donation.donorId === selectedDonor.id);
+        }
+
+        // Clear donation selection if it doesn't belong to the selected donor
+        if (this.reminder?.relatedDonationId) {
+          const selectedDonation = this.donations.find(d => d.id === this.reminder?.relatedDonationId);
+          if (selectedDonation && selectedDonation.donorId !== selectedDonor.id) {
+            this.reminder.relatedDonationId = '';
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error opening donor selection modal:', error);
+      this.ui.error('שגיאה בפתיחת חלון בחירת תורם');
+    }
+  }
+
+  clearDonorSelection() {
+    if (this.reminder) {
+      this.reminder.relatedDonorId = '';
+      this.reminder.relatedDonor = undefined;
+    }
+    // Show all donations if no donor is selected
+    if (this.donationsLoaded) {
+      this.filteredDonations = [...this.donations];
+    }
+  }
+
+  async openDonationSelectionModal() {
+    try {
+      const selectedDonation = await openDialog(
+        DonationSelectionModalComponent,
+        (modal: DonationSelectionModalComponent) => {
+          modal.args = {
+            title: 'בחירת תרומה',
+            multiSelect: false,
+            filterByDonorId: this.reminder?.relatedDonorId || undefined
+          };
+        }
+      ) as Donation | null;
+
+      if (selectedDonation) {
+        // Update the reminder with the selected donation
+        this.reminder!.relatedDonationId = selectedDonation.id;
+        this.reminder!.relatedDonation = selectedDonation;
+
+        // Auto-fill donor from donation if exists
+        if (selectedDonation.donorId) {
+          const donationWithDonor = await this.donationRepo.findId(selectedDonation.id, {
+            include: { donor: true }
+          });
+          if (donationWithDonor?.donor) {
+            this.reminder!.relatedDonorId = donationWithDonor.donor.id;
+            this.reminder!.relatedDonor = donationWithDonor.donor;
+
+            // Auto-fill fundraiser from donor if exists
+            if (donationWithDonor.donor.fundraiserId) {
+              const donorWithFundraiser = await this.donorRepo.findId(donationWithDonor.donor.id, {
+                include: { fundraiser: true }
+              });
+              if (donorWithFundraiser?.fundraiser) {
+                this.reminder!.assignedToId = donorWithFundraiser.fundraiser.id;
+                this.reminder!.assignedTo = donorWithFundraiser.fundraiser;
+              }
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error opening donation selection modal:', error);
+      this.ui.error('שגיאה בפתיחת חלון בחירת תרומה');
+    }
+  }
+
+  clearDonationSelection() {
+    if (this.reminder) {
+      this.reminder.relatedDonationId = '';
+      this.reminder.relatedDonation = undefined;
     }
   }
 

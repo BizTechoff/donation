@@ -28,10 +28,10 @@
       <div class="loading-spinner">טוען נתונים...</div>
     </div>
 
-    <!-- Modal Body -->
+    <!-- Modal Body: Contains filters + scrollable table + pagination -->
     <div class="modal-body" *ngIf="!loading">
 
-      <!-- Filters Section -->
+      <!-- Filters Section: Fixed at top -->
       <div class="filters-section">
         <div class="filters-grid">
           <div class="filter-group">
@@ -84,79 +84,57 @@
         </div>
       </div>
 
-      <!-- Donations Table -->
+      <!-- Scrollable Table Container: Donations -->
       <div class="table-container" *ngIf="!isGiftsMode">
-        <table mat-table [dataSource]="filteredDonations" class="donations-table" matSort>
-
-          <!-- Date Column -->
-          <ng-container matColumnDef="donationDate">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>תאריך</th>
-            <td mat-cell *matCellDef="let donation">
-              <div class="date-cell">
-                <mat-icon class="cell-icon">event</mat-icon>
-                {{donation.donationDate | date:'dd/MM/yyyy'}}
-              </div>
-            </td>
-          </ng-container>
-
-          <!-- Amount Column -->
-          <ng-container matColumnDef="amount">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>סכום</th>
-            <td mat-cell *matCellDef="let donation">
-              <div class="amount-cell">
-                <mat-icon class="cell-icon">attach_money</mat-icon>
-                <span class="amount">{{donation.amount | number:'1.2-2'}}</span>
-                <span class="currency">{{donation.currency}}</span>
-              </div>
-            </td>
-          </ng-container>
-
-          <!-- Currency Column -->
-          <ng-container matColumnDef="currency">
-            <th mat-header-cell *matHeaderCellDef>מטבע</th>
-            <td mat-cell *matCellDef="let donation">
-              <span class="currency-badge">{{donation.currency}}</span>
-            </td>
-          </ng-container>
-
-          <!-- Campaign Column -->
-          <ng-container matColumnDef="campaign">
-            <th mat-header-cell *matHeaderCellDef>קמפיין</th>
-            <td mat-cell *matCellDef="let donation">
-              <div class="campaign-cell" *ngIf="donation.campaignId">
-                <mat-icon class="cell-icon">campaign</mat-icon>
-                {{getCampaignName(donation.campaignId)}}
-              </div>
-              <span *ngIf="!donation.campaignId" class="no-data">-</span>
-            </td>
-          </ng-container>
-
-          <!-- Method Column -->
-          <ng-container matColumnDef="method">
-            <th mat-header-cell *matHeaderCellDef>אמצעי תשלום</th>
-            <td mat-cell *matCellDef="let donation">
-              <div class="method-cell">
-                <mat-icon class="cell-icon">payment</mat-icon>
-                {{getMethodName(donation.donationMethodId)}}
-              </div>
-            </td>
-          </ng-container>
-
-          <!-- Status Column -->
-          <!-- <ng-container matColumnDef="status">
-            <th mat-header-cell *matHeaderCellDef>סטטוס</th>
-            <td mat-cell *matCellDef="let donation">
-              <span class="status-badge" [class]="getStatusClass(donation.status)">
-                {{getStatusText(donation.status)}}
-              </span>
-            </td>
-          </ng-container> -->
-
-          <!-- Actions Column -->
-          <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef>פעולות</th>
-            <td mat-cell *matCellDef="let donation">
-              <div class="actions-cell">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th class="sortable" [class.sorted]="isSorted('donationDate')" (click)="toggleSort('donationDate', $event)">
+                תאריך
+                <span class="sort-icon" *ngIf="getSortIcon('donationDate')">{{ getSortIcon('donationDate') }}</span>
+              </th>
+              <th class="sortable" [class.sorted]="isSorted('amount')" (click)="toggleSort('amount', $event)">
+                סכום
+                <span class="sort-icon" *ngIf="getSortIcon('amount')">{{ getSortIcon('amount') }}</span>
+              </th>
+              <th>מטבע</th>
+              <th>קמפיין</th>
+              <th>אמצעי תשלום</th>
+              <th>פעולות</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let donation of paginatedDonations">
+              <td>
+                <div class="date-cell">
+                  <mat-icon class="cell-icon">event</mat-icon>
+                  {{donation.donationDate | date:'dd/MM/yyyy'}}
+                </div>
+              </td>
+              <td>
+                <div class="amount-cell">
+                  <mat-icon class="cell-icon">attach_money</mat-icon>
+                  <span class="amount">{{donation.amount | number:'1.2-2'}}</span>
+                  <span class="currency">{{donation.currency}}</span>
+                </div>
+              </td>
+              <td>
+                <span class="currency-badge">{{donation.currency}}</span>
+              </td>
+              <td>
+                <div class="campaign-cell" *ngIf="donation.campaignId">
+                  <mat-icon class="cell-icon">campaign</mat-icon>
+                  {{getCampaignName(donation.campaignId)}}
+                </div>
+                <span *ngIf="!donation.campaignId" class="no-data">-</span>
+              </td>
+              <td>
+                <div class="method-cell">
+                  <mat-icon class="cell-icon">payment</mat-icon>
+                  {{getMethodName(donation.donationMethodId)}}
+                </div>
+              </td>
+              <td class="actions">
                 <button mat-icon-button
                         (click)="editDonation(donation)"
                         matTooltip="עריכה"
@@ -178,63 +156,58 @@
                         class="action-btn delete-btn">
                   <mat-icon>delete</mat-icon>
                 </button>
-              </div>
-            </td>
-          </ng-container>
-
-          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+              </td>
+            </tr>
+            <tr *ngIf="filteredDonations.length === 0">
+              <td colspan="6" class="no-data">
+                <div class="no-data-message">
+                  <mat-icon class="no-data-icon">{{modalIcon}}</mat-icon>
+                  <h3>אין תרומות להצגה</h3>
+                  <p>לא נמצאו תרומות עבור התורם הזה או לפי הפילטרים שנבחרו</p>
+                </div>
+              </td>
+            </tr>
+          </tbody>
         </table>
-
-        <!-- No Data Message -->
-        <div class="no-data-message" *ngIf="filteredDonations.length === 0">
-          <mat-icon class="no-data-icon">{{modalIcon}}</mat-icon>
-          <h3>אין תרומות להצגה</h3>
-          <p>לא נמצאו תרומות עבור התורם הזה או לפי הפילטרים שנבחרו</p>
-        </div>
       </div>
 
-      <!-- Gifts Table -->
+      <!-- Scrollable Table Container: Gifts -->
       <div class="table-container" *ngIf="isGiftsMode">
-        <table mat-table [dataSource]="filteredDonorGifts" class="donations-table" matSort>
-
-          <!-- Delivery Date Column -->
-          <ng-container matColumnDef="deliveryDate">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>תאריך מסירה</th>
-            <td mat-cell *matCellDef="let donorGift">
-              <div class="date-cell">
-                <mat-icon class="cell-icon">event</mat-icon>
-                {{formatDate(donorGift.deliveryDate)}}
-              </div>
-            </td>
-          </ng-container>
-
-          <!-- Gift Name Column -->
-          <ng-container matColumnDef="giftName">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>שם המתנה</th>
-            <td mat-cell *matCellDef="let donorGift">
-              <div class="gift-cell">
-                <mat-icon class="cell-icon">redeem</mat-icon>
-                {{donorGift.gift?.name || 'לא מוגדר'}}
-              </div>
-            </td>
-          </ng-container>
-
-          <!-- Status Column -->
-          <ng-container matColumnDef="status">
-            <th mat-header-cell *matHeaderCellDef>סטטוס</th>
-            <td mat-cell *matCellDef="let donorGift">
-              <span class="status-badge" [class]="getGiftStatusClass(donorGift.isDelivered)">
-                {{getGiftStatusText(donorGift.isDelivered)}}
-              </span>
-            </td>
-          </ng-container>
-
-          <!-- Actions Column -->
-          <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef>פעולות</th>
-            <td mat-cell *matCellDef="let donorGift">
-              <div class="actions-cell">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th class="sortable" [class.sorted]="isSorted('deliveryDate')" (click)="toggleSort('deliveryDate', $event)">
+                תאריך מסירה
+                <span class="sort-icon" *ngIf="getSortIcon('deliveryDate')">{{ getSortIcon('deliveryDate') }}</span>
+              </th>
+              <th class="sortable" [class.sorted]="isSorted('giftName')" (click)="toggleSort('giftName', $event)">
+                שם המתנה
+                <span class="sort-icon" *ngIf="getSortIcon('giftName')">{{ getSortIcon('giftName') }}</span>
+              </th>
+              <th>סטטוס</th>
+              <th>פעולות</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let donorGift of paginatedDonorGifts">
+              <td>
+                <div class="date-cell">
+                  <mat-icon class="cell-icon">event</mat-icon>
+                  {{formatDate(donorGift.deliveryDate)}}
+                </div>
+              </td>
+              <td>
+                <div class="gift-cell">
+                  <mat-icon class="cell-icon">redeem</mat-icon>
+                  {{donorGift.gift?.name || 'לא מוגדר'}}
+                </div>
+              </td>
+              <td>
+                <span class="status-badge" [class]="getGiftStatusClass(donorGift.isDelivered)">
+                  {{getGiftStatusText(donorGift.isDelivered)}}
+                </span>
+              </td>
+              <td class="actions">
                 <button mat-icon-button
                         (click)="editDonorGift(donorGift)"
                         matTooltip="עריכה"
@@ -248,19 +221,66 @@
                         class="action-btn delete-btn">
                   <mat-icon>delete</mat-icon>
                 </button>
-              </div>
-            </td>
-          </ng-container>
-
-          <tr mat-header-row *matHeaderRowDef="currentDisplayedColumns"></tr>
-          <tr mat-row *matRowDef="let row; columns: currentDisplayedColumns;"></tr>
+              </td>
+            </tr>
+            <tr *ngIf="filteredDonorGifts.length === 0">
+              <td colspan="4" class="no-data">
+                <div class="no-data-message">
+                  <mat-icon class="no-data-icon">{{modalIcon}}</mat-icon>
+                  <h3>אין מתנות להצגה</h3>
+                  <p>לא נמצאו מתנות עבור התורם הזה או לפי הפילטרים שנבחרו</p>
+                </div>
+              </td>
+            </tr>
+          </tbody>
         </table>
+      </div>
 
-        <!-- No Data Message -->
-        <div class="no-data-message" *ngIf="filteredDonorGifts.length === 0">
-          <mat-icon class="no-data-icon">{{modalIcon}}</mat-icon>
-          <h3>אין מתנות להצגה</h3>
-          <p>לא נמצאו מתנות עבור התורם הזה או לפי הפילטרים שנבחרו</p>
+      <!-- Pagination Footer: Sticky at bottom, always visible -->
+      <div class="table-footer">
+        <div class="pagination-controls">
+          <button
+            class="btn-page"
+            (click)="firstPage()"
+            [disabled]="currentPage === 1 || loading">
+            ⏮ ראשון
+          </button>
+
+          <button
+            class="btn-page"
+            (click)="previousPage()"
+            [disabled]="currentPage === 1 || loading">
+            ← קודם
+          </button>
+
+          <div class="page-numbers">
+            <button
+              *ngFor="let page of getPageNumbers()"
+              class="btn-page-number"
+              [class.active]="page === currentPage"
+              (click)="goToPage(page)"
+              [disabled]="loading">
+              {{page}}
+            </button>
+          </div>
+
+          <button
+            class="btn-page"
+            (click)="nextPage()"
+            [disabled]="currentPage === totalPages || loading">
+            הבא →
+          </button>
+
+          <button
+            class="btn-page"
+            (click)="lastPage()"
+            [disabled]="currentPage === totalPages || loading">
+            אחרון ⏭
+          </button>
+        </div>
+
+        <div class="pagination-info">
+          <span>מציג {{(currentPage - 1) * pageSize + 1}} - {{Math.min(currentPage * pageSize, totalCount)}} מתוך {{totalCount}}</span>
         </div>
       </div>
 

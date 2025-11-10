@@ -223,6 +223,7 @@ export class DonorService {
     const donorBirthDateMap = new Map<string, Date>();
     const donorCountryIdMap = new Map<string, string>();
     const donorTotalDonationsMap = new Map<string, number>();
+    const donorLastDonationDateMap = new Map<string, Date>();
 
     // Process places
     allPlaces.forEach(dp => {
@@ -260,7 +261,16 @@ export class DonorService {
 
     allDonations.forEach(donation => {
       if (!donation.donorId) return;
-      // Skip exceptional donations (isExceptional)
+
+      // Track last donation date (for all donations, not just non-exceptional)
+      if (donation.donationDate) {
+        const currentLastDate = donorLastDonationDateMap.get(donation.donorId);
+        if (!currentLastDate || new Date(donation.donationDate) > currentLastDate) {
+          donorLastDonationDateMap.set(donation.donorId, new Date(donation.donationDate));
+        }
+      }
+
+      // Skip exceptional donations (isExceptional) for average calculation
       if (donation.isExceptional) return;
 
       const currentSum = donorDonationsSum.get(donation.donorId) || 0;
@@ -284,7 +294,8 @@ export class DonorService {
       donorFullAddressMap,
       donorBirthDateMap,
       donorCountryIdMap,
-      donorTotalDonationsMap
+      donorTotalDonationsMap,
+      donorLastDonationDateMap
     };
   }
 
@@ -299,7 +310,8 @@ export class DonorService {
       donorFullAddressMap: new Map<string, string>(),
       donorBirthDateMap: new Map<string, Date>(),
       donorCountryIdMap: new Map<string, string>(),
-      donorTotalDonationsMap: new Map<string, number>()
+      donorTotalDonationsMap: new Map<string, number>(),
+      donorLastDonationDateMap: new Map<string, Date>()
     };
   }
 }

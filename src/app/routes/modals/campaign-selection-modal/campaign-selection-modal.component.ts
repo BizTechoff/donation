@@ -1,17 +1,18 @@
 import { Component, OnInit } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
 import { BusyService, DialogConfig, openDialog } from 'common-ui-elements';
-import { Campaign } from '../../../../shared/entity';
 import { remult } from 'remult';
+import { CampaignController } from '../../../../shared/controllers/campaign.controller';
+import { Campaign } from '../../../../shared/entity';
 import { I18nService } from '../../../i18n/i18n.service';
 import { CampaignDetailsModalComponent } from '../campaign-details-modal/campaign-details-modal.component';
-import { CampaignController } from '../../../../shared/controllers/campaign.controller';
 
 export interface CampaignSelectionModalArgs {
   title?: string;
   excludeIds?: string[];
-  multiSelect?: boolean;
   selectedIds?: string[];
+  multiSelect?: boolean;
+  allowAddNew?: boolean;
 }
 
 @DialogConfig({
@@ -25,7 +26,7 @@ export interface CampaignSelectionModalArgs {
   styleUrls: ['./campaign-selection-modal.component.scss']
 })
 export class CampaignSelectionModalComponent implements OnInit {
-  args!: CampaignSelectionModalArgs;
+  args = { allowAddNew: true } as CampaignSelectionModalArgs;
   selectedCampaign: Campaign | null = null;
   selectedCampaigns: Campaign[] = [];
 
@@ -40,7 +41,7 @@ export class CampaignSelectionModalComponent implements OnInit {
     public i18n: I18nService,
     public dialogRef: MatDialogRef<any>,
     private busy: BusyService
-  ) {}
+  ) { }
 
   async ngOnInit() {
     await this.loadCampaigns();

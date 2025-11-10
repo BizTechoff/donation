@@ -80,74 +80,78 @@
   <!-- CONTENT: Main scrollable area -->
   <div class="module-content">
 
-    <!-- Loading overlay -->
-    <div class="loading-overlay" *ngIf="loading">
-      <div class="spinner">טוען...</div>
-    </div>
-
-    <div class="certificates-grid">
-      <!-- Table Header: Sticky top -->
-      <div class="grid-header">
-        <div class="grid-col sortable" [class.sorted]="isSorted('recipientName')" (click)="toggleSort('recipientName', $event)">
-          {{ (i18n.terms$ | async)?.donorRecipient }}
-          <span class="sort-icon" *ngIf="getSortIcon('recipientName')">{{ getSortIcon('recipientName') }}</span>
-        </div>
-        <div class="grid-col sortable" [class.sorted]="isSorted('type')" (click)="toggleSort('type', $event)">
-          {{ (i18n.terms$ | async)?.certificateTypeHeader }}
-          <span class="sort-icon" *ngIf="getSortIcon('type')">{{ getSortIcon('type') }}</span>
-        </div>
-        <div class="grid-col sortable" [class.sorted]="isSorted('eventDate')" (click)="toggleSort('eventDate', $event)">
-          {{ (i18n.terms$ | async)?.eventDate }}
-          <span class="sort-icon" *ngIf="getSortIcon('eventDate')">{{ getSortIcon('eventDate') }}</span>
-        </div>
-        <div class="grid-col sortable" [class.sorted]="isSorted('amount')" (click)="toggleSort('amount', $event)">
-          {{ (i18n.terms$ | async)?.amountEvent }}
-          <span class="sort-icon" *ngIf="getSortIcon('amount')">{{ getSortIcon('amount') }}</span>
-        </div>
-        <div class="grid-col">{{ (i18n.terms$ | async)?.mainText }}</div>
-        <div class="grid-col">{{ (i18n.terms$ | async)?.actionsHeaderCert }}</div>
+    <!-- Table Body: Scrollable area -->
+    <div class="table-body">
+      <div class="loading-overlay" *ngIf="loading">
+        <div class="spinner">טוען...</div>
       </div>
 
-      <!-- Table Body: Scrollable rows -->
-      <div class="grid-body">
-        <div class="grid-row" *ngFor="let certificate of certificates">
-          <div class="grid-col recipient-col">
+      <table class="data-table">
+      <thead>
+        <tr>
+          <th class="sortable" [class.sorted]="isSorted('recipientName')" (click)="toggleSort('recipientName', $event)">
+            {{ (i18n.terms$ | async)?.donorRecipient }}
+            <span class="sort-icon" *ngIf="getSortIcon('recipientName')">{{ getSortIcon('recipientName') }}</span>
+          </th>
+          <th class="sortable" [class.sorted]="isSorted('type')" (click)="toggleSort('type', $event)">
+            {{ (i18n.terms$ | async)?.certificateTypeHeader }}
+            <span class="sort-icon" *ngIf="getSortIcon('type')">{{ getSortIcon('type') }}</span>
+          </th>
+          <th class="sortable" [class.sorted]="isSorted('eventDate')" (click)="toggleSort('eventDate', $event)">
+            {{ (i18n.terms$ | async)?.eventDate }}
+            <span class="sort-icon" *ngIf="getSortIcon('eventDate')">{{ getSortIcon('eventDate') }}</span>
+          </th>
+          <th class="sortable" [class.sorted]="isSorted('amount')" (click)="toggleSort('amount', $event)">
+            {{ (i18n.terms$ | async)?.amountEvent }}
+            <span class="sort-icon" *ngIf="getSortIcon('amount')">{{ getSortIcon('amount') }}</span>
+          </th>
+          <th>תזכורת הבאה</th>
+          <th>ברכות</th>
+          <th>{{ (i18n.terms$ | async)?.mainText }}</th>
+          <th>{{ (i18n.terms$ | async)?.actionsHeaderCert }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let certificate of certificates">
+          <td>
             <strong>{{certificate.recipientName}}</strong>
             <small *ngIf="certificate.donor">{{getDonorName(certificate)}}</small>
-          </div>
-          <div class="grid-col type-col">
+          </td>
+          <td>
             <span class="cert-type-badge type-{{certificate.type}}">{{certificate.typeText}}</span>
-          </div>
-          <div class="grid-col">
-            <span class="event-date">{{certificate.eventDate | date:'dd/MM/yyyy'}}</span>
-          </div>
-          <div class="grid-col amount-col">
+          </td>
+          <td>
+            <span class="event-date">{{ formatHebrewDate(certificate.eventDate) }}</span>
+          </td>
+          <td class="amount-col">
             <span class="amount" *ngIf="certificate.amount">₪{{certificate.amount | number}}</span>
             <span class="event" *ngIf="certificate.eventName">{{ (i18n.terms$ | async)?.eventNameDisplay }}: {{certificate.eventName}}</span>
-          </div>
-          <div class="grid-col text-col">
+          </td>
+          <td>{{getNextReminderDate(certificate)}}</td>
+          <td>{{getBlessingCount(certificate)}}</td>
+          <td class="text-col">
             <span class="special-text">{{certificate.mainText | slice:0:30}}<span *ngIf="certificate && certificate.mainText && certificate.mainText.length > 30">...</span></span>
-          </div>
-          <div class="grid-col actions">
+          </td>
+          <td class="actions">
             <!-- <button class="btn-icon btn-view" [title]="(i18n.terms$ | async)?.previewAction">👁</button> -->
             <button class="btn-icon btn-edit" [title]="(i18n.terms$ | async)?.editAction" (click)="openEditModal(certificate)">✏</button>
             <!-- <button class="btn-icon btn-reminder" [title]="certificate.reminderId ? ((i18n.terms$ | async)?.reminderExists) : ((i18n.terms$ | async)?.createReminderButton)" (click)="createReminder(certificate)">
               {{ certificate.reminderId ? '🔔' : '🔔➕' }}
             </button> -->
             <button class="btn-icon btn-delete" [title]="(i18n.terms$ | async)?.delete" (click)="deleteCertificate(certificate)">🗑</button>
-          </div>
-        </div>
-
-        <div class="no-data" *ngIf="!loading && certificates.length === 0">
-          <p>{{ (i18n.terms$ | async)?.noDataFound }}</p>
-        </div>
-      </div>
+          </td>
+        </tr>
+        <tr *ngIf="!loading && certificates.length === 0">
+          <td colspan="8" class="no-data">
+            <p>{{ (i18n.terms$ | async)?.noDataFound }}</p>
+          </td>
+        </tr>
+      </tbody>
+    </table>
     </div>
 
-  </div>
-
-  <!-- FOOTER: Sticky bottom -->
-  <div class="module-footer">
+    <!-- Table Footer: Sticky pagination -->
+    <div class="table-footer">
     <div class="pagination-controls">
       <button
         class="btn-page"
@@ -192,6 +196,12 @@
     <div class="pagination-info">
       <span>מציג {{(currentPage - 1) * pageSize + 1}} - {{Math.min(currentPage * pageSize, totalCount)}} מתוך {{totalCount}}</span>
     </div>
+    </div>
+
+  </div>
+
+  <!-- FOOTER: Sticky bottom -->
+  <div class="module-footer">
   </div>
 
 </div>

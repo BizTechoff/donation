@@ -36,7 +36,7 @@
             <mat-icon>clear</mat-icon>
           </button>
         </div>
-        <button class="btn btn-create-new" (click)="createNewCampaign()">
+        <button *ngIf="this.args.allowAddNew" class="btn btn-create-new" (click)="createNewCampaign()">
           <mat-icon>add</mat-icon>
           יצירת קמפיין חדש
         </button>

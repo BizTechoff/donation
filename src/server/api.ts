@@ -36,6 +36,7 @@ import { CountryController } from '../shared/controllers/country.controller'
 import { PlaceController } from '../shared/controllers/place.controller'
 import { CampaignController } from '../shared/controllers/campaign.controller'
 import { DonorGiftController } from '../shared/controllers/donor-gift.controller'
+import { PayerController } from '../shared/controllers/payer.controller'
 
 export const entities = [
   User, Donor, Donation, Campaign, DonationMethod, Reminder,
@@ -49,7 +50,7 @@ export const api = remultExpress({
     DonationController, LetterController, FileController, PaymentController,
     DonorMapController, ReminderController, HebrewDateController, TargetAudienceController,
     CertificateController, EmailController, ReportController, CountryController, PlaceController,
-    CampaignController, DonorGiftController],
+    CampaignController, DonorGiftController, PayerController],
   entities,
   getUser,
   dataProvider: async () => {

@@ -31,13 +31,16 @@ export class HebrewDateService {
     month: number
     year: number
     formatted: string
+    moed?: string
   } {
     const hDate = new HDate(date);
+    const moed = this.getHolidayForDate(hDate.getDate(), hDate.getMonth(), hDate.getFullYear());
     return {
       day: hDate.getDate(),
       month: hDate.getMonth(),
       year: hDate.getFullYear(),
-      formatted: hDate.renderGematriya()
+      formatted: hDate.renderGematriya(),
+      moed: moed || undefined
     };
   }
 
