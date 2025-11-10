@@ -1,18 +1,20 @@
 import { Component, OnInit } from '@angular/core';
+import { BusyService, openDialog } from 'common-ui-elements';
 import { remult } from 'remult';
+import { HebrewDateController } from '../../../shared/controllers/hebrew-date.controller';
+import { Blessing } from '../../../shared/entity/blessing';
+import { Campaign } from '../../../shared/entity/campaign';
 import { Donation } from '../../../shared/entity/donation';
 import { Donor } from '../../../shared/entity/donor';
+import { DonorContact } from '../../../shared/entity/donor-contact';
 import { DonorPlace } from '../../../shared/entity/donor-place';
-import { Campaign } from '../../../shared/entity/campaign';
-import { Blessing } from '../../../shared/entity/blessing';
 import { User } from '../../../shared/entity/user';
-import { HebrewDateController } from '../../../shared/controllers/hebrew-date.controller';
-import { ReportService } from '../../services/report.service';
 import { I18nService } from '../../i18n/i18n.service';
-import { BusyService, openDialog } from 'common-ui-elements';
-import { ExcelExportService } from '../../services/excel-export.service';
+import { CampaignSelectionModalComponent } from '../../routes/modals/campaign-selection-modal/campaign-selection-modal.component';
 import { DonorSelectionModalComponent } from '../../routes/modals/donor-selection-modal/donor-selection-modal.component';
+import { ExcelExportService } from '../../services/excel-export.service';
 import { GlobalFilterService } from '../../services/global-filter.service';
+import { ReportService } from '../../services/report.service';
 
 interface ChartData {
   label: string;
@@ -40,23 +42,32 @@ interface DonationReportData {
 
 interface PaymentReportData {
   donorName: string;
-  promisedAmount: number;
-  actualAmount: number;
+  promisedAmount: number; // Used for total amount in shekel
+  actualAmount: number; // Used for donation count
   remainingDebt: number;
   status: 'fullyPaid' | 'partiallyPaid' | 'notPaid';
   currency: string;
+  address?: string;
+  city?: string;
+  lastDonationDate?: Date;
 }
 
 interface YearlySummaryData {
-  year: number;
+  year: number; // Gregorian year
+  hebrewYear: string; // Hebrew year formatted
   currencies: { [currency: string]: number };
   totalInShekel: number;
 }
 
 interface BlessingReportData {
-  donorName: string;
-  blessingType: string;
+  lastName: string;
+  firstName: string;
+  blessingBookType: string;
+  notes: string;
   status: string;
+  phone: string;
+  mobile: string;
+  email: string;
   campaignName: string;
 }
 
@@ -108,7 +119,7 @@ export class ReportsComponent implements OnInit {
 
   // Active report type
   activeReport: 'general' | 'donations' | 'payments' | 'yearly' | 'blessings' = 'donations';
-  
+
   // סטטיסטיקות כלליות
   totalStats = {
     donations: 0,
@@ -118,14 +129,14 @@ export class ReportsComponent implements OnInit {
     avgDonation: 0,
     recurringAmount: 0
   };
-  
+
   // נתונים לגרפים
   monthlyData: MonthlyStats[] = [];
   campaignData: ChartData[] = [];
   donorTypeData: ChartData[] = [];
   regionData: ChartData[] = [];
   paymentMethodData: ChartData[] = [];
-  
+
   // טבלאות מפורטות
   topDonors: any[] = [];
   topCampaigns: Campaign[] = [];
@@ -159,7 +170,7 @@ export class ReportsComponent implements OnInit {
   // Sorting data
   sortBy = 'donorName';
   sortDirection: 'asc' | 'desc' = 'asc';
-  
+
   // Filters
   filters = {
     selectedDonorType: '',
@@ -185,7 +196,7 @@ export class ReportsComponent implements OnInit {
     includeDonorNameTag: false,
     tagPosition: 'top-right' as 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
   };
-  
+
   private donationRepo = remult.repo(Donation);
   private donorRepo = remult.repo(Donor);
   private campaignRepo = remult.repo(Campaign);
@@ -197,9 +208,12 @@ export class ReportsComponent implements OnInit {
     private busy: BusyService,
     private excelService: ExcelExportService,
     private globalFilterService: GlobalFilterService
-  ) {}
+  ) { }
 
   async ngOnInit() {
+    // Load last selected report from user settings
+    await this.loadLastReportSelection();
+
     await this.refreshData();
   }
 
@@ -265,17 +279,17 @@ export class ReportsComponent implements OnInit {
     const donations = await this.donationRepo.find(query);
 
     const monthlyMap = new Map<string, { donations: number, amount: number }>();
-    
+
     donations.forEach(donation => {
-      const monthKey = new Date(donation.donationDate).toLocaleDateString('he-IL', { 
-        year: 'numeric', 
-        month: 'short' 
+      const monthKey = new Date(donation.donationDate).toLocaleDateString('he-IL', {
+        year: 'numeric',
+        month: 'short'
       });
-      
+
       if (!monthlyMap.has(monthKey)) {
         monthlyMap.set(monthKey, { donations: 0, amount: 0 });
       }
-      
+
       const monthData = monthlyMap.get(monthKey)!;
       monthData.donations++;
       monthData.amount += donation.amount;
@@ -294,7 +308,7 @@ export class ReportsComponent implements OnInit {
     });
 
     const totalRaised = campaigns.reduce((sum, c) => sum + c.raisedAmount, 0);
-    
+
     this.campaignData = campaigns.slice(0, 10).map(campaign => ({
       label: campaign.name,
       value: campaign.raisedAmount,
@@ -464,6 +478,28 @@ export class ReportsComponent implements OnInit {
     return `${value.toFixed(1)}%`;
   }
 
+  getFirstName(fullName: string): string {
+    const parts = fullName.trim().split(' ');
+    return parts.length > 1 ? parts.slice(1).join(' ') : fullName;
+  }
+
+  getLastName(fullName: string): string {
+    const parts = fullName.trim().split(' ');
+    return parts[0] || '';
+  }
+
+  getTotalByCurrency(currency: string): number {
+    return this.yearlySummaryData.reduce((sum, yearData) => {
+      return sum + (yearData.currencies[currency] || 0);
+    }, 0);
+  }
+
+  getGrandTotalInShekel(): number {
+    return this.yearlySummaryData.reduce((sum, yearData) => {
+      return sum + yearData.totalInShekel;
+    }, 0);
+  }
+
   async exportReport(format: 'excel' | 'pdf' | 'csv') {
     const message = this.i18n.currentTerms.exportReportInDevelopment?.replace('{format}', format) || `Export report in ${format} format - in development`;
     alert(message);
@@ -491,8 +527,8 @@ export class ReportsComponent implements OnInit {
   private async loadBaseData() {
     // בדיקה אם נתוני בסיס כבר נטענו
     const isBaseDataLoaded = this.currentHebrewYear > 0 &&
-                              this.hebrewYears.length > 0 &&
-                              this.availableCampaigns.length > 0;
+      this.hebrewYears.length > 0 &&
+      this.availableCampaigns.length > 0;
 
     if (isBaseDataLoaded) {
       console.log('📦 Base data already loaded, skipping...');
@@ -582,7 +618,60 @@ export class ReportsComponent implements OnInit {
 
   async switchReport(reportType: 'general' | 'donations' | 'payments' | 'yearly' | 'blessings') {
     this.activeReport = reportType;
+    await this.saveLastReportSelection();
     await this.refreshData();
+  }
+
+  /**
+   * Save last selected report to user settings
+   */
+  private async saveLastReportSelection() {
+    if (!remult.user?.id) return;
+
+    try {
+      const userRepo = remult.repo(User);
+      const user = await userRepo.findId(remult.user.id);
+
+      if (user) {
+        if (!user.settings) {
+          user.settings = {
+            openModal: 'dialog',
+            calendar_heb_holidays_jews_enabled: true,
+            calendar_open_heb_and_eng_parallel: true
+          };
+        }
+
+        if (!user.settings.reports) {
+          user.settings.reports = {};
+        }
+
+        user.settings.reports.lastSelectedTab = this.activeReport;
+        await userRepo.save(user);
+
+        console.log('Saved last report selection:', this.activeReport);
+      }
+    } catch (error) {
+      console.error('Error saving last report selection:', error);
+    }
+  }
+
+  /**
+   * Load last selected report from user settings
+   */
+  private async loadLastReportSelection() {
+    if (!remult.user?.id) return;
+
+    try {
+      const userRepo = remult.repo(User);
+      const user = await userRepo.findId(remult.user.id);
+
+      if (user?.settings?.reports?.lastSelectedTab) {
+        this.activeReport = user.settings.reports.lastSelectedTab;
+        console.log('Loaded last report selection:', this.activeReport);
+      }
+    } catch (error) {
+      console.error('Error loading last report selection:', error);
+    }
   }
 
   /**
@@ -725,8 +814,86 @@ export class ReportsComponent implements OnInit {
   }
 
   async loadPaymentsReport() {
-    // Standing orders feature removed - returning empty data
-    this.paymentReportData = [];
+    // דוח תשלומים - סיכום תרומות לפי תורם
+    try {
+      const query = this.globalFilterService.applyFiltersToQuery({
+        where: {},
+        include: {
+          donor: {
+            include: {
+              donorPlaces: {
+                include: {
+                  place: true
+                }
+              }
+            }
+          }
+        },
+        orderBy: { donationDate: 'desc' }
+      });
+
+      const donations = await this.donationRepo.find(query);
+
+      // קיבוץ לפי תורם
+      const donorMap = new Map<string, {
+        donor: Donor;
+        totalAmount: number;
+        totalDonations: number;
+        lastDonationDate: Date;
+        homeAddress?: string;
+        city?: string;
+      }>();
+
+      donations.forEach(donation => {
+        if (!donation.donor) return;
+
+        const donorId = donation.donor.id;
+        const amountInShekel = donation.amount * (this.conversionRates[donation.currency] || 1);
+
+        if (!donorMap.has(donorId)) {
+          // מציאת כתובת בית
+          const homePlace = (donation.donor as any).donorPlaces?.find((dp: any) => dp.placeType === 'home');
+
+          donorMap.set(donorId, {
+            donor: donation.donor,
+            totalAmount: 0,
+            totalDonations: 0,
+            lastDonationDate: donation.donationDate,
+            homeAddress: homePlace?.place?.fullAddress || '',
+            city: homePlace?.place?.city || ''
+          });
+        }
+
+        const data = donorMap.get(donorId)!;
+        data.totalAmount += amountInShekel;
+        data.totalDonations++;
+
+        // עדכון תאריך אחרון
+        if (donation.donationDate > data.lastDonationDate) {
+          data.lastDonationDate = donation.donationDate;
+        }
+      });
+
+      // המרה למערך וסידור
+      this.paymentReportData = Array.from(donorMap.values())
+        .map(data => ({
+          donorName: data.donor.displayName || `${data.donor.firstName} ${data.donor.lastName}`,
+          promisedAmount: data.totalAmount, // נשתמש בשדה הזה בתור סכום בשקלים
+          actualAmount: data.totalDonations, // נשתמש בשדה הזה בתור מספר תרומות
+          remainingDebt: 0, // לא רלוונטי
+          status: 'fullyPaid' as const,
+          currency: 'ILS',
+          // נוסיף שדות נוספים
+          address: data.homeAddress || '',
+          city: data.city || '',
+          lastDonationDate: data.lastDonationDate
+        }))
+        .sort((a, b) => a.donorName.localeCompare(b.donorName));
+
+    } catch (error) {
+      console.error('Error loading payments report:', error);
+      this.paymentReportData = [];
+    }
   }
 
   async loadYearlySummaryReport() {
@@ -736,38 +903,41 @@ export class ReportsComponent implements OnInit {
     });
     const donations = await this.donationRepo.find(query);
 
-    const yearlyMap = new Map<number, { [currency: string]: number }>();
+    const yearlyMap = new Map<number, { currencies: { [currency: string]: number }, hebrewYear?: string }>();
 
-    donations.forEach(donation => {
+    // Process donations and convert dates to Hebrew years
+    for (const donation of donations) {
       const year = new Date(donation.donationDate).getFullYear();
-      
+
       if (!yearlyMap.has(year)) {
-        yearlyMap.set(year, {});
+        // Get Hebrew year for this Gregorian year
+        const hebrewDate = await HebrewDateController.convertGregorianToHebrew(donation.donationDate);
+        const hebrewYearFormatted = await HebrewDateController.formatHebrewYear(hebrewDate.year);
+
+        yearlyMap.set(year, {
+          currencies: {},
+          hebrewYear: hebrewYearFormatted
+        });
       }
-      
+
       const yearData = yearlyMap.get(year)!;
-      if (!yearData[donation.currency]) {
-        yearData[donation.currency] = 0;
+      if (!yearData.currencies[donation.currency]) {
+        yearData.currencies[donation.currency] = 0;
       }
-      yearData[donation.currency] += donation.amount;
-    });
+      yearData.currencies[donation.currency] += donation.amount;
+    }
 
     this.yearlySummaryData = Array.from(yearlyMap.entries())
-      .map(([year, currencies]) => {
-        // Simple conversion to shekel (would need real exchange rates)
-        const conversionRates: { [key: string]: number } = {
-          'ILS': 1,
-          'USD': 4.2582,
-          'EUR': 3.7468
-        };
+      .map(([year, data]) => {
         let totalInShekel = 0;
-        Object.entries(currencies).forEach(([currency, amount]) => {
-          totalInShekel += amount * (conversionRates[currency] || 1);
+        Object.entries(data.currencies).forEach(([currency, amount]) => {
+          totalInShekel += amount * (this.conversionRates[currency] || 1);
         });
 
         return {
           year,
-          currencies,
+          hebrewYear: data.hebrewYear || '',
+          currencies: data.currencies,
           totalInShekel
         };
       })
@@ -775,30 +945,95 @@ export class ReportsComponent implements OnInit {
   }
 
   async loadBlessingsReport() {
-    // Note: Blessings don't have campaign/date filters in globalFilters structure
-    // but we'll apply what we can (campaignIds)
-    let query: any = {
-      include: {
-        donor: true,
-        campaign: true
-      },
-      orderBy: { createdDate: 'desc' }
-    };
-
-    // Apply campaign filter if exists
-    const filters = this.globalFilterService.currentFilters;
-    if (filters.campaignIds && filters.campaignIds.length > 0) {
-      query.where = { campaignId: { $in: filters.campaignIds } };
+    // Load campaign with invitees
+    if (!this.filters.selectedCampaign || this.filters.selectedCampaign === '') {
+      this.blessingReportData = [];
+      return;
     }
 
-    const blessings = await this.blessingRepo.find(query);
+    // Load campaign with invitees list
+    const campaign = await this.campaignRepo.findId(this.filters.selectedCampaign);
+    if (!campaign || !campaign.invitedDonorIds || campaign.invitedDonorIds.length === 0) {
+      this.blessingReportData = [];
+      return;
+    }
 
-    this.blessingReportData = blessings.map(blessing => ({
-      donorName: blessing.donor?.displayName || blessing.name,
-      blessingType: blessing.blessingType || 'לא צוין',
-      status: blessing.status || 'ממתין',
-      campaignName: blessing.campaign?.name || 'ללא קמפיין'
-    }));
+    // Load all invitees (donors)
+    const invitedDonors = await this.donorRepo.find({
+      where: { id: { $in: campaign.invitedDonorIds } }
+    });
+
+    // Load all blessings for this campaign
+    const blessings = await this.blessingRepo.find({
+      where: { campaignId: this.filters.selectedCampaign },
+      include: {
+        donor: true,
+        blessingBookType: true
+      }
+    });
+
+    // Load donor contacts for all invitees
+    const donorContactRepo = remult.repo(DonorContact);
+    const donorContacts = await donorContactRepo.find({
+      where: { donorId: { $in: campaign.invitedDonorIds } }
+    });
+
+    // Create map of contacts by donor ID
+    const contactsMap = new Map<string, DonorContact[]>();
+    donorContacts.forEach(contact => {
+      if (contact.donorId) {
+        if (!contactsMap.has(contact.donorId)) {
+          contactsMap.set(contact.donorId, []);
+        }
+        contactsMap.get(contact.donorId)!.push(contact);
+      }
+    });
+
+    // Create a map of blessings by donor ID
+    const blessingMap = new Map<string, Blessing>();
+    blessings.forEach(blessing => {
+      if (blessing.donorId) {
+        blessingMap.set(blessing.donorId, blessing);
+      }
+    });
+
+    // Create report data for all invitees
+    this.blessingReportData = invitedDonors.map(donor => {
+      const displayName = donor.displayName || `${donor.firstName} ${donor.lastName}`;
+      const nameParts = displayName.trim().split(' ');
+
+      // מציאת טלפון, נייד ואימייל
+      let phone = '';
+      let mobile = '';
+      let email = '';
+
+      const donorContactsList = contactsMap.get(donor.id) || [];
+      for (const contact of donorContactsList) {
+        if (contact.type === 'phone' && contact.phoneNumber && !phone) {
+          phone = contact.phoneNumber;
+        } else if (contact.type === 'phone' && contact.phoneNumber && !mobile) {
+          mobile = contact.phoneNumber;
+        } else if (contact.type === 'email' && contact.email && !email) {
+          email = contact.email;
+        }
+      }
+
+      // Check if this donor has a blessing
+      const blessing = blessingMap.get(donor.id);
+      console.log('blessing', JSON.stringify(blessing))
+
+      return {
+        lastName: nameParts[0] || '',
+        firstName: nameParts.length > 1 ? nameParts.slice(1).join(' ') : '',
+        blessingBookType: (blessing && blessing.blessingBookType) ? blessing.blessingBookType.type : '-',
+        notes: (blessing?.notes && blessing.notes.trim() !== '') ? blessing.notes : '-',
+        status: (blessing && blessing.status) ? blessing.status : 'לא הגיב',
+        phone: phone || '-',
+        mobile: mobile || '-',
+        email: email || '-',
+        campaignName: campaign.name
+      };
+    });
   }
 
   private checkDonorType(donor: Donor, type: string): boolean {
@@ -812,12 +1047,12 @@ export class ReportsComponent implements OnInit {
 
   private getDonorTypeString(donor?: Donor): string {
     if (!donor) return 'לא צוין';
-    
+
     const types: string[] = [];
     if (donor.isAnash) types.push('אנ"ש');
     if (donor.isAlumni) types.push('תלמידנו');
     if (donor.isOtherConnection) types.push('קשר אחר');
-    
+
     return types.length > 0 ? types.join(', ') : 'לא צוין';
   }
 
@@ -1011,9 +1246,9 @@ export class ReportsComponent implements OnInit {
 
   getBlessingSummary() {
     const summary = {
-      preMade: this.blessingReportData.filter(b => b.blessingType === 'מוכנה').length,
-      custom: this.blessingReportData.filter(b => b.blessingType === 'מותאמת אישית').length,
-      notChosen: this.blessingReportData.filter(b => b.blessingType === 'לא נבחר' || !b.blessingType).length,
+      preMade: this.blessingReportData.filter(b => b.blessingBookType === 'מוכנה').length,
+      custom: this.blessingReportData.filter(b => b.blessingBookType === 'מותאמת אישית').length,
+      notChosen: this.blessingReportData.filter(b => b.blessingBookType === 'לא נבחר' || !b.blessingBookType).length,
       total: this.blessingReportData.length
     };
     return summary;
@@ -1117,5 +1352,42 @@ export class ReportsComponent implements OnInit {
   clearSelectedDonors() {
     this.filters.selectedDonorIds = [];
     this.applyFilters();
+  }
+
+  async openCampaignSelectionModal() {
+    try {
+      const selectedCampaign = await openDialog(
+        CampaignSelectionModalComponent,
+        (modal: CampaignSelectionModalComponent) => {
+          modal.args = {
+            title: 'בחר קמפיין',
+            multiSelect: false, // Single select only
+            allowAddNew: false,
+            selectedIds: this.filters.selectedCampaign ? [this.filters.selectedCampaign] : []
+          };
+        }
+      );
+
+      if (selectedCampaign && !Array.isArray(selectedCampaign)) {
+        this.filters.selectedCampaign = (selectedCampaign as Campaign).id;
+        await this.refreshData();
+      }
+    } catch (error) {
+      console.error('Error opening campaign selection modal:', error);
+    }
+  }
+
+  getSelectedCampaignText(): string {
+    if (!this.filters.selectedCampaign) {
+      return 'בחר קמפיין';
+    }
+
+    const campaign = this.availableCampaigns.find(c => c.id === this.filters.selectedCampaign);
+    return campaign ? campaign.name : 'בחר קמפיין';
+  }
+
+  clearSelectedCampaign() {
+    this.filters.selectedCampaign = '';
+    this.refreshData();
   }
 }

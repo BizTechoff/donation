@@ -128,13 +128,42 @@
         </div>
       </div>
 
-      <!-- מסנן קמפיין -->
+      <!-- מסנן קמפיין - בדוח תרומות -->
       <div class="filter-group" *ngIf="activeReport === 'donations'">
         <label>{{ (i18n.terms$ | async)?.filterByCampaign }}</label>
         <select class="form-control" [(ngModel)]="filters.selectedCampaign" (ngModelChange)="applyFilters()">
           <option value="">{{ (i18n.terms$ | async)?.all }}</option>
           <option *ngFor="let campaign of availableCampaigns" [value]="campaign.id">{{campaign.name}}</option>
         </select>
+      </div>
+
+      <!-- מסנן קמפיין - בדוח ברכות (מודל בחירה) -->
+      <div class="filter-group donor-filter-group" *ngIf="activeReport === 'blessings'">
+        <label>{{ (i18n.terms$ | async)?.campaign }}</label>
+        <div class="donor-filter-input-wrapper">
+          <input
+            type="text"
+            class="form-control donor-filter-input"
+            [value]="getSelectedCampaignText()"
+            readonly
+            (click)="openCampaignSelectionModal()"
+            placeholder="בחר קמפיין">
+          <button
+            class="donor-filter-search-btn"
+            (click)="openCampaignSelectionModal()"
+            [matTooltip]="'בחר קמפיין'"
+            [dir]="'rtl'">
+            <mat-icon>search</mat-icon>
+          </button>
+          <button
+            *ngIf="filters.selectedCampaign"
+            class="donor-filter-clear-btn"
+            (click)="clearSelectedCampaign(); $event.stopPropagation()"
+            [matTooltip]="'נקה בחירה'"
+            [dir]="'rtl'">
+            <mat-icon>clear</mat-icon>
+          </button>
+        </div>
       </div>
 
       <!-- אפשרויות תצוגה -->
@@ -526,28 +555,24 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th>{{ (i18n.terms$ | async)?.donor }}</th>
-              <th>{{ (i18n.terms$ | async)?.promisedAmount }}</th>
-              <th>{{ (i18n.terms$ | async)?.actualAmount }}</th>
-              <th>{{ (i18n.terms$ | async)?.remainingDebt }}</th>
-              <th>{{ (i18n.terms$ | async)?.paymentStatus }}</th>
-              <th>{{ (i18n.terms$ | async)?.currency }}</th>
+              <th>שם משפחה</th>
+              <th>שם פרטי</th>
+              <th>כתובת</th>
+              <th>עיר</th>
+              <th>תאריך אחרון</th>
+              <th>בשקלים</th>
+              <th>תרומות</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let payment of paymentReportData" [class]="'status-' + payment.status">
-              <td>{{payment.donorName}}</td>
+            <tr *ngFor="let payment of paymentReportData">
+              <td>{{getLastName(payment.donorName)}}</td>
+              <td>{{getFirstName(payment.donorName)}}</td>
+              <td>{{payment.address || '-'}}</td>
+              <td>{{payment.city || '-'}}</td>
+              <td>{{payment.lastDonationDate ? formatDate(payment.lastDonationDate) : '-'}}</td>
               <td>{{formatCurrency(payment.promisedAmount)}}</td>
-              <td>{{formatCurrency(payment.actualAmount)}}</td>
-              <td>{{formatCurrency(payment.remainingDebt)}}</td>
-              <td>
-                <span class="status-badge" [class]="'status-' + payment.status">
-                  {{ payment.status === 'fullyPaid' ? (i18n.terms$ | async)?.fullyPaid : 
-                     payment.status === 'partiallyPaid' ? (i18n.terms$ | async)?.partiallyPaid : 
-                     (i18n.terms$ | async)?.notPaid }}
-                </span>
-              </td>
-              <td>{{payment.currency}}</td>
+              <td>{{payment.actualAmount}}</td>
             </tr>
           </tbody>
         </table>
@@ -562,22 +587,35 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th>{{ (i18n.terms$ | async)?.year }}</th>
-              <th>{{ (i18n.terms$ | async)?.shekel }}</th>
-              <th>{{ (i18n.terms$ | async)?.dollar }}</th>
-              <th>{{ (i18n.terms$ | async)?.euro }}</th>
-              <th>{{ (i18n.terms$ | async)?.totalByShekel }}</th>
+              <th>שנה</th>
+              <th>{{ (i18n.terms$ | async)?.shekel || 'שקל' }}</th>
+              <th>{{ (i18n.terms$ | async)?.dollar || 'דולר' }}</th>
+              <th>{{ (i18n.terms$ | async)?.euro || 'יורו' }}</th>
+              <th>{{ (i18n.terms$ | async)?.totalByShekel || 'סה"כ בשקלים' }}</th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let yearData of yearlySummaryData">
-              <td><strong>{{yearData.year}}</strong></td>
-              <td>₪{{(yearData.currencies['ILS'] || 0).toLocaleString()}}</td>
-              <td>${{(yearData.currencies['USD'] || 0).toLocaleString()}}</td>
-              <td>€{{(yearData.currencies['EUR'] || 0).toLocaleString()}}</td>
-              <td><strong>₪{{yearData.totalInShekel.toLocaleString()}}</strong></td>
+              <td>
+                <strong>{{yearData.hebrewYear}}</strong>
+                <br>
+                <small style="color: #999;">({{yearData.year}})</small>
+              </td>
+              <td>{{(yearData.currencies['ILS'] || 0) > 0 ? '₪' + Math.round(yearData.currencies['ILS']).toLocaleString() : '-'}}</td>
+              <td>{{(yearData.currencies['USD'] || 0) > 0 ? '$' + Math.round(yearData.currencies['USD']).toLocaleString() : '-'}}</td>
+              <td>{{(yearData.currencies['EUR'] || 0) > 0 ? '€' + Math.round(yearData.currencies['EUR']).toLocaleString() : '-'}}</td>
+              <td><strong>₪{{Math.round(yearData.totalInShekel).toLocaleString()}}</strong></td>
             </tr>
           </tbody>
+          <tfoot *ngIf="yearlySummaryData.length > 0">
+            <tr style="background-color: #f5f5f5; font-weight: bold; border-top: 2px solid #333;">
+              <td><strong>סה"כ</strong></td>
+              <td>{{getTotalByCurrency('ILS') > 0 ? '₪' + Math.round(getTotalByCurrency('ILS')).toLocaleString() : '-'}}</td>
+              <td>{{getTotalByCurrency('USD') > 0 ? '$' + Math.round(getTotalByCurrency('USD')).toLocaleString() : '-'}}</td>
+              <td>{{getTotalByCurrency('EUR') > 0 ? '€' + Math.round(getTotalByCurrency('EUR')).toLocaleString() : '-'}}</td>
+              <td><strong style="color: #27ae60;">₪{{Math.round(getGrandTotalInShekel()).toLocaleString()}}</strong></td>
+            </tr>
+          </tfoot>
         </table>
       </div>
     </div>
@@ -586,7 +624,7 @@
     <div *ngIf="activeReport === 'blessings'" class="blessings-report">
       <h2>{{ (i18n.terms$ | async)?.blessingsReportTitle }}</h2>
       <p class="report-subtitle">{{ (i18n.terms$ | async)?.trackingPurpose }}</p>
-      
+
       <div class="report-summary">
         <div class="summary-card">
           <div class="summary-icon">📝</div>
@@ -622,26 +660,34 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th>{{ (i18n.terms$ | async)?.donor }}</th>
-              <th>{{ (i18n.terms$ | async)?.blessingTypeSelection }}</th>
-              <th>{{ (i18n.terms$ | async)?.status }}</th>
-              <th>{{ (i18n.terms$ | async)?.campaign }}</th>
+              <th>שם משפחה</th>
+              <th>שם פרטי</th>
+              <th>סוג ברכה</th>
+              <th>הערות</th>
+              <th>סטטוס</th>
+              <th>טלפון</th>
+              <th>נייד</th>
+              <th>EMAIL</th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let blessing of blessingReportData">
-              <td>{{blessing.donorName}}</td>
+              <td>{{blessing.lastName}}</td>
+              <td>{{blessing.firstName}}</td>
               <td>
-                <span class="blessing-type" [class]="'blessing-' + (blessing.blessingType === ((i18n.terms$ | async)?.preMadeBlessings) ? 'ready' : blessing.blessingType === ((i18n.terms$ | async)?.customBlessings) ? 'custom' : 'none')">
-                  {{blessing.blessingType}}
+                <span class="blessing-type">
+                  {{blessing.blessingBookType}}
                 </span>
               </td>
+              <td>{{blessing.notes}}</td>
               <td>
                 <span class="status-badge" [class]="'status-' + blessing.status">
                   {{blessing.status}}
                 </span>
               </td>
-              <td>{{blessing.campaignName}}</td>
+              <td>{{blessing.phone}}</td>
+              <td>{{blessing.mobile}}</td>
+              <td>{{blessing.email}}</td>
             </tr>
           </tbody>
         </table>
