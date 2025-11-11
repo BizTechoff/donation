@@ -13,19 +13,16 @@
         <div class="form-group full-width">
           <label>{{ (i18n.terms$ | async)?.donor }} <span class="required">*</span></label>
           <div class="donor-selector">
-            <select class="form-control"
-                    [(ngModel)]="donorGift.donorId"
-                    (ngModelChange)="onDonorChange($event)"
-                    [disabled]="!isNew">
-              <option value="">{{ (i18n.terms$ | async)?.selectDonor }}</option>
-              <option *ngFor="let donor of donors" [value]="donor.id">
-                {{ getDonorName(donor) }}
-              </option>
-            </select>
+            <input type="text" class="form-control"
+                   [value]="selectedDonor ? getDonorName(selectedDonor) : ''"
+                   [placeholder]="(i18n.terms$ | async)?.selectDonor || 'בחר תורם'"
+                   readonly
+                   [disabled]="!isNew"
+                   (click)="isNew && openDonorSelectionModal()">
             <button mat-icon-button
                     (click)="openDonorSelectionModal()"
                     [disabled]="!isNew"
-                    [title]="(i18n.terms$ | async)?.searchDonor">
+                    [title]="(i18n.terms$ | async)?.searchDonor || 'חפש תורם'">
               <mat-icon>search</mat-icon>
             </button>
           </div>

@@ -16,6 +16,7 @@ import { GlobalFilterService } from '../../services/global-filter.service';
 import { SidebarService } from '../../services/sidebar.service';
 import { DonorMapController, DonorMapData } from '../../../shared/controllers/donor-map.controller';
 import { User } from '../../../shared/entity/user';
+import { HebrewDateService } from '../../services/hebrew-date.service';
 
 // Fix for default markers in Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -91,7 +92,8 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     private filterService: GlobalFilterService,
     private geoService: GeoService,
     private cdr: ChangeDetectorRef,
-    private sidebarService: SidebarService
+    private sidebarService: SidebarService,
+    private hebrewDateService: HebrewDateService
   ) { }
 
   // סטטיסטיקות
@@ -516,9 +518,16 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   createPopupContent(donorData: DonorMapData): string {
-    const lastDonationText = donorData.stats.lastDonationDate
-      ? new Date(donorData.stats.lastDonationDate).toLocaleDateString(this.i18n.lang.RTL ? 'he-IL' : 'en-US')
-      : this.i18n.terms.noDataAvailable;
+    let lastDonationText = this.i18n.terms.noDataAvailable;
+    if (donorData.stats.lastDonationDate) {
+      try {
+        const hebrewDate = this.hebrewDateService.convertGregorianToHebrew(new Date(donorData.stats.lastDonationDate));
+        lastDonationText = hebrewDate.formatted;
+      } catch (error) {
+        console.error('Error converting date to Hebrew:', error);
+        lastDonationText = new Date(donorData.stats.lastDonationDate).toLocaleDateString('he-IL');
+      }
+    }
 
     const direction = this.i18n.lang.RTL ? 'rtl' : 'ltr';
     const textAlign = this.i18n.lang.RTL ? 'right' : 'left';

@@ -8,6 +8,7 @@ import { TargetAudienceController } from '../../../../shared/controllers/target-
 import { DonorMapData } from '../../../../shared/controllers/donor-map.controller';
 import { DonorService } from '../../../services/donor.service';
 import { Donor } from '../../../../shared/entity/donor';
+import { HebrewDateService } from '../../../services/hebrew-date.service';
 
 export interface TargetAudienceDetailsModalArgs {
   targetAudienceId?: string; // undefined for 'new'
@@ -52,7 +53,8 @@ export class TargetAudienceDetailsModalComponent implements OnInit {
     public i18n: I18nService,
     private ui: UIToolsService,
     public dialogRef: MatDialogRef<any>,
-    private donorService: DonorService
+    private donorService: DonorService,
+    private hebrewDateService: HebrewDateService
   ) {}
 
   async ngOnInit() {
@@ -290,5 +292,17 @@ export class TargetAudienceDetailsModalComponent implements OnInit {
   // Get total donation count
   getTotalDonationCount(): number {
     return this.donorMapData.reduce((sum, d) => sum + d.stats.donationCount, 0);
+  }
+
+  // Format Hebrew date
+  formatHebrewDate(date: Date | undefined): string {
+    if (!date) return '-';
+    try {
+      const hebrewDate = this.hebrewDateService.convertGregorianToHebrew(new Date(date));
+      return hebrewDate.formatted;
+    } catch (error) {
+      console.error('Error converting date to Hebrew:', error);
+      return new Date(date).toLocaleDateString('he-IL');
+    }
   }
 }

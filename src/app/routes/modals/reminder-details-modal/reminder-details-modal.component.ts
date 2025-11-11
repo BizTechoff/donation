@@ -3,15 +3,15 @@ import { MatDialogRef } from '@angular/material/dialog';
 import { DialogConfig, openDialog } from 'common-ui-elements';
 import { remult } from 'remult';
 import { Subscription } from 'rxjs';
-import { Certificate, Donation, Donor, Reminder, User, DonorContact, DonorPlace, Place } from '../../../../shared/entity';
+import { Certificate, Donation, Donor, DonorPlace, Place, Reminder, User } from '../../../../shared/entity';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
+import { DonorService } from '../../../services/donor.service';
 import { GlobalFilterService } from '../../../services/global-filter.service';
 import { HebrewDateService } from '../../../services/hebrew-date.service';
-import { DonorService } from '../../../services/donor.service';
 import { ReminderService } from '../../../services/reminder.service';
-import { DonorSelectionModalComponent } from '../donor-selection-modal/donor-selection-modal.component';
 import { DonationSelectionModalComponent } from '../donation-selection-modal/donation-selection-modal.component';
+import { DonorSelectionModalComponent } from '../donor-selection-modal/donor-selection-modal.component';
 
 export interface ReminderDetailsModalArgs {
   reminderId?: string; // 'new' for new reminder or reminder ID for editing
@@ -158,8 +158,8 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
         // Edit existing reminder
         this.reminder = await this.reminderRepo.findId(this.args.reminderId, {
           include: {
-            relatedDonation: true,
-            relatedDonor: true,
+            relatedDonation: { include: { donor: true } },
+            relatedDonor: { include: { fundraiser: true } },
             assignedTo: true,
             createdBy: true
           }
@@ -169,19 +169,12 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
           this.dialogRef.close(false);
           return;
         }
+        console.log('ReminderDetailsModalComponent.oninit', this.reminder,this.reminder?.relatedDonation, this.reminder.relatedDonation?.donor)
 
         // If reminder has a related donor, load fundraiser if exists
-        if (this.reminder.relatedDonorId && this.reminder.relatedDonor) {
-          // Load the full donor with fundraiser relation
-          const donorWithFundraiser = await this.donorRepo.findId(this.reminder.relatedDonorId, {
-            include: { fundraiser: true }
-          });
-
-          // If donor has a fundraiser, auto-fill it (always override if donor has fundraiser)
-          if (donorWithFundraiser?.fundraiser) {
-            this.reminder.assignedToId = donorWithFundraiser.fundraiser.id;
-            this.reminder.assignedTo = donorWithFundraiser.fundraiser;
-          }
+        if (this.reminder.relatedDonor?.fundraiser) {
+          this.reminder.assignedToId = this.reminder.relatedDonor.fundraiser.id;
+          this.reminder.assignedTo = this.reminder.relatedDonor.fundraiser;
         }
       }
 
@@ -283,13 +276,13 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
 
         this.reminder!.relatedDonorId = loadedDonor.id;
         this.reminder!.relatedDonor = loadedDonor;
-        console.log('loadedDonor.relatedDonor',loadedDonor.firstName)
+        console.log('loadedDonor.relatedDonor', loadedDonor.firstName)
 
         // Auto-fill fundraiser (assignedTo) from donor's fundraiser if exists (always override)
         if (loadedDonor.fundraiser) {
           this.reminder!.assignedToId = loadedDonor.fundraiser.id;
           this.reminder!.assignedTo = loadedDonor.fundraiser;
-          console.log('loadedDonor.fundraiser',loadedDonor.fundraiser.name)
+          console.log('loadedDonor.fundraiser', loadedDonor.fundraiser.name)
         }
 
         // Set title and description based on donor and reminder type
@@ -371,8 +364,8 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
           }
         }
 
-        console.log('this.reminder!.title',this.reminder!.title,'this.reminder!.description',this.reminder!.description)
-        console.log('loadedCertificate.typeText',loadedCertificate.typeText,'loadedCertificate.mainTitle',loadedCertificate.mainTitle,'loadedCertificate.mainText',loadedCertificate.mainText)
+        console.log('this.reminder!.title', this.reminder!.title, 'this.reminder!.description', this.reminder!.description)
+        console.log('loadedCertificate.typeText', loadedCertificate.typeText, 'loadedCertificate.mainTitle', loadedCertificate.mainTitle, 'loadedCertificate.mainText', loadedCertificate.mainText)
 
         // Set title and description based on certificate
         if (!this.reminder!.title || this.reminder!.title === '') {
@@ -381,21 +374,21 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
           this.reminder!.title = `תעודה - ${certificateType} - ${donorName}`;
         }
 
-        
+
         // Set description with certificate details
-          const descriptionParts: string[] = this.reminder!.description.split('\n');
+        const descriptionParts: string[] = this.reminder!.description.split('\n');
 
-          // Add main title (כותרת)
-          if (loadedCertificate.mainTitle) {
-            descriptionParts.push(`סיבה: ${loadedCertificate.mainTitle}`);
-          }
+        // Add main title (כותרת)
+        if (loadedCertificate.mainTitle) {
+          descriptionParts.push(`סיבה: ${loadedCertificate.mainTitle}`);
+        }
 
-          // Add main text (תקציר)
-          if (loadedCertificate.mainText) {
-            descriptionParts.push(`תקציר: ${loadedCertificate.mainText}`);
-          }
+        // Add main text (תקציר)
+        if (loadedCertificate.mainText) {
+          descriptionParts.push(`תקציר: ${loadedCertificate.mainText}`);
+        }
 
-          this.reminder!.description = descriptionParts.join('\n');
+        this.reminder!.description = descriptionParts.join('\n');
       }
     } catch (error) {
       console.error('Error loading certificate:', error);
@@ -836,6 +829,7 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
   }
 
   getDonationDisplayText(donation: Donation): string {
+    // console.log('getDonationDisplayText', donation, donation.donorId, donation.donor)
     const amount = `₪${donation.amount.toLocaleString()}`;
     const date = new Date(donation.donationDate).toLocaleDateString('he-IL');
     const donor = donation.donor?.fullName || 'תורם לא ידוע';

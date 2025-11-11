@@ -2,6 +2,7 @@ import { Allow, BackendMethod, Controller } from 'remult';
 import { remult } from 'remult';
 import { DonorGift } from '../entity';
 import { GlobalFilters } from '../../app/services/global-filter.service';
+import { DonorController } from './donor.controller';
 
 export interface DonorGiftFilters {
   searchDonorName?: string;
@@ -39,6 +40,22 @@ export class DonorGiftController {
 
     // Build where clause
     let whereClause: any = {};
+
+    // Apply global filters - get filtered donor IDs
+    let filteredDonorIds: string[] | undefined = undefined;
+    if (globalFilters && (globalFilters.countryIds?.length || globalFilters.cityIds?.length ||
+        globalFilters.neighborhoodIds?.length || globalFilters.campaignIds?.length ||
+        globalFilters.targetAudienceIds?.length)) {
+      const donors = await DonorController.findFilteredDonors(globalFilters);
+      filteredDonorIds = donors.map(d => d.id);
+
+      if (filteredDonorIds.length === 0) {
+        return []; // No matching donors, return empty donor gifts
+      }
+
+      // Filter donor gifts by donor IDs
+      whereClause.donorId = { $in: filteredDonorIds };
+    }
 
     // Apply local filters
     if (localFilters.selectedDonorId) {
@@ -107,6 +124,22 @@ export class DonorGiftController {
     // Build where clause
     let whereClause: any = {};
 
+    // Apply global filters - get filtered donor IDs
+    let filteredDonorIds: string[] | undefined = undefined;
+    if (globalFilters && (globalFilters.countryIds?.length || globalFilters.cityIds?.length ||
+        globalFilters.neighborhoodIds?.length || globalFilters.campaignIds?.length ||
+        globalFilters.targetAudienceIds?.length)) {
+      const donors = await DonorController.findFilteredDonors(globalFilters);
+      filteredDonorIds = donors.map(d => d.id);
+
+      if (filteredDonorIds.length === 0) {
+        return 0; // No matching donors, return 0 count
+      }
+
+      // Filter donor gifts by donor IDs
+      whereClause.donorId = { $in: filteredDonorIds };
+    }
+
     // Apply local filters
     if (localFilters.selectedDonorId) {
       whereClause.donorId = localFilters.selectedDonorId;
@@ -166,6 +199,22 @@ export class DonorGiftController {
   ): Promise<{ deliveredCount: number; pendingCount: number }> {
     // Build where clause
     let whereClause: any = {};
+
+    // Apply global filters - get filtered donor IDs
+    let filteredDonorIds: string[] | undefined = undefined;
+    if (globalFilters && (globalFilters.countryIds?.length || globalFilters.cityIds?.length ||
+        globalFilters.neighborhoodIds?.length || globalFilters.campaignIds?.length ||
+        globalFilters.targetAudienceIds?.length)) {
+      const donors = await DonorController.findFilteredDonors(globalFilters);
+      filteredDonorIds = donors.map(d => d.id);
+
+      if (filteredDonorIds.length === 0) {
+        return { deliveredCount: 0, pendingCount: 0 }; // No matching donors
+      }
+
+      // Filter donor gifts by donor IDs
+      whereClause.donorId = { $in: filteredDonorIds };
+    }
 
     // Apply local filters
     if (localFilters.selectedDonorId) {

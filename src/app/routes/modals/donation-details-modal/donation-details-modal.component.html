@@ -77,12 +77,16 @@
               <label>{{i18n.terms.donor}} *</label>
             </div>
             <div class="input-with-icon">
-              <select class="form-control" [(ngModel)]="donation.donorId" (ngModelChange)="onDonorChange($event)">
-                <option value="">{{i18n.terms.selectDonor}}</option>
-                <option *ngFor="let donor of donors" [value]="donor.id">
-                  {{ getDonorDisplayName(donor) }}
-                </option>
-              </select>
+              <input type="text" class="form-control"
+                     [value]="selectedDonor ? getDonorDisplayName(selectedDonor) : ''"
+                     [placeholder]="i18n.terms.selectDonor"
+                     readonly
+                     (click)="openDonorSelectionModal()">
+              <button mat-icon-button class="edit-icon-btn search-icon-btn"
+                (click)="openDonorSelectionModal()" [matTooltip]="'חפש תורם'"
+                type="button">
+                <mat-icon>search</mat-icon>
+              </button>
               <button mat-icon-button class="edit-icon-btn" [class.active]="donation.donorId"
                 [disabled]="!donation.donorId" (click)="openDonorDetails()" [matTooltip]="i18n.terms.openDonorDetails"
                 type="button">

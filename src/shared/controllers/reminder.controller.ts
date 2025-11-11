@@ -1,6 +1,8 @@
 import { BackendMethod, Allow, remult } from 'remult'
 import { Reminder } from '../entity/reminder'
 import { HebrewDateController } from './hebrew-date.controller'
+import { GlobalFilters } from '../../app/services/global-filter.service'
+import { DonorController } from './donor.controller'
 
 /**
  * Controller for handling Hebrew reminder calculations
@@ -13,7 +15,7 @@ export class ReminderController {
   @BackendMethod({ allowed: Allow.authenticated })
   static async findFilteredReminders(
     filters: {
-      countryIds?: string[]
+      globalFilters?: GlobalFilters
       dateFrom?: Date
       dateTo?: Date
       searchTerm?: string
@@ -27,6 +29,20 @@ export class ReminderController {
 
     // Build where clause
     const where: any = { isActive: true }
+
+    // Apply global filters - get filtered donor IDs
+    let filteredDonorIds: string[] | undefined = undefined
+    if (filters.globalFilters) {
+      const donors = await DonorController.findFilteredDonors(filters.globalFilters)
+      filteredDonorIds = donors.map(d => d.id)
+
+      if (filteredDonorIds.length === 0) {
+        return [] // No matching donors, return empty reminders
+      }
+
+      // Filter reminders by donor IDs
+      where.relatedDonorId = { $in: filteredDonorIds }
+    }
 
     // Date range filter
     if (filters.dateFrom || filters.dateTo) {
@@ -78,7 +94,7 @@ export class ReminderController {
   @BackendMethod({ allowed: Allow.authenticated })
   static async countFilteredReminders(
     filters: {
-      countryIds?: string[]
+      globalFilters?: GlobalFilters
       dateFrom?: Date
       dateTo?: Date
       searchTerm?: string
@@ -88,6 +104,20 @@ export class ReminderController {
 
     // Build where clause (same as findFiltered)
     const where: any = { isActive: true }
+
+    // Apply global filters - get filtered donor IDs
+    let filteredDonorIds: string[] | undefined = undefined
+    if (filters.globalFilters) {
+      const donors = await DonorController.findFilteredDonors(filters.globalFilters)
+      filteredDonorIds = donors.map(d => d.id)
+
+      if (filteredDonorIds.length === 0) {
+        return 0 // No matching donors, return 0 count
+      }
+
+      // Filter reminders by donor IDs
+      where.relatedDonorId = { $in: filteredDonorIds }
+    }
 
     // Date range filter
     if (filters.dateFrom || filters.dateTo) {

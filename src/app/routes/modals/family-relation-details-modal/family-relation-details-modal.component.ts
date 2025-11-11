@@ -1,9 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
-import { DialogConfig } from 'common-ui-elements';
+import { DialogConfig, openDialog } from 'common-ui-elements';
 import { remult } from 'remult';
 import { Donor, DonorRelation } from '../../../../shared/entity';
 import { I18nService } from '../../../i18n/i18n.service';
+import { DonorSelectionModalComponent } from '../donor-selection-modal/donor-selection-modal.component';
 
 export interface FamilyRelationDetailsModalArgs {
   relationId?: string; // Can be undefined for new relation
@@ -28,12 +29,12 @@ export class FamilyRelationDetailsModalComponent implements OnInit {
 
   relation?: DonorRelation;
   donorRelationRepo = remult.repo(DonorRelation);
+  donorRepo = remult.repo(Donor);
   isNewRelation = false;
 
   newRelationshipType: string = '';
+  selectedDonor?: Donor;
   selectedDonorId: string = '';
-
-  availableDonors: Donor[] = [];
 
   constructor(
     public i18n: I18nService,
@@ -42,17 +43,6 @@ export class FamilyRelationDetailsModalComponent implements OnInit {
 
   async ngOnInit() {
     if (!this.args) return;
-
-    // Filter available donors (exclude current donor and already related donors)
-    this.availableDonors = this.args.allDonors.filter(donor => {
-      // Exclude current donor
-      if (donor.id === this.args.currentDonorId) return false;
-
-      // Exclude already related donors
-      if (this.args.existingRelationDonorIds?.includes(donor.id)) return false;
-
-      return true;
-    });
 
     if (this.args.relationId) {
       // Editing existing relation
@@ -67,11 +57,13 @@ export class FamilyRelationDetailsModalComponent implements OnInit {
           // Determine which donor is the related one and use the correct relationship type
           if (this.relation.donor1Id === this.args.currentDonorId) {
             this.selectedDonorId = this.relation.donor2Id;
+            this.selectedDonor = this.relation.donor2;
             this.newRelationshipType = this.relation.relationshipType1;
           } else {
             // Current donor is donor2, need to calculate reverse relationship
             // Note: In edit mode, we always swap to make current donor as donor1
             this.selectedDonorId = this.relation.donor1Id;
+            this.selectedDonor = this.relation.donor1;
             this.newRelationshipType = this.relation.relationshipType1;
           }
         }
@@ -119,7 +111,29 @@ export class FamilyRelationDetailsModalComponent implements OnInit {
     this.dialogRef.close(false);
   }
 
-  getAvailableDonors(): Donor[] {
-    return this.availableDonors;
+  async openDonorSelectionModal() {
+    try {
+      const result = await openDialog(
+        DonorSelectionModalComponent,
+        (modal: DonorSelectionModalComponent) => {
+          modal.args = {
+            title: 'בחירת תורם לקשר משפחתי',
+            multiSelect: false,
+            excludeIds: [
+              this.args.currentDonorId,
+              ...(this.args.existingRelationDonorIds || [])
+            ]
+          };
+        }
+      ) as Donor | null;
+
+      if (result) {
+        this.selectedDonor = result;
+        this.selectedDonorId = result.id;
+      }
+    } catch (error) {
+      console.error('Error opening donor selection modal:', error);
+      alert('שגיאה בפתיחת חלון בחירת תורם');
+    }
   }
 }

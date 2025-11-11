@@ -125,7 +125,7 @@
 
                       <div class="donor-last-donation" *ngIf="donorData.stats.lastDonationDate">
                         <mat-icon class="detail-icon">calendar_today</mat-icon>
-                        תרומה אחרונה: {{ donorData.stats.lastDonationDate | date:'dd/MM/yyyy' }}
+                        תרומה אחרונה: {{ formatHebrewDate(donorData.stats.lastDonationDate) }}
                       </div>
                     </div>
                   </div>

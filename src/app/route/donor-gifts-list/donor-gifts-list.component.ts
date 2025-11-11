@@ -20,7 +20,7 @@ import { GiftCatalogModalComponent } from '../../routes/modals/gift-catalog-moda
 export class DonorGiftsListComponent implements OnInit, OnDestroy {
 
   donorGifts: DonorGift[] = [];
-  donors: Donor[] = [];
+  selectedDonor?: Donor;
   gifts: Gift[] = [];
 
   donorGiftRepo = remult.repo(DonorGift);
@@ -86,7 +86,6 @@ export class DonorGiftsListComponent implements OnInit, OnDestroy {
    */
   private async loadBase() {
     await this.loadGifts();
-    await this.loadDonors();
     this.generateYearsList();
   }
 
@@ -139,11 +138,36 @@ export class DonorGiftsListComponent implements OnInit, OnDestroy {
     });
   }
 
-  async loadDonors() {
-    this.donors = await this.donorRepo.find({
-      where: { isActive: true },
-      orderBy: { lastName: 'asc' }
-    });
+  async openDonorSelectionModal() {
+    try {
+      const { openDialog } = await import('common-ui-elements');
+      const { DonorSelectionModalComponent } = await import('../../routes/modals/donor-selection-modal/donor-selection-modal.component');
+
+      const selectedDonor = await openDialog(
+        DonorSelectionModalComponent,
+        (modal: any) => {
+          modal.args = {
+            title: 'בחירת תורם לפילטר',
+            multiSelect: false
+          };
+        }
+      ) as Donor | null;
+
+      if (selectedDonor) {
+        this.selectedDonor = selectedDonor;
+        this.selectedDonorId = selectedDonor.id;
+        this.applyFilters();
+      }
+    } catch (error) {
+      console.error('Error opening donor selection modal:', error);
+      this.ui.error('שגיאה בפתיחת חלון בחירת תורם');
+    }
+  }
+
+  clearDonorFilter() {
+    this.selectedDonor = undefined;
+    this.selectedDonorId = '';
+    this.applyFilters();
   }
 
   async loadGifts() {

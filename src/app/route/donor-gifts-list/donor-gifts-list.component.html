@@ -50,12 +50,19 @@
 
         <div class="filter-group">
           <label>{{ (i18n.terms$ | async)?.donor }}</label>
-          <select class="form-control" [(ngModel)]="selectedDonorId" (ngModelChange)="applyFilters()">
-            <option value="">{{ (i18n.terms$ | async)?.allDonors }}</option>
-            <option *ngFor="let donor of donors" [value]="donor.id">
-              {{ donor.firstName }} {{ donor.lastName }}
-            </option>
-          </select>
+          <div class="donor-filter-field">
+            <input type="text" class="form-control"
+                   [value]="selectedDonor ? (selectedDonor.firstName + ' ' + selectedDonor.lastName) : ''"
+                   [placeholder]="(i18n.terms$ | async)?.allDonors || 'כל התורמים'"
+                   readonly
+                   (click)="openDonorSelectionModal()">
+            <button mat-icon-button (click)="openDonorSelectionModal()" [title]="'חפש תורם'">
+              <mat-icon>search</mat-icon>
+            </button>
+            <button mat-icon-button *ngIf="selectedDonor" (click)="clearDonorFilter()" [title]="'נקה'">
+              <mat-icon>clear</mat-icon>
+            </button>
+          </div>
         </div>
 
         <div class="filter-group">

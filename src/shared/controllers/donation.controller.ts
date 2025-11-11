@@ -1,5 +1,6 @@
 import { Allow, BackendMethod, remult } from 'remult';
 import { GlobalFilters } from '../../app/services/global-filter.service';
+import { GlobalFilterController } from './global-filter.controller';
 import { Bank } from '../entity/bank';
 import { Campaign } from '../entity/campaign';
 import { Company } from '../entity/company';
@@ -9,9 +10,7 @@ import { DonationMethod } from '../entity/donation-method';
 import { DonationOrganization } from '../entity/donation-organization';
 import { Donor } from '../entity/donor';
 import { Organization } from '../entity/organization';
-import { Place } from '../entity/place';
 import { DonorPlace } from '../entity/donor-place';
-import { TargetAudience } from '../entity/target-audience';
 
 export interface DonationFilters {
   searchTerm?: string;
@@ -45,81 +44,12 @@ export interface DonationSelectionData {
 
 export class DonationController {
 
-  /**
-   * Helper method to get donor IDs that match global filters
-   */
-  private static async getDonorIdsFromGlobalFilters(globalFilters: GlobalFilters): Promise<string[] | undefined> {
-    let donorIds: string[] | undefined = undefined;
-
-    // Apply place-based filters (country, city, neighborhood)
-    if (globalFilters.countryIds?.length || globalFilters.cityIds?.length || globalFilters.neighborhoodIds?.length) {
-      const placeWhere: any = {};
-
-      if (globalFilters.countryIds && globalFilters.countryIds.length > 0) {
-        placeWhere.countryId = { $in: globalFilters.countryIds };
-      }
-
-      if (globalFilters.cityIds && globalFilters.cityIds.length > 0) {
-        placeWhere.city = { $in: globalFilters.cityIds };
-      }
-
-      if (globalFilters.neighborhoodIds && globalFilters.neighborhoodIds.length > 0) {
-        placeWhere.neighborhood = { $in: globalFilters.neighborhoodIds };
-      }
-
-      const matchingPlaces = await remult.repo(Place).find({ where: placeWhere });
-      const matchingPlaceIds = matchingPlaces.map(p => p.id);
-
-      if (matchingPlaceIds.length === 0) {
-        return []; // No matching places - return empty array to indicate no results
-      }
-
-      const donorPlaces = await remult.repo(DonorPlace).find({
-        where: {
-          placeId: { $in: matchingPlaceIds },
-          isActive: true
-        }
-      });
-
-      donorIds = [...new Set(donorPlaces.map(dp => dp.donorId).filter((id): id is string => !!id))];
-
-      if (donorIds.length === 0) {
-        return [];
-      }
-    }
-
-    // Apply target audience filter
-    if (globalFilters.targetAudienceIds && globalFilters.targetAudienceIds.length > 0) {
-      const targetAudiences = await remult.repo(TargetAudience).find({
-        where: { id: { $in: globalFilters.targetAudienceIds } }
-      });
-
-      const audienceDonorIds = [
-        ...new Set(
-          targetAudiences.flatMap(ta => ta.donorIds || [])
-        )
-      ];
-
-      if (donorIds) {
-        donorIds = donorIds.filter(id => audienceDonorIds.includes(id));
-      } else {
-        donorIds = audienceDonorIds;
-      }
-
-      if (donorIds.length === 0) {
-        return [];
-      }
-    }
-
-    return donorIds;
-  }
-
   @BackendMethod({ allowed: Allow.authenticated })
-  static async getDonationsForSelection(excludeIds?: string[]): Promise<DonationSelectionData> {
-    let donations = await remult.repo(Donation).find({
-      orderBy: { donationDate: 'desc' },
-      limit: 500 // Limit to most recent 500 donations for performance
-    });
+  static async getDonationsForSelection(globalFilters: GlobalFilters, excludeIds?: string[]): Promise<DonationSelectionData> {
+    // Load donations using global filters
+    let donations = await DonationController.findFilteredDonations({
+      globalFilters
+    }, undefined, 500); // Limit to 500 for performance
 
     // Filter out excluded donations
     if (excludeIds && excludeIds.length > 0) {
@@ -252,7 +182,7 @@ export class DonationController {
     if (filters.globalFilters) {
       console.log('Applying global filters...');
       // Get donor IDs from global filters (location + target audience)
-      globalDonorIds = await DonationController.getDonorIdsFromGlobalFilters(filters.globalFilters);
+      globalDonorIds = await GlobalFilterController.getDonorIds(filters.globalFilters);
       console.log(`Found ${globalDonorIds?.length || 0} donors matching global filters`);
 
       if (globalDonorIds && globalDonorIds.length === 0) {
@@ -493,7 +423,7 @@ export class DonationController {
 
     // Apply global filters first
     if (filters.globalFilters) {
-      globalDonorIds = await DonationController.getDonorIdsFromGlobalFilters(filters.globalFilters);
+      globalDonorIds = await GlobalFilterController.getDonorIds(filters.globalFilters);
 
       if (globalDonorIds && globalDonorIds.length === 0) {
         return 0;

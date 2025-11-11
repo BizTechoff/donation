@@ -11,6 +11,8 @@ import { BlessingTypeSelectionModalComponent } from '../blessing-type-selection-
 import { BlessingTextEditModalComponent } from '../blessing-text-edit-modal/blessing-text-edit-modal.component';
 import { ExcelExportService, ExcelColumn } from '../../../services/excel-export.service';
 import { DonorService } from '../../../services/donor.service';
+import { GlobalFilterService } from '../../../services/global-filter.service';
+import { DonorController } from '../../../../shared/controllers/donor.controller';
 
 export interface CampaignBlessingBookModalArgs {
   campaignId: string;
@@ -77,7 +79,8 @@ export class CampaignBlessingBookModalComponent implements OnInit {
     private cdr: ChangeDetectorRef,
     public dialogRef: MatDialogRef<CampaignBlessingBookModalComponent>,
     private excelService: ExcelExportService,
-    private donorService: DonorService
+    private donorService: DonorService,
+    private globalFilterService: GlobalFilterService
   ) {}
 
   async ngOnInit() {
@@ -197,9 +200,19 @@ export class CampaignBlessingBookModalComponent implements OnInit {
 
         this.donorBlessings = Array.from(donorMap.values());
       } else {
-        // Original behavior: show donors with donations
+        // Original behavior: show donors with donations, filtered by global filters
+
+        // Get filtered donor IDs from global filters
+        const globalFilters = this.globalFilterService.currentFilters;
+        const filteredDonors = await DonorController.findFilteredDonors(globalFilters);
+        const filteredDonorIds = filteredDonors.map(d => d.id);
+
+        // Load donations for this campaign, filtered by global filters
         const donations = await this.donationRepo.find({
-          where: { campaignId: this.args.campaignId },
+          where: {
+            campaignId: this.args.campaignId,
+            ...(filteredDonorIds.length > 0 ? { donorId: { $in: filteredDonorIds } } : {})
+          },
           include: {
             donor: true
           }

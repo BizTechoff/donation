@@ -39,7 +39,7 @@ export class HebrewDateService {
       day: hDate.getDate(),
       month: hDate.getMonth(),
       year: hDate.getFullYear(),
-      formatted: hDate.renderGematriya(),
+      formatted: hDate.renderGematriya(true),
       moed: moed || undefined
     };
   }

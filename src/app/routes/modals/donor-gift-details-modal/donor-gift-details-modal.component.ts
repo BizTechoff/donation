@@ -27,7 +27,6 @@ export class DonorGiftDetailsModalComponent implements OnInit {
   changed = false;
 
   donorGift!: DonorGift;
-  donors: Donor[] = [];
   gifts: Gift[] = [];
 
   donorGiftRepo = remult.repo(DonorGift);
@@ -48,10 +47,7 @@ export class DonorGiftDetailsModalComponent implements OnInit {
   async ngOnInit() {
     this.loading = true;
     try {
-      await Promise.all([
-        this.loadDonors(),
-        this.loadGifts()
-      ]);
+      await this.loadGifts();
 
       if (this.args.donorGiftId === 'new') {
         this.isNew = true;
@@ -93,13 +89,6 @@ export class DonorGiftDetailsModalComponent implements OnInit {
     }
   }
 
-  async loadDonors() {
-    this.donors = await this.donorRepo.find({
-      where: { isActive: true },
-      orderBy: { lastName: 'asc' }
-    });
-  }
-
   async loadGifts() {
     this.gifts = await this.giftRepo.find({
       where: { isActive: true },
@@ -108,21 +97,22 @@ export class DonorGiftDetailsModalComponent implements OnInit {
   }
 
   async openDonorSelectionModal() {
-    const result = await openDialog(DonorSelectionModalComponent, (it) => {
-      it.args = {};
-    }) as Donor;
+    try {
+      const result = await openDialog(DonorSelectionModalComponent, (it) => {
+        it.args = {
+          title: 'בחירת תורם',
+          multiSelect: false
+        };
+      }) as Donor | null;
 
-    if (result) {
-      this.selectedDonor = result;
-      this.donorGift.donorId = result.id;
-      this.donorGift.donor = result;
-    }
-  }
-
-  onDonorChange(donorId: string) {
-    this.selectedDonor = this.donors.find(d => d.id === donorId);
-    if (this.selectedDonor) {
-      this.donorGift.donor = this.selectedDonor;
+      if (result) {
+        this.selectedDonor = result;
+        this.donorGift.donorId = result.id;
+        this.donorGift.donor = result;
+      }
+    } catch (error) {
+      console.error('Error opening donor selection modal:', error);
+      this.ui.error('שגיאה בפתיחת חלון בחירת תורם');
     }
   }
 

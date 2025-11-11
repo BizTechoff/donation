@@ -126,11 +126,9 @@ export class RemindersComponent implements OnInit, OnDestroy {
         filters.searchTerm = this.searchTerm;
       }
 
-      // Add global filters (country filter)
+      // Add global filters
       const globalFilters = this.globalFilterService.currentFilters;
-      if (globalFilters.countryIds && globalFilters.countryIds.length > 0) {
-        filters.countryIds = globalFilters.countryIds;
-      }
+      filters.globalFilters = globalFilters;
 
       // Get total count for pagination
       this.totalCount = await this.reminderService.countFiltered(filters);

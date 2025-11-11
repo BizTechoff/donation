@@ -1,6 +1,6 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
-import { DialogConfig } from 'common-ui-elements';
+import { DialogConfig, openDialog } from 'common-ui-elements';
 import { Certificate } from '../../../../shared/entity/certificate';
 import { Donor } from '../../../../shared/entity/donor';
 import { Donation } from '../../../../shared/entity/donation';
@@ -9,6 +9,7 @@ import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { ReminderDetailsModalComponent } from '../reminder-details-modal/reminder-details-modal.component';
+import { DonorSelectionModalComponent } from '../donor-selection-modal/donor-selection-modal.component';
 
 export interface CertificateDetailsModalArgs {
   certificateId?: string; // 'new' for new certificate or certificate ID for editing
@@ -28,7 +29,7 @@ export class CertificateDetailsModalComponent implements OnInit {
   changed = false;
 
   certificate!: Certificate;
-  donors: Donor[] = [];
+  selectedDonor?: Donor;
   selectedDonorId = '';
   showPreview = false;
   loading = false;
@@ -76,15 +77,12 @@ export class CertificateDetailsModalComponent implements OnInit {
       }
     }
 
-    await this.loadDonors();
-    this.loading = false;
-  }
+    // Load selected donor if exists
+    if (this.selectedDonorId) {
+      this.selectedDonor = await this.donorRepo.findId(this.selectedDonorId) || undefined;
+    }
 
-  async loadDonors() {
-    this.donors = await this.donorRepo.find({
-      where: { isActive: true },
-      orderBy: { firstName: 'asc' }
-    });
+    this.loading = false;
   }
 
   get eventDateForInput(): string {
@@ -122,15 +120,29 @@ export class CertificateDetailsModalComponent implements OnInit {
     this.changed = true;
   }
 
-  onDonorChange() {
-    if (!this.certificate) return;
+  async openDonorSelectionModal() {
+    try {
+      const selectedDonor = await openDialog(
+        DonorSelectionModalComponent,
+        (modal: DonorSelectionModalComponent) => {
+          modal.args = {
+            title: 'בחירת תורם',
+            multiSelect: false
+          };
+        }
+      ) as Donor | null;
 
-    this.certificate.donorId = this.selectedDonorId;
-    const selectedDonor = this.donors.find(d => d.id === this.selectedDonorId);
-    if (selectedDonor) {
-      this.certificate.donor = selectedDonor;
+      if (selectedDonor) {
+        this.selectedDonor = selectedDonor;
+        this.selectedDonorId = selectedDonor.id;
+        this.certificate.donorId = selectedDonor.id;
+        this.certificate.donor = selectedDonor;
+        this.changed = true;
+      }
+    } catch (error) {
+      console.error('Error opening donor selection modal:', error);
+      this.ui.info('שגיאה בפתיחת חלון בחירת תורם');
     }
-    this.changed = true;
   }
 
   async save() {

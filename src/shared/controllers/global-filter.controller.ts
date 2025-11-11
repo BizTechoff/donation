@@ -1,0 +1,184 @@
+import { Allow, BackendMethod, remult } from 'remult';
+import { GlobalFilters } from '../../app/services/global-filter.service';
+import { Donor } from '../entity/donor';
+import { Place } from '../entity/place';
+import { DonorPlace } from '../entity/donor-place';
+import { TargetAudience } from '../entity/target-audience';
+
+/**
+ * GlobalFilterController - מרכז שליטה לפילטרים גלובליים
+ *
+ * מטרה: לרכז את כל הלוגיקה של פילטרים גלובליים במקום אחד.
+ * כל Controller אחר יכול לקרוא למתודות אלו במקום לחשב בעצמו.
+ */
+export class GlobalFilterController {
+
+  /**
+   * מחזיר רשימת donorIds מסוננת לפי הפילטרים הגלובליים
+   * זוהי המתודה המרכזית שכל Controllers אחרים משתמשים בה
+   *
+   * @param filters - הפילטרים הגלובליים
+   * @returns undefined אם אין פילטרים, [] אם אין התאמות, או מערך של donorIds
+   */
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async getDonorIds(filters: GlobalFilters): Promise<string[] | undefined> {
+    if (!filters || Object.keys(filters).length === 0) {
+      return undefined; // אין פילטרים - לא לסנן כלום
+    }
+
+    let donorIds: string[] | undefined = undefined;
+
+    // סינון לפי מיקום (מדינה, עיר, שכונה)
+    const placeFiltered = await this.getDonorIdsFromPlaces(filters);
+    if (placeFiltered !== undefined) {
+      if (placeFiltered.length === 0) return []; // אין התאמות
+      donorIds = placeFiltered;
+    }
+
+    // סינון לפי קהל יעד
+    const audienceFiltered = await this.getDonorIdsFromTargetAudience(filters);
+    if (audienceFiltered !== undefined) {
+      if (donorIds) {
+        // חיתוך - רק תורמים שבשני הקטגוריות
+        donorIds = donorIds.filter(id => audienceFiltered.includes(id));
+      } else {
+        donorIds = audienceFiltered;
+      }
+      if (donorIds.length === 0) return []; // אין התאמות
+    }
+
+    return donorIds;
+  }
+
+  /**
+   * מחזיר donorIds מסוננים לפי מיקום (מדינה/עיר/שכונה)
+   */
+  private static async getDonorIdsFromPlaces(filters: GlobalFilters): Promise<string[] | undefined> {
+    if (!filters.countryIds?.length && !filters.cityIds?.length && !filters.neighborhoodIds?.length) {
+      return undefined; // אין פילטרי מיקום
+    }
+
+    const placeWhere: any = {};
+
+    if (filters.countryIds && filters.countryIds.length > 0) {
+      placeWhere.countryId = { $in: filters.countryIds };
+    }
+
+    if (filters.cityIds && filters.cityIds.length > 0) {
+      placeWhere.city = { $in: filters.cityIds };
+    }
+
+    if (filters.neighborhoodIds && filters.neighborhoodIds.length > 0) {
+      placeWhere.neighborhood = { $in: filters.neighborhoodIds };
+    }
+
+    // שליפת מיקומים תואמים
+    const matchingPlaces = await remult.repo(Place).find({ where: placeWhere });
+    const matchingPlaceIds = matchingPlaces.map(p => p.id);
+
+    if (matchingPlaceIds.length === 0) {
+      return []; // אין מיקומים תואמים
+    }
+
+    // שליפת קשרי תורם-מיקום
+    const donorPlaces = await remult.repo(DonorPlace).find({
+      where: {
+        placeId: { $in: matchingPlaceIds },
+        isActive: true
+      }
+    });
+
+    const donorIds = [...new Set(donorPlaces.map(dp => dp.donorId).filter((id): id is string => !!id))];
+    return donorIds;
+  }
+
+  /**
+   * מחזיר donorIds מסוננים לפי קהל יעד
+   */
+  private static async getDonorIdsFromTargetAudience(filters: GlobalFilters): Promise<string[] | undefined> {
+    if (!filters.targetAudienceIds || filters.targetAudienceIds.length === 0) {
+      return undefined; // אין פילטר קהל יעד
+    }
+
+    const targetAudiences = await remult.repo(TargetAudience).find({
+      where: { id: { $in: filters.targetAudienceIds } }
+    });
+
+    const donorIds = [
+      ...new Set(
+        targetAudiences.flatMap(ta => ta.donorIds || [])
+      )
+    ];
+
+    return donorIds;
+  }
+
+  /**
+   * בונה whereClause לקמפיינים
+   * כולל סינון לפי מיקום (location) ורשימת מוזמנים (invitedDonorIds)
+   */
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async buildWhereForCampaigns(
+    filters: GlobalFilters,
+    existingWhere: any = {}
+  ): Promise<any> {
+    const whereClause = { ...existingWhere };
+
+    // סינון לפי תאריכים (קיים כבר)
+    if (filters.dateFrom || filters.dateTo) {
+      whereClause.startDate = {};
+      if (filters.dateFrom) {
+        whereClause.startDate.$gte = filters.dateFrom;
+      }
+      if (filters.dateTo) {
+        whereClause.startDate.$lte = filters.dateTo;
+      }
+    }
+
+    // סינון לפי רשימת מוזמנים - צריך donorIds
+    const donorIds = await this.getDonorIds(filters);
+    if (donorIds !== undefined) {
+      if (donorIds.length === 0) {
+        // אין תורמים תואמים - נחזיר תנאי שלא יחזיר תוצאות
+        whereClause.id = { $in: [] };
+      } else {
+        // סינון קמפיינים שיש בהם לפחות אחד מהתורמים המסוננים ברשימת המוזמנים
+        whereClause.$or = [
+          { invitedDonorIds: { $contains: donorIds } }
+        ];
+      }
+    }
+
+    return whereClause;
+  }
+
+  /**
+   * בונה whereClause לתזכורות
+   * תזכורת יכולה להיות מקושרת לתורם או לתרומה
+   */
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async buildWhereForReminders(
+    filters: GlobalFilters,
+    existingWhere: any = {}
+  ): Promise<any> {
+    const whereClause = { ...existingWhere };
+
+    // סינון לפי donorIds
+    const donorIds = await this.getDonorIds(filters);
+    if (donorIds !== undefined) {
+      if (donorIds.length === 0) {
+        // אין תורמים תואמים
+        whereClause.id = { $in: [] };
+      } else {
+        // תזכורת יכולה להיות קשורה ישירות לתורם, או דרך תרומה
+        whereClause.$or = [
+          { donorId: { $in: donorIds } },
+          // TODO: אם יש donationId, צריך לבדוק את donation.donorId
+          // זה ידרוש join או שאילתה נפרדת
+        ];
+      }
+    }
+
+    return whereClause;
+  }
+}

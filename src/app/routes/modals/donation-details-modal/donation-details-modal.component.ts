@@ -36,7 +36,6 @@ export class DonationDetailsModalComponent implements OnInit {
 
   donation!: Donation;
   originalDonationData?: string; // To track changes
-  donors: Donor[] = [];
   campaigns: Campaign[] = [];
   donationMethods: DonationMethod[] = [];
   availablePartners: Donor[] = [];
@@ -289,7 +288,6 @@ export class DonationDetailsModalComponent implements OnInit {
         }
 
         // Set all data from controller
-        this.donors = data.donors;
         this.campaigns = data.campaigns;
         this.donationMethods = data.donationMethods;
         this.availablePartners = data.availablePartners;
@@ -1260,6 +1258,29 @@ export class DonationDetailsModalComponent implements OnInit {
     }
   }
 
+  async openDonorSelectionModal() {
+    try {
+      const selectedDonor = await openDialog(
+        DonorSelectionModalComponent,
+        (modal: DonorSelectionModalComponent) => {
+          modal.args = {
+            title: 'בחירת תורם',
+            multiSelect: false
+          };
+        }
+      ) as Donor | null;
+
+      if (selectedDonor) {
+        this.donation.donorId = selectedDonor.id;
+        this.selectedDonor = selectedDonor;
+        await this.onDonorChange(selectedDonor.id);
+      }
+    } catch (error) {
+      console.error('Error opening donor selection modal:', error);
+      this.ui.error('שגיאה בפתיחת חלון בחירת תורם');
+    }
+  }
+
   async openDonorDetails() {
     if (!this.donation?.donorId) return;
 
@@ -1271,12 +1292,6 @@ export class DonationDetailsModalComponent implements OnInit {
 
       // If the modal closed with changes (donor was updated)
       if (result) {
-        // Refresh donors list
-        this.donors = await this.donorRepo.find({
-          orderBy: { lastName: 'asc', firstName: 'asc' },
-          limit: 1000
-        });
-
         // Reload the selected donor
         await this.loadSelectedDonor();
 

@@ -6,6 +6,7 @@ import { UIToolsService } from '../../../common/UIToolsService';
 import { DonorMapData } from '../../../../shared/controllers/donor-map.controller';
 import { Donor } from '../../../../shared/entity/donor';
 import { DonorService } from '../../../services/donor.service';
+import { HebrewDateService } from '../../../services/hebrew-date.service';
 
 export interface MapSelectedDonorsModalArgs {
   donors: DonorMapData[];
@@ -33,7 +34,8 @@ export class MapSelectedDonorsModalComponent implements OnInit {
     public i18n: I18nService,
     private ui: UIToolsService,
     public dialogRef: MatDialogRef<any>,
-    private donorService: DonorService
+    private donorService: DonorService,
+    private hebrewDateService: HebrewDateService
   ) {}
 
   async ngOnInit() {
@@ -148,6 +150,18 @@ export class MapSelectedDonorsModalComponent implements OnInit {
   // Get total donations sum
   getTotalDonationsSum(): number {
     return this.selectedDonors.reduce((sum, d) => sum + d.stats.totalDonations, 0);
+  }
+
+  // Format Hebrew date
+  formatHebrewDate(date: Date | undefined): string {
+    if (!date) return '-';
+    try {
+      const hebrewDate = this.hebrewDateService.convertGregorianToHebrew(new Date(date));
+      return hebrewDate.formatted;
+    } catch (error) {
+      console.error('Error converting date to Hebrew:', error);
+      return new Date(date).toLocaleDateString('he-IL');
+    }
   }
 
   // Save as target audience

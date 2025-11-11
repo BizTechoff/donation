@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { Reminder } from '../../shared/entity';
 import { ReminderController } from '../../shared/controllers/reminder.controller';
 import { HebrewDateController } from '../../shared/controllers/hebrew-date.controller';
+import { GlobalFilters } from './global-filter.service';
 
 /**
  * Service for reminder calculations on the client side
@@ -16,7 +17,7 @@ export class ReminderService {
    */
   async findFiltered(
     filters: {
-      countryIds?: string[]
+      globalFilters?: GlobalFilters
       dateFrom?: Date
       dateTo?: Date
       searchTerm?: string
@@ -33,7 +34,7 @@ export class ReminderService {
    */
   async countFiltered(
     filters: {
-      countryIds?: string[]
+      globalFilters?: GlobalFilters
       dateFrom?: Date
       dateTo?: Date
       searchTerm?: string

@@ -28,10 +28,16 @@
             </div>
             <div class="form-group">
               <label>{{ (i18n.terms$ | async)?.donorSelect }}</label>
-              <select class="form-control" [(ngModel)]="selectedDonorId" (change)="onDonorChange()">
-                <option value="">{{ (i18n.terms$ | async)?.selectDonorOption }}</option>
-                <option *ngFor="let donor of donors" [value]="donor.id">{{donor.fullName}}</option>
-              </select>
+              <div class="donor-search-field">
+                <input type="text" class="form-control"
+                       [value]="selectedDonor?.fullName || ''"
+                       [placeholder]="(i18n.terms$ | async)?.selectDonorOption || 'בחר תורם'"
+                       readonly
+                       (click)="openDonorSelectionModal()">
+                <button mat-icon-button (click)="openDonorSelectionModal()" [title]="'חפש תורם'">
+                  <mat-icon>search</mat-icon>
+                </button>
+              </div>
             </div>
             <!-- <div class="form-group">
               <label>{{ (i18n.terms$ | async)?.recipientName }}</label>

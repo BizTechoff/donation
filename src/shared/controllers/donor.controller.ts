@@ -440,12 +440,9 @@ export class DonorController {
   }
 
   @BackendMethod({ allowed: Allow.authenticated })
-  static async getDonorsForSelection(excludeIds?: string[]): Promise<DonorSelectionData> {
-    // Load active donors
-    let donors = await remult.repo(Donor).find({
-      where: { isActive: true },
-      orderBy: { firstName: 'asc' }
-    });
+  static async getDonorsForSelection(globalFilters: GlobalFilters, excludeIds?: string[]): Promise<DonorSelectionData> {
+    // Load donors using global filters
+    let donors = await DonorController.findFilteredDonors(globalFilters);
 
     // Filter out excluded IDs
     if (excludeIds && excludeIds.length > 0) {

@@ -6,6 +6,7 @@ import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
 import { DonationDetailsModalComponent } from '../donation-details-modal/donation-details-modal.component';
 import { DonationController } from '../../../../shared/controllers/donation.controller';
+import { GlobalFilterService } from '../../../services/global-filter.service';
 
 export interface DonationSelectionModalArgs {
   title?: string;
@@ -56,7 +57,8 @@ export class DonationSelectionModalComponent implements OnInit {
   constructor(
     public i18n: I18nService,
     public dialogRef: MatDialogRef<any>,
-    private busy: BusyService
+    private busy: BusyService,
+    private globalFilterService: GlobalFilterService
   ) {}
 
   async ngOnInit() {
@@ -66,7 +68,10 @@ export class DonationSelectionModalComponent implements OnInit {
   async loadDonations() {
     await this.busy.doWhileShowingBusy(async () => {
       try {
-        const data = await DonationController.getDonationsForSelection(this.args?.excludeIds);
+        // Get global filters
+        const globalFilters = this.globalFilterService.currentFilters;
+
+        const data = await DonationController.getDonationsForSelection(globalFilters, this.args?.excludeIds);
         this.availableDonations = data.donations;
 
         // Convert Record to Map for easier lookup

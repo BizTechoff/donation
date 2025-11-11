@@ -147,12 +147,16 @@
     <!-- Donor Selection -->
     <div class="donor-selection" *ngIf="newRelationshipType">
       <label class="donor-selection-label">בחר תורם:</label>
-      <select class="form-control donor-select" [(ngModel)]="selectedDonorId">
-        <option value="" disabled selected>בחר תורם</option>
-        <option *ngFor="let donor of getAvailableDonors()" [value]="donor.id">
-          {{ donor.fullName }}
-        </option>
-      </select>
+      <div class="donor-search-field">
+        <input type="text" class="form-control donor-select"
+               [value]="selectedDonor?.fullName || ''"
+               placeholder="בחר תורם"
+               readonly
+               (click)="openDonorSelectionModal()">
+        <button mat-icon-button (click)="openDonorSelectionModal()" [title]="'חפש תורם'">
+          <mat-icon>search</mat-icon>
+        </button>
+      </div>
     </div>
 
   </div>
