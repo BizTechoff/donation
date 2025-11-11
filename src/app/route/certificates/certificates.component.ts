@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { remult, repo } from 'remult';
-import { Subject } from 'rxjs';
+import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { CertificateController, CertificateFilters } from '../../../shared/controllers/certificate.controller';
 import { Certificate } from '../../../shared/entity/certificate';
@@ -34,6 +34,7 @@ export class CertificatesComponent implements OnInit, OnDestroy {
   donorSearchText = '';
   private donorSearchSubject = new Subject<string>();
   private filterTimeout: any;
+  private subscriptions = new Subscription();
 
   // Pagination
   currentPage = 1;
@@ -67,6 +68,13 @@ export class CertificatesComponent implements OnInit, OnDestroy {
   async ngOnInit() {
     // Load base data once
     await this.loadBase();
+
+    // Listen for global filter changes
+    this.subscriptions.add(
+      this.globalFilterService.filters$.subscribe(() => {
+        this.refreshData();
+      })
+    );
 
     // Initial data load
     await this.refreshData();
@@ -117,6 +125,7 @@ export class CertificatesComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.donorSearchSubject.complete();
+    this.subscriptions.unsubscribe();
   }
 
   async loadCertificates() {
@@ -129,7 +138,8 @@ export class CertificatesComponent implements OnInit, OnDestroy {
         dateTo: this.filterDateTo?.trim() || undefined,
         donorSearchText: this.donorSearchText?.trim() || undefined,
         fromParasha: this.filterFromParasha?.trim() || undefined,
-        toParasha: this.filterToParasha?.trim() || undefined
+        toParasha: this.filterToParasha?.trim() || undefined,
+        globalFilters: this.globalFilterService.currentFilters
       };
 
       // Get total count and certificates from server

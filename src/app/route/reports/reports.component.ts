@@ -160,16 +160,43 @@ export class ReportsComponent implements OnInit {
     'GBP': 4.2582
   };
 
-  // Pagination data
+  // Pagination data - Donations Report
   totalRecords = 0;
   totalPages = 0;
   currentPage = 1;
   pageSize = 10;
   pageSizeOptions = [5, 10, 25, 50, 100];
 
-  // Sorting data
+  // Sorting data - Donations Report
   sortBy = 'donorName';
   sortDirection: 'asc' | 'desc' = 'asc';
+
+  // Pagination data - Payment Report
+  paymentCurrentPage = 1;
+  paymentPageSize = 20;
+  paymentTotalCount = 0;
+  paymentTotalPages = 0;
+
+  // Sorting data - Payment Report
+  paymentSortColumns: Array<{ field: string; direction: 'asc' | 'desc' }> = [];
+
+  // Pagination data - Yearly Summary Report
+  yearlySummaryCurrentPage = 1;
+  yearlySummaryPageSize = 20;
+  yearlySummaryTotalCount = 0;
+  yearlySummaryTotalPages = 0;
+
+  // Sorting data - Yearly Summary Report
+  yearlySummarySortColumns: Array<{ field: string; direction: 'asc' | 'desc' }> = [];
+
+  // Pagination data - Blessings Report
+  blessingsCurrentPage = 1;
+  blessingsPageSize = 20;
+  blessingsTotalCount = 0;
+  blessingsTotalPages = 0;
+
+  // Sorting data - Blessings Report
+  blessingsSortColumns: Array<{ field: string; direction: 'asc' | 'desc' }> = [];
 
   // Filters
   filters = {
@@ -890,9 +917,16 @@ export class ReportsComponent implements OnInit {
         }))
         .sort((a, b) => a.donorName.localeCompare(b.donorName));
 
+      // Update pagination info
+      this.paymentTotalCount = this.paymentReportData.length;
+      this.paymentTotalPages = Math.ceil(this.paymentTotalCount / this.paymentPageSize);
+      this.paymentCurrentPage = 1; // Reset to first page
+
     } catch (error) {
       console.error('Error loading payments report:', error);
       this.paymentReportData = [];
+      this.paymentTotalCount = 0;
+      this.paymentTotalPages = 0;
     }
   }
 
@@ -942,12 +976,19 @@ export class ReportsComponent implements OnInit {
         };
       })
       .sort((a, b) => b.year - a.year);
+
+    // Update pagination info
+    this.yearlySummaryTotalCount = this.yearlySummaryData.length;
+    this.yearlySummaryTotalPages = Math.ceil(this.yearlySummaryTotalCount / this.yearlySummaryPageSize);
+    this.yearlySummaryCurrentPage = 1; // Reset to first page
   }
 
   async loadBlessingsReport() {
     // Load campaign with invitees
     if (!this.filters.selectedCampaign || this.filters.selectedCampaign === '') {
       this.blessingReportData = [];
+      this.blessingsTotalCount = 0;
+      this.blessingsTotalPages = 0;
       return;
     }
 
@@ -955,6 +996,8 @@ export class ReportsComponent implements OnInit {
     const campaign = await this.campaignRepo.findId(this.filters.selectedCampaign);
     if (!campaign || !campaign.invitedDonorIds || campaign.invitedDonorIds.length === 0) {
       this.blessingReportData = [];
+      this.blessingsTotalCount = 0;
+      this.blessingsTotalPages = 0;
       return;
     }
 
@@ -1034,6 +1077,11 @@ export class ReportsComponent implements OnInit {
         campaignName: campaign.name
       };
     });
+
+    // Update pagination info
+    this.blessingsTotalCount = this.blessingReportData.length;
+    this.blessingsTotalPages = Math.ceil(this.blessingsTotalCount / this.blessingsPageSize);
+    this.blessingsCurrentPage = 1; // Reset to first page
   }
 
   private checkDonorType(donor: Donor, type: string): boolean {
@@ -1389,5 +1437,453 @@ export class ReportsComponent implements OnInit {
   clearSelectedCampaign() {
     this.filters.selectedCampaign = '';
     this.refreshData();
+  }
+
+  // ===============================================
+  // PAYMENT REPORT - Pagination & Sorting Methods
+  // ===============================================
+
+  get paginatedPaymentReport() {
+    const start = (this.paymentCurrentPage - 1) * this.paymentPageSize;
+    return this.paymentReportData.slice(start, start + this.paymentPageSize);
+  }
+
+  togglePaymentSort(field: string, event: MouseEvent) {
+    if (event.ctrlKey || event.metaKey) {
+      // Multi-column sort with Ctrl/Cmd
+      const existing = this.paymentSortColumns.find(col => col.field === field);
+      if (existing) {
+        if (existing.direction === 'asc') {
+          existing.direction = 'desc';
+        } else {
+          this.paymentSortColumns = this.paymentSortColumns.filter(col => col.field !== field);
+        }
+      } else {
+        this.paymentSortColumns.push({ field, direction: 'asc' });
+      }
+    } else {
+      // Single column sort
+      const existing = this.paymentSortColumns.find(col => col.field === field);
+      if (existing && existing.direction === 'asc') {
+        this.paymentSortColumns = [{ field, direction: 'desc' }];
+      } else {
+        this.paymentSortColumns = [{ field, direction: 'asc' }];
+      }
+    }
+    this.applyPaymentSorting();
+  }
+
+  applyPaymentSorting() {
+    if (this.paymentSortColumns.length === 0) return;
+
+    this.paymentReportData.sort((a, b) => {
+      for (const sortCol of this.paymentSortColumns) {
+        let aVal: any;
+        let bVal: any;
+
+        switch (sortCol.field) {
+          case 'donorName':
+            aVal = a.donorName || '';
+            bVal = b.donorName || '';
+            break;
+          case 'promisedAmount':
+            aVal = a.promisedAmount || 0;
+            bVal = b.promisedAmount || 0;
+            break;
+          case 'actualAmount':
+            aVal = a.actualAmount || 0;
+            bVal = b.actualAmount || 0;
+            break;
+          case 'remainingDebt':
+            aVal = a.remainingDebt || 0;
+            bVal = b.remainingDebt || 0;
+            break;
+          case 'status':
+            aVal = a.status || '';
+            bVal = b.status || '';
+            break;
+          default:
+            continue;
+        }
+
+        let comparison = 0;
+        if (typeof aVal === 'string') {
+          comparison = aVal.localeCompare(bVal);
+        } else {
+          comparison = aVal - bVal;
+        }
+
+        if (comparison !== 0) {
+          return sortCol.direction === 'asc' ? comparison : -comparison;
+        }
+      }
+      return 0;
+    });
+  }
+
+  isPaymentSorted(field: string): boolean {
+    return this.paymentSortColumns.some(col => col.field === field);
+  }
+
+  getPaymentSortIcon(field: string): string {
+    const sortCol = this.paymentSortColumns.find(col => col.field === field);
+    if (!sortCol) return '';
+    return sortCol.direction === 'asc' ? '↑' : '↓';
+  }
+
+  goToPaymentPage(page: number) {
+    if (page >= 1 && page <= this.paymentTotalPages) {
+      this.paymentCurrentPage = page;
+    }
+  }
+
+  nextPaymentPage() {
+    if (this.paymentCurrentPage < this.paymentTotalPages) {
+      this.paymentCurrentPage++;
+    }
+  }
+
+  previousPaymentPage() {
+    if (this.paymentCurrentPage > 1) {
+      this.paymentCurrentPage--;
+    }
+  }
+
+  firstPaymentPage() {
+    this.paymentCurrentPage = 1;
+  }
+
+  lastPaymentPage() {
+    this.paymentCurrentPage = this.paymentTotalPages;
+  }
+
+  getPaymentPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxPagesToShow = 5;
+    let startPage = Math.max(1, this.paymentCurrentPage - Math.floor(maxPagesToShow / 2));
+    let endPage = Math.min(this.paymentTotalPages, startPage + maxPagesToShow - 1);
+
+    if (endPage - startPage < maxPagesToShow - 1) {
+      startPage = Math.max(1, endPage - maxPagesToShow + 1);
+    }
+
+    // Add first page
+    if (startPage > 1) {
+      pages.push(1);
+      if (startPage > 2) {
+        pages.push(-1); // Ellipsis
+      }
+    }
+
+    // Add range
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+
+    // Add last page
+    if (endPage < this.paymentTotalPages) {
+      if (endPage < this.paymentTotalPages - 1) {
+        pages.push(-1); // Ellipsis
+      }
+      pages.push(this.paymentTotalPages);
+    }
+
+    return pages;
+  }
+
+  // ===============================================
+  // YEARLY SUMMARY REPORT - Pagination & Sorting Methods
+  // ===============================================
+
+  get paginatedYearlySummaryReport() {
+    const start = (this.yearlySummaryCurrentPage - 1) * this.yearlySummaryPageSize;
+    return this.yearlySummaryData.slice(start, start + this.yearlySummaryPageSize);
+  }
+
+  toggleYearlySummarySort(field: string, event: MouseEvent) {
+    if (event.ctrlKey || event.metaKey) {
+      // Multi-column sort with Ctrl/Cmd
+      const existing = this.yearlySummarySortColumns.find(col => col.field === field);
+      if (existing) {
+        if (existing.direction === 'asc') {
+          existing.direction = 'desc';
+        } else {
+          this.yearlySummarySortColumns = this.yearlySummarySortColumns.filter(col => col.field !== field);
+        }
+      } else {
+        this.yearlySummarySortColumns.push({ field, direction: 'asc' });
+      }
+    } else {
+      // Single column sort
+      const existing = this.yearlySummarySortColumns.find(col => col.field === field);
+      if (existing && existing.direction === 'asc') {
+        this.yearlySummarySortColumns = [{ field, direction: 'desc' }];
+      } else {
+        this.yearlySummarySortColumns = [{ field, direction: 'asc' }];
+      }
+    }
+    this.applyYearlySummarySorting();
+  }
+
+  applyYearlySummarySorting() {
+    if (this.yearlySummarySortColumns.length === 0) return;
+
+    this.yearlySummaryData.sort((a, b) => {
+      for (const sortCol of this.yearlySummarySortColumns) {
+        let aVal: any;
+        let bVal: any;
+
+        switch (sortCol.field) {
+          case 'year':
+            aVal = a.year || 0;
+            bVal = b.year || 0;
+            break;
+          case 'hebrewYear':
+            aVal = a.hebrewYear || '';
+            bVal = b.hebrewYear || '';
+            break;
+          case 'totalInShekel':
+            aVal = a.totalInShekel || 0;
+            bVal = b.totalInShekel || 0;
+            break;
+          default:
+            continue;
+        }
+
+        let comparison = 0;
+        if (typeof aVal === 'string') {
+          comparison = aVal.localeCompare(bVal);
+        } else {
+          comparison = aVal - bVal;
+        }
+
+        if (comparison !== 0) {
+          return sortCol.direction === 'asc' ? comparison : -comparison;
+        }
+      }
+      return 0;
+    });
+  }
+
+  isYearlySummarySorted(field: string): boolean {
+    return this.yearlySummarySortColumns.some(col => col.field === field);
+  }
+
+  getYearlySummarySortIcon(field: string): string {
+    const sortCol = this.yearlySummarySortColumns.find(col => col.field === field);
+    if (!sortCol) return '';
+    return sortCol.direction === 'asc' ? '↑' : '↓';
+  }
+
+  goToYearlySummaryPage(page: number) {
+    if (page >= 1 && page <= this.yearlySummaryTotalPages) {
+      this.yearlySummaryCurrentPage = page;
+    }
+  }
+
+  nextYearlySummaryPage() {
+    if (this.yearlySummaryCurrentPage < this.yearlySummaryTotalPages) {
+      this.yearlySummaryCurrentPage++;
+    }
+  }
+
+  previousYearlySummaryPage() {
+    if (this.yearlySummaryCurrentPage > 1) {
+      this.yearlySummaryCurrentPage--;
+    }
+  }
+
+  firstYearlySummaryPage() {
+    this.yearlySummaryCurrentPage = 1;
+  }
+
+  lastYearlySummaryPage() {
+    this.yearlySummaryCurrentPage = this.yearlySummaryTotalPages;
+  }
+
+  getYearlySummaryPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxPagesToShow = 5;
+    let startPage = Math.max(1, this.yearlySummaryCurrentPage - Math.floor(maxPagesToShow / 2));
+    let endPage = Math.min(this.yearlySummaryTotalPages, startPage + maxPagesToShow - 1);
+
+    if (endPage - startPage < maxPagesToShow - 1) {
+      startPage = Math.max(1, endPage - maxPagesToShow + 1);
+    }
+
+    // Add first page
+    if (startPage > 1) {
+      pages.push(1);
+      if (startPage > 2) {
+        pages.push(-1); // Ellipsis
+      }
+    }
+
+    // Add range
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+
+    // Add last page
+    if (endPage < this.yearlySummaryTotalPages) {
+      if (endPage < this.yearlySummaryTotalPages - 1) {
+        pages.push(-1); // Ellipsis
+      }
+      pages.push(this.yearlySummaryTotalPages);
+    }
+
+    return pages;
+  }
+
+  // ===============================================
+  // BLESSINGS REPORT - Pagination & Sorting Methods
+  // ===============================================
+
+  get paginatedBlessingsReport() {
+    const start = (this.blessingsCurrentPage - 1) * this.blessingsPageSize;
+    return this.blessingReportData.slice(start, start + this.blessingsPageSize);
+  }
+
+  toggleBlessingsSort(field: string, event: MouseEvent) {
+    if (event.ctrlKey || event.metaKey) {
+      // Multi-column sort with Ctrl/Cmd
+      const existing = this.blessingsSortColumns.find(col => col.field === field);
+      if (existing) {
+        if (existing.direction === 'asc') {
+          existing.direction = 'desc';
+        } else {
+          this.blessingsSortColumns = this.blessingsSortColumns.filter(col => col.field !== field);
+        }
+      } else {
+        this.blessingsSortColumns.push({ field, direction: 'asc' });
+      }
+    } else {
+      // Single column sort
+      const existing = this.blessingsSortColumns.find(col => col.field === field);
+      if (existing && existing.direction === 'asc') {
+        this.blessingsSortColumns = [{ field, direction: 'desc' }];
+      } else {
+        this.blessingsSortColumns = [{ field, direction: 'asc' }];
+      }
+    }
+    this.applyBlessingsSorting();
+  }
+
+  applyBlessingsSorting() {
+    if (this.blessingsSortColumns.length === 0) return;
+
+    this.blessingReportData.sort((a, b) => {
+      for (const sortCol of this.blessingsSortColumns) {
+        let aVal: any;
+        let bVal: any;
+
+        switch (sortCol.field) {
+          case 'lastName':
+            aVal = a.lastName || '';
+            bVal = b.lastName || '';
+            break;
+          case 'firstName':
+            aVal = a.firstName || '';
+            bVal = b.firstName || '';
+            break;
+          case 'blessingBookType':
+            aVal = a.blessingBookType || '';
+            bVal = b.blessingBookType || '';
+            break;
+          case 'status':
+            aVal = a.status || '';
+            bVal = b.status || '';
+            break;
+          case 'campaignName':
+            aVal = a.campaignName || '';
+            bVal = b.campaignName || '';
+            break;
+          default:
+            continue;
+        }
+
+        let comparison = 0;
+        if (typeof aVal === 'string') {
+          comparison = aVal.localeCompare(bVal);
+        } else {
+          comparison = aVal - bVal;
+        }
+
+        if (comparison !== 0) {
+          return sortCol.direction === 'asc' ? comparison : -comparison;
+        }
+      }
+      return 0;
+    });
+  }
+
+  isBlessingsSorted(field: string): boolean {
+    return this.blessingsSortColumns.some(col => col.field === field);
+  }
+
+  getBlessingsSortIcon(field: string): string {
+    const sortCol = this.blessingsSortColumns.find(col => col.field === field);
+    if (!sortCol) return '';
+    return sortCol.direction === 'asc' ? '↑' : '↓';
+  }
+
+  goToBlessingsPage(page: number) {
+    if (page >= 1 && page <= this.blessingsTotalPages) {
+      this.blessingsCurrentPage = page;
+    }
+  }
+
+  nextBlessingsPage() {
+    if (this.blessingsCurrentPage < this.blessingsTotalPages) {
+      this.blessingsCurrentPage++;
+    }
+  }
+
+  previousBlessingsPage() {
+    if (this.blessingsCurrentPage > 1) {
+      this.blessingsCurrentPage--;
+    }
+  }
+
+  firstBlessingsPage() {
+    this.blessingsCurrentPage = 1;
+  }
+
+  lastBlessingsPage() {
+    this.blessingsCurrentPage = this.blessingsTotalPages;
+  }
+
+  getBlessingsPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxPagesToShow = 5;
+    let startPage = Math.max(1, this.blessingsCurrentPage - Math.floor(maxPagesToShow / 2));
+    let endPage = Math.min(this.blessingsTotalPages, startPage + maxPagesToShow - 1);
+
+    if (endPage - startPage < maxPagesToShow - 1) {
+      startPage = Math.max(1, endPage - maxPagesToShow + 1);
+    }
+
+    // Add first page
+    if (startPage > 1) {
+      pages.push(1);
+      if (startPage > 2) {
+        pages.push(-1); // Ellipsis
+      }
+    }
+
+    // Add range
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+
+    // Add last page
+    if (endPage < this.blessingsTotalPages) {
+      if (endPage < this.blessingsTotalPages - 1) {
+        pages.push(-1); // Ellipsis
+      }
+      pages.push(this.blessingsTotalPages);
+    }
+
+    return pages;
   }
 }

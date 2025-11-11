@@ -6,6 +6,7 @@ import { Donation, Donor, DonationMethod, Campaign, DonorGift, Gift } from '../.
 import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
 import { UIToolsService } from '../../../common/UIToolsService';
+import { HebrewDateService } from '../../../services/hebrew-date.service';
 
 export interface DonorDonationsModalArgs {
   donorId: string;
@@ -77,7 +78,8 @@ export class DonorDonationsModalComponent implements OnInit {
     private ui: UIToolsService,
     private snackBar: MatSnackBar,
     private cdr: ChangeDetectorRef,
-    public dialogRef: MatDialogRef<DonorDonationsModalComponent>
+    public dialogRef: MatDialogRef<DonorDonationsModalComponent>,
+    private hebrewDateService: HebrewDateService
   ) {}
 
   async ngOnInit() {
@@ -357,6 +359,17 @@ export class DonorDonationsModalComponent implements OnInit {
   formatDate(date: Date | undefined): string {
     if (!date) return '';
     return new Date(date).toLocaleDateString('he-IL');
+  }
+
+  formatHebrewDate(date: Date | undefined): string {
+    if (!date) return '-';
+    try {
+      const hebrewDate = this.hebrewDateService.convertGregorianToHebrew(new Date(date));
+      return hebrewDate.formatted;
+    } catch (error) {
+      console.error('Error formatting Hebrew date:', error);
+      return '-';
+    }
   }
 
   // Sorting methods

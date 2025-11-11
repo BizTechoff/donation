@@ -654,6 +654,11 @@
   }
 }
 
+.reports-tabs-wrapper {
+  display: flex;
+  justify-content: space-between;
+}
+
 // Reports tabs styling
 .reports-tabs {
   display: flex;
@@ -1258,6 +1263,100 @@
         border-color: #667eea;
         box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
       }
+    }
+  }
+}
+
+// Sortable headers for all reports
+.data-table {
+  th.sortable {
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.2s;
+    position: relative;
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    &.sorted {
+      background-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .sort-icon {
+      font-size: 14px;
+      margin-right: 4px;
+      display: inline-block;
+      font-weight: bold;
+      opacity: 0.8;
+    }
+  }
+}
+
+// Table footer for pagination (all reports)
+.table-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  margin-top: 0;
+  background: #f8f9fa;
+  border-top: 1px solid #e0e6ed;
+  flex-wrap: wrap;
+  gap: 1rem;
+
+  .pagination-info {
+    font-size: 0.9rem;
+    color: #7f8c8d;
+    font-weight: 500;
+  }
+
+  .pagination-controls {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+
+    button {
+      min-width: 36px;
+      height: 36px;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid #e0e6ed;
+      background: white;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 500;
+      font-size: 0.9rem;
+      color: #2c3e50;
+
+      &:hover:not(:disabled) {
+        background: #667eea;
+        color: white;
+        border-color: #667eea;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        background: #f8f9fa;
+      }
+
+      &.active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-color: #667eea;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+      }
+    }
+
+    .page-numbers {
+      display: flex;
+      gap: 0.25rem;
     }
   }
 }

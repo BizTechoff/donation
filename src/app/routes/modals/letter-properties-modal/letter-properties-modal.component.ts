@@ -2,12 +2,12 @@ import { Component, OnInit } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
 import { DialogConfig, openDialog } from 'common-ui-elements';
 import { remult } from 'remult';
-import { Donation, DonorPlace, LetterTitle } from '../../../../shared/entity';
+import { Company, Donation, DonorPlace, LetterTitle } from '../../../../shared/entity';
+import { Letter } from '../../../../shared/enum/letter';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
 import { LetterService } from '../../../services/letter.service';
-import { Letter } from '../../../../shared/enum/letter';
-import { LetterTitleSelectionModalComponent, LetterTitleSelectionModalArgs } from '../letter-title-selection-modal/letter-title-selection-modal.component';
+import { LetterTitleSelectionModalComponent } from '../letter-title-selection-modal/letter-title-selection-modal.component';
 
 export interface LetterPropertiesModalArgs {
   donationId: string;
@@ -374,9 +374,14 @@ export class LetterPropertiesModalComponent implements OnInit {
           // Payer is the donor - use donor's home address
           const address = await remult.repo(DonorPlace).findFirst({ donor: this.donation.donor });
           place = address?.place;
-        } else if (this.donation.organizationId && this.donation.organization?.place) {
+          // } else if (this.donation.organizationId && this.donation.organization?.place) {
           // Payer is an organization
-          place = this.donation.organization.place;
+        } else {
+          const company = await remult.repo(Company).findFirst({ name: this.donation.payerName })
+          if (company) {
+            // Payer is an organization
+            place = company.place;
+          }
         }
 
         if (place) {
@@ -393,9 +398,13 @@ export class LetterPropertiesModalComponent implements OnInit {
           // Payer is the donor - use donor's home address
           const address = await remult.repo(DonorPlace).findFirst({ donor: this.donation.donor });
           place = address?.place;
-        } else if (this.donation.organizationId && this.donation.organization?.place) {
-          // Payer is an organization
-          place = this.donation.organization.place;
+          // } else if (this.donation.organizationId && this.donation.organization?.place) {
+        } else {
+          const company = await remult.repo(Company).findFirst({ name: this.donation.payerName })
+          if (company) {
+            // Payer is an organization
+            place = company.place;
+          }
         }
 
         if (place) {
@@ -420,16 +429,16 @@ export class LetterPropertiesModalComponent implements OnInit {
         const row5 = address?.place?.country?.name || ''
 
         parts.push(row1?.trim(), row2?.trim(), row3?.trim(), row4?.trim(), row5?.trim())
-        console.log('getValue',row1, row2, row3, row4, row5)
+        console.log('getValue', row1, row2, row3, row4, row5)
         result = parts.filter(p => p.trim()).join('\n')
-        console.log('result',result)
-        console.log('this.donation.donor.name',this.donation?.donor?.titleEnglish)
+        console.log('result', result)
+        console.log('this.donation.donor.name', this.donation?.donor?.titleEnglish)
 
 
-  //       parts.push(row1, row2, row3, row4, row5)
-  //       console.log('getValue',row1, row2, row3, row4, row5)
-  //       result = parts.filter(p => p.trim()).join('\n')
-  //       console.log('result',result)
+        //       parts.push(row1, row2, row3, row4, row5)
+        //       console.log('getValue',row1, row2, row3, row4, row5)
+        //       result = parts.filter(p => p.trim()).join('\n')
+        //       console.log('result',result)
 
         break
       }

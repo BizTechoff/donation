@@ -108,7 +108,7 @@
               <td>
                 <div class="date-cell">
                   <mat-icon class="cell-icon">event</mat-icon>
-                  {{donation.donationDate | date:'dd/MM/yyyy'}}
+                  {{formatHebrewDate(donation.donationDate)}}
                 </div>
               </td>
               <td>
@@ -193,7 +193,7 @@
               <td>
                 <div class="date-cell">
                   <mat-icon class="cell-icon">event</mat-icon>
-                  {{formatDate(donorGift.deliveryDate)}}
+                  {{formatHebrewDate(donorGift.deliveryDate)}}
                 </div>
               </td>
               <td>

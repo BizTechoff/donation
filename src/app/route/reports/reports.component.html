@@ -1,79 +1,56 @@
 <div class="reports-container">
-  <!-- כותרת -->
-  <div class="page-header" *ngIf="!isExpandedView">
-    <div class="header-content">
-      <h1>{{ (i18n.terms$ | async)?.reportsAnalyticsTitle }}</h1>
-      <p>{{ (i18n.terms$ | async)?.systemActivityInfo }}</p>
+
+
+    <!-- תפריט טאבים -->
+  <div class="reports-tabs-wrapper" *ngIf="!isExpandedView">
+    <div class="reports-tabs">
+      <button class="tab-button" [class.active]="activeReport === 'donations'" (click)="switchReport('donations')">
+        <span class="tab-icon">💰</span>
+        {{ (i18n.terms$ | async)?.donationsReport }}
+      </button>
+      <button class="tab-button" [class.active]="activeReport === 'payments'" (click)="switchReport('payments')">
+        <span class="tab-icon">💳</span>
+        {{ (i18n.terms$ | async)?.paymentsReport }}
+      </button>
+      <button class="tab-button" [class.active]="activeReport === 'yearly'" (click)="switchReport('yearly')">
+        <span class="tab-icon">📅</span>
+        {{ (i18n.terms$ | async)?.yearlySummaryReport }}
+      </button>
+      <button class="tab-button" [class.active]="activeReport === 'blessings'" (click)="switchReport('blessings')">
+        <span class="tab-icon">📖</span>
+        {{ (i18n.terms$ | async)?.blessingsReport }}
+      </button>
     </div>
+
     <div class="header-actions">
       <button class="btn btn-secondary" (click)="refreshData()">
         <span class="btn-icon">🔄</span>
         {{ (i18n.terms$ | async)?.refreshData }}
       </button>
-      <div class="export-buttons" *ngIf="activeReport !== 'general'">
-        <!-- <button class="btn btn-outline" (click)="printReport()">
-          <span class="btn-icon">🖨️</span>
-          {{ (i18n.terms$ | async)?.print }}
-        </button> -->
-        <button class="btn btn-outline" (click)="exportSpecificReport('excel')">
-          <span class="btn-icon">📊</span>
-          Excel
-        </button>
-        <!-- <button class="btn btn-outline" (click)="exportSpecificReport('pdf')">
-          <span class="btn-icon">📄</span>
-          PDF
-        </button> -->
-      </div>
+      <button class="btn btn-outline" (click)="exportSpecificReport('excel')">
+        <span class="btn-icon">📊</span>
+        Excel
+      </button>
     </div>
-  </div>
-
-  <!-- תפריט טאבים -->
-  <div class="reports-tabs" *ngIf="!isExpandedView">
-    <!-- <button class="tab-button" [class.active]="activeReport === 'general'" (click)="switchReport('general')">
-      <span class="tab-icon">📊</span>
-      {{ (i18n.terms$ | async)?.generalReports }}
-    </button> -->
-    <button class="tab-button" [class.active]="activeReport === 'donations'" (click)="switchReport('donations')">
-      <span class="tab-icon">💰</span>
-      {{ (i18n.terms$ | async)?.donationsReport }}
-    </button>
-    <button class="tab-button" [class.active]="activeReport === 'payments'" (click)="switchReport('payments')">
-      <span class="tab-icon">💳</span>
-      {{ (i18n.terms$ | async)?.paymentsReport }}
-    </button>
-    <button class="tab-button" [class.active]="activeReport === 'yearly'" (click)="switchReport('yearly')">
-      <span class="tab-icon">📅</span>
-      {{ (i18n.terms$ | async)?.yearlySummaryReport }}
-    </button>
-    <button class="tab-button" [class.active]="activeReport === 'blessings'" (click)="switchReport('blessings')">
-      <span class="tab-icon">📖</span>
-      {{ (i18n.terms$ | async)?.blessingsReport }}
-    </button>
   </div>
 
   <!-- מסנן תאריכים - רק לדוח הכללי -->
   <div class="date-filter" *ngIf="activeReport === 'general'">
     <div class="filter-group">
       <label>{{ (i18n.terms$ | async)?.dateFrom }}</label>
-      <input type="date" class="form-control" 
-             [(ngModel)]="dateRange.from" 
-             (change)="onDateRangeChange()">
+      <input type="date" class="form-control" [(ngModel)]="dateRange.from" (change)="onDateRangeChange()">
     </div>
     <div class="filter-group">
       <label>{{ (i18n.terms$ | async)?.dateTo }}</label>
-      <input type="date" class="form-control" 
-             [(ngModel)]="dateRange.to" 
-             (change)="onDateRangeChange()">
+      <input type="date" class="form-control" [(ngModel)]="dateRange.to" (change)="onDateRangeChange()">
     </div>
   </div>
 
   <!-- מסננים ספציפיים לדוחות -->
   <div class="specific-filters" *ngIf="activeReport !== 'general'">
     <!-- כפתור הרחבה -->
-    <button class="expand-toggle-btn"
-            (click)="toggleExpandedView()"
-            [matTooltip]="isExpandedView ? 'תצוגה רגילה' : 'הרחב דוח'"
-            [dir]="'rtl'">
+    <button class="expand-toggle-btn" (click)="toggleExpandedView()"
+      [matTooltip]="isExpandedView ? 'תצוגה רגילה' : 'הרחב דוח'" [dir]="'rtl'">
       <mat-icon>{{ isExpandedView ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
     </button>
 
@@ -103,26 +80,14 @@
       <div class="filter-group donor-filter-group" *ngIf="activeReport === 'donations' || activeReport === 'payments'">
         <label>{{ (i18n.terms$ | async)?.filterByDonor }}</label>
         <div class="donor-filter-input-wrapper">
-          <input
-            type="text"
-            class="form-control donor-filter-input"
-            [value]="getSelectedDonorsText()"
-            readonly
-            (click)="openDonorSelectionModal()"
-            placeholder="לחץ לבחירת תורמים">
-          <button
-            class="donor-filter-search-btn"
-            (click)="openDonorSelectionModal()"
-            [matTooltip]="'בחר תורמים'"
+          <input type="text" class="form-control donor-filter-input" [value]="getSelectedDonorsText()" readonly
+            (click)="openDonorSelectionModal()" placeholder="לחץ לבחירת תורמים">
+          <button class="donor-filter-search-btn" (click)="openDonorSelectionModal()" [matTooltip]="'בחר תורמים'"
             [dir]="'rtl'">
             <mat-icon>search</mat-icon>
           </button>
-          <button
-            *ngIf="filters.selectedDonorIds.length > 0"
-            class="donor-filter-clear-btn"
-            (click)="clearSelectedDonors(); $event.stopPropagation()"
-            [matTooltip]="'נקה בחירה'"
-            [dir]="'rtl'">
+          <button *ngIf="filters.selectedDonorIds.length > 0" class="donor-filter-clear-btn"
+            (click)="clearSelectedDonors(); $event.stopPropagation()" [matTooltip]="'נקה בחירה'" [dir]="'rtl'">
             <mat-icon>clear</mat-icon>
           </button>
         </div>
@@ -141,26 +106,14 @@
       <div class="filter-group donor-filter-group" *ngIf="activeReport === 'blessings'">
         <label>{{ (i18n.terms$ | async)?.campaign }}</label>
         <div class="donor-filter-input-wrapper">
-          <input
-            type="text"
-            class="form-control donor-filter-input"
-            [value]="getSelectedCampaignText()"
-            readonly
-            (click)="openCampaignSelectionModal()"
-            placeholder="בחר קמפיין">
-          <button
-            class="donor-filter-search-btn"
-            (click)="openCampaignSelectionModal()"
-            [matTooltip]="'בחר קמפיין'"
+          <input type="text" class="form-control donor-filter-input" [value]="getSelectedCampaignText()" readonly
+            (click)="openCampaignSelectionModal()" placeholder="בחר קמפיין">
+          <button class="donor-filter-search-btn" (click)="openCampaignSelectionModal()" [matTooltip]="'בחר קמפיין'"
             [dir]="'rtl'">
             <mat-icon>search</mat-icon>
           </button>
-          <button
-            *ngIf="filters.selectedCampaign"
-            class="donor-filter-clear-btn"
-            (click)="clearSelectedCampaign(); $event.stopPropagation()"
-            [matTooltip]="'נקה בחירה'"
-            [dir]="'rtl'">
+          <button *ngIf="filters.selectedCampaign" class="donor-filter-clear-btn"
+            (click)="clearSelectedCampaign(); $event.stopPropagation()" [matTooltip]="'נקה בחירה'" [dir]="'rtl'">
             <mat-icon>clear</mat-icon>
           </button>
         </div>
@@ -186,10 +139,10 @@
 
   <!-- תוכן הדוחות -->
   <div class="reports-content">
-    
+
     <!-- דוח כללי -->
     <div *ngIf="activeReport === 'general'" class="general-report">
-      
+
       <!-- סטטיסטיקות כלליות -->
       <div class="stats-section">
         <h2>{{ (i18n.terms$ | async)?.generalStatistics }}</h2>
@@ -202,7 +155,7 @@
               <div class="stat-subtitle">{{totalStats.donations}} {{ (i18n.terms$ | async)?.donationsUnit }}</div>
             </div>
           </div>
-          
+
           <div class="stat-card active-donors">
             <div class="stat-icon">👥</div>
             <div class="stat-content">
@@ -211,7 +164,7 @@
               <div class="stat-subtitle">{{ (i18n.terms$ | async)?.registeredInSystemLabel }}</div>
             </div>
           </div>
-          
+
           <div class="stat-card avg-donation">
             <div class="stat-icon">📈</div>
             <div class="stat-content">
@@ -220,7 +173,7 @@
               <div class="stat-subtitle">{{ (i18n.terms$ | async)?.perDonation }}</div>
             </div>
           </div>
-          
+
           <div class="stat-card recurring-amount">
             <div class="stat-icon">🔄</div>
             <div class="stat-content">
@@ -239,13 +192,11 @@
           <div class="monthly-chart">
             <div class="chart-bars">
               <div *ngFor="let month of monthlyData" class="bar-group">
-                <div class="bar donations-bar" 
-                     [style.height.%]="(month.donations / getMaxDonations()) * 100"
-                     [title]="month.donations + ' ' + (i18n.terms$ | async)?.donationsUnit">
+                <div class="bar donations-bar" [style.height.%]="(month.donations / getMaxDonations()) * 100"
+                  [title]="month.donations + ' ' + (i18n.terms$ | async)?.donationsUnit">
                 </div>
-                <div class="bar amount-bar" 
-                     [style.height.%]="(month.amount / getMaxAmount()) * 100"
-                     [title]="formatCurrency(month.amount)">
+                <div class="bar amount-bar" [style.height.%]="(month.amount / getMaxAmount()) * 100"
+                  [title]="formatCurrency(month.amount)">
                 </div>
                 <div class="bar-label">{{month.month}}</div>
               </div>
@@ -272,11 +223,9 @@
             <h3>{{ (i18n.terms$ | async)?.donationDistributionByCampaign }}</h3>
             <div class="pie-chart-container">
               <div class="pie-chart">
-                <div *ngFor="let campaign of campaignData.slice(0, 6); let i = index" 
-                     class="pie-slice" 
-                     [style.--percentage]="campaign.percentage"
-                     [style.--color]="getPieColor(i)"
-                     [title]="campaign.label + ': ' + formatCurrency(campaign.value)">
+                <div *ngFor="let campaign of campaignData.slice(0, 6); let i = index" class="pie-slice"
+                  [style.--percentage]="campaign.percentage" [style.--color]="getPieColor(i)"
+                  [title]="campaign.label + ': ' + formatCurrency(campaign.value)">
                 </div>
               </div>
               <div class="pie-legend">
@@ -288,7 +237,7 @@
               </div>
             </div>
           </div>
-          
+
           <div class="top-campaigns">
             <h3>{{ (i18n.terms$ | async)?.topCampaigns }}</h3>
             <div class="campaigns-list">
@@ -297,8 +246,7 @@
                   <strong>{{campaign.name}}</strong>
                   <div class="campaign-progress">
                     <div class="progress-bar">
-                      <div class="progress-fill" 
-                           [style.width.%]="getProgressPercentage(campaign)">
+                      <div class="progress-fill" [style.width.%]="getProgressPercentage(campaign)">
                       </div>
                     </div>
                     <span class="progress-text">
@@ -334,7 +282,7 @@
               </div>
             </div>
           </div>
-          
+
           <div class="top-donors">
             <h3>{{ (i18n.terms$ | async)?.topDonors }}</h3>
             <div class="donors-list">
@@ -388,11 +336,6 @@
 
     <!-- דוח תרומות -->
     <div *ngIf="activeReport === 'donations'" class="donations-report">
-      <div *ngIf="!isExpandedView">
-        <h2>דוח תרומות מקובץ לפי {{filters.groupBy === 'donor' ? 'תורם' : filters.groupBy === 'campaign' ? 'קמפיין' : filters.groupBy === 'paymentMethod' ? 'אמצעי תשלום' : 'מתרים'}}</h2>
-        <p class="report-subtitle" *ngIf="filters.selectedYear === 'last4'">שנים עבריות: {{hebrewYears.join(', ')}}</p>
-        <p class="report-subtitle" *ngIf="filters.selectedYear !== 'last4'">שנה עברית: {{hebrewYears[0]}}</p>
-      </div>
 
       <!-- טבלה מקובצת -->
       <div class="report-table grouped-report">
@@ -402,13 +345,16 @@
               <th class="sortable-header" (click)="onSortChange('donorName')">
                 שם <mat-icon class="sort-icon">{{getSortIcon('donorName')}}</mat-icon>
               </th>
-              <th *ngIf="filters.showDonorDetails && filters.groupBy === 'donor'" class="sortable-header" (click)="onSortChange('address')">
+              <th *ngIf="filters.showDonorDetails && filters.groupBy === 'donor'" class="sortable-header"
+                (click)="onSortChange('address')">
                 כתובת <mat-icon class="sort-icon">{{getSortIcon('address')}}</mat-icon>
               </th>
-              <th *ngIf="filters.showDonorDetails && filters.groupBy === 'donor'" class="sortable-header" (click)="onSortChange('phones')">
+              <th *ngIf="filters.showDonorDetails && filters.groupBy === 'donor'" class="sortable-header"
+                (click)="onSortChange('phones')">
                 טלפונים <mat-icon class="sort-icon">{{getSortIcon('phones')}}</mat-icon>
               </th>
-              <th *ngIf="filters.showDonorDetails && filters.groupBy === 'donor'" class="sortable-header" (click)="onSortChange('emails')">
+              <th *ngIf="filters.showDonorDetails && filters.groupBy === 'donor'" class="sortable-header"
+                (click)="onSortChange('emails')">
                 אימיילים <mat-icon class="sort-icon">{{getSortIcon('emails')}}</mat-icon>
               </th>
               <th *ngFor="let year of hebrewYears" class="sortable-header" (click)="onSortChange('year_' + year)">
@@ -420,18 +366,21 @@
           <tbody>
             <tr *ngFor="let row of groupedDonationReport">
               <td><strong>{{row.donorName}}</strong></td>
-              <td *ngIf="filters.showDonorDetails && filters.groupBy === 'donor'">{{row.donorDetails?.address || '-'}}</td>
+              <td *ngIf="filters.showDonorDetails && filters.groupBy === 'donor'">{{row.donorDetails?.address || '-'}}
+              </td>
               <td *ngIf="filters.showDonorDetails && filters.groupBy === 'donor'">
                 <div *ngIf="row.donorDetails && row.donorDetails.phones && row.donorDetails.phones.length > 0">
                   <div *ngFor="let phone of row.donorDetails.phones">{{phone}}</div>
                 </div>
-                <span *ngIf="!row.donorDetails || !row.donorDetails.phones || row.donorDetails.phones.length === 0">-</span>
+                <span
+                  *ngIf="!row.donorDetails || !row.donorDetails.phones || row.donorDetails.phones.length === 0">-</span>
               </td>
               <td *ngIf="filters.showDonorDetails && filters.groupBy === 'donor'">
                 <div *ngIf="row.donorDetails && row.donorDetails.emails && row.donorDetails.emails.length > 0">
                   <div *ngFor="let email of row.donorDetails.emails">{{email}}</div>
                 </div>
-                <span *ngIf="!row.donorDetails || !row.donorDetails.emails || row.donorDetails.emails.length === 0">-</span>
+                <span
+                  *ngIf="!row.donorDetails || !row.donorDetails.emails || row.donorDetails.emails.length === 0">-</span>
               </td>
               <td *ngFor="let year of hebrewYears">
                 {{formatYearTotal(row.yearlyTotals, year)}}
@@ -450,7 +399,8 @@
         <!-- Pagination Controls -->
         <div class="pagination-container" *ngIf="totalRecords > 0">
           <div class="pagination-info">
-            <span>מציג {{(currentPage - 1) * pageSize + 1}} - {{Math.min(currentPage * pageSize, totalRecords)}} מתוך {{totalRecords}} תוצאות</span>
+            <span>מציג {{(currentPage - 1) * pageSize + 1}} - {{Math.min(currentPage * pageSize, totalRecords)}} מתוך
+              {{totalRecords}} תוצאות</span>
           </div>
 
           <div class="pagination-controls">
@@ -461,10 +411,8 @@
               <mat-icon>chevron_right</mat-icon>
             </button>
 
-            <button *ngFor="let page of getPageNumbers()"
-                    class="page-btn"
-                    [class.active]="page === currentPage"
-                    (click)="onPageChange(page)">
+            <button *ngFor="let page of getPageNumbers()" class="page-btn" [class.active]="page === currentPage"
+              (click)="onPageChange(page)">
               {{page}}
             </button>
 
@@ -519,7 +467,7 @@
     <!-- דוח תשלומים -->
     <div *ngIf="activeReport === 'payments'" class="payments-report">
       <h2>{{ (i18n.terms$ | async)?.paymentsReportTitle }}</h2>
-      
+
       <div class="report-summary">
         <div class="summary-card">
           <div class="summary-icon">✅</div>
@@ -555,19 +503,26 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th>שם משפחה</th>
-              <th>שם פרטי</th>
+              <th class="sortable" [class.sorted]="isPaymentSorted('donorName')" (click)="togglePaymentSort('donorName', $event)">
+                שם תורם
+                <span class="sort-icon" *ngIf="getPaymentSortIcon('donorName')">{{ getPaymentSortIcon('donorName') }}</span>
+              </th>
               <th>כתובת</th>
               <th>עיר</th>
               <th>תאריך אחרון</th>
-              <th>בשקלים</th>
-              <th>תרומות</th>
+              <th class="sortable" [class.sorted]="isPaymentSorted('promisedAmount')" (click)="togglePaymentSort('promisedAmount', $event)">
+                בשקלים
+                <span class="sort-icon" *ngIf="getPaymentSortIcon('promisedAmount')">{{ getPaymentSortIcon('promisedAmount') }}</span>
+              </th>
+              <th class="sortable" [class.sorted]="isPaymentSorted('actualAmount')" (click)="togglePaymentSort('actualAmount', $event)">
+                תרומות
+                <span class="sort-icon" *ngIf="getPaymentSortIcon('actualAmount')">{{ getPaymentSortIcon('actualAmount') }}</span>
+              </th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let payment of paymentReportData">
-              <td>{{getLastName(payment.donorName)}}</td>
-              <td>{{getFirstName(payment.donorName)}}</td>
+            <tr *ngFor="let payment of paginatedPaymentReport">
+              <td>{{payment.donorName}}</td>
               <td>{{payment.address || '-'}}</td>
               <td>{{payment.city || '-'}}</td>
               <td>{{payment.lastDonationDate ? formatDate(payment.lastDonationDate) : '-'}}</td>
@@ -576,47 +531,102 @@
             </tr>
           </tbody>
         </table>
+
+        <!-- Pagination Controls -->
+        <div class="table-footer" *ngIf="paymentTotalCount > 0">
+          <div class="pagination-controls">
+            <button (click)="firstPaymentPage()" [disabled]="paymentCurrentPage === 1">⏮ ראשון</button>
+            <button (click)="previousPaymentPage()" [disabled]="paymentCurrentPage === 1">← הקודם</button>
+            <div class="page-numbers">
+              <button *ngFor="let page of getPaymentPageNumbers()"
+                      (click)="goToPaymentPage(page)"
+                      [class.active]="page === paymentCurrentPage"
+                      [disabled]="page === -1">
+                {{ page === -1 ? '...' : page }}
+              </button>
+            </div>
+            <button (click)="nextPaymentPage()" [disabled]="paymentCurrentPage === paymentTotalPages">הבא →</button>
+            <button (click)="lastPaymentPage()" [disabled]="paymentCurrentPage === paymentTotalPages">אחרון ⏭</button>
+          </div>
+          <div class="pagination-info">
+            <span>מציג {{(paymentCurrentPage - 1) * paymentPageSize + 1}} - {{Math.min(paymentCurrentPage * paymentPageSize, paymentTotalCount)}} מתוך {{paymentTotalCount}}</span>
+          </div>
+        </div>
       </div>
     </div>
 
     <!-- דוח סיכום שנים -->
     <div *ngIf="activeReport === 'yearly'" class="yearly-report">
       <h2>{{ (i18n.terms$ | async)?.yearlySummaryTitle }}</h2>
-      
+
       <div class="report-table">
         <table class="data-table">
           <thead>
             <tr>
-              <th>שנה</th>
+              <th class="sortable" [class.sorted]="isYearlySummarySorted('year')" (click)="toggleYearlySummarySort('year', $event)">
+                שנה
+                <span class="sort-icon" *ngIf="getYearlySummarySortIcon('year')">{{ getYearlySummarySortIcon('year') }}</span>
+              </th>
               <th>{{ (i18n.terms$ | async)?.shekel || 'שקל' }}</th>
               <th>{{ (i18n.terms$ | async)?.dollar || 'דולר' }}</th>
               <th>{{ (i18n.terms$ | async)?.euro || 'יורו' }}</th>
-              <th>{{ (i18n.terms$ | async)?.totalByShekel || 'סה"כ בשקלים' }}</th>
+              <th class="sortable" [class.sorted]="isYearlySummarySorted('totalInShekel')" (click)="toggleYearlySummarySort('totalInShekel', $event)">
+                {{ (i18n.terms$ | async)?.totalByShekel || 'סה"כ בשקלים' }}
+                <span class="sort-icon" *ngIf="getYearlySummarySortIcon('totalInShekel')">{{ getYearlySummarySortIcon('totalInShekel') }}</span>
+              </th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let yearData of yearlySummaryData">
+            <tr *ngFor="let yearData of paginatedYearlySummaryReport">
               <td>
                 <strong>{{yearData.hebrewYear}}</strong>
                 <br>
                 <small style="color: #999;">({{yearData.year}})</small>
               </td>
-              <td>{{(yearData.currencies['ILS'] || 0) > 0 ? '₪' + Math.round(yearData.currencies['ILS']).toLocaleString() : '-'}}</td>
-              <td>{{(yearData.currencies['USD'] || 0) > 0 ? '$' + Math.round(yearData.currencies['USD']).toLocaleString() : '-'}}</td>
-              <td>{{(yearData.currencies['EUR'] || 0) > 0 ? '€' + Math.round(yearData.currencies['EUR']).toLocaleString() : '-'}}</td>
+              <td>{{(yearData.currencies['ILS'] || 0) > 0 ? '₪' +
+                Math.round(yearData.currencies['ILS']).toLocaleString() : '-'}}</td>
+              <td>{{(yearData.currencies['USD'] || 0) > 0 ? '$' +
+                Math.round(yearData.currencies['USD']).toLocaleString() : '-'}}</td>
+              <td>{{(yearData.currencies['EUR'] || 0) > 0 ? '€' +
+                Math.round(yearData.currencies['EUR']).toLocaleString() : '-'}}</td>
               <td><strong>₪{{Math.round(yearData.totalInShekel).toLocaleString()}}</strong></td>
             </tr>
           </tbody>
           <tfoot *ngIf="yearlySummaryData.length > 0">
             <tr style="background-color: #f5f5f5; font-weight: bold; border-top: 2px solid #333;">
               <td><strong>סה"כ</strong></td>
-              <td>{{getTotalByCurrency('ILS') > 0 ? '₪' + Math.round(getTotalByCurrency('ILS')).toLocaleString() : '-'}}</td>
-              <td>{{getTotalByCurrency('USD') > 0 ? '$' + Math.round(getTotalByCurrency('USD')).toLocaleString() : '-'}}</td>
-              <td>{{getTotalByCurrency('EUR') > 0 ? '€' + Math.round(getTotalByCurrency('EUR')).toLocaleString() : '-'}}</td>
-              <td><strong style="color: #27ae60;">₪{{Math.round(getGrandTotalInShekel()).toLocaleString()}}</strong></td>
+              <td>{{getTotalByCurrency('ILS') > 0 ? '₪' + Math.round(getTotalByCurrency('ILS')).toLocaleString() : '-'}}
+              </td>
+              <td>{{getTotalByCurrency('USD') > 0 ? '$' + Math.round(getTotalByCurrency('USD')).toLocaleString() : '-'}}
+              </td>
+              <td>{{getTotalByCurrency('EUR') > 0 ? '€' + Math.round(getTotalByCurrency('EUR')).toLocaleString() : '-'}}
+              </td>
+              <td><strong style="color: #27ae60;">₪{{Math.round(getGrandTotalInShekel()).toLocaleString()}}</strong>
+              </td>
             </tr>
           </tfoot>
         </table>
+
+        <!-- Pagination Controls -->
+        <div class="table-footer" *ngIf="yearlySummaryTotalCount > 0">
+          <div class="pagination-controls">
+            <button (click)="firstYearlySummaryPage()" [disabled]="yearlySummaryCurrentPage === 1">⏮ ראשון</button>
+            <button (click)="previousYearlySummaryPage()" [disabled]="yearlySummaryCurrentPage === 1">← הקודם</button>
+            <div class="page-numbers">
+              <button *ngFor="let page of getYearlySummaryPageNumbers()"
+                      (click)="goToYearlySummaryPage(page)"
+                      [class.active]="page === yearlySummaryCurrentPage"
+                      [disabled]="page === -1">
+                {{ page === -1 ? '...' : page }}
+              </button>
+            </div>
+            <button (click)="nextYearlySummaryPage()" [disabled]="yearlySummaryCurrentPage === yearlySummaryTotalPages">הבא →</button>
+            <button (click)="lastYearlySummaryPage()" [disabled]="yearlySummaryCurrentPage === yearlySummaryTotalPages">אחרון ⏭</button>
+          </div>
+          <div class="pagination-info">
+            <span>מציג {{(yearlySummaryCurrentPage - 1) * yearlySummaryPageSize + 1}} - {{Math.min(yearlySummaryCurrentPage * yearlySummaryPageSize, yearlySummaryTotalCount)}} מתוך {{yearlySummaryTotalCount}}</span>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -660,18 +670,30 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th>שם משפחה</th>
-              <th>שם פרטי</th>
-              <th>סוג ברכה</th>
+              <th class="sortable" [class.sorted]="isBlessingsSorted('lastName')" (click)="toggleBlessingsSort('lastName', $event)">
+                שם משפחה
+                <span class="sort-icon" *ngIf="getBlessingsSortIcon('lastName')">{{ getBlessingsSortIcon('lastName') }}</span>
+              </th>
+              <th class="sortable" [class.sorted]="isBlessingsSorted('firstName')" (click)="toggleBlessingsSort('firstName', $event)">
+                שם פרטי
+                <span class="sort-icon" *ngIf="getBlessingsSortIcon('firstName')">{{ getBlessingsSortIcon('firstName') }}</span>
+              </th>
+              <th class="sortable" [class.sorted]="isBlessingsSorted('blessingBookType')" (click)="toggleBlessingsSort('blessingBookType', $event)">
+                סוג ברכה
+                <span class="sort-icon" *ngIf="getBlessingsSortIcon('blessingBookType')">{{ getBlessingsSortIcon('blessingBookType') }}</span>
+              </th>
               <th>הערות</th>
-              <th>סטטוס</th>
+              <th class="sortable" [class.sorted]="isBlessingsSorted('status')" (click)="toggleBlessingsSort('status', $event)">
+                סטטוס
+                <span class="sort-icon" *ngIf="getBlessingsSortIcon('status')">{{ getBlessingsSortIcon('status') }}</span>
+              </th>
               <th>טלפון</th>
               <th>נייד</th>
               <th>EMAIL</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let blessing of blessingReportData">
+            <tr *ngFor="let blessing of paginatedBlessingsReport">
               <td>{{blessing.lastName}}</td>
               <td>{{blessing.firstName}}</td>
               <td>
@@ -691,6 +713,27 @@
             </tr>
           </tbody>
         </table>
+
+        <!-- Pagination Controls -->
+        <div class="table-footer" *ngIf="blessingsTotalCount > 0">
+          <div class="pagination-controls">
+            <button (click)="firstBlessingsPage()" [disabled]="blessingsCurrentPage === 1">⏮ ראשון</button>
+            <button (click)="previousBlessingsPage()" [disabled]="blessingsCurrentPage === 1">← הקודם</button>
+            <div class="page-numbers">
+              <button *ngFor="let page of getBlessingsPageNumbers()"
+                      (click)="goToBlessingsPage(page)"
+                      [class.active]="page === blessingsCurrentPage"
+                      [disabled]="page === -1">
+                {{ page === -1 ? '...' : page }}
+              </button>
+            </div>
+            <button (click)="nextBlessingsPage()" [disabled]="blessingsCurrentPage === blessingsTotalPages">הבא →</button>
+            <button (click)="lastBlessingsPage()" [disabled]="blessingsCurrentPage === blessingsTotalPages">אחרון ⏭</button>
+          </div>
+          <div class="pagination-info">
+            <span>מציג {{(blessingsCurrentPage - 1) * blessingsPageSize + 1}} - {{Math.min(blessingsCurrentPage * blessingsPageSize, blessingsTotalCount)}} מתוך {{blessingsTotalCount}}</span>
+          </div>
+        </div>
       </div>
     </div>
 
