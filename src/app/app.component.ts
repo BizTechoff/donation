@@ -22,7 +22,7 @@ import { SidebarService } from './services/sidebar.service'
   styleUrls: ['./app.component.scss'],
 })
 export class AppComponent implements OnInit {
-  version = '2025.11.05' // environment.production ? '2025.08.05' : '2025.07.31'
+  version = '2025.11.11' // environment.production ? '2025.08.05' : '2025.07.31'
 
   // Active reminders count - will be updated in ngOnInit
   activeRemindersCount$ = new Observable<number>((observer) => {

@@ -5,11 +5,12 @@ import { User } from '../../shared/entity/user';
 
 export interface GlobalFilters {
   campaignIds?: string[];
-  donorTypeIds?: string[];
   countryIds?: string[];
   cityIds?: string[];
   neighborhoodIds?: string[];
   targetAudienceIds?: string[];
+  
+  donorTypeIds?: string[];
   dateFrom?: Date;
   dateTo?: Date;
   amountMin?: number;
