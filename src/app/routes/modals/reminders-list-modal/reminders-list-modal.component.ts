@@ -6,6 +6,7 @@ import { Reminder } from '../../../../shared/entity';
 import { I18nService } from '../../../i18n/i18n.service';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { ReminderService } from '../../../services/reminder.service';
+import { GlobalFilterService } from '../../../services/global-filter.service';
 
 @DialogConfig({
   hasBackdrop: true,
@@ -27,7 +28,8 @@ export class RemindersListModalComponent implements OnInit {
     public i18n: I18nService,
     private ui: UIToolsService,
     public dialogRef: MatDialogRef<RemindersListModalComponent>,
-    private reminderService: ReminderService
+    private reminderService: ReminderService,
+    private globalFilterService: GlobalFilterService
   ) {}
 
   async ngOnInit() {
@@ -37,23 +39,12 @@ export class RemindersListModalComponent implements OnInit {
   async loadReminders() {
     this.loading = true;
     try {
-      const today = new Date();
-      this.reminders = await this.reminderRepo.find({
-        where: {
-          nextReminderDate: { $lte: today },
-          isCompleted: false,
-          isActive: true
-        },
-        include: {
-          relatedDonor: true,
-          assignedTo: true,
-          relatedDonation: true
-        },
-        orderBy: {
-          priority: 'asc',
-          nextReminderDate: 'asc'
-        }
-      });
+      // Get global filters
+      const globalFilters = this.globalFilterService.currentFilters;
+
+      // Use ReminderService to get active reminders with global filters applied
+      this.reminders = await this.reminderService.findActiveReminders(globalFilters);
+
     } catch (error) {
       console.error('Error loading reminders:', error);
       this.ui.error('שגיאה בטעינת התזכורות');

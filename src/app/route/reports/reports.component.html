@@ -525,7 +525,7 @@
               <td>{{payment.donorName}}</td>
               <td>{{payment.address || '-'}}</td>
               <td>{{payment.city || '-'}}</td>
-              <td>{{payment.lastDonationDate ? formatDate(payment.lastDonationDate) : '-'}}</td>
+              <td>{{formatHebrewDate(payment.lastDonationDate)}}</td>
               <td>{{formatCurrency(payment.promisedAmount)}}</td>
               <td>{{payment.actualAmount}}</td>
             </tr>

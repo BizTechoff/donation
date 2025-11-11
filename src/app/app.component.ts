@@ -1,7 +1,7 @@
 import { Component, OnInit, ViewChild } from '@angular/core'
 import { Router, Route, ActivatedRoute } from '@angular/router'
 import { MatSidenav } from '@angular/material/sidenav'
-import { Observable, map, combineLatest } from 'rxjs'
+import { Observable, map, combineLatest, switchMap } from 'rxjs'
 
 import { UIToolsService } from './common/UIToolsService'
 import { openDialog, RouteHelperService } from 'common-ui-elements'
@@ -15,6 +15,9 @@ import { User } from '../shared/entity/user'
 import { Reminder } from '../shared/entity/reminder'
 import { terms } from './terms'
 import { SidebarService } from './services/sidebar.service'
+import { GlobalFilterService } from './services/global-filter.service'
+import { ReminderService } from './services/reminder.service'
+import { DonorController } from '../shared/controllers/donor.controller'
  
 @Component({
   selector: 'app-root',
@@ -36,7 +39,9 @@ export class AppComponent implements OnInit {
     private routeHelper: RouteHelperService,
     public uiService: UIToolsService,
     public i18n: I18nService,
-    private sidebarService: SidebarService
+    private sidebarService: SidebarService,
+    private globalFilterService: GlobalFilterService,
+    private reminderService: ReminderService
   ) {}
   remult = remult
   terms=terms
@@ -68,25 +73,52 @@ export class AppComponent implements OnInit {
       this.updateDocumentDirection()
     })
 
-    // Initialize active reminders count live query
+    // Initialize active reminders count with live query + global filters support
     if (remult.user?.id) {
-      const today = new Date()
-      console.log('activeRemindersCount$',today)
-      this.activeRemindersCount$ = new Observable((observer) => {
-        const liveQuery = remult.repo(Reminder).liveQuery({
-          where: {
-            nextReminderDate: { $lte: today },
-            isCompleted: false,
-            isActive: true //,
-            // assignedToId: remult.user!.id
-          }
-        })
+      console.log('Initializing activeRemindersCount$ with live query and global filters support')
 
-        liveQuery.subscribe({
-          next: (result: any) => observer.next(result.items.length),
-          error: (err: any) => observer.error(err)
-        })
+      const today = new Date()
+      today.setHours(23, 59, 59, 999)
+
+      // Create live query for reminders
+      const reminderLiveQuery = remult.repo(Reminder).liveQuery({
+        where: {
+          nextReminderDate: { $lte: today },
+          isCompleted: false,
+          isActive: true
+        }
       })
+
+      // Combine live query with global filters
+      this.activeRemindersCount$ = combineLatest([
+        new Observable<Reminder[]>(observer => {
+          reminderLiveQuery.subscribe({
+            next: (result: any) => observer.next(result.items as Reminder[]),
+            error: (err: any) => observer.error(err)
+          })
+        }),
+        this.globalFilterService.filters$
+      ]).pipe(
+        switchMap(async ([reminders, filters]: [Reminder[], any]) => {
+          // If no global filters are active, return all reminders count
+          if (!filters || (!filters.countryIds?.length && !filters.cityIds?.length &&
+              !filters.neighborhoodIds?.length && !filters.campaignIds?.length &&
+              !filters.targetAudienceIds?.length)) {
+            return reminders.length
+          }
+
+          // Filter reminders by global filters (check if donor matches)
+          const globalFilters = this.globalFilterService.currentFilters
+          const donors = await DonorController.findFilteredDonors(globalFilters)
+          const filteredDonorIds = new Set(donors.map(d => d.id))
+
+          const filteredReminders = reminders.filter((r: Reminder) =>
+            r.relatedDonorId && filteredDonorIds.has(r.relatedDonorId)
+          )
+
+          return filteredReminders.length
+        })
+      )
     }
 
     // Subscribe to fullscreen mode changes for sidebar management

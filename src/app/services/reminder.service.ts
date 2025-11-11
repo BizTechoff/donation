@@ -80,4 +80,12 @@ export class ReminderService {
   async calculateNextPurim(currentDate: Date): Promise<Date> {
     return await ReminderController.calculateNextPurim(currentDate);
   }
+
+  /**
+   * Find active reminders (for notifications/alerts)
+   * Returns reminders where nextReminderDate <= today
+   */
+  async findActiveReminders(globalFilters?: GlobalFilters): Promise<Reminder[]> {
+    return await ReminderController.findActiveReminders(globalFilters);
+  }
 }

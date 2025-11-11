@@ -15,6 +15,7 @@ import { DonorSelectionModalComponent } from '../../routes/modals/donor-selectio
 import { ExcelExportService } from '../../services/excel-export.service';
 import { GlobalFilterService } from '../../services/global-filter.service';
 import { ReportService } from '../../services/report.service';
+import { HebrewDateService } from '../../services/hebrew-date.service';
 
 interface ChartData {
   label: string;
@@ -234,7 +235,8 @@ export class ReportsComponent implements OnInit {
     private reportService: ReportService,
     private busy: BusyService,
     private excelService: ExcelExportService,
-    private globalFilterService: GlobalFilterService
+    private globalFilterService: GlobalFilterService,
+    private hebrewDateService: HebrewDateService
   ) { }
 
   async ngOnInit() {
@@ -499,6 +501,17 @@ export class ReportsComponent implements OnInit {
 
   formatDate(date: Date): string {
     return new Date(date).toLocaleDateString('he-IL');
+  }
+
+  formatHebrewDate(date: Date | undefined): string {
+    if (!date) return '-';
+    try {
+      const hebrewDate = this.hebrewDateService.convertGregorianToHebrew(new Date(date));
+      return hebrewDate.formatted;
+    } catch (error) {
+      console.error('Error converting date to Hebrew:', error);
+      return new Date(date).toLocaleDateString('he-IL');
+    }
   }
 
   formatPercentage(value: number): string {

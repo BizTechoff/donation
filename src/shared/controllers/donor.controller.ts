@@ -297,9 +297,14 @@ export class DonorController {
     if (searchTerm && searchTerm.trim()) {
       const search = searchTerm.trim();
       whereClause.$or = [
+        { title: { $contains: search } },
         { firstName: { $contains: search } },
         { lastName: { $contains: search } },
-        { idNumber: { $contains: search } }
+        { suffix: { $contains: search } },
+        { titleEnglish: { $contains: search } },
+        { firstNameEnglish: { $contains: search } },
+        { lastNameEnglish: { $contains: search } },
+        { suffixEnglish: { $contains: search } }
       ];
     }
 

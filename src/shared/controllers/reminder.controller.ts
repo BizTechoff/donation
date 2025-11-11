@@ -358,6 +358,57 @@ export class ReminderController {
   }
 
   /**
+   * Find active reminders (for notifications/alerts)
+   * Filters by nextReminderDate <= today
+   */
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async findActiveReminders(
+    globalFilters?: GlobalFilters
+  ): Promise<Reminder[]> {
+    console.log('ReminderController.findActiveReminders');
+    const reminderRepo = remult.repo(Reminder)
+
+    // Build where clause
+    const where: any = {
+      isActive: true,
+      isCompleted: false
+    }
+
+    // Apply global filters - get filtered donor IDs
+    if (globalFilters && (globalFilters.countryIds?.length || globalFilters.cityIds?.length ||
+        globalFilters.neighborhoodIds?.length || globalFilters.campaignIds?.length ||
+        globalFilters.targetAudienceIds?.length)) {
+      const donors = await DonorController.findFilteredDonors(globalFilters)
+      const filteredDonorIds = donors.map(d => d.id)
+
+      if (filteredDonorIds.length === 0) {
+        return [] // No matching donors, return empty reminders
+      }
+
+      // Filter reminders by donor IDs
+      where.relatedDonorId = { $in: filteredDonorIds }
+    }
+
+    // Filter by nextReminderDate <= today
+    const today = new Date()
+    today.setHours(23, 59, 59, 999)
+    where.nextReminderDate = { $lte: today }
+
+    return await reminderRepo.find({
+      where,
+      orderBy: {
+        priority: 'asc',
+        nextReminderDate: 'asc'
+      },
+      include: {
+        relatedDonor: true,
+        assignedTo: true,
+        relatedDonation: true
+      }
+    })
+  }
+
+  /**
    * Calculate next occurrence of a special occasion (holiday)
    * @param occasionName Name of the holiday in Hebrew
    * @param currentDate Current date to calculate from
