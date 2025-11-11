@@ -17,11 +17,14 @@ export interface ReminderDetailsModalArgs {
   reminderId?: string; // 'new' for new reminder or reminder ID for editing
   userId?: string; // Optional user ID to assign
   donorId?: string; // Optional donor ID to link
-  donationId?: string; // Optional donation ID to link
-  certificateId?: string; // Optional certificate ID to link
   reminderType?: 'donation_followup' | 'thank_you' | 'receipt' | 'birthday' | 'holiday' | 'general' | 'meeting' | 'phone_call' | 'memorialDay' | 'memorial' | 'yahrzeit'; // Optional reminder type to initialize
   reminderDate?: Date; // Optional date to initialize
   isRecurringYearly?: boolean; // Optional flag for yearly recurring reminder
+  hideDonorField?: boolean; // Hide donor field when opened from entity that already has donor
+  sourceEntity?: 'donation' | 'certificate' | 'donor_gift' | 'donor_event'; // Source entity type for dynamic title
+  donorName?: string; // Donor name for dynamic title
+  sourceEntityType?: 'donation' | 'certificate' | 'donor_gift' | 'donor_event'; // Source entity type to save in reminder
+  sourceEntityId?: string; // Source entity ID to save in reminder
 }
 
 @DialogConfig({
@@ -52,11 +55,9 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
   fundraisers: User[] = [];
   donors: Donor[] = [];
   donations: Donation[] = [];
-  filteredDonations: Donation[] = [];
 
   // Track if data has been loaded
   private donorsLoaded = false;
-  private donationsLoaded = false;
 
   // Maps for donor-related data
   donorEmailMap = new Map<string, string>();
@@ -113,7 +114,7 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
         this.reminder = this.reminderRepo.create();
 
         // Set default values
-        this.reminder.type = this.args.reminderType || 'donation_followup';
+        this.reminder.type = this.args.reminderType || 'general';
         this.reminder.priority = 'normal';
         this.reminder.alertMethod = 'popup';
         this.reminder.sendAlert = true;
@@ -140,26 +141,23 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
           this.reminder.recurringDayOfMonth = hebDate.day
         }
 
-        // Load related donation if provided
-        if (this.args.donationId) {
-          await this.loadDonation(this.args.donationId);
+        // Set source entity type and ID if provided
+        if (this.args.sourceEntityType) {
+          this.reminder.sourceEntityType = this.args.sourceEntityType;
+        }
+        if (this.args.sourceEntityId) {
+          this.reminder.sourceEntityId = this.args.sourceEntityId;
         }
 
         // Load related donor if provided
         if (this.args.donorId) {
           await this.loadDonor(this.args.donorId);
         }
-
-        // Load related certificate if provided
-        if (this.args.certificateId) {
-          await this.loadCertificate(this.args.certificateId);
-        }
       } else {
         // Edit existing reminder
         this.reminder = await this.reminderRepo.findId(this.args.reminderId, {
           include: {
-            relatedDonation: { include: { donor: true } },
-            relatedDonor: { include: { fundraiser: true } },
+            donor: { include: { fundraiser: true } },
             assignedTo: true,
             createdBy: true
           }
@@ -169,12 +167,12 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
           this.dialogRef.close(false);
           return;
         }
-        console.log('ReminderDetailsModalComponent.oninit', this.reminder,this.reminder?.relatedDonation, this.reminder.relatedDonation?.donor)
+        console.log('ReminderDetailsModalComponent.oninit', this.reminder)
 
         // If reminder has a related donor, load fundraiser if exists
-        if (this.reminder.relatedDonor?.fundraiser) {
-          this.reminder.assignedToId = this.reminder.relatedDonor.fundraiser.id;
-          this.reminder.assignedTo = this.reminder.relatedDonor.fundraiser;
+        if (this.reminder.donor?.fundraiser) {
+          this.reminder.assignedToId = this.reminder.donor.fundraiser.id;
+          this.reminder.assignedTo = this.reminder.donor.fundraiser;
         }
       }
 
@@ -219,49 +217,6 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
     }
   }
 
-  async loadDonation(donationId: string) {
-    try {
-      const loadedDonation = await this.donationRepo.findId(donationId, {
-        include: {
-          donor: true,
-          campaign: true
-        }
-      }) || undefined;
-
-      if (loadedDonation) {
-        // Link to donation
-        this.reminder!.relatedDonationId = loadedDonation.id;
-        this.reminder!.relatedDonation = loadedDonation;
-
-        if (loadedDonation.donor) {
-          this.reminder!.relatedDonorId = loadedDonation.donor.id;
-          this.reminder!.relatedDonor = loadedDonation.donor;
-
-          // Load fundraiser from donor if exists (always override)
-          if (loadedDonation.donor.fundraiserId) {
-            const donorWithFundraiser = await this.donorRepo.findId(loadedDonation.donor.id, {
-              include: { fundraiser: true }
-            });
-            if (donorWithFundraiser?.fundraiser) {
-              this.reminder!.assignedToId = donorWithFundraiser.fundraiser.id;
-              this.reminder!.assignedTo = donorWithFundraiser.fundraiser;
-            }
-          }
-        }
-
-        // Set title based on donation
-        this.reminder!.title = `מעקב תרומה - ${this.reminder!.relatedDonor?.fullName || 'תורם'}`;
-        this.reminder!.description = `סכום: ₪${loadedDonation.amount.toLocaleString()}`;
-        if (loadedDonation.campaign) {
-          this.reminder!.description += `\nקמפיין: ${loadedDonation.campaign.name}`;
-        }
-      }
-    } catch (error) {
-      console.error('Error loading donation:', error);
-      this.ui.error('שגיאה בטעינת פרטי התרומה');
-    }
-  }
-
   async loadDonor(donorId: string) {
     try {
       const loadedDonor = await this.donorRepo.findId(donorId, {
@@ -274,9 +229,9 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
         this.donorEmailMap = relatedData.donorEmailMap;
         this.donorPhoneMap = relatedData.donorPhoneMap;
 
-        this.reminder!.relatedDonorId = loadedDonor.id;
-        this.reminder!.relatedDonor = loadedDonor;
-        console.log('loadedDonor.relatedDonor', loadedDonor.firstName)
+        this.reminder!.donorId = loadedDonor.id;
+        this.reminder!.donor = loadedDonor;
+        console.log('loadedDonor.donor', loadedDonor.firstName)
 
         // Auto-fill fundraiser (assignedTo) from donor's fundraiser if exists (always override)
         if (loadedDonor.fundraiser) {
@@ -350,8 +305,8 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
         console.log('loadCertificate')
         // Link to donor if exists
         if (loadedCertificate.donor) {
-          this.reminder!.relatedDonorId = loadedCertificate.donor.id;
-          this.reminder!.relatedDonor = loadedCertificate.donor;
+          this.reminder!.donorId = loadedCertificate.donor.id;
+          this.reminder!.donor = loadedCertificate.donor;
 
           // Load fundraiser from donor if exists
           if (loadedCertificate.donor.fundraiserId) {
@@ -430,20 +385,8 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
         this.reminder.alertDate = alertDate;
       }
 
-      // Calculate next reminder date if recurring
-      if (this.reminder.isRecurring) {
-        this.reminder.nextReminderDate = await this.reminderService.calculateNextReminderDate({
-          isRecurring: this.reminder.isRecurring,
-          recurringPattern: this.reminder.recurringPattern,
-          dueDate: this.reminder.dueDate,
-          completedDate: this.reminder.completedDate,
-          recurringWeekDay: this.reminder.recurringWeekDay,
-          recurringDayOfMonth: this.reminder.recurringDayOfMonth,
-          recurringMonth: this.reminder.recurringMonth,
-          yearlyRecurringType: this.reminder.yearlyRecurringType,
-          specialOccasion: this.reminder.specialOccasion
-        });
-      }
+      // Note: Next reminder date calculation is handled by the backend in the saving hook
+      // No need to calculate it here - the backend will auto-populate Hebrew fields and calculate
 
       await this.reminder.save();
 
@@ -452,7 +395,8 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
       this.ui.info(`התזכורת נוספה בהצלחה - ${nextDateInfo}`);
 
       this.changed = true;
-      this.dialogRef.close(this.changed);
+      // Return the reminder ID if it's a new reminder, otherwise return true
+      this.dialogRef.close(this.isNewReminder ? this.reminder.id : true);
     } catch (error) {
       console.error('Error saving reminder:', error);
       this.ui.error('שגיאה בשמירת התזכורת');
@@ -484,6 +428,25 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
     }
 
     return `תזכורת הבאה: ${dateStr} בשעה ${timeStr}, ${dayName}, ${daysText}`;
+  }
+
+  getModalTitle(): string {
+    if (!this.args) return this.i18n.currentTerms.newReminder || 'תזכורת חדשה';
+
+    if (this.isNewReminder && this.args.sourceEntity && this.args.donorName) {
+      const entityNames: Record<string, string> = {
+        donation: 'תרומה',
+        certificate: 'תעודה',
+        donor_gift: 'מתנה',
+        donor_event: 'אירוע'
+      };
+      const entityName = entityNames[this.args.sourceEntity] || '';
+      return `תזכורת ל${entityName} של ${this.args.donorName}`;
+    }
+
+    return this.isNewReminder
+      ? (this.i18n.currentTerms.newReminder || 'תזכורת חדשה')
+      : (this.i18n.currentTerms.editReminderTitle || 'עריכת תזכורת');
   }
 
   cancel() {
@@ -648,27 +611,13 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
     this.donorsLoaded = true;
   }
 
-  async loadDonations() {
-    if (this.donationsLoaded) return; // Skip if already loaded
-
-    this.donations = await this.donationRepo.find({
-      include: {
-        donor: true,
-        campaign: true
-      },
-      orderBy: { donationDate: 'desc' }
-    });
-    this.filteredDonations = [...this.donations]; // Initialize with all donations
-    this.donationsLoaded = true;
-  }
-
   async onDonorSelectionChange(donorId: string) {
     if (donorId) {
       // Update the related donor
       const selectedDonor = this.donors.find(d => d.id === donorId);
       if (selectedDonor && this.reminder) {
-        this.reminder.relatedDonorId = donorId;
-        this.reminder.relatedDonor = selectedDonor;
+        this.reminder.donorId = donorId;
+        this.reminder.donor = selectedDonor;
 
         // Auto-fill fundraiser (assignedTo) from donor's fundraiser if exists
         if (selectedDonor.fundraiserId) {
@@ -682,25 +631,12 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
           }
         }
       }
-
-      // Filter donations to show only those of the selected donor
-      this.filteredDonations = this.donations.filter(donation => donation.donorId === donorId);
-
-      // Clear donation selection if it doesn't belong to the selected donor
-      if (this.reminder?.relatedDonationId) {
-        const selectedDonation = this.donations.find(d => d.id === this.reminder?.relatedDonationId);
-        if (selectedDonation && selectedDonation.donorId !== donorId) {
-          this.reminder.relatedDonationId = '';
-        }
-      }
     } else {
       // Clear the related donor
       if (this.reminder) {
-        this.reminder.relatedDonorId = '';
-        this.reminder.relatedDonor = undefined;
+        this.reminder.donorId = '';
+        this.reminder.donor = undefined;
       }
-      // Show all donations if no donor is selected
-      this.filteredDonations = [...this.donations];
     }
 
   }
@@ -725,8 +661,8 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
 
       if (selectedDonor) {
         // Update the reminder with the selected donor
-        this.reminder!.relatedDonorId = selectedDonor.id;
-        this.reminder!.relatedDonor = selectedDonor;
+        this.reminder!.donorId = selectedDonor.id;
+        this.reminder!.donor = selectedDonor;
 
         // Auto-fill fundraiser (assignedTo) from donor's fundraiser if exists
         if (selectedDonor.fundraiserId) {
@@ -739,19 +675,6 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
             this.reminder!.assignedTo = donorWithFundraiser.fundraiser;
           }
         }
-
-        // Filter donations to show only those of the selected donor
-        if (this.donationsLoaded) {
-          this.filteredDonations = this.donations.filter(donation => donation.donorId === selectedDonor.id);
-        }
-
-        // Clear donation selection if it doesn't belong to the selected donor
-        if (this.reminder?.relatedDonationId) {
-          const selectedDonation = this.donations.find(d => d.id === this.reminder?.relatedDonationId);
-          if (selectedDonation && selectedDonation.donorId !== selectedDonor.id) {
-            this.reminder.relatedDonationId = '';
-          }
-        }
       }
     } catch (error) {
       console.error('Error opening donor selection modal:', error);
@@ -761,115 +684,15 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
 
   clearDonorSelection() {
     if (this.reminder) {
-      this.reminder.relatedDonorId = '';
-      this.reminder.relatedDonor = undefined;
-    }
-    // Show all donations if no donor is selected
-    if (this.donationsLoaded) {
-      this.filteredDonations = [...this.donations];
+      this.reminder.donorId = '';
+      this.reminder.donor = undefined;
     }
   }
 
-  async openDonationSelectionModal() {
-    try {
-      const selectedDonation = await openDialog(
-        DonationSelectionModalComponent,
-        (modal: DonationSelectionModalComponent) => {
-          modal.args = {
-            title: 'בחירת תרומה',
-            multiSelect: false,
-            filterByDonorId: this.reminder?.relatedDonorId || undefined
-          };
-        }
-      ) as Donation | null;
-
-      if (selectedDonation) {
-        // Update the reminder with the selected donation
-        this.reminder!.relatedDonationId = selectedDonation.id;
-        this.reminder!.relatedDonation = selectedDonation;
-
-        // Auto-fill donor from donation if exists
-        if (selectedDonation.donorId) {
-          const donationWithDonor = await this.donationRepo.findId(selectedDonation.id, {
-            include: { donor: true }
-          });
-          if (donationWithDonor?.donor) {
-            this.reminder!.relatedDonorId = donationWithDonor.donor.id;
-            this.reminder!.relatedDonor = donationWithDonor.donor;
-
-            // Auto-fill fundraiser from donor if exists
-            if (donationWithDonor.donor.fundraiserId) {
-              const donorWithFundraiser = await this.donorRepo.findId(donationWithDonor.donor.id, {
-                include: { fundraiser: true }
-              });
-              if (donorWithFundraiser?.fundraiser) {
-                this.reminder!.assignedToId = donorWithFundraiser.fundraiser.id;
-                this.reminder!.assignedTo = donorWithFundraiser.fundraiser;
-              }
-            }
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error opening donation selection modal:', error);
-      this.ui.error('שגיאה בפתיחת חלון בחירת תרומה');
-    }
-  }
-
-  clearDonationSelection() {
-    if (this.reminder) {
-      this.reminder.relatedDonationId = '';
-      this.reminder.relatedDonation = undefined;
-    }
-  }
-
-  async onDonationDropdownOpen() {
-    if (!this.donationsLoaded) {
-      await this.loadDonations();
-    }
-  }
-
-  getDonationDisplayText(donation: Donation): string {
-    // console.log('getDonationDisplayText', donation, donation.donorId, donation.donor)
-    const amount = `₪${donation.amount.toLocaleString()}`;
-    const date = new Date(donation.donationDate).toLocaleDateString('he-IL');
-    const donor = donation.donor?.fullName || 'תורם לא ידוע';
-    return `${amount} - ${donor} (${date})`;
-  }
 
   applyGlobalFiltersToLists() {
-    const filters = this.globalFilterService.currentFilters;
-
-    // Filter donors by country ID
-    if (filters.countryIds && filters.countryIds.length > 0) {
-      const filteredDonors = this.donors.filter(donor => {
-        const countryId = this.donorCountryIdMap.get(donor.id);
-        return countryId && filters.countryIds!.includes(countryId);
-      });
-
-      // Update filtered lists based on selected donor
-      if (this.reminder?.relatedDonorId) {
-        const selectedDonor = filteredDonors.find(d => d.id === this.reminder!.relatedDonorId);
-        if (selectedDonor) {
-          this.filteredDonations = this.donations.filter(d => d.donorId === this.reminder!.relatedDonorId);
-        } else {
-          // Current donor is not in the filtered list - show filtered donors' data
-          const filteredDonorIds = filteredDonors.map(d => d.id);
-          this.filteredDonations = this.donations.filter(d => filteredDonorIds.includes(d.donorId));
-        }
-      } else {
-        // No donor selected - show all data from filtered donors
-        const filteredDonorIds = filteredDonors.map(d => d.id);
-        this.filteredDonations = this.donations.filter(d => filteredDonorIds.includes(d.donorId));
-      }
-    } else {
-      // No country filter - show all or donor-specific data
-      if (this.reminder?.relatedDonorId) {
-        this.filteredDonations = this.donations.filter(d => d.donorId === this.reminder!.relatedDonorId);
-      } else {
-        this.filteredDonations = [...this.donations];
-      }
-    }
+    // This method can be used for future filtering needs
+    // Currently no filtering is applied to lists in this component
   }
 
   getDueDateLabel(): string {

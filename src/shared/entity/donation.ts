@@ -13,6 +13,7 @@ import { Campaign } from './campaign'
 import { DonationMethod } from './donation-method'
 import { Organization } from './organization'
 import { Bank } from './bank'
+import { Reminder } from './reminder'
 import { Roles } from '../enum/roles'
 
 @Entity<Donation>('donations', {

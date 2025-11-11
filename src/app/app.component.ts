@@ -113,7 +113,7 @@ export class AppComponent implements OnInit {
           const filteredDonorIds = new Set(donors.map(d => d.id))
 
           const filteredReminders = reminders.filter((r: Reminder) =>
-            r.relatedDonorId && filteredDonorIds.has(r.relatedDonorId)
+            !r.donorId || filteredDonorIds.has(r.donorId)
           )
 
           return filteredReminders.length

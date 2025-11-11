@@ -40,9 +40,9 @@
 
         <!-- Details -->
         <div class="reminder-details">
-          <div class="detail-item" *ngIf="reminder.relatedDonor">
+          <div class="detail-item" *ngIf="reminder.donor">
             <mat-icon>person</mat-icon>
-            <span>{{ reminder.relatedDonor.displayName }}</span>
+            <span>{{ reminder.donor.displayName }}</span>
           </div>
 
           <div class="detail-item">

@@ -25,8 +25,7 @@ export async function checkAndSendReminders() {
       },
       include: {
         assignedTo: true,
-        relatedDonor: true,
-        relatedDonation: true
+        donor: true
       },
       orderBy: {
         priority: 'asc',
@@ -135,8 +134,8 @@ async function sendEmailNotification(reminder: Reminder) {
       body += `תיאור: ${reminder.description}\n`
     }
 
-    if (reminder.relatedDonor) {
-      body += `תורם קשור: ${reminder.relatedDonor.displayName}\n`
+    if (reminder.donor) {
+      body += `תורם קשור: ${reminder.donor.displayName}\n`
     }
 
     body += `תאריך יעד: ${reminder.dueDate.toLocaleDateString('he-IL')}\n`

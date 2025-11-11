@@ -38,6 +38,33 @@ import { ReminderController } from '../controllers/reminder.controller'
         const roundedMins = roundedMinutes % 60
         reminder.dueTime = `${String(roundedHours).padStart(2, '0')}:${String(roundedMins).padStart(2, '0')}`
       }
+
+      // Auto-populate Hebrew recurring fields for yearly date-based reminders
+      if (reminder.isRecurring &&
+          reminder.recurringPattern === 'yearly' &&
+          reminder.yearlyRecurringType === 'date' &&
+          (!reminder.recurringMonth || !reminder.recurringDayOfMonth)) {
+        const { HebrewDateController } = await import('../controllers/hebrew-date.controller');
+        const hebrewDate = await HebrewDateController.getHebrewDateComponents(reminder.dueDate);
+        reminder.recurringMonth = hebrewDate.month;
+        reminder.recurringDayOfMonth = hebrewDate.day;
+      }
+
+      // Calculate next reminder date if recurring
+      if (reminder.isRecurring) {
+        const { ReminderController } = await import('../controllers/reminder.controller');
+        reminder.nextReminderDate = await ReminderController.calculateNextReminderDate({
+          isRecurring: reminder.isRecurring,
+          recurringPattern: reminder.recurringPattern,
+          dueDate: reminder.dueDate,
+          completedDate: reminder.completedDate,
+          recurringWeekDay: reminder.recurringWeekDay,
+          recurringDayOfMonth: reminder.recurringDayOfMonth,
+          recurringMonth: reminder.recurringMonth,
+          yearlyRecurringType: reminder.yearlyRecurringType,
+          specialOccasion: reminder.specialOccasion
+        });
+      }
     }
   },
 })
@@ -73,25 +100,27 @@ export class Reminder extends IdEntity {
 
   @Relations.toOne<Reminder, Donor>(() => Donor, {
     caption: 'תורם קשור',
-    field: 'relatedDonorId'
+    field: 'donorId'
   })
-  relatedDonor?: Donor
+  donor?: Donor
 
   @Fields.string({
     caption: 'תורם קשור ID',
+    allowNull: true
   })
-  relatedDonorId = ''
-
-  @Relations.toOne<Reminder, Donation>(() => Donation, {
-    caption: 'תרומה קשורה',
-    field: 'relatedDonationId'
-  })
-  relatedDonation?: Donation
+  donorId?: string
 
   @Fields.string({
-    caption: 'תרומה קשורה ID',
+    caption: 'סוג ישות מקור',
+    allowNull: true
   })
-  relatedDonationId = ''
+  sourceEntityType?: 'donation' | 'certificate' | 'donor_gift' | 'donor_event'
+
+  @Fields.string({
+    caption: 'מזהה ישות מקור',
+    allowNull: true
+  })
+  sourceEntityId?: string
 
   @Fields.dateOnly({
     caption: 'תאריך יעד',
@@ -354,13 +383,13 @@ export class Reminder extends IdEntity {
   @BackendMethod({ allowed: Allow.authenticated })
   async createRecurringReminder() {
     if (!this.isRecurring || !this.nextReminderDate) return null
-    
+
     const nextReminder = remult.repo(Reminder).create({
       title: this.title,
       description: this.description,
       type: this.type,
       priority: this.priority,
-      relatedDonorId: this.relatedDonorId,
+      donorId: this.donorId,
       dueDate: this.nextReminderDate,
       assignedToId: this.assignedToId,
       sendAlert: this.sendAlert,
@@ -369,8 +398,9 @@ export class Reminder extends IdEntity {
       recurringPattern: this.recurringPattern,
       createdById: this.createdById
     })
-    
+
     await nextReminder.save()
     return nextReminder
   }
+
 }

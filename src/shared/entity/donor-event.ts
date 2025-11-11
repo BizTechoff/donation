@@ -8,6 +8,7 @@ import {
 } from 'remult'
 import { Donor } from './donor'
 import { Event } from './event'
+import { Reminder } from './reminder'
 
 @Entity<DonorEvent>('donor_events', {
   allowApiCrud: Allow.authenticated,

@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { remult } from 'remult';
-import { DonorGift, Donor, Gift } from '../../../shared/entity';
+import { DonorGift, Donor, Gift, Reminder } from '../../../shared/entity';
 import { I18nService } from '../../i18n/i18n.service';
 import { UIToolsService } from '../../common/UIToolsService';
 import { GlobalFilterService } from '../../services/global-filter.service';
@@ -22,6 +22,7 @@ export class DonorGiftsListComponent implements OnInit, OnDestroy {
   donorGifts: DonorGift[] = [];
   selectedDonor?: Donor;
   gifts: Gift[] = [];
+  reminderMap = new Map<string, string>(); // donorGiftId -> reminderId
 
   donorGiftRepo = remult.repo(DonorGift);
   donorRepo = remult.repo(Donor);
@@ -122,6 +123,9 @@ export class DonorGiftsListComponent implements OnInit, OnDestroy {
         this.donorGifts = gifts;
 
         this.totalPages = Math.ceil(this.totalCount / this.pageSize);
+
+        // Load reminders for current page
+        await this.loadReminders();
 
         console.log('refreshData: Loaded', this.donorGifts.length, 'donor gifts, total:', this.totalCount);
 
@@ -403,5 +407,86 @@ export class DonorGiftsListComponent implements OnInit, OnDestroy {
       console.error('Error formatting Hebrew date:', error);
       return '-';
     }
+  }
+
+  async addReminder(donorGift: DonorGift) {
+    if (!donorGift) return;
+
+    try {
+      const donorName = donorGift.donor ?
+        `${donorGift.donor.firstName || ''} ${donorGift.donor.lastName || ''}`.trim() :
+        'תורם';
+
+      const reminderId = await this.ui.reminderDetailsDialog('new', {
+        donorId: donorGift.donorId,
+        reminderDate: donorGift.deliveryDate,
+        sourceEntity: 'donor_gift',
+        donorName: donorName,
+        sourceEntityType: 'donor_gift',
+        sourceEntityId: donorGift.id
+      });
+
+      if (reminderId && typeof reminderId === 'string') {
+        // Reminder is now linked via sourceEntityType/sourceEntityId - no need to save gift
+        await this.refreshData();
+        console.log('Reminder created and linked to gift:', donorGift.id);
+      }
+    } catch (error) {
+      console.error('Error opening reminder modal:', error);
+      this.ui.error('שגיאה בפתיחת מודל התזכורת');
+    }
+  }
+
+  async openReminder(donorGift: DonorGift) {
+    if (!donorGift?.id) return;
+
+    try {
+      // Find reminder by sourceEntityType and sourceEntityId
+      const reminder = await remult.repo(Reminder).findFirst({
+        sourceEntityType: 'donor_gift',
+        sourceEntityId: donorGift.id
+      });
+
+      if (reminder) {
+        await this.ui.reminderDetailsDialog(reminder.id);
+      } else {
+        this.ui.error('לא נמצאה תזכורת למתנה זו');
+      }
+      // Refresh data in case reminder was updated or deleted
+      await this.refreshData();
+    } catch (error) {
+      console.error('Error opening reminder modal:', error);
+      this.ui.error('שגיאה בפתיחת מודל התזכורת');
+    }
+  }
+
+  private async loadReminders() {
+    if (this.donorGifts.length === 0) return;
+
+    const donorGiftIds = this.donorGifts.map(g => g.id).filter(id => id);
+    if (donorGiftIds.length === 0) return;
+
+    try {
+      const reminders = await remult.repo(Reminder).find({
+        where: {
+          sourceEntityType: 'donor_gift',
+          sourceEntityId: { $in: donorGiftIds }
+        }
+      });
+
+      this.reminderMap.clear();
+      for (const reminder of reminders) {
+        if (reminder.sourceEntityId) {
+          this.reminderMap.set(reminder.sourceEntityId, reminder.id);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading reminders:', error);
+      this.reminderMap.clear();
+    }
+  }
+
+  hasReminder(donorGift: DonorGift): boolean {
+    return !!donorGift.id && this.reminderMap.has(donorGift.id);
   }
 }

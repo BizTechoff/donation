@@ -10,6 +10,7 @@ import {
 import { Roles } from '../enum/roles'
 import { Donor } from './donor'
 import { Gift } from './gift'
+import { Reminder } from './reminder'
 
 @Entity<DonorGift>('donor_gifts', {
   allowApiCrud: Allow.authenticated,
@@ -56,11 +57,6 @@ export class DonorGift extends IdEntity {
     validate: Validators.required,
   })
   deliveryDate = new Date()
-
-  @Fields.dateOnly({
-    caption: 'תזכורת לתאריך',
-  })
-  reminderDate?: Date
 
   @Fields.string({
     caption: 'הערות',

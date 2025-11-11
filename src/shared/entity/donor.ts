@@ -379,4 +379,86 @@ export class Donor extends IdEntity {
     this.isActive = true
     await this.save()
   }
+
+  @BackendMethod({ allowed: Allow.authenticated })
+  async syncDonorEventReminders() {
+    if (!isBackend()) return;
+
+    const { remult } = await import('remult');
+    const { DonorEvent } = await import('./donor-event');
+    const { Reminder } = await import('./reminder');
+    const { ReminderController } = await import('../controllers/reminder.controller');
+
+    // Get all donor events for this donor
+    const donorEvents = await remult.repo(DonorEvent).find({
+      where: { donorId: this.id, isActive: true }
+    });
+
+    // Get all reminders linked to these donor events via sourceEntityType/sourceEntityId
+    const donorEventIds = donorEvents.map(de => de.id);
+    const existingReminders = donorEventIds.length > 0
+      ? await remult.repo(Reminder).find({
+          where: {
+            sourceEntityType: 'donor_event',
+            sourceEntityId: { $in: donorEventIds }
+          }
+        })
+      : [];
+
+    const existingReminderMap = new Map(existingReminders.map(r => [r.sourceEntityId, r]));
+
+    for (const donorEvent of donorEvents) {
+      if (!donorEvent.date || !donorEvent.event) continue;
+
+      const existingReminder = existingReminderMap.get(donorEvent.id);
+
+      if (!existingReminder) {
+        // Create new reminder for this donor event
+        const newReminder = remult.repo(Reminder).create();
+        newReminder.title = `${donorEvent.event.description} - ${this.displayName}`;
+        newReminder.type = 'general';
+        newReminder.priority = 'normal';
+        newReminder.donorId = this.id;
+        newReminder.dueDate = donorEvent.date;
+        newReminder.dueTime = '10:00';
+        newReminder.assignedToId = remult.user!.id;
+        newReminder.isActive = true;
+        newReminder.status = 'pending';
+        newReminder.sendAlert = true;
+        newReminder.alertMethod = 'popup';
+        newReminder.sourceEntityType = 'donor_event';
+        newReminder.sourceEntityId = donorEvent.id;
+
+        // Donor events are typically recurring yearly (birthdays, memorials, etc.)
+        newReminder.isRecurring = true;
+        newReminder.recurringPattern = 'yearly';
+        newReminder.yearlyRecurringType = 'date';
+
+        // Extract Hebrew month and day from the date
+        const { HebrewDateController } = await import('../controllers/hebrew-date.controller');
+        const hebrewDate = await HebrewDateController.getHebrewDateComponents(donorEvent.date);
+        newReminder.recurringMonth = hebrewDate.month;
+        newReminder.recurringDayOfMonth = hebrewDate.day;
+
+        await newReminder.save();
+        // No need to link back - sourceEntityId/Type already set in reminder
+      } else {
+        // Update existing reminder if date changed
+        if (existingReminder.dueDate.getTime() !== donorEvent.date.getTime()) {
+          existingReminder.dueDate = donorEvent.date;
+          await remult.repo(Reminder).save(existingReminder);
+        }
+      }
+    }
+
+    // Clean up: Find reminders that were deleted (donor events removed)
+    const currentDonorEventIds = new Set(donorEvents.map(de => de.id));
+    const orphanedReminders = existingReminders.filter(
+      r => r.sourceEntityId && !currentDonorEventIds.has(r.sourceEntityId)
+    );
+
+    for (const orphanedReminder of orphanedReminders) {
+      await remult.repo(Reminder).delete(orphanedReminder);
+    }
+  }
 }

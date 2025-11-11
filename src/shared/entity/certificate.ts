@@ -33,7 +33,7 @@ export class Certificate extends IdEntity {
     validate: Validators.required,
     caption: 'סוג תעודה',
   })
-  type: 'donation' | 'memorial' | 'memorialDay' | 'appreciation' = 'donation'
+  type: 'donation' | 'memorial' | 'memorialDay' | 'appreciation' = 'memorialDay'
 
   @Fields.string({
     caption: 'טקסט סוג התעודה',
@@ -154,17 +154,6 @@ export class Certificate extends IdEntity {
     path: string
     size: number
   }> = []
-
-  @Relations.toOne<Certificate, Reminder>(() => Reminder, {
-    caption: 'תזכורת',
-    field: 'reminderId'
-  })
-  reminder?: Reminder
-
-  @Fields.string({
-    caption: 'תזכורת ID',
-  })
-  reminderId = ''
 
   get displayName() {
     return `${this.typeText} - ${this.recipientName}`

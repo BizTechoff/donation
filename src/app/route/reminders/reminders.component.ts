@@ -144,8 +144,8 @@ export class RemindersComponent implements OnInit, OnDestroy {
 
       // Load phone data for related donors
       const donorIds = this.reminders
-        .filter(r => r.relatedDonor?.id)
-        .map(r => r.relatedDonor!.id);
+        .filter(r => r.donor?.id)
+        .map(r => r.donor!.id);
 
       if (donorIds.length > 0) {
         const relatedData = await this.donorService.loadDonorRelatedData(donorIds);
@@ -210,7 +210,9 @@ export class RemindersComponent implements OnInit, OnDestroy {
   }
 
   async createReminder() {
-    const reminderCreated = await this.ui.reminderDetailsDialog('new');
+    const reminderCreated = await this.ui.reminderDetailsDialog('new', {
+      hideDonorField: false // Show donor field when creating from reminders list
+    });
     if (reminderCreated) {
       await this.loadReminders();
     }
@@ -224,9 +226,10 @@ export class RemindersComponent implements OnInit, OnDestroy {
   }
 
   async deleteReminder(reminder: Reminder) {
-    const donorName = reminder.relatedDonor?.displayName || this.i18n.terms.unknown;
+    const donorName = reminder.donor?.displayName || this.i18n.terms.unknown;
     if (confirm(`${this.i18n.terms.confirmDeleteDonor?.replace('{name}', reminder.title || '')}`)) {
       try {
+        // No need to clean up source entity link - we use forward reference only
         await reminder.delete();
         await this.loadReminders();
       } catch (error) {
@@ -254,11 +257,11 @@ export class RemindersComponent implements OnInit, OnDestroy {
   }
 
   getDonorName(reminder: Reminder): string {
-    return reminder.relatedDonor?.displayName || this.i18n.terms.generalType;
+    return reminder.donor?.displayName || this.i18n.terms.generalType;
   }
 
   getReminderDonorPhone(reminder: Reminder): string {
-    return reminder.relatedDonor?.id ? this.donorPhoneMap.get(reminder.relatedDonor.id) || '' : '';
+    return reminder.donor?.id ? this.donorPhoneMap.get(reminder.donor.id) || '' : '';
   }
 
   getTypeText(type: string): string {
@@ -310,6 +313,34 @@ export class RemindersComponent implements OnInit, OnDestroy {
       case 'completed': return 'status-completed';
       case 'snoozed': return 'status-snoozed';
       default: return 'status-default';
+    }
+  }
+
+  getSourceText(reminder: Reminder): string {
+    if (!reminder.sourceEntityType) {
+      return 'ידנית';
+    }
+
+    switch (reminder.sourceEntityType) {
+      case 'donation': return 'תרומה';
+      case 'certificate': return 'תעודה';
+      case 'donor_gift': return 'מתנה';
+      case 'donor_event': return 'אירוע';
+      default: return 'ידנית';
+    }
+  }
+
+  getSourceIcon(reminder: Reminder): string {
+    if (!reminder.sourceEntityType) {
+      return '✍️';  // Manual/pen icon
+    }
+
+    switch (reminder.sourceEntityType) {
+      case 'donation': return '💰';  // Money bag for donation
+      case 'certificate': return '📜';  // Scroll for certificate
+      case 'donor_gift': return '🎁';  // Gift box for donor_gift
+      case 'donor_event': return '📅';  // Calendar for donor_event
+      default: return '✍️';
     }
   }
 

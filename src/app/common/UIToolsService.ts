@@ -153,23 +153,29 @@ export class UIToolsService implements UITools {
   async reminderDetailsDialog(reminderId?: string, options?: {
     userId?: string;
     donorId?: string;
-    donationId?: string;
-    certificateId?: string;
-    reminderType?: 'donation_followup' | 'thank_you' | 'receipt' | 'birthday' | 'holiday' | 'general' | 'meeting' | 'phone_call' | 'memorialDay' | 'memorial';
+    reminderType?: 'donation_followup' | 'thank_you' | 'receipt' | 'birthday' | 'holiday' | 'general' | 'meeting' | 'phone_call' | 'memorialDay' | 'memorial' | 'yahrzeit';
     reminderDate?: Date;
     isRecurringYearly?: boolean;
-  }): Promise<boolean> {
+    hideDonorField?: boolean; // Hide donor field when opened from entity that already has donor (default: true)
+    sourceEntity?: 'donation' | 'certificate' | 'donor_gift' | 'donor_event'; // Source entity type for dynamic title
+    donorName?: string; // Donor name for dynamic title
+    sourceEntityType?: 'donation' | 'certificate' | 'donor_gift' | 'donor_event'; // Source entity type to save in reminder
+    sourceEntityId?: string; // Source entity ID to save in reminder
+  }): Promise<boolean | string> {
     return await openDialog(
       (await import('../routes/modals/reminder-details-modal/reminder-details-modal.component')).ReminderDetailsModalComponent,
       (dlg) => dlg.args = {
         reminderId,
         userId: options?.userId,
         donorId: options?.donorId,
-        donationId: options?.donationId,
-        certificateId: options?.certificateId,
         reminderType: options?.reminderType,
         reminderDate: options?.reminderDate,
-        isRecurringYearly: options?.isRecurringYearly
+        isRecurringYearly: options?.isRecurringYearly,
+        hideDonorField: options?.hideDonorField !== undefined ? options.hideDonorField : true, // Default to true
+        sourceEntity: options?.sourceEntity,
+        donorName: options?.donorName,
+        sourceEntityType: options?.sourceEntityType,
+        sourceEntityId: options?.sourceEntityId
       }
     )
   }

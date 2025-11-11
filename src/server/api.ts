@@ -3,15 +3,22 @@ import { createPostgresConnection } from 'remult/postgres'
 import { remultExpress } from 'remult/remult-express'
 import { SignInController, getUser } from '../app/users/SignInController'
 import { UpdatePasswordController } from '../app/users/UpdatePasswordController'
+import { CampaignController } from '../shared/controllers/campaign.controller'
+import { CertificateController } from '../shared/controllers/certificate.controller'
+import { CountryController } from '../shared/controllers/country.controller'
 import { DonationController } from '../shared/controllers/donation.controller'
+import { DonorGiftController } from '../shared/controllers/donor-gift.controller'
 import { DonorMapController } from '../shared/controllers/donor-map.controller'
 import { DonorController } from '../shared/controllers/donor.controller'
 import { EmailController } from '../shared/controllers/email.controller'
 import { FileController } from '../shared/controllers/file.controller'
-import { LetterController } from '../shared/controllers/letter.controller'
-import { PaymentController } from '../shared/controllers/payment.controller'
-import { ReminderController } from '../shared/controllers/reminder.controller'
 import { HebrewDateController } from '../shared/controllers/hebrew-date.controller'
+import { LetterController } from '../shared/controllers/letter.controller'
+import { PayerController } from '../shared/controllers/payer.controller'
+import { PaymentController } from '../shared/controllers/payment.controller'
+import { PlaceController } from '../shared/controllers/place.controller'
+import { ReminderController } from '../shared/controllers/reminder.controller'
+import { ReportController } from '../shared/controllers/report.controller'
 import { TargetAudienceController } from '../shared/controllers/target-audience.controller'
 import { Bank, Circle, Company, DonationBank, DonationOrganization, DonorAddressType, DonorContact, DonorGift, DonorNote, DonorPlace, DonorReceptionHour, DonorRelation, Gift, LetterTitle, NoteType, Organization, Payment, TargetAudience } from '../shared/entity'
 import { Blessing } from '../shared/entity/blessing'
@@ -30,13 +37,6 @@ import { Place } from '../shared/entity/place'
 import { Reminder } from '../shared/entity/reminder'
 import { User } from '../shared/entity/user'
 import { checkAndSendReminders } from './scheduler'
-import { CertificateController } from '../shared/controllers/certificate.controller'
-import { ReportController } from '../shared/controllers/report.controller'
-import { CountryController } from '../shared/controllers/country.controller'
-import { PlaceController } from '../shared/controllers/place.controller'
-import { CampaignController } from '../shared/controllers/campaign.controller'
-import { DonorGiftController } from '../shared/controllers/donor-gift.controller'
-import { PayerController } from '../shared/controllers/payer.controller'
 
 export const entities = [
   User, Donor, Donation, Campaign, DonationMethod, Reminder,
@@ -54,10 +54,35 @@ export const api = remultExpress({
   entities,
   getUser,
   dataProvider: async () => {
-    return createPostgresConnection({
-      configuration: 'heroku',
-      sslInDev: !(process.env['DEV_MODE'] === 'DEV')
-    })
+        const STARTING_DONATION_NUM = 1001;
+        const provider = await createPostgresConnection({ 
+          configuration: "heroku", 
+          sslInDev: !(process.env['DEV_MODE'] === 'DEV') })
+
+        /*
+                let seq = `
+                CREATE SEQUENCE IF NOT EXISTS public.donations_donationnum_seq
+                INCREMENT 1
+                START 1001
+                MINVALUE 1001
+                MAXVALUE 2147483647
+                CACHE 1
+                OWNED BY donations.donationnum;
+            `
+        
+                // findorcreate donationNum serial restart at 1001.
+                await provider.execute("alter table donations add column if not exists donationnum serial");
+                let result = await provider.execute("SELECT last_value FROM donations_donationnum_seq");
+                if (result && result.rows && result.rows.length > 0) {
+                    let count = parseInt(result.rows[0].last_value);
+                    console.log('donations_donationnum_seq', count)
+                    if (count < STARTING_DONATION_NUM) {
+                        await provider.execute(`SELECT setval('donations_donationnum_seq'::regclass, ${STARTING_DONATION_NUM}, false)`);
+                    }
+                }
+        */
+
+        return provider
   },
   initApi: async r => {
     // Setup cron job to check reminders every 5 minutes

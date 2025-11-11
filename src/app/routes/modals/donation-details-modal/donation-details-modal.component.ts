@@ -3,7 +3,7 @@ import { MatDialogRef } from '@angular/material/dialog';
 import { DialogConfig, openDialog } from 'common-ui-elements';
 import { remult } from 'remult';
 import { DonationController } from '../../../../shared/controllers/donation.controller';
-import { Bank, Campaign, Company, Country, Donation, DonationBank, DonationFile, DonationMethod, DonationOrganization, DonationPartner, Donor, Organization, User } from '../../../../shared/entity';
+import { Bank, Campaign, Company, Country, Donation, DonationBank, DonationFile, DonationMethod, DonationOrganization, DonationPartner, Donor, Organization, Reminder, User } from '../../../../shared/entity';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
 import { DonorService } from '../../../services/donor.service';
@@ -63,6 +63,7 @@ export class DonationDetailsModalComponent implements OnInit {
 
   loading = false;
   isNewDonation = false;
+  hasReminderFlag = false;
   selectedDonor?: Donor;
   selectedCampaign?: Campaign;
   selectedPaymentMethod?: DonationMethod;
@@ -337,6 +338,11 @@ export class DonationDetailsModalComponent implements OnInit {
 
         // Update payer options
         this.updatePayerOptions();
+
+        // Check if reminder exists for existing donation
+        if (!this.isNewDonation && this.donation.id) {
+          await this.checkReminder();
+        }
       });
     } catch (error) {
       console.error('Error loading donation data:', error);
@@ -347,6 +353,22 @@ export class DonationDetailsModalComponent implements OnInit {
     // Prevent accidental close for new donation
     if (this.isNewDonation) {
       this.dialogRef.disableClose = true;
+    }
+  }
+
+  private async checkReminder() {
+    if (!this.donation?.id) {
+      this.hasReminderFlag = false;
+      return;
+    }
+    try {
+      const reminder = await remult.repo(Reminder).findFirst({
+        sourceEntityType: 'donation',
+        sourceEntityId: this.donation.id
+      });
+      this.hasReminderFlag = !!reminder;
+    } catch (error) {
+      this.hasReminderFlag = false;
     }
   }
 
@@ -722,13 +744,63 @@ export class DonationDetailsModalComponent implements OnInit {
   async addReminder() {
     if (!this.donation) return;
 
+    // Save donation first if it's new or has changes
+    if (this.isNewDonation || this.hasChanges()) {
+      const saved = await this.saveDonation();
+      if (!saved) {
+        this.ui.info('נא לשמור את התרומה קודם');
+        return;
+      }
+    }
+
     try {
-      const reminderCreated = await this.ui.reminderDetailsDialog('new', {
-        donationId: this.donation.id
+      // Prepare reminder data from donation
+      const donorName = this.donation.donor ?
+        `${this.donation.donor.firstName || ''} ${this.donation.donor.lastName || ''}`.trim() :
+        'תורם';
+
+      const amount = this.donation.amount || 0;
+      const campaignName = this.selectedCampaign?.name || 'קמפיין';
+
+      // Create reminder with pre-filled data
+      const reminderId = await this.ui.reminderDetailsDialog('new', {
+        donorId: this.donation.donorId,
+        reminderType: 'donation_followup',
+        reminderDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+        hideDonorField: true, // Hide donor field since it's already linked to donation's donor
+        sourceEntity: 'donation',
+        donorName: donorName,
+        sourceEntityType: 'donation',
+        sourceEntityId: this.donation.id
       });
 
-      if (reminderCreated) {
-        console.log('Reminder created successfully for donation:', this.donation.id);
+      if (reminderId && typeof reminderId === 'string') {
+        // Reminder is now linked via sourceEntityType/sourceEntityId - no need to save donation
+        console.log('Reminder created and linked to donation:', this.donation.id);
+        this.ui.info('התזכורת נוספה בהצלחה');
+        await this.checkReminder(); // Update flag
+      }
+    } catch (error) {
+      console.error('Error opening reminder modal:', error);
+      this.ui.error('שגיאה בפתיחת מודל התזכורת');
+    }
+  }
+
+  async openReminder() {
+    if (!this.donation?.id) return;
+
+    try {
+      // Find reminder by sourceEntityType and sourceEntityId
+      const reminder = await remult.repo(Reminder).findFirst({
+        sourceEntityType: 'donation',
+        sourceEntityId: this.donation.id
+      });
+
+      if (reminder) {
+        await this.ui.reminderDetailsDialog(reminder.id);
+        await this.checkReminder(); // Update flag in case reminder was deleted
+      } else {
+        this.ui.error('לא נמצאה תזכורת לתרומה זו');
       }
     } catch (error) {
       console.error('Error opening reminder modal:', error);

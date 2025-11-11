@@ -34,6 +34,7 @@ export class CertificateDetailsModalComponent implements OnInit {
   showPreview = false;
   loading = false;
   isNewCertificate = false;
+  hasReminderFlag = false;
 
   donorRepo = remult.repo(Donor);
   certificateRepo = remult.repo(Certificate);
@@ -82,7 +83,28 @@ export class CertificateDetailsModalComponent implements OnInit {
       this.selectedDonor = await this.donorRepo.findId(this.selectedDonorId) || undefined;
     }
 
+    // Check if reminder exists for existing certificate
+    if (!this.isNewCertificate && this.certificate.id) {
+      await this.checkReminder();
+    }
+
     this.loading = false;
+  }
+
+  private async checkReminder() {
+    if (!this.certificate?.id) {
+      this.hasReminderFlag = false;
+      return;
+    }
+    try {
+      const reminder = await remult.repo(Reminder).findFirst({
+        sourceEntityType: 'certificate',
+        sourceEntityId: this.certificate.id
+      });
+      this.hasReminderFlag = !!reminder;
+    } catch (error) {
+      this.hasReminderFlag = false;
+    }
   }
 
   get eventDateForInput(): string {
@@ -247,8 +269,12 @@ export class CertificateDetailsModalComponent implements OnInit {
       }
     }
 
-    // Check if reminder already exists
-    const reminderId = this.certificate.reminderId || 'new';
+    // Check if reminder already exists by querying with sourceEntityType/sourceEntityId
+    const existingReminder = await remult.repo(Reminder).findFirst({
+      sourceEntityType: 'certificate',
+      sourceEntityId: this.certificate.id
+    });
+    const reminderId = existingReminder?.id || 'new';
 
     // Prepare reminder args based on certificate type
     let reminderType: 'memorialDay' | 'memorial' | undefined;
@@ -262,24 +288,27 @@ export class CertificateDetailsModalComponent implements OnInit {
       isRecurringYearly = true; // Yearly recurring reminder
     }
 
-    const reminderSaved = await this.ui.reminderDetailsDialog(reminderId, {
+    const donorName = this.certificate.donor ?
+      `${this.certificate.donor.firstName || ''} ${this.certificate.donor.lastName || ''}`.trim() :
+      'תורם';
+
+    const result = await this.ui.reminderDetailsDialog(reminderId, {
       donorId: this.certificate.donorId,
       reminderType: reminderType,
       reminderDate: this.certificate.eventDate,
       isRecurringYearly: isRecurringYearly,
-      certificateId: this.certificate.id
+      sourceEntity: 'certificate',
+      donorName: donorName,
+      sourceEntityType: 'certificate',
+      sourceEntityId: this.certificate.id
     });
 
-    if (reminderSaved && reminderId === 'new') {
-      // Reload certificate to get the updated reminderId
-      const reloadedCert = await this.certificateRepo.findId(this.certificate.id, {
-        include: { reminder: true }
-      });
-      if (reloadedCert) {
-        this.certificate.reminderId = reloadedCert.reminderId;
-        this.certificate.reminder = reloadedCert.reminder;
-      }
-      this.ui.info('תזכורת נוצרה בהצלחה');
+    if (result && reminderId === 'new' && typeof result === 'string') {
+      // Reminder is now linked via sourceEntityType/sourceEntityId - no need to save certificate
+      this.ui.info('תזכורת נוצרה ונשמרה בהצלחה');
     }
+
+    // Update flag after creating/editing reminder
+    await this.checkReminder();
   }
 }

@@ -140,6 +140,7 @@
               {{ (i18n.terms$ | async)?.typeHeader }}
               <span class="sort-icon">{{ getSortIcon('type') }}</span>
             </th>
+            <th>מקור</th>
             <th>{{ (i18n.terms$ | async)?.donorHeader }}</th>
             <th class="sortable" [class.sorted]="isSorted('title')" (click)="toggleSort('title', $event)">
               {{ (i18n.terms$ | async)?.subjectHeader }}
@@ -166,6 +167,12 @@
 
             <td class="type-col">
               <span class="type-badge type-{{reminder.type}}">{{getTypeText(reminder.type)}}</span>
+            </td>
+
+            <td class="source-col">
+              <span class="source-badge" [title]="getSourceText(reminder)">
+                {{getSourceIcon(reminder)}} {{getSourceText(reminder)}}
+              </span>
             </td>
 
             <td class="donor-col">

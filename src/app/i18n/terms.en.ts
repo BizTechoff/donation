@@ -896,6 +896,9 @@ export const termsEn = {
   // Add Reminder Modal
   addNewReminder: 'Add New Reminder',
   newReminder: 'New Reminder',
+  addReminderButton: 'Add Reminder',
+  openReminderButton: 'Open Reminder',
+  reminder: 'Reminder',
   editReminderTitle: 'Edit Reminder',
   reminderTypeSelect: 'Reminder Type',
   yearlyReminderType: 'Yearly Reminder Type',
@@ -967,8 +970,8 @@ export const termsEn = {
   assignToDonation: 'Assign to Donation',
   assignToContact: 'Fundraiser',
   noAssignment: 'No Assignment',
-  relatedDonor: 'Related Donor',
-  relatedDonation: 'Related Donation',
+  relatedDonorLabel: 'Related Donor',
+  relatedDonationLabel: 'Related Donation',
 
   // Standing Orders Page - From standing-orders.component.html
   standingOrdersTitle: 'Standing Orders',

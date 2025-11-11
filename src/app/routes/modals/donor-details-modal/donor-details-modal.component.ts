@@ -3,7 +3,7 @@ import { MatDialogRef } from '@angular/material/dialog';
 import { BusyService, DialogConfig, openDialog } from 'common-ui-elements';
 import { remult } from 'remult';
 import { DonorController } from '../../../../shared/controllers/donor.controller';
-import { Circle, Company, Country, Donation, Donor, DonorAddressType, DonorContact, DonorEvent, DonorNote, DonorPlace, DonorReceptionHour, DonorRelation, Event, NoteType, Place, User } from '../../../../shared/entity';
+import { Circle, Company, Country, Donation, Donor, DonorAddressType, DonorContact, DonorEvent, DonorNote, DonorPlace, DonorReceptionHour, DonorRelation, Event, NoteType, Place, Reminder, User } from '../../../../shared/entity';
 import { AddressComponents } from '../../../common/osm-address-input/osm-address-input.component';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
@@ -668,8 +668,15 @@ export class DonorDetailsModalComponent implements OnInit {
           donorEvent.donorId = this.donor.id;
           await this.donorEventRepo.save(donorEvent);
           // No need to update ID back as donorEvent is saved directly
-          // TODO-REMINDER: add here event-yearly-reminder if not already exists.
         }
+
+        // Sync reminders for all donor events
+        // Reload donor to get instance with BackendMethod
+        const donorWithMethods = await remult.repo(Donor).findId(this.donor.id);
+        if (donorWithMethods) {
+          await donorWithMethods.syncDonorEventReminders();
+        }
+
 
         // Save donor contacts
         for (const donorContact of this.donorContacts) {
@@ -956,8 +963,21 @@ export class DonorDetailsModalComponent implements OnInit {
       try {
         // If the event has an ID, it was already saved to DB and needs to be deleted
         if (donorEvent.id) {
+          // Delete associated reminder if exists (find by sourceEntityId)
+          try {
+            const reminder = await remult.repo(Reminder).findFirst({
+              sourceEntityType: 'donor_event',
+              sourceEntityId: donorEvent.id
+            });
+            if (reminder) {
+              await remult.repo(Reminder).delete(reminder);
+            }
+          } catch (reminderError) {
+            console.error('Error deleting associated reminder:', reminderError);
+            // Continue with event deletion even if reminder deletion fails
+          }
+
           await this.donorEventRepo.delete(donorEvent);
-          // TODO-REMINDER: remove here event-yearly-reminder if exists.
         }
 
         // Remove from local array
@@ -2174,29 +2194,29 @@ export class DonorDetailsModalComponent implements OnInit {
       });
 
       for (const relation of relations) {
-        let relatedDonor: Donor | undefined;
+        let donor: Donor | undefined;
         let relationshipType: string = '';
         let isReverse = false;
 
         // אם התורם הנוכחי הוא donor1, אזי נשתמש ב-relationshipType1
         if (relation.donor1Id === this.donor.id) {
-          relatedDonor = relation.donor2;
+          donor = relation.donor2;
           relationshipType = relation.relationshipType1;
           isReverse = false;
         }
         // אם התורם הנוכחי הוא donor2, אזי נחשב דינמית את הקשר ההופכי
         else if (relation.donor2Id === this.donor.id) {
-          relatedDonor = relation.donor1;
+          donor = relation.donor1;
           // חישוב דינמי של הקשר ההופכי לפי מגדר donor1
           relationshipType = this.getReverseRelationshipType(relation.relationshipType1, relation.donor1?.gender || '');
           isReverse = true;
         }
 
-        if (relatedDonor && relationshipType) {
+        if (donor && relationshipType) {
           this.selectedFamilyRelationships.push({
-            donor: relatedDonor,
+            donor: donor,
             relationshipType: relationshipType,
-            donorId: relatedDonor.id,
+            donorId: donor.id,
             relationId: relation.id,
             isReverse: isReverse
           });
@@ -2219,29 +2239,29 @@ export class DonorDetailsModalComponent implements OnInit {
 
     // Build from already loaded donorRelations
     for (const relation of this.donorRelations) {
-      let relatedDonor: Donor | undefined;
+      let donor: Donor | undefined;
       let relationshipType: string = '';
       let isReverse = false;
 
       // אם התורם הנוכחי הוא donor1, אזי נשתמש ב-relationshipType1
       if (relation.donor1Id === this.donor.id) {
-        relatedDonor = relation.donor2;
+        donor = relation.donor2;
         relationshipType = relation.relationshipType1;
         isReverse = false;
       }
       // אם התורם הנוכחי הוא donor2, אזי נחשב דינמית את הקשר ההופכי
       else if (relation.donor2Id === this.donor.id) {
-        relatedDonor = relation.donor1;
+        donor = relation.donor1;
         // חישוב דינמי של הקשר ההופכי לפי מגדר donor1
         relationshipType = this.getReverseRelationshipType(relation.relationshipType1, relation.donor1?.gender || '');
         isReverse = true;
       }
 
-      if (relatedDonor && relationshipType) {
+      if (donor && relationshipType) {
         this.selectedFamilyRelationships.push({
-          donor: relatedDonor,
+          donor: donor,
           relationshipType: relationshipType,
-          donorId: relatedDonor.id,
+          donorId: donor.id,
           relationId: relation.id,
           isReverse: isReverse
         });

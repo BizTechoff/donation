@@ -141,7 +141,7 @@
     <div class="modal-footer">
       <button class="btn btn-secondary" (click)="onClose()">{{ (i18n.terms$ | async)?.cancel }}</button>
       <button class="btn btn-info" (click)="createOrEditReminder()">
-        {{ certificate.reminderId ? (i18n.terms$ | async)?.reminderButton : (i18n.terms$ | async)?.createReminder }}
+        {{ hasReminderFlag ? (i18n.terms$ | async)?.reminderButton : (i18n.terms$ | async)?.createReminder }}
       </button>
       <button class="btn btn-primary" (click)="save()">{{ (i18n.terms$ | async)?.saveCertificateButton }}</button>
     </div>

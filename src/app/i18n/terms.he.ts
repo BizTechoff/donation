@@ -894,6 +894,9 @@ export const termsHe = {
   // Add Reminder Modal
   addNewReminder: 'הוספת תזכורת חדשה',
   newReminder: 'תזכורת חדשה',
+  addReminderButton: 'הוסף תזכורת',
+  openReminderButton: 'פתח תזכורת',
+  reminder: 'תזכורת',
   editReminderTitle: 'עריכת תזכורת',
   reminderTypeSelect: 'סוג תזכורת',
   yearlyReminderType: 'סוג תזכורת שנתית',
@@ -965,8 +968,8 @@ export const termsHe = {
   assignToDonation: 'שיוך לתרומה',
   assignToContact: 'מתרים',
   noAssignment: 'ללא שיוך',
-  relatedDonor: 'תורם מקושר',
-  relatedDonation: 'תרומה מקושרת',
+  relatedDonorLabel: 'תורם מקושר',
+  relatedDonationLabel: 'תרומה מקושרת',
 
   // Standing Orders Page - From standing-orders.component.html
   standingOrdersTitle: 'הוראות קבע',

@@ -7,7 +7,7 @@
           <mat-icon>{{isNewReminder ? 'notifications_add' : 'notifications'}}</mat-icon>
         </div>
         <div class="header-text">
-          <h2>{{ isNewReminder ? (i18n.terms$ | async)?.newReminder : (i18n.terms$ | async)?.editReminderTitle }}</h2>
+          <h2>{{ getModalTitle() }}</h2>
           <p class="header-subtitle" *ngIf="!isNewReminder && reminder">
             {{reminder.title}}
           </p>
@@ -20,29 +20,28 @@
     </div>
 
     <div class="modal-content" *ngIf="!loading && reminder">
-      <!-- Donor Info -->
-      <!-- <div class="info-section" *ngIf="reminder.relatedDonor">
+      <!-- Donor Info - Display when donor is linked (read-only) -->
+      <div class="info-section" *ngIf="reminder.donor && args?.hideDonorField">
         <div class="section-header">
           <mat-icon>person</mat-icon>
-          <span>{{ (i18n.terms$ | async)?.relatedDonor }}</span>
+          <span>{{ (i18n.terms$ | async)?.donor }}</span>
         </div>
         <div class="donor-info">
-          <strong>{{ reminder.relatedDonor.fullName }}</strong>
-          <span class="secondary-text">{{ reminder.relatedDonor.phone }} | {{ reminder.relatedDonor.email }}</span>
+          <strong>{{ reminder.donor.fullName }}</strong>
         </div>
-      </div> -->
+      </div>
 
       <!-- Donation Info -->
-      <!-- <div class="info-section" *ngIf="reminder.relatedDonation">
+      <!-- <div class="info-section" *ngIf="reminder.donation">
         <div class="section-header">
           <mat-icon>monetization_on</mat-icon>
-          <span>{{ (i18n.terms$ | async)?.relatedDonation }}</span>
+          <span>{{ (i18n.terms$ | async)?.donation }}</span>
         </div>
         <div class="donation-info">
-          <strong>₪{{ reminder.relatedDonation.amount.toLocaleString() }}</strong>
-          <span class="secondary-text">{{ reminder.relatedDonation.donationDate | date:'dd/MM/yyyy' }}</span>
-          <span class="secondary-text" *ngIf="reminder.relatedDonation.campaign">{{ (i18n.terms$ | async)?.campaign }}: {{
-            reminder.relatedDonation.campaign.name }}</span>
+          <strong>₪{{ reminder.donation.amount.toLocaleString() }}</strong>
+          <span class="secondary-text">{{ reminder.donation.donationDate | date:'dd/MM/yyyy' }}</span>
+          <span class="secondary-text" *ngIf="reminder.donation.campaign">{{ (i18n.terms$ | async)?.campaign }}: {{
+            reminder.donation.campaign.name }}</span>
         </div>
       </div> -->
 
@@ -263,43 +262,25 @@
               </div>
             </div>
 
-            <div class="form-row">
+            <div class="form-row" *ngIf="!args?.hideDonorField">
               <div class="form-group full-width">
                 <label>{{ (i18n.terms$ | async)?.assignToDonor }}</label>
                 <div class="donor-selection-field">
-                  <div class="selected-donor-display" *ngIf="reminder.relatedDonor">
+                  <div class="selected-donor-display" *ngIf="reminder.donor">
                     <div class="donor-info" (click)="openDonorSelectionModal()">
-                      <strong>{{ reminder.relatedDonor.fullName }}</strong>
+                      <strong>{{ reminder.donor.fullName }}</strong>
                     </div>
                     <button type="button" class="btn-clear" (click)="clearDonorSelection()" title="נקה בחירה">
                       <mat-icon>close</mat-icon>
                     </button>
                   </div>
-                  <div class="empty-selection-field" *ngIf="!reminder.relatedDonor" (click)="openDonorSelectionModal()">
+                  <div class="empty-selection-field" *ngIf="!reminder.donor" (click)="openDonorSelectionModal()">
                     <span>בחר תורם...</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div class="form-row">
-              <div class="form-group full-width">
-                <label>{{ (i18n.terms$ | async)?.assignToDonation }}</label>
-                <div class="donor-selection-field">
-                  <div class="selected-donor-display" *ngIf="reminder.relatedDonation">
-                    <div class="donor-info" (click)="openDonationSelectionModal()">
-                      <strong>{{ getDonationDisplayText(reminder.relatedDonation) }}</strong>
-                    </div>
-                    <button type="button" class="btn-clear" (click)="clearDonationSelection()" title="נקה בחירה">
-                      <mat-icon>close</mat-icon>
-                    </button>
-                  </div>
-                  <div class="empty-selection-field" *ngIf="!reminder.relatedDonation" (click)="openDonationSelectionModal()">
-                    <span>בחר תרומה...</span>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
 
         </div>

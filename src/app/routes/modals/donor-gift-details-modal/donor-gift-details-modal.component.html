@@ -53,12 +53,15 @@
                  [(ngModel)]="donorGift.deliveryDate">
         </div>
 
-        <!-- Reminder Date -->
+        <!-- Reminder -->
         <div class="form-group">
-          <label>{{ (i18n.terms$ | async)?.reminderDate }}</label>
-          <input type="date"
-                 class="form-control"
-                 [(ngModel)]="donorGift.reminderDate">
+          <label>{{ (i18n.terms$ | async)?.reminder }}</label>
+          <button *ngIf="hasReminderFlag" class="btn-secondary full-width" (click)="openReminder()">
+            {{ (i18n.terms$ | async)?.openReminderButton }}
+          </button>
+          <button *ngIf="!hasReminderFlag" class="btn-primary full-width" (click)="addReminder()">
+            {{ (i18n.terms$ | async)?.addReminderButton }}
+          </button>
         </div>
       </div>
 

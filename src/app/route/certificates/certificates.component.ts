@@ -176,25 +176,28 @@ export class CertificatesComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Load reminders for certificates that have reminderId
+   * Load reminders for certificates by sourceEntityType/sourceEntityId
    */
   private async loadReminders() {
-    const certificatesWithReminders = this.certificates.filter(c => c.reminderId);
-    if (certificatesWithReminders.length === 0) return;
+    if (this.certificates.length === 0) return;
 
-    const reminderIds = certificatesWithReminders.map(c => c.reminderId);
+    const certificateIds = this.certificates.map(c => c.id).filter(id => id);
+    if (certificateIds.length === 0) return;
+
     const reminderRepo = remult.repo(Reminder);
 
     const reminders = await reminderRepo.find({
-      where: { id: { $in: reminderIds } }
+      where: {
+        sourceEntityType: 'certificate',
+        sourceEntityId: { $in: certificateIds }
+      }
     });
 
     // Store reminder dates
     this.certificateReminderMap.clear();
     for (const reminder of reminders) {
-      const certificate = this.certificates.find(c => c.reminderId === reminder.id);
-      if (certificate) {
-        this.certificateReminderMap.set(certificate.id, reminder.dueDate);
+      if (reminder.sourceEntityId) {
+        this.certificateReminderMap.set(reminder.sourceEntityId, reminder.dueDate);
       }
     }
   }
@@ -291,11 +294,17 @@ export class CertificatesComponent implements OnInit, OnDestroy {
   }
 
   async createReminder(certificate: Certificate) {
-    // Check if reminder already exists
-    const reminderId = certificate.reminderId || 'new';
+    // Check if reminder already exists by querying
+    const existingReminder = await remult.repo(Reminder).findFirst({
+      sourceEntityType: 'certificate',
+      sourceEntityId: certificate.id
+    });
+    const reminderId = existingReminder?.id || 'new';
 
     const reminderSaved = await this.ui.reminderDetailsDialog(reminderId, {
-      donorId: certificate.donorId
+      donorId: certificate.donorId,
+      sourceEntityType: 'certificate',
+      sourceEntityId: certificate.id
     });
 
     if (reminderSaved) {

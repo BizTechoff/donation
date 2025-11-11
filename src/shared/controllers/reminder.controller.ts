@@ -37,11 +37,15 @@ export class ReminderController {
       filteredDonorIds = donors.map(d => d.id)
 
       if (filteredDonorIds.length === 0) {
-        return [] // No matching donors, return empty reminders
+        // No matching donors, but still show reminders without donor
+        where.donorId = null
+      } else {
+        // Filter reminders by donor IDs OR reminders without donor
+        where.$or = [
+          { donorId: { $in: filteredDonorIds } },
+          { donorId: null }
+        ]
       }
-
-      // Filter reminders by donor IDs
-      where.relatedDonorId = { $in: filteredDonorIds }
     }
 
     // Date range filter
@@ -84,7 +88,7 @@ export class ReminderController {
       orderBy,
       limit: pageSize,
       page: skip,
-      include: { relatedDonor: true }
+      include: { donor: true }
     })
   }
 
@@ -112,11 +116,15 @@ export class ReminderController {
       filteredDonorIds = donors.map(d => d.id)
 
       if (filteredDonorIds.length === 0) {
-        return 0 // No matching donors, return 0 count
+        // No matching donors, but still count reminders without donor
+        where.donorId = null
+      } else {
+        // Filter reminders by donor IDs OR reminders without donor
+        where.$or = [
+          { donorId: { $in: filteredDonorIds } },
+          { donorId: null }
+        ]
       }
-
-      // Filter reminders by donor IDs
-      where.relatedDonorId = { $in: filteredDonorIds }
     }
 
     // Date range filter
@@ -386,7 +394,7 @@ export class ReminderController {
       }
 
       // Filter reminders by donor IDs
-      where.relatedDonorId = { $in: filteredDonorIds }
+      where.donorId = { $in: filteredDonorIds }
     }
 
     // Filter by nextReminderDate <= today
@@ -401,9 +409,8 @@ export class ReminderController {
         nextReminderDate: 'asc'
       },
       include: {
-        relatedDonor: true,
-        assignedTo: true,
-        relatedDonation: true
+        donor: true,
+        assignedTo: true
       }
     })
   }

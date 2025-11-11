@@ -26,7 +26,18 @@ export interface UITools {
   donorDetailsDialog(donorId: string): Promise<boolean>
   campaignDetailsDialog(campaignId: string): Promise<boolean>
   donationDetailsDialog(donationId: string, options?: { donorId?: string; campaignId?: string }): Promise<boolean>
-  reminderDetailsDialog(reminderId?: string, options?: { donorId?: string; donationId?: string }): Promise<boolean>
+  reminderDetailsDialog(reminderId?: string, options?: {
+    userId?: string;
+    donorId?: string;
+    reminderType?: 'donation_followup' | 'thank_you' | 'receipt' | 'birthday' | 'holiday' | 'general' | 'meeting' | 'phone_call' | 'memorialDay' | 'memorial' | 'yahrzeit';
+    reminderDate?: Date;
+    isRecurringYearly?: boolean;
+    hideDonorField?: boolean;
+    sourceEntity?: 'donation' | 'certificate' | 'donor_gift' | 'donor_event';
+    donorName?: string;
+    sourceEntityType?: 'donation' | 'certificate' | 'donor_gift' | 'donor_event';
+    sourceEntityId?: string;
+  }): Promise<boolean | string>
 }
 
 export interface MultiSelectOptions<T> {

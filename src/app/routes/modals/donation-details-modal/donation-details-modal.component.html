@@ -657,10 +657,16 @@
         {{i18n.terms.letterGeneration}}
       </button>
 
-      <button mat-stroked-button class="action-button add-reminder-btn" (click)="addReminder()"
-        [title]="i18n.terms.addReminder">
+      <button *ngIf="hasReminderFlag" mat-stroked-button class="action-button open-reminder-btn" (click)="openReminder()"
+        [title]="i18n.terms.openReminderButton">
+        <mat-icon>alarm</mat-icon>
+        {{i18n.terms.openReminderButton}}
+      </button>
+
+      <button *ngIf="!hasReminderFlag" mat-stroked-button class="action-button add-reminder-btn" (click)="addReminder()"
+        [title]="i18n.terms.addReminderButton">
         <mat-icon>alarm_add</mat-icon>
-        {{i18n.terms.addReminder}}
+        {{i18n.terms.addReminderButton}}
       </button>
 
       <button

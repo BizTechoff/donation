@@ -116,10 +116,7 @@
             {{ (i18n.terms$ | async)?.deliveryDate }}
             <span class="sort-icon">{{ getSortIcon('deliveryDate') }}</span>
           </th>
-          <th class="sortable" [class.sorted]="isSorted('reminderDate')" (click)="toggleSort('reminderDate', $event)">
-            {{ (i18n.terms$ | async)?.reminderDate }}
-            <span class="sort-icon">{{ getSortIcon('reminderDate') }}</span>
-          </th>
+          <th>{{ (i18n.terms$ | async)?.reminder }}</th>
           <th class="sortable" [class.sorted]="isSorted('isDelivered')" (click)="toggleSort('isDelivered', $event)">
             {{ (i18n.terms$ | async)?.status }}
             <span class="sort-icon">{{ getSortIcon('isDelivered') }}</span>
@@ -133,7 +130,14 @@
           <td>{{ getDonorName(donorGift) }}</td>
           <td>{{ donorGift.gift?.name || '-' }}</td>
           <td>{{ formatHebrewDate(donorGift.deliveryDate) }}</td>
-          <td>{{ formatHebrewDate(donorGift.reminderDate) }}</td>
+          <td>
+            <button *ngIf="hasReminder(donorGift)" class="btn-secondary" (click)="openReminder(donorGift)">
+              {{ (i18n.terms$ | async)?.openReminderButton }}
+            </button>
+            <button *ngIf="!hasReminder(donorGift)" class="btn-primary" (click)="addReminder(donorGift)">
+              {{ (i18n.terms$ | async)?.addReminderButton }}
+            </button>
+          </td>
           <td>
             <span class="status-badge" [class.delivered]="donorGift.isDelivered" [class.pending]="!donorGift.isDelivered">
               {{ donorGift.isDelivered ? (i18n.terms$ | async)?.delivered : (i18n.terms$ | async)?.pending }}
