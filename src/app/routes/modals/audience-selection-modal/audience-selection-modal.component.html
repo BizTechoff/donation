@@ -1,6 +1,6 @@
 <div class="audience-selection-modal">
   <h2 mat-dialog-title>
-    {{ args.title || 'בחירת קהל יעד' }}
+    {{ args.title || ((i18n.terms$ | async)?.selectTargetAudienceTitle || 'בחירת קהל יעד') }}
     <button mat-icon-button class="close-button" (click)="closeDialog()">
       <mat-icon>close</mat-icon>
     </button>
@@ -71,7 +71,7 @@
   <mat-dialog-actions *ngIf="args.multiSelect">
     <button mat-raised-button color="primary" (click)="finishMultiSelect()">
       <mat-icon>done</mat-icon>
-      בחר ({{ selectedAudiences.length }})
+      {{ (i18n.terms$ | async)?.selectButton || 'בחר' }} ({{ selectedAudiences.length }})
     </button>
     <button mat-button (click)="closeDialog()">
       ביטול

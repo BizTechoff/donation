@@ -182,7 +182,7 @@
                       (click)="selectBlessingType(donorBlessing)"
                       class="select-type-btn">
                 <mat-icon>category</mat-icon>
-                בחר סוג ברכה
+                {{ (i18n.terms$ | async)?.selectBlessingTypeButton || 'בחר סוג ברכה' }}
               </button>
             </td>
           </ng-container>
@@ -205,7 +205,7 @@
                       (click)="selectOrCreateDonation(donorBlessing)"
                       class="add-donation-btn">
                 <mat-icon>{{donorBlessing.matchingDonationsCount > 0 ? 'list' : 'add'}}</mat-icon>
-                {{donorBlessing.matchingDonationsCount > 0 ? 'בחר תרומה' : 'הוסף תרומה'}}
+                {{donorBlessing.matchingDonationsCount > 0 ? ((i18n.terms$ | async)?.selectDonationButton || 'בחר תרומה') : 'הוסף תרומה'}}
               </button>
               <!-- Show dash if no blessing type selected -->
               <span *ngIf="!donorBlessing.blessing?.blessingBookType" class="no-data">-</span>

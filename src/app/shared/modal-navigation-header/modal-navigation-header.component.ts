@@ -1,5 +1,6 @@
 import { Component, Input, Output, EventEmitter, OnInit, OnDestroy } from '@angular/core';
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
+import { I18nService } from '../../i18n/i18n.service';
 
 export interface NavigationRecord {
   id: string;
@@ -57,6 +58,8 @@ export class ModalNavigationHeaderComponent implements OnInit, OnDestroy {
   rangeMax: number = 100;
   amountMin: number = 0;
   amountMax: number = 10000;
+
+  constructor(public i18n: I18nService) {}
 
   ngOnInit() {
     this.setupSearchDebounce();

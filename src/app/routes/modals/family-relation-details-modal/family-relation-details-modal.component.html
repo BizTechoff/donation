@@ -19,7 +19,7 @@
 
     <!-- Relationship Type Selection as Cards -->
     <div class="relationship-type-selection">
-      <label class="relationship-selection-label">בחר סוג קשר:</label>
+      <label class="relationship-selection-label">{{ (i18n.terms$ | async)?.selectRelationshipLabel || 'בחר סוג קשר:' }}</label>
       <div class="relationship-types-grid">
         <div class="relationship-type-option" [class.active]="newRelationshipType === 'אבא'">
           <label class="relationship-card">
@@ -146,11 +146,11 @@
 
     <!-- Donor Selection -->
     <div class="donor-selection" *ngIf="newRelationshipType">
-      <label class="donor-selection-label">בחר תורם:</label>
+      <label class="donor-selection-label">{{ (i18n.terms$ | async)?.selectDonorLabel || 'בחר תורם:' }}</label>
       <div class="donor-search-field">
         <input type="text" class="form-control donor-select"
                [value]="selectedDonor?.fullName || ''"
-               placeholder="בחר תורם"
+               [placeholder]="(i18n.terms$ | async)?.selectDonorPlaceholder || 'בחר תורם'"
                readonly
                (click)="openDonorSelectionModal()">
         <button mat-icon-button (click)="openDonorSelectionModal()" [title]="'חפש תורם'">

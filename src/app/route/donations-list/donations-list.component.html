@@ -124,7 +124,7 @@
             <span class="sort-icon" *ngIf="getSortIcon('donorName')">{{ getSortIcon('donorName') }}</span>
           </th>
           <th class="sortable" [class.sorted]="isSorted('address')" (click)="toggleSort('address', $event)">
-            כתובת מגורים
+            {{ (i18n.terms$ | async)?.homeAddressColumn }}
             <span class="sort-icon" *ngIf="getSortIcon('address')">{{ getSortIcon('address') }}</span>
           </th>
           <th class="sortable" [class.sorted]="isSorted('amount')" (click)="toggleSort('amount', $event)">
@@ -136,11 +136,11 @@
             <span class="sort-icon" *ngIf="getSortIcon('currency')">{{ getSortIcon('currency') }}</span>
           </th>
           <th class="sortable" [class.sorted]="isSorted('amountInShekel')" (click)="toggleSort('amountInShekel', $event)">
-            סכום בשקלים
+            {{ (i18n.terms$ | async)?.amountInShekelColumn }}
             <span class="sort-icon" *ngIf="getSortIcon('amountInShekel')">{{ getSortIcon('amountInShekel') }}</span>
           </th>
           <th class="sortable" [class.sorted]="isSorted('donationDate')" (click)="toggleSort('donationDate', $event)">
-            תאריך
+            {{ (i18n.terms$ | async)?.dateColumn }}
             <span class="sort-icon" *ngIf="getSortIcon('donationDate')">{{ getSortIcon('donationDate') }}</span>
           </th>
           <th class="sortable" [class.sorted]="isSorted('method')" (click)="toggleSort('method', $event)">

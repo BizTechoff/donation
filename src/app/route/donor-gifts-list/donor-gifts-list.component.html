@@ -56,10 +56,10 @@
                    [placeholder]="(i18n.terms$ | async)?.allDonors || 'כל התורמים'"
                    readonly
                    (click)="openDonorSelectionModal()">
-            <button mat-icon-button (click)="openDonorSelectionModal()" [title]="'חפש תורם'">
+            <button mat-icon-button (click)="openDonorSelectionModal()" [title]="(i18n.terms$ | async)?.searchDonorTitle">
               <mat-icon>search</mat-icon>
             </button>
-            <button mat-icon-button *ngIf="selectedDonor" (click)="clearDonorFilter()" [title]="'נקה'">
+            <button mat-icon-button *ngIf="selectedDonor" (click)="clearDonorFilter()" [title]="(i18n.terms$ | async)?.clearFilterTitle">
               <mat-icon>clear</mat-icon>
             </button>
           </div>

@@ -210,7 +210,7 @@
               <div class="form-group">
                 <label>{{ i18n.terms.hebrewMonth }}</label>
                 <select class="form-control" [(ngModel)]="reminder.recurringMonth" (ngModelChange)="onHebrewMonthChange()">
-                  <option value="">בחר חודש</option>
+                  <option value="">{{ (i18n.terms$ | async)?.selectMonthOption || 'בחר חודש' }}</option>
                   <option *ngFor="let month of hebrewMonthOptions" [value]="month.value">
                     {{ month.label }}
                   </option>
@@ -223,7 +223,7 @@
               <div class="form-group">
                 <label>{{ i18n.terms.hebrewDayOfMonth }}</label>
                 <select class="form-control" [(ngModel)]="reminder.recurringDayOfMonth">
-                  <option value="">בחר יום</option>
+                  <option value="">{{ (i18n.terms$ | async)?.selectDayOption || 'בחר יום' }}</option>
                   <option *ngFor="let day of hebrewDayOfMonthOptions" [value]="day.value">
                     {{ day.label }}
                   </option>

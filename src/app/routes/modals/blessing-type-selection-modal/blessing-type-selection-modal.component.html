@@ -1,7 +1,7 @@
 <div class="modal-overlay">
   <div class="modal-content blessing-type-modal">
     <div class="modal-header">
-      <h2>בחירת סוג ברכה</h2>
+      <h2>{{ (i18n.terms$ | async)?.selectBlessingTypeTitle || 'בחירת סוג ברכה' }}</h2>
       <button class="modal-close" (click)="onClose()">&times;</button>
     </div>
 
@@ -19,7 +19,7 @@
             <span class="amount">{{type.price | number}}</span>
           </div>
           <div class="type-footer">
-            <button class="select-btn">בחר</button>
+            <button class="select-btn">{{ (i18n.terms$ | async)?.selectButton || 'בחר' }}</button>
           </div>
         </div>
       </div>

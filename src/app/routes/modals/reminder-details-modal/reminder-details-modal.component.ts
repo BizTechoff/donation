@@ -289,24 +289,25 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
         if (!this.reminder!.title || this.reminder!.title === '') {
           const donorName = loadedDonor.fullName || `${loadedDonor.firstName} ${loadedDonor.lastName}`;
 
+          const terms = this.i18n.terms;
           switch (this.reminder!.type) {
             case 'birthday':
-              this.reminder!.title = `יום הולדת - ${donorName}`;
+              this.reminder!.title = `${terms.birthdayType} - ${donorName}`;
               break;
             case 'memorialDay':
-              this.reminder!.title = `נציב יום - ${donorName}`;
+              this.reminder!.title = `${terms.memorialDayType} - ${donorName}`;
               break;
             case 'memorial':
-              this.reminder!.title = `נציב זכרון - ${donorName}`;
+              this.reminder!.title = `${terms.memorialMonumentType} - ${donorName}`;
               break;
             case 'yahrzeit':
-              this.reminder!.title = `יוארצהייט - ${donorName}`;
+              this.reminder!.title = `${terms.yahrzeitType} - ${donorName}`;
               break;
             case 'thank_you':
-              this.reminder!.title = `מכתב תודה - ${donorName}`;
+              this.reminder!.title = `${terms.thankYouReminder} - ${donorName}`;
               break;
             case 'phone_call':
-              this.reminder!.title = `שיחת טלפון - ${donorName}`;
+              this.reminder!.title = `${terms.phoneCallType} - ${donorName}`;
               break;
             case 'meeting':
               this.reminder!.title = `פגישה - ${donorName}`;
@@ -887,9 +888,9 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
       { value: 'general', label: terms.generalType },
       { value: 'meeting', label: terms.meetingType },
       { value: 'phone_call', label: terms.phoneCallType },
-      { value: 'memorialDay', label: 'נציב יום' },
-      { value: 'memorial', label: 'נציב זכרון' },
-      { value: 'yahrzeit', label: 'יוארצהייט' }
+      { value: 'memorialDay', label: terms.memorialDayType },
+      { value: 'memorial', label: terms.memorialMonumentType },
+      { value: 'yahrzeit', label: terms.yahrzeitType }
     ];
 
     this.priorityOptions = [

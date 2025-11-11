@@ -24,7 +24,7 @@
       <input matInput
              [value]="getSelectedCampaignsDisplay()"
              readonly
-             placeholder="בחר קמפיין...">
+             [placeholder]="(i18n.terms$ | async)?.selectCampaignPlaceholder || ''">
       <button *ngIf="currentFilters.campaignIds && currentFilters.campaignIds.length > 0"
               mat-icon-button
               matSuffix
@@ -42,7 +42,7 @@
       <input matInput
              [value]="getSelectedCountriesDisplay()"
              readonly
-             placeholder="בחר מדינה...">
+             [placeholder]="(i18n.terms$ | async)?.selectCountryPlaceholder || ''">
       <button *ngIf="currentFilters.countryIds && currentFilters.countryIds.length > 0"
               mat-icon-button
               matSuffix
@@ -60,7 +60,7 @@
       <input matInput
              [value]="getSelectedCitiesDisplay()"
              readonly
-             placeholder="בחר עיר...">
+             [placeholder]="(i18n.terms$ | async)?.selectCityPlaceholder || ''">
       <button *ngIf="currentFilters.cityIds && currentFilters.cityIds.length > 0"
               mat-icon-button
               matSuffix
@@ -78,7 +78,7 @@
       <input matInput
              [value]="getSelectedNeighborhoodsDisplay()"
              readonly
-             placeholder="בחר שכונה...">
+             [placeholder]="(i18n.terms$ | async)?.selectNeighborhoodPlaceholder || ''">
       <button *ngIf="currentFilters.neighborhoodIds && currentFilters.neighborhoodIds.length > 0"
               mat-icon-button
               matSuffix
@@ -96,7 +96,7 @@
       <input matInput
              [value]="getSelectedTargetAudiencesDisplay()"
              readonly
-             placeholder="בחר קהל יעד...">
+             [placeholder]="(i18n.terms$ | async)?.selectTargetAudiencePlaceholder || ''">
       <button *ngIf="currentFilters.targetAudienceIds && currentFilters.targetAudienceIds.length > 0"
               mat-icon-button
               matSuffix

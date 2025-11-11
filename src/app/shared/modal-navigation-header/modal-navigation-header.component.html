@@ -91,9 +91,9 @@
       <!-- Filter Selection -->
       <div class="filter-row">
         <mat-form-field appearance="outline" class="filter-select">
-          <mat-label>בחר פילטר</mat-label>
+          <mat-label>{{ (i18n.terms$ | async)?.selectFilterLabel }}</mat-label>
           <mat-select [(ngModel)]="selectedFilterKey">
-            <mat-option value="">-- בחר פילטר --</mat-option>
+            <mat-option value="">{{ (i18n.terms$ | async)?.selectFilterOption }}</mat-option>
             <mat-option *ngFor="let option of filterOptions" [value]="option.key">
               {{ option.label }}
             </mat-option>
@@ -115,7 +115,7 @@
             
             <!-- Select Filter -->
             <mat-form-field appearance="outline" *ngSwitchCase="'select'">
-              <mat-label>בחר ערך</mat-label>
+              <mat-label>{{ (i18n.terms$ | async)?.selectValueLabel }}</mat-label>
               <mat-select [(ngModel)]="selectedFilterValue">
                 <mat-option *ngFor="let opt of getSelectedFilterOption()?.options" [value]="opt.value">
                   {{ opt.label }}

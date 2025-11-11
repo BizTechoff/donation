@@ -92,9 +92,9 @@
       </div> -->
 
         <div class="filter-group">
-          <label>פרשה</label>
+          <label>{{ (i18n.terms$ | async)?.parashaLabel }}</label>
           <select class="form-control" [(ngModel)]="fromParasha" (change)="applyParashaFilter()">
-            <option value="">בחר פרשה</option>
+            <option value="">{{ (i18n.terms$ | async)?.selectParashaPlaceholder }}</option>
             <option *ngFor="let parasha of torahPortions; let i = index" [value]="i">{{parasha}}</option>
           </select>
         </div>
@@ -102,7 +102,7 @@
         <!-- <div class="filter-group">
         <label>עד פרשה</label>
         <select class="form-control" [(ngModel)]="toParasha" (change)="applyParashaFilter()">
-          <option value="">בחר פרשה</option>
+          <option value="">{{ (i18n.terms$ | async)?.selectParashaOption }}</option>
           <option *ngFor="let parasha of torahPortions; let i = index" [value]="i">{{parasha}} ({{i}})</option>
         </select>
       </div> -->
@@ -196,14 +196,14 @@
               <button class="btn-icon btn-complete" [title]="(i18n.terms$ | async)?.markAsCompleted" *ngIf="!reminder.isCompleted" (click)="completeReminder(reminder)">✅</button>
               <button class="btn-icon btn-edit" [title]="(i18n.terms$ | async)?.editReminder"
                 (click)="editReminder(reminder)">✏</button>
-              <div class="snooze-dropdown" *ngIf="!reminder.isCompleted">
+              <!-- <div class="snooze-dropdown" *ngIf="!reminder.isCompleted">
                 <button class="btn-icon btn-postpone" [title]="(i18n.terms$ | async)?.snoozeReminder">⏰</button>
                 <div class="snooze-menu">
-                  <button (click)="snoozeReminder(reminder, 1)">יום אחד</button>
-                  <button (click)="snoozeReminder(reminder, 7)">שבוע</button>
-                  <button (click)="snoozeReminder(reminder, 30)">חודש</button>
+                  <button (click)="snoozeReminder(reminder, 1)">{{ (i18n.terms$ | async)?.snoozeOneDay }}</button>
+                  <button (click)="snoozeReminder(reminder, 7)">{{ (i18n.terms$ | async)?.snoozeOneWeek }}</button>
+                  <button (click)="snoozeReminder(reminder, 30)">{{ (i18n.terms$ | async)?.snoozeOneMonth }}</button>
                 </div>
-              </div>
+              </div> -->
               <button class="btn-icon btn-delete" [title]="(i18n.terms$ | async)?.deleteReminder"
                 (click)="deleteReminder(reminder)">🗑</button>
             </td>

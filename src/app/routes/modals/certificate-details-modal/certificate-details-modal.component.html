@@ -31,7 +31,7 @@
               <div class="donor-search-field">
                 <input type="text" class="form-control"
                        [value]="selectedDonor?.fullName || ''"
-                       [placeholder]="(i18n.terms$ | async)?.selectDonorOption || 'בחר תורם'"
+                       [placeholder]="(i18n.terms$ | async)?.selectDonorPlaceholder || 'בחר תורם'"
                        readonly
                        (click)="openDonorSelectionModal()">
                 <button mat-icon-button (click)="openDonorSelectionModal()" [title]="'חפש תורם'">

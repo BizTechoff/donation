@@ -2,7 +2,7 @@
   <div class="modal-content" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <div class="header-content">
-        <h2>{{ args.title || 'בחר שכונה' }}</h2>
+        <h2>{{ args.title || ((i18n.terms$ | async)?.selectNeighborhoodTitle || 'בחר שכונה') }}</h2>
         <div class="selection-counter" *ngIf="args.multiSelect && selectedNeighborhoods.length > 0">
           <mat-icon>check_circle</mat-icon>
           <span>{{ selectedNeighborhoods.length }} נבחרו</span>

@@ -105,8 +105,8 @@
             {{ (i18n.terms$ | async)?.amountEvent }}
             <span class="sort-icon" *ngIf="getSortIcon('amount')">{{ getSortIcon('amount') }}</span>
           </th>
-          <th>תזכורת הבאה</th>
-          <th>ברכות</th>
+          <th>{{ (i18n.terms$ | async)?.nextReminderColumn }}</th>
+          <th>{{ (i18n.terms$ | async)?.blessingsColumn }}</th>
           <th>{{ (i18n.terms$ | async)?.mainText }}</th>
           <th>{{ (i18n.terms$ | async)?.actionsHeaderCert }}</th>
         </tr>

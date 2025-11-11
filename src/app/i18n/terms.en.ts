@@ -910,6 +910,9 @@ export const termsEn = {
   birthdayType: 'Birthday',
   holiday: 'Holiday',
   memorialType: 'Memorial Day',
+  memorialDayType: 'Memorial Day Marker',
+  memorialMonumentType: 'Memorial Monument',
+  yahrzeitType: 'Yahrzeit',
   meetingType: 'Meeting',
   phoneCallType: 'Phone Call',
   emailType: 'Email',
@@ -1530,5 +1533,139 @@ export const termsEn = {
   allYears: 'All Years',
   donorGifts: 'Donor Gifts',
   manageGiftCatalog: 'Manage Gift Catalog',
-  addGiftToDonor: 'Add Gift To Donor'
+  addGiftToDonor: 'Add Gift To Donor',
+
+  // Campaigns - Additional terms (non-duplicate)
+  inviteesHeader: 'Invitees',
+  blessingsHeader: 'Blessings',
+  inviteesList: 'Invitees List',
+  eventLocation: 'Event Location',
+  campaignTypeLabel: 'Campaign Type',
+  campaignTypeRegular: 'Regular',
+  campaignTypeDinner: 'Dinner',
+  blessingsBookButton: 'Blessings Book',
+  donorsButton: 'Donors',
+  contactsActivists: 'Contacts & Activists',
+
+  // Donor Gifts - Additional terms
+  searchDonorTitle: 'Search Donor',
+  clearFilterTitle: 'Clear',
+
+  // Reminders - Additional terms
+  parashaLabel: 'Torah Portion',
+  selectParashaPlaceholder: 'Select Torah Portion',
+  snoozeOneDay: 'One Day',
+  snoozeOneWeek: 'One Week',
+  snoozeOneMonth: 'One Month',
+
+  // Donations List - Table columns
+  homeAddressColumn: 'Home Address',
+  amountInShekelColumn: 'Amount in Shekels',
+
+  // Certificates List - Table columns
+  nextReminderColumn: 'Next Reminder',
+  blessingsColumn: 'Blessings',
+
+  // Map Popup - Buttons
+  viewDetailsButton: 'View Details',
+  removeFromListButton: 'Remove from List',
+
+  // Reports - Payment Report
+  donorNameColumn: 'Donor Name',
+  addressColumn: 'Address',
+  cityColumn: 'City',
+  lastDateColumn: 'Last Date',
+  inShekelColumn: 'In Shekels',
+  donationsColumn: 'Donations',
+  firstButton: 'First',
+  previousButton: 'Previous',
+  nextButton: 'Next',
+  lastButton: 'Last',
+  showingText: 'Showing',
+  ofText: 'of',
+
+  // Reports - Donations Report
+  nameColumn: 'Name',
+  phonesColumn: 'Phones',
+  emailsColumn: 'Emails',
+  actualPaymentsColumn: 'Actual Payments',
+  resultsText: 'results',
+  rowsPerPageLabel: 'Rows per page:',
+
+  // Reports - Yearly Summary
+  yearColumn: 'Year',
+  totalText: 'Total',
+
+  // Reports - Blessings Report
+  lastNameColumn: 'Last Name',
+  firstNameColumn: 'First Name',
+  blessingTypeColumn: 'Blessing Type',
+  notesColumn: 'Notes',
+  statusColumn: 'Status',
+  phoneColumn: 'Phone',
+  mobileColumn: 'Mobile',
+  emailColumn: 'EMAIL',
+
+  // Selection placeholders and titles
+  selectCampaignPlaceholder: 'Select Campaign...',
+  selectCountryPlaceholder: 'Select Country...',
+  selectCityPlaceholder: 'Select City...',
+  selectNeighborhoodPlaceholder: 'Select Neighborhood...',
+  selectTargetAudiencePlaceholder: 'Select Target Audience...',
+  selectFilterLabel: 'Select Filter',
+  selectFilterOption: '-- Select Filter --',
+  selectValueLabel: 'Select Value',
+  selectDonorsComment: 'Donor Selection Filter',
+  clickToSelectDonorsPlaceholder: 'Click to Select Donors',
+  selectDonorsTooltip: 'Select Donors',
+  selectCampaignTooltip: 'Select Campaign',
+  selectParashaOption: 'Select Torah Portion',
+  selectCountryTitle: 'Select Country',
+  selectBankTitle: 'Select Bank',
+  selectCircleTitle: 'Select Circle',
+  selectTargetAudienceTitle: 'Select Target Audience',
+  selectButton: 'Select',
+  selectDonationTitle: 'Select Donation',
+  selectBlessingTypeTitle: 'Select Blessing Type',
+  selectCityTitle: 'Select City',
+  selectCampaignTitle: 'Select Campaign',
+  selectPayerOption: 'Select Payer',
+  selectOrganizationLabel: 'Select Organization',
+  selectBankLabel: 'Select Bank',
+  selectBlessingTypeButton: 'Select Blessing Type',
+  selectDonationButton: 'Select Donation',
+  selectCompanyTitle: 'Select Company',
+  selectCountryOption: '-- Select Country --',
+  selectAddressTypeTitle: 'Select Address Type',
+  selectLetterTypeSubtitle: 'Select letter type, opening and closing lines',
+  selectCategoryLabel: 'Select Category',
+  selectSubcategoryLabel: 'Select Subcategory',
+  selectLetterLabel: 'Select Letter',
+  selectEventTitle: 'Select Event',
+  selectTitleTypeTitle: 'Selection of',
+  selectTitleSubtitle: 'Select title or create new',
+  selectNeighborhoodTitle: 'Select Neighborhood',
+  selectNoteTypeTitle: 'Select Note Type',
+  selectRelationshipLabel: 'Select Relationship Type:',
+  selectDonorLabel: 'Select Donor:',
+  selectDonorPlaceholder: 'Select Donor',
+  selectDonorTitle: 'Select Donor',
+  selectOrganizationTitle: 'Select Organization',
+  selectMonthOption: 'Select Month',
+  selectDayOption: 'Select Day',
+
+  // Donor Selection Modal
+  finishSelectionButton: 'Finish Selection',
+  searchLabel: 'Search',
+  searchDonorPlaceholder: 'Search donor...',
+  createNewDonorButton: 'Create New Donor',
+  selectionColumn: 'Selection',
+  noDonorsFound: 'No donors found',
+
+  // Donation Selection Modal
+  searchDonationPlaceholder: 'Search donation (donor, amount, campaign)...',
+  createNewDonationButton: 'Create New Donation',
+  campaignColumn: 'Campaign',
+  unknownDonor: 'Unknown',
+  noDonationsFound: 'No donations found'
 }

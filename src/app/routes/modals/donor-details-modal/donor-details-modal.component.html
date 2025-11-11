@@ -149,7 +149,7 @@
                 <label>קידומת בינלאומית</label>
               </div>
               <select class="form-control" [(ngModel)]="donor.countryId" (change)="onFieldChange()">
-                <option value="">-- בחר מדינה --</option>
+                <option value="">{{ (i18n.terms$ | async)?.selectCountryOption || '-- בחר מדינה --' }}</option>
                 <option *ngFor="let country of countries" [ngValue]="country.id">
                   {{ country.name }} / {{ country.nameEn }} ({{ country.phonePrefix }})
                 </option>

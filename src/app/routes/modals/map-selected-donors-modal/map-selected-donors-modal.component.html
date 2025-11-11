@@ -93,17 +93,17 @@
             <div class="donor-actions">
               <button class="btn btn-sm btn-view"
                       (click)="openDonorDetails(donorData.donor.id)"
-                      title="הצג פרטים">
+                      [title]="(i18n.terms$ | async)?.viewDetailsButton">
                 <mat-icon>visibility</mat-icon>
               </button>
               <button class="btn btn-sm btn-add-donation"
                       (click)="addDonation(donorData.donor.id)"
-                      title="הוסף תרומה">
+                      [title]="(i18n.terms$ | async)?.addDonationButton">
                 <mat-icon>add_circle</mat-icon>
               </button>
               <button class="btn btn-sm btn-remove"
                       (click)="removeDonor(donorData.donor.id)"
-                      title="הסר מהרשימה">
+                      [title]="(i18n.terms$ | async)?.removeFromListButton">
                 <mat-icon>remove_circle</mat-icon>
               </button>
             </div>

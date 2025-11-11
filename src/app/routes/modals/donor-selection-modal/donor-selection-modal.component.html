@@ -1,9 +1,9 @@
 <div class="module-container">
   <div class="module-header">
     <div class="header-top">
-      <h2>{{ args.title || 'בחר תורם' }}</h2>
+      <h2>{{ args.title || ((i18n.terms$ | async)?.selectDonorTitle || 'בחר תורם') }}</h2>
       <div class="header-actions">
-        <button *ngIf="args.multiSelect && selectedDonors.length > 0" class="btn-finish" (click)="finishMultiSelect()">סיים בחירה ({{ selectedDonors.length }})</button>
+        <button *ngIf="args.multiSelect && selectedDonors.length > 0" class="btn-finish" (click)="finishMultiSelect()">{{ (i18n.terms$ | async)?.finishSelectionButton }} ({{ selectedDonors.length }})</button>
         <button class="btn-close" (click)="closeDialog()">✕</button>
       </div>
     </div>
@@ -11,10 +11,10 @@
     <div class="filters-section">
       <div class="filter-row">
         <div class="filter-group">
-          <label>חיפוש</label>
-          <input type="text" [(ngModel)]="filterText" (ngModelChange)="applyFilters()" placeholder="חפש תורם...">
+          <label>{{ (i18n.terms$ | async)?.searchLabel }}</label>
+          <input type="text" [(ngModel)]="filterText" (ngModelChange)="applyFilters()" [placeholder]="(i18n.terms$ | async)?.searchDonorPlaceholder || ''">
         </div>
-        <button class="btn-create" (click)="createNewDonor()">יצירת תורם חדש</button>
+        <button class="btn-create" (click)="createNewDonor()">{{ (i18n.terms$ | async)?.createNewDonorButton }}</button>
       </div>
     </div>
   </div>
@@ -24,14 +24,14 @@
       <table class="data-table">
         <thead>
           <tr>
-            <th *ngIf="args.multiSelect" class="checkbox-col">בחירה</th>
+            <th *ngIf="args.multiSelect" class="checkbox-col">{{ (i18n.terms$ | async)?.selectionColumn }}</th>
             <th class="sortable" [class.sorted]="isSorted('fullName')" (click)="toggleSort('fullName', $event)">
-              שם תורם
+              {{ (i18n.terms$ | async)?.donorNameColumn }}
               <span class="sort-icon" *ngIf="getSortIcon('fullName')">{{getSortIcon('fullName')}}</span>
             </th>
-            <th>טלפון</th>
-            <th>אימייל</th>
-            <th>כתובת</th>
+            <th>{{ (i18n.terms$ | async)?.phoneColumn }}</th>
+            <th>{{ (i18n.terms$ | async)?.emailColumn }}</th>
+            <th>{{ (i18n.terms$ | async)?.addressColumn }}</th>
           </tr>
         </thead>
         <tbody>
@@ -45,7 +45,7 @@
             <td>{{ getDonorPlace(donor.id)?.fullAddress }}</td>
           </tr>
           <tr *ngIf="paginatedDonors.length === 0">
-            <td [attr.colspan]="args.multiSelect ? 5 : 4" class="no-data">לא נמצאו תורמים</td>
+            <td [attr.colspan]="args.multiSelect ? 5 : 4" class="no-data">{{ (i18n.terms$ | async)?.noDonorsFound }}</td>
           </tr>
         </tbody>
       </table>
@@ -53,16 +53,16 @@
 
     <div class="table-footer">
       <div class="pagination-controls">
-        <button (click)="firstPage()" [disabled]="currentPage === 1">⏮ ראשון</button>
-        <button (click)="previousPage()" [disabled]="currentPage === 1">← הקודם</button>
+        <button (click)="firstPage()" [disabled]="currentPage === 1">⏮ {{ (i18n.terms$ | async)?.firstButton }}</button>
+        <button (click)="previousPage()" [disabled]="currentPage === 1">← {{ (i18n.terms$ | async)?.previousButton }}</button>
         <div class="page-numbers">
           <button *ngFor="let page of getPageNumbers()" (click)="goToPage(page)" [class.active]="page === currentPage">{{page}}</button>
         </div>
-        <button (click)="nextPage()" [disabled]="currentPage === totalPages">הבא →</button>
-        <button (click)="lastPage()" [disabled]="currentPage === totalPages">אחרון ⏭</button>
+        <button (click)="nextPage()" [disabled]="currentPage === totalPages">{{ (i18n.terms$ | async)?.nextButton }} →</button>
+        <button (click)="lastPage()" [disabled]="currentPage === totalPages">{{ (i18n.terms$ | async)?.lastButton }} ⏭</button>
       </div>
       <div class="pagination-info">
-        <span>מציג {{(currentPage - 1) * pageSize + 1}} - {{Math.min(currentPage * pageSize, totalCount)}} מתוך {{totalCount}}</span>
+        <span>{{ (i18n.terms$ | async)?.showingText }} {{(currentPage - 1) * pageSize + 1}} - {{Math.min(currentPage * pageSize, totalCount)}} {{ (i18n.terms$ | async)?.ofText }} {{totalCount}}</span>
       </div>
     </div>
   </div>

@@ -8,8 +8,8 @@
         <mat-icon>text_fields</mat-icon>
       </div>
       <div class="header-text">
-        <h2>בחירת {{ titleType }}</h2>
-        <p class="header-subtitle">בחר כותרת או צור חדשה</p>
+        <h2>{{ (i18n.terms$ | async)?.selectTitleTypeTitle || 'בחירת' }} {{ titleType }}</h2>
+        <p class="header-subtitle">{{ (i18n.terms$ | async)?.selectTitleSubtitle || 'בחר כותרת או צור חדשה' }}</p>
       </div>
     </div>
     <button class="modal-close" (click)="closeModal()" matTooltip="סגור" [dir]="'rtl'">

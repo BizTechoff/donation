@@ -908,6 +908,9 @@ export const termsHe = {
   birthdayType: 'יום הולדת',
   holiday: 'חג',
   memorialType: 'יום זיכרון',
+  memorialDayType: 'נציב יום',
+  memorialMonumentType: 'נציב זכרון',
+  yahrzeitType: 'יוארצהייט',
   meetingType: 'פגישה',
   phoneCallType: 'שיחת טלפון',
   emailType: 'אימייל',
@@ -1528,5 +1531,139 @@ export const termsHe = {
   allYears: 'כל השנים',
   donorGifts: 'מתנות לתורמים',
   manageGiftCatalog: 'ניהול קטלוג מתנות',
-  addGiftToDonor: 'שייך מתנה לתורם'
+  addGiftToDonor: 'שייך מתנה לתורם',
+
+  // Campaigns - Additional terms (non-duplicate)
+  inviteesHeader: 'מוזמנים',
+  blessingsHeader: 'ברכות',
+  inviteesList: 'רשימת מוזמנים',
+  eventLocation: 'מיקום האירוע',
+  campaignTypeLabel: 'סוג קמפיין',
+  campaignTypeRegular: 'רגיל',
+  campaignTypeDinner: 'דינער',
+  blessingsBookButton: 'ספר ברכות',
+  donorsButton: 'תורמים',
+  contactsActivists: 'אנשי קשר ופעילים',
+
+  // Donor Gifts - Additional terms
+  searchDonorTitle: 'חפש תורם',
+  clearFilterTitle: 'נקה',
+
+  // Reminders - Additional terms
+  parashaLabel: 'פרשה',
+  selectParashaPlaceholder: 'בחר פרשה',
+  snoozeOneDay: 'יום אחד',
+  snoozeOneWeek: 'שבוע',
+  snoozeOneMonth: 'חודש',
+
+  // Donations List - Table columns
+  homeAddressColumn: 'כתובת מגורים',
+  amountInShekelColumn: 'סכום בשקלים',
+
+  // Certificates List - Table columns
+  nextReminderColumn: 'תזכורת הבאה',
+  blessingsColumn: 'ברכות',
+
+  // Map Popup - Buttons
+  viewDetailsButton: 'הצג פרטים',
+  removeFromListButton: 'הסר מהרשימה',
+
+  // Reports - Payment Report
+  donorNameColumn: 'שם תורם',
+  addressColumn: 'כתובת',
+  cityColumn: 'עיר',
+  lastDateColumn: 'תאריך אחרון',
+  inShekelColumn: 'בשקלים',
+  donationsColumn: 'תרומות',
+  firstButton: 'ראשון',
+  previousButton: 'הקודם',
+  nextButton: 'הבא',
+  lastButton: 'אחרון',
+  showingText: 'מציג',
+  ofText: 'מתוך',
+
+  // Reports - Donations Report
+  nameColumn: 'שם',
+  phonesColumn: 'טלפונים',
+  emailsColumn: 'אימיילים',
+  actualPaymentsColumn: 'תשלומים בפועל',
+  resultsText: 'תוצאות',
+  rowsPerPageLabel: 'שורות לעמוד:',
+
+  // Reports - Yearly Summary
+  yearColumn: 'שנה',
+  totalText: 'סה"כ',
+
+  // Reports - Blessings Report
+  lastNameColumn: 'שם משפחה',
+  firstNameColumn: 'שם פרטי',
+  blessingTypeColumn: 'סוג ברכה',
+  notesColumn: 'הערות',
+  statusColumn: 'סטטוס',
+  phoneColumn: 'טלפון',
+  mobileColumn: 'נייד',
+  emailColumn: 'EMAIL',
+
+  // Selection placeholders and titles
+  selectCampaignPlaceholder: 'בחר קמפיין...',
+  selectCountryPlaceholder: 'בחר מדינה...',
+  selectCityPlaceholder: 'בחר עיר...',
+  selectNeighborhoodPlaceholder: 'בחר שכונה...',
+  selectTargetAudiencePlaceholder: 'בחר קהל יעד...',
+  selectFilterLabel: 'בחר פילטר',
+  selectFilterOption: '-- בחר פילטר --',
+  selectValueLabel: 'בחר ערך',
+  selectDonorsComment: 'מסנן בחירת תורמים',
+  clickToSelectDonorsPlaceholder: 'לחץ לבחירת תורמים',
+  selectDonorsTooltip: 'בחר תורמים',
+  selectCampaignTooltip: 'בחר קמפיין',
+  selectParashaOption: 'בחר פרשה',
+  selectCountryTitle: 'בחר מדינה',
+  selectBankTitle: 'בחר בנק',
+  selectCircleTitle: 'בחר חוג',
+  selectTargetAudienceTitle: 'בחירת קהל יעד',
+  selectButton: 'בחר',
+  selectDonationTitle: 'בחר תרומה',
+  selectBlessingTypeTitle: 'בחירת סוג ברכה',
+  selectCityTitle: 'בחר עיר',
+  selectCampaignTitle: 'בחר קמפיין',
+  selectPayerOption: 'בחר משלם',
+  selectOrganizationLabel: 'בחירת עמותה',
+  selectBankLabel: 'בחירת בנק',
+  selectBlessingTypeButton: 'בחר סוג ברכה',
+  selectDonationButton: 'בחר תרומה',
+  selectCompanyTitle: 'בחר חברה',
+  selectCountryOption: '-- בחר מדינה --',
+  selectAddressTypeTitle: 'בחר סוג כתובת',
+  selectLetterTypeSubtitle: 'בחר סוג מכתב, שורות פתיחה וסיום',
+  selectCategoryLabel: 'בחר קטגוריה',
+  selectSubcategoryLabel: 'בחר תת-קטגוריה',
+  selectLetterLabel: 'בחר מכתב',
+  selectEventTitle: 'בחר אירוע',
+  selectTitleTypeTitle: 'בחירת',
+  selectTitleSubtitle: 'בחר כותרת או צור חדשה',
+  selectNeighborhoodTitle: 'בחר שכונה',
+  selectNoteTypeTitle: 'בחר סוג הערה',
+  selectRelationshipLabel: 'בחר סוג קשר:',
+  selectDonorLabel: 'בחר תורם:',
+  selectDonorPlaceholder: 'בחר תורם',
+  selectDonorTitle: 'בחר תורם',
+  selectOrganizationTitle: 'בחר עמותה',
+  selectMonthOption: 'בחר חודש',
+  selectDayOption: 'בחר יום',
+
+  // Donor Selection Modal
+  finishSelectionButton: 'סיים בחירה',
+  searchLabel: 'חיפוש',
+  searchDonorPlaceholder: 'חפש תורם...',
+  createNewDonorButton: 'יצירת תורם חדש',
+  selectionColumn: 'בחירה',
+  noDonorsFound: 'לא נמצאו תורמים',
+
+  // Donation Selection Modal
+  searchDonationPlaceholder: 'חפש תרומה (תורם, סכום, קמפיין)...',
+  createNewDonationButton: 'יצירת תרומה חדשה',
+  campaignColumn: 'קמפיין',
+  unknownDonor: 'לא ידוע',
+  noDonationsFound: 'לא נמצאו תרומות'
 }

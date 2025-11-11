@@ -1,7 +1,7 @@
 <div class="modal-backdrop" (click)="closeDialog()">
   <div class="modal-content" (click)="$event.stopPropagation()">
     <div class="modal-header">
-      <h2>{{ args.title || 'בחר עמותה' }}</h2>
+      <h2>{{ args.title || ((i18n.terms$ | async)?.selectOrganizationTitle || 'בחר עמותה') }}</h2>
       <button class="close-btn" (click)="closeDialog()" title="סגור">
         <mat-icon>close</mat-icon>
       </button>

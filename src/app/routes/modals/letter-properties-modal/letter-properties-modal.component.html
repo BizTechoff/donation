@@ -43,7 +43,7 @@
       </div>
       <div class="header-text">
         <h2>הגדרות מכתב</h2>
-        <p class="header-subtitle">בחר סוג מכתב, שורות פתיחה וסיום</p>
+        <p class="header-subtitle">{{ (i18n.terms$ | async)?.selectLetterTypeSubtitle || 'בחר סוג מכתב, שורות פתיחה וסיום' }}</p>
       </div>
     </div>
     <button class="modal-close" (click)="closeModal()" matTooltip="סגור" [dir]="'rtl'">
@@ -63,7 +63,7 @@
 
       <!-- Step 1: Category Selection -->
       <div *ngIf="!selectedCategory">
-        <h3>בחר קטגוריה</h3>
+        <h3>{{ (i18n.terms$ | async)?.selectCategoryLabel || 'בחר קטגוריה' }}</h3>
         <div class="letter-types-grid">
           <div class="letter-type-card" *ngFor="let category of categories"
             (click)="selectCategory(category)">
@@ -88,7 +88,7 @@
           <span class="breadcrumb-separator">/</span>
           <span class="breadcrumb-current">{{ selectedCategory.name }}</span>
         </div>
-        <h3>בחר תת-קטגוריה</h3>
+        <h3>{{ (i18n.terms$ | async)?.selectSubcategoryLabel || 'בחר תת-קטגוריה' }}</h3>
         <div class="letter-types-grid">
           <div class="letter-type-card" *ngFor="let subcategory of selectedCategory.subcategories"
             (click)="selectSubcategory(subcategory)">
@@ -117,7 +117,7 @@
           <span class="breadcrumb-separator">/</span>
           <span class="breadcrumb-current">{{ selectedSubcategory.name }}</span>
         </div>
-        <h3>בחר מכתב</h3>
+        <h3>{{ (i18n.terms$ | async)?.selectLetterLabel || 'בחר מכתב' }}</h3>
         <div class="letter-types-grid">
           <div class="letter-type-card" *ngFor="let letter of selectedSubcategory.letters"
             (click)="selectLetterType(letter)">

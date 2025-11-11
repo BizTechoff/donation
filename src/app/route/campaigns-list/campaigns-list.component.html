@@ -98,8 +98,8 @@
             {{ (i18n.terms$ | async)?.progressPercentage }}
             <span class="sort-icon" *ngIf="getSortIcon('progressPercentage')">{{ getSortIcon('progressPercentage') }}</span>
           </th>
-          <th>מוזמנים</th>
-          <th>ברכות</th>
+          <th>{{ (i18n.terms$ | async)?.inviteesHeader }}</th>
+          <th>{{ (i18n.terms$ | async)?.blessingsHeader }}</th>
           <th class="sortable" [class.sorted]="isSorted('startDate')" (click)="toggleSort('startDate', $event)">
             {{ (i18n.terms$ | async)?.startDate }}
             <span class="sort-icon" *ngIf="getSortIcon('startDate')">{{ getSortIcon('startDate') }}</span>
@@ -134,8 +134,8 @@
           <td>{{formatHebrewDate(campaign.startDate)}}</td>
           <td>{{formatHebrewDate(campaign.endDate)}}</td>
           <td class="actions">
-            <button class="btn-icon btn-invited" title="רשימת מוזמנים" (click)="openInvitedList(campaign)">👥</button>
-            <button class="btn-icon btn-blessings" title="ספר ברכות" (click)="openBlessingsBook(campaign)">📖</button>
+            <button class="btn-icon btn-invited" [title]="(i18n.terms$ | async)?.inviteesList" (click)="openInvitedList(campaign)">👥</button>
+            <button class="btn-icon btn-blessings" [title]="(i18n.terms$ | async)?.blessingsBook" (click)="openBlessingsBook(campaign)">📖</button>
             <button class="btn-icon btn-edit" [title]="(i18n.terms$ | async)?.edit" (click)="editCampaign(campaign)">✏</button>
             <button class="btn-icon btn-delete" [title]="(i18n.terms$ | async)?.delete" (click)="deleteCampaign(campaign)">🗑</button>
           </td>
@@ -241,18 +241,18 @@
 
         <!-- New fields -->
         <div class="form-group">
-          <label>מיקום האירוע</label>
+          <label>{{ (i18n.terms$ | async)?.eventLocation }}</label>
           <input type="text" class="form-control"
                  [(ngModel)]="editingCampaign!.eventLocation"
                  (ngModelChange)="onLocationChange()"
-                 placeholder="מיקום האירוע">
+                 [placeholder]="(i18n.terms$ | async)?.eventLocationPlaceholder">
         </div>
 
         <div class="form-group">
-          <label>סוג קמפיין</label>
+          <label>{{ (i18n.terms$ | async)?.campaignTypeLabel }}</label>
           <select class="form-control" [(ngModel)]="editingCampaign!.campaignType" (change)="onCampaignTypeChange()">
-            <option value="רגיל">רגיל</option>
-            <option value="דינער">דינער</option>
+            <option value="רגיל">{{ (i18n.terms$ | async)?.campaignTypeRegular }}</option>
+            <option value="דינער">{{ (i18n.terms$ | async)?.campaignTypeDinner }}</option>
           </select>
         </div>
 
@@ -260,7 +260,7 @@
         <div class="form-group full-width">
           <app-modern-dual-date-picker
             [(ngModel)]="editingCampaign!.startDate"
-            [label]="'תאריך התחלה'"
+            [label]="(i18n.terms$ | async)?.startDateLabel || ''"
             (dateChange)="onStartDateChange($event)">
           </app-modern-dual-date-picker>
         </div>
@@ -269,7 +269,7 @@
         <div class="form-group full-width">
           <app-modern-dual-date-picker
             [(ngModel)]="editingCampaign!.endDate"
-            [label]="'תאריך סיום'"
+            [label]="(i18n.terms$ | async)?.endDateLabel || ''"
             (dateChange)="onEndDateChange($event)">
           </app-modern-dual-date-picker>
         </div>
@@ -312,18 +312,18 @@
     <div class="modal-footer">
       <!-- Action buttons for dinner campaigns -->
       <div class="action-buttons" *ngIf="editingCampaign?.campaignType === 'דינער' && editingCampaign && !editingCampaign._.isNew()">
-        <button class="btn btn-info" (click)="openBlessingsBook()" title="ספר ברכות">
-          📖 ספר ברכות
+        <button class="btn btn-info" (click)="openBlessingsBook()" [title]="(i18n.terms$ | async)?.blessingsBook">
+          📖 {{ (i18n.terms$ | async)?.blessingsBookButton }}
         </button>
       </div>
 
       <!-- Regular action buttons -->
       <div class="action-buttons" *ngIf="editingCampaign && !editingCampaign._.isNew()">
-        <button class="btn btn-outline-primary" (click)="openDonors()" title="תורמים">
-          👥 תורמים
+        <button class="btn btn-outline-primary" (click)="openDonors()" [title]="(i18n.terms$ | async)?.donorsButton">
+          👥 {{ (i18n.terms$ | async)?.donorsButton }}
         </button>
-        <button class="btn btn-outline-success" (click)="openContacts()" title="אנשי קשר ופעילים">
-          📞 אנשי קשר ופעילים
+        <button class="btn btn-outline-success" (click)="openContacts()" [title]="(i18n.terms$ | async)?.contactsActivists">
+          📞 {{ (i18n.terms$ | async)?.contactsActivists }}
         </button>
       </div>
 

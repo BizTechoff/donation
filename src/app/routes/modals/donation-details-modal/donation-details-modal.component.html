@@ -348,7 +348,7 @@
               <label>שם משלם</label>
             </div>
             <select class="form-control" [(ngModel)]="donation.payerName">
-              <option value="">בחר משלם</option>
+              <option value="">{{ (i18n.terms$ | async)?.selectPayerOption || 'בחר משלם' }}</option>
               <option *ngFor="let option of payerOptions" [value]="option.value">{{ option.label }}</option>
             </select>
           </div>
@@ -405,7 +405,7 @@
             *ngIf="isOrganizationPayment || (isStandingOrderPayment && donation.standingOrderType === 'organization')">
             <div class="field-title">
               <mat-icon class="field-icon">business</mat-icon>
-              <label>בחירת עמותה</label>
+              <label>{{ (i18n.terms$ | async)?.selectOrganizationLabel || 'בחירת עמותה' }}</label>
               <button class="field-add-btn" *ngIf="donationOrganizations.length === 0"
                 (click)="addOrganizationToDonation()" [title]="i18n.terms.addNewOrganization">
                 <mat-icon>add</mat-icon>
@@ -431,7 +431,7 @@
             *ngIf="isTransferPayment || (isStandingOrderPayment && donation.standingOrderType === 'bank')">
             <div class="field-title">
               <mat-icon class="field-icon">account_balance</mat-icon>
-              <label>בחירת בנק</label>
+              <label>{{ (i18n.terms$ | async)?.selectBankLabel || 'בחירת בנק' }}</label>
               <button class="field-add-btn" *ngIf="donationBanks.length === 0" (click)="addNewBank()"
                 [title]="i18n.terms.addNewBank">
                 <mat-icon>add</mat-icon>

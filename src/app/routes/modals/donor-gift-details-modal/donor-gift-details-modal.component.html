@@ -15,7 +15,7 @@
           <div class="donor-selector">
             <input type="text" class="form-control"
                    [value]="selectedDonor ? getDonorName(selectedDonor) : ''"
-                   [placeholder]="(i18n.terms$ | async)?.selectDonor || 'בחר תורם'"
+                   [placeholder]="(i18n.terms$ | async)?.selectDonorPlaceholder || 'בחר תורם'"
                    readonly
                    [disabled]="!isNew"
                    (click)="isNew && openDonorSelectionModal()">

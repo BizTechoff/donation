@@ -1,9 +1,9 @@
 <div class="module-container">
   <div class="module-header">
     <div class="header-top">
-      <h2>{{ args.title || 'בחר תרומה' }}</h2>
+      <h2>{{ args.title || ((i18n.terms$ | async)?.selectDonationTitle || 'בחר תרומה') }}</h2>
       <div class="header-actions">
-        <button *ngIf="args.multiSelect && selectedDonations.length > 0" class="btn-finish" (click)="finishMultiSelect()">סיים בחירה ({{ selectedDonations.length }})</button>
+        <button *ngIf="args.multiSelect && selectedDonations.length > 0" class="btn-finish" (click)="finishMultiSelect()">{{ (i18n.terms$ | async)?.finishSelectionButton }} ({{ selectedDonations.length }})</button>
         <button class="btn-close" (click)="closeDialog()">✕</button>
       </div>
     </div>
@@ -11,10 +11,10 @@
     <div class="filters-section">
       <div class="filter-row">
         <div class="filter-group">
-          <label>חיפוש</label>
-          <input type="text" [(ngModel)]="filterText" (ngModelChange)="applyFilters()" placeholder="חפש תרומה (תורם, סכום, קמפיין)...">
+          <label>{{ (i18n.terms$ | async)?.searchLabel }}</label>
+          <input type="text" [(ngModel)]="filterText" (ngModelChange)="applyFilters()" [placeholder]="(i18n.terms$ | async)?.searchDonationPlaceholder || ''">
         </div>
-        <button class="btn-create" (click)="createNewDonation()">יצירת תרומה חדשה</button>
+        <button class="btn-create" (click)="createNewDonation()">{{ (i18n.terms$ | async)?.createNewDonationButton }}</button>
       </div>
     </div>
   </div>
@@ -24,21 +24,21 @@
       <table class="data-table">
         <thead>
           <tr>
-            <th *ngIf="args.multiSelect" class="checkbox-col">בחירה</th>
+            <th *ngIf="args.multiSelect" class="checkbox-col">{{ (i18n.terms$ | async)?.selectionColumn }}</th>
             <th class="sortable" [class.sorted]="isSorted('donorName')" (click)="toggleSort('donorName', $event)">
-              שם תורם
+              {{ (i18n.terms$ | async)?.donorNameColumn }}
               <span class="sort-icon" *ngIf="getSortIcon('donorName')">{{getSortIcon('donorName')}}</span>
             </th>
             <th class="sortable" [class.sorted]="isSorted('amount')" (click)="toggleSort('amount', $event)">
-              סכום
+              {{ (i18n.terms$ | async)?.amountColumn }}
               <span class="sort-icon" *ngIf="getSortIcon('amount')">{{getSortIcon('amount')}}</span>
             </th>
             <th class="sortable" [class.sorted]="isSorted('date')" (click)="toggleSort('date', $event)">
-              תאריך
+              {{ (i18n.terms$ | async)?.dateColumn }}
               <span class="sort-icon" *ngIf="getSortIcon('date')">{{getSortIcon('date')}}</span>
             </th>
             <th class="sortable" [class.sorted]="isSorted('campaign')" (click)="toggleSort('campaign', $event)">
-              קמפיין
+              {{ (i18n.terms$ | async)?.campaignColumn }}
               <span class="sort-icon" *ngIf="getSortIcon('campaign')">{{getSortIcon('campaign')}}</span>
             </th>
           </tr>
@@ -48,13 +48,13 @@
             <td *ngIf="args.multiSelect" class="checkbox-col">
               <input type="checkbox" [checked]="isDonationSelected(donation)" (click)="$event.stopPropagation()">
             </td>
-            <td>{{ getDonor(donation.donorId)?.fullName || 'לא ידוע' }}</td>
+            <td>{{ getDonor(donation.donorId)?.fullName || (i18n.terms$ | async)?.unknownDonor }}</td>
             <td class="amount-cell">{{ donation.amount | number }} {{ donation.currency }}</td>
             <td>{{ formatDate(donation.donationDate) }}</td>
             <td>{{ getCampaign(donation.campaignId)?.name || '-' }}</td>
           </tr>
           <tr *ngIf="paginatedDonations.length === 0">
-            <td [attr.colspan]="args.multiSelect ? 5 : 4" class="no-data">לא נמצאו תרומות</td>
+            <td [attr.colspan]="args.multiSelect ? 5 : 4" class="no-data">{{ (i18n.terms$ | async)?.noDonationsFound }}</td>
           </tr>
         </tbody>
       </table>
@@ -62,16 +62,16 @@
 
     <div class="table-footer">
       <div class="pagination-controls">
-        <button (click)="firstPage()" [disabled]="currentPage === 1">⏮ ראשון</button>
-        <button (click)="previousPage()" [disabled]="currentPage === 1">← הקודם</button>
+        <button (click)="firstPage()" [disabled]="currentPage === 1">⏮ {{ (i18n.terms$ | async)?.firstButton }}</button>
+        <button (click)="previousPage()" [disabled]="currentPage === 1">← {{ (i18n.terms$ | async)?.previousButton }}</button>
         <div class="page-numbers">
           <button *ngFor="let page of getPageNumbers()" (click)="goToPage(page)" [class.active]="page === currentPage">{{page}}</button>
         </div>
-        <button (click)="nextPage()" [disabled]="currentPage === totalPages">הבא →</button>
-        <button (click)="lastPage()" [disabled]="currentPage === totalPages">אחרון ⏭</button>
+        <button (click)="nextPage()" [disabled]="currentPage === totalPages">{{ (i18n.terms$ | async)?.nextButton }} →</button>
+        <button (click)="lastPage()" [disabled]="currentPage === totalPages">{{ (i18n.terms$ | async)?.lastButton }} ⏭</button>
       </div>
       <div class="pagination-info">
-        <span>מציג {{(currentPage - 1) * pageSize + 1}} - {{Math.min(currentPage * pageSize, totalCount)}} מתוך {{totalCount}}</span>
+        <span>{{ (i18n.terms$ | async)?.showingText }} {{(currentPage - 1) * pageSize + 1}} - {{Math.min(currentPage * pageSize, totalCount)}} {{ (i18n.terms$ | async)?.ofText }} {{totalCount}}</span>
       </div>
     </div>
   </div>
