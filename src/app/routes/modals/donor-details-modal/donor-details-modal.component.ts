@@ -1041,12 +1041,13 @@ export class DonorDetailsModalComponent implements OnInit {
   async removeDonorContact(donorContact: DonorContact) {
     if (confirm('האם אתה בטוח שברצונך להסיר את איש הקשר?')) {
       try {
-        if (!donorContact.isNew()) {
+        // Check if it has an ID (was already saved to DB)
+        if (donorContact.id) {
           await this.donorContactRepo.delete(donorContact);
         }
 
         // Remove from local array
-        const index = this.donorContacts.findIndex(dc => dc.id === donorContact.id);
+        const index = this.donorContacts.findIndex(dc => dc === donorContact);
         if (index > -1) {
           this.donorContacts.splice(index, 1);
         }
@@ -1128,12 +1129,13 @@ export class DonorDetailsModalComponent implements OnInit {
   async removeDonorPlace(donorPlace: DonorPlace) {
     if (confirm('האם אתה בטוח שברצונך להסיר את הכתובת?')) {
       try {
-        if (!donorPlace.isNew()) {
+        // Check if it has an ID (was already saved to DB)
+        if (donorPlace.id) {
           await this.donorPlaceRepo.delete(donorPlace);
         }
 
         // Remove from local array
-        const index = this.donorPlaces.findIndex(dp => dp.id === donorPlace.id);
+        const index = this.donorPlaces.findIndex(dp => dp === donorPlace);
         if (index > -1) {
           this.donorPlaces.splice(index, 1);
         }
@@ -1274,12 +1276,13 @@ export class DonorDetailsModalComponent implements OnInit {
   async removeDonorReceptionHour(receptionHour: DonorReceptionHour) {
     if (confirm('האם אתה בטוח שברצונך להסיר את טווח השעות?')) {
       try {
-        if (!receptionHour.isNew()) {
+        // Check if it has an ID (was already saved to DB)
+        if (receptionHour.id) {
           await this.donorReceptionHourRepo.delete(receptionHour);
         }
 
         // Remove from local array
-        const index = this.donorReceptionHours.findIndex(rh => rh.id === receptionHour.id);
+        const index = this.donorReceptionHours.findIndex(rh => rh === receptionHour);
         if (index > -1) {
           this.donorReceptionHours.splice(index, 1);
         }
