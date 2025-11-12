@@ -266,13 +266,13 @@ export class DonorListComponent implements OnInit, OnDestroy {
           placesMap.set(dp.donorId, dp.place);
         }
       }
-
+ 
       this.allDonors = donors.map(donor => {
         const place = placesMap.get(donor.id);
         return {
           id: donor.id,
-          displayName: donor.fullName || donor.displayName || '',
-          name: donor.fullName || donor.displayName || '',
+          fullName: donor.fullName || donor.fullNameEnglish || '',
+          name: donor.fullName || donor.fullNameEnglish || '',
           city: place?.city || '',
           country: place?.country || '',
           isActive: donor.isActive

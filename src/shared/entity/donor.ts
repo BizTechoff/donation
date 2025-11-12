@@ -2,7 +2,6 @@ import {
   Allow,
   BackendMethod,
   Entity,
-  Field,
   Fields,
   IdEntity,
   Relations,
@@ -11,8 +10,6 @@ import {
 } from 'remult'
 import { Roles } from '../enum/roles'
 import { User } from './user'
-import { Place } from './place'
-import { Country } from './country'
 
 @Entity<Donor>('donors', {
   allowApiCrud: Allow.authenticated,
@@ -113,6 +110,34 @@ export class Donor extends IdEntity {
     caption: 'סיומת באנגלית',
   })
   suffixEnglish = ''
+
+  // Computed field for fullName - so it's available when loaded from server
+  @Fields.string<Donor>({
+    caption: 'שם מלא',
+    serverExpression: (donor) => {
+      const parts = []
+      if (donor.title) parts.push(donor.title)
+      if (donor.firstName) parts.push(donor.firstName)
+      if (donor.lastName) parts.push(donor.lastName)
+      if (donor.suffix) parts.push(donor.suffix)
+      return parts.join(' ').trim()
+    }
+  })
+  fullName!: string
+
+  // Computed field for fullNameEnglish - so it's available when loaded from server
+  @Fields.string<Donor>({
+    caption: 'שם מלא באנגלית',
+    serverExpression: (donor) => {
+      const parts = []
+      if (donor.titleEnglish) parts.push(donor.titleEnglish)
+      if (donor.firstNameEnglish) parts.push(donor.firstNameEnglish)
+      if (donor.lastNameEnglish) parts.push(donor.lastNameEnglish)
+      if (donor.suffixEnglish) parts.push(donor.suffixEnglish)
+      return parts.join(' ').trim()
+    }
+  })
+  fullNameEnglish!: string
 
   @Fields.string({
     caption: 'תעודת זהות',
@@ -321,52 +346,72 @@ export class Donor extends IdEntity {
   })
   createdById = ''
 
-  @Field(() => String, {
-    caption: 'שם מלא',
-    serverExpression: async (donor: Donor) => {
-      const parts = []
-      if (donor.title) parts.push(donor.title)
-      if (donor.firstName) parts.push(donor.firstName)
-      if (donor.lastName) parts.push(donor.lastName)
-      if (donor.suffix) parts.push(donor.suffix)
-      return parts.join(' ').trim()
-    }
-  })
-  fullName?: string
+  // @Field(() => String, {
+  //   caption: 'שם מלא',
+  //   serverExpression: async (donor: Donor) => {
+  //     const parts = []
+  //     if (donor.title) parts.push(donor.title)
+  //     if (donor.firstName) parts.push(donor.firstName)
+  //     if (donor.lastName) parts.push(donor.lastName)
+  //     if (donor.suffix) parts.push(donor.suffix)
+  //     return parts.join(' ').trim()
+  //   }
+  // })
+  // fullName?: string
 
-  @Field(() => String, {
-    caption: 'שם תצוגה',
-    serverExpression: async (donor: Donor) => {
-      const parts = []
-      if (donor.title) parts.push(donor.title)
-      if (donor.firstName) parts.push(donor.firstName)
-      if (donor.lastName) parts.push(donor.lastName)
-      if (donor.suffix) parts.push(donor.suffix)
-      const fullName = parts.join(' ').trim()
-      return fullName || 'לא ידוע'
-    }
-  })
-  displayName?: string
+  // @Field(() => String, {
+  //   caption: 'שם מלא',
+  //   serverExpression: async (donor: Donor) => {
+  //     const parts = []
+  //     if (donor.titleEnglish) parts.push(donor.titleEnglish)
+  //     if (donor.firstNameEnglish) parts.push(donor.firstNameEnglish)
+  //     if (donor.lastNameEnglish) parts.push(donor.lastNameEnglish)
+  //     if (donor.suffixEnglish) parts.push(donor.suffixEnglish)
+  //     return parts.join(' ').trim()
+  //   }
+  // })
+  // fullNameEnglish?: string
+
+  // @Field(() => String, {
+  //   caption: 'שם תצוגה',
+  //   serverExpression: async (donor: Donor) => {
+  //     const parts = []
+  //     if (donor.title) parts.push(donor.title)
+  //     if (donor.firstName) parts.push(donor.firstName)
+  //     if (donor.lastName) parts.push(donor.lastName)
+  //     if (donor.suffix) parts.push(donor.suffix)
+  //     const fullName = parts.join(' ').trim()
+  //     return fullName || 'לא ידוע'
+  //   }
+  // })
+  // displayName?: string
 
   @Fields.number({ caption: 'ממוצע תרומות', allowNull: true })
   ns?: number
 
-  get fullNameGetter() {
-    const parts = []
-    if (this.title) parts.push(this.title)
-    if (this.firstName) parts.push(this.firstName)
-    if (this.lastName) parts.push(this.lastName)
-    if (this.suffix) parts.push(this.suffix)
-    return parts.join(' ').trim()
-  }
+  // get fullNameGetter() {
+  //   const parts = []
+  //   if (this.title) parts.push(this.title)
+  //   if (this.firstName) parts.push(this.firstName)
+  //   if (this.lastName) parts.push(this.lastName)
+  //   if (this.suffix) parts.push(this.suffix)
+  //   return parts.join(' ').trim()
+  // }
 
-  get fullNameEnglish() {
-    return `${this.firstNameEnglish} ${this.lastNameEnglish}`.trim()
-  }
+  // get fullNameEnglish() {
 
-  get displayNameGetter() {
-    return this.fullName || 'לא ידוע'
-  }
+  //     const parts = []
+  //     if (this.titleEnglish) parts.push(this.titleEnglish)
+  //     if (this.firstNameEnglish) parts.push(this.firstNameEnglish)
+  //     if (this.lastNameEnglish) parts.push(this.lastNameEnglish)
+  //     if (this.suffixEnglish) parts.push(this.suffixEnglish)
+  //     const fullName = parts.join(' ').trim()
+  //     return fullName || 'UnKnown'
+  // }
+
+  // get displayNameGetter() {
+  //   return this.fullName || 'לא ידוע'
+  // }
 
   @BackendMethod({ allowed: [Roles.admin] })
   async deactivate() {
@@ -398,11 +443,11 @@ export class Donor extends IdEntity {
     const donorEventIds = donorEvents.map(de => de.id);
     const existingReminders = donorEventIds.length > 0
       ? await remult.repo(Reminder).find({
-          where: {
-            sourceEntityType: 'donor_event',
-            sourceEntityId: { $in: donorEventIds }
-          }
-        })
+        where: {
+          sourceEntityType: 'donor_event',
+          sourceEntityId: { $in: donorEventIds }
+        }
+      })
       : [];
 
     const existingReminderMap = new Map(existingReminders.map(r => [r.sourceEntityId, r]));
@@ -415,7 +460,7 @@ export class Donor extends IdEntity {
       if (!existingReminder) {
         // Create new reminder for this donor event
         const newReminder = remult.repo(Reminder).create();
-        newReminder.title = `${donorEvent.event.description} - ${this.displayName}`;
+        newReminder.title = `${donorEvent.event.description} - ${this.fullName}`;
         newReminder.type = 'general';
         newReminder.priority = 'normal';
         newReminder.donorId = this.id;
