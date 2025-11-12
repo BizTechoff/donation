@@ -182,9 +182,9 @@ export class DonorGiftsListComponent implements OnInit, OnDestroy {
   }
 
   generateYearsList() {
-    const currentYear = new Date().getFullYear();
+    const currentHebrewYear = this.hebrewDateService.getCurrentHebrewYear();
     this.years = [];
-    for (let i = currentYear; i >= currentYear - 10; i--) {
+    for (let i = currentHebrewYear; i >= currentHebrewYear - 10; i--) {
       this.years.push(i);
     }
   }
