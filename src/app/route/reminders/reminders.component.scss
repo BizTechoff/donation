@@ -307,10 +307,9 @@
 
   .date-display {
     display: flex;
-    flex-direction: row;
-    gap: 8px;
+    flex-direction: column;
+    gap: 4px;
     align-items: center;
-    flex-wrap: nowrap;
     width: 100%;
 
     .reminder-date {
@@ -318,7 +317,11 @@
       color: #2c3e50;
       font-size: 13px;
       white-space: nowrap;
-      flex: 1;
+    }
+
+    .moed-name {
+      color: #7f8c8d;
+      font-size: 12px;
     }
   }
 }

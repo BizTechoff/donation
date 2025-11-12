@@ -337,7 +337,10 @@
       }
 
       &.campaign-name-col {
+          display: flex;
+          flex-direction: column;
         .campaign-info {
+
           strong {
             display: block;
             color: #2c3e50;
@@ -436,6 +439,115 @@
 
       &:hover {
         background: #229954;
+      }
+    }
+  }
+}
+
+// ===================================
+// TABLE STYLES (regular <table>)
+// ===================================
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  thead {
+    th {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 15px 12px;
+      text-align: right;
+      font-weight: 600;
+      font-size: 14px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+  }
+
+  tbody {
+    tr {
+      border-bottom: 1px solid #ecf0f1;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background-color: #f7f9fc;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      }
+
+      &.inactive {
+        opacity: 0.6;
+        background: #f8f9fa;
+      }
+
+      td {
+        padding: 15px 12px;
+        font-size: 14px;
+        text-align: right;
+
+        .campaign-info {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+
+          strong {
+            display: block;
+            color: #2c3e50;
+            font-size: 15px;
+            font-weight: 600;
+          }
+
+          small {
+            display: block;
+            color: #7f8c8d;
+            font-size: 12px;
+          }
+        }
+
+        &.amount {
+          font-weight: 600;
+          color: #2c3e50;
+
+          &.raised {
+            color: #27ae60;
+          }
+        }
+
+        .progress-container {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          width: 100%;
+
+          .progress-bar {
+            flex: 1;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+
+            .progress-fill {
+              height: 100%;
+              background: linear-gradient(90deg, #28a745 0%, #20c997 100%);
+              border-radius: 4px;
+              transition: width 0.3s ease;
+            }
+          }
+
+          .progress-text {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #28a745;
+            min-width: 45px;
+          }
+        }
+
+        &.actions {
+          display: flex;
+          justify-content: center;
+          gap: 8px;
+        }
       }
     }
   }
