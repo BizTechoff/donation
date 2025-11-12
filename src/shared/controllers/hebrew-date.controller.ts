@@ -6,6 +6,76 @@ import { HDate, months, HebrewCalendar, Event, Sedra } from '@hebcal/core'
  * This is the ONLY place where @hebcal/core should be imported for date operations
  */
 export class HebrewDateController {
+  // Mapping from English parsha names to Hebrew
+  private static readonly PARSHA_ENGLISH_TO_HEBREW: Record<string, string> = {
+    'Bereshit': 'בראשית',
+    'Noach': 'נח',
+    'Lech-Lecha': 'לך לך',
+    'Vayera': 'וירא',
+    'Chayei Sara': 'חיי שרה',
+    'Toldot': 'תולדות',
+    'Vayetzei': 'ויצא',
+    'Vayishlach': 'וישלח',
+    'Vayeshev': 'וישב',
+    'Miketz': 'מקץ',
+    'Vayigash': 'ויגש',
+    'Vayechi': 'ויחי',
+    'Shemot': 'שמות',
+    'Vaera': 'וארא',
+    'Bo': 'בא',
+    'Beshalach': 'בשלח',
+    'Yitro': 'יתרו',
+    'Mishpatim': 'משפטים',
+    'Terumah': 'תרומה',
+    'Tetzaveh': 'תצוה',
+    'Ki Tisa': 'כי תשא',
+    'Vayakhel': 'ויקהל',
+    'Pekudei': 'פקודי',
+    'Vayikra': 'ויקרא',
+    'Tzav': 'צו',
+    'Shmini': 'שמיני',
+    'Tazria': 'תזריע',
+    'Metzora': 'מצורע',
+    'Achrei Mot': 'אחרי מות',
+    'Kedoshim': 'קדושים',
+    'Emor': 'אמור',
+    'Behar': 'בהר',
+    'Bechukotai': 'בחוקותי',
+    'Bamidbar': 'במדבר',
+    'Nasso': 'נשא',
+    'Beha\'alotcha': 'בהעלותך',
+    'Sh\'lach': 'שלח לך',
+    'Korach': 'קרח',
+    'Chukat': 'חקת',
+    'Balak': 'בלק',
+    'Pinchas': 'פינחס',
+    'Matot': 'מטות',
+    'Masei': 'מסעי',
+    'Devarim': 'דברים',
+    'Vaetchanan': 'ואתחנן',
+    'Eikev': 'עקב',
+    'Re\'eh': 'ראה',
+    'Shoftim': 'שופטים',
+    'Ki Teitzei': 'כי תצא',
+    'Ki Tavo': 'כי תבוא',
+    'Nitzavim': 'נצבים',
+    'Vayeilech': 'וילך',
+    'Ha\'azinu': 'האזינו',
+    'Vezot Haberakhah': 'וזאת הברכה',
+    // Combined parshiyot
+    'Vayakhel-Pekudei': 'ויקהל-פקודי',
+    'Tazria-Metzora': 'תזריע-מצורע',
+    'Achrei Mot-Kedoshim': 'אחרי מות-קדושים',
+    'Behar-Bechukotai': 'בהר-בחוקותי',
+    'Chukat-Balak': 'חקת-בלק',
+    'Matot-Masei': 'מטות-מסעי',
+    'Nitzavim-Vayeilech': 'נצבים-וילך'
+  };
+
+  // Reverse mapping from Hebrew to English
+  private static readonly PARSHA_HEBREW_TO_ENGLISH: Record<string, string> = Object.fromEntries(
+    Object.entries(HebrewDateController.PARSHA_ENGLISH_TO_HEBREW).map(([eng, heb]) => [heb, eng])
+  );
   /**
    * Convert Gregorian date to Hebrew date
    * @param date Gregorian date
@@ -210,6 +280,96 @@ export class HebrewDateController {
       return parsha.parsha.map((p: string) => p).join('-')
     }
 
+    return null
+  }
+
+  /**
+   * Get date range for a specific parsha
+   * Returns the Saturday (Shabbat) of the parsha and the following Friday
+   * @param parashaName Name of the parsha in Hebrew
+   * @param year Hebrew year (optional, defaults to current year)
+   * @param isDiaspora Whether to use diaspora schedule
+   * @returns Object with startDate (Saturday) and endDate (Friday) or null if not found
+   */
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async getParshaDateRange(
+    parashaName: string,
+    year?: number,
+    isDiaspora: boolean = false
+  ): Promise<{ startDate: Date; endDate: Date } | null> {
+    console.log('getParshaDateRange called with:', { parashaName, year, isDiaspora })
+
+    // Convert Hebrew parsha name to English if needed
+    const parashaNameEnglish = HebrewDateController.PARSHA_HEBREW_TO_ENGLISH[parashaName] || parashaName
+    console.log('Searching for parsha (English):', parashaNameEnglish)
+
+    const currentHYear = new HDate().getFullYear()
+    const yearsToSearch = year ? [year] : [currentHYear, currentHYear + 1, currentHYear - 1]
+
+    console.log('Searching in years:', yearsToSearch)
+
+    // Search in multiple years
+    for (const hyear of yearsToSearch) {
+      console.log(`Searching in year ${hyear}`)
+
+      // Create Sedra for that year
+      const sedra = new Sedra(hyear, !isDiaspora)
+
+      // Get all Saturdays in the year
+      const startOfYear = new HDate(1, months.TISHREI, hyear)
+      const endOfYear = new HDate(29, months.ELUL, hyear)
+
+      // Convert to Gregorian
+      const startGreg = startOfYear.greg()
+      const endGreg = endOfYear.greg()
+
+      console.log(`Year ${hyear} range: ${startGreg.toISOString()} to ${endGreg.toISOString()}`)
+
+      // Find all Saturdays in the year
+      let currentDate = new Date(startGreg)
+
+      // Move to first Saturday
+      while (currentDate.getDay() !== 6) {
+        currentDate.setDate(currentDate.getDate() + 1)
+      }
+
+      let saturdayCount = 0
+
+      // Search for the parsha
+      while (currentDate <= endGreg) {
+        const hDate = new HDate(currentDate)
+        const parsha = sedra.lookup(hDate)
+
+        if (parsha && parsha.parsha && parsha.parsha.length > 0) {
+          const currentParshaEnglish = parsha.parsha.map((p: string) => p).join('-')
+          saturdayCount++
+
+          if (saturdayCount <= 5 || currentParshaEnglish === parashaNameEnglish) {
+            console.log(`Saturday ${currentDate.toISOString().split('T')[0]}: ${currentParshaEnglish}`)
+          }
+
+          if (currentParshaEnglish === parashaNameEnglish) {
+            // Found the parsha! Return Saturday to Friday
+            const startDate = new Date(currentDate)
+            startDate.setHours(0, 0, 0, 0)
+
+            const endDate = new Date(currentDate)
+            endDate.setDate(endDate.getDate() + 6) // Add 6 days to get to Friday
+            endDate.setHours(23, 59, 59, 999)
+
+            console.log('Found parsha!', { startDate, endDate })
+            return { startDate, endDate }
+          }
+        }
+
+        // Move to next Saturday
+        currentDate.setDate(currentDate.getDate() + 7)
+      }
+
+      console.log(`Total Saturdays in year ${hyear}: ${saturdayCount}`)
+    }
+
+    console.log('Parsha not found:', parashaName)
     return null
   }
 

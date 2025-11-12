@@ -19,6 +19,8 @@ export class ReminderController {
       dateFrom?: Date
       dateTo?: Date
       searchTerm?: string
+      reminderType?: string
+      donorSearch?: string
     } = {},
     page: number = 1,
     pageSize: number = 50,
@@ -62,6 +64,8 @@ export class ReminderController {
       dateFrom?: Date
       dateTo?: Date
       searchTerm?: string
+      reminderType?: string
+      donorSearch?: string
     } = {}
   ): Promise<number> {
     const where = await ReminderController.buildWhereClause(filters)
@@ -78,6 +82,8 @@ export class ReminderController {
       dateFrom?: Date
       dateTo?: Date
       searchTerm?: string
+      reminderType?: string
+      donorSearch?: string
     } = {}
   ): Promise<{
     todayCount: number
@@ -123,9 +129,16 @@ export class ReminderController {
       dateFrom?: Date
       dateTo?: Date
       searchTerm?: string
+      reminderType?: string
+      donorSearch?: string
     } = {}
   ): Promise<any> {
     const where: any = { isActive: true }
+
+    // Apply reminder type filter
+    if (filters.reminderType && filters.reminderType.trim() !== '') {
+      where.type = filters.reminderType
+    }
 
     // Apply global filters - get filtered donor IDs
     if (filters.globalFilters) {
@@ -141,6 +154,40 @@ export class ReminderController {
           { donorId: { $in: filteredDonorIds } },
           { donorId: null }
         ]
+      }
+    }
+
+    // Donor search filter
+    if (filters.donorSearch && filters.donorSearch.trim() !== '') {
+      const searchLower = filters.donorSearch.toLowerCase().trim()
+      const Donor = (await import('../entity/donor')).Donor
+
+      const matchingDonors = await remult.repo(Donor).find({
+        where: {
+          $or: [
+            { firstName: { $contains: searchLower } },
+            { lastName: { $contains: searchLower } }
+          ]
+        }
+      })
+
+      const donorIds = matchingDonors.map(d => d.id)
+
+      if (donorIds.length === 0) {
+        // No matching donors found
+        where.donorId = null // This will return no reminders
+      } else {
+        // Combine with existing donor filter if exists
+        if (where.$or) {
+          // Already have donor filter from global filters
+          where.$and = [
+            { $or: where.$or },
+            { donorId: { $in: donorIds } }
+          ]
+          delete where.$or
+        } else {
+          where.donorId = { $in: donorIds }
+        }
       }
     }
 

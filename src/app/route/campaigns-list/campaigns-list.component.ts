@@ -222,6 +222,11 @@ export class CampaignsListComponent implements OnInit, OnDestroy {
     return this.campaignBlessingCountMap.get(campaign.id) || 0;
   }
 
+  getProgressPercentage(campaign: Campaign): number {
+    if (!campaign.targetAmount || campaign.targetAmount === 0) return 0;
+    return Math.min(100, Math.round((campaign.raisedAmount / campaign.targetAmount) * 100));
+  }
+
   async recalculateAllCampaigns() {
     const confirmed = confirm('האם אתה בטוח שברצונך לחשב מחדש את סכומי התרומות לכל הקמפיינים? פעולה זו עשויה לקחת זמן.');
     if (!confirmed) return;

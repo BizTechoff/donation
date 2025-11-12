@@ -21,6 +21,8 @@ export class ReminderService {
       dateFrom?: Date
       dateTo?: Date
       searchTerm?: string
+      reminderType?: string
+      donorSearch?: string
     } = {},
     page: number = 1,
     pageSize: number = 50,
@@ -38,6 +40,8 @@ export class ReminderService {
       dateFrom?: Date
       dateTo?: Date
       searchTerm?: string
+      reminderType?: string
+      donorSearch?: string
     } = {}
   ): Promise<number> {
     return await ReminderController.countFilteredReminders(filters);
@@ -52,6 +56,8 @@ export class ReminderService {
       dateFrom?: Date
       dateTo?: Date
       searchTerm?: string
+      reminderType?: string
+      donorSearch?: string
     } = {}
   ): Promise<{
     todayCount: number

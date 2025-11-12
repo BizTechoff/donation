@@ -275,7 +275,7 @@
                     </button>
                   </div>
                   <div class="empty-selection-field" *ngIf="!reminder.donor" (click)="openDonorSelectionModal()">
-                    <span>בחר תורם...</span>
+                    <span>{{ (i18n.terms$ | async)?.selectDonorPlaceholder }}</span>
                   </div>
                 </div>
               </div>

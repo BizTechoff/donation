@@ -42,7 +42,7 @@
         <mat-icon>description</mat-icon>
       </div>
       <div class="header-text">
-        <h2>הגדרות מכתב</h2>
+        <h2>{{ (i18n.terms$ | async)?.letterSettings }}</h2>
         <p class="header-subtitle">{{ (i18n.terms$ | async)?.selectLetterTypeSubtitle || 'בחר סוג מכתב, שורות פתיחה וסיום' }}</p>
       </div>
     </div>

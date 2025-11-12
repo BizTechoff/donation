@@ -10,21 +10,21 @@
     <div class="certificate-types">
     <div class="type-card memorial-cert">
       <div class="card-icon">🕯️</div>
-      <h3>{{ (i18n.terms$ | async)?.memorialCertificatesCard }}</h3>
-      <p>{{ (i18n.terms$ | async)?.memorialCertDescription }}</p>
-      <div class="stats">
+      <!-- <h3>{{ (i18n.terms$ | async)?.memorialCertificatesCard }}</h3>
+      <p>{{ (i18n.terms$ | async)?.memorialCertDescription }}</p> -->
+      <div class="stats stats-vertical">
         <span class="count">{{memorialCertificatesCount}}</span>
-        <span class="label">{{ (i18n.terms$ | async)?.activeMemorials }}</span>
+        <span class="label">{{ (i18n.terms$ | async)?.activeCertificatesMemorials }}</span>
       </div>
     </div>
 
     <div class="type-card memorial-cert">
       <div class="card-icon">📅</div>
-      <h3>{{ (i18n.terms$ | async)?.memorialDay }}</h3>
-      <p>נציבים ליום מיוחד</p>
-      <div class="stats">
+      <!-- <h3>{{ (i18n.terms$ | async)?.memorialDay }}</h3>
+      <p>{{ (i18n.terms$ | async)?.memorialDayDescription }}</p> -->
+      <div class="stats stats-vertical">
         <span class="count">{{memorialDayCertificatesCount}}</span>
-        <span class="label">נציבים פעילים</span>
+        <span class="label">{{ (i18n.terms$ | async)?.activeCertificatesDay }}</span>
       </div>
     </div>
   </div>
@@ -42,12 +42,24 @@
 
       <div class="filter-group">
         <label>{{ (i18n.terms$ | async)?.dateFromFilter }}</label>
-        <input type="date" class="form-control" [(ngModel)]="filterDateFrom" (ngModelChange)="onFilterChange()">
+        <app-modern-dual-date-picker
+          [(ngModel)]="filterDateFrom"
+          [label]="(i18n.terms$ | async)?.dateFromFilter || ''"
+          [compact]="true"
+          [showOnlyHebrew]="true"
+          (dateChange)="onFilterChange()">
+        </app-modern-dual-date-picker>
       </div>
 
       <div class="filter-group">
         <label>{{ (i18n.terms$ | async)?.dateToFilter }}</label>
-        <input type="date" class="form-control" [(ngModel)]="filterDateTo" (ngModelChange)="onFilterChange()">
+        <app-modern-dual-date-picker
+          [(ngModel)]="filterDateTo"
+          [label]="(i18n.terms$ | async)?.dateToFilter || ''"
+          [compact]="true"
+          [showOnlyHebrew]="true"
+          (dateChange)="onFilterChange()">
+        </app-modern-dual-date-picker>
       </div>
 
       <div class="filter-group">
@@ -59,7 +71,7 @@
       </div>
 
       <div class="filter-group">
-        <label>{{ (i18n.terms$ | async)?.fromParasha }}</label>
+        <label>{{ (i18n.terms$ | async)?.parasha }}</label>
         <select class="form-control" [(ngModel)]="filterFromParasha" (ngModelChange)="onFromParashaChange()">
           <option value="">{{ (i18n.terms$ | async)?.everything }}</option>
           <option *ngFor="let parasha of parashotList" [value]="parasha">{{ parasha }}</option>
@@ -118,7 +130,7 @@
             <small *ngIf="certificate.donor">{{getDonorName(certificate)}}</small>
           </td>
           <td>
-            <span class="cert-type-badge type-{{certificate.type}}">{{certificate.typeText}}</span>
+            <span class="cert-type-badge type-{{certificate.type}}">{{getCertificateTypeText(certificate)}}</span>
           </td>
           <td>
             <span class="event-date">{{ formatHebrewDate(certificate.eventDate) }}</span>

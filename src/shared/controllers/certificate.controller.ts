@@ -3,6 +3,7 @@ import { Certificate } from '../entity/certificate';
 import { Donor } from '../entity/donor';
 import { GlobalFilters } from '../../app/services/global-filter.service';
 import { GlobalFilterController } from './global-filter.controller';
+import { HebrewDateController } from './hebrew-date.controller';
 
 export interface CertificateFilters {
   certificateType?: string;
@@ -179,6 +180,37 @@ export class CertificateController {
       }
 
       whereClause.donorId = { $in: donorIds };
+    }
+
+    // Apply parasha filter
+    if (filters.fromParasha) {
+      const parashaRange = await HebrewDateController.getParshaDateRange(filters.fromParasha);
+
+console.log('parashaRange',  parashaRange)
+      if (parashaRange) {
+        const parashaStartDate = parashaRange.startDate;
+        const parashaEndDate = parashaRange.endDate;
+console.log('parashaStartDate',  parashaStartDate,parashaEndDate)
+        // If we already have date filters, intersect with parasha range
+        if (whereClause.eventDate) {
+          // Combine existing date filters with parasha range
+          const existingGte = whereClause.eventDate.$gte;
+          const existingLte = whereClause.eventDate.$lte;
+
+          whereClause.eventDate = {
+            $gte: existingGte && existingGte > parashaStartDate ? existingGte : parashaStartDate,
+            $lte: existingLte && existingLte < parashaEndDate ? existingLte : parashaEndDate
+          };
+        } else {
+          whereClause.eventDate = {
+            $gte: parashaStartDate,
+            $lte: parashaEndDate
+          };
+        }
+      } else {
+        // Parasha not found - return no results
+        return null;
+      }
     }
 
     return whereClause;

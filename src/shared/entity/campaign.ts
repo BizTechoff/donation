@@ -155,6 +155,8 @@ export class Campaign extends IdEntity {
   } = {}
 
   get progressPercentage() {
+    console.log('this.targetAmount',this.targetAmount)
+    console.log('this.raisedAmount',this.raisedAmount)
     if (this.targetAmount === 0) return 0
     return Math.min(100, Math.round((this.raisedAmount / this.targetAmount) * 100))
   }

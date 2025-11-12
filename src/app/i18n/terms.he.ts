@@ -680,6 +680,7 @@ export const termsHe = {
   dateToFilter: 'תאריך עד',
   donorSearch: 'חיפוש תורם',
   fromParasha: 'מפרשה',
+  parasha: 'פרשה',
   toParasha: 'עד פרשה',
   statusFilterCert: 'סטטוס',
   draftStatusCert: 'טיוטה',
@@ -1136,7 +1137,7 @@ export const termsHe = {
 
   // Certificates component hardcoded terms
   certificateMemorialDayDescription: 'נציבים ליום מיוחד',
-  activeCertificatesMemorials: 'נציבים פעילים',
+  activeCertificatesMemorials: 'נציבי זכרון פעילים',
 
   // Reminders component hardcoded terms
   fromParashaLabel: 'מפרשה',
@@ -1649,7 +1650,7 @@ export const termsHe = {
   selectNoteTypeTitle: 'בחר סוג הערה',
   selectRelationshipLabel: 'בחר סוג קשר:',
   selectDonorLabel: 'בחר תורם:',
-  selectDonorPlaceholder: 'בחר תורם',
+  selectDonorPlaceholder: 'בחר תורם...',
   selectDonorTitle: 'בחר תורם',
   selectOrganizationTitle: 'בחר עמותה',
   selectMonthOption: 'בחר חודש',
@@ -1691,5 +1692,16 @@ export const termsHe = {
   snoozeNextWeek: 'שבוע הבא',
   exactlyOneWeek: 'בעוד שבוע בדיוק',
   snoozeNextMonth: 'חודש הבא',
-  sameDayNextMonth: 'אותו יום בחודש הבא'
+  sameDayNextMonth: 'אותו יום בחודש הבא',
+
+  // Additional i18n terms
+  payerIdInTransaction: 'מזהה משלם בתנועה',
+  letterSettings: 'הגדרות מכתב',
+  donorSelection: 'בחירת תורם',
+  exportSummaryToExcel: 'ייצא סיכום לאקסל',
+  addBlessingButton: 'הוסף ברכה',
+  allBlessingTypes: 'כל סוגי הברכות',
+  memorialDayDescription: 'נציבים ליום מיוחד',
+  activeCertificates: 'נציבים פעילים',
+  activeCertificatesDay: 'נציבי יום פעילים'
 }

@@ -88,7 +88,7 @@
           <div class="filter-group">
             <mat-icon class="filter-icon">category</mat-icon>
             <select class="filter-select" [(ngModel)]="filterBlessingType">
-              <option value="">כל סוגי הברכות</option>
+              <option value="">{{ (i18n.terms$ | async)?.allBlessingTypes }}</option>
               <option *ngFor="let type of blessingTypes" [value]="type.id">
                 {{type.type}} - {{type.price}} ₪
               </option>
@@ -237,7 +237,7 @@
                 </span>
                 <span *ngIf="!donorBlessing.blessing?.blessingContent" class="no-blessing">
                   <mat-icon>edit</mat-icon>
-                  הוסף ברכה
+                  {{ (i18n.terms$ | async)?.addBlessingButton }}
                 </span>
               </div>
             </td>
@@ -278,7 +278,7 @@
                 (click)="exportSummaryToExcel()"
                 class="export-btn">
           <mat-icon>summarize</mat-icon>
-          ייצא סיכום לאקסל
+          {{ (i18n.terms$ | async)?.exportSummaryToExcel }}
         </button>
 
         <!-- <button mat-stroked-button

@@ -129,6 +129,13 @@
           color: #7f8c8d;
           font-weight: 600;
         }
+
+        &.stats-vertical {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 4px;
+        }
       }
     }
   }

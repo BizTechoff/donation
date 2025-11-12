@@ -130,9 +130,9 @@
           <td>
             <div class="progress-container" *ngIf="campaign.targetAmount > 0">
               <div class="progress-bar">
-                <div class="progress-fill" [style.width.%]="campaign.progressPercentage"></div>
+                <div class="progress-fill" [style.width.%]="getProgressPercentage(campaign)"></div>
               </div>
-              <span class="progress-text">{{campaign.progressPercentage}}%</span>
+              <span class="progress-text">{{getProgressPercentage(campaign)}}%</span>
             </div>
             <span *ngIf="campaign.targetAmount === 0">-</span>
           </td>

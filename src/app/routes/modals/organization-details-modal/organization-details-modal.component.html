@@ -58,7 +58,7 @@
             <div class="form-group">
               <div class="field-title">
                 <mat-icon class="field-icon">fingerprint</mat-icon>
-                <label>מזהה משלם בתנועה</label>
+                <label>{{ (i18n.terms$ | async)?.payerIdInTransaction }}</label>
               </div>
               <input type="text"
                      class="form-control"

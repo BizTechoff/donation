@@ -271,14 +271,14 @@
         <button mat-raised-button color="accent" *ngIf="!isNewCampaign" (click)="openCampaignDonations()"
           class="action-button donations-list-button">
           <mat-icon>list</mat-icon>
-          תרומות
+          {{ (i18n.terms$ | async)?.donations }}
         </button>
 
-        <button mat-raised-button color="primary" *ngIf="!isNewCampaign" (click)="openNewDonation()"
+        <!-- <button mat-raised-button color="primary" *ngIf="!isNewCampaign" (click)="openNewDonation()"
           class="action-button new-donation-button">
           <mat-icon>add_circle</mat-icon>
           {{ (i18n.terms$ | async)?.newDonationButton }}
-        </button>
+        </button> -->
 
         <div class="footer-divider" *ngIf="!isNewCampaign"></div>
 
@@ -287,6 +287,9 @@
           <mat-icon>list_alt</mat-icon>
           {{ (i18n.terms$ | async)?.invitedListButton }}
         </button>
+
+        <div class="footer-divider" *ngIf="!isNewCampaign"></div>
+
 
         <button mat-raised-button color="primary" *ngIf="campaign.campaignType === 'דינער'" (click)="openBlessingBook()"
           class="action-button blessing-book-button">

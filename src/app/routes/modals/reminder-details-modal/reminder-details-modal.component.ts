@@ -700,7 +700,7 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
         DonorSelectionModalComponent,
         (modal: DonorSelectionModalComponent) => {
           modal.args = {
-            title: 'בחירת תורם',
+            title: this.i18n.currentTerms.donorSelection,
             multiSelect: false
           };
         }
@@ -725,7 +725,7 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
       }
     } catch (error) {
       console.error('Error opening donor selection modal:', error);
-      this.ui.error('שגיאה בפתיחת חלון בחירת תורם');
+      this.ui.error(this.i18n.currentTerms.donorSelection);
     }
   }
 

@@ -43,7 +43,7 @@
       <div class="filter-row">
         <div class="filter-group">
           <label>{{ (i18n.terms$ | async)?.reminderTypeFilter }}</label>
-          <select class="form-control">
+          <select class="form-control" [(ngModel)]="filterReminderType" (ngModelChange)="loadReminders()">
             <option value="">{{ (i18n.terms$ | async)?.everything }}</option>
             <option value="donation">{{ (i18n.terms$ | async)?.donationReminder }}</option>
             <option value="contact">{{ (i18n.terms$ | async)?.contactReminder }}</option>
@@ -66,18 +66,33 @@
       </div> -->
 
         <div class="filter-group">
-          <label>{{ (i18n.terms$ | async)?.dateFromReminder }}</label>
-          <input type="date" class="form-control">
+        <label>{{ (i18n.terms$ | async)?.dateFromFilter }}</label>
+          <app-modern-dual-date-picker
+            [(ngModel)]="filterDateFrom"
+            [label]="(i18n.terms$ | async)?.dateFromReminder || ''"
+            [compact]="true"
+            [showOnlyHebrew]="true"
+            (dateChange)="loadReminders()">
+          </app-modern-dual-date-picker>
         </div>
 
         <div class="filter-group">
-          <label>{{ (i18n.terms$ | async)?.dateToReminder }}</label>
-          <input type="date" class="form-control">
+        <label>{{ (i18n.terms$ | async)?.dateToFilter }}</label>
+          <app-modern-dual-date-picker
+            [(ngModel)]="filterDateTo"
+            [label]="(i18n.terms$ | async)?.dateToReminder || ''"
+            [compact]="true"
+            [showOnlyHebrew]="true"
+            (dateChange)="loadReminders()">
+          </app-modern-dual-date-picker>
         </div>
 
         <div class="filter-group">
           <label>{{ (i18n.terms$ | async)?.donorSearchReminder }}</label>
-          <input type="text" class="form-control" [placeholder]="(i18n.terms$ | async)?.donorNamePlaceholder">
+          <input type="text" class="form-control"
+                 [(ngModel)]="filterDonorSearch"
+                 (ngModelChange)="loadReminders()"
+                 [placeholder]="(i18n.terms$ | async)?.donorNamePlaceholder">
         </div>
 
         <!-- <div class="filter-group">
@@ -91,13 +106,13 @@
         </select>
       </div> -->
 
-        <div class="filter-group">
+        <!-- <div class="filter-group">
           <label>{{ (i18n.terms$ | async)?.parashaLabel }}</label>
           <select class="form-control" [(ngModel)]="fromParasha" (change)="applyParashaFilter()">
             <option value="">{{ (i18n.terms$ | async)?.selectParashaPlaceholder }}</option>
             <option *ngFor="let parasha of torahPortions; let i = index" [value]="i">{{parasha}}</option>
           </select>
-        </div>
+        </div> -->
 
         <!-- <div class="filter-group">
         <label>עד פרשה</label>

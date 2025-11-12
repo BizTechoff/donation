@@ -682,6 +682,7 @@ export const termsEn = {
   dateToFilter: 'Date To',
   donorSearch: 'Donor Search',
   fromParasha: 'From Parasha',
+  parasha: 'Parasha',
   toParasha: 'To Parasha',
   statusFilterCert: 'Status',
   draftStatusCert: 'Draft',
@@ -1138,7 +1139,7 @@ export const termsEn = {
 
   // Certificates component hardcoded terms
   certificateMemorialDayDescription: 'Memorials for special days',
-  activeCertificatesMemorials: 'Active memorials',
+  activeCertificatesMemorials: 'Active Memorial Certificates',
 
   // Reminders component hardcoded terms
   fromParashaLabel: 'From Parasha',
@@ -1651,7 +1652,7 @@ export const termsEn = {
   selectNoteTypeTitle: 'Select Note Type',
   selectRelationshipLabel: 'Select Relationship Type:',
   selectDonorLabel: 'Select Donor:',
-  selectDonorPlaceholder: 'Select Donor',
+  selectDonorPlaceholder: 'Select Donor...',
   selectDonorTitle: 'Select Donor',
   selectOrganizationTitle: 'Select Organization',
   selectMonthOption: 'Select Month',
@@ -1693,5 +1694,16 @@ export const termsEn = {
   snoozeNextWeek: 'Next Week',
   exactlyOneWeek: 'Exactly one week',
   snoozeNextMonth: 'Next Month',
-  sameDayNextMonth: 'Same day next month'
+  sameDayNextMonth: 'Same day next month',
+
+  // Additional i18n terms
+  payerIdInTransaction: 'Payer ID in Transaction',
+  letterSettings: 'Letter Settings',
+  donorSelection: 'Donor Selection',
+  exportSummaryToExcel: 'Export Summary to Excel',
+  addBlessingButton: 'Add Blessing',
+  allBlessingTypes: 'All Blessing Types',
+  memorialDayDescription: 'Certificates for Special Day',
+  activeCertificates: 'Active Certificates',
+  activeCertificatesDay: 'Active Day Certificates'
 }

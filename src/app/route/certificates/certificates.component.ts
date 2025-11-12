@@ -29,8 +29,8 @@ export class CertificatesComponent implements OnInit, OnDestroy {
   filterFromParasha = '';
   filterToParasha = '';
   filterCertificateType = '';
-  filterDateFrom = '';
-  filterDateTo = '';
+  filterDateFrom: Date | null = null;
+  filterDateTo: Date | null = null;
   donorSearchText = '';
   private donorSearchSubject = new Subject<string>();
   private filterTimeout: any;
@@ -138,8 +138,8 @@ export class CertificatesComponent implements OnInit, OnDestroy {
       // Build filters object for server-side filtering
       const filters: CertificateFilters = {
         certificateType: this.filterCertificateType?.trim() || undefined,
-        dateFrom: this.filterDateFrom?.trim() || undefined,
-        dateTo: this.filterDateTo?.trim() || undefined,
+        dateFrom: this.filterDateFrom ? this.formatDateForFilter(this.filterDateFrom) : undefined,
+        dateTo: this.filterDateTo ? this.formatDateForFilter(this.filterDateTo) : undefined,
         donorSearchText: this.donorSearchText?.trim() || undefined,
         fromParasha: this.filterFromParasha?.trim() || undefined,
         toParasha: this.filterToParasha?.trim() || undefined,
@@ -210,7 +210,7 @@ export class CertificatesComponent implements OnInit, OnDestroy {
     this.certificateReminderMap.clear();
     for (const reminder of reminders) {
       if (reminder.sourceEntityId) {
-        this.certificateReminderMap.set(reminder.sourceEntityId, reminder.dueDate);
+        this.certificateReminderMap.set(reminder.sourceEntityId, reminder.nextReminderDate || reminder.dueDate);
       }
     }
   }
@@ -304,6 +304,27 @@ export class CertificatesComponent implements OnInit, OnDestroy {
 
   getDonorName(certificate: Certificate): string {
     return certificate.donor?.fullName || '-';
+  }
+
+  getCertificateTypeText(certificate: Certificate): string {
+    // If typeText is already set, use it
+    if (certificate.typeText) {
+      return certificate.typeText;
+    }
+
+    // Otherwise, determine based on type
+    switch (certificate.type) {
+      case 'donation':
+        return this.i18n.currentTerms.donationCertificate;
+      case 'memorial':
+        return this.i18n.currentTerms.memorialCertificate;
+      case 'memorialDay':
+        return this.i18n.currentTerms.memorialDay;
+      case 'appreciation':
+        return this.i18n.currentTerms.appreciation;
+      default:
+        return '';
+    }
   }
 
   async createReminder(certificate: Certificate) {
@@ -520,6 +541,13 @@ export class CertificatesComponent implements OnInit, OnDestroy {
     const counts = this.certificateBlessingCountMap.get(certificate.id);
     if (!counts || counts.total === 0) return '-';
     return `${counts.received}/${counts.total}`;
+  }
+
+  private formatDateForFilter(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 
 }

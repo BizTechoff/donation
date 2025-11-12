@@ -36,8 +36,10 @@ export class RemindersComponent implements OnInit, OnDestroy {
 
   // Local filter properties
   searchTerm = '';
-  filterDateFrom?: Date;
-  filterDateTo?: Date;
+  filterDateFrom: Date | null = null;
+  filterDateTo: Date | null = null;
+  filterReminderType = '';
+  filterDonorSearch = '';
 
   // Pagination
   currentPage = 1;
@@ -133,6 +135,12 @@ export class RemindersComponent implements OnInit, OnDestroy {
       }
       if (this.searchTerm && this.searchTerm.trim() !== '') {
         filters.searchTerm = this.searchTerm;
+      }
+      if (this.filterReminderType && this.filterReminderType.trim() !== '') {
+        filters.reminderType = this.filterReminderType;
+      }
+      if (this.filterDonorSearch && this.filterDonorSearch.trim() !== '') {
+        filters.donorSearch = this.filterDonorSearch;
       }
 
       // Add global filters

@@ -137,17 +137,6 @@ export class Reminder extends IdEntity {
   })
   alertDate?: Date
 
-  @Fields.boolean({
-    caption: 'הושלם',
-  })
-  isCompleted = false
-
-  @Fields.date({
-    caption: 'תאריך השלמה',
-    allowApiUpdate: false,
-  })
-  completedDate?: Date
-
   @Fields.string({
     caption: 'הערות השלמה',
   })
@@ -221,6 +210,17 @@ export class Reminder extends IdEntity {
     caption: 'זמן מיוחד (חג/אירוע)',
   })
   specialOccasion = '' // Holiday or special occasion name
+
+  @Fields.boolean({
+    caption: 'הושלם',
+  })
+  isCompleted = false
+
+  @Fields.date({
+    caption: 'תאריך השלמה',
+    allowApiUpdate: false,
+  })
+  completedDate?: Date
 
   @Fields.date({
     caption: 'תזכורת הבאה',
