@@ -55,21 +55,23 @@
         </div>
 
         <div class="filter-group">
-          <label>{{ (i18n.terms$ | async)?.dateFromFilter }}</label>
-          <input
-            type="date"
-            class="form-control"
+          <app-modern-dual-date-picker
             [(ngModel)]="dateFrom"
-            (ngModelChange)="onFilterChange()">
+            [label]="(i18n.terms$ | async)?.dateFromFilter || ''"
+            [compact]="true"
+            [showOnlyHebrew]="true"
+            (dateChange)="onFilterChange()">
+          </app-modern-dual-date-picker>
         </div>
 
         <div class="filter-group">
-          <label>{{ (i18n.terms$ | async)?.dateToFilter }}</label>
-          <input
-            type="date"
-            class="form-control"
+          <app-modern-dual-date-picker
             [(ngModel)]="dateTo"
-            (ngModelChange)="onFilterChange()">
+            [label]="(i18n.terms$ | async)?.dateToFilter || ''"
+            [compact]="true"
+            [showOnlyHebrew]="true"
+            (dateChange)="onFilterChange()">
+          </app-modern-dual-date-picker>
         </div>
 
         <div class="filter-group">

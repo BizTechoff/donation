@@ -54,8 +54,8 @@ export class DonationsListComponent implements OnInit, OnDestroy {
 
   // Filter variables
   searchTerm = '';
-  dateFrom = '';
-  dateTo = '';
+  dateFrom: Date | null = null;
+  dateTo: Date | null = null;
   selectedMethodId = '';
   amountFrom: number | undefined;
   selectedCampaignId = '';
@@ -128,8 +128,8 @@ export class DonationsListComponent implements OnInit, OnDestroy {
         // Build filters object with both local and global filters
         const filters: DonationFilters = {
           searchTerm: this.searchTerm?.trim() || undefined,
-          dateFrom: this.dateFrom?.trim() || undefined,
-          dateTo: this.dateTo?.trim() || undefined,
+          dateFrom: this.dateFrom ? this.formatDateForFilter(this.dateFrom) : undefined,
+          dateTo: this.dateTo ? this.formatDateForFilter(this.dateTo) : undefined,
           selectedMethodId: this.selectedMethodId?.trim() || undefined,
           amountFrom: this.amountFrom,
           selectedCampaignId: this.selectedCampaignId?.trim() || undefined,
@@ -174,6 +174,13 @@ export class DonationsListComponent implements OnInit, OnDestroy {
     if (this.filterTimeout) {
       clearTimeout(this.filterTimeout);
     }
+  }
+
+  private formatDateForFilter(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 
 
