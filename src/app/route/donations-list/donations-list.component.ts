@@ -35,7 +35,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   editingDonation?: Donation;
   today = new Date().toISOString().split('T')[0];
 
-  completedDonationsCountCache = 0;
+  totalAmountCache = 0;
 
   // Pagination
   currentPage = 1;
@@ -138,22 +138,21 @@ export class DonationsListComponent implements OnInit, OnDestroy {
 
         console.log('refreshData: Fetching donations with filters:', filters, 'page:', this.currentPage, 'sorting:', this.sortColumns);
 
-        // Get total count and donations from server with all filters and sorting
-        [this.totalCount, this.donations] = await Promise.all([
+        // Get total count, total amount, and donations from server with all filters and sorting
+        [this.totalCount, this.totalAmountCache, this.donations] = await Promise.all([
           DonationController.countFilteredDonations(filters),
+          DonationController.sumFilteredDonations(filters),
           DonationController.findFilteredDonations(filters, this.currentPage, this.pageSize, this.sortColumns)
         ]);
 
         this.totalPages = Math.ceil(this.totalCount / this.pageSize);
 
-        console.log('refreshData: Loaded', this.donations.length, 'donations, total:', this.totalCount);
-
-        // Calculate completed donations count
-        this.completedDonationsCountCache = this.donations.length;
+        console.log('refreshData: Loaded', this.donations.length, 'donations, total:', this.totalCount, 'totalAmount:', this.totalAmountCache);
       } catch (error) {
         console.error('Error refreshing donations:', error);
         this.donations = [];
         this.totalCount = 0;
+        this.totalAmountCache = 0;
         this.totalPages = 0;
       }
     });
@@ -250,7 +249,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   }
 
   async deleteDonation(donation: Donation) {
-    const confirmMessage = this.i18n.currentTerms.confirmDeleteDonation?.replace('{donor}', donation.donor?.displayName || '') || '';
+    const confirmMessage = this.i18n.currentTerms.confirmDeleteDonation?.replace('{donor}', donation.donor?.fullName || '') || '';
     if (confirm(confirmMessage)) {
       try {
         await donation.delete();
@@ -304,7 +303,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
         );
 
         // Show results
-        let message = `קליטת תנועות לתרומה של ${donation.donor?.displayName || 'תורם לא ידוע'}\n\n`;
+        let message = `קליטת תנועות לתרומה של ${donation.donor?.fullName || 'תורם לא ידוע'}\n\n`;
         message += `נמצאו ${result.matched} תשלומים תואמים\n`;
         message += `נוצרו ${result.created} רשומות תשלום חדשות\n`;
 
@@ -372,7 +371,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   getSelectedDonorName(): string {
     if (!this.editingDonation?.donorId) return '';
     const donor = this.donors.find(d => d.id === this.editingDonation!.donorId);
-    return donor?.displayName || '';
+    return donor?.fullName || '';
   }
 
   getSelectedMethodName(): string {
@@ -419,8 +418,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   }
 
   get totalAmount(): number {
-    return this.donations
-      .reduce((sum, donation) => sum + donation.amount, 0);
+    return this.totalAmountCache;
   }
 
   get pendingAmount(): number {
@@ -428,7 +426,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   }
 
   getDonorName(donation: Donation): string {
-    return donation.donor?.displayName || '-';
+    return donation.donor?.fullName || '-';
   }
 
   getDonorHomeAddress(donation: Donation): string {
@@ -490,9 +488,6 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   }
 
 
-  get completedDonationsCount(): number {
-    return this.completedDonationsCountCache;
-  }
 
   // תרומות מסוננות - רק עם קמפיין
   get donationsWithCampaign(): Donation[] {

@@ -418,6 +418,38 @@ export class DonationController {
 
   @BackendMethod({ allowed: Allow.authenticated })
   static async countFilteredDonations(filters: DonationFilters): Promise<number> {
+    const whereClause = await DonationController.buildWhereClause(filters);
+    if (whereClause === null) {
+      return 0;
+    }
+
+    const count = await remult.repo(Donation).count(
+      Object.keys(whereClause).length > 0 ? whereClause : undefined
+    );
+
+    return count;
+  }
+
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async sumFilteredDonations(filters: DonationFilters): Promise<number> {
+    const whereClause = await DonationController.buildWhereClause(filters);
+    if (whereClause === null) {
+      return 0;
+    }
+
+    const donations = await remult.repo(Donation).find({
+      where: Object.keys(whereClause).length > 0 ? whereClause : undefined
+    });
+
+    // Sum all amounts
+    return donations.reduce((sum, donation) => sum + donation.amount, 0);
+  }
+
+  /**
+   * Build where clause for filtering donations
+   * Returns null if no results should be returned (e.g., no matching donors)
+   */
+  private static async buildWhereClause(filters: DonationFilters): Promise<any | null> {
     let whereClause: any = {};
     let globalDonorIds: string[] | undefined = undefined;
 
@@ -426,7 +458,7 @@ export class DonationController {
       globalDonorIds = await GlobalFilterController.getDonorIds(filters.globalFilters);
 
       if (globalDonorIds && globalDonorIds.length === 0) {
-        return 0;
+        return null;
       }
 
       // Apply campaign filter from global filters
@@ -518,14 +550,14 @@ export class DonationController {
       const searchDonorIds = matchingDonors.map(d => d.id);
 
       if (searchDonorIds.length === 0) {
-        return 0;
+        return null;
       }
 
       // Intersect with global filter results
       if (globalDonorIds) {
         const intersected = globalDonorIds.filter(id => searchDonorIds.includes(id));
         if (intersected.length === 0) {
-          return 0;
+          return null;
         }
         if (whereClause.donorId) {
           whereClause.donorId = { $in: [whereClause.donorId, ...intersected] };
@@ -546,17 +578,13 @@ export class DonationController {
         if (globalDonorIds.includes(specificDonorId)) {
           whereClause.donorId = specificDonorId;
         } else {
-          return 0;
+          return null;
         }
       } else {
         whereClause.donorId = { $in: globalDonorIds };
       }
     }
 
-    const count = await remult.repo(Donation).count(
-      Object.keys(whereClause).length > 0 ? whereClause : undefined
-    );
-
-    return count;
+    return whereClause;
   }
 }
