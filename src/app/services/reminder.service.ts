@@ -44,6 +44,25 @@ export class ReminderService {
   }
 
   /**
+   * Get summary statistics for filtered reminders
+   */
+  async getSummary(
+    filters: {
+      globalFilters?: GlobalFilters
+      dateFrom?: Date
+      dateTo?: Date
+      searchTerm?: string
+    } = {}
+  ): Promise<{
+    todayCount: number
+    pendingCount: number
+    overdueCount: number
+    completedThisMonthCount: number
+  }> {
+    return await ReminderController.getSummaryForFilteredReminders(filters);
+  }
+
+  /**
    * Calculate next reminder date for recurring reminders
    */
   async calculateNextReminderDate(reminderData: {

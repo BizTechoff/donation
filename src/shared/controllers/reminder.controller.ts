@@ -25,48 +25,8 @@ export class ReminderController {
     sortColumns: Array<{ field: string; direction: 'asc' | 'desc' }> = []
   ): Promise<Reminder[]> {
     console.log('ReminderController.findFilteredReminders');
-    const reminderRepo = remult.repo(Reminder)
 
-    // Build where clause
-    const where: any = { isActive: true }
-
-    // Apply global filters - get filtered donor IDs
-    let filteredDonorIds: string[] | undefined = undefined
-    if (filters.globalFilters) {
-      const donors = await DonorController.findFilteredDonors(filters.globalFilters)
-      filteredDonorIds = donors.map(d => d.id)
-
-      if (filteredDonorIds.length === 0) {
-        // No matching donors, but still show reminders without donor
-        where.donorId = null
-      } else {
-        // Filter reminders by donor IDs OR reminders without donor
-        where.$or = [
-          { donorId: { $in: filteredDonorIds } },
-          { donorId: null }
-        ]
-      }
-    }
-
-    // Date range filter
-    if (filters.dateFrom || filters.dateTo) {
-      where.dueDate = {}
-      if (filters.dateFrom) {
-        where.dueDate.$gte = filters.dateFrom
-      }
-      if (filters.dateTo) {
-        where.dueDate.$lte = filters.dateTo
-      }
-    }
-
-    // Search term filter (title, description)
-    if (filters.searchTerm && filters.searchTerm.trim() !== '') {
-      const searchLower = filters.searchTerm.toLowerCase().trim()
-      where.$or = [
-        { title: { $contains: searchLower } },
-        { description: { $contains: searchLower } }
-      ]
-    }
+    const where = await ReminderController.buildWhereClause(filters)
 
     // Build orderBy clause
     const orderBy: any = {}
@@ -83,7 +43,7 @@ export class ReminderController {
     // Apply pagination
     const skip = (page - 1) * pageSize
 
-    return await reminderRepo.find({
+    return await remult.repo(Reminder).find({
       where,
       orderBy,
       limit: pageSize,
@@ -104,19 +64,76 @@ export class ReminderController {
       searchTerm?: string
     } = {}
   ): Promise<number> {
-    const reminderRepo = remult.repo(Reminder)
+    const where = await ReminderController.buildWhereClause(filters)
+    return await remult.repo(Reminder).count(where)
+  }
 
-    // Build where clause (same as findFiltered)
+  /**
+   * Get summary statistics for filtered reminders
+   */
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async getSummaryForFilteredReminders(
+    filters: {
+      globalFilters?: GlobalFilters
+      dateFrom?: Date
+      dateTo?: Date
+      searchTerm?: string
+    } = {}
+  ): Promise<{
+    todayCount: number
+    pendingCount: number
+    overdueCount: number
+    completedThisMonthCount: number
+  }> {
+    const where = await ReminderController.buildWhereClause(filters)
+    const reminders = await remult.repo(Reminder).find({ where, include: { donor: true } })
+
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const tomorrow = new Date(today)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+
+    return {
+      todayCount: reminders.filter(r => {
+        const dueDate = new Date(r.dueDate)
+        dueDate.setHours(0, 0, 0, 0)
+        return dueDate.getTime() === today.getTime() && !r.isCompleted
+      }).length,
+      pendingCount: reminders.filter(r => !r.isCompleted).length,
+      overdueCount: reminders.filter(r => {
+        const dueDate = new Date(r.dueDate)
+        return dueDate < today && !r.isCompleted
+      }).length,
+      completedThisMonthCount: reminders.filter(r => {
+        if (!r.isCompleted || !r.completedDate) return false
+        const completedDate = new Date(r.completedDate)
+        return completedDate >= startOfMonth && completedDate <= today
+      }).length
+    }
+  }
+
+  /**
+   * Build where clause for filtering reminders
+   */
+  private static async buildWhereClause(
+    filters: {
+      globalFilters?: GlobalFilters
+      dateFrom?: Date
+      dateTo?: Date
+      searchTerm?: string
+    } = {}
+  ): Promise<any> {
     const where: any = { isActive: true }
 
     // Apply global filters - get filtered donor IDs
-    let filteredDonorIds: string[] | undefined = undefined
     if (filters.globalFilters) {
       const donors = await DonorController.findFilteredDonors(filters.globalFilters)
-      filteredDonorIds = donors.map(d => d.id)
+      const filteredDonorIds = donors.map(d => d.id)
 
       if (filteredDonorIds.length === 0) {
-        // No matching donors, but still count reminders without donor
+        // No matching donors, but still show reminders without donor
         where.donorId = null
       } else {
         // Filter reminders by donor IDs OR reminders without donor
@@ -147,7 +164,7 @@ export class ReminderController {
       ]
     }
 
-    return await reminderRepo.count(where)
+    return where
   }
 
   /**

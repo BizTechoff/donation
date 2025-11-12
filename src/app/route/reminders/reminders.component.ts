@@ -110,6 +110,12 @@ export class RemindersComponent implements OnInit, OnDestroy {
     }
   }
 
+  // Summary stats
+  todayCount = 0;
+  pendingCountStat = 0;
+  overdueCountStat = 0;
+  completedThisMonthCountStat = 0;
+
   async loadReminders() {
     this.loading = true;
     try {
@@ -130,17 +136,20 @@ export class RemindersComponent implements OnInit, OnDestroy {
       const globalFilters = this.globalFilterService.currentFilters;
       filters.globalFilters = globalFilters;
 
-      // Get total count for pagination
-      this.totalCount = await this.reminderService.countFiltered(filters);
-      this.totalPages = Math.ceil(this.totalCount / this.pageSize);
+      // Get total count, summary stats, and reminders from server
+      const [count, summary, reminders] = await Promise.all([
+        this.reminderService.countFiltered(filters),
+        this.reminderService.getSummary(filters),
+        this.reminderService.findFiltered(filters, this.currentPage, this.pageSize, this.sortColumns)
+      ]);
 
-      // Load reminders with pagination and sorting
-      this.reminders = await this.reminderService.findFiltered(
-        filters,
-        this.currentPage,
-        this.pageSize,
-        this.sortColumns
-      );
+      this.totalCount = count;
+      this.todayCount = summary.todayCount;
+      this.pendingCountStat = summary.pendingCount;
+      this.overdueCountStat = summary.overdueCount;
+      this.completedThisMonthCountStat = summary.completedThisMonthCount;
+      this.reminders = reminders;
+      this.totalPages = Math.ceil(this.totalCount / this.pageSize);
 
       // Load phone data for related donors
       const donorIds = this.reminders
@@ -226,7 +235,7 @@ export class RemindersComponent implements OnInit, OnDestroy {
   }
 
   async deleteReminder(reminder: Reminder) {
-    const donorName = reminder.donor?.displayName || this.i18n.terms.unknown;
+    const donorName = reminder.donor?.fullName || this.i18n.terms.unknown;
     if (confirm(`${this.i18n.terms.confirmDeleteDonor?.replace('{name}', reminder.title || '')}`)) {
       try {
         // No need to clean up source entity link - we use forward reference only
@@ -257,7 +266,7 @@ export class RemindersComponent implements OnInit, OnDestroy {
   }
 
   getDonorName(reminder: Reminder): string {
-    return reminder.donor?.displayName || this.i18n.terms.generalType;
+    return reminder.donor?.fullName || this.i18n.terms.generalType;
   }
 
   getReminderDonorPhone(reminder: Reminder): string {
@@ -344,16 +353,19 @@ export class RemindersComponent implements OnInit, OnDestroy {
     }
   }
 
-  get pendingReminders(): Reminder[] {
-    return this.reminders.filter(r => !r.isCompleted);
+  get pendingReminders(): { length: number } {
+    // Return object with length property from server stats
+    return { length: this.pendingCountStat };
   }
 
-  get overdueReminders(): Reminder[] {
-    return this.reminders.filter(r => r.isOverdue);
+  get overdueReminders(): { length: number } {
+    // Return object with length property from server stats
+    return { length: this.overdueCountStat };
   }
 
-  get todayReminders(): Reminder[] {
-    return this.reminders.filter(r => r.isDueToday);
+  get todayReminders(): { length: number } {
+    // Return object with length property from server stats
+    return { length: this.todayCount };
   }
 
   get upcomingBirthdays(): Donor[] {
@@ -373,7 +385,8 @@ export class RemindersComponent implements OnInit, OnDestroy {
   }
 
   get completedRemindersCount(): number {
-    return this.reminders.filter(r => r.isCompleted).length;
+    // Return from server stats
+    return this.completedThisMonthCountStat;
   }
 
   get thisWeekReminders(): Reminder[] {
