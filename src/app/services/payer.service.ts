@@ -8,8 +8,8 @@ export interface CurrencyType {
   rateInShekel: number;
 }
 
-// Currency data - exported for server-side access
-export const CURRENCIES: CurrencyType[] = [
+// Currency data
+const CURRENCIES: CurrencyType[] = [
   { id: 'ILS', label: 'שקל', labelEnglish: 'Shekel', symbol: '₪', rateInShekel: 1 },
   { id: 'USD', label: 'דולר', labelEnglish: 'Dollar', symbol: '$', rateInShekel: 3.2 },
   { id: 'EUR', label: 'יורו', labelEnglish: 'Euro', symbol: '€', rateInShekel: 3.73 },

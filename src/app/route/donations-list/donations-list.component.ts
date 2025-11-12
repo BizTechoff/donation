@@ -8,7 +8,7 @@ import { UIToolsService } from '../../common/UIToolsService';
 import { I18nService } from '../../i18n/i18n.service';
 import { GlobalFilterService } from '../../services/global-filter.service';
 import { BusyService } from '../../common-ui-elements/src/angular/wait/busy-service';
-import { PayerService } from '../../services/payer.service';
+import { CurrencyType, PayerService } from '../../services/payer.service';
 import { HebrewDateService } from '../../services/hebrew-date.service';
 
 @Component({
@@ -63,7 +63,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   private subscriptions = new Subscription();
 
   // Currency types with rates
-  currencyTypes: any[] = [];
+  currencyTypes: CurrencyType[] = [];
   private currencyRates: Map<string, number> = new Map();
 
   constructor(
@@ -146,7 +146,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
         // Get total count, total amount, and donations from server with all filters and sorting
         [this.totalCount, this.totalAmountCache, this.donations] = await Promise.all([
           DonationController.countFilteredDonations(filters),
-          DonationController.sumFilteredDonations(filters),
+          DonationController.sumFilteredDonations(filters, this.currencyTypes),
           DonationController.findFilteredDonations(filters, this.currentPage, this.pageSize, this.sortColumns)
         ]);
 

@@ -31,6 +31,8 @@ export class DonorService {
   async findFilteredIds(additionalFilters?: Partial<GlobalFilters>): Promise<string[]> {
     const globalFilters = this.globalFilterService.currentFilters;
     const combinedFilters = { ...globalFilters, ...additionalFilters };
+    console.log('DonorService.findFilteredIds - globalFilters:', JSON.stringify(globalFilters, null, 2));
+    console.log('DonorService.findFilteredIds - combinedFilters:', JSON.stringify(combinedFilters, null, 2));
     return await DonorController.findFilteredIds(combinedFilters);
   }
 

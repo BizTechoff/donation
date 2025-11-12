@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Campaign, Donor, Circle, Place } from '../../../../shared/entity';
@@ -8,6 +8,8 @@ import { UIToolsService } from '../../../common/UIToolsService';
 import { openDialog, DialogConfig, BusyService } from 'common-ui-elements';
 import { ExcelExportService, ExcelColumn } from '../../../services/excel-export.service';
 import { DonorService } from '../../../services/donor.service';
+import { GlobalFilterService } from '../../../services/global-filter.service';
+import { Subscription } from 'rxjs';
 
 export interface CampaignInvitedListModalArgs {
   campaignId: string;
@@ -21,7 +23,7 @@ export interface CampaignInvitedListModalArgs {
   templateUrl: './campaign-invited-list-modal.component.html',
   styleUrls: ['./campaign-invited-list-modal.component.scss']
 })
-export class CampaignInvitedListModalComponent implements OnInit {
+export class CampaignInvitedListModalComponent implements OnInit, OnDestroy {
   args!: CampaignInvitedListModalArgs;
 
   campaign!: Campaign;
@@ -31,6 +33,7 @@ export class CampaignInvitedListModalComponent implements OnInit {
   donorRepo = remult.repo(Donor);
   circleRepo = remult.repo(Circle);
   loading = false;
+  private subscription = new Subscription();
 
   // Maps for related data from dedicated entities
   donorPlaceMap = new Map<string, Place>();
@@ -91,11 +94,24 @@ export class CampaignInvitedListModalComponent implements OnInit {
     public dialogRef: MatDialogRef<CampaignInvitedListModalComponent>,
     private excelService: ExcelExportService,
     private donorService: DonorService,
-    private busy: BusyService
+    private busy: BusyService,
+    private globalFilterService: GlobalFilterService
   ) {}
 
   async ngOnInit() {
+    // Subscribe to global filter changes
+    this.subscription.add(
+      this.globalFilterService.filters$.subscribe(() => {
+        console.log('CampaignInvitedList: Global filters changed, reloading data');
+        this.loadInvitedDonors();
+      })
+    );
+
     await this.refreshData();
+  }
+
+  ngOnDestroy() {
+    this.subscription.unsubscribe();
   }
 
   /**
@@ -218,19 +234,13 @@ export class CampaignInvitedListModalComponent implements OnInit {
     if (!this.campaign) return;
 
     try {
-      // ✅ OPTIMIZATION: טען רק תורמים פעילים עם limit ראשוני
-      // במקום כל התורמים במערכת
-      const baseAllDonors = await this.donorRepo.find({
-        where: {
-          isActive: true  // רק פעילים
-        },
-        limit: 1000,  // הגבלה ראשונית
-        orderBy: { firstName: 'asc' }
-      });
+      // Use global filters to get filtered donors
+      const filteredDonors = await this.donorService.findFiltered();
+      console.log('CampaignInvitedList: Loaded donors from global filters:', filteredDonors.length);
 
-      // ✅ OPTIMIZATION: טען נתונים קשורים רק עבור התורמים שנטענו
+      // Load related data for filtered donors
       const relatedData = await this.donorService.loadDonorRelatedData(
-        baseAllDonors.map(d => d.id)
+        filteredDonors.map(d => d.id)
       );
 
       // Populate maps from service
@@ -239,7 +249,7 @@ export class CampaignInvitedListModalComponent implements OnInit {
       this.donorPhoneMap = relatedData.donorPhoneMap;
       this.donorBirthDateMap = relatedData.donorBirthDateMap;
 
-      this.invitedDonors = baseAllDonors;
+      this.invitedDonors = filteredDonors;
       this.totalDonors = this.invitedDonors.length;
 
       // Apply current filters as selection

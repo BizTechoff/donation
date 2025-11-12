@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialogRef } from '@angular/material/dialog';
 import { DialogConfig } from 'common-ui-elements';
@@ -7,6 +7,9 @@ import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { HebrewDateService } from '../../../services/hebrew-date.service';
+import { GlobalFilterService } from '../../../services/global-filter.service';
+import { DonorService } from '../../../services/donor.service';
+import { Subscription } from 'rxjs';
 
 export interface CampaignDonationsModalArgs {
   campaignId: string;
@@ -21,7 +24,7 @@ export interface CampaignDonationsModalArgs {
   templateUrl: './campaign-donations-modal.component.html',
   styleUrls: ['./campaign-donations-modal.component.scss']
 })
-export class CampaignDonationsModalComponent implements OnInit {
+export class CampaignDonationsModalComponent implements OnInit, OnDestroy {
   args!: CampaignDonationsModalArgs;
 
   campaign?: Campaign;
@@ -35,6 +38,7 @@ export class CampaignDonationsModalComponent implements OnInit {
   donationMethodRepo = remult.repo(DonationMethod);
 
   loading = false;
+  private subscription = new Subscription();
 
   // Filters
   filterText = '';
@@ -67,13 +71,26 @@ export class CampaignDonationsModalComponent implements OnInit {
     private snackBar: MatSnackBar,
     private cdr: ChangeDetectorRef,
     private hebrewDateService: HebrewDateService,
-    public dialogRef: MatDialogRef<CampaignDonationsModalComponent>
+    public dialogRef: MatDialogRef<CampaignDonationsModalComponent>,
+    private globalFilterService: GlobalFilterService,
+    private donorService: DonorService
   ) {}
 
   async ngOnInit() {
+    // Subscribe to global filter changes
+    this.subscription.add(
+      this.globalFilterService.filters$.subscribe(() => {
+        this.loadDonations();
+      })
+    );
+
     await this.loadCampaign();
     await this.loadDropdownData();
     await this.loadDonations();
+  }
+
+  ngOnDestroy() {
+    this.subscription.unsubscribe();
   }
 
   async loadCampaign() {
@@ -110,12 +127,30 @@ export class CampaignDonationsModalComponent implements OnInit {
 
     this.loading = true;
     try {
+      // Get filtered donor IDs from global filters
+      const filteredDonorIds = await this.donorService.findFilteredIds();
+      console.log('CampaignDonations: Filtered donor IDs from global filters:', filteredDonorIds.length);
+
       // Build where clause
       const where: any = {
         campaignId: this.args.campaignId
       };
 
-      // Apply filters
+      // Apply global filters - filter by donor IDs
+      if (filteredDonorIds.length > 0) {
+        where.donorId = { $in: filteredDonorIds };
+      } else {
+        // If no donors match global filters, show no donations
+        this.donations = [];
+        this.totalCount = 0;
+        this.totalPages = 0;
+        this.totalDonations = 0;
+        this.totalAmount = 0;
+        this.loading = false;
+        return;
+      }
+
+      // Apply local filters
       if (this.filterDonor) {
         where.donorId = this.filterDonor;
       }

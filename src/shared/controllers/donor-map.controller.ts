@@ -37,15 +37,20 @@ export class DonorMapController {
 
     console.time('DonorMapController.loadDonorsMapData');
 
+    // If donorIds is explicitly provided as empty array, return empty result
+    if (donorIds && donorIds.length === 0) {
+      console.log('DonorMapController: No donor IDs provided, returning empty result');
+      return [];
+    }
+
     // טען תורמים לפי IDs או את כולם
-    // הגבל למקסימום 1000 תורמים למפה
-    const MAX_DONORS = 1000;
+    const MAX_DONORS = 1000; // הגבלה רק כשטוענים הכל (בלי פילטור)
     const donors = donorIds && donorIds.length > 0
       ? await donorRepo.find({
-          where: { id: donorIds },
-          limit: MAX_DONORS
+          where: { id: donorIds }
+          // אין limit כאן - אם כבר סיננו, נציג את כל התוצאות
         })
-      : await donorRepo.find({ limit: MAX_DONORS });
+      : await donorRepo.find({ limit: MAX_DONORS }); // הגבלה רק כשטוענים הכל
 
     console.log(`DonorMapController: Loading ${donors.length} donors for map`);
 

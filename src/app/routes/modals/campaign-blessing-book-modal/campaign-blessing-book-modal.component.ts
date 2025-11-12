@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialogRef } from '@angular/material/dialog';
 import { DialogConfig, openDialog } from 'common-ui-elements';
@@ -13,6 +13,7 @@ import { ExcelExportService, ExcelColumn } from '../../../services/excel-export.
 import { DonorService } from '../../../services/donor.service';
 import { GlobalFilterService } from '../../../services/global-filter.service';
 import { DonorController } from '../../../../shared/controllers/donor.controller';
+import { Subscription } from 'rxjs';
 
 export interface CampaignBlessingBookModalArgs {
   campaignId: string;
@@ -38,7 +39,7 @@ export interface DonorBlessing {
   templateUrl: './campaign-blessing-book-modal.component.html',
   styleUrls: ['./campaign-blessing-book-modal.component.scss']
 })
-export class CampaignBlessingBookModalComponent implements OnInit {
+export class CampaignBlessingBookModalComponent implements OnInit, OnDestroy {
   args!: CampaignBlessingBookModalArgs;
 
   campaign?: Campaign;
@@ -52,6 +53,7 @@ export class CampaignBlessingBookModalComponent implements OnInit {
   blessingTypeRepo = remult.repo(BlessingBookType);
 
   loading = false;
+  private subscription = new Subscription();
 
   // Maps for donor-related data
   donorEmailMap = new Map<string, string>();
@@ -84,7 +86,19 @@ export class CampaignBlessingBookModalComponent implements OnInit {
   ) {}
 
   async ngOnInit() {
+    // Subscribe to global filter changes
+    this.subscription.add(
+      this.globalFilterService.filters$.subscribe(() => {
+        console.log('CampaignBlessingBook: Global filters changed, reloading data');
+        this.loadData();
+      })
+    );
+
     await this.loadData();
+  }
+
+  ngOnDestroy() {
+    this.subscription.unsubscribe();
   }
 
   get modalTitle(): string {
@@ -104,12 +118,23 @@ export class CampaignBlessingBookModalComponent implements OnInit {
         orderBy: { price: 'asc' }
       });
 
-      // If campaign has invited donors, show only those
+      // If campaign has invited donors, show only those (filtered by global filters)
       if (this.campaign?.invitedDonorIds && this.campaign.invitedDonorIds.length > 0) {
-        // Load only invited donors
+        // Get filtered donor IDs from global filters
+        const filteredDonorIds = await this.donorService.findFilteredIds();
+        console.log('CampaignBlessingBook: Filtered donor IDs from global filters:', filteredDonorIds.length);
+        console.log('CampaignBlessingBook: Invited donor IDs from campaign:', this.campaign.invitedDonorIds.length);
+
+        // Intersect invited donors with filtered donors
+        const invitedAndFilteredIds = this.campaign.invitedDonorIds.filter(id =>
+          filteredDonorIds.includes(id)
+        );
+        console.log('CampaignBlessingBook: Donors that are both invited AND match global filters:', invitedAndFilteredIds.length);
+
+        // Load only donors that are both invited AND match global filters
         const invitedDonors = await this.donorRepo.find({
           where: {
-            id: { $in: this.campaign.invitedDonorIds }
+            id: { $in: invitedAndFilteredIds }
           }
         });
 

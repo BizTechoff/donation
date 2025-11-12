@@ -471,8 +471,8 @@ export class ReportsComponent implements OnInit {
     return `₪${amount.toLocaleString()}`;
   }
 
-  getCurrencySymbol(currency: string): string {
-    // Map Hebrew currency names to codes
+  normalizeCurrencyCode(currency: string): string {
+    // Map Hebrew currency names and variations to standard codes
     const hebrewToCode: { [key: string]: string } = {
       'דולר': 'USD',
       'אירו': 'EUR',
@@ -481,11 +481,25 @@ export class ReportsComponent implements OnInit {
       'שקלים': 'ILS',
       'לירה': 'GBP',
       'לירה שטרלינג': 'GBP',
-      'פאונד': 'GBP'
+      'ליש"ט': 'GBP',
+      'פאונד': 'GBP',
+      'Shekel': 'ILS',
+      'Dollar': 'USD',
+      'Euro': 'EUR',
+      'Pound': 'GBP'
     };
 
-    // Get currency code (convert from Hebrew if needed)
-    const currencyCode = hebrewToCode[currency] || currency;
+    // Return standard code if already in correct format, otherwise convert
+    const normalized = hebrewToCode[currency] || currency.toUpperCase();
+
+    // Ensure it's one of the valid codes
+    const validCodes = ['ILS', 'USD', 'EUR', 'GBP'];
+    return validCodes.includes(normalized) ? normalized : 'ILS';
+  }
+
+  getCurrencySymbol(currency: string): string {
+    // Normalize currency first
+    const currencyCode = this.normalizeCurrencyCode(currency);
 
     // Map currency codes to symbols
     const symbols: { [key: string]: string } = {
@@ -973,10 +987,12 @@ export class ReportsComponent implements OnInit {
       }
 
       const yearData = yearlyMap.get(year)!;
-      if (!yearData.currencies[donation.currency]) {
-        yearData.currencies[donation.currency] = 0;
+      // Normalize currency code to standard format (ILS, USD, EUR, GBP)
+      const normalizedCurrency = this.normalizeCurrencyCode(donation.currency);
+      if (!yearData.currencies[normalizedCurrency]) {
+        yearData.currencies[normalizedCurrency] = 0;
       }
-      yearData.currencies[donation.currency] += donation.amount;
+      yearData.currencies[normalizedCurrency] += donation.amount;
     }
 
     this.yearlySummaryData = Array.from(yearlyMap.entries())

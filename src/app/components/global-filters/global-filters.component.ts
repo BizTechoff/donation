@@ -288,10 +288,13 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
       }
     );
 
+console.log('#############', result, JSON.stringify(result))
+
     // Only update if user actually made a selection (not null/undefined from cancel)
     if (result !== null && result !== undefined) {
       if (Array.isArray(result) && result.length > 0) {
         const selectedIds = result.map((c: Country) => c.id);
+        console.table(selectedIds)
         this.updateFilter('countryIds', selectedIds.length > 0 ? selectedIds : undefined);
       } else if (Array.isArray(result) && result.length === 0) {
         // User explicitly cleared all selections

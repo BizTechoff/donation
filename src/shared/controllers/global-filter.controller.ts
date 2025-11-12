@@ -29,14 +29,14 @@ export class GlobalFilterController {
     let donorIds: string[] | undefined = undefined;
 
     // סינון לפי מיקום (מדינה, עיר, שכונה)
-    const placeFiltered = await this.getDonorIdsFromPlaces(filters);
+    const placeFiltered = await GlobalFilterController.getDonorIdsFromPlaces(filters);
     if (placeFiltered !== undefined) {
       if (placeFiltered.length === 0) return []; // אין התאמות
       donorIds = placeFiltered;
     }
 
     // סינון לפי קהל יעד
-    const audienceFiltered = await this.getDonorIdsFromTargetAudience(filters);
+    const audienceFiltered = await GlobalFilterController.getDonorIdsFromTargetAudience(filters);
     if (audienceFiltered !== undefined) {
       if (donorIds) {
         // חיתוך - רק תורמים שבשני הקטגוריות
@@ -136,7 +136,7 @@ export class GlobalFilterController {
     }
 
     // סינון לפי רשימת מוזמנים - צריך donorIds
-    const donorIds = await this.getDonorIds(filters);
+    const donorIds = await GlobalFilterController.getDonorIds(filters);
     if (donorIds !== undefined) {
       if (donorIds.length === 0) {
         // אין תורמים תואמים - נחזיר תנאי שלא יחזיר תוצאות
@@ -164,7 +164,7 @@ export class GlobalFilterController {
     const whereClause = { ...existingWhere };
 
     // סינון לפי donorIds
-    const donorIds = await this.getDonorIds(filters);
+    const donorIds = await GlobalFilterController.getDonorIds(filters);
     if (donorIds !== undefined) {
       if (donorIds.length === 0) {
         // אין תורמים תואמים

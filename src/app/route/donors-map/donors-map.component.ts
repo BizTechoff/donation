@@ -162,7 +162,7 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
       // Use DonorService to get filtered donor IDs efficiently
       const currentFilters = this.filterService.currentFilters;
-      console.log('DonorsMap: Loading donors with filters:', currentFilters);
+      console.log('DonorsMap: Loading donors with filters:', JSON.stringify(currentFilters, null, 2));
 
       console.time('Get donor IDs');
       // Get only donor IDs without loading full donor objects - much faster!

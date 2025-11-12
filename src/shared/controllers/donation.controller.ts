@@ -11,6 +11,7 @@ import { DonationOrganization } from '../entity/donation-organization';
 import { Donor } from '../entity/donor';
 import { Organization } from '../entity/organization';
 import { DonorPlace } from '../entity/donor-place';
+import { CurrencyType } from '../../app/services/payer.service';
 
 export interface DonationFilters {
   searchTerm?: string;
@@ -431,7 +432,7 @@ export class DonationController {
   }
 
   @BackendMethod({ allowed: Allow.authenticated })
-  static async sumFilteredDonations(filters: DonationFilters): Promise<number> {
+  static async sumFilteredDonations(filters: DonationFilters, currencies: CurrencyType[]): Promise<number> {
     const whereClause = await DonationController.buildWhereClause(filters);
     if (whereClause === null) {
       return 0;
@@ -441,12 +442,9 @@ export class DonationController {
       where: Object.keys(whereClause).length > 0 ? whereClause : undefined
     });
 
-    // Load currency rates from PayerService constant (no DI needed)
-    const { CURRENCIES } = await import('../../app/services/payer.service');
-
-    // Build conversion rates map
+    // Build conversion rates map from provided currencies
     const conversionRates: { [key: string]: number } = {};
-    CURRENCIES.forEach(currency => {
+    currencies.forEach(currency => {
       conversionRates[currency.id] = currency.rateInShekel;
     });
 

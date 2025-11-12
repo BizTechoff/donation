@@ -200,21 +200,60 @@ export class DonorController {
 
       if (filters.countryIds && filters.countryIds.length > 0) {
         placeWhere.countryId = { $in: filters.countryIds };
+        console.log(`DonorController: Filtering by countryIds:`, filters.countryIds);
+
+        // Debug: Check what countryIds actually exist in Places
+        const distinctCountries = await remult.repo(Place).find({ limit: 100 });
+        const uniqueCountryIds = [...new Set(distinctCountries.map(p => p.countryId).filter(id => id))];
+        console.log(`DonorController: DEBUG - Unique countryIds in Places (first 100):`, uniqueCountryIds);
+        console.log(`DonorController: DEBUG - Looking for countryId:`, filters.countryIds[0]);
+        console.log(`DonorController: DEBUG - Does it exist in Places?:`, uniqueCountryIds.includes(filters.countryIds[0]));
+
+        // Debug: Check Countries table
+        const Country = (await import('../entity/country')).Country;
+        const allCountries = await remult.repo(Country).find();
+        const usaCountry = allCountries.find(c => c.name === 'ארצות הברית' || c.name === 'United States' || c.name === 'USA');
+        console.log(`DonorController: DEBUG - USA Country:`, usaCountry ? { id: usaCountry.id, name: usaCountry.name } : 'NOT FOUND');
+        console.log(`DonorController: DEBUG - OLD USA ID in Places: 2b172f98-33a9-4540-9996-28d51148eb4b`);
+        console.log(`DonorController: DEBUG - NEW USA ID in Countries:`, usaCountry?.id);
       }
 
       if (filters.cityIds && filters.cityIds.length > 0) {
         placeWhere.city = { $in: filters.cityIds };
+        console.log(`DonorController: Filtering by cityIds:`, filters.cityIds);
       }
 
       if (filters.neighborhoodIds && filters.neighborhoodIds.length > 0) {
         placeWhere.neighborhood = { $in: filters.neighborhoodIds };
+        console.log(`DonorController: Filtering by neighborhoodIds:`, filters.neighborhoodIds);
       }
+
+      console.log(`DonorController: placeWhere query:`, JSON.stringify(placeWhere, null, 2));
 
       // Find matching places
       const matchingPlaces = await remult.repo(Place).find({ where: placeWhere });
       const matchingPlaceIds = matchingPlaces.map(p => p.id);
 
       console.log(`DonorController: Found ${matchingPlaces.length} places matching location filters`);
+      console.log(`DonorController: Sample places (first 3):`, matchingPlaces.slice(0, 3).map(p => ({ id: p.id, city: p.city, countryId: p.countryId })));
+
+      // Debug: Check how many places have countryId populated
+      if (filters.countryIds && filters.countryIds.length > 0 && matchingPlaces.length === 0) {
+        const allPlaces = await remult.repo(Place).find({ limit: 10 });
+        console.log(`DonorController: DEBUG - Sample of all places (first 10):`, allPlaces.map(p => ({
+          id: p.id,
+          city: p.city,
+          countryId: p.countryId,
+          fullAddress: p.fullAddress
+        })));
+
+        const allPlacesCount = await remult.repo(Place).count();
+        console.log(`DonorController: DEBUG - Total places in DB: ${allPlacesCount}`);
+
+        // Count places with non-null countryId
+        const placesWithCountryCount = allPlaces.filter(p => p.countryId).length;
+        console.log(`DonorController: DEBUG - Places with countryId in sample: ${placesWithCountryCount} out of ${allPlaces.length}`);
+      }
 
       if (matchingPlaceIds.length === 0) {
         return []; // No matching places found
