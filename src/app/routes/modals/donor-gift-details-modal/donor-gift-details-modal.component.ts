@@ -5,6 +5,7 @@ import { remult } from 'remult';
 import { DonorGift, Donor, Gift, Reminder } from '../../../../shared/entity';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
+import { HebrewDateService } from '../../../services/hebrew-date.service';
 import { DonorSelectionModalComponent } from '../donor-selection-modal/donor-selection-modal.component';
 
 export interface DonorGiftDetailsModalArgs {
@@ -42,6 +43,7 @@ export class DonorGiftDetailsModalComponent implements OnInit {
   constructor(
     public i18n: I18nService,
     private ui: UIToolsService,
+    private hebrewDateService: HebrewDateService,
     public dialogRef: MatDialogRef<DonorGiftDetailsModalComponent>
   ) {}
 
@@ -148,6 +150,17 @@ export class DonorGiftDetailsModalComponent implements OnInit {
   getDonorName(donor?: Donor): string {
     if (!donor) return '';
     return `${donor.firstName || ''} ${donor.lastName || ''}`.trim();
+  }
+
+  getHebrewDate(date: Date | undefined): string {
+    if (!date) return '';
+    try {
+      const hebrewDate = this.hebrewDateService.convertGregorianToHebrew(new Date(date));
+      return hebrewDate.formatted;
+    } catch (error) {
+      console.error('Error formatting Hebrew date:', error);
+      return '';
+    }
   }
 
   async save() {

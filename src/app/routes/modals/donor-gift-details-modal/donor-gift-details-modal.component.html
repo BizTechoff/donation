@@ -52,16 +52,12 @@
                  class="form-control"
                  [(ngModel)]="donorGift.deliveryDate">
         </div>
-
-        <!-- Reminder -->
         <div class="form-group">
-          <label>{{ (i18n.terms$ | async)?.reminder }}</label>
-          <button *ngIf="hasReminderFlag" class="btn-secondary full-width" (click)="openReminder()">
-            {{ (i18n.terms$ | async)?.openReminderButton }}
-          </button>
-          <button *ngIf="!hasReminderFlag" class="btn-primary full-width" (click)="addReminder()">
-            {{ (i18n.terms$ | async)?.addReminderButton }}
-          </button>
+          <label>{{ (i18n.terms$ | async)?.hebrewDate }}</label>
+          <input type="text"
+                 class="form-control"
+                 [value]="getHebrewDate(donorGift.deliveryDate)"
+                 readonly>
         </div>
       </div>
 
@@ -90,6 +86,14 @@
   <div class="modal-footer">
     <button class="btn btn-secondary" (click)="close()">
       {{ (i18n.terms$ | async)?.cancel }}
+    </button>
+    <button *ngIf="!isNew && hasReminderFlag" class="btn btn-info" (click)="openReminder()">
+      <mat-icon>alarm</mat-icon>
+      {{ (i18n.terms$ | async)?.openReminderButton }}
+    </button>
+    <button *ngIf="!isNew && !hasReminderFlag" class="btn btn-info" (click)="addReminder()">
+      <mat-icon>alarm_add</mat-icon>
+      {{ (i18n.terms$ | async)?.addReminderButton }}
     </button>
     <button class="btn btn-primary" (click)="save()" [disabled]="loading">
       <mat-icon>save</mat-icon>
