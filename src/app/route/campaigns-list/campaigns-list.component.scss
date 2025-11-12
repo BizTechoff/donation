@@ -453,8 +453,10 @@
   border-collapse: collapse;
 
   thead {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+
     th {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: transparent;
       color: white;
       padding: 15px 12px;
       text-align: right;
