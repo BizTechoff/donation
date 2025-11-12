@@ -9,7 +9,7 @@
       <div class="header-text">
         <h2>{{isNewDonor ? ((i18n.terms$ | async)?.addNewDonor) : ((i18n.terms$ | async)?.donorDetails)}}</h2>
         <p class="header-subtitle" *ngIf="!isNewDonor && donor">
-          {{donor.displayName}}
+          {{donor.fullName}}
         </p>
       </div>
     </div>

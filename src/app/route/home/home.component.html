@@ -162,7 +162,7 @@
       <div class="recent-donations">
         <div *ngFor="let donation of recentDonations" class="donation-item">
           <div class="donation-info">
-            <strong>{{donation.donor?.displayName}}</strong>
+            <strong>{{donation.donor?.fullName}}</strong>
             <small>{{formatDate(donation.donationDate)}}</small>
           </div>
           <div class="donation-amount">{{formatCurrency(donation.amount)}}</div>

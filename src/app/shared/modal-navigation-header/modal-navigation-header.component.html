@@ -24,7 +24,7 @@
                (click)="onRecordSelect(record)"
                [class.active]="record.id === currentRecordId">
             <mat-icon class="result-icon">person</mat-icon>
-            <span class="result-name">{{ record.displayName }}</span>
+            <span class="result-name">{{ record.fullName }}</span>
           </div>
           <div class="search-result-more" *ngIf="filteredRecords.length > 8">
             ועוד {{ filteredRecords.length - 8 }} תוצאות...

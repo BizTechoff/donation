@@ -288,7 +288,7 @@
             <div class="donors-list">
               <div *ngFor="let donorData of topDonors.slice(0, 8)" class="donor-item">
                 <div class="donor-info">
-                  <strong>{{donorData.donor.displayName}}</strong>
+                  <strong>{{donorData.donor.fullName}}</strong>
                   <small>{{donorData.count}} {{ (i18n.terms$ | async)?.donationsUnit }}</small>
                 </div>
                 <div class="donor-amount">{{formatCurrency(donorData.total)}}</div>

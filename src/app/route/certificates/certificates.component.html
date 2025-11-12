@@ -13,7 +13,7 @@
       <h3>{{ (i18n.terms$ | async)?.memorialCertificatesCard }}</h3>
       <p>{{ (i18n.terms$ | async)?.memorialCertDescription }}</p>
       <div class="stats">
-        <span class="count">28</span>
+        <span class="count">{{memorialCertificatesCount}}</span>
         <span class="label">{{ (i18n.terms$ | async)?.activeMemorials }}</span>
       </div>
     </div>
@@ -23,7 +23,7 @@
       <h3>{{ (i18n.terms$ | async)?.memorialDay }}</h3>
       <p>נציבים ליום מיוחד</p>
       <div class="stats">
-        <span class="count">15</span>
+        <span class="count">{{memorialDayCertificatesCount}}</span>
         <span class="label">נציבים פעילים</span>
       </div>
     </div>
