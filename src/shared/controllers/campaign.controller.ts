@@ -12,6 +12,12 @@ export interface CampaignFilters {
   isActive?: boolean;
 }
 
+export interface CampaignSummary {
+  activeCampaigns: number;
+  totalTargetAmount: number;
+  totalRaisedAmount: number;
+}
+
 @Controller('campaign')
 export class CampaignController {
   @BackendMethod({ allowed: Allow.authenticated })
@@ -47,32 +53,7 @@ export class CampaignController {
       });
     }
 
-    // Build where clause
-    let whereClause: any = {};
-
-    // Apply local filters
-    if (localFilters.searchTerm && localFilters.searchTerm.trim()) {
-      const search = localFilters.searchTerm.trim();
-      whereClause.$or = [
-        { name: { $contains: search } },
-        { description: { $contains: search } }
-      ];
-    }
-
-    if (localFilters.isActive !== undefined) {
-      whereClause.isActive = localFilters.isActive;
-    }
-
-    // Apply global date filter if provided
-    if (globalFilters.dateFrom || globalFilters.dateTo) {
-      whereClause.startDate = {};
-      if (globalFilters.dateFrom) {
-        whereClause.startDate.$gte = globalFilters.dateFrom;
-      }
-      if (globalFilters.dateTo) {
-        whereClause.startDate.$lte = globalFilters.dateTo;
-      }
-    }
+    const whereClause = CampaignController.buildWhereClause(globalFilters, localFilters);
 
     return await remult.repo(Campaign).find({
       where: Object.keys(whereClause).length > 0 ? whereClause : undefined,
@@ -87,8 +68,33 @@ export class CampaignController {
     globalFilters: GlobalFilters,
     localFilters: CampaignFilters
   ): Promise<number> {
-    // Build where clause
-    let whereClause: any = {};
+    const whereClause = CampaignController.buildWhereClause(globalFilters, localFilters);
+    return await remult.repo(Campaign).count(Object.keys(whereClause).length > 0 ? whereClause : undefined);
+  }
+
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async getSummaryForFilteredCampaigns(
+    globalFilters: GlobalFilters,
+    localFilters: CampaignFilters
+  ): Promise<CampaignSummary> {
+    const whereClause = CampaignController.buildWhereClause(globalFilters, localFilters);
+
+    const campaigns = await remult.repo(Campaign).find({
+      where: Object.keys(whereClause).length > 0 ? whereClause : undefined
+    });
+
+    return {
+      activeCampaigns: campaigns.filter(c => c.isActive).length,
+      totalTargetAmount: campaigns.reduce((sum, c) => sum + (c.targetAmount || 0), 0),
+      totalRaisedAmount: campaigns.reduce((sum, c) => sum + (c.raisedAmount || 0), 0)
+    };
+  }
+
+  /**
+   * Build where clause for filtering campaigns
+   */
+  private static buildWhereClause(globalFilters: GlobalFilters, localFilters: CampaignFilters): any {
+    const whereClause: any = {};
 
     // Apply local filters
     if (localFilters.searchTerm && localFilters.searchTerm.trim()) {
@@ -114,6 +120,6 @@ export class CampaignController {
       }
     }
 
-    return await remult.repo(Campaign).count(Object.keys(whereClause).length > 0 ? whereClause : undefined);
+    return whereClause;
   }
 }

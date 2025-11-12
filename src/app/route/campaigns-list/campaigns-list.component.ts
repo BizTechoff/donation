@@ -110,20 +110,23 @@ export class CampaignsListComponent implements OnInit, OnDestroy {
 
         console.log('refreshData: Fetching campaigns with globalFilters:', globalFilters, 'localFilters:', localFilters, 'page:', this.currentPage, 'sorting:', this.sortColumns);
 
-        // Get total count and campaigns from server
-        [this.totalCount, this.campaigns] = await Promise.all([
+        // Get total count, summary data, and campaigns from server
+        const [count, summary, campaigns] = await Promise.all([
           CampaignController.countFilteredCampaigns(globalFilters, localFilters),
+          CampaignController.getSummaryForFilteredCampaigns(globalFilters, localFilters),
           CampaignController.findFilteredCampaigns(globalFilters, localFilters, this.currentPage, this.pageSize, this.sortColumns)
         ]);
 
+        this.totalCount = count;
+        this.campaigns = campaigns;
         this.totalPages = Math.ceil(this.totalCount / this.pageSize);
 
-        // Calculate summary data
-        this.activeCampaigns = this.campaigns.filter(c => c.isActive).length;
-        this.totalTargetAmount = this.campaigns.reduce((sum, c) => sum + (c.targetAmount || 0), 0);
-        this.totalRaisedAmount = this.campaigns.reduce((sum, c) => sum + (c.raisedAmount || 0), 0);
+        // Use summary data from server (calculated from all filtered campaigns, not just current page)
+        this.activeCampaigns = summary.activeCampaigns;
+        this.totalTargetAmount = summary.totalTargetAmount;
+        this.totalRaisedAmount = summary.totalRaisedAmount;
 
-        console.log('refreshData: Loaded', this.campaigns.length, 'campaigns, total:', this.totalCount);
+        console.log('refreshData: Loaded', this.campaigns.length, 'campaigns, total:', this.totalCount, 'active:', this.activeCampaigns);
 
         // Load blessing counts for all campaigns
         await this.loadBlessingCounts();
