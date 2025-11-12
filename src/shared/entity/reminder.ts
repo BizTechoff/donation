@@ -50,21 +50,19 @@ import { ReminderController } from '../controllers/reminder.controller'
         reminder.recurringDayOfMonth = hebrewDate.day;
       }
 
-      // Calculate next reminder date if recurring
-      if (reminder.isRecurring) {
-        const { ReminderController } = await import('../controllers/reminder.controller');
-        reminder.nextReminderDate = await ReminderController.calculateNextReminderDate({
-          isRecurring: reminder.isRecurring,
-          recurringPattern: reminder.recurringPattern,
-          dueDate: reminder.dueDate,
-          completedDate: reminder.completedDate,
-          recurringWeekDay: reminder.recurringWeekDay,
-          recurringDayOfMonth: reminder.recurringDayOfMonth,
-          recurringMonth: reminder.recurringMonth,
-          yearlyRecurringType: reminder.yearlyRecurringType,
-          specialOccasion: reminder.specialOccasion
-        });
-      }
+      // Calculate next reminder date for ALL reminders (recurring and one-time)
+      const { ReminderController } = await import('../controllers/reminder.controller');
+      reminder.nextReminderDate = await ReminderController.calculateNextReminderDate({
+        isRecurring: reminder.isRecurring,
+        recurringPattern: reminder.recurringPattern,
+        dueDate: reminder.dueDate,
+        dueTime: reminder.dueTime,
+        recurringWeekDay: reminder.recurringWeekDay,
+        recurringDayOfMonth: reminder.recurringDayOfMonth,
+        recurringMonth: reminder.recurringMonth,
+        yearlyRecurringType: reminder.yearlyRecurringType,
+        specialOccasion: reminder.specialOccasion
+      });
     }
   },
 })
@@ -323,25 +321,29 @@ export class Reminder extends IdEntity {
 
   @BackendMethod({ allowed: Allow.authenticated })
   async complete(notes?: string) {
-    this.isCompleted = true
-    this.completedDate = new Date()
-    if (notes) {
-      this.completionNotes = notes
-    }
-
-    // Create next reminder if recurring
+    // For recurring reminders: just move to next occurrence
+    // For one-time reminders: mark as completed
     if (this.isRecurring) {
+      // Calculate next occurrence
       this.nextReminderDate = await ReminderController.calculateNextReminderDate({
         isRecurring: this.isRecurring,
         recurringPattern: this.recurringPattern,
         dueDate: this.dueDate,
-        completedDate: this.completedDate,
+        dueTime: this.dueTime,
         recurringWeekDay: this.recurringWeekDay,
         recurringDayOfMonth: this.recurringDayOfMonth,
         recurringMonth: this.recurringMonth,
         yearlyRecurringType: this.yearlyRecurringType,
         specialOccasion: this.specialOccasion
       })
+      // Keep the reminder active (don't set isCompleted)
+    } else {
+      // One-time reminder: mark as completed
+      this.isCompleted = true
+      this.completedDate = new Date()
+      if (notes) {
+        this.completionNotes = notes
+      }
     }
 
     await this.save()

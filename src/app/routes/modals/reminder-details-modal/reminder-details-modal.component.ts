@@ -131,14 +131,19 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
           this.reminder.dueDate = tomorrow;
         }
 
+        // Always initialize Hebrew date fields based on dueDate
+        const hebDate = await this.hebrewDateService.convertGregorianToHebrew(this.reminder.dueDate)
+        // Convert hebcal month number to internal month number
+        this.reminder.recurringMonth = this.getInternalMonthNumber(hebDate.month) || hebDate.month
+        this.reminder.recurringDayOfMonth = hebDate.day
+
+        // Update Hebrew day options based on the initialized month
+        await this.updateHebrewDayOptions();
+
         // Set recurring pattern if specified
         if (this.args.isRecurringYearly) {
           this.reminder.isRecurring = true;
           this.reminder.recurringPattern = 'yearly';
-          const hebDate = await this.hebrewDateService.convertGregorianToHebrew(this.reminder.dueDate)
-          // console.log('this.reminder.dueDate',this.reminder.dueDate, 'hebDate',hebDate)
-          this.reminder.recurringMonth = hebDate.month
-          this.reminder.recurringDayOfMonth = hebDate.day
         }
 
         // Set source entity type and ID if provided
@@ -550,9 +555,51 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
     return mapping[internalMonth] || null;
   }
 
+  getInternalMonthNumber(hebcalMonth: number): number | null {
+    // Map hebcal month numbers to our internal numbering (1-13)
+    const mapping: { [key: number]: number } = {
+      7: 1,   // TISHREI = תשרי
+      8: 2,   // CHESHVAN = חשון
+      9: 3,   // KISLEV = כסלו
+      10: 4,  // TEVET = טבת
+      11: 5,  // SHVAT = שבט
+      12: 6,  // ADAR_I = אדר
+      13: 7,  // ADAR_II = אדר ב'
+      1: 8,   // NISAN = ניסן
+      2: 9,   // IYYAR = אייר
+      3: 10,  // SIVAN = סיון
+      4: 11,  // TAMUZ = תמוז
+      5: 12,  // AV = אב
+      6: 13   // ELUL = אלול
+    };
+
+    return mapping[hebcalMonth] || null;
+  }
+
   get formattedDueDate(): string {
     if (!this.reminder?.dueDate) return '';
     return new Date(this.reminder.dueDate).toLocaleDateString('he-IL');
+  }
+
+  /**
+   * Update Hebrew date fields when dueDate changes
+   */
+  async onDueDateChange() {
+    if (!this.reminder?.dueDate) return;
+
+    try {
+      const hebDate = await this.hebrewDateService.convertGregorianToHebrew(this.reminder.dueDate);
+      // Convert hebcal month number to internal month number
+      this.reminder.recurringMonth = this.getInternalMonthNumber(hebDate.month) || hebDate.month;
+      this.reminder.recurringDayOfMonth = hebDate.day;
+
+      // Update Hebrew day options based on the new month
+      await this.updateHebrewDayOptions();
+
+      this.cdr.detectChanges();
+    } catch (error) {
+      console.error('Error updating Hebrew date:', error);
+    }
   }
 
   get priorityColor(): string {

@@ -355,6 +355,7 @@ export class HebrewDateController {
 
   /**
    * Create a safe Hebrew date with validation
+   * Handles Adar I/II in leap/non-leap years correctly
    * Returns the actual day if requested day exceeds month length
    * @param day Hebrew day (1-30)
    * @param month Hebrew month (hebcal month number)
@@ -368,14 +369,32 @@ export class HebrewDateController {
     year: number
   ): Promise<{ gregorianDate: Date; actualDay: number } | null> {
     try {
+      // Check if this is a leap year
+      const testDate = new HDate(1, months.TISHREI, year)
+      const isLeapYear = testDate.isLeapYear()
+
+      // Handle Adar months in leap/non-leap years
+      let actualMonth = month
+
+      if (month === months.ADAR_II && !isLeapYear) {
+        // Adar II requested but year is NOT leap → use Adar I (the only Adar)
+        actualMonth = months.ADAR_I
+        console.log(`Adjusting Adar II to Adar I for non-leap year ${year}`)
+      } else if (month === months.ADAR_I && isLeapYear) {
+        // Adar I requested and year IS leap → keep Adar I (user explicitly requested it)
+        actualMonth = months.ADAR_I
+      }
+      // Note: If Adar II requested and year IS leap → keep Adar II
+      // Note: If Adar I requested and year is NOT leap → keep Adar I (it's the only Adar)
+
       // Get actual days in this month for this year
-      const testDate = new HDate(1, month, year)
-      const daysInMonth = testDate.daysInMonth()
+      const monthTestDate = new HDate(1, actualMonth, year)
+      const daysInMonth = monthTestDate.daysInMonth()
 
       // Handle day 30 in 29-day months - use day 29 instead
       const actualDay = Math.min(day, daysInMonth)
 
-      const hDate = new HDate(actualDay, month, year)
+      const hDate = new HDate(actualDay, actualMonth, year)
       return {
         gregorianDate: hDate.greg(),
         actualDay: actualDay

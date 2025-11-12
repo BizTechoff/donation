@@ -89,7 +89,7 @@
             <div class="form-row" *ngIf="!(reminder.isRecurring)">
               <div class="form-group full-width">
                 <app-modern-dual-date-picker [label]="getDueDateLabel()" [(ngModel)]="reminder.dueDate"
-                  [disabled]="loading" [compact]="false">
+                  (ngModelChange)="onDueDateChange()" [disabled]="loading" [compact]="false">
                 </app-modern-dual-date-picker>
               </div>
             </div>

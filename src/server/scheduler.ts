@@ -79,13 +79,14 @@ async function sendReminderNotification(reminder: Reminder) {
   }
 
   // Update the reminder to mark that notification was sent
-  // Only update nextReminderDate if it's a recurring reminder
+  // For recurring: move to next occurrence
+  // For one-time: mark as completed
   if (reminder.isRecurring) {
     const nextDate = await ReminderController.calculateNextReminderDate({
       isRecurring: reminder.isRecurring,
       recurringPattern: reminder.recurringPattern,
       dueDate: reminder.dueDate,
-      completedDate: reminder.completedDate,
+      dueTime: reminder.dueTime,
       recurringWeekDay: reminder.recurringWeekDay,
       recurringDayOfMonth: reminder.recurringDayOfMonth,
       recurringMonth: reminder.recurringMonth,
@@ -98,10 +99,11 @@ async function sendReminderNotification(reminder: Reminder) {
       console.log(`[Scheduler] Updated next reminder date to: ${nextDate}`)
     }
   } else {
-    // For non-recurring reminders, clear the nextReminderDate to avoid repeated notifications
-    reminder.nextReminderDate = undefined
+    // For non-recurring reminders, mark as completed (stops future notifications)
+    reminder.isCompleted = true
+    reminder.completedDate = new Date()
     await reminder.save()
-    console.log(`[Scheduler] Cleared next reminder date for non-recurring reminder`)
+    console.log(`[Scheduler] Marked non-recurring reminder as completed`)
   }
 }
 
