@@ -1668,5 +1668,16 @@ export const termsHe = {
   createNewDonationButton: 'יצירת תרומה חדשה',
   campaignColumn: 'קמפיין',
   unknownDonor: 'לא ידוע',
-  noDonationsFound: 'לא נמצאו תרומות'
+  noDonationsFound: 'לא נמצאו תרומות',
+
+  // Navigation buttons for modals
+  contact: 'יצירת קשר',
+  family: 'משפחה',
+  events: 'אירועים',
+  companies: 'חברות',
+  circles: 'חוגים',
+  preferences: 'העדפות',
+  payment: 'תשלום',
+  partners: 'שותפים',
+  files: 'קבצים'
 }

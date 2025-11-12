@@ -34,26 +34,26 @@
     <button class="nav-btn" (click)="scrollToSection('section-basic-details')"
       [title]="i18n.terms.basicDonationDetails || 'פרטים בסיסיים'">
       <mat-icon>info</mat-icon>
-      <span>פרטים</span>
+      <span>{{ i18n.terms.details || 'פרטים' }}</span>
     </button>
     <button class="nav-btn" (click)="scrollToSection('section-payment-method')"
       *ngIf="donation?.donationType !== 'commitment'" [title]="i18n.terms.paymentMethod || 'אמצעי תשלום'">
       <mat-icon>payment</mat-icon>
-      <span>תשלום</span>
+      <span>{{ i18n.terms.payment || 'תשלום' }}</span>
     </button>
     <button class="nav-btn" (click)="scrollToSection('section-partners')"
       [title]="i18n.terms.donationPartners || 'שותפים'">
       <mat-icon>group</mat-icon>
-      <span>שותפים</span>
+      <span>{{ i18n.terms.partners || 'שותפים' }}</span>
     </button>
     <button class="nav-btn" (click)="scrollToSection('section-notes')" [title]="i18n.terms.notes || 'הערות'">
       <mat-icon>note</mat-icon>
-      <span>הערות</span>
+      <span>{{ i18n.terms.notes || 'הערות' }}</span>
     </button>
     <button class="nav-btn" (click)="scrollToSection('section-files')" *ngIf="!isNewDonation"
       [title]="i18n.terms.attachedFiles || 'קבצים'">
       <mat-icon>attach_file</mat-icon>
-      <span>קבצים</span>
+      <span>{{ i18n.terms.files || 'קבצים' }}</span>
     </button>
   </div>
 

@@ -168,7 +168,7 @@ export class ReminderController {
   }
 
   /**
-   * Calculate next reminder date for recurring reminders
+   * Calculate next reminder date for all reminders (recurring and one-time)
    * @param reminderData Reminder configuration
    * @returns Next occurrence date (Gregorian)
    */
@@ -177,18 +177,30 @@ export class ReminderController {
     isRecurring: boolean
     recurringPattern: 'daily' | 'weekly' | 'monthly' | 'yearly'
     dueDate: Date
-    completedDate?: Date
+    dueTime?: string
     recurringWeekDay?: number
     recurringDayOfMonth?: number
     recurringMonth?: number
     yearlyRecurringType?: 'date' | 'occasion'
     specialOccasion?: string
   }): Promise<Date | undefined> {
+    // For one-time reminders, nextReminderDate = dueDate + dueTime
     if (!reminderData.isRecurring) {
-      return undefined
+      const nextDate = new Date(reminderData.dueDate)
+
+      // Add time if specified
+      if (reminderData.dueTime) {
+        const [hours, minutes] = reminderData.dueTime.split(':').map(Number)
+        nextDate.setHours(hours, minutes, 0, 0)
+      } else {
+        nextDate.setHours(10, 0, 0, 0) // Default time 10:00
+      }
+
+      return nextDate
     }
 
-    const baseDate = reminderData.completedDate || reminderData.dueDate
+    // For recurring reminders, calculate next occurrence from NOW
+    const baseDate = new Date() // Always calculate from current time
     const nextDate = new Date(baseDate)
 
     switch (reminderData.recurringPattern) {
@@ -215,10 +227,18 @@ export class ReminderController {
       case 'monthly':
         // Use Hebrew calendar for monthly calculations
         if (reminderData.recurringDayOfMonth !== undefined) {
-          return await ReminderController.calculateNextHebrewMonthlyReminder(
+          const hebrewNextDate = await ReminderController.calculateNextHebrewMonthlyReminder(
             reminderData.recurringDayOfMonth,
             baseDate
           )
+          // Add dueTime to Hebrew date
+          if (reminderData.dueTime) {
+            const [hours, minutes] = reminderData.dueTime.split(':').map(Number)
+            hebrewNextDate.setHours(hours, minutes, 0, 0)
+          } else {
+            hebrewNextDate.setHours(10, 0, 0, 0)
+          }
+          return hebrewNextDate
         }
         // Fallback to Gregorian
         nextDate.setMonth(nextDate.getMonth() + 1)
@@ -229,21 +249,37 @@ export class ReminderController {
         if (reminderData.yearlyRecurringType === 'occasion') {
           // Calculate next occurrence of special occasion (holiday)
           if (reminderData.specialOccasion) {
-            return await ReminderController.calculateNextSpecialOccasion(
+            const occasionDate = await ReminderController.calculateNextSpecialOccasion(
               reminderData.specialOccasion,
               baseDate
             )
+            // Add dueTime to occasion date
+            if (reminderData.dueTime) {
+              const [hours, minutes] = reminderData.dueTime.split(':').map(Number)
+              occasionDate.setHours(hours, minutes, 0, 0)
+            } else {
+              occasionDate.setHours(10, 0, 0, 0)
+            }
+            return occasionDate
           }
         } else if (
           reminderData.yearlyRecurringType === 'date' &&
           reminderData.recurringMonth !== undefined &&
           reminderData.recurringDayOfMonth !== undefined
         ) {
-          return await ReminderController.calculateNextHebrewYearlyReminder(
+          const yearlyDate = await ReminderController.calculateNextHebrewYearlyReminder(
             reminderData.recurringMonth,
             reminderData.recurringDayOfMonth,
             baseDate
           )
+          // Add dueTime to yearly date
+          if (reminderData.dueTime) {
+            const [hours, minutes] = reminderData.dueTime.split(':').map(Number)
+            yearlyDate.setHours(hours, minutes, 0, 0)
+          } else {
+            yearlyDate.setHours(10, 0, 0, 0)
+          }
+          return yearlyDate
         }
         // Fallback to Gregorian
         nextDate.setFullYear(nextDate.getFullYear() + 1)
@@ -251,6 +287,14 @@ export class ReminderController {
 
       default:
         return undefined
+    }
+
+    // Add dueTime to the calculated next date
+    if (reminderData.dueTime) {
+      const [hours, minutes] = reminderData.dueTime.split(':').map(Number)
+      nextDate.setHours(hours, minutes, 0, 0)
+    } else {
+      nextDate.setHours(10, 0, 0, 0) // Default time 10:00
     }
 
     return nextDate
@@ -308,8 +352,13 @@ export class ReminderController {
     let targetMonth = currentHebDate.month
     let targetYear = currentHebDate.year
 
+    // Get days in current month to handle cases where requested day doesn't exist
+    const daysInCurrentMonth = await HebrewDateController.getDaysInMonth(targetMonth, targetYear)
+
     // Check if we need to move to next month
-    if (currentHebDate.day >= hebrewDay) {
+    // If requested day 30 but current month only has 29 days (like כט), move to next month
+    // OR if we're already past the requested day in current month
+    if (currentHebDate.day >= hebrewDay || hebrewDay > daysInCurrentMonth) {
       // Move to next Hebrew month
       targetMonth++
       if (targetMonth > 13) {
@@ -319,6 +368,7 @@ export class ReminderController {
     }
 
     // Create date for next occurrence
+    // createSafeHebrewDate will adjust day 30 to day 29 if target month only has 29 days
     const nextDate = await HebrewDateController.createSafeHebrewDate(hebrewDay, targetMonth, targetYear)
     if (!nextDate) {
       throw new Error(`Failed to create Hebrew date for monthly reminder`)

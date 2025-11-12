@@ -1,6 +1,7 @@
-import { APP_INITIALIZER, NgModule } from '@angular/core'
+import { APP_INITIALIZER, LOCALE_ID, NgModule } from '@angular/core'
 import { BrowserModule } from '@angular/platform-browser'
-import { CommonModule } from '@angular/common'
+import { CommonModule, registerLocaleData } from '@angular/common'
+import localeHe from '@angular/common/locales/he'
 import { AppRoutingModule } from './app-routing.module'
 import { AppComponent } from './app.component'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
@@ -226,10 +227,14 @@ import { NeighborhoodDetailsModalComponent } from './routes/modals/neighborhood-
     AdminGuard,
     HebrewDateService,
     { provide: APP_INITIALIZER, useFactory: initApp, multi: true },
+    { provide: LOCALE_ID, useValue: 'he' }
   ],
   bootstrap: [AppComponent],
 })
 export class AppModule {}
+
+// Register Hebrew locale
+registerLocaleData(localeHe, 'he')
 
 export function initApp() {
   const loadCurrentUserBeforeAppStarts = async () => {

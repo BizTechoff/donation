@@ -1670,5 +1670,16 @@ export const termsEn = {
   createNewDonationButton: 'Create New Donation',
   campaignColumn: 'Campaign',
   unknownDonor: 'Unknown',
-  noDonationsFound: 'No donations found'
+  noDonationsFound: 'No donations found',
+
+  // Navigation buttons for modals
+  contact: 'Contact',
+  family: 'Family',
+  events: 'Events',
+  companies: 'Companies',
+  circles: 'Circles',
+  preferences: 'Preferences',
+  payment: 'Payment',
+  partners: 'Partners',
+  files: 'Files'
 }

@@ -21,41 +21,41 @@
 
   <!-- Section Navigation -->
   <div class="section-navigation" *ngIf="!isNewDonor">
-    <button class="nav-btn" (click)="scrollToSection('section-personal')" title="פרטים אישיים">
+    <button class="nav-btn" (click)="scrollToSection('section-personal')" [title]="(i18n.terms$ | async)?.personalDetails || 'פרטים אישיים'">
       <mat-icon>person</mat-icon>
-      <span>פרטים</span>
+      <span>{{ (i18n.terms$ | async)?.details || 'פרטים' }}</span>
     </button>
-    <button class="nav-btn" (click)="scrollToSection('section-addresses')" title="כתובות">
+    <button class="nav-btn" (click)="scrollToSection('section-addresses')" [title]="(i18n.terms$ | async)?.addresses || 'כתובות'">
       <mat-icon>location_on</mat-icon>
-      <span>כתובות</span>
+      <span>{{ (i18n.terms$ | async)?.addresses || 'כתובות' }}</span>
     </button>
-    <button class="nav-btn" (click)="scrollToSection('section-contacts')" title="יצירת קשר">
+    <button class="nav-btn" (click)="scrollToSection('section-contacts')" [title]="(i18n.terms$ | async)?.contactDetails || 'יצירת קשר'">
       <mat-icon>contact_phone</mat-icon>
-      <span>יצירת קשר</span>
+      <span>{{ (i18n.terms$ | async)?.contact || 'יצירת קשר' }}</span>
     </button>
-    <button class="nav-btn" (click)="scrollToSection('section-family')" title="משפחה">
+    <button class="nav-btn" (click)="scrollToSection('section-family')" [title]="(i18n.terms$ | async)?.family || 'משפחה'">
       <mat-icon>family_restroom</mat-icon>
-      <span>משפחה</span>
+      <span>{{ (i18n.terms$ | async)?.family || 'משפחה' }}</span>
     </button>
-    <button class="nav-btn" (click)="scrollToSection('section-events')" title="אירועים">
+    <button class="nav-btn" (click)="scrollToSection('section-events')" [title]="(i18n.terms$ | async)?.events || 'אירועים'">
       <mat-icon>event</mat-icon>
-      <span>אירועים</span>
+      <span>{{ (i18n.terms$ | async)?.events || 'אירועים' }}</span>
     </button>
-    <button class="nav-btn" (click)="scrollToSection('section-companies')" title="חברות">
+    <button class="nav-btn" (click)="scrollToSection('section-companies')" [title]="(i18n.terms$ | async)?.companies || 'חברות'">
       <mat-icon>business</mat-icon>
-      <span>חברות</span>
+      <span>{{ (i18n.terms$ | async)?.companies || 'חברות' }}</span>
     </button>
-    <button class="nav-btn" (click)="scrollToSection('section-categories')" title="חוגים">
+    <button class="nav-btn" (click)="scrollToSection('section-categories')" [title]="(i18n.terms$ | async)?.circles || 'חוגים'">
       <mat-icon>label</mat-icon>
-      <span>חוגים</span>
+      <span>{{ (i18n.terms$ | async)?.circles || 'חוגים' }}</span>
     </button>
-    <button class="nav-btn" (click)="scrollToSection('section-preferences')" title="העדפות">
+    <button class="nav-btn" (click)="scrollToSection('section-preferences')" [title]="(i18n.terms$ | async)?.preferences || 'העדפות'">
       <mat-icon>settings</mat-icon>
-      <span>העדפות</span>
+      <span>{{ (i18n.terms$ | async)?.preferences || 'העדפות' }}</span>
     </button>
-    <button class="nav-btn" (click)="scrollToSection('section-notes')" title="הערות">
+    <button class="nav-btn" (click)="scrollToSection('section-notes')" [title]="(i18n.terms$ | async)?.notes || 'הערות'">
       <mat-icon>note</mat-icon>
-      <span>הערות</span>
+      <span>{{ (i18n.terms$ | async)?.notes || 'הערות' }}</span>
     </button>
   </div>
 
