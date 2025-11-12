@@ -128,6 +128,10 @@ export class CertificatesComponent implements OnInit, OnDestroy {
     this.subscriptions.unsubscribe();
   }
 
+  // Summary data
+  memorialCertificatesCount = 0;
+  memorialDayCertificatesCount = 0;
+
   async loadCertificates() {
     this.loading = true;
     try {
@@ -142,13 +146,20 @@ export class CertificatesComponent implements OnInit, OnDestroy {
         globalFilters: this.globalFilterService.currentFilters
       };
 
-      // Get total count and certificates from server
-      [this.totalCount, this.certificates] = await Promise.all([
+      // Get total count, summary, and certificates from server
+      const [count, summary, certificates] = await Promise.all([
         CertificateController.countFilteredCertificates(filters),
+        CertificateController.getSummaryForFilteredCertificates(filters),
         CertificateController.findFilteredCertificates(filters, this.currentPage, this.pageSize, this.sortColumns)
       ]);
 
+      this.totalCount = count;
+      this.certificates = certificates;
       this.totalPages = Math.ceil(this.totalCount / this.pageSize);
+
+      // Use summary data from server
+      this.memorialCertificatesCount = summary.memorialCertificates;
+      this.memorialDayCertificatesCount = summary.memorialDayCertificates;
 
       // Load related data for certificates
       await this.loadRelatedData();
@@ -157,6 +168,8 @@ export class CertificatesComponent implements OnInit, OnDestroy {
       this.certificates = [];
       this.totalCount = 0;
       this.totalPages = 0;
+      this.memorialCertificatesCount = 0;
+      this.memorialDayCertificatesCount = 0;
     } finally {
       this.loading = false;
     }

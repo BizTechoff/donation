@@ -14,6 +14,11 @@ export interface CertificateFilters {
   globalFilters?: GlobalFilters;
 }
 
+export interface CertificateSummary {
+  memorialCertificates: number;
+  memorialDayCertificates: number;
+}
+
 export class CertificateController {
 
   @BackendMethod({ allowed: Allow.authenticated })
@@ -24,43 +29,9 @@ export class CertificateController {
     sortColumns?: Array<{ field: string; direction: 'asc' | 'desc' }>
   ): Promise<Certificate[]> {
     console.log('CertificateController.findFilteredCertificates');
-    let whereClause: any = {};
 
-    // Apply global filters first (affects donorId)
-    if (filters.globalFilters) {
-      const globalDonorIds = await GlobalFilterController.getDonorIds(filters.globalFilters);
-      if (globalDonorIds !== undefined) {
-        if (globalDonorIds.length === 0) {
-          return []; // No donors match global filters
-        }
-        whereClause.donorId = { $in: globalDonorIds };
-      }
-    }
-
-    // Apply certificate type filter
-    if (filters.certificateType) {
-      whereClause.type = filters.certificateType;
-    }
-
-    // Apply date range filter
-    if (filters.dateFrom) {
-      const fromDate = new Date(filters.dateFrom);
-      fromDate.setHours(0, 0, 0, 0);
-      whereClause.eventDate = { $gte: fromDate };
-    }
-
-    if (filters.dateTo) {
-      const toDate = new Date(filters.dateTo);
-      toDate.setHours(23, 59, 59, 999);
-      if (whereClause.eventDate) {
-        whereClause.eventDate = {
-          ...whereClause.eventDate,
-          $lte: toDate
-        };
-      } else {
-        whereClause.eventDate = { $lte: toDate };
-      }
-    }
+    const whereClause = await CertificateController.buildWhereClause(filters);
+    if (whereClause === null) return [];
 
     // Build orderBy from sortColumns or use default
     let orderBy: any = { createdDate: 'desc' as 'desc' }; // Default sort
@@ -86,28 +57,6 @@ export class CertificateController {
             break;
         }
       });
-    }
-
-    // If we have a donor search term, find matching donors first
-    if (filters.donorSearchText && filters.donorSearchText.trim() !== '') {
-      const searchLower = filters.donorSearchText.toLowerCase().trim();
-
-      const matchingDonors = await remult.repo(Donor).find({
-        where: {
-          $or: [
-            { firstName: { $contains: searchLower } },
-            { lastName: { $contains: searchLower } }
-          ]
-        }
-      });
-
-      const donorIds = matchingDonors.map(d => d.id);
-
-      if (donorIds.length === 0) {
-        return [];
-      }
-
-      whereClause.donorId = { $in: donorIds };
     }
 
     const findOptions: any = {
@@ -137,6 +86,41 @@ export class CertificateController {
 
   @BackendMethod({ allowed: Allow.authenticated })
   static async countFilteredCertificates(filters: CertificateFilters): Promise<number> {
+    const whereClause = await CertificateController.buildWhereClause(filters);
+    if (whereClause === null) return 0;
+
+    const count = await remult.repo(Certificate).count(
+      Object.keys(whereClause).length > 0 ? whereClause : undefined
+    );
+
+    return count;
+  }
+
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async getSummaryForFilteredCertificates(filters: CertificateFilters): Promise<CertificateSummary> {
+    const whereClause = await CertificateController.buildWhereClause(filters);
+    if (whereClause === null) {
+      return {
+        memorialCertificates: 0,
+        memorialDayCertificates: 0
+      };
+    }
+
+    const certificates = await remult.repo(Certificate).find({
+      where: Object.keys(whereClause).length > 0 ? whereClause : undefined
+    });
+
+    return {
+      memorialCertificates: certificates.filter(c => c.type === 'memorial').length,
+      memorialDayCertificates: certificates.filter(c => c.type === 'memorialDay').length
+    };
+  }
+
+  /**
+   * Build where clause for filtering certificates
+   * Returns null if no results should be returned (e.g., no matching donors)
+   */
+  private static async buildWhereClause(filters: CertificateFilters): Promise<any | null> {
     let whereClause: any = {};
 
     // Apply global filters first (affects donorId)
@@ -144,7 +128,7 @@ export class CertificateController {
       const globalDonorIds = await GlobalFilterController.getDonorIds(filters.globalFilters);
       if (globalDonorIds !== undefined) {
         if (globalDonorIds.length === 0) {
-          return 0; // No donors match global filters
+          return null; // No donors match global filters
         }
         whereClause.donorId = { $in: globalDonorIds };
       }
@@ -191,16 +175,12 @@ export class CertificateController {
       const donorIds = matchingDonors.map(d => d.id);
 
       if (donorIds.length === 0) {
-        return 0;
+        return null;
       }
 
       whereClause.donorId = { $in: donorIds };
     }
 
-    const count = await remult.repo(Certificate).count(
-      Object.keys(whereClause).length > 0 ? whereClause : undefined
-    );
-
-    return count;
+    return whereClause;
   }
 }
