@@ -4,7 +4,7 @@ import { I18nService } from '../../i18n/i18n.service';
 
 export interface NavigationRecord {
   id: string;
-  displayName: string;
+  fullName: string;
   [key: string]: any;
 }
 
@@ -95,7 +95,7 @@ export class ModalNavigationHeaderComponent implements OnInit, OnDestroy {
     if (this.searchTerm.trim()) {
       const term = this.searchTerm.toLowerCase();
       filtered = filtered.filter(record => 
-        record.displayName.toLowerCase().includes(term)
+        record.fullName.toLowerCase().includes(term)
       );
     }
 

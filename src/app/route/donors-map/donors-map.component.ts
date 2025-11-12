@@ -430,16 +430,16 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     let addedCount = 0;
     this.filteredDonorsMapData.forEach((donorData, index) => {
       if (donorData.donorPlace?.place?.latitude && donorData.donorPlace?.place?.longitude) {
-        // console.log(`Adding marker ${index + 1}:`, donorData.donor.displayName, donorData.donorPlace.place.latitude, donorData.donorPlace.place.longitude);
+        // console.log(`Adding marker ${index + 1}:`, donorData.donor.fullName, donorData.donorPlace.place.latitude, donorData.donorPlace.place.longitude);
         try {
           const marker = this.createMarkerForDonor(donorData);
           this.markersLayer.addLayer(marker);
           addedCount++;
         } catch (error) {
-          console.error('Error creating marker for donor:', donorData.donor.displayName, error);
+          console.error('Error creating marker for donor:', donorData.donor.fullName, error);
         }
       } else {
-        console.log(`No coordinates for donor ${index + 1}:`, donorData.donor.displayName);
+        console.log(`No coordinates for donor ${index + 1}:`, donorData.donor.fullName);
       }
     });
 
@@ -536,7 +536,7 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
       <div style="direction: ${direction}; font-family: Arial, sans-serif; min-width: 250px; text-align: ${textAlign};">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
           <h4 style="margin: 0; color: #2c3e50; cursor: pointer; text-decoration: underline;" onclick="window.openDonorDetails('${donorData.donor.id}')">
-            ${donorData.donor.displayName}
+            ${donorData.donor.fullName}
           </h4>
           <button style="
             background: #27ae60;

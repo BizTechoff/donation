@@ -323,7 +323,7 @@ export class ReportController {
       switch (filters.groupBy) {
         case 'donor':
           groupKey = donation.donorId || 'unknown';
-          groupName = donation.donor?.displayName || 'תורם אלמוני';
+          groupName = donation.donor?.fullName || 'תורם אלמוני';
           break;
         case 'campaign':
           groupKey = donation.campaignId || 'unknown';

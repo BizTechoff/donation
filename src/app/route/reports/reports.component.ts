@@ -455,7 +455,7 @@ export class ReportsComponent implements OnInit {
     this.recentActivity = recentDonations.map(donation => ({
       type: 'donation',
       date: donation.donationDate,
-      description: `תרומה מ${donation.donor?.displayName || 'תורם אלמוני'}`,
+      description: `תרומה מ${donation.donor?.fullName || 'תורם אלמוני'}`,
       amount: donation.amount,
       campaign: donation.campaign?.name,
       details: donation
@@ -917,7 +917,7 @@ export class ReportsComponent implements OnInit {
       // המרה למערך וסידור
       this.paymentReportData = Array.from(donorMap.values())
         .map(data => ({
-          donorName: data.donor.displayName || `${data.donor.firstName} ${data.donor.lastName}`,
+          donorName: data.donor.fullName || `${data.donor.firstName} ${data.donor.lastName}`,
           promisedAmount: data.totalAmount, // נשתמש בשדה הזה בתור סכום בשקלים
           actualAmount: data.totalDonations, // נשתמש בשדה הזה בתור מספר תרומות
           remainingDebt: 0, // לא רלוונטי
@@ -1055,7 +1055,7 @@ export class ReportsComponent implements OnInit {
 
     // Create report data for all invitees
     this.blessingReportData = invitedDonors.map(donor => {
-      const displayName = donor.displayName || `${donor.firstName} ${donor.lastName}`;
+      const displayName = donor.fullName || `${donor.firstName} ${donor.lastName}`;
       const nameParts = displayName.trim().split(' ');
 
       // מציאת טלפון, נייד ואימייל

@@ -135,7 +135,7 @@ async function sendEmailNotification(reminder: Reminder) {
     }
 
     if (reminder.donor) {
-      body += `תורם קשור: ${reminder.donor.displayName}\n`
+      body += `תורם קשור: ${reminder.donor.fullName}\n`
     }
 
     body += `תאריך יעד: ${reminder.dueDate.toLocaleDateString('he-IL')}\n`

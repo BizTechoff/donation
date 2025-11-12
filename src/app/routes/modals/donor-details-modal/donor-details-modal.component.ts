@@ -133,7 +133,7 @@ export class DonorDetailsModalComponent implements OnInit {
       // Convert allDonors to NavigationRecords
       this.allDonors = data.allDonors.map(d => ({
         id: d.id,
-        displayName: d.displayName || '',
+        fullName: d.fullName || '',
         isActive: d.isActive
       }));
 
@@ -1433,7 +1433,7 @@ export class DonorDetailsModalComponent implements OnInit {
       this.allDonors = donors.map(donor => ({
         ...donor,
         id: donor.id,
-        displayName: donor.fullName || `${donor.firstName} ${donor.lastName}`
+        fullName: donor.fullName || `${donor.firstName} ${donor.lastName}`
       }));
 
       // Set current donor record
