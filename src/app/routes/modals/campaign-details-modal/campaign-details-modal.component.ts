@@ -9,6 +9,7 @@ import { DONOR_LEVELS_ARRAY, DonorLevel } from '../../../../shared/enum/donor-le
 import { CampaignBlessingBookModalComponent, CampaignBlessingBookModalArgs } from '../campaign-blessing-book-modal/campaign-blessing-book-modal.component';
 import { CampaignInvitedListModalComponent, CampaignInvitedListModalArgs } from '../campaign-invited-list-modal/campaign-invited-list-modal.component';
 import { openDialog, DialogConfig } from 'common-ui-elements';
+import { PayerService, CurrencyType } from '../../../services/payer.service';
 
 export interface CampaignDetailsModalArgs {
   campaignId: string; // Can be 'new' for new campaign or campaign ID
@@ -41,13 +42,20 @@ export class CampaignDetailsModalComponent implements OnInit {
   // Available levels for multi-select from donor levels enum
   availableLevels = DONOR_LEVELS_ARRAY;
 
+  // Currency types from service
+  currencyTypes: CurrencyType[] = [];
+
   constructor(
     public i18n: I18nService,
     private ui: UIToolsService,
     private snackBar: MatSnackBar,
     private cdr: ChangeDetectorRef,
+    private payerService: PayerService,
     public dialogRef: MatDialogRef<CampaignDetailsModalComponent>
-  ) {}
+  ) {
+    // Load currency types from service
+    this.currencyTypes = this.payerService.getCurrencyTypes();
+  }
 
   async ngOnInit() {
     await this.initializeCampaign();
@@ -619,6 +627,43 @@ export class CampaignDetailsModalComponent implements OnInit {
     } catch (error: any) {
       console.error('Error opening new donation:', error);
       this.ui.error('שגיאה בפתיחת תרומה חדשה: ' + (error.message || error));
+    }
+  }
+
+  // Open campaign donations list modal
+  async openCampaignDonations() {
+    if (!this.campaign) return;
+
+    try {
+      // Save campaign first if it's new or has unsaved changes
+      if (this.isNewCampaign || this.hasUnsavedChanges()) {
+        // Validate required fields
+        if (!this.campaign.name?.trim()) {
+          this.ui.error('שם הקמפיין הוא שדה חובה');
+          return;
+        }
+
+        if (!this.campaign.startDate) {
+          this.ui.error('תאריך התחלה הוא שדה חובה');
+          return;
+        }
+
+        // Save the campaign
+        await this.campaign.save();
+        this.snackBar.open('הקמפיין נשמר', 'סגור', { duration: 2000 });
+        this.originalCampaignData = JSON.stringify(this.campaign);
+        this.changed = false;
+        this.isNewCampaign = false;
+      }
+
+      // Open campaign donations dialog
+      await this.ui.campaignDonationsDialog(this.campaign.id, this.campaign.name);
+
+      // Refresh campaign data to update raised amount
+      await this.reloadCampaign();
+    } catch (error: any) {
+      console.error('Error opening campaign donations:', error);
+      this.ui.error('שגיאה בפתיחת רשימת התרומות: ' + (error.message || error));
     }
   }
 }

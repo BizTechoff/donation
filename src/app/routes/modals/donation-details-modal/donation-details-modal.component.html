@@ -182,63 +182,9 @@
               <label>{{i18n.terms.currency}}</label>
             </div>
             <select class="form-control" [(ngModel)]="donation.currency">
-              <option value="ILS">{{getCurrencyName('ILS')}}</option>
-              <option value="USD">{{getCurrencyName('USD')}}</option>
-              <option value="EUR">{{getCurrencyName('EUR')}}</option>
-              <option value="GBP">{{getCurrencyName('GBP')}}</option>
-              <option value="CAD">{{getCurrencyName('CAD')}}</option>
-              <option value="AUD">{{getCurrencyName('AUD')}}</option>
-              <option value="CHF">{{getCurrencyName('CHF')}}</option>
-              <option value="JPY">{{getCurrencyName('JPY')}}</option>
-              <option value="SEK">{{getCurrencyName('SEK')}}</option>
-              <option value="NOK">{{getCurrencyName('NOK')}}</option>
-              <option value="DKK">{{getCurrencyName('DKK')}}</option>
-              <option value="PLN">{{getCurrencyName('PLN')}}</option>
-              <option value="HUF">{{getCurrencyName('HUF')}}</option>
-              <option value="CZK">{{getCurrencyName('CZK')}}</option>
-              <option value="RON">{{getCurrencyName('RON')}}</option>
-              <option value="BGN">{{getCurrencyName('BGN')}}</option>
-              <option value="HRK">{{getCurrencyName('HRK')}}</option>
-              <option value="ISK">{{getCurrencyName('ISK')}}</option>
-              <option value="UAH">{{getCurrencyName('UAH')}}</option>
-              <option value="RUB">{{getCurrencyName('RUB')}}</option>
-              <option value="TRY">{{getCurrencyName('TRY')}}</option>
-              <option value="CNY">{{getCurrencyName('CNY')}}</option>
-              <option value="INR">{{getCurrencyName('INR')}}</option>
-              <option value="KRW">{{getCurrencyName('KRW')}}</option>
-              <option value="THB">{{getCurrencyName('THB')}}</option>
-              <option value="SGD">{{getCurrencyName('SGD')}}</option>
-              <option value="MYR">{{getCurrencyName('MYR')}}</option>
-              <option value="IDR">{{getCurrencyName('IDR')}}</option>
-              <option value="PHP">{{getCurrencyName('PHP')}}</option>
-              <option value="VND">{{getCurrencyName('VND')}}</option>
-              <option value="HKD">{{getCurrencyName('HKD')}}</option>
-              <option value="TWD">{{getCurrencyName('TWD')}}</option>
-              <option value="PKR">{{getCurrencyName('PKR')}}</option>
-              <option value="BDT">{{getCurrencyName('BDT')}}</option>
-              <option value="LKR">{{getCurrencyName('LKR')}}</option>
-              <option value="BRL">{{getCurrencyName('BRL')}}</option>
-              <option value="ARS">{{getCurrencyName('ARS')}}</option>
-              <option value="MXN">{{getCurrencyName('MXN')}}</option>
-              <option value="CLP">{{getCurrencyName('CLP')}}</option>
-              <option value="COP">{{getCurrencyName('COP')}}</option>
-              <option value="PEN">{{getCurrencyName('PEN')}}</option>
-              <option value="UYU">{{getCurrencyName('UYU')}}</option>
-              <option value="AED">{{getCurrencyName('AED')}}</option>
-              <option value="SAR">{{getCurrencyName('SAR')}}</option>
-              <option value="JOD">{{getCurrencyName('JOD')}}</option>
-              <option value="EGP">{{getCurrencyName('EGP')}}</option>
-              <option value="LBP">{{getCurrencyName('LBP')}}</option>
-              <option value="BHD">{{getCurrencyName('BHD')}}</option>
-              <option value="KWD">{{getCurrencyName('KWD')}}</option>
-              <option value="QAR">{{getCurrencyName('QAR')}}</option>
-              <option value="OMR">{{getCurrencyName('OMR')}}</option>
-              <option value="ZAR">{{getCurrencyName('ZAR')}}</option>
-              <option value="NGN">{{getCurrencyName('NGN')}}</option>
-              <option value="KES">{{getCurrencyName('KES')}}</option>
-              <option value="ETB">{{getCurrencyName('ETB')}}</option>
-              <option value="GHS">{{getCurrencyName('GHS')}}</option>
-              <option value="NZD">{{getCurrencyName('NZD')}}</option>
+              <option *ngFor="let currency of currencyTypes" [value]="currency.id">
+                {{ currency.label }}
+              </option>
             </select>
           </div>
 

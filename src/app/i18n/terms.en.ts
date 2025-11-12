@@ -1681,5 +1681,17 @@ export const termsEn = {
   preferences: 'Preferences',
   payment: 'Payment',
   partners: 'Partners',
-  files: 'Files'
+  files: 'Files',
+
+  // Snooze Modal
+  snoozeReminderTitle: 'Snooze Reminder',
+  selectSnoozePeriod: 'Select Snooze Period',
+  snoozeTomorrow: 'Tomorrow',
+  tomorrowSameTime: 'Tomorrow at the same time',
+  dayAfterTomorrow: 'Day After Tomorrow',
+  inTwoDays: 'In two days',
+  snoozeNextWeek: 'Next Week',
+  exactlyOneWeek: 'Exactly one week',
+  snoozeNextMonth: 'Next Month',
+  sameDayNextMonth: 'Same day next month'
 }

@@ -81,30 +81,11 @@
         </button>
 
         <button mat-icon-button
-                [matMenuTriggerFor]="snoozeMenu"
+                (click)="openSnoozeModal(reminder)"
                 matTooltip="דחה"
                 class="action-snooze">
           <mat-icon>snooze</mat-icon>
         </button>
-
-        <mat-menu #snoozeMenu="matMenu">
-          <button mat-menu-item (click)="snoozeReminder(reminder, 1)">
-            <mat-icon>schedule</mat-icon>
-            <span>דחה שעה</span>
-          </button>
-          <button mat-menu-item (click)="snoozeReminder(reminder, 4)">
-            <mat-icon>schedule</mat-icon>
-            <span>דחה 4 שעות</span>
-          </button>
-          <button mat-menu-item (click)="snoozeReminder(reminder, 24)">
-            <mat-icon>schedule</mat-icon>
-            <span>דחה יום</span>
-          </button>
-          <button mat-menu-item (click)="snoozeReminder(reminder, 168)">
-            <mat-icon>schedule</mat-icon>
-            <span>דחה שבוע</span>
-          </button>
-        </mat-menu>
 
         <button mat-icon-button
                 matTooltip="סמן כנראה (קבע הבא)"

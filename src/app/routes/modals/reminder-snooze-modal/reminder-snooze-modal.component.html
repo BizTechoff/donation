@@ -1,0 +1,59 @@
+<div class="reminder-snooze-modal">
+  <div class="modal-header">
+    <div class="header-content">
+      <div class="header-icon">
+        <mat-icon>snooze</mat-icon>
+      </div>
+      <div class="header-text">
+        <h2>{{ (i18n.terms$ | async)?.snoozeReminderTitle || 'דחה תזכורת' }}</h2>
+        <p class="header-subtitle">{{ (i18n.terms$ | async)?.selectSnoozePeriod || 'בחר טווח דחייה' }}</p>
+      </div>
+    </div>
+    <button class="modal-close" (click)="cancel()" [matTooltip]="(i18n.terms$ | async)?.close || 'סגור'">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <div class="modal-body">
+    <div class="snooze-options">
+      <button mat-raised-button class="snooze-option" (click)="selectPeriod('tomorrow')">
+        <mat-icon>wb_twilight</mat-icon>
+        <div class="option-text">
+          <span class="option-title">{{ (i18n.terms$ | async)?.snoozeTomorrow || 'מחר' }}</span>
+          <span class="option-subtitle">{{ (i18n.terms$ | async)?.tomorrowSameTime || 'מחר באותה שעה' }}</span>
+        </div>
+      </button>
+
+      <button mat-raised-button class="snooze-option" (click)="selectPeriod('dayAfterTomorrow')">
+        <mat-icon>wb_sunny</mat-icon>
+        <div class="option-text">
+          <span class="option-title">{{ (i18n.terms$ | async)?.dayAfterTomorrow || 'מחרתיים' }}</span>
+          <span class="option-subtitle">{{ (i18n.terms$ | async)?.inTwoDays || 'בעוד יומיים' }}</span>
+        </div>
+      </button>
+
+      <button mat-raised-button class="snooze-option" (click)="selectPeriod('nextWeek')">
+        <mat-icon>date_range</mat-icon>
+        <div class="option-text">
+          <span class="option-title">{{ (i18n.terms$ | async)?.snoozeNextWeek || 'שבוע הבא' }}</span>
+          <span class="option-subtitle">{{ (i18n.terms$ | async)?.exactlyOneWeek || 'בעוד שבוע בדיוק' }}</span>
+        </div>
+      </button>
+
+      <button mat-raised-button class="snooze-option" (click)="selectPeriod('nextMonth')">
+        <mat-icon>event</mat-icon>
+        <div class="option-text">
+          <span class="option-title">{{ (i18n.terms$ | async)?.snoozeNextMonth || 'חודש הבא' }}</span>
+          <span class="option-subtitle">{{ (i18n.terms$ | async)?.sameDayNextMonth || 'אותו יום בחודש הבא' }}</span>
+        </div>
+      </button>
+    </div>
+  </div>
+
+  <div class="modal-footer">
+    <button mat-stroked-button (click)="cancel()" class="cancel-button">
+      <mat-icon>close</mat-icon>
+      {{ (i18n.terms$ | async)?.cancel || 'ביטול' }}
+    </button>
+  </div>
+</div>

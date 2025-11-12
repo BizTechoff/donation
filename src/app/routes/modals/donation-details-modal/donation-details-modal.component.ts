@@ -3,11 +3,12 @@ import { MatDialogRef } from '@angular/material/dialog';
 import { DialogConfig, openDialog } from 'common-ui-elements';
 import { remult } from 'remult';
 import { DonationController } from '../../../../shared/controllers/donation.controller';
-import { Bank, Campaign, Company, Country, Donation, DonationBank, DonationFile, DonationMethod, DonationOrganization, DonationPartner, Donor, Organization, Reminder, User } from '../../../../shared/entity';
+import { Bank, Campaign, Company, Country, Donation, DonationBank, DonationFile, DonationMethod, DonationOrganization, DonationPartner, Donor, DonorPlace, Organization, Reminder, User } from '../../../../shared/entity';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
 import { DonorService } from '../../../services/donor.service';
 import { LetterService } from '../../../services/letter.service';
+import { PayerService, CurrencyType } from '../../../services/payer.service';
 import { BankSelectionModalComponent } from '../bank-selection-modal/bank-selection-modal.component';
 import { DonorDetailsModalComponent } from '../donor-details-modal/donor-details-modal.component';
 import { DonorSelectionModalComponent } from '../donor-selection-modal/donor-selection-modal.component';
@@ -69,129 +70,7 @@ export class DonationDetailsModalComponent implements OnInit {
   selectedPaymentMethod?: DonationMethod;
   selectedOrganization?: Organization;
   selectedBank?: Bank;
-
-  // Country to currency mapping
-  private countryCurrencyMap: { [countryCode: string]: string } = {
-    // מדינות עיקריות
-    'IL': 'ILS', // ישראל
-    'US': 'USD', // ארצות הברית
-    'GB': 'GBP', // בריטניה
-    'CA': 'CAD', // קנדה
-    'AU': 'AUD', // אוסטרליה
-
-    // אירופה - יורו
-    'FR': 'EUR', // צרפת
-    'DE': 'EUR', // גרמניה
-    'IT': 'EUR', // איטליה
-    'ES': 'EUR', // ספרד
-    'NL': 'EUR', // הולנד
-    'BE': 'EUR', // בלגיה
-    'AT': 'EUR', // אוסטריה
-    'PT': 'EUR', // פורטוגל
-    'IE': 'EUR', // אירלנד
-    'LU': 'EUR', // לוקסמבורג
-    'FI': 'EUR', // פינלנד
-    'GR': 'EUR', // יוון
-    'MT': 'EUR', // מלטה
-    'EE': 'EUR', // אסטוניה
-    'LV': 'EUR', // לטביה
-    'LT': 'EUR', // ליטא
-    'SK': 'EUR', // סלובקיה
-    'SI': 'EUR', // סלובניה
-    'CY': 'EUR', // קפריסין
-
-    // אירופה - מטבעות מקומיים
-    'CH': 'CHF', // שוויץ
-    'DK': 'DKK', // דנמרק
-    'SE': 'SEK', // שוודיה
-    'NO': 'NOK', // נורווגיה
-    'PL': 'PLN', // פולין
-    'HU': 'HUF', // הונגריה
-    'CZ': 'CZK', // צ'כיה
-    'RO': 'RON', // רומניה
-    'BG': 'BGN', // בולגריה
-    'HR': 'HRK', // קרואטיה
-    'IS': 'ISK', // איסלנד
-    'UA': 'UAH', // אוקראינה
-    'RS': 'RSD', // סרביה
-    'MK': 'MKD', // מקדוניה הצפונית
-    'AL': 'ALL', // אלבניה
-    'MD': 'MDL', // מולדובה
-    'BY': 'BYN', // בלארוס
-    'RU': 'RUB', // רוסיה
-    'TR': 'TRY', // טורקיה
-
-    // אמריקה הלטינית
-    'BR': 'BRL', // ברזיל
-    'AR': 'ARS', // ארגנטינה
-    'MX': 'MXN', // מקסיקו
-    'CL': 'CLP', // צ'ילה
-    'CO': 'COP', // קולומביה
-    'PE': 'PEN', // פרו
-    'VE': 'VES', // ונצואלה
-    'UY': 'UYU', // אורוגוואי
-    'PA': 'PAB', // פנמה
-    'CR': 'CRC', // קוסטה ריקה
-
-    // אסיה
-    'CN': 'CNY', // סין
-    'JP': 'JPY', // יפן
-    'IN': 'INR', // הודו
-    'KR': 'KRW', // קוריאה הדרומית
-    'TH': 'THB', // תאילנד
-    'SG': 'SGD', // סינגפור
-    'MY': 'MYR', // מלזיה
-    'ID': 'IDR', // אינדונזיה
-    'PH': 'PHP', // פיליפינים
-    'VN': 'VND', // וייטנאם
-    'HK': 'HKD', // הונג קונג
-    'TW': 'TWD', // טייוואן
-    'PK': 'PKR', // פקיסטן
-    'BD': 'BDT', // בנגלדש
-    'LK': 'LKR', // סרי לנקה
-    'NP': 'NPR', // נפאל
-    'MM': 'MMK', // מיאנמר
-    'KH': 'KHR', // קמבודיה
-    'MN': 'MNT', // מונגוליה
-
-    // המזרח התיכון
-    'AE': 'AED', // איחוד האמירויות
-    'SA': 'SAR', // ערב הסעודית
-    'JO': 'JOD', // ירדן
-    'EG': 'EGP', // מצרים
-    'LB': 'LBP', // לבנון
-    'MA': 'MAD', // מרוקו
-    'TN': 'TND', // תוניסיה
-    'BH': 'BHD', // בחריין
-    'KW': 'KWD', // כווית
-    'QA': 'QAR', // קטאר
-    'OM': 'OMR', // עומאן
-    'GE': 'GEL', // גאורגיה
-    'AZ': 'AZN', // אזרבייג'ן
-    'AM': 'AMD', // ארמניה
-    'KZ': 'KZT', // קזחסטן
-    'AF': 'AFN', // אפגניסטן
-    'IQ': 'IQD', // עיראק
-    'IR': 'IRR', // איראן
-    'SY': 'SYP', // סוריה
-    'YE': 'YER', // תימן
-
-    // אפריקה
-    'ZA': 'ZAR', // דרום אפריקה
-    'NG': 'NGN', // ניגריה
-    'KE': 'KES', // קניה
-    'ET': 'ETB', // אתיופיה
-    'UG': 'UGX', // אוגנדה
-    'TZ': 'TZS', // טנזניה
-    'ZW': 'ZWL', // זימבבואה
-    'GH': 'GHS', // גאנה
-    'DZ': 'DZD', // אלג'יריה
-    'LY': 'LYD', // לוב
-    'SD': 'SDG', // סודן
-
-    // אוקיאניה
-    'NZ': 'NZD', // ניו זילנד
-  };
+  currencyTypes: CurrencyType[] = [];
 
   constructor(
     public i18n: I18nService,
@@ -199,8 +78,12 @@ export class DonationDetailsModalComponent implements OnInit {
     private cdr: ChangeDetectorRef,
     private letter: LetterService,
     private donorService: DonorService,
+    private payerService: PayerService,
     public dialogRef: MatDialogRef<DonationDetailsModalComponent>
-  ) { }
+  ) {
+    // Load currency types from service
+    this.currencyTypes = this.payerService.getCurrencyTypes();
+  }
 
   async ngOnInit() {
     this.loading = true;
@@ -986,14 +869,35 @@ export class DonationDetailsModalComponent implements OnInit {
   // Helper function to update currency based on donor's country
   private async updateCurrencyBasedOnCountry(donor: Donor) {
     try {
-      // Country-based currency update disabled - always use ILS
-      // This method could be enhanced in the future to:
-      // 1. Load home place from DonorPlace entities
-      // 2. Get country from the place
-      // 3. Map country code to currency using countryCurrencyMap
+      // Load the primary home place for the donor
+      const donorPlaceRepo = remult.repo(DonorPlace);
+      const donorPlaces = await donorPlaceRepo.find({
+        where: {
+          donorId: donor.id,
+          isActive: true,
+          isPrimary: true
+        },
+        include: {
+          place: {
+            include: {
+              country: true
+            }
+          }
+        },
+        limit: 1
+      });
 
-      // Default to ILS
+      // If donor has a primary place with country and currency, use it
+      if (donorPlaces.length > 0 && donorPlaces[0].place?.country?.currency) {
+        const currency = donorPlaces[0].place.country.currency;
+        this.donation.currency = currency;
+        console.log(`Currency auto-set to ${currency} based on donor's country: ${donorPlaces[0].place.country.name}`);
+        return;
+      }
+
+      // Default to ILS if no place/country found
       this.donation.currency = 'ILS';
+      console.log('No country found for donor, defaulting to ILS');
     } catch (error: any) {
       console.error('Error updating currency based on donor country:', error);
       // Default to ILS on error

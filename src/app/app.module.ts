@@ -110,6 +110,8 @@ import { CitySelectionModalComponent } from './routes/modals/city-selection-moda
 import { CityDetailsModalComponent } from './routes/modals/city-details-modal/city-details-modal.component'
 import { NeighborhoodSelectionModalComponent } from './routes/modals/neighborhood-selection-modal/neighborhood-selection-modal.component'
 import { NeighborhoodDetailsModalComponent } from './routes/modals/neighborhood-details-modal/neighborhood-details-modal.component'
+import { ReminderSnoozeModalComponent } from './routes/modals/reminder-snooze-modal/reminder-snooze-modal.component'
+import { CampaignDonationsModalComponent } from './routes/modals/campaign-donations-modal/campaign-donations-modal.component'
 
 @NgModule({
   declarations: [
@@ -185,7 +187,9 @@ import { NeighborhoodDetailsModalComponent } from './routes/modals/neighborhood-
     CitySelectionModalComponent,
     CityDetailsModalComponent,
     NeighborhoodSelectionModalComponent,
-    NeighborhoodDetailsModalComponent
+    NeighborhoodDetailsModalComponent,
+    ReminderSnoozeModalComponent,
+    CampaignDonationsModalComponent
   ],
   imports: [
     BrowserModule,

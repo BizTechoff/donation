@@ -154,123 +154,9 @@
               </div>
               <select class="form-control" [(ngModel)]="campaign.currency" [disabled]="!canEdit"
                 (ngModelChange)="markAsChanged()">
-                <!-- עיקריים -->
-                <option value="ILS">{{ (i18n.terms$ | async)?.shekelILS }}</option>
-                <option value="USD">{{ (i18n.terms$ | async)?.dollarUSD }}</option>
-                <option value="EUR">{{ (i18n.terms$ | async)?.euroEUR }}</option>
-                <option value="GBP">{{ (i18n.terms$ | async)?.poundGBP }}</option>
-                <option value="CAD">{{ (i18n.terms$ | async)?.dollarCAD }}</option>
-                <option value="AUD">{{ (i18n.terms$ | async)?.dollarAUD }}</option>
-
-                <!-- אירופה -->
-                <option value="CHF">פרנק שוויצרי (CHF)</option>
-                <option value="NOK">כתר נורווגי (NOK)</option>
-                <option value="SEK">כתר שוודי (SEK)</option>
-                <option value="DKK">כתר דני (DKK)</option>
-                <option value="ISK">כתר איסלנדי (ISK)</option>
-                <option value="CZK">כתר צ'כי (CZK)</option>
-                <option value="PLN">זלוטי פולני (PLN)</option>
-                <option value="HUF">פורינט הונגרי (HUF)</option>
-                <option value="RON">לאו רומני (RON)</option>
-                <option value="BGN">לב בולגרי (BGN)</option>
-                <option value="HRK">קונה קרואטית (HRK)</option>
-                <option value="RSD">דינר סרבי (RSD)</option>
-                <option value="BAM">מארק בוסני (BAM)</option>
-                <option value="MKD">דינר מקדוני (MKD)</option>
-                <option value="ALL">לק אלבני (ALL)</option>
-                <option value="MDL">לאו מולדובי (MDL)</option>
-                <option value="UAH">הריבניה אוקראינית (UAH)</option>
-                <option value="BYN">רובל בלארוסי (BYN)</option>
-                <option value="RUB">רובל רוסי (RUB)</option>
-                <option value="TRY">לירה טורקית (TRY)</option>
-
-                <!-- אסיה-פסיפיק -->
-                <option value="NZD">דולר ניו-זילנדי (NZD)</option>
-                <option value="JPY">ין יפני (JPY)</option>
-                <option value="CNY">יואן סיני (CNY)</option>
-                <option value="INR">רופי הודי (INR)</option>
-                <option value="SGD">דולר סינגפורי (SGD)</option>
-                <option value="HKD">דולר הונג קונגי (HKD)</option>
-                <option value="MYR">רינגיט מלזי (MYR)</option>
-                <option value="THB">בהט תאילנדי (THB)</option>
-                <option value="IDR">רופיה אינדונזית (IDR)</option>
-                <option value="PHP">פסו פיליפיני (PHP)</option>
-                <option value="VND">דונג וייטנאמי (VND)</option>
-                <option value="KRW">וון דרום קוריאני (KRW)</option>
-                <option value="TWD">דולר טאיוואני (TWD)</option>
-                <option value="PKR">רופי פקיסטני (PKR)</option>
-                <option value="BDT">טקה בנגלדשי (BDT)</option>
-                <option value="LKR">רופי סרי לנקי (LKR)</option>
-                <option value="NPR">רופי נפאלי (NPR)</option>
-                <option value="MMK">קיאט בורמזי (MMK)</option>
-                <option value="KHR">ריאל קמבודי (KHR)</option>
-                <option value="LAK">קיפ לאוסי (LAK)</option>
-                <option value="MOP">פטקה מקאו (MOP)</option>
-                <option value="BND">דולר ברוניי (BND)</option>
-                <option value="KZT">טנגה קזחסטני (KZT)</option>
-                <option value="UZS">סום אוזבקי (UZS)</option>
-                <option value="KGS">סום קירגיזי (KGS)</option>
-                <option value="TJS">סומוני טג'יקי (TJS)</option>
-                <option value="TMT">מאנאט טורקמני (TMT)</option>
-                <option value="MNT">טוגריק מונגולי (MNT)</option>
-                <option value="GEL">לארי גאורגי (GEL)</option>
-                <option value="AMD">דראם ארמני (AMD)</option>
-                <option value="AZN">מאנאט אזרי (AZN)</option>
-
-                <!-- מזרח תיכון -->
-                <option value="AED">דירהם אמירויות (AED)</option>
-                <option value="SAR">ריאל סעודי (SAR)</option>
-                <option value="QAR">ריאל קטארי (QAR)</option>
-                <option value="KWD">דינר כוויתי (KWD)</option>
-                <option value="BHD">דינר בחרייני (BHD)</option>
-                <option value="OMR">ריאל עומאני (OMR)</option>
-                <option value="JOD">דינר ירדני (JOD)</option>
-                <option value="LBP">לירה לבנונית (LBP)</option>
-                <option value="IQD">דינר עיראקי (IQD)</option>
-                <option value="EGP">לירה מצרית (EGP)</option>
-
-                <!-- אפריקה -->
-                <option value="ZAR">ראנד דרום אפריקאי (ZAR)</option>
-                <option value="NGN">ניירה ניגרית (NGN)</option>
-                <option value="KES">שילינג קנייתי (KES)</option>
-                <option value="GHS">סדי גאני (GHS)</option>
-                <option value="UGX">שילינג אוגנדי (UGX)</option>
-                <option value="TZS">שילינג טנזני (TZS)</option>
-                <option value="ETB">ביר אתיופי (ETB)</option>
-                <option value="MAD">דירהם מרוקאי (MAD)</option>
-                <option value="TND">דינר תוניסאי (TND)</option>
-                <option value="DZD">דינר אלג'יראי (DZD)</option>
-                <option value="XAF">פרנק מרכז אפריקה (XAF)</option>
-                <option value="XOF">פרנק מערב אפריקה (XOF)</option>
-                <option value="ZMW">קוואצ'ה זמבי (ZMW)</option>
-                <option value="BWP">פולה בוצוואנית (BWP)</option>
-                <option value="MUR">רופי מאוריציוס (MUR)</option>
-                <option value="NAD">דולר נמיבי (NAD)</option>
-
-                <!-- אמריקה הלטינית -->
-                <option value="BRL">ריאל ברזילאי (BRL)</option>
-                <option value="MXN">פסו מקסיקני (MXN)</option>
-                <option value="ARS">פסו ארגנטינאי (ARS)</option>
-                <option value="CLP">פסו צ'ילאני (CLP)</option>
-                <option value="COP">פסו קולומביאני (COP)</option>
-                <option value="PEN">סול פרואני (PEN)</option>
-                <option value="UYU">פסו אורוגוואי (UYU)</option>
-                <option value="PYG">גואראני פרגוואי (PYG)</option>
-                <option value="BOB">בוליביאנו (BOB)</option>
-                <option value="CRC">קולון קוסטה ריקה (CRC)</option>
-                <option value="GTQ">קצאל גואטמלה (GTQ)</option>
-                <option value="PAB">בלבואה פנמה (PAB)</option>
-                <option value="HNL">למפירה הונדורס (HNL)</option>
-                <option value="NIO">קורדובה ניקרגואה (NIO)</option>
-
-                <!-- קריביים -->
-                <option value="JMD">דולר ג'מייקני (JMD)</option>
-                <option value="TTD">דולר טרינידד וטובגו (TTD)</option>
-                <option value="BBD">דולר ברבדוס (BBD)</option>
-                <option value="BSD">דולר בהאמס (BSD)</option>
-                <option value="XCD">דולר קריבי מזרחי (XCD)</option>
-                <option value="BZD">דולר בליז (BZD)</option>
-                <option value="KYD">דולר איי קיימן (KYD)</option>
+                <option *ngFor="let currency of currencyTypes" [value]="currency.id">
+                  {{ currency.label }}
+                </option>
               </select>
             </div>
 
@@ -382,6 +268,12 @@
       
 
       <div class="footer-actions-right">
+        <button mat-raised-button color="accent" *ngIf="!isNewCampaign" (click)="openCampaignDonations()"
+          class="action-button donations-list-button">
+          <mat-icon>list</mat-icon>
+          תרומות
+        </button>
+
         <button mat-raised-button color="primary" *ngIf="!isNewCampaign" (click)="openNewDonation()"
           class="action-button new-donation-button">
           <mat-icon>add_circle</mat-icon>

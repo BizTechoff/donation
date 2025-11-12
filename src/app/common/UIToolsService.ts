@@ -215,6 +215,13 @@ export class UIToolsService implements UITools {
     )
   }
 
+  async campaignDonationsDialog(campaignId: string, campaignName?: string): Promise<void> {
+    return await openDialog(
+      (await import('../routes/modals/campaign-donations-modal/campaign-donations-modal.component')).CampaignDonationsModalComponent,
+      (dlg) => dlg.args = { campaignId, campaignName }
+    )
+  }
+
   async campaignBlessingBookDialog(campaignId: string, campaignName?: string): Promise<void> {
     return await openDialog(
       (await import('../routes/modals/campaign-blessing-book-modal/campaign-blessing-book-modal.component')).CampaignBlessingBookModalComponent,

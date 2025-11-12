@@ -88,8 +88,8 @@
               <select class="form-control"
                       [(ngModel)]="bank.currency"
                       (ngModelChange)="onFieldChange()">
-                <option *ngFor="let curr of currencyOptions" [value]="curr.value">
-                  {{curr.label}}
+                <option *ngFor="let currency of currencyTypes" [value]="currency.id">
+                  {{ currency.label }}
                 </option>
               </select>
             </div>

@@ -1,0 +1,208 @@
+<!-- Campaign Donations Modal -->
+<div class="modal-overlay" (click)="closeModal()">
+  <div class="modal-content campaign-donations-modal" (click)="$event.stopPropagation()">
+
+    <!-- Modal Header -->
+    <div class="modal-header">
+      <div class="header-content">
+        <div class="header-icon">
+          <mat-icon>attach_money</mat-icon>
+        </div>
+        <div class="header-text">
+          <h2>תרומות קמפיין: {{campaign?.name}}</h2>
+          <p class="header-subtitle" *ngIf="!loading">
+            סה"כ {{totalDonations}} תרומות • {{totalAmount | number:'1.2-2'}} ₪
+          </p>
+        </div>
+      </div>
+      <button class="modal-close" (click)="closeModal()" matTooltip="סגור" [dir]="'rtl'">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-overlay" *ngIf="loading">
+      <div class="loading-spinner">טוען נתונים...</div>
+    </div>
+
+    <!-- Modal Body: Contains filters + scrollable table + pagination -->
+    <div class="modal-body" *ngIf="!loading">
+
+      <!-- Filters Section: Fixed at top -->
+      <div class="filters-section">
+        <div class="filters-grid">
+          <div class="filter-group">
+            <mat-icon class="filter-icon">search</mat-icon>
+            <input type="text"
+                   class="filter-input"
+                   [(ngModel)]="filterText"
+                   placeholder="חיפוש בהערות או סכום">
+          </div>
+
+          <div class="filter-group">
+            <mat-icon class="filter-icon">person</mat-icon>
+            <select class="filter-select" [(ngModel)]="filterDonor" (ngModelChange)="applyFilters()">
+              <option value="">כל התורמים</option>
+              <option *ngFor="let donor of donors" [value]="donor.id">
+                {{donor.fullName}}
+              </option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <mat-icon class="filter-icon">payment</mat-icon>
+            <select class="filter-select" [(ngModel)]="filterMethod" (ngModelChange)="applyFilters()">
+              <option value="">כל אמצעי התשלום</option>
+              <option *ngFor="let method of donationMethods" [value]="method.id">
+                {{method.name}}
+              </option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <mat-icon class="filter-icon">category</mat-icon>
+            <select class="filter-select" [(ngModel)]="filterType" (ngModelChange)="applyFilters()">
+              <option value="">כל הסוגים</option>
+              <option value="full">תרומה מלאה</option>
+              <option value="commitment">התחייבות</option>
+            </select>
+          </div>
+
+          <div class="filter-actions">
+            <button mat-raised-button
+                    color="primary"
+                    (click)="openNewDonation()"
+                    class="add-btn">
+              <mat-icon>add</mat-icon>
+              הוסף תרומה חדשה
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scrollable Table Container: Donations -->
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th class="sortable" [class.sorted]="isSorted('donationDate')" (click)="toggleSort('donationDate', $event)">
+                תאריך
+                <span class="sort-icon" *ngIf="getSortIcon('donationDate')">{{ getSortIcon('donationDate') }}</span>
+              </th>
+              <th class="sortable" [class.sorted]="isSorted('donor')" (click)="toggleSort('donor', $event)">
+                תורם
+                <span class="sort-icon" *ngIf="getSortIcon('donor')">{{ getSortIcon('donor') }}</span>
+              </th>
+              <th class="sortable" [class.sorted]="isSorted('amount')" (click)="toggleSort('amount', $event)">
+                סכום
+                <span class="sort-icon" *ngIf="getSortIcon('amount')">{{ getSortIcon('amount') }}</span>
+              </th>
+              <th>מטבע</th>
+              <th>אמצעי תשלום</th>
+              <th>סוג</th>
+              <th class="actions-column">פעולות</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let donation of donations" class="data-row">
+              <td>
+                <div class="date-cell">
+                  <div class="date-gregorian">{{formatDate(donation.donationDate)}}</div>
+                  <div class="date-hebrew">{{formatHebrewDate(donation.donationDate)}}</div>
+                </div>
+              </td>
+              <td>
+                <div class="donor-cell">
+                  {{getDonorName(donation)}}
+                </div>
+              </td>
+              <td class="amount-cell">
+                <strong>{{formatCurrency(donation.amount, donation.currency)}}</strong>
+              </td>
+              <td>{{donation.currency || 'ILS'}}</td>
+              <td>{{getMethodName(donation)}}</td>
+              <td>
+                <span class="type-badge" [class.commitment]="donation.donationType === 'commitment'">
+                  {{getDonationType(donation)}}
+                </span>
+              </td>
+              <td class="actions-cell">
+                <button mat-icon-button
+                        (click)="editDonation(donation)"
+                        matTooltip="ערוך תרומה"
+                        [dir]="'rtl'"
+                        class="action-btn edit-btn">
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button mat-icon-button
+                        (click)="deleteDonation(donation)"
+                        matTooltip="מחק תרומה"
+                        [dir]="'rtl'"
+                        class="action-btn delete-btn">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </td>
+            </tr>
+            <tr *ngIf="donations.length === 0">
+              <td colspan="7" class="no-data">
+                <mat-icon class="no-data-icon">info</mat-icon>
+                <p>לא נמצאו תרומות לקמפיין זה</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination: Fixed at bottom -->
+      <div class="pagination-container" *ngIf="totalPages > 1">
+        <div class="pagination-controls">
+          <button mat-icon-button
+                  (click)="firstPage()"
+                  [disabled]="currentPage === 1"
+                  matTooltip="עמוד ראשון"
+                  [dir]="'rtl'">
+            <mat-icon>first_page</mat-icon>
+          </button>
+
+          <button mat-icon-button
+                  (click)="previousPage()"
+                  [disabled]="currentPage === 1"
+                  matTooltip="עמוד קודם"
+                  [dir]="'rtl'">
+            <mat-icon>chevron_right</mat-icon>
+          </button>
+
+          <div class="page-numbers">
+            <button *ngFor="let page of getPageNumbers()"
+                    mat-button
+                    [class.active]="page === currentPage"
+                    (click)="goToPage(page)">
+              {{page}}
+            </button>
+          </div>
+
+          <button mat-icon-button
+                  (click)="nextPage()"
+                  [disabled]="currentPage === totalPages"
+                  matTooltip="עמוד הבא"
+                  [dir]="'rtl'">
+            <mat-icon>chevron_left</mat-icon>
+          </button>
+
+          <button mat-icon-button
+                  (click)="lastPage()"
+                  [disabled]="currentPage === totalPages"
+                  matTooltip="עמוד אחרון"
+                  [dir]="'rtl'">
+            <mat-icon>last_page</mat-icon>
+          </button>
+        </div>
+
+        <div class="pagination-info">
+          <span>מציג {{(currentPage - 1) * pageSize + 1}} - {{Math.min(currentPage * pageSize, totalCount)}} מתוך {{totalCount}}</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

@@ -191,4 +191,51 @@ export class Campaign extends IdEntity {
     this.raisedAmount += amount
     await this.save()
   }
+
+  @BackendMethod({ allowed: [Roles.admin] })
+  async recalculateRaisedAmount() {
+    if (isBackend()) {
+      const { remult } = await import('remult')
+      const { Donation } = await import('./donation')
+      const donations = await remult.repo(Donation).find({
+        where: {
+          campaignId: this.id
+        }
+      })
+
+      this.raisedAmount = donations.reduce((sum: number, donation: any) => sum + donation.amount, 0)
+      await this.save()
+      console.log(`Campaign ${this.name}: Recalculated raisedAmount to ${this.raisedAmount} from ${donations.length} donations`)
+    }
+  }
+
+  @BackendMethod({ allowed: [Roles.admin] })
+  static async recalculateAllCampaignsRaisedAmount() {
+    if (isBackend()) {
+      const { remult } = await import('remult')
+      const { Donation } = await import('./donation')
+      const campaigns = await remult.repo(Campaign).find()
+
+      let updatedCount = 0
+      for (const campaign of campaigns) {
+        const donations = await remult.repo(Donation).find({
+          where: {
+            campaignId: campaign.id
+          }
+        })
+
+        const calculatedAmount = donations.reduce((sum: number, donation: any) => sum + donation.amount, 0)
+        if (campaign.raisedAmount !== calculatedAmount) {
+          campaign.raisedAmount = calculatedAmount
+          await campaign.save()
+          updatedCount++
+          console.log(`Campaign ${campaign.name}: Updated raisedAmount from ${campaign.raisedAmount} to ${calculatedAmount}`)
+        }
+      }
+
+      console.log(`Recalculated raisedAmount for ${updatedCount} campaigns out of ${campaigns.length} total campaigns`)
+      return updatedCount
+    }
+    return 0
+  }
 }

@@ -6,6 +6,7 @@ import { Bank, Place } from '../../../../shared/entity';
 import { AddressComponents } from '../../../common/osm-address-input/osm-address-input.component';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
+import { PayerService, CurrencyType } from '../../../services/payer.service';
 
 export interface BankDetailsModalArgs {
   bankId?: string; // undefined for new bank, or bank ID for edit
@@ -32,24 +33,19 @@ export class BankDetailsModalComponent implements OnInit {
   loading = false;
   isNew = false;
 
-  // Currency options - dynamically generated from terms
-  get currencyOptions() {
-    return [
-      { value: 'ILS', label: this.i18n.terms.currencyILS },
-      { value: 'USD', label: this.i18n.terms.currencyUSD },
-      { value: 'EUR', label: this.i18n.terms.currencyEUR },
-      { value: 'GBP', label: this.i18n.terms.currencyGBP },
-      { value: 'CAD', label: this.i18n.terms.currencyCAD },
-      { value: 'AUD', label: this.i18n.terms.currencyAUD }
-    ];
-  }
+  // Currency types from service
+  currencyTypes: CurrencyType[] = [];
 
   constructor(
     public i18n: I18nService,
     private ui: UIToolsService,
     private cdr: ChangeDetectorRef,
+    private payerService: PayerService,
     public dialogRef: MatDialogRef<BankDetailsModalComponent>
-  ) { }
+  ) {
+    // Load currency types from service
+    this.currencyTypes = this.payerService.getCurrencyTypes();
+  }
 
   async ngOnInit() {
     await this.initializeBank();

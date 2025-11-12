@@ -1679,5 +1679,17 @@ export const termsHe = {
   preferences: 'העדפות',
   payment: 'תשלום',
   partners: 'שותפים',
-  files: 'קבצים'
+  files: 'קבצים',
+
+  // Snooze Modal
+  snoozeReminderTitle: 'דחה תזכורת',
+  selectSnoozePeriod: 'בחר טווח דחייה',
+  snoozeTomorrow: 'מחר',
+  tomorrowSameTime: 'מחר באותה שעה',
+  dayAfterTomorrow: 'מחרתיים',
+  inTwoDays: 'בעוד יומיים',
+  snoozeNextWeek: 'שבוע הבא',
+  exactlyOneWeek: 'בעוד שבוע בדיוק',
+  snoozeNextMonth: 'חודש הבא',
+  sameDayNextMonth: 'אותו יום בחודש הבא'
 }

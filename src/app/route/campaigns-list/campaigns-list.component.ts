@@ -222,6 +222,23 @@ export class CampaignsListComponent implements OnInit, OnDestroy {
     return this.campaignBlessingCountMap.get(campaign.id) || 0;
   }
 
+  async recalculateAllCampaigns() {
+    const confirmed = confirm('האם אתה בטוח שברצונך לחשב מחדש את סכומי התרומות לכל הקמפיינים? פעולה זו עשויה לקחת זמן.');
+    if (!confirmed) return;
+
+    this.loading = true;
+    try {
+      const updatedCount = await Campaign.recalculateAllCampaignsRaisedAmount();
+      this.ui.info(`חושב מחדש עבור ${updatedCount} קמפיינים`);
+      await this.refreshData();
+    } catch (error) {
+      console.error('Error recalculating campaigns:', error);
+      this.ui.error('שגיאה בחישוב מחדש של הקמפיינים');
+    } finally {
+      this.loading = false;
+    }
+  }
+
   // Modal event handlers
   onLocationChange() {
     // Handle location change if needed
@@ -448,5 +465,11 @@ export class CampaignsListComponent implements OnInit, OnDestroy {
 
   async openInvitedList(campaign: Campaign) {
     await this.ui.campaignInvitedListDialog(campaign.id);
+  }
+
+  async openCampaignDonations(campaign: Campaign) {
+    await this.ui.campaignDonationsDialog(campaign.id, campaign.name);
+    // Refresh data after closing donations modal
+    await this.refreshData();
   }
 }

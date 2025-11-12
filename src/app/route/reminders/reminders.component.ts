@@ -24,6 +24,9 @@ export class RemindersComponent implements OnInit, OnDestroy {
   filteredReminders: Reminder[] = [];
   loading = false;
 
+  // Remult repo
+  reminderRepo = remult.repo(Reminder);
+
   // Expose Math to template
   Math = Math;
 
@@ -248,8 +251,21 @@ export class RemindersComponent implements OnInit, OnDestroy {
   }
 
   async completeReminder(reminder: Reminder) {
+    // Ask for confirmation
+    const confirmMessage = 'האם לסמן את התזכורת כהושלמה?';
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
     try {
-      await reminder.complete();
+      // Reload the reminder from the server to get the full entity with methods
+      const fullReminder = await this.reminderRepo.findId(reminder.id);
+      if (!fullReminder) {
+        console.error('Reminder not found');
+        return;
+      }
+
+      await fullReminder.complete();
       await this.loadReminders();
     } catch (error) {
       console.error('Error completing reminder:', error);

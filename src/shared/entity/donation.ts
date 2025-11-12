@@ -30,18 +30,42 @@ import { Roles } from '../enum/roles'
       donation.updatedDate = new Date()
     }
   },
-  saved: async (donation) => {
-    if (isBackend() && donation.donorId) {
-      // עדכון ממוצע תרומות של התורם
+  saved: async (donation, event) => {
+    if (isBackend()) {
       const { remult } = await import('remult')
-      await updateDonorAverage(donation.donorId, remult)
+
+      // עדכון ממוצע תרומות של התורם
+      if (donation.donorId) {
+        await updateDonorAverage(donation.donorId, remult)
+      }
+
+      // עדכון סכום שנאסף של הקמפיין
+      if (donation.campaignId) {
+        await updateCampaignRaisedAmount(donation.campaignId, remult)
+      }
+
+      // אם הקמפיין שונה (במקרה של עדכון), עדכן גם את הקמפיין הישן
+      if (!event.isNew && event.originalId && event.fields.campaignId.valueChanged()) {
+        const oldCampaignId = event.fields.campaignId.originalValue
+        if (oldCampaignId && oldCampaignId !== donation.campaignId) {
+          await updateCampaignRaisedAmount(oldCampaignId, remult)
+        }
+      }
     }
   },
   deleted: async (donation) => {
-    if (isBackend() && donation.donorId) {
-      // עדכון ממוצע תרומות של התורם לאחר מחיקה
+    if (isBackend()) {
       const { remult } = await import('remult')
-      await updateDonorAverage(donation.donorId, remult)
+
+      // עדכון ממוצע תרומות של התורם לאחר מחיקה
+      if (donation.donorId) {
+        await updateDonorAverage(donation.donorId, remult)
+      }
+
+      // עדכון סכום שנאסף של הקמפיין לאחר מחיקה
+      if (donation.campaignId) {
+        await updateCampaignRaisedAmount(donation.campaignId, remult)
+      }
     }
   },
 })
@@ -259,5 +283,23 @@ async function updateDonorAverage(donorId: string, remult: any) {
       donor.ns = sum / donations.length
     }
     await donor.save()
+  }
+}
+
+// פונקציה לעדכון סכום שנאסף של קמפיין
+async function updateCampaignRaisedAmount(campaignId: string, remult: any) {
+  const { Campaign } = await import('./campaign')
+  const donations = await remult.repo(Donation).find({
+    where: {
+      campaignId: campaignId
+    }
+  })
+
+  const campaign = await remult.repo(Campaign).findId(campaignId)
+  if (campaign) {
+    const sum = donations.reduce((acc: number, donation: Donation) => acc + donation.amount, 0)
+    campaign.raisedAmount = sum
+    await campaign.save()
+    console.log(`Campaign ${campaign.name} (${campaignId}): Updated raisedAmount to ${sum} from ${donations.length} donations`)
   }
 }

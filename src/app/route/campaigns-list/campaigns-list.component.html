@@ -4,9 +4,15 @@
   <div class="module-header">
     <div class="header-top">
       <h1>{{ (i18n.terms$ | async)?.campaignsManagement }}</h1>
-      <button class="btn btn-primary add-campaign-btn" (click)="createCampaign()">
-        {{ (i18n.terms$ | async)?.newCampaign }}
-      </button>
+      <div class="header-actions">
+        <button class="btn btn-secondary" (click)="recalculateAllCampaigns()" [disabled]="loading"
+                [matTooltip]="'חשב מחדש את סכומי התרומות לכל הקמפיינים'">
+          🔄 חישוב מחדש
+        </button>
+        <button class="btn btn-primary add-campaign-btn" (click)="createCampaign()">
+          {{ (i18n.terms$ | async)?.newCampaign }}
+        </button>
+      </div>
     </div>
 
     <!-- כרטיסי סיכום -->
@@ -122,18 +128,20 @@
           <td class="amount">{{formatCurrency(campaign.targetAmount)}}</td>
           <td class="amount raised">{{formatCurrency(campaign.raisedAmount)}}</td>
           <td>
-            <div class="progress-container">
+            <div class="progress-container" *ngIf="campaign.targetAmount > 0">
               <div class="progress-bar">
                 <div class="progress-fill" [style.width.%]="campaign.progressPercentage"></div>
               </div>
               <span class="progress-text">{{campaign.progressPercentage}}%</span>
             </div>
+            <span *ngIf="campaign.targetAmount === 0">-</span>
           </td>
           <td>{{getInviteesCount(campaign)}}</td>
           <td>{{getBlessingCount(campaign)}}</td>
           <td>{{formatHebrewDate(campaign.startDate)}}</td>
           <td>{{formatHebrewDate(campaign.endDate)}}</td>
           <td class="actions">
+            <button class="btn-icon btn-donations" title="הצג תרומות" (click)="openCampaignDonations(campaign)">💰</button>
             <button class="btn-icon btn-invited" [title]="(i18n.terms$ | async)?.inviteesList" (click)="openInvitedList(campaign)">👥</button>
             <button class="btn-icon btn-blessings" [title]="(i18n.terms$ | async)?.blessingsBook" (click)="openBlessingsBook(campaign)">📖</button>
             <button class="btn-icon btn-edit" [title]="(i18n.terms$ | async)?.edit" (click)="editCampaign(campaign)">✏</button>

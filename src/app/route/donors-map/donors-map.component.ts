@@ -83,6 +83,12 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
   placeRepo = remult.repo(Place);
   countryRepo = remult.repo(Country);
 
+  // Calculated statistics (to avoid ExpressionChangedAfterItHasBeenCheckedError)
+  totalDonors = 0;
+  activeDonors = 0;
+  averageDonation = 0;
+  donorsOnMap = 0;
+
   constructor(
     private geocodingService: GeocodingService,
     public i18n: I18nService,
@@ -96,24 +102,20 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     private hebrewDateService: HebrewDateService
   ) { }
 
-  // סטטיסטיקות
-  get totalDonors(): number {
-    return this.donorsMapData.length;
-  }
+  // Calculate statistics from donorsMapData
+  private calculateStatistics(): void {
+    this.totalDonors = this.donorsMapData.length;
+    this.activeDonors = this.donorsMapData.filter(d => d.donor.isActive).length;
 
-  get activeDonors(): number {
-    return this.donorsMapData.filter(d => d.donor.isActive).length;
-  }
+    if (this.donorsMapData.length === 0) {
+      this.averageDonation = 0;
+    } else {
+      const totalAmount = this.donorsMapData.reduce((sum, d) => sum + d.stats.totalDonations, 0);
+      const totalCount = this.donorsMapData.reduce((sum, d) => sum + d.stats.donationCount, 0);
+      this.averageDonation = totalCount > 0 ? totalAmount / totalCount : 0;
+    }
 
-  get averageDonation(): number {
-    if (this.donorsMapData.length === 0) return 0;
-    const totalAmount = this.donorsMapData.reduce((sum, d) => sum + d.stats.totalDonations, 0);
-    const totalCount = this.donorsMapData.reduce((sum, d) => sum + d.stats.donationCount, 0);
-    return totalCount > 0 ? totalAmount / totalCount : 0;
-  }
-
-  get donorsOnMap(): number {
-    return this.donorsMapData.filter(d => {
+    this.donorsOnMap = this.donorsMapData.filter(d => {
       return d.donorPlace?.place?.latitude && d.donorPlace?.place?.longitude;
     }).length;
   }
@@ -178,6 +180,9 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
       // This loads donations and calculates stats for these donors
       this.donorsMapData = await DonorMapController.loadDonorsMapData(limitedDonorIds);
       console.timeEnd('Load map data from server');
+
+      // Calculate statistics
+      this.calculateStatistics();
 
       // Apply local map filters
       this.applyMapFilters();
