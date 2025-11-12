@@ -80,14 +80,14 @@ export class DonationDetailsModalComponent implements OnInit {
     private donorService: DonorService,
     private payerService: PayerService,
     public dialogRef: MatDialogRef<DonationDetailsModalComponent>
-  ) {
-    // Load currency types from service
-    this.currencyTypes = this.payerService.getCurrencyTypes();
-  }
+  ) {}
 
   async ngOnInit() {
     this.loading = true;
     try {
+      // Load currency types from service
+      this.currencyTypes = await this.payerService.getCurrencyTypes();
+
       await this.ui.busy.doWhileShowingBusy(async () => {
         if (!this.args?.donationId) return;
 

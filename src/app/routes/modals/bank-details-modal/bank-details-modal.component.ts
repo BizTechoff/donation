@@ -42,12 +42,11 @@ export class BankDetailsModalComponent implements OnInit {
     private cdr: ChangeDetectorRef,
     private payerService: PayerService,
     public dialogRef: MatDialogRef<BankDetailsModalComponent>
-  ) {
-    // Load currency types from service
-    this.currencyTypes = this.payerService.getCurrencyTypes();
-  }
+  ) {}
 
   async ngOnInit() {
+    // Load currency types from service
+    this.currencyTypes = await this.payerService.getCurrencyTypes();
     await this.initializeBank();
 
     // Prevent accidental close for new bank

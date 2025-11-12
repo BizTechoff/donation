@@ -62,8 +62,9 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   private filterTimeout: any;
   private subscriptions = new Subscription();
 
-  // Exchange rates
-  rates: Record<string, number> = {};
+  // Currency types with rates
+  currencyTypes: any[] = [];
+  private currencyRates: Map<string, number> = new Map();
 
   constructor(
     public i18n: I18nService,
@@ -105,9 +106,13 @@ export class DonationsListComponent implements OnInit, OnDestroy {
         })
       );
 
-      // Load exchange rates from server
-      const { PayerController } = await import('../../../shared/controllers/payer.controller');
-      this.rates = await PayerController.getRatesInShekels();
+      // Load currency types from server (includes rates, symbols, labels)
+      this.currencyTypes = await this.payerService.getCurrencyTypes();
+
+      // Build rate map for quick lookup
+      this.currencyTypes.forEach(currency => {
+        this.currencyRates.set(currency.id, currency.rateInShekel);
+      });
 
       // Load reference data (donors, campaigns, methods)
       await Promise.all([
@@ -442,7 +447,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   }
 
   getAmountInShekel(donation: Donation): number {
-    const rate = this.rates[donation.currency] || 1;
+    const rate = this.currencyRates.get(donation.currency) || 1;
     return donation.amount * rate;
   }
 
@@ -467,16 +472,8 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   }
 
   getCurrencyName(currencyCode: string): string {
-    const currencyMap: { [key: string]: string } = {
-      'ILS': '₪',
-      'USD': '$',
-      'EUR': '€',
-      'GBP': '£',
-      'JPY': '¥',
-      'CHF': 'Fr'
-    };
-    // console.log('getCurrencyName',currencyCode,currencyMap[currencyCode] )
-    return currencyMap[currencyCode] || currencyCode;
+    const currency = this.currencyTypes.find(c => c.id === currencyCode);
+    return currency?.symbol || currencyCode;
   }
 
   getMethodName(donation: Donation): string {

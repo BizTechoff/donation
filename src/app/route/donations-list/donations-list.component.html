@@ -55,6 +55,7 @@
         </div>
 
         <div class="filter-group">
+        <label>{{ (i18n.terms$ | async)?.dateFromFilter }}</label>
           <app-modern-dual-date-picker
             [(ngModel)]="dateFrom"
             [label]="(i18n.terms$ | async)?.dateFromFilter || ''"
@@ -65,6 +66,7 @@
         </div>
 
         <div class="filter-group">
+        <label>{{ (i18n.terms$ | async)?.dateToFilter }}</label>
           <app-modern-dual-date-picker
             [(ngModel)]="dateTo"
             [label]="(i18n.terms$ | async)?.dateToFilter || ''"

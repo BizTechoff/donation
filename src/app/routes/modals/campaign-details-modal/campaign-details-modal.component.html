@@ -282,7 +282,7 @@
 
         <div class="footer-divider" *ngIf="!isNewCampaign"></div>
 
-        <button mat-raised-button color="accent" *ngIf="campaign.campaignType === 'דינער'" (click)="openInvitedList()"
+        <button mat-raised-button color="accent" *ngIf="campaign && campaign.campaignType === 'דינער'" (click)="openInvitedList()"
           class="action-button invited-list-button">
           <mat-icon>list_alt</mat-icon>
           {{ (i18n.terms$ | async)?.invitedListButton }}
@@ -291,7 +291,7 @@
         <div class="footer-divider" *ngIf="!isNewCampaign"></div>
 
 
-        <button mat-raised-button color="primary" *ngIf="campaign.campaignType === 'דינער'" (click)="openBlessingBook()"
+        <button mat-raised-button color="primary" *ngIf="campaign && campaign.campaignType === 'דינער'" (click)="openBlessingBook()"
           class="action-button blessing-book-button">
           <mat-icon>menu_book</mat-icon>
           {{ (i18n.terms$ | async)?.blessingBookButton }}

@@ -45,12 +45,11 @@ export class OrganizationDetailsModalComponent implements OnInit {
     private cdr: ChangeDetectorRef,
     private payerService: PayerService,
     public dialogRef: MatDialogRef<OrganizationDetailsModalComponent>
-  ) {
-    // Load currency types from service
-    this.currencyTypes = this.payerService.getCurrencyTypes();
-  }
+  ) {}
 
   async ngOnInit() {
+    // Load currency types from service
+    this.currencyTypes = await this.payerService.getCurrencyTypes();
     await this.initializeOrganization();
 
     // Prevent accidental close for new organization

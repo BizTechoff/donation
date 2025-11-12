@@ -259,13 +259,19 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
       }
     );
 
-    // Always reload to reflect any changes
-    await this.loadData();
-
-    if (result && Array.isArray(result) && result.length > 0) {
-      const selectedIds = result.map((c: Campaign) => c.id);
-      this.updateFilter('campaignIds', selectedIds.length > 0 ? selectedIds : undefined);
+    // Only update if user actually made a selection (not null/undefined from cancel)
+    if (result !== null && result !== undefined) {
+      if (Array.isArray(result) && result.length > 0) {
+        const selectedIds = result.map((c: Campaign) => c.id);
+        this.updateFilter('campaignIds', selectedIds.length > 0 ? selectedIds : undefined);
+      } else if (Array.isArray(result) && result.length === 0) {
+        // User explicitly cleared all selections
+        this.updateFilter('campaignIds', undefined);
+      }
     }
+
+    // Reload data after filter update (in case new items were created in the modal)
+    await this.loadData();
   }
 
   async openCountrySelectionModal(event: Event) {
@@ -282,13 +288,19 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
       }
     );
 
-    // Always reload to reflect any changes
-    await this.loadData();
-
-    if (result && Array.isArray(result) && result.length > 0) {
-      const selectedIds = result.map((c: Country) => c.id);
-      this.updateFilter('countryIds', selectedIds.length > 0 ? selectedIds : undefined);
+    // Only update if user actually made a selection (not null/undefined from cancel)
+    if (result !== null && result !== undefined) {
+      if (Array.isArray(result) && result.length > 0) {
+        const selectedIds = result.map((c: Country) => c.id);
+        this.updateFilter('countryIds', selectedIds.length > 0 ? selectedIds : undefined);
+      } else if (Array.isArray(result) && result.length === 0) {
+        // User explicitly cleared all selections
+        this.updateFilter('countryIds', undefined);
+      }
     }
+
+    // Reload data after filter update (in case new items were created in the modal)
+    await this.loadData();
   }
 
   async openCitySelectionModal(event: Event) {
@@ -308,12 +320,18 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
       }
     );
 
-    // Always reload to reflect any changes
-    await this.loadData();
-
-    if (result && Array.isArray(result) && result.length > 0) {
-      this.updateFilter('cityIds', result);
+    // Only update if user actually made a selection (not null/undefined from cancel)
+    if (result !== null && result !== undefined) {
+      if (Array.isArray(result) && result.length > 0) {
+        this.updateFilter('cityIds', result);
+      } else if (Array.isArray(result) && result.length === 0) {
+        // User explicitly cleared all selections
+        this.updateFilter('cityIds', undefined);
+      }
     }
+
+    // Reload data after filter update (in case new items were created in the modal)
+    await this.loadData();
   }
 
   async openNeighborhoodSelectionModal(event: Event) {
@@ -336,12 +354,18 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
       }
     );
 
-    // Always reload to reflect any changes
-    await this.loadData();
-
-    if (result && Array.isArray(result) && result.length > 0) {
-      this.updateFilter('neighborhoodIds', result);
+    // Only update if user actually made a selection (not null/undefined from cancel)
+    if (result !== null && result !== undefined) {
+      if (Array.isArray(result) && result.length > 0) {
+        this.updateFilter('neighborhoodIds', result);
+      } else if (Array.isArray(result) && result.length === 0) {
+        // User explicitly cleared all selections
+        this.updateFilter('neighborhoodIds', undefined);
+      }
     }
+
+    // Reload data after filter update (in case new items were created in the modal)
+    await this.loadData();
   }
 
   async openAudienceSelectionModal(event: Event) {

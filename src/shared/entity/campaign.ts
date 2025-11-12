@@ -53,6 +53,8 @@ export class Campaign extends IdEntity {
 
   @Fields.string({
     caption: 'מטבע',
+    // Note: Stored as currency ID (e.g., 'ILS', 'USD')
+    // Use getCurrencyType() method to get full CurrencyType object
   })
   currency = 'ILS'
 
@@ -155,8 +157,8 @@ export class Campaign extends IdEntity {
   } = {}
 
   get progressPercentage() {
-    console.log('this.targetAmount',this.targetAmount)
-    console.log('this.raisedAmount',this.raisedAmount)
+    // console.log('this.targetAmount',this.targetAmount)
+    // console.log('this.raisedAmount',this.raisedAmount)
     if (this.targetAmount === 0) return 0
     return Math.min(100, Math.round((this.raisedAmount / this.targetAmount) * 100))
   }

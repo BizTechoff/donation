@@ -16,6 +16,7 @@ import { ExcelExportService } from '../../services/excel-export.service';
 import { GlobalFilterService } from '../../services/global-filter.service';
 import { ReportService } from '../../services/report.service';
 import { HebrewDateService } from '../../services/hebrew-date.service';
+import { PayerService } from '../../services/payer.service';
 
 interface ChartData {
   label: string;
@@ -154,12 +155,7 @@ export class ReportsComponent implements OnInit {
   currencySummaryData: CurrencySummary[] = [];
   hebrewYears: string[] = []; // תשפ"א, תשפ"ב, תשפ"ג, תשפ"ד, תשפ"ה
   currentHebrewYear = 5785; // Will be calculated
-  conversionRates: { [key: string]: number } = {
-    'ILS': 1,
-    'USD': 3.2530,
-    'EUR': 3.7468,
-    'GBP': 4.2582
-  };
+  conversionRates: { [key: string]: number } = {};
 
   // Pagination data - Donations Report
   totalRecords = 0;
@@ -236,7 +232,8 @@ export class ReportsComponent implements OnInit {
     private busy: BusyService,
     private excelService: ExcelExportService,
     private globalFilterService: GlobalFilterService,
-    private hebrewDateService: HebrewDateService
+    private hebrewDateService: HebrewDateService,
+    private payerService: PayerService
   ) { }
 
   async ngOnInit() {
@@ -265,17 +262,25 @@ export class ReportsComponent implements OnInit {
 
   async loadCurrencyRates() {
     try {
-      const currentUser = await remult.repo(User).findId(remult.user!.id!);
-      if (currentUser?.settings?.currencyRates) {
-        this.conversionRates = {
-          'ILS': 1,
-          'USD': currentUser.settings.currencyRates.USD || 3.2530,
-          'EUR': currentUser.settings.currencyRates.EUR || 3.7468,
-          'GBP': currentUser.settings.currencyRates.GBP || 4.2582
-        };
-      }
+      // Load currency rates from PayerService
+      const currencyTypes = await this.payerService.getCurrencyTypes();
+
+      // Build conversion rates map from currency types
+      this.conversionRates = {};
+      currencyTypes.forEach(currency => {
+        this.conversionRates[currency.id] = currency.rateInShekel;
+      });
+
+      console.log('Loaded conversion rates from PayerService:', this.conversionRates);
     } catch (error) {
       console.error('Error loading currency rates:', error);
+      // Fallback to default rates if loading fails
+      this.conversionRates = {
+        'ILS': 1,
+        'USD': 3.2,
+        'EUR': 3.73,
+        'GBP': 4.58
+      };
     }
   }
 

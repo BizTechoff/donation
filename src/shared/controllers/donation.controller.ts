@@ -441,8 +441,20 @@ export class DonationController {
       where: Object.keys(whereClause).length > 0 ? whereClause : undefined
     });
 
-    // Sum all amounts
-    return donations.reduce((sum, donation) => sum + donation.amount, 0);
+    // Load currency rates from PayerService constant (no DI needed)
+    const { CURRENCIES } = await import('../../app/services/payer.service');
+
+    // Build conversion rates map
+    const conversionRates: { [key: string]: number } = {};
+    CURRENCIES.forEach(currency => {
+      conversionRates[currency.id] = currency.rateInShekel;
+    });
+
+    // Sum all amounts converted to shekels
+    return donations.reduce((sum, donation) => {
+      const rate = conversionRates[donation.currency] || 1;
+      return sum + (donation.amount * rate);
+    }, 0);
   }
 
   /**

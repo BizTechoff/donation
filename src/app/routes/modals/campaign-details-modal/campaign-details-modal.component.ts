@@ -52,12 +52,11 @@ export class CampaignDetailsModalComponent implements OnInit {
     private cdr: ChangeDetectorRef,
     private payerService: PayerService,
     public dialogRef: MatDialogRef<CampaignDetailsModalComponent>
-  ) {
-    // Load currency types from service
-    this.currencyTypes = this.payerService.getCurrencyTypes();
-  }
+  ) {}
 
   async ngOnInit() {
+    // Load currency types from service
+    this.currencyTypes = await this.payerService.getCurrencyTypes();
     await this.initializeCampaign();
     await this.loadDropdownData();
   }
