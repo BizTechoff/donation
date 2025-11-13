@@ -342,9 +342,34 @@
         color: #388e3c;
       }
 
+      &.type-payment {
+        background: #e0f2f1;
+        color: #00796b;
+      }
+
       &.type-campaign {
         background: #fff3e0;
         color: #f57c00;
+      }
+
+      &.type-company {
+        background: #fce4ec;
+        color: #c2185b;
+      }
+
+      &.type-bank {
+        background: #e1f5fe;
+        color: #0277bd;
+      }
+
+      &.type-organization {
+        background: #f1f8e9;
+        color: #558b2f;
+      }
+
+      &.type-circle {
+        background: #ede7f6;
+        color: #512da8;
       }
 
       &.type-certificate {
@@ -353,8 +378,8 @@
       }
 
       &.type-reminder {
-        background: #fce4ec;
-        color: #c2185b;
+        background: #fff9c4;
+        color: #f57f17;
       }
     }
   }

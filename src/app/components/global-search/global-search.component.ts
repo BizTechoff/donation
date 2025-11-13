@@ -1,22 +1,32 @@
-import { Component, OnInit, OnDestroy, HostListener, ElementRef } from '@angular/core';
+import { Component, ElementRef, HostListener, OnDestroy, OnInit } from '@angular/core';
+import { openDialog } from 'common-ui-elements';
+import { remult } from 'remult';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
-import { remult } from 'remult';
-import { Donor } from '../../../shared/entity/donor';
-import { Donation } from '../../../shared/entity/donation';
+import { Bank } from '../../../shared/entity/bank';
 import { Campaign } from '../../../shared/entity/campaign';
 import { Certificate } from '../../../shared/entity/certificate';
+import { Circle } from '../../../shared/entity/circle';
+import { Company } from '../../../shared/entity/company';
+import { Donation } from '../../../shared/entity/donation';
+import { Donor } from '../../../shared/entity/donor';
+import { Organization } from '../../../shared/entity/organization';
+import { Payment } from '../../../shared/entity/payment';
 import { Reminder } from '../../../shared/entity/reminder';
 import { User } from '../../../shared/entity/user';
-import { openDialog } from 'common-ui-elements';
-import { DonorDetailsModalComponent } from '../../routes/modals/donor-details-modal/donor-details-modal.component';
-import { DonationDetailsModalComponent } from '../../routes/modals/donation-details-modal/donation-details-modal.component';
+import { BankDetailsModalComponent } from '../../routes/modals/bank-details-modal/bank-details-modal.component';
 import { CampaignDetailsModalComponent } from '../../routes/modals/campaign-details-modal/campaign-details-modal.component';
 import { CertificateDetailsModalComponent } from '../../routes/modals/certificate-details-modal/certificate-details-modal.component';
+import { CircleDetailsModalComponent } from '../../routes/modals/circle-details-modal/circle-details-modal.component';
+import { CompanyDetailsModalComponent } from '../../routes/modals/company-details-modal/company-details-modal.component';
+import { DonationDetailsModalComponent } from '../../routes/modals/donation-details-modal/donation-details-modal.component';
+import { DonorDetailsModalComponent } from '../../routes/modals/donor-details-modal/donor-details-modal.component';
+import { OrganizationDetailsModalComponent } from '../../routes/modals/organization-details-modal/organization-details-modal.component';
+import { PaymentDetailsModalComponent } from '../../routes/modals/payment-details-modal/payment-details-modal.component';
 import { ReminderDetailsModalComponent } from '../../routes/modals/reminder-details-modal/reminder-details-modal.component';
 
 interface SearchResult {
-  type: 'donor' | 'donation' | 'campaign' | 'certificate' | 'reminder';
+  type: 'donor' | 'donation' | 'campaign' | 'certificate' | 'reminder' | 'payment' | 'company' | 'bank' | 'organization' | 'circle';
   id: string;
   title: string;
   subtitle?: string;
@@ -50,6 +60,11 @@ export class GlobalSearchComponent implements OnInit, OnDestroy {
   private campaignRepo = remult.repo(Campaign);
   private certificateRepo = remult.repo(Certificate);
   private reminderRepo = remult.repo(Reminder);
+  private paymentRepo = remult.repo(Payment);
+  private companyRepo = remult.repo(Company);
+  private bankRepo = remult.repo(Bank);
+  private organizationRepo = remult.repo(Organization);
+  private circleRepo = remult.repo(Circle);
   private userRepo = remult.repo(User);
   private saveTimeout: any;
   private resizeObserver?: ResizeObserver;
@@ -157,19 +172,29 @@ export class GlobalSearchComponent implements OnInit, OnDestroy {
       const trimmedTerm = term.trim().toLowerCase();
 
       // Search in parallel
-      const [donors, donations, campaigns, certificates, reminders] = await Promise.all([
+      const [donors, donations, campaigns, certificates, reminders, payments, companies, banks, organizations, circles] = await Promise.all([
         this.searchDonors(trimmedTerm),
         this.searchDonations(trimmedTerm),
         this.searchCampaigns(trimmedTerm),
         this.searchCertificates(trimmedTerm),
-        this.searchReminders(trimmedTerm)
+        this.searchReminders(trimmedTerm),
+        this.searchPayments(trimmedTerm),
+        this.searchCompanies(trimmedTerm),
+        this.searchBanks(trimmedTerm),
+        this.searchOrganizations(trimmedTerm),
+        this.searchCircles(trimmedTerm)
       ]);
 
-      // Combine and limit results
+      // Combine and limit results - organized by category
       this.searchResults = [
         ...donors.slice(0, 3),
-        ...donations.slice(0, 3),
-        ...campaigns.slice(0, 3),
+        ...donations.slice(0, 2),
+        ...payments.slice(0, 2),
+        ...campaigns.slice(0, 2),
+        ...companies.slice(0, 2),
+        ...banks.slice(0, 2),
+        ...organizations.slice(0, 2),
+        ...circles.slice(0, 2),
         ...certificates.slice(0, 2),
         ...reminders.slice(0, 2)
       ];
@@ -182,17 +207,19 @@ export class GlobalSearchComponent implements OnInit, OnDestroy {
   }
 
   private async searchDonors(term: string): Promise<SearchResult[]> {
+    console.log('searchDonors', 1)
     const donors = await this.donorRepo.find({
       where: {
         $or: [
           { firstName: { $contains: term } },
           { lastName: { $contains: term } },
-          { fullName: { $contains: term } }
+          { firstNameEnglish: { $contains: term } },
+          { lastNameEnglish: { $contains: term } }
         ]
       },
       limit: 5
     });
-
+    console.log('searchDonors', 2, donors.length)
     return donors.map(donor => ({
       type: 'donor' as const,
       id: donor.id,
@@ -220,7 +247,7 @@ export class GlobalSearchComponent implements OnInit, OnDestroy {
       const donorName = d.donor?.fullName || '';
       const campaignName = d.campaign?.name || '';
       return donorName.toLowerCase().includes(term) ||
-             campaignName.toLowerCase().includes(term);
+        campaignName.toLowerCase().includes(term);
     });
 
     return filtered.slice(0, 5).map(donation => ({
@@ -295,6 +322,115 @@ export class GlobalSearchComponent implements OnInit, OnDestroy {
     }));
   }
 
+  private async searchPayments(term: string): Promise<SearchResult[]> {
+    // Search by payment identifier or reference
+    const payments = await this.paymentRepo.find({
+      where: {
+        $or: [
+          { paymentIdentifier: { $contains: term } },
+          { reference: { $contains: term } }
+        ]
+      },
+      include: { donation: { include: { donor: true } } },
+      limit: 5
+    });
+
+    return payments.map(payment => ({
+      type: 'payment' as const,
+      id: payment.id!,
+      title: `תשלום - ${payment.amount} ₪`,
+      subtitle: `${payment.paymentIdentifier || payment.reference || ''} • ${payment.donation?.donor?.fullName || ''}`,
+      icon: 'receipt',
+      entity: payment
+    }));
+  }
+
+  private async searchCompanies(term: string): Promise<SearchResult[]> {
+    const companies = await this.companyRepo.find({
+      where: {
+        $or: [
+          { name: { $contains: term } },
+          { number: { $contains: term } }
+        ]
+      },
+      include: { place: true },
+      limit: 5
+    });
+
+    return companies.map(company => ({
+      type: 'company' as const,
+      id: company.id,
+      title: company.name,
+      subtitle: `${company.number || ''} ${company.place?.city ? '• ' + company.place.city : ''}`,
+      icon: 'business',
+      entity: company
+    }));
+  }
+
+  private async searchBanks(term: string): Promise<SearchResult[]> {
+    const banks = await this.bankRepo.find({
+      where: {
+        name: { $contains: term }
+      },
+      include: { place: true },
+      limit: 5
+    });
+
+    return banks.map(bank => ({
+      type: 'bank' as const,
+      id: bank.id,
+      title: bank.name,
+      subtitle: bank.place?.city || '',
+      icon: 'account_balance',
+      entity: bank
+    }));
+  }
+
+  private async searchOrganizations(term: string): Promise<SearchResult[]> {
+    console.log('searchOrganizations',1,term)
+    const organizations = await this.organizationRepo.find({
+      where: {
+        $or: [
+          { name: { $contains: term } },
+          { payerIdentifier: { $contains: term } }
+        ]
+      },
+      include: { place: true },
+      limit: 5
+    });
+console.log('searchOrganizations',2, organizations.length)
+    return organizations.map(org => ({
+      type: 'organization' as const,
+      id: org.id,
+      title: org.name,
+      subtitle: org.place?.city || '',
+      icon: 'corporate_fare',
+      entity: org
+    }));
+  }
+
+  private async searchCircles(term: string): Promise<SearchResult[]> {
+    const circles = await this.circleRepo.find({
+      where: {
+        $or: [
+          { name: { $contains: term } },
+          { nameEnglish: { $contains: term } },
+          { description: { $contains: term } }
+        ]
+      },
+      limit: 5
+    });
+
+    return circles.map(circle => ({
+      type: 'circle' as const,
+      id: circle.id,
+      title: circle.name,
+      subtitle: circle.description || circle.nameEnglish || '',
+      icon: circle.icon || 'group',
+      entity: circle
+    }));
+  }
+
   openResult(result: SearchResult) {
     switch (result.type) {
       case 'donor':
@@ -320,6 +456,31 @@ export class GlobalSearchComponent implements OnInit, OnDestroy {
       case 'reminder':
         openDialog(ReminderDetailsModalComponent, (dlg) => {
           dlg.args = { reminderId: result.id };
+        });
+        break;
+      case 'payment':
+        openDialog(PaymentDetailsModalComponent, (dlg) => {
+          dlg.args = { paymentId: result.id };
+        });
+        break;
+      case 'company':
+        openDialog(CompanyDetailsModalComponent, (dlg) => {
+          dlg.args = { companyId: result.id };
+        });
+        break;
+      case 'bank':
+        openDialog(BankDetailsModalComponent, (dlg) => {
+          dlg.args = { bankId: result.id };
+        });
+        break;
+      case 'organization':
+        openDialog(OrganizationDetailsModalComponent, (dlg) => {
+          dlg.args = { organizationId: result.id };
+        });
+        break;
+      case 'circle':
+        openDialog(CircleDetailsModalComponent, (dlg) => {
+          dlg.args = { circleId: result.id };
         });
         break;
     }
@@ -360,7 +521,12 @@ export class GlobalSearchComponent implements OnInit, OnDestroy {
       donation: 'payments',
       campaign: 'campaign',
       certificate: 'description',
-      reminder: 'notifications'
+      reminder: 'notifications',
+      payment: 'receipt',
+      company: 'business',
+      bank: 'account_balance',
+      organization: 'corporate_fare',
+      circle: 'group'
     };
     return icons[type] || 'search';
   }
@@ -371,7 +537,12 @@ export class GlobalSearchComponent implements OnInit, OnDestroy {
       donation: 'תרומה',
       campaign: 'קמפיין',
       certificate: 'תעודה',
-      reminder: 'תזכורת'
+      reminder: 'תזכורת',
+      payment: 'תשלום',
+      company: 'חברה',
+      bank: 'בנק',
+      organization: 'ארגון',
+      circle: 'חוג'
     };
     return labels[type] || '';
   }
@@ -391,6 +562,10 @@ export class GlobalSearchComponent implements OnInit, OnDestroy {
         }
         if (settings.minimized !== undefined) {
           this.isMinimized = settings.minimized;
+          // If was minimized, show it as minimized
+          if (settings.minimized) {
+            this.isVisible = true;
+          }
         }
         // Width and height will be applied via CSS if saved
         if (settings.width && settings.height) {
