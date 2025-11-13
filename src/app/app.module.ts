@@ -112,6 +112,7 @@ import { NeighborhoodSelectionModalComponent } from './routes/modals/neighborhoo
 import { NeighborhoodDetailsModalComponent } from './routes/modals/neighborhood-details-modal/neighborhood-details-modal.component'
 import { ReminderSnoozeModalComponent } from './routes/modals/reminder-snooze-modal/reminder-snooze-modal.component'
 import { CampaignDonationsModalComponent } from './routes/modals/campaign-donations-modal/campaign-donations-modal.component'
+import { GlobalSearchComponent } from './components/global-search/global-search.component'
 
 @NgModule({
   declarations: [
@@ -189,7 +190,8 @@ import { CampaignDonationsModalComponent } from './routes/modals/campaign-donati
     NeighborhoodSelectionModalComponent,
     NeighborhoodDetailsModalComponent,
     ReminderSnoozeModalComponent,
-    CampaignDonationsModalComponent
+    CampaignDonationsModalComponent,
+    GlobalSearchComponent
   ],
   imports: [
     BrowserModule,

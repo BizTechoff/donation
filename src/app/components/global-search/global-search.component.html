@@ -1,0 +1,115 @@
+<!-- Floating Search Window -->
+<div
+  class="global-search-container"
+  *ngIf="isVisible"
+  [class.minimized]="isMinimized"
+  [style.left.px]="position.x"
+  [style.top.px]="position.y"
+  (mousedown)="onMouseDown($event)">
+
+  <!-- Minimized View -->
+  <div class="minimized-view" *ngIf="isMinimized" (click)="maximize()">
+    <mat-icon>search</mat-icon>
+    <span>חיפוש גלובלי</span>
+  </div>
+
+  <!-- Full View -->
+  <div class="search-window" *ngIf="!isMinimized">
+    <!-- Header (draggable area) -->
+    <div class="search-header">
+      <mat-icon class="search-icon">search</mat-icon>
+      <span class="search-title">חיפוש גלובלי</span>
+      <div class="search-actions">
+        <button mat-icon-button (click)="minimize()" matTooltip="מזער" class="action-btn">
+          <mat-icon>minimize</mat-icon>
+        </button>
+        <button mat-icon-button (click)="close()" matTooltip="סגור" class="action-btn close-btn">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+    </div>
+
+    <!-- Search Input -->
+    <div class="search-input-container">
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-icon matPrefix>search</mat-icon>
+        <input
+          matInput
+          class="global-search-input"
+          [(ngModel)]="searchTerm"
+          (input)="onSearchChange(searchTerm)"
+          placeholder="חפש תורמים, תרומות, קמפיינים..."
+          autocomplete="off">
+        <button mat-icon-button matSuffix *ngIf="searchTerm" (click)="searchTerm = ''; searchResults = []">
+          <mat-icon>clear</mat-icon>
+        </button>
+      </mat-form-field>
+      <div class="keyboard-hint">
+        <kbd>Ctrl</kbd> + <kbd>K</kbd> לפתיחה מהירה
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div class="search-loading" *ngIf="isLoading">
+      <mat-spinner diameter="30"></mat-spinner>
+      <span>מחפש...</span>
+    </div>
+
+    <!-- Results -->
+    <div class="search-results" *ngIf="!isLoading && searchResults.length > 0">
+      <div
+        class="search-result-item"
+        *ngFor="let result of searchResults; let i = index"
+        [class.selected]="i === selectedIndex"
+        (click)="openResult(result)"
+        (mouseenter)="selectedIndex = i">
+
+        <div class="result-icon">
+          <mat-icon>{{ result.icon }}</mat-icon>
+        </div>
+
+        <div class="result-content">
+          <div class="result-title">{{ result.title }}</div>
+          <div class="result-subtitle" *ngIf="result.subtitle">{{ result.subtitle }}</div>
+        </div>
+
+        <div class="result-type">
+          <span class="type-badge" [class]="'type-' + result.type">
+            {{ getTypeLabel(result.type) }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- No Results -->
+    <div class="search-no-results" *ngIf="!isLoading && searchTerm.length >= 2 && searchResults.length === 0">
+      <mat-icon>search_off</mat-icon>
+      <p>לא נמצאו תוצאות עבור "{{ searchTerm }}"</p>
+    </div>
+
+    <!-- Empty State -->
+    <div class="search-empty-state" *ngIf="!isLoading && searchTerm.length < 2 && searchResults.length === 0">
+      <mat-icon>info</mat-icon>
+      <p>הקלד לפחות 2 תווים לחיפוש</p>
+      <div class="search-tips">
+        <p><strong>טיפים לחיפוש:</strong></p>
+        <ul>
+          <li>חפש לפי שם תורם, קמפיין או סכום</li>
+          <li>השתמש ב-↑↓ לניווט ו-Enter לפתיחה</li>
+          <li>לחץ ESC לסגירה</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Floating Action Button (always visible when search is closed) -->
+<button
+  mat-fab
+  class="global-search-fab"
+  *ngIf="!isVisible"
+  (click)="toggle()"
+  matTooltip="חיפוש גלובלי (Ctrl+K)"
+  matTooltipPosition="left">
+  <mat-icon>search</mat-icon>
+</button>

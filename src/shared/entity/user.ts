@@ -132,6 +132,13 @@ export class User extends IdEntity {
     reports?: {
       lastSelectedTab?: 'general' | 'donations' | 'payments' | 'yearly' | 'blessings';
     };
+    globalSearch?: {
+      x?: number;
+      y?: number;
+      width?: number;
+      height?: number;
+      minimized?: boolean;
+    };
   };
 
   @Fields.number({

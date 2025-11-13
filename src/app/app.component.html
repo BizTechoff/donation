@@ -87,4 +87,7 @@
     <span (click)="this.openBizTechoff()"><i>Biz</i>Techoff™v{{ this.version }}</span>
     <!-- </ngx-marquee> -->
   </div>
+
+  <!-- Global Search Component - Always available -->
+  <app-global-search *ngIf="remult.authenticated()"></app-global-search>
 </div>
