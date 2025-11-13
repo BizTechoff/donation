@@ -934,24 +934,66 @@ export class ReportsComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Load all invitees (donors)
+    // 🎯 Apply global filters to invited donors list
+    let filteredInvitedDonorIds = [...campaign.invitedDonorIds];
+    const globalFilters = this.globalFilterService.currentFilters;
+
+    // Filter by city
+    if (globalFilters.cityIds && globalFilters.cityIds.length > 0) {
+      const donorPlaceRepo = remult.repo(DonorPlace);
+      const donorPlaces = await donorPlaceRepo.find({
+        where: {
+          isPrimary: true,
+          isActive: true,
+          donorId: { $in: filteredInvitedDonorIds }
+        },
+        include: { place: true }
+      });
+
+      const cityFilteredDonorIds = donorPlaces
+        .filter(dp => dp.place?.city && globalFilters.cityIds!.includes(dp.place.city))
+        .map(dp => dp.donorId!)
+        .filter(Boolean);
+
+      filteredInvitedDonorIds = filteredInvitedDonorIds.filter(id => cityFilteredDonorIds.includes(id));
+      console.log(`🏙️ City filter applied: ${campaign.invitedDonorIds.length} → ${filteredInvitedDonorIds.length} donors`);
+    }
+
+    // Filter by donor type
+    if (globalFilters.donorTypeIds && globalFilters.donorTypeIds.length > 0) {
+      // This would require loading donors first - for now skip or implement if needed
+      console.log('⚠️ Donor type filter not yet implemented for Blessings Report');
+    }
+
+    // If no donors left after filtering, return empty
+    if (filteredInvitedDonorIds.length === 0) {
+      this.blessingReportData = [];
+      this.blessingsTotalCount = 0;
+      this.blessingsTotalPages = 0;
+      return;
+    }
+
+    // Load all invitees (donors) - now filtered
     const invitedDonors = await this.donorRepo.find({
-      where: { id: { $in: campaign.invitedDonorIds } }
+      where: { id: { $in: filteredInvitedDonorIds } }
     });
 
-    // Load all blessings for this campaign
+    // Load all blessings for this campaign (only for filtered donors)
     const blessings = await this.blessingRepo.find({
-      where: { campaignId: this.filters.selectedCampaign },
+      where: {
+        campaignId: this.filters.selectedCampaign,
+        donorId: { $in: filteredInvitedDonorIds }
+      },
       include: {
         donor: true,
         blessingBookType: true
       }
     });
 
-    // Load donor contacts for all invitees
+    // Load donor contacts for filtered invitees only
     const donorContactRepo = remult.repo(DonorContact);
     const donorContacts = await donorContactRepo.find({
-      where: { donorId: { $in: campaign.invitedDonorIds } }
+      where: { donorId: { $in: filteredInvitedDonorIds } }
     });
 
     // Create map of contacts by donor ID
