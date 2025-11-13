@@ -106,15 +106,14 @@ export class CampaignsListComponent implements OnInit, OnDestroy {
           isActive: this.filterActive ? this.filterActive === 'true' : undefined
         };
 
-        const globalFilters = this.globalFilterService.currentFilters;
-
-        console.log('refreshData: Fetching campaigns with globalFilters:', globalFilters, 'localFilters:', localFilters, 'page:', this.currentPage, 'sorting:', this.sortColumns);
+        console.log('refreshData: Fetching campaigns with localFilters:', localFilters, 'page:', this.currentPage, 'sorting:', this.sortColumns);
 
         // Get total count, summary data, and campaigns from server
+        // Global filters are fetched from user.settings in the backend
         const [count, summary, campaigns] = await Promise.all([
-          CampaignController.countFilteredCampaigns(globalFilters, localFilters),
-          CampaignController.getSummaryForFilteredCampaigns(globalFilters, localFilters),
-          CampaignController.findFilteredCampaigns(globalFilters, localFilters, this.currentPage, this.pageSize, this.sortColumns)
+          CampaignController.countFilteredCampaigns(localFilters),
+          CampaignController.getSummaryForFilteredCampaigns(localFilters),
+          CampaignController.findFilteredCampaigns(localFilters, this.currentPage, this.pageSize, this.sortColumns)
         ]);
 
         this.totalCount = count;

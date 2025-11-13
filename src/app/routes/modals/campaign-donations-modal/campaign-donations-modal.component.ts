@@ -7,9 +7,7 @@ import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { HebrewDateService } from '../../../services/hebrew-date.service';
-import { GlobalFilterService } from '../../../services/global-filter.service';
 import { DonorService } from '../../../services/donor.service';
-import { Subscription } from 'rxjs';
 
 export interface CampaignDonationsModalArgs {
   campaignId: string;
@@ -24,7 +22,7 @@ export interface CampaignDonationsModalArgs {
   templateUrl: './campaign-donations-modal.component.html',
   styleUrls: ['./campaign-donations-modal.component.scss']
 })
-export class CampaignDonationsModalComponent implements OnInit, OnDestroy {
+export class CampaignDonationsModalComponent implements OnInit {
   args!: CampaignDonationsModalArgs;
 
   campaign?: Campaign;
@@ -38,7 +36,6 @@ export class CampaignDonationsModalComponent implements OnInit, OnDestroy {
   donationMethodRepo = remult.repo(DonationMethod);
 
   loading = false;
-  private subscription = new Subscription();
 
   // Filters
   filterText = '';
@@ -72,25 +69,13 @@ export class CampaignDonationsModalComponent implements OnInit, OnDestroy {
     private cdr: ChangeDetectorRef,
     private hebrewDateService: HebrewDateService,
     public dialogRef: MatDialogRef<CampaignDonationsModalComponent>,
-    private globalFilterService: GlobalFilterService,
     private donorService: DonorService
   ) {}
 
   async ngOnInit() {
-    // Subscribe to global filter changes
-    this.subscription.add(
-      this.globalFilterService.filters$.subscribe(() => {
-        this.loadDonations();
-      })
-    );
-
     await this.loadCampaign();
     await this.loadDropdownData();
     await this.loadDonations();
-  }
-
-  ngOnDestroy() {
-    this.subscription.unsubscribe();
   }
 
   async loadCampaign() {

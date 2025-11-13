@@ -55,7 +55,7 @@ export class DonorGiftDetailsModalComponent implements OnInit {
       if (this.args.donorGiftId === 'new') {
         this.isNew = true;
         this.donorGift = this.donorGiftRepo.create();
-        this.donorGift.deliveryDate = new Date();
+        // Don't set default deliveryDate - it's optional now
 
         // Pre-select donor if provided
         if (this.args.donorId) {
@@ -163,6 +163,13 @@ export class DonorGiftDetailsModalComponent implements OnInit {
     }
   }
 
+  onDeliveryStatusChange(isDelivered: boolean) {
+    // When marked as delivered, always set deliveryDate to current date
+    if (isDelivered) {
+      this.donorGift.deliveryDate = new Date();
+    }
+  }
+
   async save() {
     try {
       // Validation
@@ -176,10 +183,7 @@ export class DonorGiftDetailsModalComponent implements OnInit {
         return;
       }
 
-      if (!this.donorGift.deliveryDate) {
-        this.ui.error('נא להזין תאריך מסירה');
-        return;
-      }
+      // deliveryDate is now optional - no validation needed
 
       this.loading = true;
 
@@ -212,14 +216,22 @@ export class DonorGiftDetailsModalComponent implements OnInit {
         `${this.selectedDonor.firstName || ''} ${this.selectedDonor.lastName || ''}`.trim() :
         'תורם';
 
-      const reminderId = await this.ui.reminderDetailsDialog('new', {
+      // Build reminder args - only include reminderDate if deliveryDate exists
+      const reminderArgs: any = {
         donorId: this.donorGift.donorId,
-        reminderDate: this.donorGift.deliveryDate,
+        reminderType: 'gift',
         sourceEntity: 'donor_gift',
         donorName: donorName,
         sourceEntityType: 'donor_gift',
         sourceEntityId: this.donorGift.id
-      });
+      };
+
+      // Only pass deliveryDate if it exists
+      if (this.donorGift.deliveryDate) {
+        reminderArgs.reminderDate = this.donorGift.deliveryDate;
+      }
+
+      const reminderId = await this.ui.reminderDetailsDialog('new', reminderArgs);
 
       if (reminderId && typeof reminderId === 'string') {
         // Reminder is now linked via sourceEntityType/sourceEntityId - no need to save gift

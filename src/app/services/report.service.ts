@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { ReportController, GroupedReportResponse, ReportFilters } from '../../shared/controllers/report.controller';
+import { ReportController, GroupedReportResponse, ReportFilters, PaymentReportData, YearlySummaryData } from '../../shared/controllers/report.controller';
 
 @Injectable({
   providedIn: 'root'
@@ -23,5 +23,21 @@ export class ReportService {
    */
   async getAvailableHebrewYears(): Promise<string[]> {
     return await ReportController.getAvailableHebrewYears();
+  }
+
+  /**
+   * Get Payments Report (Commitment vs Actual)
+   * Applies global filters from user.settings automatically
+   */
+  async getPaymentsReport(conversionRates: { [currency: string]: number }): Promise<PaymentReportData[]> {
+    return await ReportController.getPaymentsReport(conversionRates);
+  }
+
+  /**
+   * Get Yearly Summary Report
+   * Applies global filters from user.settings automatically
+   */
+  async getYearlySummaryReport(conversionRates: { [currency: string]: number }): Promise<YearlySummaryData[]> {
+    return await ReportController.getYearlySummaryReport(conversionRates);
   }
 }

@@ -15,7 +15,6 @@ export class ReminderController {
   @BackendMethod({ allowed: Allow.authenticated })
   static async findFilteredReminders(
     filters: {
-      globalFilters?: GlobalFilters
       dateFrom?: Date
       dateTo?: Date
       searchTerm?: string
@@ -60,7 +59,6 @@ export class ReminderController {
   @BackendMethod({ allowed: Allow.authenticated })
   static async countFilteredReminders(
     filters: {
-      globalFilters?: GlobalFilters
       dateFrom?: Date
       dateTo?: Date
       searchTerm?: string
@@ -78,7 +76,6 @@ export class ReminderController {
   @BackendMethod({ allowed: Allow.authenticated })
   static async getSummaryForFilteredReminders(
     filters: {
-      globalFilters?: GlobalFilters
       dateFrom?: Date
       dateTo?: Date
       searchTerm?: string
@@ -125,7 +122,6 @@ export class ReminderController {
    */
   private static async buildWhereClause(
     filters: {
-      globalFilters?: GlobalFilters
       dateFrom?: Date
       dateTo?: Date
       searchTerm?: string
@@ -135,14 +131,23 @@ export class ReminderController {
   ): Promise<any> {
     const where: any = { isActive: true }
 
+    // 🎯 Fetch global filters from user.settings
+    const currentUserId = remult.user?.id;
+    let globalFilters: GlobalFilters | undefined = undefined;
+    if (currentUserId) {
+      const { User } = await import('../entity/user');
+      const user = await remult.repo(User).findId(currentUserId);
+      globalFilters = user?.settings?.globalFilters;
+    }
+
     // Apply reminder type filter
     if (filters.reminderType && filters.reminderType.trim() !== '') {
       where.type = filters.reminderType
     }
 
     // Apply global filters - get filtered donor IDs
-    if (filters.globalFilters) {
-      const donors = await DonorController.findFilteredDonors(filters.globalFilters)
+    if (globalFilters) {
+      const donors = await DonorController.findFilteredDonors()
       const filteredDonorIds = donors.map(d => d.id)
 
       if (filteredDonorIds.length === 0) {
@@ -484,11 +489,18 @@ export class ReminderController {
    * Filters by nextReminderDate <= today
    */
   @BackendMethod({ allowed: Allow.authenticated })
-  static async findActiveReminders(
-    globalFilters?: GlobalFilters
-  ): Promise<Reminder[]> {
+  static async findActiveReminders(): Promise<Reminder[]> {
     console.log('ReminderController.findActiveReminders');
     const reminderRepo = remult.repo(Reminder)
+
+    // 🎯 Fetch global filters from user.settings
+    const currentUserId = remult.user?.id;
+    let globalFilters: GlobalFilters | undefined = undefined;
+    if (currentUserId) {
+      const { User } = await import('../entity/user');
+      const user = await remult.repo(User).findId(currentUserId);
+      globalFilters = user?.settings?.globalFilters;
+    }
 
     // Build where clause
     const where: any = {
@@ -500,7 +512,7 @@ export class ReminderController {
     if (globalFilters && (globalFilters.countryIds?.length || globalFilters.cityIds?.length ||
         globalFilters.neighborhoodIds?.length || globalFilters.campaignIds?.length ||
         globalFilters.targetAudienceIds?.length)) {
-      const donors = await DonorController.findFilteredDonors(globalFilters)
+      const donors = await DonorController.findFilteredDonors()
       const filteredDonorIds = donors.map(d => d.id)
 
       if (filteredDonorIds.length === 0) {

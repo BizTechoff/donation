@@ -108,8 +108,8 @@ export class AppComponent implements OnInit {
           }
 
           // Filter reminders by global filters (check if donor matches)
-          const globalFilters = this.globalFilterService.currentFilters
-          const donors = await DonorController.findFilteredDonors(globalFilters)
+          // Global filters are fetched from user.settings in the backend
+          const donors = await DonorController.findFilteredDonors()
           const filteredDonorIds = new Set(donors.map(d => d.id))
 
           const filteredReminders = reminders.filter((r: Reminder) =>

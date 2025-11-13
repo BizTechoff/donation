@@ -11,9 +11,7 @@ import { BlessingTypeSelectionModalComponent } from '../blessing-type-selection-
 import { BlessingTextEditModalComponent } from '../blessing-text-edit-modal/blessing-text-edit-modal.component';
 import { ExcelExportService, ExcelColumn } from '../../../services/excel-export.service';
 import { DonorService } from '../../../services/donor.service';
-import { GlobalFilterService } from '../../../services/global-filter.service';
 import { DonorController } from '../../../../shared/controllers/donor.controller';
-import { Subscription } from 'rxjs';
 
 export interface CampaignBlessingBookModalArgs {
   campaignId: string;
@@ -39,7 +37,7 @@ export interface DonorBlessing {
   templateUrl: './campaign-blessing-book-modal.component.html',
   styleUrls: ['./campaign-blessing-book-modal.component.scss']
 })
-export class CampaignBlessingBookModalComponent implements OnInit, OnDestroy {
+export class CampaignBlessingBookModalComponent implements OnInit {
   args!: CampaignBlessingBookModalArgs;
 
   campaign?: Campaign;
@@ -53,7 +51,6 @@ export class CampaignBlessingBookModalComponent implements OnInit, OnDestroy {
   blessingTypeRepo = remult.repo(BlessingBookType);
 
   loading = false;
-  private subscription = new Subscription();
 
   // Maps for donor-related data
   donorEmailMap = new Map<string, string>();
@@ -81,24 +78,11 @@ export class CampaignBlessingBookModalComponent implements OnInit, OnDestroy {
     private cdr: ChangeDetectorRef,
     public dialogRef: MatDialogRef<CampaignBlessingBookModalComponent>,
     private excelService: ExcelExportService,
-    private donorService: DonorService,
-    private globalFilterService: GlobalFilterService
+    private donorService: DonorService
   ) {}
 
   async ngOnInit() {
-    // Subscribe to global filter changes
-    this.subscription.add(
-      this.globalFilterService.filters$.subscribe(() => {
-        console.log('CampaignBlessingBook: Global filters changed, reloading data');
-        this.loadData();
-      })
-    );
-
     await this.loadData();
-  }
-
-  ngOnDestroy() {
-    this.subscription.unsubscribe();
   }
 
   get modalTitle(): string {
@@ -226,10 +210,10 @@ export class CampaignBlessingBookModalComponent implements OnInit, OnDestroy {
         this.donorBlessings = Array.from(donorMap.values());
       } else {
         // Original behavior: show donors with donations, filtered by global filters
+        // Global filters are fetched from user.settings in the backend
 
-        // Get filtered donor IDs from global filters
-        const globalFilters = this.globalFilterService.currentFilters;
-        const filteredDonors = await DonorController.findFilteredDonors(globalFilters);
+        // Get filtered donor IDs from global filters (backend fetches from user.settings)
+        const filteredDonors = await DonorController.findFilteredDonors();
         const filteredDonorIds = filteredDonors.map(d => d.id);
 
         // Load donations for this campaign, filtered by global filters

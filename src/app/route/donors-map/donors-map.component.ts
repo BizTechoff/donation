@@ -95,7 +95,7 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     private router: Router,
     private ui: UIToolsService,
     private donorService: DonorService,
-    private filterService: GlobalFilterService,
+    private globalFilterService: GlobalFilterService,
     private geoService: GeoService,
     private cdr: ChangeDetectorRef,
     private sidebarService: SidebarService,
@@ -135,7 +135,7 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
     // Subscribe to global filter changes
     this.subscription.add(
-      this.filterService.filters$.subscribe((filters) => {
+      this.globalFilterService.filters$.subscribe((filters) => {
         console.log('DonorsMap: Global filters changed:', filters);
         this.loadData();
       })
@@ -159,10 +159,6 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.loading = true;
     try {
       console.time('Total map load time');
-
-      // Use DonorService to get filtered donor IDs efficiently
-      const currentFilters = this.filterService.currentFilters;
-      console.log('DonorsMap: Loading donors with filters:', JSON.stringify(currentFilters, null, 2));
 
       console.time('Get donor IDs');
       // Get only donor IDs without loading full donor objects - much faster!

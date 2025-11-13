@@ -1,13 +1,11 @@
-import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
 import { DialogConfig, openDialog } from 'common-ui-elements';
 import { remult } from 'remult';
-import { Subscription } from 'rxjs';
 import { Certificate, Donation, Donor, DonorPlace, Place, Reminder, User } from '../../../../shared/entity';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
 import { DonorService } from '../../../services/donor.service';
-import { GlobalFilterService } from '../../../services/global-filter.service';
 import { HebrewDateService } from '../../../services/hebrew-date.service';
 import { ReminderService } from '../../../services/reminder.service';
 import { DonationSelectionModalComponent } from '../donation-selection-modal/donation-selection-modal.component';
@@ -17,7 +15,7 @@ export interface ReminderDetailsModalArgs {
   reminderId?: string; // 'new' for new reminder or reminder ID for editing
   userId?: string; // Optional user ID to assign
   donorId?: string; // Optional donor ID to link
-  reminderType?: 'donation_followup' | 'thank_you' | 'receipt' | 'birthday' | 'holiday' | 'general' | 'meeting' | 'phone_call' | 'memorialDay' | 'memorial' | 'yahrzeit'; // Optional reminder type to initialize
+  reminderType?: 'donation_followup' | 'thank_you' | 'receipt' | 'birthday' | 'holiday' | 'general' | 'meeting' | 'phone_call' | 'memorialDay' | 'memorial' | 'yahrzeit' | 'gift'; // Optional reminder type to initialize
   reminderDate?: Date; // Optional date to initialize
   isRecurringYearly?: boolean; // Optional flag for yearly recurring reminder
   hideDonorField?: boolean; // Hide donor field when opened from entity that already has donor
@@ -37,7 +35,7 @@ export interface ReminderDetailsModalArgs {
   templateUrl: './reminder-details-modal.component.html',
   styleUrls: ['./reminder-details-modal.component.scss']
 })
-export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
+export class ReminderDetailsModalComponent implements OnInit {
   args!: ReminderDetailsModalArgs;
   changed = false;
 
@@ -85,12 +83,9 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
   // Special occasions (holidays and events)
   specialOccasionOptions: { value: string, label: string }[] = [];
 
-  private filterSubscription?: Subscription;
-
   constructor(
     public i18n: I18nService,
     private ui: UIToolsService,
-    private globalFilterService: GlobalFilterService,
     private hebrewDateService: HebrewDateService,
     private cdr: ChangeDetectorRef,
     public dialogRef: MatDialogRef<ReminderDetailsModalComponent>,
@@ -200,25 +195,11 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
         }
       }
 
-      // Subscribe to global filter changes
-      this.filterSubscription = this.globalFilterService.filters$.subscribe(() => {
-        this.applyGlobalFiltersToLists();
-      });
-
-      // Apply initial filters
-      this.applyGlobalFiltersToLists();
-
     } catch (error) {
       console.error('Error loading reminder:', error);
       this.ui.error('שגיאה בטעינת התזכורת');
     } finally {
       this.loading = false;
-    }
-  }
-
-  ngOnDestroy() {
-    if (this.filterSubscription) {
-      this.filterSubscription.unsubscribe();
     }
   }
 
@@ -737,11 +718,6 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
   }
 
 
-  applyGlobalFiltersToLists() {
-    // This method can be used for future filtering needs
-    // Currently no filtering is applied to lists in this component
-  }
-
   getDueDateLabel(): string {
     return this.i18n.terms.dueDate || 'תאריך יעד';
   }
@@ -758,6 +734,7 @@ export class ReminderDetailsModalComponent implements OnInit, OnDestroy {
       { value: 'general', label: terms.generalType },
       { value: 'meeting', label: terms.meetingType },
       { value: 'phone_call', label: terms.phoneCallType },
+      { value: 'gift', label: terms.giftReminderType },
       { value: 'memorialDay', label: terms.memorialDayType },
       { value: 'memorial', label: terms.memorialMonumentType },
       { value: 'yahrzeit', label: terms.yahrzeitType }

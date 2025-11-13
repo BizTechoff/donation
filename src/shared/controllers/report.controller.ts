@@ -67,12 +67,7 @@ export interface ReportFilters {
   // Sorting
   sortBy?: string;
   sortDirection?: 'asc' | 'desc';
-  // Global filters
-  globalFilterCampaignIds?: string[];
-  globalFilterDateFrom?: Date;
-  globalFilterDateTo?: Date;
-  globalFilterAmountMin?: number;
-  globalFilterAmountMax?: number;
+  // Global filters - removed, now fetched from user.settings in backend
 }
 
 export class ReportController {
@@ -85,6 +80,59 @@ export class ReportController {
     filters: ReportFilters
   ): Promise<GroupedReportResponse> {
     try {
+      // 🎯 Fetch global filters from user.settings
+      const currentUserId = remult.user?.id;
+      let globalFilterDonorIds: string[] | undefined = undefined;
+      let globalFilterCampaignIds: string[] | undefined = undefined;
+      let globalFilterDateFrom: Date | undefined = undefined;
+      let globalFilterDateTo: Date | undefined = undefined;
+      let globalFilterAmountMin: number | undefined = undefined;
+      let globalFilterAmountMax: number | undefined = undefined;
+      let globalFilterCityIds: string[] | undefined = undefined;
+
+      if (currentUserId) {
+        const { User } = await import('../entity/user');
+        const user = await remult.repo(User).findId(currentUserId);
+        const globalFilters = user?.settings?.globalFilters;
+
+        if (globalFilters) {
+          globalFilterDonorIds = globalFilters.donorIds;
+          globalFilterCampaignIds = globalFilters.campaignIds;
+          globalFilterDateFrom = globalFilters.dateFrom;
+          globalFilterDateTo = globalFilters.dateTo;
+          globalFilterAmountMin = globalFilters.amountMin;
+          globalFilterAmountMax = globalFilters.amountMax;
+          globalFilterCityIds = globalFilters.cityIds;
+        }
+      }
+
+      // 🏙️ If city filter is active, get donor IDs for those cities
+      if (globalFilterCityIds && globalFilterCityIds.length > 0) {
+        const donorPlaces = await remult.repo(DonorPlace).find({
+          where: {
+            isPrimary: true,
+            isActive: true
+          },
+          include: { place: true }
+        });
+
+        const cityFilteredDonorIds = donorPlaces
+          .filter(dp => dp.place?.city && globalFilterCityIds!.includes(dp.place.city))
+          .map(dp => dp.donorId!)
+          .filter(Boolean);
+
+        console.log(`  → City filter: Found ${cityFilteredDonorIds.length} donors in selected cities`);
+
+        // Merge with existing donor filter
+        if (globalFilterDonorIds && globalFilterDonorIds.length > 0) {
+          // Intersect: only donors that are in both lists
+          globalFilterDonorIds = globalFilterDonorIds.filter(id => cityFilteredDonorIds.includes(id));
+          console.log(`  → After intersecting with donor filter: ${globalFilterDonorIds.length} donors`);
+        } else {
+          globalFilterDonorIds = cityFilteredDonorIds;
+        }
+      }
+
       // Get current Hebrew year
       const currentHebrewYear = await HebrewDateController.getCurrentHebrewYear();
 
@@ -173,6 +221,15 @@ export class ReportController {
         console.log(`  → Multi-donor filter: ${before} → ${filteredDonations.length} (${filters.selectedDonorIds.length} donors selected)`);
       }
 
+      // 🎯 Apply global donor filter (from user.settings)
+      if (globalFilterDonorIds && globalFilterDonorIds.length > 0) {
+        const before = filteredDonations.length;
+        filteredDonations = filteredDonations.filter(d =>
+          d.donorId && globalFilterDonorIds!.includes(d.donorId)
+        );
+        console.log(`  → Global donor filter: ${before} → ${filteredDonations.length} (${globalFilterDonorIds.length} donors in global filter)`);
+      }
+
       if (filters.selectedCampaign) {
         const before = filteredDonations.length;
         filteredDonations = filteredDonations.filter(d => d.campaignId === filters.selectedCampaign);
@@ -193,31 +250,31 @@ export class ReportController {
         console.log(`  → Donor type filter: ${before} → ${filteredDonations.length}`);
       }
 
-      // Apply global filters
-      if (filters.globalFilterCampaignIds && filters.globalFilterCampaignIds.length > 0) {
+      // Apply global filters (from user.settings)
+      if (globalFilterCampaignIds && globalFilterCampaignIds.length > 0) {
         const before = filteredDonations.length;
         filteredDonations = filteredDonations.filter(d =>
-          d.campaignId && filters.globalFilterCampaignIds!.includes(d.campaignId)
+          d.campaignId && globalFilterCampaignIds!.includes(d.campaignId)
         );
         console.log(`  → Global campaign filter: ${before} → ${filteredDonations.length}`);
       }
 
-      if (filters.globalFilterDateFrom || filters.globalFilterDateTo) {
+      if (globalFilterDateFrom || globalFilterDateTo) {
         const before = filteredDonations.length;
         filteredDonations = filteredDonations.filter(d => {
           const donationDate = new Date(d.donationDate);
-          if (filters.globalFilterDateFrom && donationDate < filters.globalFilterDateFrom) return false;
-          if (filters.globalFilterDateTo && donationDate > filters.globalFilterDateTo) return false;
+          if (globalFilterDateFrom && donationDate < globalFilterDateFrom) return false;
+          if (globalFilterDateTo && donationDate > globalFilterDateTo) return false;
           return true;
         });
         console.log(`  → Global date filter: ${before} → ${filteredDonations.length}`);
       }
 
-      if (filters.globalFilterAmountMin !== undefined || filters.globalFilterAmountMax !== undefined) {
+      if (globalFilterAmountMin !== undefined || globalFilterAmountMax !== undefined) {
         const before = filteredDonations.length;
         filteredDonations = filteredDonations.filter(d => {
-          if (filters.globalFilterAmountMin !== undefined && d.amount < filters.globalFilterAmountMin) return false;
-          if (filters.globalFilterAmountMax !== undefined && d.amount > filters.globalFilterAmountMax) return false;
+          if (globalFilterAmountMin !== undefined && d.amount < globalFilterAmountMin) return false;
+          if (globalFilterAmountMax !== undefined && d.amount > globalFilterAmountMax) return false;
           return true;
         });
         console.log(`  → Global amount filter: ${before} → ${filteredDonations.length}`);
@@ -511,7 +568,7 @@ export class ReportController {
   }
 
   private static normalizeCurrencyName(currency: string): string {
-    // Map Hebrew currency names to standard codes
+    // Map Hebrew currency names and variations to standard codes
     const hebrewToCode: { [key: string]: string } = {
       'דולר': 'USD',
       'אירו': 'EUR',
@@ -520,10 +577,24 @@ export class ReportController {
       'שקלים': 'ILS',
       'לירה': 'GBP',
       'לירה שטרלינג': 'GBP',
-      'פאונד': 'GBP'
+      'ליש"ט': 'GBP',
+      'פאונד': 'GBP',
+      'Shekel': 'ILS',
+      'Dollar': 'USD',
+      'Euro': 'EUR',
+      'Pound': 'GBP',
+      'euro': 'EUR',
+      'dollar': 'USD',
+      'shekel': 'ILS',
+      'pound': 'GBP'
     };
 
-    return hebrewToCode[currency] || currency;
+    // Return standard code if already in correct format, otherwise convert
+    const normalized = hebrewToCode[currency] || currency.toUpperCase();
+
+    // Ensure it's one of the valid codes
+    const validCodes = ['ILS', 'USD', 'EUR', 'GBP'];
+    return validCodes.includes(normalized) ? normalized : 'ILS';
   }
 
   private static async calculateCurrencySummary(
@@ -690,4 +761,401 @@ export class ReportController {
       return [];
     }
   }
+
+  /**
+   * Get Payments Report (Commitment vs Actual)
+   * Shows promised donations vs actual payments, grouped by donor
+   * Applies global filters from user.settings
+   */
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async getPaymentsReport(
+    conversionRates: { [currency: string]: number }
+  ): Promise<PaymentReportData[]> {
+    try {
+      // 🎯 Fetch global filters from user.settings
+      const currentUserId = remult.user?.id;
+      let globalFilterDonorIds: string[] | undefined = undefined;
+      let globalFilterCampaignIds: string[] | undefined = undefined;
+      let globalFilterDateFrom: Date | undefined = undefined;
+      let globalFilterDateTo: Date | undefined = undefined;
+      let globalFilterAmountMin: number | undefined = undefined;
+      let globalFilterAmountMax: number | undefined = undefined;
+      let globalFilterCityIds: string[] | undefined = undefined;
+
+      if (currentUserId) {
+        const { User } = await import('../entity/user');
+        const user = await remult.repo(User).findId(currentUserId);
+        const globalFilters = user?.settings?.globalFilters;
+
+        if (globalFilters) {
+          globalFilterDonorIds = globalFilters.donorIds;
+          globalFilterCampaignIds = globalFilters.campaignIds;
+          globalFilterDateFrom = globalFilters.dateFrom;
+          globalFilterDateTo = globalFilters.dateTo;
+          globalFilterAmountMin = globalFilters.amountMin;
+          globalFilterAmountMax = globalFilters.amountMax;
+          globalFilterCityIds = globalFilters.cityIds;
+        }
+      }
+
+      // 🏙️ If city filter is active, get donor IDs for those cities
+      if (globalFilterCityIds && globalFilterCityIds.length > 0) {
+        const donorPlaces = await remult.repo(DonorPlace).find({
+          where: {
+            isPrimary: true,
+            isActive: true
+          },
+          include: { place: true }
+        });
+
+        const cityFilteredDonorIds = donorPlaces
+          .filter(dp => dp.place?.city && globalFilterCityIds!.includes(dp.place.city))
+          .map(dp => dp.donorId!)
+          .filter(Boolean);
+
+        console.log(`  → City filter (Payments): Found ${cityFilteredDonorIds.length} donors in selected cities`);
+
+        // Merge with existing donor filter
+        if (globalFilterDonorIds && globalFilterDonorIds.length > 0) {
+          // Intersect: only donors that are in both lists
+          globalFilterDonorIds = globalFilterDonorIds.filter(id => cityFilteredDonorIds.includes(id));
+          console.log(`  → After intersecting with donor filter: ${globalFilterDonorIds.length} donors`);
+        } else {
+          globalFilterDonorIds = cityFilteredDonorIds;
+        }
+      }
+
+      // Load all donations with donor information
+      let donations = await remult.repo(Donation).find({
+        include: {
+          donor: true
+        },
+        orderBy: { donationDate: 'desc' }
+      });
+
+      console.log(`📊 Loaded ${donations.length} donations for payments report`);
+
+      // Apply global filters
+      if (globalFilterDonorIds && globalFilterDonorIds.length > 0) {
+        const before = donations.length;
+        donations = donations.filter(d => d.donorId && globalFilterDonorIds!.includes(d.donorId));
+        console.log(`  → Global donor filter: ${before} → ${donations.length}`);
+      }
+
+      if (globalFilterCampaignIds && globalFilterCampaignIds.length > 0) {
+        const before = donations.length;
+        donations = donations.filter(d => d.campaignId && globalFilterCampaignIds!.includes(d.campaignId));
+        console.log(`  → Global campaign filter: ${before} → ${donations.length}`);
+      }
+
+      if (globalFilterDateFrom || globalFilterDateTo) {
+        const before = donations.length;
+        donations = donations.filter(d => {
+          const donationDate = new Date(d.donationDate);
+          if (globalFilterDateFrom && donationDate < globalFilterDateFrom) return false;
+          if (globalFilterDateTo && donationDate > globalFilterDateTo) return false;
+          return true;
+        });
+        console.log(`  → Global date filter: ${before} → ${donations.length}`);
+      }
+
+      if (globalFilterAmountMin !== undefined || globalFilterAmountMax !== undefined) {
+        const before = donations.length;
+        donations = donations.filter(d => {
+          if (globalFilterAmountMin !== undefined && d.amount < globalFilterAmountMin) return false;
+          if (globalFilterAmountMax !== undefined && d.amount > globalFilterAmountMax) return false;
+          return true;
+        });
+        console.log(`  → Global amount filter: ${before} → ${donations.length}`);
+      }
+
+      // Load payments for all donations
+      const donationIds = donations.map(d => d.id!).filter(Boolean);
+      const payments = await remult.repo(Payment).find({
+        where: {
+          donationId: { $in: donationIds }
+        }
+      });
+
+      console.log(`📊 Loaded ${payments.length} payments`);
+
+      // Load donor details (addresses)
+      const uniqueDonorIds = [...new Set(donations.map(d => d.donorId).filter(Boolean))];
+      const donorDetailsMap = await ReportController.loadAllDonorDetails(uniqueDonorIds);
+
+      // Group by donor
+      const donorMap = new Map<string, {
+        donor: Donor;
+        totalCommitment: number; // Total promised (in shekel)
+        totalActual: number; // Total paid (in shekel)
+        donationCount: number;
+        lastDonationDate: Date;
+        address?: string;
+        city?: string;
+      }>();
+
+      // Process donations (commitments)
+      for (const donation of donations) {
+        if (!donation.donor) continue;
+
+        const donorId = donation.donor.id;
+        const amountInShekel = donation.amount * (conversionRates[donation.currency] || 1);
+
+        if (!donorMap.has(donorId)) {
+          const donorDetails = donorDetailsMap.get(donorId);
+
+          // Extract city from address
+          let city = '';
+          if (donorDetails?.address) {
+            const addressParts = donorDetails.address.trim().split(' ');
+            city = addressParts[addressParts.length - 1] || '';
+          }
+
+          donorMap.set(donorId, {
+            donor: donation.donor,
+            totalCommitment: 0,
+            totalActual: 0,
+            donationCount: 0,
+            lastDonationDate: donation.donationDate,
+            address: donorDetails?.address || '',
+            city: city
+          });
+        }
+
+        const data = donorMap.get(donorId)!;
+        data.totalCommitment += amountInShekel;
+        data.donationCount++;
+
+        // Update last donation date
+        if (donation.donationDate > data.lastDonationDate) {
+          data.lastDonationDate = donation.donationDate;
+        }
+      }
+
+      // Process payments (actual amounts)
+      for (const payment of payments) {
+        const donation = donations.find(d => d.id === payment.donationId);
+        if (!donation?.donor) continue;
+
+        const donorId = donation.donor.id;
+        const data = donorMap.get(donorId);
+        if (!data) continue;
+
+        // Convert payment to shekel
+        const amountInShekel = payment.amount * (conversionRates[donation.currency] || 1);
+        data.totalActual += amountInShekel;
+      }
+
+      // Convert to array and calculate remaining debt
+      const reportData: PaymentReportData[] = Array.from(donorMap.values())
+        .map(data => {
+          const remainingDebt = Math.max(0, data.totalCommitment - data.totalActual);
+          let status: 'fullyPaid' | 'partiallyPaid' | 'notPaid';
+
+          if (data.totalActual >= data.totalCommitment) {
+            status = 'fullyPaid';
+          } else if (data.totalActual > 0) {
+            status = 'partiallyPaid';
+          } else {
+            status = 'notPaid';
+          }
+
+          return {
+            donorName: data.donor.fullName || `${data.donor.firstName} ${data.donor.lastName}`,
+            promisedAmount: data.totalCommitment,
+            actualAmount: data.totalActual,
+            remainingDebt: remainingDebt,
+            status: status,
+            currency: 'ILS', // Always in shekel after conversion
+            address: data.address || '',
+            city: data.city || '',
+            lastDonationDate: data.lastDonationDate
+          };
+        })
+        .sort((a, b) => a.donorName.localeCompare(b.donorName, 'he'));
+
+      console.log(`✅ Generated ${reportData.length} payment report rows`);
+      return reportData;
+
+    } catch (error) {
+      console.error('Error in getPaymentsReport:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get Yearly Summary Report
+   * Shows donations grouped by year with currency breakdown
+   * Applies global filters from user.settings
+   */
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async getYearlySummaryReport(
+    conversionRates: { [currency: string]: number }
+  ): Promise<YearlySummaryData[]> {
+    try {
+      // 🎯 Fetch global filters from user.settings
+      const currentUserId = remult.user?.id;
+      let globalFilterDonorIds: string[] | undefined = undefined;
+      let globalFilterCampaignIds: string[] | undefined = undefined;
+      let globalFilterDateFrom: Date | undefined = undefined;
+      let globalFilterDateTo: Date | undefined = undefined;
+      let globalFilterAmountMin: number | undefined = undefined;
+      let globalFilterAmountMax: number | undefined = undefined;
+      let globalFilterCityIds: string[] | undefined = undefined;
+
+      if (currentUserId) {
+        const { User } = await import('../entity/user');
+        const user = await remult.repo(User).findId(currentUserId);
+        const globalFilters = user?.settings?.globalFilters;
+
+        if (globalFilters) {
+          globalFilterDonorIds = globalFilters.donorIds;
+          globalFilterCampaignIds = globalFilters.campaignIds;
+          globalFilterDateFrom = globalFilters.dateFrom;
+          globalFilterDateTo = globalFilters.dateTo;
+          globalFilterAmountMin = globalFilters.amountMin;
+          globalFilterAmountMax = globalFilters.amountMax;
+          globalFilterCityIds = globalFilters.cityIds;
+        }
+      }
+
+      // 🏙️ If city filter is active, get donor IDs for those cities
+      if (globalFilterCityIds && globalFilterCityIds.length > 0) {
+        const donorPlaces = await remult.repo(DonorPlace).find({
+          where: {
+            isPrimary: true,
+            isActive: true
+          },
+          include: { place: true }
+        });
+
+        const cityFilteredDonorIds = donorPlaces
+          .filter(dp => dp.place?.city && globalFilterCityIds!.includes(dp.place.city))
+          .map(dp => dp.donorId!)
+          .filter(Boolean);
+
+        console.log(`  → City filter (Yearly): Found ${cityFilteredDonorIds.length} donors in selected cities`);
+
+        // Merge with existing donor filter
+        if (globalFilterDonorIds && globalFilterDonorIds.length > 0) {
+          // Intersect: only donors that are in both lists
+          globalFilterDonorIds = globalFilterDonorIds.filter(id => cityFilteredDonorIds.includes(id));
+          console.log(`  → After intersecting with donor filter: ${globalFilterDonorIds.length} donors`);
+        } else {
+          globalFilterDonorIds = cityFilteredDonorIds;
+        }
+      }
+
+      // Load all donations
+      let donations = await remult.repo(Donation).find({
+        orderBy: { donationDate: 'desc' }
+      });
+
+      console.log(`📊 Loaded ${donations.length} donations for yearly summary report`);
+
+      // Apply global filters
+      if (globalFilterDonorIds && globalFilterDonorIds.length > 0) {
+        const before = donations.length;
+        donations = donations.filter(d => d.donorId && globalFilterDonorIds!.includes(d.donorId));
+        console.log(`  → Global donor filter: ${before} → ${donations.length}`);
+      }
+
+      if (globalFilterCampaignIds && globalFilterCampaignIds.length > 0) {
+        const before = donations.length;
+        donations = donations.filter(d => d.campaignId && globalFilterCampaignIds!.includes(d.campaignId));
+        console.log(`  → Global campaign filter: ${before} → ${donations.length}`);
+      }
+
+      if (globalFilterDateFrom || globalFilterDateTo) {
+        const before = donations.length;
+        donations = donations.filter(d => {
+          const donationDate = new Date(d.donationDate);
+          if (globalFilterDateFrom && donationDate < globalFilterDateFrom) return false;
+          if (globalFilterDateTo && donationDate > globalFilterDateTo) return false;
+          return true;
+        });
+        console.log(`  → Global date filter: ${before} → ${donations.length}`);
+      }
+
+      if (globalFilterAmountMin !== undefined || globalFilterAmountMax !== undefined) {
+        const before = donations.length;
+        donations = donations.filter(d => {
+          if (globalFilterAmountMin !== undefined && d.amount < globalFilterAmountMin) return false;
+          if (globalFilterAmountMax !== undefined && d.amount > globalFilterAmountMax) return false;
+          return true;
+        });
+        console.log(`  → Global amount filter: ${before} → ${donations.length}`);
+      }
+
+      // Group by year
+      const yearlyMap = new Map<number, { currencies: { [currency: string]: number }, hebrewYear?: string }>();
+
+      // Process donations and convert dates to Hebrew years
+      for (const donation of donations) {
+        const year = new Date(donation.donationDate).getFullYear();
+
+        if (!yearlyMap.has(year)) {
+          // Get Hebrew year for this Gregorian year
+          const hebrewDate = await HebrewDateController.convertGregorianToHebrew(donation.donationDate);
+          const hebrewYearFormatted = await HebrewDateController.formatHebrewYear(hebrewDate.year);
+
+          yearlyMap.set(year, {
+            currencies: {},
+            hebrewYear: hebrewYearFormatted
+          });
+        }
+
+        const yearData = yearlyMap.get(year)!;
+        // Normalize currency code to standard format
+        const normalizedCurrency = ReportController.normalizeCurrencyName(donation.currency);
+        if (!yearData.currencies[normalizedCurrency]) {
+          yearData.currencies[normalizedCurrency] = 0;
+        }
+        yearData.currencies[normalizedCurrency] += donation.amount;
+      }
+
+      // Convert to array with totals
+      const reportData = Array.from(yearlyMap.entries())
+        .map(([year, data]) => {
+          let totalInShekel = 0;
+          Object.entries(data.currencies).forEach(([currency, amount]) => {
+            totalInShekel += amount * (conversionRates[currency] || 1);
+          });
+
+          return {
+            year,
+            hebrewYear: data.hebrewYear || '',
+            currencies: data.currencies,
+            totalInShekel
+          };
+        })
+        .sort((a, b) => b.year - a.year);
+
+      console.log(`✅ Generated ${reportData.length} yearly summary rows`);
+      return reportData;
+
+    } catch (error) {
+      console.error('Error in getYearlySummaryReport:', error);
+      throw error;
+    }
+  }
+}
+
+export interface PaymentReportData {
+  donorName: string;
+  promisedAmount: number; // Commitment in shekel
+  actualAmount: number; // Actual payments in shekel
+  remainingDebt: number;
+  status: 'fullyPaid' | 'partiallyPaid' | 'notPaid';
+  currency: string;
+  address?: string;
+  city?: string;
+  lastDonationDate?: Date;
+}
+
+export interface YearlySummaryData {
+  year: number; // Gregorian year
+  hebrewYear: string; // Hebrew year formatted
+  currencies: { [currency: string]: number };
+  totalInShekel: number;
 }

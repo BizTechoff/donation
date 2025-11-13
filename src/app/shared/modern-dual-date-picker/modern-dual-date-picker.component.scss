@@ -6,7 +6,20 @@
 
   // Create a new stacking context to contain popups
   isolation: isolate;
-  
+
+  // Horizontal layout - dates side by side
+  &.horizontal {
+    .date-triggers-wrapper {
+      flex-direction: row !important;
+      gap: 12px;
+
+      .date-input-group {
+        flex: 1;
+        min-width: 0; // Allow flex shrink
+      }
+    }
+  }
+
   &.compact {
     gap: 4px;
     

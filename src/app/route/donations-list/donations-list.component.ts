@@ -137,8 +137,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
           dateTo: this.dateTo ? this.formatDateForFilter(this.dateTo) : undefined,
           selectedMethodId: this.selectedMethodId?.trim() || undefined,
           amountFrom: this.amountFrom,
-          selectedCampaignId: this.selectedCampaignId?.trim() || undefined,
-          globalFilters: this.globalFilterService.currentFilters
+          selectedCampaignId: this.selectedCampaignId?.trim() || undefined
         };
 
         console.log('refreshData: Fetching donations with filters:', filters, 'page:', this.currentPage, 'sorting:', this.sortColumns);
@@ -272,6 +271,22 @@ export class DonationsListComponent implements OnInit, OnDestroy {
     }
   }
 
+  async printLetter(donation: Donation) {
+    if (!donation?.id) return;
+
+    try {
+      // Open letter properties modal
+      console.log('Opening letter properties selection for donation:', donation.id);
+      const result = await this.ui.letterPropertiesDialog(donation.id);
+
+      if (result) {
+        console.log('Letter generated successfully:', result);
+      }
+    } catch (error) {
+      console.error('Error printing letter:', error);
+      this.ui.error('שגיאה בהפקת מכתב');
+    }
+  }
 
   async uploadTransactions(donation: Donation) {
     // Create file input element
@@ -499,12 +514,8 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   }
 
   // רשימת תורמים מסוננת לפי פילטר גלובלי
+  // Note: Global filtering is now handled in the backend via user.settings
   get filteredDonors(): Donor[] {
-    const globalFilters = this.globalFilterService.currentFilters;
-
-    // Note: Country filtering is now handled through DonorPlace, not directly on Donor
-    // For donations list, we don't filter donors by country
-    // If country filtering is needed, it should be implemented through DonorService
     return this.donors;
   }
 

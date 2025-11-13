@@ -15,12 +15,20 @@ export interface DonorGiftFilters {
 export class DonorGiftController {
   @BackendMethod({ allowed: Allow.authenticated })
   static async findFilteredDonorGifts(
-    globalFilters: GlobalFilters,
     localFilters: DonorGiftFilters,
     page?: number,
     pageSize?: number,
     sortColumns?: Array<{ field: string; direction: 'asc' | 'desc' }>
   ): Promise<DonorGift[]> {
+    // 🎯 Fetch global filters from user.settings
+    const currentUserId = remult.user?.id;
+    let globalFilters: GlobalFilters | undefined = undefined;
+    if (currentUserId) {
+      const { User } = await import('../entity/user');
+      const user = await remult.repo(User).findId(currentUserId);
+      globalFilters = user?.settings?.globalFilters;
+    }
+
     console.log('DonorGiftController.findFilteredDonorGifts', globalFilters, localFilters);
 
     // Build orderBy from sortColumns or use default
@@ -46,7 +54,7 @@ export class DonorGiftController {
     if (globalFilters && (globalFilters.countryIds?.length || globalFilters.cityIds?.length ||
         globalFilters.neighborhoodIds?.length || globalFilters.campaignIds?.length ||
         globalFilters.targetAudienceIds?.length)) {
-      const donors = await DonorController.findFilteredDonors(globalFilters);
+      const donors = await DonorController.findFilteredDonors();
       filteredDonorIds = donors.map(d => d.id);
 
       if (filteredDonorIds.length === 0) {
@@ -67,7 +75,7 @@ export class DonorGiftController {
     }
 
     // Apply global date filter if provided (on deliveryDate)
-    if (globalFilters.dateFrom || globalFilters.dateTo) {
+    if (globalFilters && (globalFilters.dateFrom || globalFilters.dateTo)) {
       whereClause.deliveryDate = {};
       if (globalFilters.dateFrom) {
         whereClause.deliveryDate.$gte = globalFilters.dateFrom;
@@ -118,9 +126,17 @@ export class DonorGiftController {
 
   @BackendMethod({ allowed: Allow.authenticated })
   static async countFilteredDonorGifts(
-    globalFilters: GlobalFilters,
     localFilters: DonorGiftFilters
   ): Promise<number> {
+    // 🎯 Fetch global filters from user.settings
+    const currentUserId = remult.user?.id;
+    let globalFilters: GlobalFilters | undefined = undefined;
+    if (currentUserId) {
+      const { User } = await import('../entity/user');
+      const user = await remult.repo(User).findId(currentUserId);
+      globalFilters = user?.settings?.globalFilters;
+    }
+
     // Build where clause
     let whereClause: any = {};
 
@@ -129,7 +145,7 @@ export class DonorGiftController {
     if (globalFilters && (globalFilters.countryIds?.length || globalFilters.cityIds?.length ||
         globalFilters.neighborhoodIds?.length || globalFilters.campaignIds?.length ||
         globalFilters.targetAudienceIds?.length)) {
-      const donors = await DonorController.findFilteredDonors(globalFilters);
+      const donors = await DonorController.findFilteredDonors();
       filteredDonorIds = donors.map(d => d.id);
 
       if (filteredDonorIds.length === 0) {
@@ -150,7 +166,7 @@ export class DonorGiftController {
     }
 
     // Apply global date filter if provided (on deliveryDate)
-    if (globalFilters.dateFrom || globalFilters.dateTo) {
+    if (globalFilters && (globalFilters.dateFrom || globalFilters.dateTo)) {
       whereClause.deliveryDate = {};
       if (globalFilters.dateFrom) {
         whereClause.deliveryDate.$gte = globalFilters.dateFrom;
@@ -194,9 +210,17 @@ export class DonorGiftController {
 
   @BackendMethod({ allowed: Allow.authenticated })
   static async getStats(
-    globalFilters: GlobalFilters,
     localFilters: DonorGiftFilters
   ): Promise<{ deliveredCount: number; pendingCount: number }> {
+    // 🎯 Fetch global filters from user.settings
+    const currentUserId = remult.user?.id;
+    let globalFilters: GlobalFilters | undefined = undefined;
+    if (currentUserId) {
+      const { User } = await import('../entity/user');
+      const user = await remult.repo(User).findId(currentUserId);
+      globalFilters = user?.settings?.globalFilters;
+    }
+
     // Build where clause
     let whereClause: any = {};
 
@@ -205,7 +229,7 @@ export class DonorGiftController {
     if (globalFilters && (globalFilters.countryIds?.length || globalFilters.cityIds?.length ||
         globalFilters.neighborhoodIds?.length || globalFilters.campaignIds?.length ||
         globalFilters.targetAudienceIds?.length)) {
-      const donors = await DonorController.findFilteredDonors(globalFilters);
+      const donors = await DonorController.findFilteredDonors();
       filteredDonorIds = donors.map(d => d.id);
 
       if (filteredDonorIds.length === 0) {
@@ -226,7 +250,7 @@ export class DonorGiftController {
     }
 
     // Apply global date filter if provided (on deliveryDate)
-    if (globalFilters.dateFrom || globalFilters.dateTo) {
+    if (globalFilters && (globalFilters.dateFrom || globalFilters.dateTo)) {
       whereClause.deliveryDate = {};
       if (globalFilters.dateFrom) {
         whereClause.deliveryDate.$gte = globalFilters.dateFrom;

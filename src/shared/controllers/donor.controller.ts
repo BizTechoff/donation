@@ -158,19 +158,31 @@ export class DonorController {
    * Get only donor IDs without loading full donor objects - much faster for maps
    */
   @BackendMethod({ allowed: Allow.authenticated })
-  static async findFilteredIds(filters: GlobalFilters): Promise<string[]> {
-    const donors = await DonorController.findFilteredDonors(filters);
+  static async findFilteredIds(additionalFilters?: Partial<GlobalFilters>): Promise<string[]> {
+    const donors = await DonorController.findFilteredDonors(undefined, additionalFilters);
     return donors.map(d => d.id);
   }
 
   @BackendMethod({ allowed: Allow.authenticated })
   static async findFilteredDonors(
-    filters: GlobalFilters,
     searchTerm?: string,
+    additionalFilters?: Partial<GlobalFilters>,
     page?: number,
     pageSize?: number,
     sortColumns?: Array<{ field: string; direction: 'asc' | 'desc' }>
   ): Promise<Donor[]> {
+    // 🎯 Fetch global filters from user.settings
+    const currentUserId = remult.user?.id;
+    let globalFilters: GlobalFilters = {};
+    if (currentUserId) {
+      const { User } = await import('../entity/user');
+      const user = await remult.repo(User).findId(currentUserId);
+      globalFilters = user?.settings?.globalFilters || {};
+    }
+
+    // Merge global filters with additional filters
+    const filters: GlobalFilters = { ...globalFilters, ...additionalFilters };
+
     console.log('DonorController.findFilteredDonors', filters, 'searchTerm:', searchTerm);
 
     // Build orderBy from sortColumns or use default
@@ -368,7 +380,19 @@ export class DonorController {
   }
 
   @BackendMethod({ allowed: Allow.authenticated })
-  static async countFilteredDonors(filters: GlobalFilters, searchTerm?: string): Promise<number> {
+  static async countFilteredDonors(searchTerm?: string, additionalFilters?: Partial<GlobalFilters>): Promise<number> {
+    // 🎯 Fetch global filters from user.settings
+    const currentUserId = remult.user?.id;
+    let globalFilters: GlobalFilters = {};
+    if (currentUserId) {
+      const { User } = await import('../entity/user');
+      const user = await remult.repo(User).findId(currentUserId);
+      globalFilters = user?.settings?.globalFilters || {};
+    }
+
+    // Merge global filters with additional filters
+    const filters: GlobalFilters = { ...globalFilters, ...additionalFilters };
+
     // Start with all active donors
     let donorIds: string[] | undefined = undefined;
 
@@ -481,9 +505,9 @@ export class DonorController {
   }
 
   @BackendMethod({ allowed: Allow.authenticated })
-  static async getDonorsForSelection(globalFilters: GlobalFilters, excludeIds?: string[]): Promise<DonorSelectionData> {
-    // Load donors using global filters
-    let donors = await DonorController.findFilteredDonors(globalFilters);
+  static async getDonorsForSelection(excludeIds?: string[]): Promise<DonorSelectionData> {
+    // Load donors using global filters (fetched from user.settings in the backend)
+    let donors = await DonorController.findFilteredDonors();
 
     // Filter out excluded IDs
     if (excludeIds && excludeIds.length > 0) {

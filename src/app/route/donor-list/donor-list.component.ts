@@ -54,7 +54,7 @@ export class DonorListComponent implements OnInit, OnDestroy {
     public i18n: I18nService,
     private ui: UIToolsService,
     private donorService: DonorService,
-    private filterService: GlobalFilterService,
+    private globalFilterService: GlobalFilterService,
     private busy: BusyService,
     private hebrewDateService: HebrewDateService
   ) {}
@@ -65,7 +65,7 @@ export class DonorListComponent implements OnInit, OnDestroy {
 
     // Subscribe to filter changes
     this.subscription.add(
-      this.filterService.filters$.subscribe(() => {
+      this.globalFilterService.filters$.subscribe(() => {
         this.refreshData();
       })
     );
@@ -550,5 +550,13 @@ export class DonorListComponent implements OnInit, OnDestroy {
       console.error('Error formatting Hebrew date:', error);
       return '-';
     }
+  }
+
+  async openDonorDonations(donor: Donor) {
+    await this.ui.donorDonationsDialog(donor.id, 'donations', donor.fullName);
+  }
+
+  async openDonorGifts(donor: Donor) {
+    await this.ui.donorDonationsDialog(donor.id, 'gifts', donor.fullName);
   }
 }

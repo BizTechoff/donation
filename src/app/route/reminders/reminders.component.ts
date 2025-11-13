@@ -124,7 +124,8 @@ export class RemindersComponent implements OnInit, OnDestroy {
   async loadReminders() {
     this.loading = true;
     try {
-      // Build filters
+      // Build filters (local filters only)
+      // Global filters are fetched from user.settings in the backend
       const filters: any = {};
 
       if (this.filterDateFrom) {
@@ -142,10 +143,6 @@ export class RemindersComponent implements OnInit, OnDestroy {
       if (this.filterDonorSearch && this.filterDonorSearch.trim() !== '') {
         filters.donorSearch = this.filterDonorSearch;
       }
-
-      // Add global filters
-      const globalFilters = this.globalFilterService.currentFilters;
-      filters.globalFilters = globalFilters;
 
       // Get total count, summary stats, and reminders from server
       const [count, summary, reminders] = await Promise.all([
@@ -260,7 +257,7 @@ export class RemindersComponent implements OnInit, OnDestroy {
 
   async completeReminder(reminder: Reminder) {
     // Ask for confirmation
-    const confirmMessage = 'האם לסמן את התזכורת כהושלמה?';
+    const confirmMessage = 'האם לסמן את התזכורת הנוכחית כהושלמה?';
     if (!confirm(confirmMessage)) {
       return;
     }

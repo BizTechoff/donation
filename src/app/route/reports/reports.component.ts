@@ -1,6 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { BusyService, openDialog } from 'common-ui-elements';
 import { remult } from 'remult';
+import { Subscription } from 'rxjs';
 import { HebrewDateController } from '../../../shared/controllers/hebrew-date.controller';
 import { Blessing } from '../../../shared/entity/blessing';
 import { Campaign } from '../../../shared/entity/campaign';
@@ -44,8 +45,8 @@ interface DonationReportData {
 
 interface PaymentReportData {
   donorName: string;
-  promisedAmount: number; // Used for total amount in shekel
-  actualAmount: number; // Used for donation count
+  promisedAmount: number; // Commitment in shekel
+  actualAmount: number; // Actual payments in shekel
   remainingDebt: number;
   status: 'fullyPaid' | 'partiallyPaid' | 'notPaid';
   currency: string;
@@ -110,9 +111,10 @@ type GroupByOption = 'donor' | 'campaign' | 'paymentMethod' | 'fundraiser';
   templateUrl: './reports.component.html',
   styleUrls: ['./reports.component.scss']
 })
-export class ReportsComponent implements OnInit {
+export class ReportsComponent implements OnInit, OnDestroy {
   Math = Math; // Make Math available in template
   isExpandedView = false;
+  private subscription = new Subscription();
 
   dateRange = {
     from: new Date(new Date().getFullYear(), 0, 1), // תחילת השנה
@@ -237,10 +239,22 @@ export class ReportsComponent implements OnInit {
   ) { }
 
   async ngOnInit() {
+    // Subscribe to global filter changes
+    this.subscription.add(
+      this.globalFilterService.filters$.subscribe(() => {
+        console.log('Reports: Global filters changed, reloading data');
+        this.refreshData();
+      })
+    );
+
     // Load last selected report from user settings
     await this.loadLastReportSelection();
 
     await this.refreshData();
+  }
+
+  ngOnDestroy() {
+    this.subscription.unsubscribe();
   }
 
   async loadCurrentHebrewYear() {
@@ -286,8 +300,8 @@ export class ReportsComponent implements OnInit {
 
 
   private async loadGeneralStats() {
-    const donationsQuery = this.globalFilterService.applyFiltersToQuery({ where: {} });
-    const donations = await this.donationRepo.find(donationsQuery);
+    // Note: Global filters are now applied on the backend automatically via user.settings
+    const donations = await this.donationRepo.find();
     console.log('📊 Donations loaded:', donations.length);
 
     const donors = await this.donorRepo.find();
@@ -306,11 +320,10 @@ export class ReportsComponent implements OnInit {
   }
 
   private async loadMonthlyTrends() {
-    const query = this.globalFilterService.applyFiltersToQuery({
-      where: {},
+    // Note: Global filters are now applied on the backend automatically via user.settings
+    const donations = await this.donationRepo.find({
       orderBy: { donationDate: 'asc' }
     });
-    const donations = await this.donationRepo.find(query);
 
     const monthlyMap = new Map<string, { donations: number, amount: number }>();
 
@@ -351,11 +364,10 @@ export class ReportsComponent implements OnInit {
   }
 
   private async loadDonorAnalysis() {
-    const query = this.globalFilterService.applyFiltersToQuery({
-      where: {},
+    // Note: Global filters are now applied on the backend automatically via user.settings
+    const donations = await this.donationRepo.find({
       include: { donor: true }
     });
-    const donations = await this.donationRepo.find(query);
 
     // Load donor places for all donors
     const uniqueDonorIds = [...new Set(donations.map(d => d.donorId).filter(Boolean))];
@@ -412,11 +424,10 @@ export class ReportsComponent implements OnInit {
 
   private async loadTopPerformers() {
     // תורמים מובילים
-    const query = this.globalFilterService.applyFiltersToQuery({
-      where: {},
+    // Note: Global filters are now applied on the backend automatically via user.settings
+    const donations = await this.donationRepo.find({
       include: { donor: true }
     });
-    const donations = await this.donationRepo.find(query);
 
     const donorMap = new Map<string, { donor: any, total: number, count: number }>();
     donations.forEach(donation => {
@@ -446,8 +457,8 @@ export class ReportsComponent implements OnInit {
   }
 
   private async loadRecentActivity() {
-    const query = this.globalFilterService.applyFiltersToQuery({
-      where: {},
+    // Note: Global filters are now applied on the backend automatically via user.settings
+    const recentDonations = await this.donationRepo.find({
       orderBy: { donationDate: 'desc' },
       limit: 20,
       include: {
@@ -455,7 +466,6 @@ export class ReportsComponent implements OnInit {
         campaign: true
       }
     });
-    const recentDonations = await this.donationRepo.find(query);
 
     this.recentActivity = recentDonations.map(donation => ({
       type: 'donation',
@@ -772,7 +782,7 @@ export class ReportsComponent implements OnInit {
         sortDirection: this.sortDirection
       });
 
-      const globalFilters = this.globalFilterService.currentFilters;
+      // Global filters are fetched from user.settings in the backend
       const reportResponse = await this.reportService.getGroupedDonationsReport({
         groupBy: this.filters.groupBy,
         showDonorDetails: this.filters.showDonorDetails,
@@ -786,13 +796,7 @@ export class ReportsComponent implements OnInit {
         page: this.currentPage,
         pageSize: this.pageSize,
         sortBy: this.sortBy,
-        sortDirection: this.sortDirection,
-        // Add global filters
-        globalFilterCampaignIds: globalFilters.campaignIds,
-        globalFilterDateFrom: globalFilters.dateFrom,
-        globalFilterDateTo: globalFilters.dateTo,
-        globalFilterAmountMin: globalFilters.amountMin,
-        globalFilterAmountMax: globalFilters.amountMax
+        sortDirection: this.sortDirection
       });
 
       console.log('✅ CLIENT: Received report response:', {
@@ -873,87 +877,17 @@ export class ReportsComponent implements OnInit {
   }
 
   async loadPaymentsReport() {
-    // דוח תשלומים - סיכום תרומות לפי תורם
+    // דוח תשלומים - Commitment vs Actual
     try {
-      const query = this.globalFilterService.applyFiltersToQuery({
-        where: {},
-        include: {
-          donor: {
-            include: {
-              donorPlaces: {
-                include: {
-                  place: true
-                }
-              }
-            }
-          }
-        },
-        orderBy: { donationDate: 'desc' }
-      });
-
-      const donations = await this.donationRepo.find(query);
-
-      // קיבוץ לפי תורם
-      const donorMap = new Map<string, {
-        donor: Donor;
-        totalAmount: number;
-        totalDonations: number;
-        lastDonationDate: Date;
-        homeAddress?: string;
-        city?: string;
-      }>();
-
-      donations.forEach(donation => {
-        if (!donation.donor) return;
-
-        const donorId = donation.donor.id;
-        const amountInShekel = donation.amount * (this.conversionRates[donation.currency] || 1);
-
-        if (!donorMap.has(donorId)) {
-          // מציאת כתובת בית
-          const homePlace = (donation.donor as any).donorPlaces?.find((dp: any) => dp.placeType === 'home');
-
-          donorMap.set(donorId, {
-            donor: donation.donor,
-            totalAmount: 0,
-            totalDonations: 0,
-            lastDonationDate: donation.donationDate,
-            homeAddress: homePlace?.place?.fullAddress || '',
-            city: homePlace?.place?.city || ''
-          });
-        }
-
-        const data = donorMap.get(donorId)!;
-        data.totalAmount += amountInShekel;
-        data.totalDonations++;
-
-        // עדכון תאריך אחרון
-        if (donation.donationDate > data.lastDonationDate) {
-          data.lastDonationDate = donation.donationDate;
-        }
-      });
-
-      // המרה למערך וסידור
-      this.paymentReportData = Array.from(donorMap.values())
-        .map(data => ({
-          donorName: data.donor.fullName || `${data.donor.firstName} ${data.donor.lastName}`,
-          promisedAmount: data.totalAmount, // נשתמש בשדה הזה בתור סכום בשקלים
-          actualAmount: data.totalDonations, // נשתמש בשדה הזה בתור מספר תרומות
-          remainingDebt: 0, // לא רלוונטי
-          status: 'fullyPaid' as const,
-          currency: 'ILS',
-          // נוסיף שדות נוספים
-          address: data.homeAddress || '',
-          city: data.city || '',
-          lastDonationDate: data.lastDonationDate
-        }))
-        .sort((a, b) => a.donorName.localeCompare(b.donorName));
+      // Global filters are now applied on the backend automatically via user.settings
+      this.paymentReportData = await this.reportService.getPaymentsReport(this.conversionRates);
 
       // Update pagination info
       this.paymentTotalCount = this.paymentReportData.length;
       this.paymentTotalPages = Math.ceil(this.paymentTotalCount / this.paymentPageSize);
       this.paymentCurrentPage = 1; // Reset to first page
 
+      console.log(`✅ Loaded ${this.paymentReportData.length} payment report rows`);
     } catch (error) {
       console.error('Error loading payments report:', error);
       this.paymentReportData = [];
@@ -963,58 +897,23 @@ export class ReportsComponent implements OnInit {
   }
 
   async loadYearlySummaryReport() {
-    const query = this.globalFilterService.applyFiltersToQuery({
-      where: {},
-      orderBy: { donationDate: 'desc' }
-    });
-    const donations = await this.donationRepo.find(query);
+    // דוח שנתי - סיכום לפי שנים
+    try {
+      // Global filters are now applied on the backend automatically via user.settings
+      this.yearlySummaryData = await this.reportService.getYearlySummaryReport(this.conversionRates);
 
-    const yearlyMap = new Map<number, { currencies: { [currency: string]: number }, hebrewYear?: string }>();
+      // Update pagination info
+      this.yearlySummaryTotalCount = this.yearlySummaryData.length;
+      this.yearlySummaryTotalPages = Math.ceil(this.yearlySummaryTotalCount / this.yearlySummaryPageSize);
+      this.yearlySummaryCurrentPage = 1; // Reset to first page
 
-    // Process donations and convert dates to Hebrew years
-    for (const donation of donations) {
-      const year = new Date(donation.donationDate).getFullYear();
-
-      if (!yearlyMap.has(year)) {
-        // Get Hebrew year for this Gregorian year
-        const hebrewDate = await HebrewDateController.convertGregorianToHebrew(donation.donationDate);
-        const hebrewYearFormatted = await HebrewDateController.formatHebrewYear(hebrewDate.year);
-
-        yearlyMap.set(year, {
-          currencies: {},
-          hebrewYear: hebrewYearFormatted
-        });
-      }
-
-      const yearData = yearlyMap.get(year)!;
-      // Normalize currency code to standard format (ILS, USD, EUR, GBP)
-      const normalizedCurrency = this.normalizeCurrencyCode(donation.currency);
-      if (!yearData.currencies[normalizedCurrency]) {
-        yearData.currencies[normalizedCurrency] = 0;
-      }
-      yearData.currencies[normalizedCurrency] += donation.amount;
+      console.log(`✅ Loaded ${this.yearlySummaryData.length} yearly summary rows`);
+    } catch (error) {
+      console.error('Error loading yearly summary report:', error);
+      this.yearlySummaryData = [];
+      this.yearlySummaryTotalCount = 0;
+      this.yearlySummaryTotalPages = 0;
     }
-
-    this.yearlySummaryData = Array.from(yearlyMap.entries())
-      .map(([year, data]) => {
-        let totalInShekel = 0;
-        Object.entries(data.currencies).forEach(([currency, amount]) => {
-          totalInShekel += amount * (this.conversionRates[currency] || 1);
-        });
-
-        return {
-          year,
-          hebrewYear: data.hebrewYear || '',
-          currencies: data.currencies,
-          totalInShekel
-        };
-      })
-      .sort((a, b) => b.year - a.year);
-
-    // Update pagination info
-    this.yearlySummaryTotalCount = this.yearlySummaryData.length;
-    this.yearlySummaryTotalPages = Math.ceil(this.yearlySummaryTotalCount / this.yearlySummaryPageSize);
-    this.yearlySummaryCurrentPage = 1; // Reset to first page
   }
 
   async loadBlessingsReport() {
@@ -1163,7 +1062,7 @@ export class ReportsComponent implements OnInit {
   async exportDonationsReportToExcel() {
     try {
       // Load all data without pagination for export
-      const globalFilters = this.globalFilterService.currentFilters;
+      // Global filters are fetched from user.settings in the backend
       const fullReportResponse = await this.reportService.getGroupedDonationsReport({
         groupBy: this.filters.groupBy,
         showDonorDetails: this.filters.showDonorDetails,
@@ -1177,13 +1076,7 @@ export class ReportsComponent implements OnInit {
         page: 1,
         pageSize: 999999, // Get all records
         sortBy: this.sortBy,
-        sortDirection: this.sortDirection,
-        // Add global filters
-        globalFilterCampaignIds: globalFilters.campaignIds,
-        globalFilterDateFrom: globalFilters.dateFrom,
-        globalFilterDateTo: globalFilters.dateTo,
-        globalFilterAmountMin: globalFilters.amountMin,
-        globalFilterAmountMax: globalFilters.amountMax
+        sortDirection: this.sortDirection
       });
 
       const XLSX = await import('xlsx');

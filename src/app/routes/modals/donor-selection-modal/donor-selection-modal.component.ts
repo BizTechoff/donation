@@ -6,7 +6,6 @@ import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
 import { DonorDetailsModalComponent } from '../donor-details-modal/donor-details-modal.component';
 import { DonorController } from '../../../../shared/controllers/donor.controller';
-import { GlobalFilterService } from '../../../services/global-filter.service';
 
 export interface DonorSelectionModalArgs {
   title?: string;
@@ -57,8 +56,7 @@ export class DonorSelectionModalComponent implements OnInit {
   constructor(
     public i18n: I18nService,
     public dialogRef: MatDialogRef<any>,
-    private busy: BusyService,
-    private globalFilterService: GlobalFilterService
+    private busy: BusyService
   ) {}
 
   async ngOnInit() {
@@ -69,10 +67,9 @@ export class DonorSelectionModalComponent implements OnInit {
     await this.busy.doWhileShowingBusy(async () => {
       try {
         // Get global filters
-        const globalFilters = this.globalFilterService.currentFilters;
-
         // Call server-side method to get all data in one request
-        const data = await DonorController.getDonorsForSelection(globalFilters, this.args?.excludeIds);
+        // Global filters are fetched from user.settings in the backend
+        const data = await DonorController.getDonorsForSelection(this.args?.excludeIds);
 
         // Set donors
         this.availableDonors = data.donors;

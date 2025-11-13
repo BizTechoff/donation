@@ -1,9 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { remult } from 'remult';
 import { User } from '../../shared/entity/user';
-import { GlobalFilterController } from '../../shared/controllers/global-filter.controller';
 
 export interface GlobalFilters {
   campaignIds?: string[];
@@ -25,67 +23,18 @@ export class GlobalFilterService {
   private filtersSubject = new BehaviorSubject<GlobalFilters>({});
   public filters$: Observable<GlobalFilters> = this.filtersSubject.asObservable();
 
-  // ✨ חדש - donorIds מקושר מהשרת
-  private donorIdsSubject = new BehaviorSubject<string[] | undefined>(undefined);
-  public donorIds$: Observable<string[] | undefined> = this.donorIdsSubject.asObservable();
-
-  // ✨ חדש - מצב טעינה
-  private loadingSubject = new BehaviorSubject<boolean>(false);
-  public loading$: Observable<boolean> = this.loadingSubject.asObservable();
-
   private userRepo = remult.repo(User);
 
   constructor() {
     this.loadFiltersFromUserSettings();
-    this.initializeDonorIdsListener();
-  }
-
-  /**
-   * מאזין לשינויי פילטרים ומחשב את donorIds עם debouncing
-   */
-  private initializeDonorIdsListener() {
-    this.filters$.pipe(
-      debounceTime(300), // המתן 300ms אחרי השינוי האחרון
-      distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr))
-    ).subscribe(async (filters) => {
-      // רק אם יש פילטרים רלוונטיים ל-donorIds
-      const hasRelevantFilters =
-        filters.countryIds?.length ||
-        filters.cityIds?.length ||
-        filters.neighborhoodIds?.length ||
-        filters.targetAudienceIds?.length;
-
-      if (!hasRelevantFilters) {
-        this.donorIdsSubject.next(undefined);
-        return;
-      }
-
-      this.loadingSubject.next(true);
-      try {
-        const donorIds = await GlobalFilterController.getDonorIds(filters);
-        this.donorIdsSubject.next(donorIds);
-      } catch (error) {
-        console.error('Error fetching donor IDs from global filters:', error);
-        this.donorIdsSubject.next(undefined);
-      } finally {
-        this.loadingSubject.next(false);
-      }
-    });
+    // Note: donorIds calculation removed - now done in backend from user.settings
   }
 
   get currentFilters(): GlobalFilters {
     return this.filtersSubject.value;
   }
 
-  get currentDonorIds(): string[] | undefined {
-    return this.donorIdsSubject.value;
-  }
-
-  get isLoading(): boolean {
-    return this.loadingSubject.value;
-  }
-
-  updateFilter(key: keyof GlobalFilters, value: any) {
+  async updateFilter(key: keyof GlobalFilters, value: any) {
     const currentFilters = this.filtersSubject.value;
     let updatedFilters = { ...currentFilters, [key]: value };
 
@@ -99,11 +48,13 @@ export class GlobalFilterService {
       updatedFilters = this.validateAmountRange(updatedFilters);
     }
 
+    // ⚠️ Save to DB first, THEN notify subscribers
+    // This ensures the backend has the updated filters before reports refresh
+    await this.saveFiltersToUserSettings(updatedFilters);
     this.filtersSubject.next(updatedFilters);
-    this.saveFiltersToUserSettings(updatedFilters);
   }
 
-  updateFilters(filters: Partial<GlobalFilters>) {
+  async updateFilters(filters: Partial<GlobalFilters>) {
     const currentFilters = this.filtersSubject.value;
     let updatedFilters = { ...currentFilters, ...filters };
 
@@ -113,21 +64,24 @@ export class GlobalFilterService {
     // Validate amount ranges
     updatedFilters = this.validateAmountRange(updatedFilters);
 
+    // ⚠️ Save to DB first, THEN notify subscribers
+    // This ensures the backend has the updated filters before reports refresh
+    await this.saveFiltersToUserSettings(updatedFilters);
     this.filtersSubject.next(updatedFilters);
-    this.saveFiltersToUserSettings(updatedFilters);
   }
 
-  clearFilters() {
+  async clearFilters() {
+    // ⚠️ Save to DB first, THEN notify subscribers
+    await this.saveFiltersToUserSettings({});
     this.filtersSubject.next({});
-    this.donorIdsSubject.next(undefined);
-    this.saveFiltersToUserSettings({});
   }
 
-  clearFilter(key: keyof GlobalFilters) {
+  async clearFilter(key: keyof GlobalFilters) {
     const currentFilters = this.filtersSubject.value;
     const { [key]: _, ...updatedFilters } = currentFilters;
+    // ⚠️ Save to DB first, THEN notify subscribers
+    await this.saveFiltersToUserSettings(updatedFilters);
     this.filtersSubject.next(updatedFilters);
-    this.saveFiltersToUserSettings(updatedFilters);
   }
 
   private async loadFiltersFromUserSettings() {

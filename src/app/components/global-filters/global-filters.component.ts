@@ -90,16 +90,16 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
     }
   }
   
-  updateFilter(key: keyof GlobalFilters, value: any) {
-    this.filterService.updateFilter(key, value);
+  async updateFilter(key: keyof GlobalFilters, value: any) {
+    await this.filterService.updateFilter(key, value);
   }
-  
-  clearFilters() {
-    this.filterService.clearFilters();
+
+  async clearFilters() {
+    await this.filterService.clearFilters();
   }
-  
-  clearFilter(key: keyof GlobalFilters) {
-    this.filterService.clearFilter(key);
+
+  async clearFilter(key: keyof GlobalFilters) {
+    await this.filterService.clearFilter(key);
   }
   
   get hasActiveFilters(): boolean {

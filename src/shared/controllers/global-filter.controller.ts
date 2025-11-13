@@ -4,6 +4,8 @@ import { Donor } from '../entity/donor';
 import { Place } from '../entity/place';
 import { DonorPlace } from '../entity/donor-place';
 import { TargetAudience } from '../entity/target-audience';
+import { Donation } from '../entity/donation';
+import { Campaign } from '../entity/campaign';
 
 /**
  * GlobalFilterController - מרכז שליטה לפילטרים גלובליים
@@ -43,6 +45,30 @@ export class GlobalFilterController {
         donorIds = donorIds.filter(id => audienceFiltered.includes(id));
       } else {
         donorIds = audienceFiltered;
+      }
+      if (donorIds.length === 0) return []; // אין התאמות
+    }
+
+    // סינון לפי קמפיינים
+    const campaignFiltered = await GlobalFilterController.getDonorIdsFromCampaigns(filters);
+    if (campaignFiltered !== undefined) {
+      if (donorIds) {
+        // חיתוך - רק תורמים שבשני הקטגוריות
+        donorIds = donorIds.filter(id => campaignFiltered.includes(id));
+      } else {
+        donorIds = campaignFiltered;
+      }
+      if (donorIds.length === 0) return []; // אין התאמות
+    }
+
+    // סינון לפי סוג תורם
+    const donorTypeFiltered = await GlobalFilterController.getDonorIdsFromDonorTypes(filters);
+    if (donorTypeFiltered !== undefined) {
+      if (donorIds) {
+        // חיתוך - רק תורמים שבשני הקטגוריות
+        donorIds = donorIds.filter(id => donorTypeFiltered.includes(id));
+      } else {
+        donorIds = donorTypeFiltered;
       }
       if (donorIds.length === 0) return []; // אין התאמות
     }
@@ -109,6 +135,61 @@ export class GlobalFilterController {
         targetAudiences.flatMap(ta => ta.donorIds || [])
       )
     ];
+
+    return donorIds;
+  }
+
+  /**
+   * מחזיר donorIds מסוננים לפי קמפיינים
+   * מחזיר תורמים שתרמו או הוזמנו לקמפיינים שנבחרו
+   */
+  private static async getDonorIdsFromCampaigns(filters: GlobalFilters): Promise<string[] | undefined> {
+    if (!filters.campaignIds || filters.campaignIds.length === 0) {
+      return undefined; // אין פילטר קמפיינים
+    }
+
+    // נקבל את התורמים מתוך donations
+    const donations = await remult.repo(Donation).find({
+      where: { campaignId: { $in: filters.campaignIds } }
+    });
+
+    // נוסיף גם תורמים שהוזמנו לקמפיינים (מתוך invitedDonorIds)
+    const campaigns = await remult.repo(Campaign).find({
+      where: { id: { $in: filters.campaignIds } }
+    });
+
+    const donorIdsFromDonations = donations.map(d => d.donorId).filter((id): id is string => !!id);
+    const donorIdsFromInvites = campaigns.flatMap(c => c.invitedDonorIds || []);
+
+    const donorIds = [...new Set([...donorIdsFromDonations, ...donorIdsFromInvites])];
+
+    return donorIds;
+  }
+
+  /**
+   * מחזיר donorIds מסוננים לפי סוג תורם
+   * donorTypeIds מכיל את הערכים: 'אחר', 'קבוע', 'זמני'
+   */
+  private static async getDonorIdsFromDonorTypes(filters: GlobalFilters): Promise<string[] | undefined> {
+    if (!filters.donorTypeIds || filters.donorTypeIds.length === 0) {
+      return undefined; // אין פילטר סוג תורם
+    }
+
+    // בודק שכל הערכים תקינים
+    const validTypes: Array<'אחר' | 'קבוע' | 'זמני'> = filters.donorTypeIds.filter(
+      (type): type is 'אחר' | 'קבוע' | 'זמני' =>
+        type === 'אחר' || type === 'קבוע' || type === 'זמני'
+    );
+
+    if (validTypes.length === 0) {
+      return []; // אין ערכים תקינים
+    }
+
+    const donors = await remult.repo(Donor).find({
+      where: { donorType: { $in: validTypes } }
+    });
+
+    const donorIds = donors.map(d => d.id).filter((id): id is string => !!id);
 
     return donorIds;
   }

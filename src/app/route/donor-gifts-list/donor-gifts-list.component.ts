@@ -106,15 +106,14 @@ export class DonorGiftsListComponent implements OnInit, OnDestroy {
           selectedYear: this.selectedYear?.trim() || undefined
         };
 
-        const globalFilters = this.globalFilterService.currentFilters;
-
-        console.log('refreshData: Fetching donor gifts with globalFilters:', globalFilters, 'localFilters:', localFilters, 'page:', this.currentPage, 'sorting:', this.sortColumns);
+        console.log('refreshData: Fetching donor gifts with localFilters:', localFilters, 'page:', this.currentPage, 'sorting:', this.sortColumns);
 
         // Get total count, stats, and donor gifts from server
+        // Global filters are fetched from user.settings in the backend
         const [count, stats, gifts] = await Promise.all([
-          DonorGiftController.countFilteredDonorGifts(globalFilters, localFilters),
-          DonorGiftController.getStats(globalFilters, localFilters),
-          DonorGiftController.findFilteredDonorGifts(globalFilters, localFilters, this.currentPage, this.pageSize, this.sortColumns)
+          DonorGiftController.countFilteredDonorGifts(localFilters),
+          DonorGiftController.getStats(localFilters),
+          DonorGiftController.findFilteredDonorGifts(localFilters, this.currentPage, this.pageSize, this.sortColumns)
         ]);
 
         this.totalCount = count;
@@ -488,5 +487,58 @@ export class DonorGiftsListComponent implements OnInit, OnDestroy {
 
   hasReminder(donorGift: DonorGift): boolean {
     return !!donorGift.id && this.reminderMap.has(donorGift.id);
+  }
+
+  async toggleDeliveryStatus(donorGift: DonorGift) {
+    if (!donorGift) return;
+
+    try {
+      const wasDelivered = donorGift.isDelivered;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      // If marking as delivered
+      if (!wasDelivered) {
+        // Check if deliveryDate already exists and is different from today
+        if (donorGift.deliveryDate) {
+          const existingDate = new Date(donorGift.deliveryDate);
+          existingDate.setHours(0, 0, 0, 0);
+
+          // If date is different from today, ask user
+          if (existingDate.getTime() !== today.getTime()) {
+            const hebrewExistingDate = this.formatHebrewDate(donorGift.deliveryDate);
+
+            const confirmed = await this.ui.yesNoQuestion(
+              `המתנה סומנה כנמסרה! לגבי התאריך שרשום כרגע בשדה "תאריך מסירה" רשום שם: ${hebrewExistingDate}. האם לשנות את תאריך המסירה להיום?`,
+            true);
+
+            if (!confirmed) {
+              // User wants to keep existing date, just mark as delivered
+              donorGift.isDelivered = true;
+              await this.donorGiftRepo.save(donorGift);
+              await this.refreshData();
+              this.ui.info('המתנה סומנה כנמסרה (התאריך הקיים נשמר)');
+              return;
+            }
+          }
+        }
+
+        // Set today as delivery date and mark as delivered
+        donorGift.deliveryDate = today;
+        donorGift.isDelivered = true;
+        await this.donorGiftRepo.save(donorGift);
+        await this.refreshData();
+        this.ui.info('המתנה סומנה כנמסרה עם תאריך של היום');
+      } else {
+        // Unmarking as delivered
+        donorGift.isDelivered = false;
+        await this.donorGiftRepo.save(donorGift);
+        await this.refreshData();
+        this.ui.info('הסימון כנמסר בוטל');
+      }
+    } catch (error) {
+      console.error('Error toggling delivery status:', error);
+      this.ui.error('שגיאה בעדכון סטטוס המסירה');
+    }
   }
 }

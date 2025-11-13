@@ -135,15 +135,15 @@ export class CertificatesComponent implements OnInit, OnDestroy {
   async loadCertificates() {
     this.loading = true;
     try {
-      // Build filters object for server-side filtering
+      // Build filters object for server-side filtering (local filters only)
+      // Global filters are fetched from user.settings in the backend
       const filters: CertificateFilters = {
         certificateType: this.filterCertificateType?.trim() || undefined,
         dateFrom: this.filterDateFrom ? this.formatDateForFilter(this.filterDateFrom) : undefined,
         dateTo: this.filterDateTo ? this.formatDateForFilter(this.filterDateTo) : undefined,
         donorSearchText: this.donorSearchText?.trim() || undefined,
         fromParasha: this.filterFromParasha?.trim() || undefined,
-        toParasha: this.filterToParasha?.trim() || undefined,
-        globalFilters: this.globalFilterService.currentFilters
+        toParasha: this.filterToParasha?.trim() || undefined
       };
 
       // Get total count, summary, and certificates from server

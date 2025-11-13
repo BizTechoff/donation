@@ -21,7 +21,7 @@ export interface DonationFilters {
   amountFrom?: number;
   selectedCampaignId?: string;
   donorId?: string;
-  globalFilters?: GlobalFilters; // Add global filters support
+  // globalFilters removed - now fetched from user.settings in backend
 }
 
 export interface DonationDetailsData {
@@ -46,11 +46,10 @@ export interface DonationSelectionData {
 export class DonationController {
 
   @BackendMethod({ allowed: Allow.authenticated })
-  static async getDonationsForSelection(globalFilters: GlobalFilters, excludeIds?: string[]): Promise<DonationSelectionData> {
-    // Load donations using global filters
-    let donations = await DonationController.findFilteredDonations({
-      globalFilters
-    }, undefined, 500); // Limit to 500 for performance
+  static async getDonationsForSelection(excludeIds?: string[]): Promise<DonationSelectionData> {
+    // Load donations using global filters from user.settings
+    // Global filters are fetched automatically in findFilteredDonations
+    let donations = await DonationController.findFilteredDonations({}, undefined, 500); // Limit to 500 for performance
 
     // Filter out excluded donations
     if (excludeIds && excludeIds.length > 0) {
@@ -175,15 +174,24 @@ export class DonationController {
     pageSize?: number,
     sortColumns?: Array<{ field: string; direction: 'asc' | 'desc' }>
   ): Promise<Donation[]> {
+    // 🎯 Fetch global filters from user.settings
+    const currentUserId = remult.user?.id;
+    let globalFilters: GlobalFilters | undefined = undefined;
+    if (currentUserId) {
+      const { User } = await import('../entity/user');
+      const user = await remult.repo(User).findId(currentUserId);
+      globalFilters = user?.settings?.globalFilters;
+    }
+
     console.log('DonationController.findFilteredDonations', JSON.stringify(filters, null, 2));
     let whereClause: any = {};
     let globalDonorIds: string[] | undefined = undefined;
 
     // Apply global filters first
-    if (filters.globalFilters) {
+    if (globalFilters) {
       console.log('Applying global filters...');
       // Get donor IDs from global filters (location + target audience)
-      globalDonorIds = await GlobalFilterController.getDonorIds(filters.globalFilters);
+      globalDonorIds = await GlobalFilterController.getDonorIds(globalFilters);
       console.log(`Found ${globalDonorIds?.length || 0} donors matching global filters`);
 
       if (globalDonorIds && globalDonorIds.length === 0) {
@@ -192,29 +200,29 @@ export class DonationController {
       }
 
       // Apply campaign filter from global filters
-      if (filters.globalFilters.campaignIds && filters.globalFilters.campaignIds.length > 0) {
-        whereClause.campaignId = { $in: filters.globalFilters.campaignIds };
+      if (globalFilters.campaignIds && globalFilters.campaignIds.length > 0) {
+        whereClause.campaignId = { $in: globalFilters.campaignIds };
       }
 
       // Apply date range filter from global filters
-      if (filters.globalFilters.dateFrom || filters.globalFilters.dateTo) {
+      if (globalFilters.dateFrom || globalFilters.dateTo) {
         whereClause.donationDate = {};
-        if (filters.globalFilters.dateFrom) {
-          whereClause.donationDate.$gte = filters.globalFilters.dateFrom;
+        if (globalFilters.dateFrom) {
+          whereClause.donationDate.$gte = globalFilters.dateFrom;
         }
-        if (filters.globalFilters.dateTo) {
-          whereClause.donationDate.$lte = filters.globalFilters.dateTo;
+        if (globalFilters.dateTo) {
+          whereClause.donationDate.$lte = globalFilters.dateTo;
         }
       }
 
       // Apply amount range filter from global filters
-      if (filters.globalFilters.amountMin !== undefined || filters.globalFilters.amountMax !== undefined) {
+      if (globalFilters.amountMin !== undefined || globalFilters.amountMax !== undefined) {
         whereClause.amount = {};
-        if (filters.globalFilters.amountMin !== undefined) {
-          whereClause.amount.$gte = filters.globalFilters.amountMin;
+        if (globalFilters.amountMin !== undefined) {
+          whereClause.amount.$gte = globalFilters.amountMin;
         }
-        if (filters.globalFilters.amountMax !== undefined) {
-          whereClause.amount.$lte = filters.globalFilters.amountMax;
+        if (globalFilters.amountMax !== undefined) {
+          whereClause.amount.$lte = globalFilters.amountMax;
         }
       }
     }
@@ -460,41 +468,50 @@ export class DonationController {
    * Returns null if no results should be returned (e.g., no matching donors)
    */
   private static async buildWhereClause(filters: DonationFilters): Promise<any | null> {
+    // 🎯 Fetch global filters from user.settings
+    const currentUserId = remult.user?.id;
+    let globalFilters: GlobalFilters | undefined = undefined;
+    if (currentUserId) {
+      const { User } = await import('../entity/user');
+      const user = await remult.repo(User).findId(currentUserId);
+      globalFilters = user?.settings?.globalFilters;
+    }
+
     let whereClause: any = {};
     let globalDonorIds: string[] | undefined = undefined;
 
     // Apply global filters first
-    if (filters.globalFilters) {
-      globalDonorIds = await GlobalFilterController.getDonorIds(filters.globalFilters);
+    if (globalFilters) {
+      globalDonorIds = await GlobalFilterController.getDonorIds(globalFilters);
 
       if (globalDonorIds && globalDonorIds.length === 0) {
         return null;
       }
 
       // Apply campaign filter from global filters
-      if (filters.globalFilters.campaignIds && filters.globalFilters.campaignIds.length > 0) {
-        whereClause.campaignId = { $in: filters.globalFilters.campaignIds };
+      if (globalFilters.campaignIds && globalFilters.campaignIds.length > 0) {
+        whereClause.campaignId = { $in: globalFilters.campaignIds };
       }
 
       // Apply date range filter from global filters
-      if (filters.globalFilters.dateFrom || filters.globalFilters.dateTo) {
+      if (globalFilters.dateFrom || globalFilters.dateTo) {
         whereClause.donationDate = {};
-        if (filters.globalFilters.dateFrom) {
-          whereClause.donationDate.$gte = filters.globalFilters.dateFrom;
+        if (globalFilters.dateFrom) {
+          whereClause.donationDate.$gte = globalFilters.dateFrom;
         }
-        if (filters.globalFilters.dateTo) {
-          whereClause.donationDate.$lte = filters.globalFilters.dateTo;
+        if (globalFilters.dateTo) {
+          whereClause.donationDate.$lte = globalFilters.dateTo;
         }
       }
 
       // Apply amount range filter from global filters
-      if (filters.globalFilters.amountMin !== undefined || filters.globalFilters.amountMax !== undefined) {
+      if (globalFilters.amountMin !== undefined || globalFilters.amountMax !== undefined) {
         whereClause.amount = {};
-        if (filters.globalFilters.amountMin !== undefined) {
-          whereClause.amount.$gte = filters.globalFilters.amountMin;
+        if (globalFilters.amountMin !== undefined) {
+          whereClause.amount.$gte = globalFilters.amountMin;
         }
-        if (filters.globalFilters.amountMax !== undefined) {
-          whereClause.amount.$lte = filters.globalFilters.amountMax;
+        if (globalFilters.amountMax !== undefined) {
+          whereClause.amount.$lte = globalFilters.amountMax;
         }
       }
     }

@@ -1,7 +1,10 @@
 <div class="modal-container" *ngIf="!loading && donorGift">
   <div class="modal-header">
-    <h2>{{ isNew ? (i18n.terms$ | async)?.addNewGift : (i18n.terms$ | async)?.editGift }}</h2>
-    <button mat-icon-button (click)="close()">
+    <div class="header-content">
+      <mat-icon class="header-icon">card_giftcard</mat-icon>
+      <h2>{{ isNew ? (i18n.terms$ | async)?.addNewGift : (i18n.terms$ | async)?.editGift }}</h2>
+    </div>
+    <button mat-icon-button (click)="close()" class="close-button">
       <mat-icon>close</mat-icon>
     </button>
   </div>
@@ -9,30 +12,40 @@
   <div class="modal-body">
     <div class="form-section">
       <!-- Donor Selection -->
-      <div class="form-row">
-        <div class="form-group full-width">
+      <div class="form-card">
+        <div class="form-card-header">
+          <mat-icon class="card-icon">person</mat-icon>
           <label>{{ (i18n.terms$ | async)?.donor }} <span class="required">*</span></label>
-          <div class="donor-selector">
+        </div>
+        <div class="donor-selector">
+          <div class="input-with-icon">
+            <mat-icon class="input-icon">account_circle</mat-icon>
             <input type="text" class="form-control"
                    [value]="selectedDonor ? getDonorName(selectedDonor) : ''"
                    [placeholder]="(i18n.terms$ | async)?.selectDonorPlaceholder || 'בחר תורם'"
                    readonly
                    [disabled]="!isNew"
                    (click)="isNew && openDonorSelectionModal()">
-            <button mat-icon-button
-                    (click)="openDonorSelectionModal()"
-                    [disabled]="!isNew"
-                    [title]="(i18n.terms$ | async)?.searchDonor || 'חפש תורם'">
-              <mat-icon>search</mat-icon>
-            </button>
           </div>
+          <button mat-raised-button
+                  color="primary"
+                  (click)="openDonorSelectionModal()"
+                  [disabled]="!isNew"
+                  class="search-btn"
+                  [title]="(i18n.terms$ | async)?.searchDonor || 'חפש תורם'">
+            <mat-icon>search</mat-icon>
+          </button>
         </div>
       </div>
 
       <!-- Gift Selection -->
-      <div class="form-row">
-        <div class="form-group full-width">
+      <div class="form-card">
+        <div class="form-card-header">
+          <mat-icon class="card-icon">redeem</mat-icon>
           <label>{{ (i18n.terms$ | async)?.gift }} <span class="required">*</span></label>
+        </div>
+        <div class="input-with-icon">
+          <mat-icon class="input-icon">loyalty</mat-icon>
           <select class="form-control"
                   [(ngModel)]="donorGift.giftId"
                   (ngModelChange)="onGiftChange($event)">
@@ -45,35 +58,40 @@
       </div>
 
       <!-- Delivery Date -->
-      <div class="form-row">
-        <div class="form-group">
-          <label>{{ (i18n.terms$ | async)?.deliveryDate }} <span class="required">*</span></label>
-          <input type="date"
-                 class="form-control"
-                 [(ngModel)]="donorGift.deliveryDate">
+      <div class="form-card">
+        <div class="form-card-header">
+          <mat-icon class="card-icon">event</mat-icon>
+          <label>{{ (i18n.terms$ | async)?.deliveryDate }}</label>
         </div>
-        <div class="form-group">
-          <label>{{ (i18n.terms$ | async)?.hebrewDate }}</label>
-          <input type="text"
-                 class="form-control"
-                 [value]="getHebrewDate(donorGift.deliveryDate)"
-                 readonly>
-        </div>
+        <app-modern-dual-date-picker
+          [(ngModel)]="donorGift.deliveryDate"
+          [label]="''"
+          [compact]="true"
+          [horizontal]="true">
+        </app-modern-dual-date-picker>
       </div>
 
       <!-- Status -->
-      <div class="form-row">
-        <div class="form-group full-width">
-          <mat-checkbox [(ngModel)]="donorGift.isDelivered">
+      <div class="form-card status-card">
+        <div class="checkbox-wrapper">
+          <mat-icon class="status-icon" [class.delivered]="donorGift.isDelivered">
+            {{ donorGift.isDelivered ? 'check_circle' : 'radio_button_unchecked' }}
+          </mat-icon>
+          <mat-checkbox [(ngModel)]="donorGift.isDelivered"
+                        (ngModelChange)="onDeliveryStatusChange($event)"
+                        class="styled-checkbox">
             {{ (i18n.terms$ | async)?.giftDelivered }}
           </mat-checkbox>
         </div>
       </div>
 
       <!-- Notes -->
-      <div class="form-row">
-        <div class="form-group full-width">
+      <div class="form-card">
+        <div class="form-card-header">
+          <mat-icon class="card-icon">note</mat-icon>
           <label>{{ (i18n.terms$ | async)?.notes }}</label>
+        </div>
+        <div class="textarea-wrapper">
           <textarea class="form-control"
                     rows="4"
                     [(ngModel)]="donorGift.notes"
@@ -85,6 +103,7 @@
 
   <div class="modal-footer">
     <button class="btn btn-secondary" (click)="close()">
+      <mat-icon>close</mat-icon>
       {{ (i18n.terms$ | async)?.cancel }}
     </button>
     <button *ngIf="!isNew && hasReminderFlag" class="btn btn-info" (click)="openReminder()">

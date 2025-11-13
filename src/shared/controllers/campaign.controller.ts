@@ -36,12 +36,20 @@ export class CampaignController {
 
   @BackendMethod({ allowed: Allow.authenticated })
   static async findFilteredCampaigns(
-    globalFilters: GlobalFilters,
     localFilters: CampaignFilters,
     page?: number,
     pageSize?: number,
     sortColumns?: Array<{ field: string; direction: 'asc' | 'desc' }>
   ): Promise<Campaign[]> {
+    // 🎯 Fetch global filters from user.settings
+    const currentUserId = remult.user?.id;
+    let globalFilters: GlobalFilters | undefined = undefined;
+    if (currentUserId) {
+      const { User } = await import('../entity/user');
+      const user = await remult.repo(User).findId(currentUserId);
+      globalFilters = user?.settings?.globalFilters;
+    }
+
     console.log('CampaignController.findFilteredCampaigns', globalFilters, localFilters);
 
     // Build orderBy from sortColumns or use default
@@ -65,18 +73,34 @@ export class CampaignController {
 
   @BackendMethod({ allowed: Allow.authenticated })
   static async countFilteredCampaigns(
-    globalFilters: GlobalFilters,
     localFilters: CampaignFilters
   ): Promise<number> {
+    // 🎯 Fetch global filters from user.settings
+    const currentUserId = remult.user?.id;
+    let globalFilters: GlobalFilters | undefined = undefined;
+    if (currentUserId) {
+      const { User } = await import('../entity/user');
+      const user = await remult.repo(User).findId(currentUserId);
+      globalFilters = user?.settings?.globalFilters;
+    }
+
     const whereClause = CampaignController.buildWhereClause(globalFilters, localFilters);
     return await remult.repo(Campaign).count(Object.keys(whereClause).length > 0 ? whereClause : undefined);
   }
 
   @BackendMethod({ allowed: Allow.authenticated })
   static async getSummaryForFilteredCampaigns(
-    globalFilters: GlobalFilters,
     localFilters: CampaignFilters
   ): Promise<CampaignSummary> {
+    // 🎯 Fetch global filters from user.settings
+    const currentUserId = remult.user?.id;
+    let globalFilters: GlobalFilters | undefined = undefined;
+    if (currentUserId) {
+      const { User } = await import('../entity/user');
+      const user = await remult.repo(User).findId(currentUserId);
+      globalFilters = user?.settings?.globalFilters;
+    }
+
     const whereClause = CampaignController.buildWhereClause(globalFilters, localFilters);
 
     const campaigns = await remult.repo(Campaign).find({
@@ -93,7 +117,7 @@ export class CampaignController {
   /**
    * Build where clause for filtering campaigns
    */
-  private static buildWhereClause(globalFilters: GlobalFilters, localFilters: CampaignFilters): any {
+  private static buildWhereClause(globalFilters: GlobalFilters | undefined, localFilters: CampaignFilters): any {
     const whereClause: any = {};
 
     // Apply local filters
@@ -110,7 +134,7 @@ export class CampaignController {
     }
 
     // Apply global date filter if provided
-    if (globalFilters.dateFrom || globalFilters.dateTo) {
+    if (globalFilters && (globalFilters.dateFrom || globalFilters.dateTo)) {
       whereClause.startDate = {};
       if (globalFilters.dateFrom) {
         whereClause.startDate.$gte = globalFilters.dateFrom;

@@ -178,6 +178,8 @@
           <td class="actions">
             <button class="btn-icon btn-edit" (click)="editDonation(donation)"
               [title]="(i18n.terms$ | async)?.edit">✏</button>
+            <button class="btn-icon btn-letter" (click)="printLetter(donation)"
+              [title]="(i18n.terms$ | async)?.letterGeneration">✉</button>
             <button class="btn-icon btn-delete" (click)="deleteDonation(donation)"
               [title]="(i18n.terms$ | async)?.delete">🗑</button>
           </td>

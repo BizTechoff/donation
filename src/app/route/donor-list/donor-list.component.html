@@ -77,6 +77,8 @@
           <td>{{getDonorTotalDonations(donor.id) | number:'1.2-2'}}</td>
           <td>{{ formatHebrewDate(getDonorLastDonationDate(donor.id)) }}</td>
           <td class="actions">
+            <button class="btn-icon btn-donations" (click)="openDonorDonations(donor); $event.stopPropagation()" [title]="(i18n.terms$ | async)?.donations || 'תרומות'">💰</button>
+            <button class="btn-icon btn-gifts" (click)="openDonorGifts(donor); $event.stopPropagation()" [title]="(i18n.terms$ | async)?.gifts || 'מתנות'">🎁</button>
             <button class="btn-icon btn-edit" (click)="editDonor(donor)" [title]="(i18n.terms$ | async)?.edit">✏</button>
             <button class="btn-icon btn-delete" (click)="deleteDonor(donor)" [title]="(i18n.terms$ | async)?.delete">🗑</button>
           </td>

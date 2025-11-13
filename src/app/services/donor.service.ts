@@ -27,17 +27,15 @@ export class DonorService {
 
   /**
    * Get only donor IDs with filters - much faster for maps
+   * Global filters are fetched from user.settings in the backend
    */
   async findFilteredIds(additionalFilters?: Partial<GlobalFilters>): Promise<string[]> {
-    const globalFilters = this.globalFilterService.currentFilters;
-    const combinedFilters = { ...globalFilters, ...additionalFilters };
-    console.log('DonorService.findFilteredIds - globalFilters:', JSON.stringify(globalFilters, null, 2));
-    console.log('DonorService.findFilteredIds - combinedFilters:', JSON.stringify(combinedFilters, null, 2));
-    return await DonorController.findFilteredIds(combinedFilters);
+    console.log('DonorService.findFilteredIds - additionalFilters:', JSON.stringify(additionalFilters, null, 2));
+    return await DonorController.findFilteredIds(additionalFilters);
   }
 
   /**
-   * Find donors with global filters applied automatically
+   * Find donors with global filters applied automatically in the backend
    */
   async findFiltered(
     searchTerm?: string,
@@ -46,9 +44,7 @@ export class DonorService {
     pageSize?: number,
     sortColumns?: Array<{ field: string; direction: 'asc' | 'desc' }>
   ): Promise<Donor[]> {
-    const globalFilters = this.globalFilterService.currentFilters;
-    const combinedFilters = { ...globalFilters, ...additionalFilters };
-    return await DonorController.findFilteredDonors(combinedFilters, searchTerm, page, pageSize, sortColumns);
+    return await DonorController.findFilteredDonors(searchTerm, additionalFilters, page, pageSize, sortColumns);
   }
 
   async findById(id: string): Promise<Donor | null> {
@@ -64,12 +60,10 @@ export class DonorService {
   }
 
   /**
-   * Count donors with global filters applied automatically
+   * Count donors with global filters applied automatically in the backend
    */
   async countFiltered(searchTerm?: string, additionalFilters?: Partial<GlobalFilters>): Promise<number> {
-    const globalFilters = this.globalFilterService.currentFilters;
-    const combinedFilters = { ...globalFilters, ...additionalFilters };
-    return await DonorController.countFilteredDonors(combinedFilters, searchTerm);
+    return await DonorController.countFilteredDonors(searchTerm, additionalFilters);
   }
 
   /**

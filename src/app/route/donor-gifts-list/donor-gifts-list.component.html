@@ -136,6 +136,12 @@
           </td>
           <td>{{ donorGift.notes || '-' }}</td>
           <td class="actions" (click)="$event.stopPropagation()">
+            <button class="btn-icon btn-delivery"
+                    [class.delivered]="donorGift.isDelivered"
+                    (click)="toggleDeliveryStatus(donorGift)"
+                    [title]="donorGift.isDelivered ? (i18n.terms$ | async)?.markAsNotDelivered : (i18n.terms$ | async)?.markAsDelivered">
+              {{ donorGift.isDelivered ? '✅' : '📦' }}
+            </button>
             <button class="btn-icon btn-edit" (click)="editDonorGift(donorGift)" [title]="(i18n.terms$ | async)?.edit">✏</button>
             <button class="btn-icon btn-delete" (click)="deleteDonorGift(donorGift)" [title]="(i18n.terms$ | async)?.delete">🗑</button>
           </td>

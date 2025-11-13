@@ -6,7 +6,6 @@ import { Reminder } from '../../../../shared/entity';
 import { I18nService } from '../../../i18n/i18n.service';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { ReminderService } from '../../../services/reminder.service';
-import { GlobalFilterService } from '../../../services/global-filter.service';
 import { ReminderSnoozeModalComponent, SnoozePeriod } from '../reminder-snooze-modal/reminder-snooze-modal.component';
 
 @DialogConfig({
@@ -29,8 +28,7 @@ export class RemindersListModalComponent implements OnInit {
     public i18n: I18nService,
     private ui: UIToolsService,
     public dialogRef: MatDialogRef<RemindersListModalComponent>,
-    private reminderService: ReminderService,
-    private globalFilterService: GlobalFilterService
+    private reminderService: ReminderService
   ) {}
 
   async ngOnInit() {
@@ -41,10 +39,8 @@ export class RemindersListModalComponent implements OnInit {
     this.loading = true;
     try {
       // Get global filters
-      const globalFilters = this.globalFilterService.currentFilters;
-
-      // Use ReminderService to get active reminders with global filters applied
-      this.reminders = await this.reminderService.findActiveReminders(globalFilters);
+      // Global filters are fetched from user.settings in the backend
+      this.reminders = await this.reminderService.findActiveReminders();
 
     } catch (error) {
       console.error('Error loading reminders:', error);

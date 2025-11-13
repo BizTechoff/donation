@@ -511,12 +511,16 @@
               <th>{{ (i18n.terms$ | async)?.cityColumn }}</th>
               <th>{{ (i18n.terms$ | async)?.lastDateColumn }}</th>
               <th class="sortable" [class.sorted]="isPaymentSorted('promisedAmount')" (click)="togglePaymentSort('promisedAmount', $event)">
-                {{ (i18n.terms$ | async)?.inShekelColumn }}
+                {{ (i18n.terms$ | async)?.commitmentColumn }}
                 <span class="sort-icon" *ngIf="getPaymentSortIcon('promisedAmount')">{{ getPaymentSortIcon('promisedAmount') }}</span>
               </th>
               <th class="sortable" [class.sorted]="isPaymentSorted('actualAmount')" (click)="togglePaymentSort('actualAmount', $event)">
-                {{ (i18n.terms$ | async)?.donationsColumn }}
+                {{ (i18n.terms$ | async)?.actualPaymentColumn }}
                 <span class="sort-icon" *ngIf="getPaymentSortIcon('actualAmount')">{{ getPaymentSortIcon('actualAmount') }}</span>
+              </th>
+              <th class="sortable" [class.sorted]="isPaymentSorted('remainingDebt')" (click)="togglePaymentSort('remainingDebt', $event)">
+                {{ (i18n.terms$ | async)?.remainingDebtColumn }}
+                <span class="sort-icon" *ngIf="getPaymentSortIcon('remainingDebt')">{{ getPaymentSortIcon('remainingDebt') }}</span>
               </th>
             </tr>
           </thead>
@@ -527,7 +531,8 @@
               <td>{{payment.city || '-'}}</td>
               <td>{{formatHebrewDate(payment.lastDonationDate)}}</td>
               <td>{{formatCurrency(payment.promisedAmount)}}</td>
-              <td>{{payment.actualAmount}}</td>
+              <td>{{formatCurrency(payment.actualAmount)}}</td>
+              <td>{{formatCurrency(payment.remainingDebt)}}</td>
             </tr>
           </tbody>
         </table>

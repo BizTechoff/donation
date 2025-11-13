@@ -82,7 +82,7 @@ export class Reminder extends IdEntity {
     caption: 'סוג תזכורת',
     validate: Validators.required,
   })
-  type: 'donation_followup' | 'thank_you' | 'receipt' | 'birthday' | 'holiday' | 'general' | 'meeting' | 'phone_call' | 'memorialDay' | 'memorial' | 'yahrzeit' = 'general'
+  type: 'donation_followup' | 'thank_you' | 'receipt' | 'birthday' | 'holiday' | 'general' | 'meeting' | 'phone_call' | 'memorialDay' | 'memorial' | 'yahrzeit' | 'gift' = 'general'
 
   @Fields.string({
     caption: 'עדיפות',
@@ -263,6 +263,7 @@ export class Reminder extends IdEntity {
       case 'memorialDay': return 'נציב יום'
       case 'memorial': return 'נציב זכרון'
       case 'yahrzeit': return 'יוארצהייט'
+      case 'gift': return 'מתנה'
       default: return this.type
     }
   }

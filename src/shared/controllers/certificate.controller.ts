@@ -12,7 +12,7 @@ export interface CertificateFilters {
   donorSearchText?: string;
   fromParasha?: string;
   toParasha?: string;
-  globalFilters?: GlobalFilters;
+  // globalFilters removed - now fetched from user.settings in backend
 }
 
 export interface CertificateSummary {
@@ -124,9 +124,18 @@ export class CertificateController {
   private static async buildWhereClause(filters: CertificateFilters): Promise<any | null> {
     let whereClause: any = {};
 
+    // 🎯 הקסם: שליפת הגלובלים מה-user.settings
+    const currentUserId = remult.user?.id;
+    let globalFilters: GlobalFilters | undefined = undefined;
+    if (currentUserId) {
+      const { User } = await import('../entity/user');
+      const user = await remult.repo(User).findId(currentUserId);
+      globalFilters = user?.settings?.globalFilters;
+    }
+
     // Apply global filters first (affects donorId)
-    if (filters.globalFilters) {
-      const globalDonorIds = await GlobalFilterController.getDonorIds(filters.globalFilters);
+    if (globalFilters) {
+      const globalDonorIds = await GlobalFilterController.getDonorIds(globalFilters);
       if (globalDonorIds !== undefined) {
         if (globalDonorIds.length === 0) {
           return null; // No donors match global filters
@@ -164,13 +173,21 @@ export class CertificateController {
     if (filters.donorSearchText && filters.donorSearchText.trim() !== '') {
       const searchLower = filters.donorSearchText.toLowerCase().trim();
 
+      // Build donor search query
+      const donorSearchWhere: any = {
+        $or: [
+          { firstName: { $contains: searchLower } },
+          { lastName: { $contains: searchLower } }
+        ]
+      };
+
+      // If we already have a donorId filter from global filters, combine them
+      if (whereClause.donorId?.$in) {
+        donorSearchWhere.id = { $in: whereClause.donorId.$in };
+      }
+
       const matchingDonors = await remult.repo(Donor).find({
-        where: {
-          $or: [
-            { firstName: { $contains: searchLower } },
-            { lastName: { $contains: searchLower } }
-          ]
-        }
+        where: donorSearchWhere
       });
 
       const donorIds = matchingDonors.map(d => d.id);

@@ -17,7 +17,6 @@ export class ReminderService {
    */
   async findFiltered(
     filters: {
-      globalFilters?: GlobalFilters
       dateFrom?: Date
       dateTo?: Date
       searchTerm?: string
@@ -36,7 +35,6 @@ export class ReminderService {
    */
   async countFiltered(
     filters: {
-      globalFilters?: GlobalFilters
       dateFrom?: Date
       dateTo?: Date
       searchTerm?: string
@@ -52,7 +50,6 @@ export class ReminderService {
    */
   async getSummary(
     filters: {
-      globalFilters?: GlobalFilters
       dateFrom?: Date
       dateTo?: Date
       searchTerm?: string
@@ -109,8 +106,9 @@ export class ReminderService {
   /**
    * Find active reminders (for notifications/alerts)
    * Returns reminders where nextReminderDate <= today
+   * Global filters are fetched from user.settings in the backend
    */
-  async findActiveReminders(globalFilters?: GlobalFilters): Promise<Reminder[]> {
-    return await ReminderController.findActiveReminders(globalFilters);
+  async findActiveReminders(): Promise<Reminder[]> {
+    return await ReminderController.findActiveReminders();
   }
 }

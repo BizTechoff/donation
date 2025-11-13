@@ -22,8 +22,9 @@ export class ModernDualDatePickerComponent implements OnInit, OnDestroy, Control
   @Input() isDiaspora: boolean = false; // For diaspora holidays
   @Input() calendar_open_heb_and_eng_parallel: boolean = true; // Open both calendars in parallel
   @Input() showOnlyHebrew: boolean = false; // Show only Hebrew date picker
-  @Input() showOnlyGregorian: boolean = false; // Show only Gregorian date picker  
+  @Input() showOnlyGregorian: boolean = false; // Show only Gregorian date picker
   @Input() compact: boolean = false; // Compact mode for table cells
+  @Input() horizontal: boolean = false; // Horizontal layout (side by side)
   @Output() dateChange = new EventEmitter<Date | null>();
 
   @ViewChild('hebrewPopup', { static: false }) hebrewPopup!: ElementRef;
