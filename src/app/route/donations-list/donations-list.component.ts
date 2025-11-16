@@ -500,7 +500,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
       credit_card: this.i18n.terms.credit_card,
       bank_transfer: this.i18n.terms.bank_transfer,
       standing_order: this.i18n.terms.standingOrder,
-      association: this.i18n.terms.other
+      association: this.i18n.terms.organization
     };
 
     return typeLabels[donation.donationMethod.type] || donation.donationMethod.name;

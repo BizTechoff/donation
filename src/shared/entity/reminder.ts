@@ -211,6 +211,13 @@ export class Reminder extends IdEntity {
   })
   specialOccasion = '' // Holiday or special occasion name
 
+  @Fields.date({
+    caption: 'נשלחה התראה',
+    allowApiUpdate: false,
+    allowNull: true,
+  })
+  alertSent?: Date
+
   @Fields.boolean({
     caption: 'הושלם',
   })

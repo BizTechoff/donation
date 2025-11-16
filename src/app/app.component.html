@@ -13,11 +13,8 @@
       <app-global-filters *ngIf="remult.authenticated()"></app-global-filters>
 
       <!-- Reminder Bell Notification -->
-      <button mat-icon-button
-              class="reminder-bell"
-              [class.reminders-active]="(activeRemindersCount$ | async) || 0 > 0"
-              *ngIf="remult.authenticated()"
-              (click)="navigateToReminders()">
+      <button mat-icon-button class="reminder-bell" [class.reminders-active]="(activeRemindersCount$ | async) || 0 > 0"
+        *ngIf="remult.authenticated()" (click)="navigateToReminders()">
         <mat-icon>notifications</mat-icon>
         <span *ngIf="(activeRemindersCount$ | async) as count" [class.reminder-count]="count > 0">{{ count }}</span>
       </button>
@@ -32,7 +29,9 @@
       </ng-container>
       <ng-container *ngIf="remult.authenticated()">
         <button mat-stroked-button class="toolbar-button" [matMenuTriggerFor]="menu">
-          {{ remult.user!.name }}
+          <div style="display: flex; flex-direction: column;">
+            <span>{{ remult.user!.name }}</span>
+          </div>
         </button>
         <mat-menu #menu="matMenu">
           <button mat-menu-item (click)="updateInfo()">
@@ -44,6 +43,8 @@
           <button mat-menu-item (click)="signOut()">{{ (i18n.terms$ | async)?.signOut }}</button>
         </mat-menu>
       </ng-container>
+      <span style="display: flex; position: absolute; bottom: 0; right: 0; font-size: x-small;">{{ 'כ"ג חשון התשפ"ו'
+        }}</span>
     </div>
   </mat-toolbar>
   <mat-sidenav-container class="app-sidenav-container" [dir]="i18n.lang.RTL ? 'rtl' : 'ltr'">
@@ -66,7 +67,7 @@
 
       <mat-nav-list role="list">
         <ng-container *ngFor="let m of router.config; let i = index">
-          <mat-divider  style="opacity: .2; color: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"
+          <mat-divider style="opacity: .2; color: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"
             *ngIf="shouldDisplayRoute(m) && [terms.userAccounts, terms.reminders, terms.certificates].includes(m.path)"></mat-divider>
           <a mat-list-item *ngIf="shouldDisplayRoute(m)" routerLinkActive="active-route" [routerLink]="m.path"
             (click)="routeClicked()">
@@ -81,7 +82,7 @@
       </div>
     </div>
   </mat-sidenav-container>
- 
+
   <div class="biztechoff">
     <!-- <ngx-marquee> -->
     <span (click)="this.openBizTechoff()"><i>Biz</i>Techoff™v{{ this.version }}</span>

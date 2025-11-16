@@ -12,11 +12,12 @@ import { I18nService } from '../../i18n/i18n.service';
 import { DonorService } from '../../services/donor.service';
 import { GeoService } from '../../services/geo.service';
 import { GeocodingService } from '../../services/geocoding.service';
-import { GlobalFilterService } from '../../services/global-filter.service';
+import { GlobalFilterService, GlobalFilters } from '../../services/global-filter.service';
 import { SidebarService } from '../../services/sidebar.service';
-import { DonorMapController, DonorMapData } from '../../../shared/controllers/donor-map.controller';
+import { DonorMapController, DonorMapData, MarkerData, MapFilters as BackendMapFilters, MapStatistics } from '../../../shared/controllers/donor-map.controller';
 import { User } from '../../../shared/entity/user';
 import { HebrewDateService } from '../../services/hebrew-date.service';
+import { BusyService } from '../../common-ui-elements/src/angular/wait/busy-service';
 
 // Fix for default markers in Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -52,14 +53,16 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
   private tempPolyline?: L.Polyline;
   private subscription = new Subscription();
 
-  // All donor map data loaded from server
-  donorsMapData: DonorMapData[] = [];
-  filteredDonorsMapData: DonorMapData[] = [];
+  // Lightweight markers loaded from server (new approach)
+  markersData: MarkerData[] = [];
 
   loading = false;
   showSummary = true;
   isFullscreen = false;
   isPolygonMode = false;
+
+  // Flag to track if map settings were loaded (one-time operation)
+  private mapSettingsLoaded = false;
 
   // Map filters
   mapFilters: MapFilters = {
@@ -99,26 +102,11 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     private geoService: GeoService,
     private cdr: ChangeDetectorRef,
     private sidebarService: SidebarService,
-    private hebrewDateService: HebrewDateService
+    private hebrewDateService: HebrewDateService,
+    private busy: BusyService
   ) { }
 
-  // Calculate statistics from donorsMapData
-  private calculateStatistics(): void {
-    this.totalDonors = this.donorsMapData.length;
-    this.activeDonors = this.donorsMapData.filter(d => d.donor.isActive).length;
-
-    if (this.donorsMapData.length === 0) {
-      this.averageDonation = 0;
-    } else {
-      const totalAmount = this.donorsMapData.reduce((sum, d) => sum + d.stats.totalDonations, 0);
-      const totalCount = this.donorsMapData.reduce((sum, d) => sum + d.stats.donationCount, 0);
-      this.averageDonation = totalCount > 0 ? totalAmount / totalCount : 0;
-    }
-
-    this.donorsOnMap = this.donorsMapData.filter(d => {
-      return d.donorPlace?.place?.latitude && d.donorPlace?.place?.longitude;
-    }).length;
-  }
+  // Statistics are now loaded from server via getMapStatistics()
 
   async ngOnInit() {
     // Register global functions for popup callbacks
@@ -129,9 +117,6 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     (window as any).addDonationForDonor = (donorId: string) => {
       this.addDonationForDonor(donorId);
     };
-
-    // Load saved map settings
-    await this.loadMapSettings();
 
     // Subscribe to global filter changes
     this.subscription.add(
@@ -156,48 +141,62 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
   // This ngOnDestroy method was moved to the end of the class
 
   async loadData() {
-    this.loading = true;
-    try {
-      console.time('Total map load time');
+    await this.busy.doWhileShowingBusy(async () => {
+      try {
+        // Load map settings once on first call
+        if (!this.mapSettingsLoaded) {
+          await this.loadMapSettings();
+          this.mapSettingsLoaded = true;
+        }
 
-      console.time('Get donor IDs');
-      // Get only donor IDs without loading full donor objects - much faster!
-      const donorIds = await this.donorService.findFilteredIds();
-      console.timeEnd('Get donor IDs');
+        console.time('Total map load time');
 
-      console.log('DonorsMap: Found', donorIds.length, 'donor IDs to load on map');
+        // Build map filters for backend - send all filters to server
+        const backendFilters: BackendMapFilters = {
+          searchTerm: this.mapFilters.searchTerm?.trim() || undefined,
+          minDonationCount: this.mapFilters.minDonationCount > 0 ? this.mapFilters.minDonationCount : undefined,
+          statusFilter: this.mapFilters.statusFilter.length > 0 ? this.mapFilters.statusFilter as Array<'active' | 'inactive' | 'high-donor' | 'recent-donor'> : undefined,
+          hasCoordinates: this.mapFilters.hasCoordinates,
+          minTotalDonations: this.mapFilters.minTotalDonations > 0 ? this.mapFilters.minTotalDonations : undefined,
+          maxTotalDonations: this.mapFilters.maxTotalDonations < 999999999 ? this.mapFilters.maxTotalDonations : undefined,
+          hasRecentDonation: this.mapFilters.hasRecentDonation
+        };
 
-      // Limit to first 200 donors for performance
-      const limitedDonorIds = donorIds.slice(0, 200);
-      console.log('DonorsMap: Limited to', limitedDonorIds.length, 'donors for map performance');
+        console.log('DonorsMap: Sending backend filters:', backendFilters);
 
-      console.time('Load map data from server');
-      // Load all map data from server in a single call
-      // This loads donations and calculates stats for these donors
-      this.donorsMapData = await DonorMapController.loadDonorsMapData(limitedDonorIds);
-      console.timeEnd('Load map data from server');
+        // Load markers and statistics in parallel
+        // @ts-ignore - remult metadata not updated yet
+        const [markersData, statistics] = await Promise.all([
+          DonorMapController.getMapMarkers(backendFilters),
+          // @ts-ignore - remult metadata not updated yet
+          DonorMapController.getMapStatistics(backendFilters)
+        ]);
 
-      // Calculate statistics
-      this.calculateStatistics();
+        this.markersData = markersData;
 
-      // Apply local map filters
-      this.applyMapFilters();
+        // Update statistics
+        this.totalDonors = statistics.totalDonors;
+        this.activeDonors = statistics.activeDonors;
+        this.donorsOnMap = markersData.length; // מספר המרקרים שבאמת על המפה
+        this.averageDonation = statistics.averageDonation;
 
-      console.log('DonorsMap: Loaded donor map data:', this.donorsMapData.length);
-      console.log('DonorsMap: Filtered donors:', this.filteredDonorsMapData.length);
-      console.log('DonorsMap: Donors with locations:', this.donorsOnMap);
+        console.log('DonorsMap: Loaded markers:', this.markersData.length);
+        console.log('DonorsMap: Statistics:', statistics);
 
-      console.timeEnd('Total map load time');
+        console.timeEnd('Total map load time');
 
-      // Update map markers if map is initialized
-      if (this.map && this.markersLayer) {
-        this.addMarkersToMap();
+        // Update map markers if map is initialized
+        if (this.map && this.markersLayer) {
+          this.addMarkersToMap();
+        }
+      } catch (error) {
+        console.error('Error loading data:', error);
+        if (error && typeof error === 'object') {
+          console.error('Error details:', JSON.stringify(error, null, 2));
+        }
+        this.ui.error('שגיאה בטעינת נתוני המפה: ' + (error instanceof Error ? error.message : String(error)));
       }
-    } catch (error) {
-      console.error('Error loading data:', error);
-    } finally {
-      this.loading = false;
-    }
+    });
   }
 
   // Load map settings from user preferences
@@ -266,60 +265,7 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  // Apply local map filters to the loaded data
-  applyMapFilters() {
-    this.filteredDonorsMapData = this.donorsMapData.filter(donorData => {
-      // Status filter
-      if (this.mapFilters.statusFilter.length > 0) {
-        if (!this.mapFilters.statusFilter.includes(donorData.stats.status)) {
-          return false;
-        }
-      }
-
-      // Coordinates filter
-      if (this.mapFilters.hasCoordinates !== null) {
-        const hasCoords = !!(donorData.donorPlace?.place?.latitude && donorData.donorPlace?.place?.longitude);
-        if (this.mapFilters.hasCoordinates !== hasCoords) {
-          return false;
-        }
-      }
-
-      // Total donations filter
-      if (donorData.stats.totalDonations < this.mapFilters.minTotalDonations ||
-          donorData.stats.totalDonations > this.mapFilters.maxTotalDonations) {
-        return false;
-      }
-
-      // Donation count filter
-      if (donorData.stats.donationCount < this.mapFilters.minDonationCount) {
-        return false;
-      }
-
-      // Recent donation filter
-      if (this.mapFilters.hasRecentDonation !== null) {
-        const hasRecent = donorData.stats.status === 'recent-donor';
-        if (this.mapFilters.hasRecentDonation !== hasRecent) {
-          return false;
-        }
-      }
-
-      // Search term filter
-      if (this.mapFilters.searchTerm.trim()) {
-        const term = this.mapFilters.searchTerm.toLowerCase();
-        const matchesName = donorData.donor.firstName?.toLowerCase().includes(term) ||
-                           donorData.donor.lastName?.toLowerCase().includes(term) ||
-                           donorData.donor.fullName?.toLowerCase().includes(term);
-        const matchesAddress = donorData.fullAddress?.toLowerCase().includes(term);
-        const matchesEmail = donorData.email?.toLowerCase().includes(term);
-
-        if (!matchesName && !matchesAddress && !matchesEmail) {
-          return false;
-        }
-      }
-
-      return true;
-    });
-  }
+  // All filters are now applied on the server side in getMapMarkers()
 
   // Check if any filter is active
   hasActiveFilters(): boolean {
@@ -344,8 +290,8 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
       searchTerm: ''
     };
 
-    this.applyMapFilters();
-    this.addMarkersToMap();
+    // Reload data from server with cleared filters
+    this.loadData();
     this.saveMapSettings();
   }
 
@@ -358,15 +304,15 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
       this.mapFilters.statusFilter.push(status);
     }
 
-    this.applyMapFilters();
-    this.addMarkersToMap();
+    // Reload data from server with new filters
+    this.loadData();
     this.saveMapSettings();
   }
 
   // Update filter and refresh
   onFilterChange() {
-    this.applyMapFilters();
-    this.addMarkersToMap();
+    // Reload data from server with updated filters (searchTerm, minTotalDonations)
+    this.loadData();
     this.saveMapSettings();
   }
 
@@ -424,23 +370,16 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.markersLayer.clearLayers();
 
-    console.log('Adding markers for donors:', this.filteredDonorsMapData.length);
-    const donorsWithCoords = this.filteredDonorsMapData.filter(d => d.donorPlace?.place?.latitude && d.donorPlace?.place?.longitude);
-    console.log('Donors with coordinates:', donorsWithCoords.length);
+    console.log('Adding lightweight markers:', this.markersData.length);
 
     let addedCount = 0;
-    this.filteredDonorsMapData.forEach((donorData, index) => {
-      if (donorData.donorPlace?.place?.latitude && donorData.donorPlace?.place?.longitude) {
-        // console.log(`Adding marker ${index + 1}:`, donorData.donor.fullName, donorData.donorPlace.place.latitude, donorData.donorPlace.place.longitude);
-        try {
-          const marker = this.createMarkerForDonor(donorData);
-          this.markersLayer.addLayer(marker);
-          addedCount++;
-        } catch (error) {
-          console.error('Error creating marker for donor:', donorData.donor.fullName, error);
-        }
-      } else {
-        console.log(`No coordinates for donor ${index + 1}:`, donorData.donor.fullName);
+    this.markersData.forEach((markerData, index) => {
+      try {
+        const marker = this.createLightweightMarker(markerData);
+        this.markersLayer.addLayer(marker);
+        addedCount++;
+      } catch (error) {
+        console.error('Error creating marker for donor:', markerData.donorName, error);
       }
     });
 
@@ -475,6 +414,92 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     }, 100);
   }
 
+  /**
+   * Create a lightweight marker for a donor (new approach)
+   * Shows only basic info, loads full details on click
+   */
+  createLightweightMarker(markerData: MarkerData): L.Marker {
+    // קבע צבע לפי סטטוס
+    const color = this.getMarkerColor(markerData.status);
+
+    // יצירת אייקון צבעוני
+    const customIcon = L.divIcon({
+      html: `<div style="
+        background-color: ${color};
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 3px solid white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      "></div>`,
+      className: 'custom-marker',
+      iconSize: [20, 20],
+      iconAnchor: [10, 10]
+    });
+
+    const marker = L.marker([markerData.lat, markerData.lng], {
+      icon: customIcon
+    });
+
+    // הוסף popup פשוט עם שם התורם
+    const direction = this.i18n.lang.RTL ? 'rtl' : 'ltr';
+    const textAlign = this.i18n.lang.RTL ? 'right' : 'left';
+
+    const popupContent = `
+      <div style="direction: ${direction}; font-family: Arial, sans-serif; min-width: 200px; text-align: ${textAlign};">
+        <h4 style="margin: 0 0 10px 0; color: #2c3e50;">${markerData.donorName}</h4>
+        <div style="color: #7f8c8d; font-size: 12px;">לחץ למידע מלא...</div>
+      </div>
+    `;
+    marker.bindPopup(popupContent);
+
+    // Load full details on click
+    marker.on('click', async () => {
+      await this.onMarkerClick(markerData.donorId, marker);
+    });
+
+    return marker;
+  }
+
+  /**
+   * Load full donor details when marker is clicked
+   * Updates the popup with full information
+   */
+  async onMarkerClick(donorId: string, marker: L.Marker) {
+    try {
+      // Show loading state in popup
+      const direction = this.i18n.lang.RTL ? 'rtl' : 'ltr';
+      const textAlign = this.i18n.lang.RTL ? 'right' : 'left';
+
+      const loadingContent = `
+        <div style="direction: ${direction}; font-family: Arial, sans-serif; min-width: 250px; text-align: ${textAlign};">
+          <div style="color: #7f8c8d; padding: 20px; text-align: center;">טוען נתונים...</div>
+        </div>
+      `;
+      marker.setPopupContent(loadingContent);
+
+      // Load full donor details
+      // @ts-ignore - remult metadata not updated yet
+      const donorData = await DonorMapController.getDonorMapDetails(donorId);
+
+      // Create full popup content
+      const fullContent = this.createPopupContent(donorData);
+      marker.setPopupContent(fullContent);
+    } catch (error) {
+      console.error('Error loading donor details:', error);
+      const errorContent = `
+        <div style="direction: rtl; font-family: Arial, sans-serif; min-width: 250px; text-align: right;">
+          <div style="color: #e74c3c; padding: 20px;">שגיאה בטעינת נתונים</div>
+        </div>
+      `;
+      marker.setPopupContent(errorContent);
+    }
+  }
+
+  /**
+   * OLD approach: Create a marker with full donor data
+   * Kept for reference, will be removed later
+   */
   createMarkerForDonor(donorData: DonorMapData): L.Marker {
     const color = this.getMarkerColor(donorData.stats.status);
 
@@ -820,8 +845,8 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     // Add polygon to layer temporarily
     polygon.addTo(this.polygonLayer);
 
-    // Find donors inside polygon
-    const donorsInPolygon = this.findDonorsInPolygon(polygon);
+    // Find donors inside polygon (now async)
+    const donorsInPolygon = await this.findDonorsInPolygon(polygon);
 
     // Exit polygon mode
     this.isPolygonMode = false;
@@ -837,21 +862,27 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.polygonLayer.removeLayer(polygon);
   }
 
-  findDonorsInPolygon(polygon: L.Polygon): DonorMapData[] {
-    const donorsInside: DonorMapData[] = [];
+  async findDonorsInPolygon(polygon: L.Polygon): Promise<DonorMapData[]> {
+    const donorIdsInside: string[] = [];
 
-    for (const donorData of this.filteredDonorsMapData) {
-      if (donorData.donorPlace?.place?.latitude && donorData.donorPlace?.place?.longitude) {
-        const point = L.latLng(donorData.donorPlace.place.latitude, donorData.donorPlace.place.longitude);
+    // Find markers inside polygon (lightweight check)
+    for (const marker of this.markersData) {
+      const point = L.latLng(marker.lat, marker.lng);
 
-        // Check if point is inside polygon using ray casting algorithm
-        if (this.isPointInPolygon(point, polygon.getLatLngs()[0] as L.LatLng[])) {
-          donorsInside.push(donorData);
-        }
+      // Check if point is inside polygon using ray casting algorithm
+      if (this.isPointInPolygon(point, polygon.getLatLngs()[0] as L.LatLng[])) {
+        donorIdsInside.push(marker.donorId);
       }
     }
 
-    return donorsInside;
+    // Load full data only for donors inside polygon
+    if (donorIdsInside.length === 0) {
+      return [];
+    }
+
+    // @ts-ignore - remult metadata not updated yet
+    const donorsData = await DonorMapController.loadDonorsMapDataByIds(donorIdsInside);
+    return donorsData;
   }
 
   isPointInPolygon(point: L.LatLng, polygon: L.LatLng[]): boolean {

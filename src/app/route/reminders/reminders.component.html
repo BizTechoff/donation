@@ -66,33 +66,24 @@
       </div> -->
 
         <div class="filter-group">
-        <label>{{ (i18n.terms$ | async)?.dateFromFilter }}</label>
-          <app-modern-dual-date-picker
-            [(ngModel)]="filterDateFrom"
-            [label]="(i18n.terms$ | async)?.dateFromReminder || ''"
-            [compact]="true"
-            [showOnlyHebrew]="true"
+          <label>{{ (i18n.terms$ | async)?.dateFromFilter }}</label>
+          <app-modern-dual-date-picker [(ngModel)]="filterDateFrom"
+            [label]="(i18n.terms$ | async)?.dateFromReminder || ''" [compact]="true" [showOnlyHebrew]="true"
             (dateChange)="loadReminders()">
           </app-modern-dual-date-picker>
         </div>
 
         <div class="filter-group">
-        <label>{{ (i18n.terms$ | async)?.dateToFilter }}</label>
-          <app-modern-dual-date-picker
-            [(ngModel)]="filterDateTo"
-            [label]="(i18n.terms$ | async)?.dateToReminder || ''"
-            [compact]="true"
-            [showOnlyHebrew]="true"
-            (dateChange)="loadReminders()">
+          <label>{{ (i18n.terms$ | async)?.dateToFilter }}</label>
+          <app-modern-dual-date-picker [(ngModel)]="filterDateTo" [label]="(i18n.terms$ | async)?.dateToReminder || ''"
+            [compact]="true" [showOnlyHebrew]="true" (dateChange)="loadReminders()">
           </app-modern-dual-date-picker>
         </div>
 
         <div class="filter-group">
           <label>{{ (i18n.terms$ | async)?.donorSearchReminder }}</label>
-          <input type="text" class="form-control"
-                 [(ngModel)]="filterDonorSearch"
-                 (ngModelChange)="loadReminders()"
-                 [placeholder]="(i18n.terms$ | async)?.donorNamePlaceholder">
+          <input type="text" class="form-control" [(ngModel)]="filterDonorSearch" (ngModelChange)="loadReminders()"
+            [placeholder]="(i18n.terms$ | async)?.donorNamePlaceholder">
         </div>
 
         <!-- <div class="filter-group">
@@ -173,10 +164,17 @@
           <tr *ngFor="let reminder of filteredReminders" [class.overdue]="reminder.isOverdue"
             [class.today]="reminder.isDueToday" [class.completed]="reminder.isCompleted">
 
-            <td class="date-col">
+            <td class="date-col"
+              [title]="(reminder.nextReminderDate | date:'HH:mm') + ' ' + (reminder.isRecurring ? '(' + reminder.recurringPattern + ')' : '')">
               <div class="date-display">
-                <span class="reminder-date">{{ formatHebrewDate(reminder.dueDate) }}</span>
-                <small class="moed-name" *ngIf="getMoedName(reminder.dueDate)">{{getMoedName(reminder.dueDate)}}</small>
+                <span class="reminder-date">{{
+                  formatHebrewDate(reminder.nextReminderDate) }}</span>
+                <!-- <span class="reminder-date"
+                  [title]="(reminder.nextReminderDate | date:'HH:mm') + ' ' + (reminder.isRecurring ? '(⇄ '+ (reminder.isRecurring ? reminder.recurringPattern + ')' : ''): '')">{{
+                  formatHebrewDate(reminder.nextReminderDate) }}</span> -->
+                <small class="moed-name"
+                  *ngIf="getMoedName(reminder.nextReminderDate)">{{getMoedName(reminder.nextReminderDate)}}</small>
+                  <!-- <small class="moed-name">{{'12+'}}</small> -->
               </div>
             </td>
 
@@ -215,7 +213,8 @@
           </td> -->
 
             <td class="actions">
-              <button class="btn-icon btn-complete" [title]="(i18n.terms$ | async)?.markAsCompleted" *ngIf="!reminder.isCompleted" (click)="completeReminder(reminder)">✅</button>
+              <button class="btn-icon btn-complete" [title]="(i18n.terms$ | async)?.markAsCompleted"
+                *ngIf="!reminder.isCompleted" (click)="completeReminder(reminder)">✅</button>
               <button class="btn-icon btn-edit" [title]="(i18n.terms$ | async)?.editReminder"
                 (click)="editReminder(reminder)">✏</button>
               <!-- <div class="snooze-dropdown" *ngIf="!reminder.isCompleted">
@@ -298,48 +297,33 @@
   <!-- FOOTER: Sticky bottom -->
   <div class="module-footer">
     <div class="pagination-controls">
-      <button
-        class="btn-page"
-        (click)="firstPage()"
-        [disabled]="currentPage === 1 || loading">
+      <button class="btn-page" (click)="firstPage()" [disabled]="currentPage === 1 || loading">
         ⏮ {{ (i18n.terms$ | async)?.first }}
       </button>
 
-      <button
-        class="btn-page"
-        (click)="previousPage()"
-        [disabled]="currentPage === 1 || loading">
+      <button class="btn-page" (click)="previousPage()" [disabled]="currentPage === 1 || loading">
         ← {{ (i18n.terms$ | async)?.previous }}
       </button>
 
       <div class="page-numbers">
-        <button
-          *ngFor="let page of getPageNumbers()"
-          class="btn-page-number"
-          [class.active]="page === currentPage"
-          [disabled]="page === -1"
-          (click)="page !== -1 && goToPage(page)">
+        <button *ngFor="let page of getPageNumbers()" class="btn-page-number" [class.active]="page === currentPage"
+          [disabled]="page === -1" (click)="page !== -1 && goToPage(page)">
           {{ page === -1 ? '...' : page }}
         </button>
       </div>
 
-      <button
-        class="btn-page"
-        (click)="nextPage()"
-        [disabled]="currentPage === totalPages || loading">
+      <button class="btn-page" (click)="nextPage()" [disabled]="currentPage === totalPages || loading">
         {{ (i18n.terms$ | async)?.next }} →
       </button>
 
-      <button
-        class="btn-page"
-        (click)="lastPage()"
-        [disabled]="currentPage === totalPages || loading">
+      <button class="btn-page" (click)="lastPage()" [disabled]="currentPage === totalPages || loading">
         {{ (i18n.terms$ | async)?.last }} ⏭
       </button>
     </div>
 
     <div class="pagination-info">
-      <span>{{ (i18n.terms$ | async)?.showing }} {{(currentPage - 1) * pageSize + 1}} - {{Math.min(currentPage * pageSize, totalCount)}} {{ (i18n.terms$ | async)?.of }} {{totalCount}}</span>
+      <span>{{ (i18n.terms$ | async)?.showing }} {{(currentPage - 1) * pageSize + 1}} - {{Math.min(currentPage *
+        pageSize, totalCount)}} {{ (i18n.terms$ | async)?.of }} {{totalCount}}</span>
     </div>
   </div>
 

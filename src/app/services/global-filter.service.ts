@@ -14,6 +14,8 @@ export interface GlobalFilters {
   dateTo?: Date;
   amountMin?: number;
   amountMax?: number;
+  searchTerm?: string;
+  minDonationCount?: number;  // מספר מינימלי של תרומות (לא סכום!)
 }
 
 @Injectable({

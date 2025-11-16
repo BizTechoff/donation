@@ -16,6 +16,27 @@ import { Campaign } from '../entity/campaign';
 export class GlobalFilterController {
 
   /**
+   * מחזיר רשימת donorIds מסוננת לפי הפילטרים הגלובליים מ-user.settings
+   * זוהי המתודה שנקראת כשלא מעבירים פילטרים במפורש
+   *
+   * @returns undefined אם אין פילטרים, [] אם אין התאמות, או מערך של donorIds
+   */
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async getDonorIdsFromUserSettings(): Promise<string[] | undefined> {
+    // שלוף globalFilters מ-user.settings
+    const currentUserId = remult.user?.id;
+    let globalFilters: GlobalFilters = {};
+    if (currentUserId) {
+      const { User } = await import('../entity/user');
+      const user = await remult.repo(User).findId(currentUserId);
+      globalFilters = user?.settings?.globalFilters || {};
+    }
+
+    // קרא למתודה המקורית עם הפילטרים
+    return await GlobalFilterController.getDonorIds(globalFilters);
+  }
+
+  /**
    * מחזיר רשימת donorIds מסוננת לפי הפילטרים הגלובליים
    * זוהי המתודה המרכזית שכל Controllers אחרים משתמשים בה
    *

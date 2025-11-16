@@ -82,7 +82,7 @@ export class TargetAudienceDetailsModalComponent implements OnInit {
 
       // Load donor map data
       if (this.targetAudience.donorIds && this.targetAudience.donorIds.length > 0) {
-        this.donorMapData = await this.donorService.loadDonorsMapData(this.targetAudience.donorIds);
+        this.donorMapData = await this.donorService.loadDonorsMapDataByIds(this.targetAudience.donorIds);
       }
     } catch (error) {
       this.ui.error(error);
@@ -122,7 +122,7 @@ export class TargetAudienceDetailsModalComponent implements OnInit {
 
     if (donors && Array.isArray(donors) && donors.length > 0) {
       const donorIds = donors.map((d: Donor) => d.id);
-      const newDonorsData = await this.donorService.loadDonorsMapData(donorIds);
+      const newDonorsData = await this.donorService.loadDonorsMapDataByIds(donorIds);
       this.donorMapData = [...this.donorMapData, ...newDonorsData];
 
       // If editing existing audience, save immediately
@@ -166,7 +166,7 @@ export class TargetAudienceDetailsModalComponent implements OnInit {
 
   // Refresh specific donor data
   async refreshDonorData(donorId: string) {
-    const updatedData = await this.donorService.loadDonorsMapData([donorId]);
+    const updatedData = await this.donorService.loadDonorsMapDataByIds([donorId]);
     if (updatedData.length > 0) {
       const index = this.donorMapData.findIndex(d => d.donor.id === donorId);
       if (index >= 0) {

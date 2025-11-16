@@ -824,6 +824,7 @@ export const termsEn = {
   bankStandingOrder: 'Bank',
   creditCardStandingOrder: 'Credit Card',
   organizationStandingOrder: 'Organization',
+  organization: 'Organization',
   numberOfPaymentsLabel: 'Number of Payments to Charge',
   unlimitedPayments: 'Unlimited',
   limitedPayments: 'Limited Number',

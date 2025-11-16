@@ -1,13 +1,52 @@
 import { BackendMethod, remult, Allow } from 'remult';
+import { GlobalFilters } from '../../app/services/global-filter.service';
 import { Donor } from '../entity/donor';
 import { Donation } from '../entity/donation';
 import { DonorPlace } from '../entity/donor-place';
 import { DonorContact } from '../entity/donor-contact';
 
+// ממשק לפילטרים מקומיים של המפה
+export interface MapFilters {
+  searchTerm?: string;
+  minDonationCount?: number;
+  statusFilter?: Array<'active' | 'inactive' | 'high-donor' | 'recent-donor'>;
+  hasCoordinates?: boolean | null;
+  minTotalDonations?: number;
+  maxTotalDonations?: number;
+  hasRecentDonation?: boolean | null;
+}
+
+// ממשק למרקר קל על המפה
+export interface MarkerData {
+  donorId: string;
+  lat: number;
+  lng: number;
+  donorName: string;
+  status: 'active' | 'inactive' | 'high-donor' | 'recent-donor';
+}
+
+/**
+ * סטטיסטיקות כלליות של המפה
+ * כל הסכומים הם בשקלים (₪)
+ */
+export interface MapStatistics {
+  totalDonors: number;
+  activeDonors: number;
+  donorsOnMap: number;
+  /** ממוצע תרומה בשקלים */
+  averageDonation: number;
+}
+
+/**
+ * סטטיסטיקות תרומות של תורם עבור המפה
+ * כל הסכומים הם בשקלים (₪)
+ */
 export interface DonorMapStats {
   donorId: string;
   donationCount: number;
+  /** סך כל התרומות בשקלים */
   totalDonations: number;
+  /** ממוצע תרומה בשקלים */
   averageDonation: number;
   lastDonationDate: Date | null;
   status: 'active' | 'inactive' | 'high-donor' | 'recent-donor';
@@ -23,13 +62,412 @@ export interface DonorMapData {
 }
 
 export class DonorMapController {
+
+  static BIG_DONOR_AMOUNT =  1500
+
+  /**
+   * מתודה פנימית - מחזירה IDs של תורמים לפי פילטרים מקומיים של המפה
+   * @param mapFilters פילטרים מקומיים (searchTerm, minDonationCount)
+   * @returns מערך של donorIds
+   */
+  private static async getDonorIds(mapFilters: MapFilters): Promise<string[]> {
+    const donorRepo = remult.repo(Donor);
+    const donationRepo = remult.repo(Donation);
+
+    let donorIds: string[] | undefined = undefined;
+
+    // searchTerm - חיפוש בשם
+    if (mapFilters.searchTerm?.trim()) {
+      const term = mapFilters.searchTerm.trim();
+      const donors = await donorRepo.find({
+        where: {
+          isActive: true,
+          $or: [
+            { firstName: { $contains: term } },
+            { lastName: { $contains: term } }
+          ]
+        }
+      });
+      donorIds = donors.map(d => d.id);
+    }
+
+    // Donation-based filters (minDonationCount, minTotalDonations, maxTotalDonations)
+    const needsDonationData = (mapFilters.minDonationCount && mapFilters.minDonationCount > 0) ||
+                               (mapFilters.minTotalDonations && mapFilters.minTotalDonations > 0) ||
+                               (mapFilters.maxTotalDonations && mapFilters.maxTotalDonations < 999999999);
+
+    if (needsDonationData) {
+      // טען תרומות
+      const donations = await donationRepo.find({
+        where: donorIds ? { donorId: { $in: donorIds } } : {}
+      });
+
+      // חשב סטטיסטיקות תרומות
+      const donationStats = new Map<string, { count: number; total: number }>();
+      donations.forEach(d => {
+        const stats = donationStats.get(d.donorId) || { count: 0, total: 0 };
+        stats.count++;
+        stats.total += d.amount;
+        donationStats.set(d.donorId, stats);
+      });
+
+      // סנן לפי הקריטריונים
+      let filteredIds = Array.from(donationStats.keys());
+
+      if (mapFilters.minDonationCount && mapFilters.minDonationCount > 0) {
+        filteredIds = filteredIds.filter(id => {
+          const stats = donationStats.get(id);
+          return stats && stats.count >= mapFilters.minDonationCount!;
+        });
+      }
+
+      if (mapFilters.minTotalDonations && mapFilters.minTotalDonations > 0) {
+        filteredIds = filteredIds.filter(id => {
+          const stats = donationStats.get(id);
+          return stats && stats.total >= mapFilters.minTotalDonations!;
+        });
+      }
+
+      if (mapFilters.maxTotalDonations && mapFilters.maxTotalDonations < 999999999) {
+        filteredIds = filteredIds.filter(id => {
+          const stats = donationStats.get(id);
+          return stats && stats.total <= mapFilters.maxTotalDonations!;
+        });
+      }
+
+      donorIds = donorIds
+        ? donorIds.filter(id => filteredIds.includes(id))  // חיתוך עם searchTerm
+        : filteredIds;
+    }
+
+    // אם אין פילטרים מקומיים - החזר את כולם
+    if (!donorIds) {
+      const donors = await donorRepo.find({ where: { isActive: true } });
+      donorIds = donors.map(d => d.id);
+    }
+
+    return donorIds;
+  }
+
+  /**
+   * מחזיר מרקרים קלים למפה (רק lat, lng, name)
+   * מבצע פילטור דו-שלבי: גלובלי + מקומי
+   * @param mapFilters פילטרים מקומיים של המפה
+   * @returns מערך של MarkerData
+   */
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async getMapMarkers(mapFilters: MapFilters): Promise<MarkerData[]> {
+    console.time('DonorMapController.getMapMarkers - Total');
+
+    // שלב 1: קבל IDs מהפילטרים הגלובליים (מ-user.settings)
+    console.time('Get global donor IDs');
+    const { GlobalFilterController } = await import('./global-filter.controller');
+    const globalDonorIds = await GlobalFilterController.getDonorIdsFromUserSettings();
+    console.timeEnd('Get global donor IDs');
+    console.log(`Global filters: ${globalDonorIds?.length ?? 'all'} donors`);
+
+    // שלב 2: קבל IDs מהפילטרים המקומיים של המפה
+    console.time('Get local map donor IDs');
+    const localDonorIds = await DonorMapController.getDonorIds(mapFilters);
+    console.timeEnd('Get local map donor IDs');
+    console.log(`Map filters: ${localDonorIds.length} donors`);
+
+    // שלב 3: חיתוך - רק IDs שנמצאים בשני הקבוצות
+    console.time('Intersection');
+    let intersectedIds: string[];
+    if (globalDonorIds === undefined) {
+      // אין פילטרים גלובליים - קח רק את המקומיים
+      intersectedIds = localDonorIds;
+    } else {
+      const globalSet = new Set(globalDonorIds);
+      intersectedIds = localDonorIds.filter(id => globalSet.has(id));
+    }
+    console.timeEnd('Intersection');
+    console.log(`After intersection: ${intersectedIds.length} donors`);
+
+    // שלב 4: שלוף רק lat, lng, name עבור התורמים הממוסננים
+    console.time('Load marker data');
+    const donorPlaceRepo = remult.repo(DonorPlace);
+    const donorRepo = remult.repo(Donor);
+
+    if (intersectedIds.length === 0) {
+      console.timeEnd('Load marker data');
+      console.timeEnd('DonorMapController.getMapMarkers - Total');
+      return [];
+    }
+
+    // טען DonorPlaces עם Place מלא (כולל קואורדינטות)
+    const donorPlaces = await donorPlaceRepo.find({
+      where: {
+        donorId: { $in: intersectedIds },
+        isActive: true
+      },
+      include: {
+        place: true
+      }
+    });
+
+    // צור מפה של donorId -> מיקום (רק אלו עם קואורדינטות תקינות)
+    const locationMap = new Map<string, { lat: number; lng: number }>();
+    donorPlaces.forEach(dp => {
+      if (dp.donorId && dp.place?.latitude && dp.place?.longitude && !locationMap.has(dp.donorId)) {
+        locationMap.set(dp.donorId, {
+          lat: dp.place.latitude,
+          lng: dp.place.longitude
+        });
+      }
+    });
+
+    // טען שמות של התורמים
+    const donorIdsWithLocation = Array.from(locationMap.keys());
+    const donors = await donorRepo.find({
+      where: { id: { $in: donorIdsWithLocation } }
+    });
+
+    // טען סטטיסטיקות תרומות לחישוב סטטוס
+    const donationRepo = remult.repo(Donation);
+    const donations = await donationRepo.find({
+      where: { donorId: { $in: donorIdsWithLocation } }
+    });
+
+    // טען שערי המרה של מטבעות
+    const { PayerService } = await import('../../app/services/payer.service');
+    const payerService = new PayerService();
+    const currencyTypes = await payerService.getCurrencyTypes();
+    const currencyRates = new Map(currencyTypes.map(c => [c.id, c.rateInShekel]));
+
+    // חשב סטטיסטיקות תרומות לכל תורם (המר הכל לשקלים)
+    const donationStatsByDonor = new Map<string, { total: number; lastDate: Date | null }>();
+    donations.forEach(donation => {
+      // המר סכום לשקלים
+      const rate = currencyRates.get(donation.currency) || 1;
+      const amountInShekel = donation.amount * rate;
+
+      const existing = donationStatsByDonor.get(donation.donorId);
+      if (!existing) {
+        donationStatsByDonor.set(donation.donorId, {
+          total: amountInShekel,
+          lastDate: donation.donationDate
+        });
+      } else {
+        existing.total += amountInShekel;
+        if (!existing.lastDate || (donation.donationDate && new Date(donation.donationDate) > new Date(existing.lastDate))) {
+          existing.lastDate = donation.donationDate;
+        }
+      }
+    });
+
+    // בנה מערך מרקרים עם סטטוס
+    const markers: MarkerData[] = donors
+      .filter(d => locationMap.has(d.id))
+      .map(d => {
+        const stats = donationStatsByDonor.get(d.id);
+        const totalDonations = stats?.total || 0;
+        const lastDonationDate = stats?.lastDate || null;
+
+        // קבע סטטוס (אותה לוגיקה כמו ב-loadDonorsMapData)
+        let status: 'active' | 'inactive' | 'high-donor' | 'recent-donor' = 'inactive';
+        if (d.isActive) {
+          if (totalDonations > DonorMapController.BIG_DONOR_AMOUNT) {
+            status = 'high-donor';
+          } else if (lastDonationDate) {
+            const threeMonthsAgo = new Date();
+            threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+            if (new Date(lastDonationDate) > threeMonthsAgo) {
+              status = 'recent-donor';
+            } else {
+              status = 'active';
+            }
+          } else {
+            status = 'active';
+          }
+        }
+
+        return {
+          donorId: d.id,
+          lat: locationMap.get(d.id)!.lat,
+          lng: locationMap.get(d.id)!.lng,
+          donorName: d.fullName || `${d.firstName || ''} ${d.lastName || ''}`.trim(),
+          status
+        };
+      });
+
+    // Apply client-side filters (filters that work on already calculated data)
+    let filteredMarkers = markers;
+
+    // Status filter
+    if (mapFilters.statusFilter && mapFilters.statusFilter.length > 0) {
+      filteredMarkers = filteredMarkers.filter(m => mapFilters.statusFilter!.includes(m.status));
+    }
+
+    // Has coordinates - all markers already have coordinates, so this filter doesn't apply here
+    // (markers without coordinates were already filtered out)
+
+    // Has recent donation filter
+    if (mapFilters.hasRecentDonation !== null && mapFilters.hasRecentDonation !== undefined) {
+      if (mapFilters.hasRecentDonation) {
+        filteredMarkers = filteredMarkers.filter(m => m.status === 'recent-donor');
+      } else {
+        filteredMarkers = filteredMarkers.filter(m => m.status !== 'recent-donor');
+      }
+    }
+
+    console.timeEnd('Load marker data');
+    console.timeEnd('DonorMapController.getMapMarkers - Total');
+
+    return filteredMarkers;
+  }
+
+  /**
+   * מחזיר סטטיסטיקות כלליות למפה (בלי לטעון את כל הנתונים)
+   * @param mapFilters פילטרים מקומיים של המפה
+   * @returns סטטיסטיקות כלליות
+   */
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async getMapStatistics(mapFilters: MapFilters): Promise<MapStatistics> {
+    console.time('DonorMapController.getMapStatistics');
+
+    const { GlobalFilterController } = await import('./global-filter.controller');
+
+    // שלב 1: קבל IDs מהפילטרים הגלובליים
+    const globalDonorIds = await GlobalFilterController.getDonorIdsFromUserSettings();
+
+    // שלב 2: קבל IDs מהפילטרים המקומיים
+    const localDonorIds = await DonorMapController.getDonorIds(mapFilters);
+
+    // שלב 3: חיתוך
+    let intersectedIds: string[];
+    if (globalDonorIds === undefined) {
+      intersectedIds = localDonorIds;
+    } else {
+      const globalSet = new Set(globalDonorIds);
+      intersectedIds = localDonorIds.filter(id => globalSet.has(id));
+    }
+
+    const donorRepo = remult.repo(Donor);
+    const donorPlaceRepo = remult.repo(DonorPlace);
+    const donationRepo = remult.repo(Donation);
+
+    // ספירת תורמים כללית
+    const donors = await donorRepo.find({
+      where: { id: { $in: intersectedIds } }
+    });
+
+    const totalDonors = donors.length;
+    const activeDonors = donors.filter(d => d.isActive).length;
+
+    // ספירת תורמים עם קואורדינטות
+    const donorPlaces = await donorPlaceRepo.find({
+      where: {
+        donorId: { $in: intersectedIds },
+        isActive: true
+      },
+      include: {
+        place: true
+      }
+    });
+
+    const donorsWithCoordinates = new Set<string>();
+    donorPlaces.forEach(dp => {
+      if (dp.donorId && dp.place?.latitude && dp.place?.longitude) {
+        donorsWithCoordinates.add(dp.donorId);
+      }
+    });
+
+    const donorsOnMap = donorsWithCoordinates.size;
+
+    // חישוב ממוצע תרומות (בשקלים)
+    const donations = await donationRepo.find({
+      where: { donorId: { $in: intersectedIds } }
+    });
+
+    // טען שערי המרה של מטבעות
+    const { PayerService } = await import('../../app/services/payer.service');
+    const payerService = new PayerService();
+    const currencyTypes = await payerService.getCurrencyTypes();
+    const currencyRates = new Map(currencyTypes.map(c => [c.id, c.rateInShekel]));
+
+    // חשב סכום כולל בשקלים
+    const totalAmount = donations.reduce((sum, d) => {
+      const rate = currencyRates.get(d.currency) || 1;
+      return sum + (d.amount * rate);
+    }, 0);
+    const totalCount = donations.length;
+    const averageDonation = totalCount > 0 ? totalAmount / totalCount : 0;
+
+    console.timeEnd('DonorMapController.getMapStatistics');
+
+    return {
+      totalDonors,
+      activeDonors,
+      donorsOnMap,
+      averageDonation
+    };
+  }
+
+  /**
+   * מחזיר פרטים מלאים של תורם ספציפי (לפופאפ)
+   * @param donorId מזהה התורם
+   * @returns DonorMapData עם כל הפרטים
+   */
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async getDonorMapDetails(donorId: string): Promise<DonorMapData> {
+    const results = await DonorMapController.loadDonorsMapDataByIds([donorId]);
+    if (results.length === 0) {
+      throw new Error(`Donor not found: ${donorId}`);
+    }
+    return results[0];
+  }
+
   /**
    * טוען את כל הנתונים הדרושים למפת תורמים כולל סטטיסטיקות
-   * @param donorIds מערך של IDs של תורמים לטעון (אם ריק, יטען את כולם)
+   * מושך גלובל פילטרים מ-user.settings, ממזג עם פילטרים נוספים ומחיל אותם על השאילתא
+   * @param additionalFilters פילטרים נוספים מהקליינט (searchTerm, minTotalDonations וכו')
+   * @returns מערך של נתוני תורמים מעובדים עם סטטיסטיקות
+   * @deprecated השתמש ב-getMapMarkers במקום
+   */
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async loadDonorsMapData(additionalFilters?: Partial<GlobalFilters>): Promise<DonorMapData[]> {
+    const { DonorController } = await import('./donor.controller');
+    const { User } = await import('../entity/user');
+
+    console.time('DonorMapController.loadDonorsMapData - Total');
+
+    // 🎯 Fetch global filters from user.settings
+    const currentUserId = remult.user?.id;
+    let globalFilters: GlobalFilters = {};
+    if (currentUserId) {
+      const user = await remult.repo(User).findId(currentUserId);
+      globalFilters = user?.settings?.globalFilters || {};
+    }
+
+    // Merge global filters with additional filters (from client)
+    const mergedFilters: GlobalFilters = { ...globalFilters, ...additionalFilters };
+
+    console.log('DonorMapController: Global filters:', globalFilters);
+    console.log('DonorMapController: Additional filters:', additionalFilters);
+    console.log('DonorMapController: Merged filters:', mergedFilters);
+
+    // קבל IDs ממוסננים (משתמש בפילטרים הממוזגים)
+    console.time('Get filtered donor IDs');
+    const donorIds = await DonorController.findFilteredIds(mergedFilters);
+    console.timeEnd('Get filtered donor IDs');
+    console.log(`DonorMapController: Got ${donorIds.length} filtered donor IDs`);
+
+    // טען את הנתונים המלאים
+    const result = await DonorMapController.loadDonorsMapDataByIds(donorIds);
+
+    console.timeEnd('DonorMapController.loadDonorsMapData - Total');
+    return result;
+  }
+
+  /**
+   * טוען נתוני מפה עבור רשימת IDs ספציפית
+   * @param donorIds מערך של IDs של תורמים לטעון
    * @returns מערך של נתוני תורמים מעובדים עם סטטיסטיקות
    */
   @BackendMethod({ allowed: Allow.authenticated })
-  static async loadDonorsMapData(donorIds?: string[]): Promise<DonorMapData[]> {
+  static async loadDonorsMapDataByIds(donorIds?: string[]): Promise<DonorMapData[]> {
     const donorRepo = remult.repo(Donor);
     const donationRepo = remult.repo(Donation);
     const donorPlaceRepo = remult.repo(DonorPlace);
@@ -113,18 +551,28 @@ export class DonorMapController {
     console.log(`Loaded ${donationStats.length} donations for ${donorIdsList.length} donors`);
 
     console.time('Calculate donation stats');
-    // Calculate stats efficiently using a single pass
+    // טען שערי המרה של מטבעות
+    const { PayerService } = await import('../../app/services/payer.service');
+    const payerService = new PayerService();
+    const currencyTypes = await payerService.getCurrencyTypes();
+    const currencyRates = new Map(currencyTypes.map(c => [c.id, c.rateInShekel]));
+
+    // Calculate stats efficiently using a single pass, converting all amounts to ILS
     donationStats.forEach(donation => {
+      // המר סכום לשקלים
+      const rate = currencyRates.get(donation.currency) || 1;
+      const amountInShekel = donation.amount * rate;
+
       const existing = donationsByDonor.get(donation.donorId);
       if (!existing) {
         donationsByDonor.set(donation.donorId, {
           count: 1,
-          total: donation.amount,
+          total: amountInShekel,
           lastDate: donation.donationDate
         });
       } else {
         existing.count++;
-        existing.total += donation.amount;
+        existing.total += amountInShekel;
         if (!existing.lastDate || (donation.donationDate && new Date(donation.donationDate) > new Date(existing.lastDate))) {
           existing.lastDate = donation.donationDate;
         }
@@ -147,7 +595,7 @@ export class DonorMapController {
       // קבע סטטוס
       let status: 'active' | 'inactive' | 'high-donor' | 'recent-donor' = 'inactive';
       if (donor.isActive) {
-        if (totalDonations > 10000) {
+        if (totalDonations > DonorMapController.BIG_DONOR_AMOUNT) {
           status = 'high-donor';
         } else if (lastDonationDate) {
           const threeMonthsAgo = new Date();

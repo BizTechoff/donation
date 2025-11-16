@@ -22,6 +22,7 @@ import { Roles } from '../enum/roles'
   allowApiUpdate: [Roles.admin],
   allowApiDelete: [Roles.admin],
   allowApiInsert: Allow.authenticated,
+  defaultOrderBy: { donationDate: 'desc', createdDate: 'desc' },
   saving: async (donation) => {
     if (isBackend()) {
       if (donation._.isNew()) {

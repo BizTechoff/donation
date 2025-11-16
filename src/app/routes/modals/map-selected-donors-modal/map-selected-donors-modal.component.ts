@@ -95,7 +95,7 @@ export class MapSelectedDonorsModalComponent implements OnInit {
       const donorIds = donors.map((d: Donor) => d.id);
 
       // Load full donor data with stats
-      const newDonorsData = await this.donorService.loadDonorsMapData(donorIds);
+      const newDonorsData = await this.donorService.loadDonorsMapDataByIds(donorIds);
 
       // Add to existing list
       this.selectedDonors = [...this.selectedDonors, ...newDonorsData];

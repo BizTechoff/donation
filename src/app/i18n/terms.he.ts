@@ -563,7 +563,7 @@ export const termsHe = {
   noCampaigns: 'אין קמפיינים',
   noCampaignsMatchingCriteria: 'לא נמצאו קמפיינים העונים על הקריטריונים',
   createFirstCampaign: 'צור קמפיין ראשון',
-  
+
   // Campaign Modal
   addEditCampaignModal: 'מודל הוספת/עריכת קמפיין',
   campaignNameRequired: 'שם הקמפיין *',
@@ -687,7 +687,7 @@ export const termsHe = {
   readyForPrint: 'מוכן להדפסה',
   printedStatus: 'הודפס',
   deliveredStatus: 'נמסר',
-  
+
   // Certificate Types Cards
   donationCertificatesCard: 'תעודות תרומה',
   donationCertDescription: 'תעודות מעוצבות לתרומות כללות',
@@ -701,7 +701,7 @@ export const termsHe = {
   appreciationCertificatesCard: 'תעודות הוקרה',
   appreciationDescription: 'תעודות הוקרה למתנדבים ותורמים',
   appreciationThisYear: 'תעודות השנה',
-  
+
   // Certificate Grid Headers
   creationDate: 'תאריך יצירה',
   certificateTypeHeader: 'סוג תעודה',
@@ -721,7 +721,7 @@ export const termsHe = {
   markAsNotDelivered: 'בטל סימון נמסר',
   previousPage: 'הקודם',
   nextPage: 'הבא',
-  
+
   // Certificate Creation Modal
   createNewCertificateModal: 'יצירת תעודה חדשה',
   basicInfo: 'פרטים בסיסיים',
@@ -773,12 +773,12 @@ export const termsHe = {
   torahStudy: 'לימוד תורה',
   charityProduct: 'צדקה',
   buildingProduct: 'בניין',
-  
+
   // Summary Cards - Donations
   totalDonationsSum: 'סה"כ תרומות',
   pendingApprovalAmount: 'ממתין לאישור',
   completedDonationsCount: 'תרומות שהושלמו',
-  
+
   // Donations Grid
   dateColumn: 'תאריך',
   donorColumn: 'תורם',
@@ -793,7 +793,7 @@ export const termsHe = {
   createdByUnknown: 'לא ידוע',
   receiptAction: 'הדפס קבלה',
   cancelDonation: 'ביטול',
-  
+
   // Donation Modal
   donationRecordingModal: 'רישום תרומה חדשה',
   gregorianDateField: 'תאריך לועזי',
@@ -822,6 +822,7 @@ export const termsHe = {
   bankStandingOrder: 'בנקאית',
   creditCardStandingOrder: 'כרטיס אשראי',
   organizationStandingOrder: 'עמותה',
+  organization: 'עמותה',
   numberOfPaymentsLabel: 'מספר תשלומים לחיוב',
   unlimitedPayments: 'ללא הגבלה',
   limitedPayments: 'מספר מוגבל',
@@ -862,13 +863,13 @@ export const termsHe = {
   northRegion: 'צפון',
   southRegion: 'דרום',
   jerusalemRegion: 'ירושלים',
-  
+
   // Reminders Tabs
   todayTab: 'היום',
   weekTab: 'השבוע',
   overdueTab: 'באיחור',
   allTab: 'הכל',
-  
+
   // Reminders Table
   reminderDateHeader: 'תאריך תזכורת',
   typeHeader: 'סוג',
@@ -881,7 +882,7 @@ export const termsHe = {
   editReminder: 'עריכה',
   snoozeReminder: 'דחה תזכורת למחר',
   deleteReminder: 'מחק',
-  
+
   // Quick Reminders Section
   quickReminders: 'תזכורות מהירות',
   birthdaysThisWeek: 'ימי הולדת השבוע',
@@ -892,7 +893,7 @@ export const termsHe = {
   noCandidatesAvailable: 'אין מועמדים זמינים',
   meetingsThisWeek: 'פגישות השבוע',
   noMeetingsThisWeek: 'אין פגישות השבוע',
-  
+
   // Add Reminder Modal
   addNewReminder: 'הוספת תזכורת חדשה',
   newReminder: 'תזכורת חדשה',
@@ -953,7 +954,7 @@ export const termsHe = {
   sendAlert: 'שלח התראה',
   alertMethod: 'אמצעי התראה',
   emailAlert: 'אימייל',
-    emailAndSystemAlert: 'התראה באימייל ובמערכת',
+  emailAndSystemAlert: 'התראה באימייל ובמערכת',
   smsAlert: 'SMS',
   popupAlert: 'התראה במערכת',
   noAlert: 'ללא',
@@ -991,13 +992,13 @@ export const termsHe = {
   leumiBank: 'בנק לאומי',
   discountBank: 'בנק דיסקונט',
   mizrahiBank: 'מזרחי טפחות',
-  
+
   // Standing Orders Summary Cards
   activeOrdersCard: 'הוראות פעילות',
   monthlyExpectedCard: 'צפוי חודשי',
   yearlyExpectedCard: 'צפוי שנתי',
   nextCollectionCard: 'גביה הבאה',
-  
+
   // Standing Orders Table
   donorColumnStanding: 'תורם',
   amountColumnStanding: 'סכום',
@@ -1014,7 +1015,7 @@ export const termsHe = {
   pauseOrder: 'השהה',
   activateOrder: 'הפעל',
   cancelOrder: 'בטל',
-  
+
   // Standing Order Modal
   addStandingOrderModal: 'הוספת הוראת קבע',
   donorSelectStanding: 'תורם',
@@ -1054,7 +1055,7 @@ export const termsHe = {
 
   // Additional campaigns terms
   activeInactive: 'פעיל/לא פעיל',
-  inactiveStatus: 'לא פעיל', 
+  inactiveStatus: 'לא פעיל',
   financialTarget: 'יעד כספי',
   collected: 'נאסף',
   responsible: 'אחראי',
@@ -1078,7 +1079,7 @@ export const termsHe = {
   yearlySummaryReport: 'דוח סיכום שנים',
   blessingsReport: 'דוח ברכות',
   generalReports: 'דוחות כלליים',
-  
+
   // Donations Report
   donationsReportTitle: 'דוח תרומות',
   filterByDonor: 'סינון לפי תורם',
@@ -1092,7 +1093,7 @@ export const termsHe = {
   donorNameTag: 'תגית שם תורם',
   addDonorNameTag: 'הוסף תגית שם תורם',
   tagPosition: 'מיקום התגית בדף',
-  
+
   // Payments Report
   paymentsReportTitle: 'דוח תשלומים - התחייבות מול בפועל',
   commitmentVsActual: 'התחייבות מול בפועל',
@@ -1103,13 +1104,13 @@ export const termsHe = {
   fullyPaid: 'שולם במלואו',
   partiallyPaid: 'שולם חלקית',
   notPaid: 'לא שולם',
-  
+
   // Yearly Summary Report
   yearlySummaryTitle: 'דוח סיכום שנים לפי מטבע',
   summaryByCurrency: 'סיכום לפי מטבע',
   totalByShekel: 'סה"כ בשקלים',
   currencyBreakdown: 'פירוט מטבעות',
-  
+
   // Blessings Report
   blessingsReportTitle: 'דוח ברכות',
   blessingTypeSelection: 'סוג הברכה שנבחר',

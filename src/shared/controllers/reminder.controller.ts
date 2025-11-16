@@ -100,13 +100,13 @@ export class ReminderController {
 
     return {
       todayCount: reminders.filter(r => {
-        const dueDate = new Date(r.dueDate)
+        const dueDate = new Date(r.nextReminderDate!)
         dueDate.setHours(0, 0, 0, 0)
         return dueDate.getTime() === today.getTime() && !r.isCompleted
       }).length,
       pendingCount: reminders.filter(r => !r.isCompleted).length,
       overdueCount: reminders.filter(r => {
-        const dueDate = new Date(r.dueDate)
+        const dueDate = new Date(r.nextReminderDate!)
         return dueDate < today && !r.isCompleted
       }).length,
       completedThisMonthCount: reminders.filter(r => {

@@ -68,10 +68,19 @@ export class DonorService {
 
   /**
    * Load donors map data with full stats
-   * Used for map visualization and target audience management
+   * Uses global filters from user.settings and merges with additional filters from client
+   * @param additionalFilters Additional filters from client (searchTerm, minTotalDonations, etc)
    */
-  async loadDonorsMapData(donorIds?: string[]): Promise<DonorMapData[]> {
-    return await DonorMapController.loadDonorsMapData(donorIds);
+  async loadDonorsMapData(additionalFilters?: Partial<GlobalFilters>): Promise<DonorMapData[]> {
+    // @ts-ignore - remult metadata not updated yet
+    return await DonorMapController.loadDonorsMapData(additionalFilters);
+  }
+
+  /**
+   * Load donors map data for specific donor IDs
+   */
+  async loadDonorsMapDataByIds(donorIds: string[]): Promise<DonorMapData[]> {
+    return await DonorMapController.loadDonorsMapDataByIds(donorIds);
   }
 
   /**

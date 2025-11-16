@@ -1,7 +1,6 @@
 import { remult } from 'remult'
-import { Reminder } from '../shared/entity/reminder'
-import { User } from '../shared/entity/user'
 import { ReminderController } from '../shared/controllers/reminder.controller'
+import { Reminder } from '../shared/entity/reminder'
 
 /**
  * Scheduler for checking and sending reminder notifications
@@ -60,6 +59,7 @@ async function sendReminderNotification(reminder: Reminder) {
 
   switch (alertMethod) {
     case 'email':
+      // if(!reminder.ale)
       await sendEmailNotification(reminder)
       break
 
@@ -99,11 +99,10 @@ async function sendReminderNotification(reminder: Reminder) {
       console.log(`[Scheduler] Updated next reminder date to: ${nextDate}`)
     }
   } else {
-    // For non-recurring reminders, mark as completed (stops future notifications)
-    reminder.isCompleted = true
-    reminder.completedDate = new Date()
+    // For non-recurring reminders, mark alert as sent
+    reminder.alertSent = new Date()
     await reminder.save()
-    console.log(`[Scheduler] Marked non-recurring reminder as completed`)
+    console.log(`[Scheduler] Marked alert as sent for non-recurring reminder`)
   }
 }
 

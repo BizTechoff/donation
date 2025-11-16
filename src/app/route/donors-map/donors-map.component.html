@@ -40,7 +40,7 @@
         <div class="card-icon">💰</div>
         <div class="card-content">
           <h3>{{ i18n.terms.mapAverageDonation }}</h3>
-          <span class="count">₪{{ averageDonation | number }}</span>
+          <span class="count">₪{{ averageDonation | number:'1.0-0' }}</span>
         </div>
       </div>
       <div class="summary-card">
@@ -110,9 +110,9 @@
       <!-- Results Counter -->
       <div class="results-counter">
         {{ i18n.terms.showing || 'מציג' }}:
-        <strong>{{ filteredDonorsMapData.length }}</strong>
+        <strong>{{ donorsOnMap }}</strong>
         {{ i18n.terms.outOf || 'מתוך' }}
-        <strong>{{ donorsMapData.length }}</strong>
+        <strong>{{ totalDonors }}</strong>
         {{ i18n.terms.donors || 'תורמים' }}
       </div>
     </div>
