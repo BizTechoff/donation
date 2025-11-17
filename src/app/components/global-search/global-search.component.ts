@@ -370,7 +370,10 @@ export class GlobalSearchComponent implements OnInit, OnDestroy {
   private async searchBanks(term: string): Promise<SearchResult[]> {
     const banks = await this.bankRepo.find({
       where: {
-        name: { $contains: term }
+        $or: [
+          { name: { $contains: term } },
+          { payerIdentifier: { $contains: term } }
+        ]
       },
       include: { place: true },
       limit: 5
@@ -387,7 +390,7 @@ export class GlobalSearchComponent implements OnInit, OnDestroy {
   }
 
   private async searchOrganizations(term: string): Promise<SearchResult[]> {
-    console.log('searchOrganizations',1,term)
+    console.log('searchOrganizations', 1, term)
     const organizations = await this.organizationRepo.find({
       where: {
         $or: [
@@ -398,7 +401,7 @@ export class GlobalSearchComponent implements OnInit, OnDestroy {
       include: { place: true },
       limit: 5
     });
-console.log('searchOrganizations',2, organizations.length)
+    console.log('searchOrganizations', 2, organizations.length)
     return organizations.map(org => ({
       type: 'organization' as const,
       id: org.id,

@@ -1,4 +1,5 @@
 <div style="height: 100%; display: flex; flex-direction: column">
+
   <mat-toolbar color="primary" style="flex-shrink: 0">
     <button mat-button class="sidenav-toggle" (click)="sidenav.toggle()">
       <mat-icon>menu</mat-icon>
@@ -43,10 +44,12 @@
           <button mat-menu-item (click)="signOut()">{{ (i18n.terms$ | async)?.signOut }}</button>
         </mat-menu>
       </ng-container>
-      <span style="display: flex; position: absolute; bottom: 0; right: 0; font-size: x-small;">{{ 'כ"ג חשון התשפ"ו'
-        }}</span>
     </div>
+    
+      <span style="display: flex; position: absolute; top: -8px; right: 1px; font-size: x-small;">{{ 'כ"ג חשון התשפ"ו'
+        }}</span>
   </mat-toolbar>
+
   <mat-sidenav-container class="app-sidenav-container" [dir]="i18n.lang.RTL ? 'rtl' : 'ltr'">
     <mat-sidenav #sidenav class="app-sidenav mat-elevation-z10 no-print"
       [opened]="!uiService.isScreenSmall() && remult.authenticated()"

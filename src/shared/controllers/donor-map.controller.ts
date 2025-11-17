@@ -1,9 +1,9 @@
-import { BackendMethod, remult, Allow } from 'remult';
+import { Allow, BackendMethod, remult } from 'remult';
 import { GlobalFilters } from '../../app/services/global-filter.service';
-import { Donor } from '../entity/donor';
 import { Donation } from '../entity/donation';
-import { DonorPlace } from '../entity/donor-place';
+import { Donor } from '../entity/donor';
 import { DonorContact } from '../entity/donor-contact';
+import { DonorPlace } from '../entity/donor-place';
 
 // ממשק לפילטרים מקומיים של המפה
 export interface MapFilters {
@@ -63,7 +63,8 @@ export interface DonorMapData {
 
 export class DonorMapController {
 
-  static BIG_DONOR_AMOUNT =  1500
+  static HIGH_DONOR_AMOUNT =  1500
+  static RECENT_DONOR_MONTHS = 3
 
   /**
    * מתודה פנימית - מחזירה IDs של תורמים לפי פילטרים מקומיים של המפה
@@ -266,13 +267,13 @@ export class DonorMapController {
         const lastDonationDate = stats?.lastDate || null;
 
         // קבע סטטוס (אותה לוגיקה כמו ב-loadDonorsMapData)
-        let status: 'active' | 'inactive' | 'high-donor' | 'recent-donor' = 'inactive';
+        let status: 'active' | 'inactive' | 'high-donor' | 'recent-donor' = 'recent-donor';
         if (d.isActive) {
-          if (totalDonations > DonorMapController.BIG_DONOR_AMOUNT) {
+          if (totalDonations > DonorMapController.HIGH_DONOR_AMOUNT) {
             status = 'high-donor';
           } else if (lastDonationDate) {
             const threeMonthsAgo = new Date();
-            threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+            threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - DonorMapController.RECENT_DONOR_MONTHS);
             if (new Date(lastDonationDate) > threeMonthsAgo) {
               status = 'recent-donor';
             } else {
@@ -595,7 +596,7 @@ export class DonorMapController {
       // קבע סטטוס
       let status: 'active' | 'inactive' | 'high-donor' | 'recent-donor' = 'inactive';
       if (donor.isActive) {
-        if (totalDonations > DonorMapController.BIG_DONOR_AMOUNT) {
+        if (totalDonations > DonorMapController.HIGH_DONOR_AMOUNT) {
           status = 'high-donor';
         } else if (lastDonationDate) {
           const threeMonthsAgo = new Date();

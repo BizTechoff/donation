@@ -82,18 +82,6 @@ export class GlobalFilterController {
       if (donorIds.length === 0) return []; // אין התאמות
     }
 
-    // סינון לפי סוג תורם
-    const donorTypeFiltered = await GlobalFilterController.getDonorIdsFromDonorTypes(filters);
-    if (donorTypeFiltered !== undefined) {
-      if (donorIds) {
-        // חיתוך - רק תורמים שבשני הקטגוריות
-        donorIds = donorIds.filter(id => donorTypeFiltered.includes(id));
-      } else {
-        donorIds = donorTypeFiltered;
-      }
-      if (donorIds.length === 0) return []; // אין התאמות
-    }
-
     return donorIds;
   }
 
@@ -183,34 +171,6 @@ export class GlobalFilterController {
     const donorIdsFromInvites = campaigns.flatMap(c => c.invitedDonorIds || []);
 
     const donorIds = [...new Set([...donorIdsFromDonations, ...donorIdsFromInvites])];
-
-    return donorIds;
-  }
-
-  /**
-   * מחזיר donorIds מסוננים לפי סוג תורם
-   * donorTypeIds מכיל את הערכים: 'אחר', 'קבוע', 'זמני'
-   */
-  private static async getDonorIdsFromDonorTypes(filters: GlobalFilters): Promise<string[] | undefined> {
-    if (!filters.donorTypeIds || filters.donorTypeIds.length === 0) {
-      return undefined; // אין פילטר סוג תורם
-    }
-
-    // בודק שכל הערכים תקינים
-    const validTypes: Array<'אחר' | 'קבוע' | 'זמני'> = filters.donorTypeIds.filter(
-      (type): type is 'אחר' | 'קבוע' | 'זמני' =>
-        type === 'אחר' || type === 'קבוע' || type === 'זמני'
-    );
-
-    if (validTypes.length === 0) {
-      return []; // אין ערכים תקינים
-    }
-
-    const donors = await remult.repo(Donor).find({
-      where: { donorType: { $in: validTypes } }
-    });
-
-    const donorIds = donors.map(d => d.id).filter((id): id is string => !!id);
 
     return donorIds;
   }
