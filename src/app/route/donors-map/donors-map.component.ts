@@ -108,6 +108,8 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // Statistics are now loaded from server via getMapStatistics()
 
+  private initialLoadDone = false;
+
   async ngOnInit() {
     // Register global functions for popup callbacks
     (window as any).openDonorDetails = (donorId: string) => {
@@ -118,24 +120,27 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
       this.addDonationForDonor(donorId);
     };
 
-    // Subscribe to global filter changes
+    // Subscribe to global filter changes - skip first emit to avoid double load
     this.subscription.add(
       this.globalFilterService.filters$.subscribe((filters) => {
-        console.log('DonorsMap: Global filters changed:', filters);
-        this.loadData();
+        if (this.initialLoadDone) {
+          console.log('DonorsMap: Global filters changed:', filters);
+          this.loadData();
+        }
       })
     );
 
     await this.loadData();
+    this.initialLoadDone = true;
   }
 
   ngAfterViewInit() {
+    // Initialize map immediately after view is ready
+    this.initializeMap();
+    // Add markers after map is ready (short delay for DOM)
     setTimeout(() => {
-      this.initializeMap();
-      setTimeout(() => {
-        this.addMarkersToMap();
-      }, 500);
-    }, 250);
+      this.addMarkersToMap();
+    }, 100);
   }
 
   // This ngOnDestroy method was moved to the end of the class
