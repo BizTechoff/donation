@@ -1,17 +1,14 @@
 import { remult, withRemult } from 'remult'
 import { createPostgresConnection } from 'remult/postgres'
 import {
-  Donor,
-  Donation,
-  Campaign,
-  DonorPlace,
-  DonorContact,
-  Place,
-  Country,
-  DonationMethod,
-  DonorAddressType,
   Company,
-  User
+  Donation,
+  DonationMethod,
+  Donor,
+  DonorAddressType,
+  DonorContact,
+  DonorPlace,
+  Place
 } from '../shared/entity'
 import { entities } from './api'
 
@@ -40853,13 +40850,13 @@ export async function seedLegacyData() {
     }
     console.log(`  ✓ Deleted ${existingPlaces.length} existing donor places`)
 
-    console.log('\nDeleting existing places...')
-    const placeRepo = remult.repo(Place)
-    const existingPlaceRecords = await placeRepo.find()
-    for (const place of existingPlaceRecords) {
-      await placeRepo.delete(place)
-    }
-    console.log(`  ✓ Deleted ${existingPlaceRecords.length} existing places`)
+    // console.log('\nDeleting existing places...')
+    // const placeRepo = remult.repo(Place)
+    // const existingPlaceRecords = await placeRepo.find()
+    // for (const place of existingPlaceRecords) {
+    //   await placeRepo.delete(place)
+    // }
+    // console.log(`  ✓ Deleted ${existingPlaceRecords.length} existing places`)
 
     console.log('\nDeleting existing donors...')
     const donorRepo = remult.repo(Donor)
@@ -40907,7 +40904,12 @@ export async function seedLegacyData() {
     const allCountries = await countryRepo.find()
     console.log(`  ✓ Found ${allCountries.length} countries for matching`)
 
+    var counter = 0
     for (const donorData of DONORS_DATA) {
+      if (counter % 50 === 0) {
+        console.log(`wrinting already: ${counter} donors records.`)
+      }
+      ++counter
       try {
         // Handle empty names
         const firstName = donorData.firstName?.trim() || donorData.lastName || 'לא ידוע'
@@ -40951,7 +40953,7 @@ export async function seedLegacyData() {
 
                 // Special handling for USA variations
                 const isUSA = countryNameClean === 'usa' || countryNameClean === 'us' ||
-                              countryNameClean === 'united states' || countryNameClean === 'united states of america'
+                  countryNameClean === 'united states' || countryNameClean === 'united states of america'
                 const isCountryUS = countryCodeToMatch === 'us' || countryEnToMatch === 'united states'
 
                 if (isUSA && isCountryUS) {
@@ -40959,12 +40961,12 @@ export async function seedLegacyData() {
                 }
 
                 return countryToMatch === countryNameClean ||
-                       countryCodeToMatch === countryNameClean ||
-                       countryEnToMatch === countryNameClean ||
-                       countryToMatch.includes(countryNameClean) ||
-                       countryNameClean.includes(countryToMatch) ||
-                       countryEnToMatch.includes(countryNameClean) ||
-                       countryNameClean.includes(countryEnToMatch)
+                  countryCodeToMatch === countryNameClean ||
+                  countryEnToMatch === countryNameClean ||
+                  countryToMatch.includes(countryNameClean) ||
+                  countryNameClean.includes(countryToMatch) ||
+                  countryEnToMatch.includes(countryNameClean) ||
+                  countryNameClean.includes(countryEnToMatch)
               })
 
               if (matchedCountry) {
@@ -41100,7 +41102,13 @@ export async function seedLegacyData() {
     let bankMatchCount = 0
     let organizationMatchCount = 0
 
+    counter = 0
     for (const donationData of DONATIONS_DATA) {
+      if (counter % 50 === 0) {
+        console.log(`wrinting already: ${counter} donations records.`)
+      }
+      ++counter
+
       try {
         const donor = donorMap.get(String(donationData.donorLegacyId))
         if (!donor) {
@@ -41161,8 +41169,8 @@ export async function seedLegacyData() {
               .replace(/^bank\s+/i, '')
               .trim()
             return bankNameToMatch === bankNameClean ||
-                   bankNameToMatch.includes(bankNameClean) ||
-                   bankNameClean.includes(bankNameToMatch)
+              bankNameToMatch.includes(bankNameClean) ||
+              bankNameClean.includes(bankNameToMatch)
           })
 
           if (matchedBank) {
@@ -41221,7 +41229,7 @@ export async function seedLegacyData() {
 // Run if called directly
 if (typeof module !== 'undefined' && require.main === module) {
   const dataProvider = createPostgresConnection({
-    configuration: 'heroku',
+    // configuration: 'heroku',
     sslInDev: !(process.env['DEV_MODE'] === 'DEV')
   })
 

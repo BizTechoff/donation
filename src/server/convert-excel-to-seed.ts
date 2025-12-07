@@ -781,7 +781,7 @@ export async function seedLegacyData() {
 // Run if called directly
 if (typeof module !== 'undefined' && require.main === module) {
   const dataProvider = createPostgresConnection({
-    configuration: 'heroku',
+    // configuration: 'heroku',
     sslInDev: !(process.env['DEV_MODE'] === 'DEV')
   })
 

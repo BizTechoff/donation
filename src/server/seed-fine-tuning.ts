@@ -260,7 +260,7 @@ async function fineTuning() {
 // אם רצים את הקובץ ישירות - רק בסביבת Node.js
 if (typeof module !== 'undefined' && require.main === module) {
   const dataProvider = createPostgresConnection({
-    configuration: 'heroku',
+    // configuration: 'heroku',
     sslInDev: !(process.env['DEV_MODE'] === 'DEV')
   })
 

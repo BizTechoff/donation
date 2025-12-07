@@ -42,6 +42,7 @@ export class SignInController extends ControllerBase {
    * 2. When a user that has no password signs in, that password that they've signed in with is set as the users password
    */
   async signIn() {
+    console.log('signIn')
     let result: UserInfo | undefined
     const userRepo = repo(User)
     let u = await userRepo.findFirst({ name: this.user })
