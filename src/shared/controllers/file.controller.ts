@@ -100,6 +100,7 @@ export class FileController {
       const uniqueFileName = pathParts[pathParts.length - 1];
       const bucketKey = pathParts.slice(0, -1).join('/');
 
+
       // Get signed URL from S3
       const s3Result = await FileController.generateUploadURLDelegate('getObject', uniqueFileName, file.fileType, bucketKey);
 
@@ -111,9 +112,18 @@ export class FileController {
         };
       }
 
+      /*
+      https://donation-yyg.s3.eu-central-1.amazonaws.com/https%3A//donation-yyg.s3.eu-central-1.amazonaws.com/certificates/2c6bc3b7-a8f2-4154-9b45-5939b971ea61/1765138261998_60022.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA24G2HKROT44MS6JE%2F20251207%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20251207T201859Z&X-Amz-Expires=1800&X-Amz-Signature=eb48d81c1cb153d6ac53828835c716e202e7236b6f6154a76fc6e82541aaf02e&X-Amz-SignedHeaders=host
+      
+      */
+      const part1 = s3Result.url.split('?')[0]
+      const part2 = part1.split('//')[part1.split('//').length - 1]
+      const url = 'https://' + part2
+      // const url = 'https://' + s3Result.url.split('?')[0].split('//')[0] //.replace(process.env['S3_BUCKET_URL']!, '').replace('https%3A//', 'https//')
+
       return {
         success: true,
-        url: s3Result.url,
+        url: url,
         fileId: file.id
       };
     } catch (error) {

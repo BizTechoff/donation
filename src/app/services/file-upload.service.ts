@@ -207,15 +207,17 @@ export class FileUploadService {
       if (!url) {
         throw new Error('Failed to get download URL');
       }
+// alert(url)
+      window?.open(url, '_blank')
 
       // Open in new window or download
-      const link = document.createElement('a');
-      link.href = url;
-      link.target = '_blank';
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      // const link = document.createElement('a');
+      // link.href = url;
+      // link.target = '_blank';
+      // link.download = fileName;
+      // document.body.appendChild(link);
+      // link.click();
+      // document.body.removeChild(link);
     } catch (error) {
       console.error('Error downloading file:', error);
       throw error;
