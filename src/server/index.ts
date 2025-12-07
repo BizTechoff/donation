@@ -26,7 +26,12 @@ async function startup() {
     })
   )
   app.use(compression())
-  app.use(helmet({ contentSecurityPolicy: false }))
+  app.use(
+    helmet({
+      contentSecurityPolicy: false,
+      crossOriginEmbedderPolicy: false
+    })
+  )
 
   app.use(api)
   app.use('/api/geo/places', getPlaces)
