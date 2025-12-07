@@ -25,7 +25,7 @@ import { DonorController } from '../shared/controllers/donor.controller'
   styleUrls: ['./app.component.scss'],
 })
 export class AppComponent implements OnInit {
-  version = '2025.12.07.01' // environment.production ? '2025.08.05' : '2025.07.31'
+  version = '2025.12.07.02' // environment.production ? '2025.08.05' : '2025.07.31'
 
   // Active reminders count - will be updated in ngOnInit
   activeRemindersCount$ = new Observable<number>((observer) => {
