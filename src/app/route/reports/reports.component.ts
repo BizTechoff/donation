@@ -113,8 +113,17 @@ type GroupByOption = 'donor' | 'campaign' | 'paymentMethod' | 'fundraiser';
   styleUrls: ['./reports.component.scss']
 })
 export class ReportsComponent implements OnInit, OnDestroy {
+toggleIsPrintAndProduceOnce() {
+  // this.isPrintAndProduceOnce = !this.isPrintAndProduceOnce
+}
+
+  printAndProduceOnce() {
+    this.loadPersonalDonorReport()
+    this.printPersonalDonorReport()
+  }
   Math = Math; // Make Math available in template
   isExpandedView = false;
+  isPrintAndProduceOnce = true
   private subscription = new Subscription();
 
   dateRange = {
@@ -2047,20 +2056,20 @@ export class ReportsComponent implements OnInit, OnDestroy {
       console.log('printPersonalDonorReport:', JSON.stringify(result));
 
 
-    if (result.success) {
-      // יצירת לינק להורדה
-      const link = document.createElement('a');
-      link.href = result.url;
-      link.download = `דוח אישי לתורם.docx` // result.fileName!;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      if (result.success) {
+        // יצירת לינק להורדה
+        const link = document.createElement('a');
+        link.href = result.url;
+        link.download = `דוח אישי לתורם.docx` // result.fileName!;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
 
-  //      const viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(result.url)}&embedded=true`;
-  // window.open(viewerUrl, '_blank');
-    } else {
-      console.error('Error:', result.error);
-    }
+        //      const viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(result.url)}&embedded=true`;
+        // window.open(viewerUrl, '_blank');
+      } else {
+        console.error('Error:', result.error);
+      }
 
     } catch (error) {
       console.error('Error loading personal donor report:', error);
@@ -2083,17 +2092,17 @@ export class ReportsComponent implements OnInit, OnDestroy {
       console.log('printPersonalDonorReport:', JSON.stringify(result));
 
 
-    if (result.success) {
-      // יצירת לינק להורדה
-      const link = document.createElement('a');
-      link.href = result.url;
-      link.download = `דוח אישי לתורם.docx` // result.fileName!;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } else {
-      console.error('Error:', result.error);
-    }
+      if (result.success) {
+        // יצירת לינק להורדה
+        const link = document.createElement('a');
+        link.href = result.url;
+        link.download = `דוח אישי לתורם.docx` // result.fileName!;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        console.error('Error:', result.error);
+      }
 
     } catch (error) {
       console.error('Error loading personal donor report:', error);

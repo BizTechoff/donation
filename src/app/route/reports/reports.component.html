@@ -820,21 +820,29 @@
           </div>
 
           <!-- כפתורים -->
-          <div class="filter-actions">
-            <button class="btn btn-primary" (click)="loadPersonalDonorReport()"
-              [disabled]="!selectedDonorForPersonalReport || !personalReportFromDate">
-              <mat-icon>description</mat-icon>
-              הפק דוח
-            </button>
-            <button class="btn btn-secondary" (click)="printPersonalDonorReport()"
-              [disabled]="!personalDonorReportData">
-              <mat-icon>print</mat-icon>
-              הדפס
-            </button>
-            <button class="btn btn-outline" (click)="clearPersonalDonorReport()">
-              <mat-icon>refresh</mat-icon>
-              נקה
-            </button>
+          <div>
+            <div class="filter-actions">
+              <!-- (click)="loadPersonalDonorReport()" -->
+              <button class="btn btn-primary" (click)="printAndProduceOnce()"
+                [disabled]="!selectedDonorForPersonalReport || !personalReportFromDate">
+                <mat-icon>description</mat-icon>
+                הפק דוח
+              </button>
+              <button *ngIf="!isPrintAndProduceOnce" class="btn btn-secondary" (click)="printPersonalDonorReport()"
+                [disabled]="!personalDonorReportData">
+                <mat-icon>print</mat-icon>
+                הדפס
+              </button>
+              <button class="btn btn-outline" (click)="clearPersonalDonorReport()">
+                <mat-icon>refresh</mat-icon>
+                נקה
+              </button>
+            </div>
+            <!-- <div>
+              <mat-checkbox [(ngModel)]="isPrintAndProduceOnce" (change)="toggleIsPrintAndProduceOnce()">
+                הדפס והפק ביחד
+              </mat-checkbox>
+            </div> -->
           </div>
         </div>
       </div>
@@ -852,27 +860,32 @@
                   <th class="sortable" [class.sorted]="isPersonalDonorSorted('date')"
                     (click)="togglePersonalDonorSort('date', $event)">
                     תאריך
-                    <span class="sort-icon" *ngIf="getPersonalDonorSortIcon('date')">{{ getPersonalDonorSortIcon('date') }}</span>
+                    <span class="sort-icon" *ngIf="getPersonalDonorSortIcon('date')">{{ getPersonalDonorSortIcon('date')
+                      }}</span>
                   </th>
                   <th class="sortable" [class.sorted]="isPersonalDonorSorted('dateHebrew')"
                     (click)="togglePersonalDonorSort('dateHebrew', $event)">
                     תאריך עברי
-                    <span class="sort-icon" *ngIf="getPersonalDonorSortIcon('dateHebrew')">{{ getPersonalDonorSortIcon('dateHebrew') }}</span>
+                    <span class="sort-icon" *ngIf="getPersonalDonorSortIcon('dateHebrew')">{{
+                      getPersonalDonorSortIcon('dateHebrew') }}</span>
                   </th>
                   <th class="sortable" [class.sorted]="isPersonalDonorSorted('commitment')"
                     (click)="togglePersonalDonorSort('commitment', $event)">
                     התחייבות
-                    <span class="sort-icon" *ngIf="getPersonalDonorSortIcon('commitment')">{{ getPersonalDonorSortIcon('commitment') }}</span>
+                    <span class="sort-icon" *ngIf="getPersonalDonorSortIcon('commitment')">{{
+                      getPersonalDonorSortIcon('commitment') }}</span>
                   </th>
                   <th class="sortable" [class.sorted]="isPersonalDonorSorted('amount')"
                     (click)="togglePersonalDonorSort('amount', $event)">
                     סכום
-                    <span class="sort-icon" *ngIf="getPersonalDonorSortIcon('amount')">{{ getPersonalDonorSortIcon('amount') }}</span>
+                    <span class="sort-icon" *ngIf="getPersonalDonorSortIcon('amount')">{{
+                      getPersonalDonorSortIcon('amount') }}</span>
                   </th>
                   <th class="sortable" [class.sorted]="isPersonalDonorSorted('notes')"
                     (click)="togglePersonalDonorSort('notes', $event)">
                     הערות
-                    <span class="sort-icon" *ngIf="getPersonalDonorSortIcon('notes')">{{ getPersonalDonorSortIcon('notes') }}</span>
+                    <span class="sort-icon" *ngIf="getPersonalDonorSortIcon('notes')">{{
+                      getPersonalDonorSortIcon('notes') }}</span>
                   </th>
                 </tr>
               </thead>
@@ -880,14 +893,15 @@
                 <tr *ngFor="let donation of personalDonorReportData.donations">
                   <td>{{formatDateForReport(donation.date)}}</td>
                   <td>{{donation.dateHebrew}}</td>
-                  <td>{{donation.commitment > 0 ? donation.commitment + ' ' + getCurrencySymbol(donation.currencySymbol) : '' }}</td>
+                  <td>{{donation.commitment > 0 ? donation.commitment + ' ' + getCurrencySymbol(donation.currencySymbol)
+                    : '' }}</td>
                   <td>{{donation.amount}} {{getCurrencySymbol(donation.currencySymbol)}}</td>
                   <td>{{donation.notes}}</td>
                 </tr>
               </tbody>
             </table>
           </div>
-          
+
         </div>
       </div>
 

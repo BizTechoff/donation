@@ -113,9 +113,11 @@ import { NeighborhoodDetailsModalComponent } from './routes/modals/neighborhood-
 import { ReminderSnoozeModalComponent } from './routes/modals/reminder-snooze-modal/reminder-snooze-modal.component'
 import { CampaignDonationsModalComponent } from './routes/modals/campaign-donations-modal/campaign-donations-modal.component'
 import { GlobalSearchComponent } from './components/global-search/global-search.component'
+import { AutoYearDirective } from './shared/directives/auto-year.directive'
 
 @NgModule({
   declarations: [
+    AutoYearDirective,
     AppComponent,
     UsersComponent,
     HomeComponent,
