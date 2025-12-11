@@ -39,10 +39,23 @@ async function startup() {
   app.use('/api/geo/reverse-geocode', reverseGeocode)
   app.use('/api/geo/maps-api-key', getGoogleMapsApiKey)
 
+
+  console.log(`HI FROM SCALAR PORTAL SERVER. CURRENT TIME: ${new Date()}. __dirname: ${__dirname}. process.cwd(): ${process.cwd()}`)
+
   let dist = path.resolve('dist/donation/browser')
+  console.log('[Server] Checking dist path:', dist, 'exists:', fs.existsSync(dist))
   if (!fs.existsSync(dist)) {
     dist = path.resolve('../donation/browser')
+    console.log('[Server] Fallback dist path:', dist, 'exists:', fs.existsSync(dist))
   }
+
+  // Log assets directory
+  const assetsPath = path.join(dist, 'assets')
+  console.log('[Server] Assets path:', assetsPath, 'exists:', fs.existsSync(assetsPath))
+  if (fs.existsSync(assetsPath)) {
+    console.log('[Server] Assets contents:', fs.readdirSync(assetsPath))
+  }
+
   app.use(express.static(dist))
   app.use('/*', async (req, res) => {
     if (req.headers.accept?.includes('json')) {
