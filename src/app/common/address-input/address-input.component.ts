@@ -117,15 +117,15 @@ export class AddressInputComponent
                         partial_match: false,
                         geometry: {
                           location_type: '',
-                          location: toLocation(place.geometry!.location)!,
-                          viewport: {
+                          location: place.geometry?.location ? toLocation(place.geometry.location)! : { lat: 0, lng: 0 },
+                          viewport: place.geometry!.viewport ? {
                             northeast: toLocation(
                               place.geometry!.viewport.getNorthEast()
                             ),
                             southwest: toLocation(
                               place.geometry!.viewport.getSouthWest()
                             ),
-                          },
+                          } : undefined,
                         },
                         place_id: place.place_id!,
                         types: place.types!,
@@ -133,10 +133,10 @@ export class AddressInputComponent
                     ],
                     status: 'OK',
                   },
-                  location: {
-                    lat: place.geometry!.location.lat(),
-                    lng: place.geometry!.location.lng(),
-                  },
+                  location: place.geometry?.location ? {
+                    lat: place.geometry.location.lat(),
+                    lng: place.geometry.location.lng(),
+                  } : { lat: 0, lng: 0 },
                   addressByGoogle: getAddress(place),
                 }
           )

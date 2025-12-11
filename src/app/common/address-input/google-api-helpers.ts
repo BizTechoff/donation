@@ -1,5 +1,3 @@
-/// <reference types="@types/googlemaps" />
-
 import { UIToolsService } from '../UIToolsService'
 
 export function getDistrict(g: GeocodeResult | undefined | null) {

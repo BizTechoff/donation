@@ -22,6 +22,9 @@ interface GooglePlacesResponse {
   status: string;
 }
 
+// Declare google as global
+declare const google: any;
+
 @Injectable({
   providedIn: 'root'
 })
@@ -29,6 +32,10 @@ export class GeoService {
   private key = 'bto-donation-wapp-api-key'
   private debounceTimer?: number;
   public suggestions: GooglePlacePrediction[] = [];
+
+  // Google Maps API loading state
+  private googleMapsLoaded = false;
+  private googleMapsLoadingPromise: Promise<void> | null = null;
 
   constructor(private i18n: I18nService) { }
 
@@ -248,5 +255,91 @@ export class GeoService {
       console.error('Error in reverse geocoding:', error);
       throw error;
     }
+  }
+
+  /**
+   * Load Google Maps JavaScript API dynamically
+   * @returns Promise that resolves when Google Maps API is loaded
+   */
+  async loadGoogleMapsApi(): Promise<void> {
+    // If already loaded, return immediately
+    if (this.googleMapsLoaded && typeof google !== 'undefined' && google.maps) {
+      return Promise.resolve();
+    }
+
+    // If loading is in progress, return the existing promise
+    if (this.googleMapsLoadingPromise) {
+      return this.googleMapsLoadingPromise;
+    }
+
+    // Start loading
+    this.googleMapsLoadingPromise = new Promise(async (resolve, reject) => {
+      try {
+        // Get API key from server
+        const response = await fetch(`/api/geo/maps-api-key?key=${encodeURIComponent(this.key)}`);
+
+        if (!response.ok) {
+          throw new Error(`Failed to get Google Maps API key: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const apiKey = data.apiKey;
+
+        if (!apiKey) {
+          throw new Error('Google Maps API key not returned from server');
+        }
+
+        // Check if script already exists
+        const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
+        if (existingScript) {
+          this.googleMapsLoaded = true;
+          resolve();
+          return;
+        }
+
+        // Create and load the script
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&language=${this.getUserLanguage()}`;
+        script.async = true;
+        script.defer = true;
+
+        script.onload = () => {
+          console.log('Google Maps API loaded successfully');
+          this.googleMapsLoaded = true;
+          resolve();
+        };
+
+        script.onerror = (error) => {
+          console.error('Error loading Google Maps API:', error);
+          this.googleMapsLoadingPromise = null;
+          reject(new Error('Failed to load Google Maps API'));
+        };
+
+        document.head.appendChild(script);
+      } catch (error) {
+        console.error('Error loading Google Maps API:', error);
+        this.googleMapsLoadingPromise = null;
+        reject(error);
+      }
+    });
+
+    return this.googleMapsLoadingPromise;
+  }
+
+  /**
+   * Check if Google Maps API is loaded
+   */
+  isGoogleMapsLoaded(): boolean {
+    return this.googleMapsLoaded && typeof google !== 'undefined' && google.maps;
+  }
+
+  /**
+   * Get Google Maps object (after loading)
+   */
+  getGoogleMaps(): any {
+    if (!this.isGoogleMapsLoaded()) {
+      throw new Error('Google Maps API not loaded. Call loadGoogleMapsApi() first.');
+    }
+    return google.maps;
   }
 }

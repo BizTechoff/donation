@@ -349,6 +349,29 @@ export const getPlaces = async (req: Request, res: Response, next: NextFunction)
     }
 };
 
+/**
+ * Get Google Maps API Key for client-side map loading
+ * Returns the API key only if the request has a valid server API key
+ */
+export const getGoogleMapsApiKey = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const { key } = req.query;
+
+    if (key !== process.env['SERVER_API_KEY']!) {
+        console.warn('Invalid API key for Google Maps API key request');
+        res.status(401).json({ error: 'Unauthorized' });
+        return;
+    }
+
+    const apiKey = process.env['GOOGLE_GEO_API_KEY'];
+    if (!apiKey) {
+        console.error('GOOGLE_GEO_API_KEY not configured');
+        res.status(500).json({ error: 'API key not configured' });
+        return;
+    }
+
+    res.status(200).json({ apiKey });
+};
+
 // export const optimizeRoute = async (req: Request, res: Response, next: NextFunction) => {
 //     const result: ApiResponse = { success: false, message: '' }
 

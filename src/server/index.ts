@@ -7,7 +7,7 @@ import sslRedirect from 'heroku-ssl-redirect'
 import path from 'path'
 import { api } from './api'
 import './docx'
-import { getPlace, getPlaces, reverseGeocode } from './geo'
+import { getPlace, getPlaces, reverseGeocode, getGoogleMapsApiKey } from './geo'
 import './s3'
 import { checkAndSendReminders } from './scheduler'
 
@@ -37,6 +37,7 @@ async function startup() {
   app.use('/api/geo/places', getPlaces)
   app.use('/api/geo/place-details', getPlace)
   app.use('/api/geo/reverse-geocode', reverseGeocode)
+  app.use('/api/geo/maps-api-key', getGoogleMapsApiKey)
 
   let dist = path.resolve('dist/donation/browser')
   if (!fs.existsSync(dist)) {
