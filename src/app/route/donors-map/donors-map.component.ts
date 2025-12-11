@@ -47,6 +47,7 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
   private tempPolyline?: google.maps.Polyline;
   private drawnPolygon?: google.maps.Polygon;
   private subscription = new Subscription();
+  private isCtrlPressed = false;
 
   // Lightweight markers loaded from server (new approach)
   markersData: MarkerData[] = [];
@@ -106,6 +107,10 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
   private initialLoadDone = false;
 
   async ngOnInit() {
+    // Track Ctrl key state for map click handling
+    document.addEventListener('keydown', this.onKeyDown);
+    document.addEventListener('keyup', this.onKeyUp);
+
     // Register global functions for popup callbacks
     (window as any).openDonorDetails = (donorId: string) => {
       this.openDonorDetails(donorId);
@@ -913,6 +918,18 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     await this.ui.mapSelectedDonorsDialog(donors, polygonPoints);
   }
 
+  private onKeyDown = (e: KeyboardEvent) => {
+    if (e.key === 'Control') {
+      this.isCtrlPressed = true;
+    }
+  };
+
+  private onKeyUp = (e: KeyboardEvent) => {
+    if (e.key === 'Control') {
+      this.isCtrlPressed = false;
+    }
+  };
+
   async onMapClick(e: google.maps.MapMouseEvent) {
     if (!e.latLng) return;
 
@@ -926,11 +943,11 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    // Check if Ctrl key is pressed (for creating new donor)
-    // Note: Google Maps doesn't pass the original event, so we need to track it differently
-    // For now, we'll skip the Ctrl check since it's not easily accessible
-    return; // Skip new donor creation from map click for now
-    
+    // Require Ctrl+Click to create new donor
+    if (!this.isCtrlPressed) {
+      return;
+    }
+
     try {
       // הצגת אינדיקטור טעינה
       this.loading = true;
@@ -1038,6 +1055,10 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    // Remove keyboard event listeners
+    document.removeEventListener('keydown', this.onKeyDown);
+    document.removeEventListener('keyup', this.onKeyUp);
+
     // Clear markers
     this.markers.forEach(marker => marker.setMap(null));
     this.markers = [];
