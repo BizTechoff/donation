@@ -1403,11 +1403,24 @@
           }
         }
 
-        .hebrew-date-hint {
-          font-size: 0.8rem;
-          color: #7f8c8d;
-          margin-top: 0.25rem;
+        &.date-filter-group {
+          .hebrew-date-hint {
+            font-size: 0.8rem;
+            color: #7f8c8d;
+            margin-top: 0.25rem;
+            height: 1.2em; // Fixed height to prevent layout shift
+            line-height: 1.2em;
+          }
         }
+      }
+
+      // Add margin-bottom to non-date filter groups to align with date groups
+      .filter-group.donor-filter-group {
+        margin-bottom: calc(1.2em + 0.25rem); // Match hebrew-date-hint height + margin
+      }
+
+      .filter-actions {
+        margin-bottom: calc(1.2em + 0.25rem); // Match hebrew-date-hint height + margin
       }
 
       .filter-actions {

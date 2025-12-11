@@ -1910,15 +1910,33 @@ export class ReportsComponent implements OnInit, OnDestroy {
   }
 
   onPersonalReportFromDateChange() {
-    // If "from" date is set and "to" date is empty, auto-fill "to" with today
-    if (this.personalReportFromDate && !this.personalReportToDate) {
-      this.personalReportToDate = new Date();
+    if (!this.personalReportFromDate) {
+      this.updatePersonalReportHebrewDates();
+      return;
     }
 
-    // If "from" date is greater than "to" date, set "to" = "from"
-    if (this.personalReportFromDate && this.personalReportToDate &&
-      this.personalReportFromDate > this.personalReportToDate) {
-      this.personalReportToDate = new Date(this.personalReportFromDate);
+    const fromDate = new Date(this.personalReportFromDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Helper to format date as YYYY-MM-DD string for input[type="date"]
+    const formatDateForInput = (date: Date): string => {
+      const year = date.getFullYear();
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const day = date.getDate().toString().padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
+    // Case 1: If "to" date is empty, fill with today
+    if (!this.personalReportToDate) {
+      this.personalReportToDate = formatDateForInput(today) as any;
+    } else {
+      const toDate = new Date(this.personalReportToDate);
+      // Case 2: If "to" date is less than "from" date, set "to" = "from"
+      if (toDate < fromDate) {
+        this.personalReportToDate = formatDateForInput(fromDate) as any;
+      }
+      // Case 3: If "to" date is greater than "from" - don't touch!
     }
 
     // Update Hebrew date display
@@ -1937,16 +1955,43 @@ export class ReportsComponent implements OnInit, OnDestroy {
   }
 
   private async updatePersonalReportHebrewDates() {
-    if (this.personalReportFromDate) {
-      const hebrewFrom = this.hebrewDateService.convertGregorianToHebrew(this.personalReportFromDate);
-      this.personalReportFromDateHebrew = hebrewFrom.formatted;
+    // Helper to check if date is valid for Hebrew conversion (year >= 1000)
+    const isValidForHebrew = (date: Date | string | null): boolean => {
+      if (!date) return false;
+      const d = date instanceof Date ? date : new Date(date);
+      if (isNaN(d.getTime())) return false;
+      const year = d.getFullYear();
+      return year >= 1000 && year <= 9999;
+    };
+
+    // Helper to ensure we have a Date object
+    const toDate = (date: Date | string | null): Date | null => {
+      if (!date) return null;
+      if (date instanceof Date) return date;
+      const d = new Date(date);
+      return isNaN(d.getTime()) ? null : d;
+    };
+
+    const fromDate = toDate(this.personalReportFromDate);
+    if (fromDate && isValidForHebrew(fromDate)) {
+      try {
+        const hebrewFrom = this.hebrewDateService.convertGregorianToHebrew(fromDate);
+        this.personalReportFromDateHebrew = hebrewFrom.formatted;
+      } catch {
+        this.personalReportFromDateHebrew = '';
+      }
     } else {
       this.personalReportFromDateHebrew = '';
     }
 
-    if (this.personalReportToDate) {
-      const hebrewTo = this.hebrewDateService.convertGregorianToHebrew(this.personalReportToDate);
-      this.personalReportToDateHebrew = hebrewTo.formatted;
+    const toDateVal = toDate(this.personalReportToDate);
+    if (toDateVal && isValidForHebrew(toDateVal)) {
+      try {
+        const hebrewTo = this.hebrewDateService.convertGregorianToHebrew(toDateVal);
+        this.personalReportToDateHebrew = hebrewTo.formatted;
+      } catch {
+        this.personalReportToDateHebrew = '';
+      }
     } else {
       this.personalReportToDateHebrew = '';
     }

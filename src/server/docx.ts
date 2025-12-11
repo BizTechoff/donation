@@ -28,8 +28,15 @@ export const createLetterDocX = async (type: Letter, contents = [] as DocxConten
         contents = [] as DocxContentControl[]
     }
 
-    const fullPath = path.resolve(__dirname, `../${isProduction ? 'donation/' : ''}assets/letters`, `${type.templatePath}`);//.docx`);
+    
+    // In production: /app/dist/donation/browser/assets/reports
+    // In dev: relative to project root
+    const assetsBase = isProduction
+        ? path.resolve(process.cwd(), 'dist/donation/browser/assets/letters')
+        : path.resolve(__dirname, '../assets/letters');
+    const fullPath = path.join(assetsBase, type.templatePath);
     console.log('fullPath', fullPath)
+    console.log('contents', JSON.stringify(contents))
 
     var content = ''
     try {
@@ -112,7 +119,7 @@ export const createReportDocX = async (report: Report, contents: Record<string, 
     const fullPath = path.join(assetsBase, report.templatePath);
     console.log('fullPath', fullPath)
     console.log('contents', JSON.stringify(contents))
-    
+
     var content = ''
     try {
         // Load the docx file as binary content
