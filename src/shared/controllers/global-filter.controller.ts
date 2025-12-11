@@ -175,72 +175,72 @@ export class GlobalFilterController {
     return donorIds;
   }
 
-  /**
-   * בונה whereClause לקמפיינים
-   * כולל סינון לפי מיקום (location) ורשימת מוזמנים (invitedDonorIds)
-   */
-  @BackendMethod({ allowed: Allow.authenticated })
-  static async buildWhereForCampaigns(
-    filters: GlobalFilters,
-    existingWhere: any = {}
-  ): Promise<any> {
-    const whereClause = { ...existingWhere };
+  // /**
+  //  * בונה whereClause לקמפיינים
+  //  * כולל סינון לפי מיקום (location) ורשימת מוזמנים (invitedDonorIds)
+  //  */
+  // @BackendMethod({ allowed: Allow.authenticated })
+  // static async buildWhereForCampaigns(
+  //   filters: GlobalFilters,
+  //   existingWhere: any = {}
+  // ): Promise<any> {
+  //   const whereClause = { ...existingWhere };
 
-    // סינון לפי תאריכים (קיים כבר)
-    if (filters.dateFrom || filters.dateTo) {
-      whereClause.startDate = {};
-      if (filters.dateFrom) {
-        whereClause.startDate.$gte = filters.dateFrom;
-      }
-      if (filters.dateTo) {
-        whereClause.startDate.$lte = filters.dateTo;
-      }
-    }
+  //   // סינון לפי תאריכים (קיים כבר)
+  //   if (filters.dateFrom || filters.dateTo) {
+  //     whereClause.startDate = {};
+  //     if (filters.dateFrom) {
+  //       whereClause.startDate.$gte = filters.dateFrom;
+  //     }
+  //     if (filters.dateTo) {
+  //       whereClause.startDate.$lte = filters.dateTo;
+  //     }
+  //   }
 
-    // סינון לפי רשימת מוזמנים - צריך donorIds
-    const donorIds = await GlobalFilterController.getDonorIds(filters);
-    if (donorIds !== undefined) {
-      if (donorIds.length === 0) {
-        // אין תורמים תואמים - נחזיר תנאי שלא יחזיר תוצאות
-        whereClause.id = { $in: [] };
-      } else {
-        // סינון קמפיינים שיש בהם לפחות אחד מהתורמים המסוננים ברשימת המוזמנים
-        whereClause.$or = [
-          { invitedDonorIds: { $contains: donorIds } }
-        ];
-      }
-    }
+  //   // סינון לפי רשימת מוזמנים - צריך donorIds
+  //   const donorIds = await GlobalFilterController.getDonorIds(filters);
+  //   if (donorIds !== undefined) {
+  //     if (donorIds.length === 0) {
+  //       // אין תורמים תואמים - נחזיר תנאי שלא יחזיר תוצאות
+  //       whereClause.id = { $in: [] };
+  //     } else {
+  //       // סינון קמפיינים שיש בהם לפחות אחד מהתורמים המסוננים ברשימת המוזמנים
+  //       whereClause.$or = [
+  //         { invitedDonorIds: { $contains: donorIds } }
+  //       ];
+  //     }
+  //   }
 
-    return whereClause;
-  }
+  //   return whereClause;
+  // }
 
-  /**
-   * בונה whereClause לתזכורות
-   * תזכורת יכולה להיות מקושרת לתורם או לתרומה
-   */
-  @BackendMethod({ allowed: Allow.authenticated })
-  static async buildWhereForReminders(
-    filters: GlobalFilters,
-    existingWhere: any = {}
-  ): Promise<any> {
-    const whereClause = { ...existingWhere };
+  // /**
+  //  * בונה whereClause לתזכורות
+  //  * תזכורת יכולה להיות מקושרת לתורם או לתרומה
+  //  */
+  // @BackendMethod({ allowed: Allow.authenticated })
+  // static async buildWhereForReminders(
+  //   filters: GlobalFilters,
+  //   existingWhere: any = {}
+  // ): Promise<any> {
+  //   const whereClause = { ...existingWhere };
 
-    // סינון לפי donorIds
-    const donorIds = await GlobalFilterController.getDonorIds(filters);
-    if (donorIds !== undefined) {
-      if (donorIds.length === 0) {
-        // אין תורמים תואמים
-        whereClause.id = { $in: [] };
-      } else {
-        // תזכורת יכולה להיות קשורה ישירות לתורם, או דרך תרומה
-        whereClause.$or = [
-          { donorId: { $in: donorIds } },
-          // TODO: אם יש donationId, צריך לבדוק את donation.donorId
-          // זה ידרוש join או שאילתה נפרדת
-        ];
-      }
-    }
+  //   // סינון לפי donorIds
+  //   const donorIds = await GlobalFilterController.getDonorIds(filters);
+  //   if (donorIds !== undefined) {
+  //     if (donorIds.length === 0) {
+  //       // אין תורמים תואמים
+  //       whereClause.id = { $in: [] };
+  //     } else {
+  //       // תזכורת יכולה להיות קשורה ישירות לתורם, או דרך תרומה
+  //       whereClause.$or = [
+  //         { donorId: { $in: donorIds } },
+  //         // TODO: אם יש donationId, צריך לבדוק את donation.donorId
+  //         // זה ידרוש join או שאילתה נפרדת
+  //       ];
+  //     }
+  //   }
 
-    return whereClause;
-  }
+  //   return whereClause;
+  // }
 }

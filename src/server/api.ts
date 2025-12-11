@@ -38,6 +38,7 @@ import { Reminder } from '../shared/entity/reminder'
 import { User } from '../shared/entity/user'
 import { checkAndSendReminders } from './scheduler'
 import { GlobalFilterController } from '../shared/controllers/global-filter.controller'
+import { geocodeMissingPlaces } from './geocode-places'
 
 export const entities = [
   User, Donor, Donation, Campaign, DonationMethod, Reminder,
@@ -87,6 +88,7 @@ export const api = remultExpress({
         return provider
   },
   initApi: async r => {
+    // await geocodeMissingPlaces()
     // Setup cron job to check reminders every 5 minutes
     console.log('[Server] Setting up reminder scheduler (every 5 minutes)...')
     cron.schedule('*/5 * * * *', async () => {

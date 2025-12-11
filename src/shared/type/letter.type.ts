@@ -1,7 +1,8 @@
 
 export interface DocxContentControl {
     name: string,
-    value: string
+    value: string,
+    contents?: DocxContentControl[]
 }
 
 export interface DocxCreateResponse {

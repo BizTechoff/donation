@@ -130,7 +130,7 @@ export class User extends IdEntity {
       sort?: Array<{ field: string; direction: 'asc' | 'desc' }>;
     };
     reports?: {
-      lastSelectedTab?: 'general' | 'donations' | 'payments' | 'yearly' | 'blessings';
+      lastSelectedTab?: 'general' | 'donations' | 'payments' | 'yearly' | 'blessings' | 'personalDonor';
     };
     globalSearch?: {
       x?: number;

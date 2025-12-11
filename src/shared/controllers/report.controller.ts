@@ -1,11 +1,12 @@
-import { Allow, BackendMethod } from 'remult';
+import { Allow, BackendMethod, remult } from 'remult';
 import { Donation } from '../entity/donation';
 import { Donor } from '../entity/donor';
-import { DonorPlace } from '../entity/donor-place';
 import { DonorContact } from '../entity/donor-contact';
+import { DonorPlace } from '../entity/donor-place';
 import { Payment } from '../entity/payment';
+import { Report } from '../enum/report';
+import { DocxCreateResponse } from '../type/letter.type';
 import { HebrewDateController } from './hebrew-date.controller';
-import { remult } from 'remult';
 
 export interface GroupedDonationReportData {
   donorId?: string;
@@ -1139,6 +1140,271 @@ export class ReportController {
       throw error;
     }
   }
+
+  /**
+   * Get Personal Donor Report
+   * Returns donation details for a specific donor within a date range
+   * Includes donations where the donor is a partner (partnerIds)
+   */
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async getPersonalDonorReport(
+    donorId: string,
+    fromDate: Date,
+    toDate: Date
+  ): Promise<PersonalDonorReportData> {
+    try {
+      console.log(`📊 Loading personal donor report for donor ${donorId}`);
+      console.log(`   Date range: ${fromDate} to ${toDate}`);
+
+      // Load donor details
+      const donor = await remult.repo(Donor).findId(donorId);
+      if (!donor) {
+        throw new Error('Donor not found');
+      }
+
+      // Load donor's primary place
+      const donorPlace = await remult.repo(DonorPlace).findFirst({
+        donorId: donorId,
+        isPrimary: true,
+        isActive: true
+      }, { include: { place: true } });
+
+      // Load donations for this donor in the date range
+      const donorDonations = await remult.repo(Donation).find({
+        where: {
+          donorId: donorId,
+          donationDate: {
+            $gte: fromDate,
+            $lte: toDate
+          }
+        },
+        orderBy: { donationDate: 'asc' }
+      });
+
+      console.log(`   Found ${donorDonations.length} direct donations`);
+
+      // Load donations where this donor is a partner
+      const allDonationsInRange = await remult.repo(Donation).find({
+        where: {
+          donationDate: {
+            $gte: fromDate,
+            $lte: toDate
+          }
+        },
+        include: { donor: true }
+      });
+
+      const partnerDonations = allDonationsInRange.filter(d =>
+        d.partnerIds && d.partnerIds.includes(donorId) && d.donorId !== donorId
+      );
+
+      console.log(`   Found ${partnerDonations.length} partner donations`);
+
+      // Load payments for all these donations
+      const allDonationIds = [
+        ...donorDonations.map(d => d.id!),
+        ...partnerDonations.map(d => d.id!)
+      ].filter(Boolean);
+
+      const payments = allDonationIds.length > 0
+        ? await remult.repo(Payment).find({
+          where: { donationId: { $in: allDonationIds } }
+        })
+        : [];
+
+      // Create payment map: donationId -> total payment amount
+      const paymentMap = new Map<string, number>();
+      for (const payment of payments) {
+        const current = paymentMap.get(payment.donationId) || 0;
+        paymentMap.set(payment.donationId, current + payment.amount);
+      }
+
+      // Build donations array
+      const donationsData: PersonalDonorReportData['donations'] = [];
+
+      // Process direct donations
+      for (const donation of donorDonations) {
+        const hebrewDate = await HebrewDateController.convertGregorianToHebrew(donation.donationDate);
+        const commitment = paymentMap.get(donation.id!) || 0;
+
+        donationsData.push({
+          date: donation.donationDate,
+          dateHebrew: hebrewDate.formatted,
+          commitment: commitment,
+          amount: donation.amount,
+          currencySymbol: donation.currency,
+          notes: donation.reason || ''
+        });
+      }
+
+      //   { id: 'ILS', label: 'שקל', labelEnglish: 'Shekel', symbol: '₪', rateInShekel: 1 },
+      //   { id: 'USD', label: 'דולר', labelEnglish: 'Dollar', symbol: '$', rateInShekel: 3.2 },
+      //   { id: 'EUR', label: 'יורו', labelEnglish: 'Euro', symbol: '€', rateInShekel: 3.73 },
+      //   { id: 'GBP', label: 'ליש"ט', labelEnglish: 'Pound', symbol: '£', rateInShekel: 4.58 }
+      // ];
+
+      // Process partner donations
+      for (const donation of partnerDonations) {
+        const hebrewDate = await HebrewDateController.convertGregorianToHebrew(donation.donationDate);
+        const mainDonorName = donation.donor?.fullName || 'תורם לא ידוע';
+
+        donationsData.push({
+          date: donation.donationDate,
+          dateHebrew: hebrewDate.formatted,
+          commitment: 0,
+          amount: donation.amount,
+          currencySymbol: donation.currency,
+          notes: `שותף בתרומה עם ${mainDonorName}`
+        });
+      }
+
+      // Sort by date
+      donationsData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+      // Convert dates to Hebrew
+      const fromDateHebrew = await HebrewDateController.convertGregorianToHebrew(fromDate);
+      const toDateHebrew = await HebrewDateController.convertGregorianToHebrew(toDate);
+
+      const reportData: PersonalDonorReportData = {
+        donor: {
+          title: donor.title || '',
+          fullName: donor.fullName || `${donor.firstName} ${donor.lastName}`,
+          suffix: donor.suffix || '',
+          titleEnglish: donor.titleEnglish || '',
+          fullNameEnglish: donor.fullNameEnglish || `${donor.firstNameEnglish || ''} ${donor.lastNameEnglish || ''}`.trim(),
+          address: {
+            street: donorPlace?.place?.street || '',
+            houseNumber: donorPlace?.place?.houseNumber || '',
+            city: donorPlace?.place?.city || '',
+            postcode: donorPlace?.place?.postcode || ''
+          }
+        },
+        fromDate: fromDate,
+        fromDateHebrew: fromDateHebrew.formatted,
+        toDate: toDate,
+        toDateHebrew: toDateHebrew.formatted,
+        reportDate: new Date(),
+        donations: donationsData
+      };
+
+      console.log(`✅ Personal donor report generated with ${donationsData.length} donations`);
+      return reportData;
+
+    } catch (error) {
+      console.error('Error in getPersonalDonorReport:', error);
+      throw error;
+    }
+  }
+
+  static createReportDelegate: (type: Report, contents: Record<string, any>) => Promise<DocxCreateResponse>
+  // static createReportRecordsDelegate: (type: Report, contents: Record<string, any>) => Promise<DocxCreateResponse>
+
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async createPersonalDonorReport(donorId: string, from: Date, to: Date): Promise<DocxCreateResponse> {
+
+    const data = await ReportController.getPersonalDonorReport(
+      donorId, from, to)
+
+
+    // Load donor details
+    const donor = await remult.repo(Donor).findId(donorId);
+    if (!donor) {
+      throw new Error('Donor not found');
+    }
+    const donorPlace = await remult.repo(DonorPlace).findFirst({ donor: donor }, { orderBy: { createdDate: 'desc' } });
+
+    const fullAddress =
+      `${data.donor.address.houseNumber} ${data.donor.address.street}`
+      + '\n' +
+      `${data.donor.address.city} ${data.donor.address.postcode}`
+    console.log('fullAddress', fullAddress)
+    // שלב 2: הכנת הנתונים להדפסה
+    const dataToRender = {
+      'מתאריך': ReportController.formatDateForFilter(data.fromDate),
+      'עד_תאריך': ReportController.formatDateForFilter(data.toDate),
+      'שם_תורם_מלא_עברית': `${ReportController.getFieldValue('שם_תורם_מלא_עברית', donor, donorPlace)}`,
+      'שם_תורם_מלא_אנגלית': `${ReportController.getFieldValue('שם_תורם_מלא_אנגלית', donor, donorPlace)}`,
+      'FullAddress': `${ReportController.getFieldValue('FullAddress', donor, donorPlace)}`,
+      // יצירת מערך 'stops' שתואם ללולאה בשבלונה
+      'stops': data.donations.map(d => {
+        // יצירת אובייקט פשוט עבור כל משימה
+        return {
+          'תאריך': ReportController.formatDateForFilter(d.date),
+          'תאריך_עברי': d.dateHebrew,
+          'התחייבות': d.commitment || '',
+          'סכום': d.notes.startsWith('שותף בתרומה') ? `(${'$'}${d.amount})` : `${'$'}${d.amount}`,
+          'הערות': d.notes
+        };
+      })
+    };
+
+    return await ReportController.createReportDelegate(Report.report_personal_donor_donations, dataToRender)
+  }
+
+  private static formatDateForFilter(d: Date): string {
+    const date = new Date(d)
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${day}/${month}/${year}`;
+  }
+
+  private static getFieldValue(field: string, donor: Donor, donorPlace?: DonorPlace) {
+    var result = ''
+    switch (field) {
+
+      case 'שם_תורם_מלא_עברית': {
+        result = ''
+        result += (donor?.title || '').trim()
+        result = result.trim() + ' '
+        result += (donor?.firstName || '').trim()
+        result = result.trim() + ' '
+        result += (donor?.lineage === 'israel' ? '' : donor?.lineage || '').trim()
+        result = result.trim() + ' '
+        result += (donor?.lastName || '').trim()
+        result = result.trim() + ' '
+        result += (donor?.suffix || '').trim()
+        result = result.trim()
+        break
+      }
+
+      case 'שם_תורם_מלא_אנגלית': {
+        result = ''
+        result += (donor?.titleEnglish || '').trim()
+        result = result.trim() + ' '
+        result += (donor?.firstNameEnglish || ' ')[0]?.toUpperCase().trim()
+        result = result.trim() + ' '
+        result += (donor?.lineage === 'israel' ? '' : donor?.lineage || '').trim()
+        result = result.trim() + ' '
+        result += (donor?.maritalStatus === 'married' ? '& Mrs.' : '').trim()
+        result = result.trim() + ' '
+        result += ReportController.toCamelCase(donor?.lastNameEnglish || '').trim()
+        result = result.trim() + ' '
+        result += (donor?.suffixEnglish || '').trim()
+        result = result.trim()
+        break
+      }
+
+      case 'FullAddress': {
+        const row1 = `${donorPlace?.place?.apartment} ${donorPlace?.place?.building}` || ''
+        const row2 = `${donorPlace?.place?.houseNumber} ${donorPlace?.place?.street}` || ''
+        const row3 = `${donorPlace?.place?.city} ${donorPlace?.place?.country?.code === 'US' ? donorPlace?.place?.country?.name : ''} ${donorPlace?.place?.postcode}` || ''
+        const row4 = donorPlace?.place?.country?.name || ''
+
+        const parts = [] as string[]
+        parts.push(row1?.trim(), row2?.trim(), row3?.trim(), row4?.trim())
+        console.log('getValue', row1, row1, row2, row3, row4)
+        result = parts.filter(p => p.trim()).join('\n')
+        break
+      }
+    }
+    return result.trim()
+  }
+
+  private static toCamelCase(str: string): string {
+    return str.replace(/_([a-z])/g, (match, char) => char.toUpperCase());
+  }
+
 }
 
 export interface PaymentReportData {
@@ -1158,4 +1424,33 @@ export interface YearlySummaryData {
   hebrewYear: string; // Hebrew year formatted
   currencies: { [currency: string]: number };
   totalInShekel: number;
+}
+
+export interface PersonalDonorReportData {
+  donor: {
+    title: string;
+    fullName: string;
+    suffix: string;
+    titleEnglish: string;
+    fullNameEnglish: string;
+    address: {
+      street: string;
+      houseNumber: string;
+      city: string;
+      postcode: string;
+    };
+  };
+  fromDate: Date;
+  fromDateHebrew: string;
+  toDate: Date;
+  toDateHebrew: string;
+  reportDate: Date;
+  donations: {
+    date: Date;
+    dateHebrew: string;
+    commitment: number;
+    amount: number;
+    currencySymbol: string;
+    notes: string;
+  }[];
 }

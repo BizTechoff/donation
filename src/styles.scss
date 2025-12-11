@@ -356,3 +356,158 @@ th {
     transform: scale(1);
   }
 }
+
+// ===============================================
+// PRINT STYLES FOR PERSONAL DONOR REPORT
+// ===============================================
+@media print {
+  // Page setup - A4 size with margins for multi-page
+  @page {
+    size: A4 portrait;
+    margin: 15mm 0;
+  }
+
+  // First page can have less top margin since it has header
+  @page :first {
+    margin-top: 0;
+  }
+
+  // Hide app frame elements (toolbar, sidebar, navigation, footer, FAB)
+  mat-toolbar,
+  .mat-toolbar,
+  mat-sidenav,
+  .mat-sidenav,
+  .mat-drawer,
+  .app-sidenav,
+  .no-print,
+  app-header,
+  app-sidebar,
+  .sidebar,
+  .header,
+  .nav,
+  .navbar,
+  .page-header,
+  .reports-tabs-wrapper,
+  .personal-report-filters,
+  .empty-state,
+  .filter-row,
+  .header-actions,
+  .reports-tabs,
+  .specific-filters,
+  .filter-actions,
+  .filter-group,
+  .biztechoff,
+  .global-search-fab,
+  app-global-search {
+    display: none !important;
+  }
+
+  // Make the main content area full width and remove transforms
+  mat-sidenav-container,
+  .mat-sidenav-container,
+  .app-sidenav-container {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  mat-sidenav-content,
+  .mat-sidenav-content,
+  .mat-drawer-content {
+    margin: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    transform: none !important;
+  }
+
+  // Remove any flex gap from app container
+  .full-page {
+    gap: 0 !important;
+  }
+
+  // Reset body and html
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    height: auto !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  // Reset container styles
+  .reports-container {
+    padding: 0 !important;
+    background: white !important;
+    min-height: auto !important;
+  }
+
+  .reports-content {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .personal-donor-report {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .personal-report-display {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: white !important;
+  }
+
+  // The main report page - allow natural flow for multi-page reports
+  .report-page {
+    max-width: 100% !important;
+    width: 210mm !important;
+    padding: 10mm 15mm !important;
+    margin: 0 auto !important;
+    background: white !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
+
+    .donations-table {
+      width: 100% !important;
+      page-break-inside: auto;
+
+      thead {
+        display: table-header-group; // Repeat header on each page
+        background: #f8f9fa !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+
+      tr {
+        page-break-inside: avoid;
+        page-break-after: auto;
+      }
+
+      th {
+        background: #f8f9fa !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+    }
+
+    .report-signature {
+      margin-top: 20mm !important;
+      page-break-inside: avoid;
+    }
+
+    .report-footer {
+      margin-top: 5mm !important;
+      text-align: center;
+      font-size: 9pt !important;
+      color: #666 !important;
+      page-break-inside: avoid;
+    }
+  }
+
+}

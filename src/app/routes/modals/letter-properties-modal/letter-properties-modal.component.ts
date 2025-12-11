@@ -444,18 +444,18 @@ export class LetterPropertiesModalComponent implements OnInit {
       }
 
       // ===== Hebrew Common Fields =====
-      case 'תואר_מלא': {
-        const parts = [] as string[]
-        parts.push(...this.selectedPrefixLines)
-        result = parts.join('\n')
-        break
-      }
       case 'תואר_עברית': {
         result = `${this.donation.donor?.title || ''}`
         break
       }
       case 'תואר  מלא': { // Handle typo in some templates
         result = `${this.donation.donor?.title || ''}`
+        break
+      }
+      case 'תואר_מלא': {
+        const parts = [] as string[]
+        parts.push(...this.selectedPrefixLines)
+        result = parts.join('\n')
         break
       }
       case 'שם_עברית': {

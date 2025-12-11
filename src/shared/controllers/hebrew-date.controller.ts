@@ -82,7 +82,32 @@ export class HebrewDateController {
    * @returns Hebrew date components and formatted string
    */
   @BackendMethod({ allowed: Allow.authenticated })
+  
+  /**
+   * Convert Gregorian date to Hebrew date
+   */
   static async convertGregorianToHebrew(date: Date): Promise<{
+    day: number
+    month: number
+    year: number
+    formatted: string
+    moed?: string
+  }> {
+    // const hDate = new HDate(date);
+    const dateObj = date instanceof Date ? date : new Date(date)
+    const hDate = new HDate(dateObj)
+    // const isLeap = hDate.isLeapYear()
+    const moed = await this.getHolidayForDate(hDate.getDate(), hDate.getMonth(), hDate.getFullYear());
+    return {
+      day: hDate.getDate(),
+      month: hDate.getMonth(),
+      year: hDate.getFullYear(),
+      formatted: hDate.renderGematriya(true),
+      moed: moed || undefined
+    };
+  }
+
+  static async convertGregorianToHebrew1(date: Date): Promise<{
     day: number
     month: number
     year: number

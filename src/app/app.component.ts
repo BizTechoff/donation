@@ -18,6 +18,7 @@ import { SidebarService } from './services/sidebar.service'
 import { GlobalFilterService } from './services/global-filter.service'
 import { ReminderService } from './services/reminder.service'
 import { DonorController } from '../shared/controllers/donor.controller'
+import { HebrewDateService } from './services/hebrew-date.service'
  
 @Component({
   selector: 'app-root',
@@ -26,6 +27,7 @@ import { DonorController } from '../shared/controllers/donor.controller'
 })
 export class AppComponent implements OnInit {
   version = '2025.12.07.04' // environment.production ? '2025.08.05' : '2025.07.31'
+  currentHebrewDate = this.hebrewDate.convertGregorianToHebrew(new Date())?.formatted
 
   // Active reminders count - will be updated in ngOnInit
   activeRemindersCount$ = new Observable<number>((observer) => {
@@ -41,7 +43,8 @@ export class AppComponent implements OnInit {
     public i18n: I18nService,
     private sidebarService: SidebarService,
     private globalFilterService: GlobalFilterService,
-    private reminderService: ReminderService
+    private reminderService: ReminderService,
+    private hebrewDate: HebrewDateService
   ) {}
   remult = remult
   terms=terms
