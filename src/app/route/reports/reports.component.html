@@ -1,7 +1,7 @@
 <div class="reports-container">
 
 
-    <!-- תפריט טאבים -->
+  <!-- תפריט טאבים -->
   <div class="reports-tabs-wrapper" *ngIf="!isExpandedView">
     <div class="reports-tabs">
       <button class="tab-button" [class.active]="activeReport === 'donations'" (click)="switchReport('donations')">
@@ -19,6 +19,11 @@
       <button class="tab-button" [class.active]="activeReport === 'blessings'" (click)="switchReport('blessings')">
         <span class="tab-icon">📖</span>
         {{ (i18n.terms$ | async)?.blessingsReport }}
+      </button>
+      <button class="tab-button" [class.active]="activeReport === 'personalDonor'"
+        (click)="switchReport('personalDonor')">
+        <span class="tab-icon">👤</span>
+        דוח אישי לתורם
       </button>
     </div>
 
@@ -82,8 +87,8 @@
         <div class="donor-filter-input-wrapper">
           <input type="text" class="form-control donor-filter-input" [value]="getSelectedDonorsText()" readonly
             (click)="openDonorSelectionModal()" [placeholder]="(i18n.terms$ | async)?.clickToSelectDonorsPlaceholder">
-          <button class="donor-filter-search-btn" (click)="openDonorSelectionModal()" [matTooltip]="(i18n.terms$ | async)?.selectDonorsTooltip"
-            [dir]="'rtl'">
+          <button class="donor-filter-search-btn" (click)="openDonorSelectionModal()"
+            [matTooltip]="(i18n.terms$ | async)?.selectDonorsTooltip" [dir]="'rtl'">
             <mat-icon>search</mat-icon>
           </button>
           <button *ngIf="filters.selectedDonorIds.length > 0" class="donor-filter-clear-btn"
@@ -108,8 +113,8 @@
         <div class="donor-filter-input-wrapper">
           <input type="text" class="form-control donor-filter-input" [value]="getSelectedCampaignText()" readonly
             (click)="openCampaignSelectionModal()" [placeholder]="(i18n.terms$ | async)?.selectCampaignTitle">
-          <button class="donor-filter-search-btn" (click)="openCampaignSelectionModal()" [matTooltip]="(i18n.terms$ | async)?.selectCampaignTooltip"
-            [dir]="'rtl'">
+          <button class="donor-filter-search-btn" (click)="openCampaignSelectionModal()"
+            [matTooltip]="(i18n.terms$ | async)?.selectCampaignTooltip" [dir]="'rtl'">
             <mat-icon>search</mat-icon>
           </button>
           <button *ngIf="filters.selectedCampaign" class="donor-filter-clear-btn"
@@ -343,19 +348,23 @@
           <thead>
             <tr>
               <th class="sortable-header" (click)="onSortChange('donorName')">
-                {{ (i18n.terms$ | async)?.nameColumn }} <mat-icon class="sort-icon">{{getSortIcon('donorName')}}</mat-icon>
+                {{ (i18n.terms$ | async)?.nameColumn }} <mat-icon
+                  class="sort-icon">{{getSortIcon('donorName')}}</mat-icon>
               </th>
               <th *ngIf="filters.showDonorDetails && filters.groupBy === 'donor'" class="sortable-header"
                 (click)="onSortChange('address')">
-                {{ (i18n.terms$ | async)?.addressColumn }} <mat-icon class="sort-icon">{{getSortIcon('address')}}</mat-icon>
+                {{ (i18n.terms$ | async)?.addressColumn }} <mat-icon
+                  class="sort-icon">{{getSortIcon('address')}}</mat-icon>
               </th>
               <th *ngIf="filters.showDonorDetails && filters.groupBy === 'donor'" class="sortable-header"
                 (click)="onSortChange('phones')">
-                {{ (i18n.terms$ | async)?.phonesColumn }} <mat-icon class="sort-icon">{{getSortIcon('phones')}}</mat-icon>
+                {{ (i18n.terms$ | async)?.phonesColumn }} <mat-icon
+                  class="sort-icon">{{getSortIcon('phones')}}</mat-icon>
               </th>
               <th *ngIf="filters.showDonorDetails && filters.groupBy === 'donor'" class="sortable-header"
                 (click)="onSortChange('emails')">
-                {{ (i18n.terms$ | async)?.emailsColumn }} <mat-icon class="sort-icon">{{getSortIcon('emails')}}</mat-icon>
+                {{ (i18n.terms$ | async)?.emailsColumn }} <mat-icon
+                  class="sort-icon">{{getSortIcon('emails')}}</mat-icon>
               </th>
               <th *ngFor="let year of hebrewYears" class="sortable-header" (click)="onSortChange('year_' + year)">
                 {{year}} <mat-icon class="sort-icon">{{getSortIcon('year_' + year)}}</mat-icon>
@@ -399,7 +408,8 @@
         <!-- Pagination Controls -->
         <div class="pagination-container" *ngIf="totalRecords > 0">
           <div class="pagination-info">
-            <span>{{ (i18n.terms$ | async)?.showingText }} {{(currentPage - 1) * pageSize + 1}} - {{Math.min(currentPage * pageSize, totalRecords)}} {{ (i18n.terms$ | async)?.ofText }}
+            <span>{{ (i18n.terms$ | async)?.showingText }} {{(currentPage - 1) * pageSize + 1}} - {{Math.min(currentPage
+              * pageSize, totalRecords)}} {{ (i18n.terms$ | async)?.ofText }}
               {{totalRecords}} {{ (i18n.terms$ | async)?.resultsText }}</span>
           </div>
 
@@ -503,24 +513,32 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th class="sortable" [class.sorted]="isPaymentSorted('donorName')" (click)="togglePaymentSort('donorName', $event)">
+              <th class="sortable" [class.sorted]="isPaymentSorted('donorName')"
+                (click)="togglePaymentSort('donorName', $event)">
                 {{ (i18n.terms$ | async)?.donorNameColumn }}
-                <span class="sort-icon" *ngIf="getPaymentSortIcon('donorName')">{{ getPaymentSortIcon('donorName') }}</span>
+                <span class="sort-icon" *ngIf="getPaymentSortIcon('donorName')">{{ getPaymentSortIcon('donorName')
+                  }}</span>
               </th>
               <th>{{ (i18n.terms$ | async)?.addressColumn }}</th>
               <th>{{ (i18n.terms$ | async)?.cityColumn }}</th>
               <th>{{ (i18n.terms$ | async)?.lastDateColumn }}</th>
-              <th class="sortable" [class.sorted]="isPaymentSorted('promisedAmount')" (click)="togglePaymentSort('promisedAmount', $event)">
+              <th class="sortable" [class.sorted]="isPaymentSorted('promisedAmount')"
+                (click)="togglePaymentSort('promisedAmount', $event)">
                 {{ (i18n.terms$ | async)?.commitmentColumn }}
-                <span class="sort-icon" *ngIf="getPaymentSortIcon('promisedAmount')">{{ getPaymentSortIcon('promisedAmount') }}</span>
+                <span class="sort-icon" *ngIf="getPaymentSortIcon('promisedAmount')">{{
+                  getPaymentSortIcon('promisedAmount') }}</span>
               </th>
-              <th class="sortable" [class.sorted]="isPaymentSorted('actualAmount')" (click)="togglePaymentSort('actualAmount', $event)">
+              <th class="sortable" [class.sorted]="isPaymentSorted('actualAmount')"
+                (click)="togglePaymentSort('actualAmount', $event)">
                 {{ (i18n.terms$ | async)?.actualPaymentColumn }}
-                <span class="sort-icon" *ngIf="getPaymentSortIcon('actualAmount')">{{ getPaymentSortIcon('actualAmount') }}</span>
+                <span class="sort-icon" *ngIf="getPaymentSortIcon('actualAmount')">{{ getPaymentSortIcon('actualAmount')
+                  }}</span>
               </th>
-              <th class="sortable" [class.sorted]="isPaymentSorted('remainingDebt')" (click)="togglePaymentSort('remainingDebt', $event)">
+              <th class="sortable" [class.sorted]="isPaymentSorted('remainingDebt')"
+                (click)="togglePaymentSort('remainingDebt', $event)">
                 {{ (i18n.terms$ | async)?.remainingDebtColumn }}
-                <span class="sort-icon" *ngIf="getPaymentSortIcon('remainingDebt')">{{ getPaymentSortIcon('remainingDebt') }}</span>
+                <span class="sort-icon" *ngIf="getPaymentSortIcon('remainingDebt')">{{
+                  getPaymentSortIcon('remainingDebt') }}</span>
               </th>
             </tr>
           </thead>
@@ -540,21 +558,25 @@
         <!-- Pagination Controls -->
         <div class="table-footer" *ngIf="paymentTotalCount > 0">
           <div class="pagination-controls">
-            <button (click)="firstPaymentPage()" [disabled]="paymentCurrentPage === 1">⏮ {{ (i18n.terms$ | async)?.firstButton }}</button>
-            <button (click)="previousPaymentPage()" [disabled]="paymentCurrentPage === 1">← {{ (i18n.terms$ | async)?.previousButton }}</button>
+            <button (click)="firstPaymentPage()" [disabled]="paymentCurrentPage === 1">⏮ {{ (i18n.terms$ |
+              async)?.firstButton }}</button>
+            <button (click)="previousPaymentPage()" [disabled]="paymentCurrentPage === 1">← {{ (i18n.terms$ |
+              async)?.previousButton }}</button>
             <div class="page-numbers">
-              <button *ngFor="let page of getPaymentPageNumbers()"
-                      (click)="goToPaymentPage(page)"
-                      [class.active]="page === paymentCurrentPage"
-                      [disabled]="page === -1">
+              <button *ngFor="let page of getPaymentPageNumbers()" (click)="goToPaymentPage(page)"
+                [class.active]="page === paymentCurrentPage" [disabled]="page === -1">
                 {{ page === -1 ? '...' : page }}
               </button>
             </div>
-            <button (click)="nextPaymentPage()" [disabled]="paymentCurrentPage === paymentTotalPages">{{ (i18n.terms$ | async)?.nextButton }} →</button>
-            <button (click)="lastPaymentPage()" [disabled]="paymentCurrentPage === paymentTotalPages">{{ (i18n.terms$ | async)?.lastButton }} ⏭</button>
+            <button (click)="nextPaymentPage()" [disabled]="paymentCurrentPage === paymentTotalPages">{{ (i18n.terms$ |
+              async)?.nextButton }} →</button>
+            <button (click)="lastPaymentPage()" [disabled]="paymentCurrentPage === paymentTotalPages">{{ (i18n.terms$ |
+              async)?.lastButton }} ⏭</button>
           </div>
           <div class="pagination-info">
-            <span>{{ (i18n.terms$ | async)?.showingText }} {{(paymentCurrentPage - 1) * paymentPageSize + 1}} - {{Math.min(paymentCurrentPage * paymentPageSize, paymentTotalCount)}} {{ (i18n.terms$ | async)?.ofText }} {{paymentTotalCount}}</span>
+            <span>{{ (i18n.terms$ | async)?.showingText }} {{(paymentCurrentPage - 1) * paymentPageSize + 1}} -
+              {{Math.min(paymentCurrentPage * paymentPageSize, paymentTotalCount)}} {{ (i18n.terms$ | async)?.ofText }}
+              {{paymentTotalCount}}</span>
           </div>
         </div>
       </div>
@@ -568,16 +590,20 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th class="sortable" [class.sorted]="isYearlySummarySorted('year')" (click)="toggleYearlySummarySort('year', $event)">
+              <th class="sortable" [class.sorted]="isYearlySummarySorted('year')"
+                (click)="toggleYearlySummarySort('year', $event)">
                 {{ (i18n.terms$ | async)?.yearColumn }}
-                <span class="sort-icon" *ngIf="getYearlySummarySortIcon('year')">{{ getYearlySummarySortIcon('year') }}</span>
+                <span class="sort-icon" *ngIf="getYearlySummarySortIcon('year')">{{ getYearlySummarySortIcon('year')
+                  }}</span>
               </th>
               <th>{{ (i18n.terms$ | async)?.shekel || 'שקל' }}</th>
               <th>{{ (i18n.terms$ | async)?.dollar || 'דולר' }}</th>
               <th>{{ (i18n.terms$ | async)?.euro || 'יורו' }}</th>
-              <th class="sortable" [class.sorted]="isYearlySummarySorted('totalInShekel')" (click)="toggleYearlySummarySort('totalInShekel', $event)">
+              <th class="sortable" [class.sorted]="isYearlySummarySorted('totalInShekel')"
+                (click)="toggleYearlySummarySort('totalInShekel', $event)">
                 {{ (i18n.terms$ | async)?.totalByShekel || 'סה"כ בשקלים' }}
-                <span class="sort-icon" *ngIf="getYearlySummarySortIcon('totalInShekel')">{{ getYearlySummarySortIcon('totalInShekel') }}</span>
+                <span class="sort-icon" *ngIf="getYearlySummarySortIcon('totalInShekel')">{{
+                  getYearlySummarySortIcon('totalInShekel') }}</span>
               </th>
             </tr>
           </thead>
@@ -618,18 +644,20 @@
             <button (click)="firstYearlySummaryPage()" [disabled]="yearlySummaryCurrentPage === 1">⏮ ראשון</button>
             <button (click)="previousYearlySummaryPage()" [disabled]="yearlySummaryCurrentPage === 1">← הקודם</button>
             <div class="page-numbers">
-              <button *ngFor="let page of getYearlySummaryPageNumbers()"
-                      (click)="goToYearlySummaryPage(page)"
-                      [class.active]="page === yearlySummaryCurrentPage"
-                      [disabled]="page === -1">
+              <button *ngFor="let page of getYearlySummaryPageNumbers()" (click)="goToYearlySummaryPage(page)"
+                [class.active]="page === yearlySummaryCurrentPage" [disabled]="page === -1">
                 {{ page === -1 ? '...' : page }}
               </button>
             </div>
-            <button (click)="nextYearlySummaryPage()" [disabled]="yearlySummaryCurrentPage === yearlySummaryTotalPages">הבא →</button>
-            <button (click)="lastYearlySummaryPage()" [disabled]="yearlySummaryCurrentPage === yearlySummaryTotalPages">אחרון ⏭</button>
+            <button (click)="nextYearlySummaryPage()"
+              [disabled]="yearlySummaryCurrentPage === yearlySummaryTotalPages">הבא →</button>
+            <button (click)="lastYearlySummaryPage()"
+              [disabled]="yearlySummaryCurrentPage === yearlySummaryTotalPages">אחרון ⏭</button>
           </div>
           <div class="pagination-info">
-            <span>מציג {{(yearlySummaryCurrentPage - 1) * yearlySummaryPageSize + 1}} - {{Math.min(yearlySummaryCurrentPage * yearlySummaryPageSize, yearlySummaryTotalCount)}} מתוך {{yearlySummaryTotalCount}}</span>
+            <span>מציג {{(yearlySummaryCurrentPage - 1) * yearlySummaryPageSize + 1}} -
+              {{Math.min(yearlySummaryCurrentPage * yearlySummaryPageSize, yearlySummaryTotalCount)}} מתוך
+              {{yearlySummaryTotalCount}}</span>
           </div>
         </div>
       </div>
@@ -675,22 +703,30 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th class="sortable" [class.sorted]="isBlessingsSorted('lastName')" (click)="toggleBlessingsSort('lastName', $event)">
+              <th class="sortable" [class.sorted]="isBlessingsSorted('lastName')"
+                (click)="toggleBlessingsSort('lastName', $event)">
                 {{ (i18n.terms$ | async)?.lastNameColumn }}
-                <span class="sort-icon" *ngIf="getBlessingsSortIcon('lastName')">{{ getBlessingsSortIcon('lastName') }}</span>
+                <span class="sort-icon" *ngIf="getBlessingsSortIcon('lastName')">{{ getBlessingsSortIcon('lastName')
+                  }}</span>
               </th>
-              <th class="sortable" [class.sorted]="isBlessingsSorted('firstName')" (click)="toggleBlessingsSort('firstName', $event)">
+              <th class="sortable" [class.sorted]="isBlessingsSorted('firstName')"
+                (click)="toggleBlessingsSort('firstName', $event)">
                 {{ (i18n.terms$ | async)?.firstNameColumn }}
-                <span class="sort-icon" *ngIf="getBlessingsSortIcon('firstName')">{{ getBlessingsSortIcon('firstName') }}</span>
+                <span class="sort-icon" *ngIf="getBlessingsSortIcon('firstName')">{{ getBlessingsSortIcon('firstName')
+                  }}</span>
               </th>
-              <th class="sortable" [class.sorted]="isBlessingsSorted('blessingBookType')" (click)="toggleBlessingsSort('blessingBookType', $event)">
+              <th class="sortable" [class.sorted]="isBlessingsSorted('blessingBookType')"
+                (click)="toggleBlessingsSort('blessingBookType', $event)">
                 {{ (i18n.terms$ | async)?.blessingTypeColumn }}
-                <span class="sort-icon" *ngIf="getBlessingsSortIcon('blessingBookType')">{{ getBlessingsSortIcon('blessingBookType') }}</span>
+                <span class="sort-icon" *ngIf="getBlessingsSortIcon('blessingBookType')">{{
+                  getBlessingsSortIcon('blessingBookType') }}</span>
               </th>
               <th>{{ (i18n.terms$ | async)?.notesColumn }}</th>
-              <th class="sortable" [class.sorted]="isBlessingsSorted('status')" (click)="toggleBlessingsSort('status', $event)">
+              <th class="sortable" [class.sorted]="isBlessingsSorted('status')"
+                (click)="toggleBlessingsSort('status', $event)">
                 {{ (i18n.terms$ | async)?.statusColumn }}
-                <span class="sort-icon" *ngIf="getBlessingsSortIcon('status')">{{ getBlessingsSortIcon('status') }}</span>
+                <span class="sort-icon" *ngIf="getBlessingsSortIcon('status')">{{ getBlessingsSortIcon('status')
+                  }}</span>
               </th>
               <th>{{ (i18n.terms$ | async)?.phoneColumn }}</th>
               <th>{{ (i18n.terms$ | async)?.mobileColumn }}</th>
@@ -725,20 +761,141 @@
             <button (click)="firstBlessingsPage()" [disabled]="blessingsCurrentPage === 1">⏮ ראשון</button>
             <button (click)="previousBlessingsPage()" [disabled]="blessingsCurrentPage === 1">← הקודם</button>
             <div class="page-numbers">
-              <button *ngFor="let page of getBlessingsPageNumbers()"
-                      (click)="goToBlessingsPage(page)"
-                      [class.active]="page === blessingsCurrentPage"
-                      [disabled]="page === -1">
+              <button *ngFor="let page of getBlessingsPageNumbers()" (click)="goToBlessingsPage(page)"
+                [class.active]="page === blessingsCurrentPage" [disabled]="page === -1">
                 {{ page === -1 ? '...' : page }}
               </button>
             </div>
-            <button (click)="nextBlessingsPage()" [disabled]="blessingsCurrentPage === blessingsTotalPages">הבא →</button>
-            <button (click)="lastBlessingsPage()" [disabled]="blessingsCurrentPage === blessingsTotalPages">אחרון ⏭</button>
+            <button (click)="nextBlessingsPage()" [disabled]="blessingsCurrentPage === blessingsTotalPages">הבא
+              →</button>
+            <button (click)="lastBlessingsPage()" [disabled]="blessingsCurrentPage === blessingsTotalPages">אחרון
+              ⏭</button>
           </div>
           <div class="pagination-info">
-            <span>מציג {{(blessingsCurrentPage - 1) * blessingsPageSize + 1}} - {{Math.min(blessingsCurrentPage * blessingsPageSize, blessingsTotalCount)}} מתוך {{blessingsTotalCount}}</span>
+            <span>מציג {{(blessingsCurrentPage - 1) * blessingsPageSize + 1}} - {{Math.min(blessingsCurrentPage *
+              blessingsPageSize, blessingsTotalCount)}} מתוך {{blessingsTotalCount}}</span>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- דוח אישי לתורם -->
+    <div *ngIf="activeReport === 'personalDonor'" class="personal-donor-report">
+      <!-- Filters Section -->
+      <div class="personal-report-filters" *ngIf="!isPersonalReportPrintMode">
+        <div class="filter-row">
+          <!-- בחירת תורם -->
+          <div class="filter-group donor-filter-group">
+            <label>תורם</label>
+            <div class="donor-filter-input-wrapper">
+              <input type="text" class="form-control donor-filter-input"
+                [value]="selectedDonorForPersonalReport?.fullName || 'בחר תורם'" readonly
+                (click)="selectDonorForPersonalReport()">
+              <button class="donor-filter-search-btn" (click)="selectDonorForPersonalReport()" matTooltip="בחר תורם"
+                dir="rtl">
+                <mat-icon>search</mat-icon>
+              </button>
+              <button *ngIf="selectedDonorForPersonalReport" class="donor-filter-clear-btn"
+                (click)="selectedDonorForPersonalReport = null; personalDonorReportData = null; $event.stopPropagation()"
+                matTooltip="נקה בחירה" dir="rtl">
+                <mat-icon>clear</mat-icon>
+              </button>
+            </div>
+          </div>
+
+          <!-- מתאריך -->
+          <div class="filter-group">
+            <label>מתאריך</label>
+            <input type="date" class="form-control" [(ngModel)]="personalReportFromDate"
+              (change)="onPersonalReportFromDateChange()">
+            <small class="hebrew-date-hint"
+              *ngIf="personalReportFromDateHebrew">{{personalReportFromDateHebrew}}</small>
+          </div>
+
+          <!-- עד תאריך -->
+          <div class="filter-group">
+            <label>עד תאריך</label>
+            <input type="date" class="form-control" [(ngModel)]="personalReportToDate"
+              (change)="onPersonalReportToDateChange()">
+            <small class="hebrew-date-hint" *ngIf="personalReportToDateHebrew">{{personalReportToDateHebrew}}</small>
+          </div>
+
+          <!-- כפתורים -->
+          <div class="filter-actions">
+            <button class="btn btn-primary" (click)="loadPersonalDonorReport()"
+              [disabled]="!selectedDonorForPersonalReport || !personalReportFromDate">
+              <mat-icon>description</mat-icon>
+              הפק דוח
+            </button>
+            <button class="btn btn-secondary" (click)="printPersonalDonorReport()"
+              [disabled]="!personalDonorReportData">
+              <mat-icon>print</mat-icon>
+              הדפס
+            </button>
+            <button class="btn btn-outline" (click)="clearPersonalDonorReport()">
+              <mat-icon>refresh</mat-icon>
+              נקה
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Report Display -->
+      <div class="personal-report-display" *ngIf="personalDonorReportData"
+        [class.print-mode]="isPersonalReportPrintMode">
+        <div class="report-page">
+
+          <!-- Donations Table -->
+          <div class="report-table personal-donor-table">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th class="sortable" [class.sorted]="isPersonalDonorSorted('date')"
+                    (click)="togglePersonalDonorSort('date', $event)">
+                    תאריך
+                    <span class="sort-icon" *ngIf="getPersonalDonorSortIcon('date')">{{ getPersonalDonorSortIcon('date') }}</span>
+                  </th>
+                  <th class="sortable" [class.sorted]="isPersonalDonorSorted('dateHebrew')"
+                    (click)="togglePersonalDonorSort('dateHebrew', $event)">
+                    תאריך עברי
+                    <span class="sort-icon" *ngIf="getPersonalDonorSortIcon('dateHebrew')">{{ getPersonalDonorSortIcon('dateHebrew') }}</span>
+                  </th>
+                  <th class="sortable" [class.sorted]="isPersonalDonorSorted('commitment')"
+                    (click)="togglePersonalDonorSort('commitment', $event)">
+                    התחייבות
+                    <span class="sort-icon" *ngIf="getPersonalDonorSortIcon('commitment')">{{ getPersonalDonorSortIcon('commitment') }}</span>
+                  </th>
+                  <th class="sortable" [class.sorted]="isPersonalDonorSorted('amount')"
+                    (click)="togglePersonalDonorSort('amount', $event)">
+                    סכום
+                    <span class="sort-icon" *ngIf="getPersonalDonorSortIcon('amount')">{{ getPersonalDonorSortIcon('amount') }}</span>
+                  </th>
+                  <th class="sortable" [class.sorted]="isPersonalDonorSorted('notes')"
+                    (click)="togglePersonalDonorSort('notes', $event)">
+                    הערות
+                    <span class="sort-icon" *ngIf="getPersonalDonorSortIcon('notes')">{{ getPersonalDonorSortIcon('notes') }}</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let donation of personalDonorReportData.donations">
+                  <td>{{formatDateForReport(donation.date)}}</td>
+                  <td>{{donation.dateHebrew}}</td>
+                  <td>{{donation.commitment > 0 ? donation.commitment + ' ' + getCurrencySymbol(donation.currencySymbol) : '' }}</td>
+                  <td>{{donation.amount}} {{getCurrencySymbol(donation.currencySymbol)}}</td>
+                  <td>{{donation.notes}}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div class="empty-state" *ngIf="!personalDonorReportData && !isPersonalReportPrintMode">
+        <mat-icon>description</mat-icon>
+        <p>בחר תורם ותאריכים להפקת דוח אישי</p>
       </div>
     </div>
 

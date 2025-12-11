@@ -1,8 +1,9 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { BusyService, openDialog } from 'common-ui-elements';
 import { remult } from 'remult';
 import { Subscription } from 'rxjs';
 import { HebrewDateController } from '../../../shared/controllers/hebrew-date.controller';
+import { PersonalDonorReportData, ReportController } from '../../../shared/controllers/report.controller';
 import { Blessing } from '../../../shared/entity/blessing';
 import { Campaign } from '../../../shared/entity/campaign';
 import { Donation } from '../../../shared/entity/donation';
@@ -15,9 +16,9 @@ import { CampaignSelectionModalComponent } from '../../routes/modals/campaign-se
 import { DonorSelectionModalComponent } from '../../routes/modals/donor-selection-modal/donor-selection-modal.component';
 import { ExcelExportService } from '../../services/excel-export.service';
 import { GlobalFilterService } from '../../services/global-filter.service';
-import { ReportService } from '../../services/report.service';
 import { HebrewDateService } from '../../services/hebrew-date.service';
 import { PayerService } from '../../services/payer.service';
+import { ReportService } from '../../services/report.service';
 
 interface ChartData {
   label: string;
@@ -122,7 +123,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
   };
 
   // Active report type
-  activeReport: 'general' | 'donations' | 'payments' | 'yearly' | 'blessings' = 'donations';
+  activeReport: 'general' | 'donations' | 'payments' | 'yearly' | 'blessings' | 'personalDonor' = 'donations';
 
   // סטטיסטיקות כלליות
   totalStats = {
@@ -223,6 +224,18 @@ export class ReportsComponent implements OnInit, OnDestroy {
     tagPosition: 'top-right' as 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
   };
 
+  // Personal Donor Report
+  personalDonorReportData: PersonalDonorReportData | null = null;
+  selectedDonorForPersonalReport: Donor | null = null;
+  personalReportFromDate: Date | null = null;
+  personalReportToDate: Date | null = null;
+  personalReportFromDateHebrew = '';
+  personalReportToDateHebrew = '';
+  isPersonalReportPrintMode = false;
+
+  // Sorting data - Personal Donor Report
+  personalDonorSortColumns: Array<{ field: string; direction: 'asc' | 'desc' }> = [];
+
   private donationRepo = remult.repo(Donation);
   private donorRepo = remult.repo(Donor);
   private campaignRepo = remult.repo(Campaign);
@@ -247,10 +260,20 @@ export class ReportsComponent implements OnInit, OnDestroy {
       })
     );
 
+
+    // this.activeReport === 'personalDonor'
+    //   const donor = await remult.repo(Donor).findId('f6a1af98-f5e5-4595-b95d-895fb46a07e8')
+    //   if (donor) {
+    //     this.selectedDonorForPersonalReport = donor
+    //     this.personalReportFromDate = new Date(2000, 1, 1)
+    //     // await this.loadPersonalDonorReport()
+    //   }
+
     // Load last selected report from user settings
     await this.loadLastReportSelection();
 
     await this.refreshData();
+
   }
 
   ngOnDestroy() {
@@ -685,7 +708,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
     }
   }
 
-  async switchReport(reportType: 'general' | 'donations' | 'payments' | 'yearly' | 'blessings') {
+  async switchReport(reportType: 'general' | 'donations' | 'payments' | 'yearly' | 'blessings' | 'personalDonor') {
     this.activeReport = reportType;
     await this.saveLastReportSelection();
     await this.refreshData();
@@ -744,7 +767,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * טעינת דוחות ספציפיים (תרומות, תשלומים, שנתי, ברכות)
+   * טעינת דוחות ספציפיים (תרומות, תשלומים, שנתי, ברכות, דוח אישי לתורם)
    */
   private async loadSpecificReportDataWithoutLoading() {
     switch (this.activeReport) {
@@ -759,6 +782,9 @@ export class ReportsComponent implements OnInit, OnDestroy {
         break;
       case 'blessings':
         await this.loadBlessingsReport();
+        break;
+      case 'personalDonor':
+        // Don't auto-load - user needs to select donor and dates first
         break;
     }
   }
@@ -1854,5 +1880,300 @@ export class ReportsComponent implements OnInit, OnDestroy {
     }
 
     return pages;
+  }
+
+  // ===============================================
+  // PERSONAL DONOR REPORT Methods
+  // ===============================================
+
+  async selectDonorForPersonalReport() {
+    try {
+      const selectedDonor = await openDialog(
+        DonorSelectionModalComponent,
+        (modal: DonorSelectionModalComponent) => {
+          modal.args = {
+            title: 'בחר תורם לדוח אישי',
+            multiSelect: false,
+            selectedIds: this.selectedDonorForPersonalReport ? [this.selectedDonorForPersonalReport.id] : []
+          };
+        }
+      );
+
+      if (selectedDonor && !Array.isArray(selectedDonor)) {
+        this.selectedDonorForPersonalReport = selectedDonor as Donor;
+        // Reset report data when donor changes
+        this.personalDonorReportData = null;
+      }
+    } catch (error) {
+      console.error('Error selecting donor for personal report:', error);
+    }
+  }
+
+  onPersonalReportFromDateChange() {
+    // If "from" date is set and "to" date is empty, auto-fill "to" with today
+    if (this.personalReportFromDate && !this.personalReportToDate) {
+      this.personalReportToDate = new Date();
+    }
+
+    // If "from" date is greater than "to" date, set "to" = "from"
+    if (this.personalReportFromDate && this.personalReportToDate &&
+      this.personalReportFromDate > this.personalReportToDate) {
+      this.personalReportToDate = new Date(this.personalReportFromDate);
+    }
+
+    // Update Hebrew date display
+    this.updatePersonalReportHebrewDates();
+  }
+
+  onPersonalReportToDateChange() {
+    // If "from" date is greater than "to" date, set "to" = "from"
+    if (this.personalReportFromDate && this.personalReportToDate &&
+      this.personalReportFromDate > this.personalReportToDate) {
+      this.personalReportToDate = new Date(this.personalReportFromDate);
+    }
+
+    // Update Hebrew date display
+    this.updatePersonalReportHebrewDates();
+  }
+
+  private async updatePersonalReportHebrewDates() {
+    if (this.personalReportFromDate) {
+      const hebrewFrom = this.hebrewDateService.convertGregorianToHebrew(this.personalReportFromDate);
+      this.personalReportFromDateHebrew = hebrewFrom.formatted;
+    } else {
+      this.personalReportFromDateHebrew = '';
+    }
+
+    if (this.personalReportToDate) {
+      const hebrewTo = this.hebrewDateService.convertGregorianToHebrew(this.personalReportToDate);
+      this.personalReportToDateHebrew = hebrewTo.formatted;
+    } else {
+      this.personalReportToDateHebrew = '';
+    }
+  }
+
+  async loadPersonalDonorReport() {
+    if (!this.selectedDonorForPersonalReport) {
+      alert('יש לבחור תורם');
+      return;
+    }
+
+    if (!this.personalReportFromDate) {
+      alert('יש לבחור תאריך התחלה');
+      return;
+    }
+
+    await this.busy.doWhileShowingBusy(async () => {
+      try {
+        this.personalDonorReportData = await ReportController.getPersonalDonorReport(
+          this.selectedDonorForPersonalReport!.id,
+          this.personalReportFromDate!,
+          this.personalReportToDate || new Date()
+        );
+        console.log('Personal donor report loaded:', this.personalDonorReportData);
+      } catch (error) {
+        console.error('Error loading personal donor report:', error);
+        alert('שגיאה בטעינת הדוח');
+      }
+    });
+
+    // await this.busy.doWhileShowingBusy(async () => {
+    //   try {
+    //     this.personalDonorReportData = await ReportController.getPersonalDonorReport(
+    //       this.selectedDonorForPersonalReport!.id,
+    //       this.personalReportFromDate!,
+    //       this.personalReportToDate || new Date()
+    //     );
+    //     console.log('Personal donor report loaded:', this.personalDonorReportData);
+    //   } catch (error) {
+    //     console.error('Error loading personal donor report:', error);
+    //     alert('שגיאה בטעינת הדוח');
+    //   }
+    // });
+  }
+
+  async printPersonalDonorReport() {
+    try {
+      const result = await ReportController.createPersonalDonorReport(
+        this.selectedDonorForPersonalReport!.id,
+        this.personalReportFromDate!,
+        this.personalReportToDate || new Date()
+      );
+      console.log('printPersonalDonorReport:', JSON.stringify(result));
+
+
+    if (result.success) {
+      // יצירת לינק להורדה
+      const link = document.createElement('a');
+      link.href = result.url;
+      link.download = `דוח אישי לתורם.docx` // result.fileName!;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+  //      const viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(result.url)}&embedded=true`;
+  // window.open(viewerUrl, '_blank');
+    } else {
+      console.error('Error:', result.error);
+    }
+
+    } catch (error) {
+      console.error('Error loading personal donor report:', error);
+      alert('שגיאה בהדפסת הדוח');
+    }
+    // this.isPersonalReportPrintMode = true;
+    // setTimeout(() => {
+    //   window.print();
+    //   this.isPersonalReportPrintMode = false;
+    // }, 100);
+  }
+
+  async printPersonalDonorReport1() {
+    try {
+      const result = await ReportController.createPersonalDonorReport(
+        this.selectedDonorForPersonalReport!.id,
+        this.personalReportFromDate!,
+        this.personalReportToDate || new Date()
+      );
+      console.log('printPersonalDonorReport:', JSON.stringify(result));
+
+
+    if (result.success) {
+      // יצירת לינק להורדה
+      const link = document.createElement('a');
+      link.href = result.url;
+      link.download = `דוח אישי לתורם.docx` // result.fileName!;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else {
+      console.error('Error:', result.error);
+    }
+
+    } catch (error) {
+      console.error('Error loading personal donor report:', error);
+      alert('שגיאה בהדפסת הדוח');
+    }
+    // this.isPersonalReportPrintMode = true;
+    // setTimeout(() => {
+    //   window.print();
+    //   this.isPersonalReportPrintMode = false;
+    // }, 100);
+  }
+
+  clearPersonalDonorReport() {
+    this.selectedDonorForPersonalReport = null;
+    this.personalReportFromDate = null;
+    this.personalReportToDate = null;
+    this.personalReportFromDateHebrew = '';
+    this.personalReportToDateHebrew = '';
+    this.personalDonorReportData = null;
+  }
+
+  formatDateForReport(date: Date): string {
+    // Format: DD/MM/YYYY
+    const d = new Date(date);
+    const day = d.getDate().toString().padStart(2, '0');
+    const month = (d.getMonth() + 1).toString().padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
+  }
+
+  formatDateEnglish(date: Date): string {
+    // Format: 08 December 2025
+    const d = new Date(date);
+    const day = d.getDate().toString().padStart(2, '0');
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'];
+    const month = monthNames[d.getMonth()];
+    const year = d.getFullYear();
+    return `${day} ${month} ${year}`;
+  }
+
+  // ===============================================
+  // PERSONAL DONOR REPORT - Sorting Methods
+  // ===============================================
+
+  togglePersonalDonorSort(field: string, event: MouseEvent) {
+    if (event.ctrlKey || event.metaKey) {
+      // Multi-column sort with Ctrl/Cmd
+      const existing = this.personalDonorSortColumns.find(col => col.field === field);
+      if (existing) {
+        if (existing.direction === 'asc') {
+          existing.direction = 'desc';
+        } else {
+          this.personalDonorSortColumns = this.personalDonorSortColumns.filter(col => col.field !== field);
+        }
+      } else {
+        this.personalDonorSortColumns.push({ field, direction: 'asc' });
+      }
+    } else {
+      // Single column sort
+      const existing = this.personalDonorSortColumns.find(col => col.field === field);
+      if (existing && existing.direction === 'asc') {
+        this.personalDonorSortColumns = [{ field, direction: 'desc' }];
+      } else {
+        this.personalDonorSortColumns = [{ field, direction: 'asc' }];
+      }
+    }
+    this.applyPersonalDonorSorting();
+  }
+
+  applyPersonalDonorSorting() {
+    if (!this.personalDonorReportData || this.personalDonorSortColumns.length === 0) return;
+
+    this.personalDonorReportData.donations.sort((a, b) => {
+      for (const sortCol of this.personalDonorSortColumns) {
+        let aVal: any;
+        let bVal: any;
+
+        switch (sortCol.field) {
+          case 'date':
+            aVal = new Date(a.date).getTime();
+            bVal = new Date(b.date).getTime();
+            break;
+          case 'dateHebrew':
+            aVal = a.dateHebrew || '';
+            bVal = b.dateHebrew || '';
+            break;
+          case 'commitment':
+            aVal = a.commitment || 0;
+            bVal = b.commitment || 0;
+            break;
+          case 'amount':
+            aVal = a.amount || 0;
+            bVal = b.amount || 0;
+            break;
+          case 'notes':
+            aVal = a.notes || '';
+            bVal = b.notes || '';
+            break;
+          default:
+            continue;
+        }
+
+        let comparison = 0;
+        if (typeof aVal === 'string') {
+          comparison = aVal.localeCompare(bVal);
+        } else {
+          comparison = aVal - bVal;
+        }
+
+        if (comparison !== 0) {
+          return sortCol.direction === 'asc' ? comparison : -comparison;
+        }
+      }
+      return 0;
+    });
+  }
+
+  isPersonalDonorSorted(field: string): boolean {
+    return this.personalDonorSortColumns.some(col => col.field === field);
+  }
+
+  getPersonalDonorSortIcon(field: string): string {
+    const sortCol = this.personalDonorSortColumns.find(col => col.field === field);
+    if (!sortCol) return '';
+    return sortCol.direction === 'asc' ? '↑' : '↓';
   }
 }

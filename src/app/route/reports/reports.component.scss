@@ -1360,3 +1360,318 @@
     }
   }
 }
+
+// ===============================================
+// PERSONAL DONOR REPORT STYLES
+// ===============================================
+.personal-donor-report {
+  .personal-report-filters {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+
+    .filter-row {
+      display: flex;
+      gap: 1.5rem;
+      align-items: flex-end;
+      flex-wrap: wrap;
+
+      .filter-group {
+        flex: 1;
+        min-width: 180px;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+
+        label {
+          font-size: 0.9rem;
+          font-weight: 600;
+          color: #34495e;
+        }
+
+        .form-control {
+          padding: 0.7rem;
+          border: 2px solid #e0e6ed;
+          border-radius: 6px;
+          font-size: 0.95rem;
+
+          &:focus {
+            outline: none;
+            border-color: #3498db;
+          }
+        }
+
+        .hebrew-date-hint {
+          font-size: 0.8rem;
+          color: #7f8c8d;
+          margin-top: 0.25rem;
+        }
+      }
+
+      .filter-actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+
+        .btn {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.7rem 1.2rem;
+          border-radius: 6px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s ease;
+
+          mat-icon {
+            font-size: 18px;
+            width: 18px;
+            height: 18px;
+          }
+
+          &.btn-primary {
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+            color: white;
+            border: none;
+
+            &:hover:not(:disabled) {
+              transform: translateY(-2px);
+              box-shadow: 0 4px 15px rgba(39, 174, 96, 0.4);
+            }
+
+            &:disabled {
+              opacity: 0.6;
+              cursor: not-allowed;
+            }
+          }
+
+          &.btn-secondary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+
+            &:hover:not(:disabled) {
+              transform: translateY(-2px);
+              box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            }
+
+            &:disabled {
+              opacity: 0.6;
+              cursor: not-allowed;
+            }
+          }
+
+          &.btn-outline {
+            background: white;
+            color: #e74c3c;
+            border: 2px solid #e74c3c;
+
+            &:hover {
+              background: #e74c3c;
+              color: white;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    text-align: center;
+
+    mat-icon {
+      font-size: 64px;
+      width: 64px;
+      height: 64px;
+      color: #bdc3c7;
+      margin-bottom: 1rem;
+    }
+
+    p {
+      font-size: 1.1rem;
+      color: #7f8c8d;
+    }
+  }
+
+  .personal-report-display {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    padding: 2rem;
+
+    .report-page {
+      max-width: 800px;
+      margin: 0 auto;
+      font-family: 'Arial', sans-serif;
+
+      .report-header-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 2rem;
+
+        .header-right {
+          font-size: 1.1rem;
+          font-weight: 600;
+        }
+
+        .header-left {
+          font-size: 0.95rem;
+          color: #2c3e50;
+        }
+      }
+
+      .recipient-section {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 2rem;
+
+        .recipient-right {
+          text-align: right;
+
+          .recipient-label {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+            margin-bottom: 0.25rem;
+          }
+
+          .recipient-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2c3e50;
+          }
+        }
+
+        .recipient-left {
+          text-align: left;
+
+          .recipient-label {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+            margin-bottom: 0.25rem;
+          }
+
+          .recipient-name-en {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 0.25rem;
+          }
+
+          .recipient-address {
+            font-size: 0.9rem;
+            color: #2c3e50;
+            line-height: 1.4;
+          }
+        }
+      }
+
+      .report-title {
+        text-align: center;
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #2c3e50;
+        margin-bottom: 1.5rem;
+      }
+
+      .report-date-range {
+        text-align: center;
+        margin-bottom: 2rem;
+        font-size: 1rem;
+        color: #2c3e50;
+
+        .date-separator {
+          display: inline-block;
+          width: 3rem;
+        }
+      }
+
+      .donations-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 3rem;
+
+        thead {
+          tr {
+            background: #f8f9fa;
+            border-bottom: 2px solid #2c3e50;
+
+            th {
+              padding: 0.75rem;
+              text-align: right;
+              font-weight: 600;
+              font-size: 0.9rem;
+              color: #2c3e50;
+            }
+          }
+        }
+
+        tbody {
+          tr {
+            border-bottom: 1px solid #e0e6ed;
+
+            &:last-child {
+              border-bottom: none;
+            }
+
+            td {
+              padding: 0.75rem;
+              font-size: 0.9rem;
+              color: #2c3e50;
+              vertical-align: top;
+            }
+          }
+        }
+      }
+
+      .report-signature {
+        text-align: center;
+        margin-top: 4rem;
+        margin-bottom: 2rem;
+
+        .signature-text {
+          font-size: 1.2rem;
+          font-weight: 700;
+          color: #2c3e50;
+          margin-bottom: 0.5rem;
+        }
+
+        .signature-name {
+          font-size: 1.1rem;
+          font-weight: 600;
+          color: #2c3e50;
+        }
+      }
+
+      .report-footer {
+        text-align: center;
+        font-size: 0.85rem;
+        color: #7f8c8d;
+        padding-top: 2rem;
+        border-top: 1px solid #e0e6ed;
+        margin-top: 2rem;
+      }
+    }
+  }
+}
+
+// Personal donor table - full width
+.personal-donor-table {
+  width: 100%;
+
+  .data-table {
+    width: 100%;
+  }
+}
+
+// Print styles for Personal Donor Report
+// Note: Global print styles are in styles.scss
