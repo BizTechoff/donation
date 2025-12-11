@@ -40,7 +40,7 @@ async function startup() {
   app.use('/api/geo/maps-api-key', getGoogleMapsApiKey)
 
 
-  console.log(`HI FROM SCALAR PORTAL SERVER. CURRENT TIME: ${new Date()}. __dirname: ${__dirname}. process.cwd(): ${process.cwd()}`)
+  console.log(`HI FROM YYG SERVER. CURRENT TIME: ${new Date()}. __dirname: ${__dirname}. process.cwd(): ${process.cwd()}`)
 
   let dist = path.resolve('dist/donation/browser')
   console.log('[Server] Checking dist path:', dist, 'exists:', fs.existsSync(dist))

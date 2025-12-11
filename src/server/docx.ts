@@ -4,23 +4,23 @@ import * as fs from "fs";
 import path from "path";
 import PizZip from "pizzip";
 import { LetterController } from "../shared/controllers/letter.controller";
-import { DocxContentControl, DocxCreateResponse } from "../shared/type/letter.type";
+import { ReportController } from "../shared/controllers/report.controller";
 import { Letter } from "../shared/enum/letter";
 import { Report } from '../shared/enum/report';
-import { ReportController } from "../shared/controllers/report.controller";
+import { DocxContentControl, DocxCreateResponse } from "../shared/type/letter.type";
 
 config()
 
 const isProduction = process.env['NODE_ENV'] === "production";
 
 
-LetterController.createLetterDelegate = async (type:Letter, contents = [] as DocxContentControl[]) => await createLetterDocX(type, contents)
+LetterController.createLetterDelegate = async (type: Letter, contents = [] as DocxContentControl[]) => await createLetterDocX(type, contents)
 console.info('createLetterDelegate succesfuly registered.')
-ReportController.createReportDelegate = async (report:Report, contents:Record<string, any>) => await createReportDocX(report, contents)
+ReportController.createReportDelegate = async (report: Report, contents: Record<string, any>) => await createReportDocX(report, contents)
 console.info('createReportDelegate succesfuly registered.')
 
 
-export const createLetterDocX = async (type:Letter, contents = [] as DocxContentControl[]) => {
+export const createLetterDocX = async (type: Letter, contents = [] as DocxContentControl[]) => {
 
     var result: DocxCreateResponse = { success: false, url: '', error: '', fileName: '' }
 
@@ -100,15 +100,19 @@ export const createLetterDocX = async (type:Letter, contents = [] as DocxContent
 }
 
 
-export const createReportDocX = async (report:Report, contents:Record<string, any>) => {
+export const createReportDocX = async (report: Report, contents: Record<string, any>) => {
 
     var result: DocxCreateResponse = { success: false, url: '', error: '', fileName: '' }
 
-    const fullPath = path.resolve(__dirname, `../${isProduction ? 'donation/' : ''}assets/reports`, `${report.templatePath}`);//.docx`);
+    // In production: /app/dist/donation/browser/assets/reports
+    // In dev: relative to project root
+    const assetsBase = isProduction
+        ? path.resolve(process.cwd(), 'dist/donation/browser/assets/reports')
+        : path.resolve(__dirname, '../assets/reports');
+    const fullPath = path.join(assetsBase, report.templatePath);
     console.log('fullPath', fullPath)
-console.log('contents', JSON.stringify(contents))
-
-
+    console.log('contents', JSON.stringify(contents))
+    
     var content = ''
     try {
         // Load the docx file as binary content
