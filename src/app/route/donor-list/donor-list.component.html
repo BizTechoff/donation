@@ -64,7 +64,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let donor of filteredDonors">
+        <tr *ngFor="let donor of this.donors">
           <td>
             <div class="donor-name">
               <strong>{{donor.fullName}}</strong>
@@ -83,7 +83,7 @@
             <button class="btn-icon btn-delete" (click)="deleteDonor(donor)" [title]="(i18n.terms$ | async)?.delete">🗑</button>
           </td>
         </tr>
-        <tr *ngIf="!loading && filteredDonors.length === 0">
+        <tr *ngIf="!loading && this.donors.length === 0">
           <td colspan="7" class="no-data">
             <p>{{ (i18n.terms$ | async)?.noDataFound }}</p>
           </td>

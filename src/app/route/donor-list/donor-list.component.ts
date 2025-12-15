@@ -1,14 +1,14 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { remult } from 'remult';
 import { Subscription } from 'rxjs';
-import { Donor, DonorContact, DonorPlace, Place, User } from '../../../shared/entity';
-import { I18nService } from '../../i18n/i18n.service';
+import { Donor, DonorPlace, User } from '../../../shared/entity';
+import { BusyService } from '../../common-ui-elements/src/angular/wait/busy-service';
 import { UIToolsService } from '../../common/UIToolsService';
+import { I18nService } from '../../i18n/i18n.service';
 import { DonorService } from '../../services/donor.service';
 import { GlobalFilterService } from '../../services/global-filter.service';
-import { NavigationRecord, FilterOption, ActiveFilter } from '../../shared/modal-navigation-header/modal-navigation-header.component';
-import { remult } from 'remult';
-import { BusyService } from '../../common-ui-elements/src/angular/wait/busy-service';
 import { HebrewDateService } from '../../services/hebrew-date.service';
+import { ActiveFilter, FilterOption, NavigationRecord } from '../../shared/modal-navigation-header/modal-navigation-header.component';
 
 @Component({
   selector: 'app-donor-list',
@@ -18,7 +18,7 @@ import { HebrewDateService } from '../../services/hebrew-date.service';
 export class DonorListComponent implements OnInit, OnDestroy {
 
   donors: Donor[] = [];
-  filteredDonors: Donor[] = [];
+  // filteredDonors: Donor[] = [];
   loading = false;
   private subscription = new Subscription();
 
@@ -57,7 +57,7 @@ export class DonorListComponent implements OnInit, OnDestroy {
     private globalFilterService: GlobalFilterService,
     private busy: BusyService,
     private hebrewDateService: HebrewDateService
-  ) {}
+  ) { }
 
   async ngOnInit() {
     // Load base data once (user settings, mobile labels, etc.)
@@ -134,7 +134,7 @@ export class DonorListComponent implements OnInit, OnDestroy {
         this.donorLastDonationDateMap = relatedData.donorLastDonationDateMap;
 
         // No need for local filtering anymore - all done on server
-        this.filteredDonors = [...this.donors];
+        // this.filteredDonors = [...this.donors];
 
       } catch (error) {
         console.error('Error refreshing donors:', error);
@@ -206,10 +206,12 @@ export class DonorListComponent implements OnInit, OnDestroy {
     const confirmMessage = this.i18n.currentTerms.confirmDeleteDonor?.replace('{name}', donor.fullName || '') || '';
     if (confirm(confirmMessage)) {
       try {
-        await donor.delete();
+        await remult.repo(Donor).delete(donor);
         this.donors = this.donors.filter(d => d.id !== donor.id);
       } catch (error) {
-        console.error('Error deleting donor:', error);
+        const msg = `Error deleting donor: ${JSON.stringify(error)}`
+        console.error(msg);
+        this.ui.error(msg)
       }
     }
   }
@@ -266,7 +268,7 @@ export class DonorListComponent implements OnInit, OnDestroy {
           placesMap.set(dp.donorId, dp.place);
         }
       }
- 
+
       this.allDonors = donors.map(donor => {
         const place = placesMap.get(donor.id);
         return {

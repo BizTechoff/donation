@@ -651,6 +651,13 @@ export class DonorDetailsModalComponent implements OnInit {
     if (!this.donor) return;
 
     try {
+
+      const familyName = this.donor.lastName
+      if (!familyName) {
+        this.ui.error('שם משפחה: שדה חובה');
+        return;
+      }
+
       // Validate reception hours before saving
       const validationResult = this.validateReceptionHours();
       if (!validationResult.valid) {
@@ -733,7 +740,9 @@ export class DonorDetailsModalComponent implements OnInit {
       this.changed = wasNew || this.hasChanges();
       this.dialogRef.close(this.changed);
     } catch (error) {
-      console.error('Error saving donor:', error);
+      const msg = `Error saving donor: ${error}`
+      console.error(msg);
+      this.ui.error(msg)
     }
   }
 

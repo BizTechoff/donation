@@ -6,9 +6,11 @@ import {
   IdEntity,
   Relations,
   Validators,
-  isBackend
+  isBackend,
+  remult
 } from 'remult'
 import { Roles } from '../enum/roles'
+import { Donation } from './donation'
 import { User } from './user'
 
 @Entity<Donor>('donors', {
@@ -25,6 +27,14 @@ import { User } from './user'
       donor.updatedDate = new Date()
     }
   },
+  deleting: async (donor, cycle) => {
+    if (isBackend()) {
+      const donationsCount = await remult.repo(Donation).count({ donor: donor })
+      if (donationsCount) {
+        throw new Error(`לתורם זה ישנם תרומות - יש למחוק את התרומות שלו ואז אותו`)
+      }
+    }
+  }
 })
 export class Donor extends IdEntity {
   @Fields.string({
@@ -45,7 +55,7 @@ export class Donor extends IdEntity {
   title = ''
 
   @Fields.string({
-    validate: Validators.required,
+    // validate: Validators.required,
     caption: 'שם פרטי',
   })
   firstName = ''
@@ -140,8 +150,8 @@ export class Donor extends IdEntity {
   fullNameEnglish!: string
 
   @Fields.string({
-    caption: 'תעודת זהות',
-    validate: [Validators.uniqueOnBackend],
+    caption: 'תעודת זהות'//,
+    // validate: [Validators.unique],
   })
   idNumber = ''
 

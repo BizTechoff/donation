@@ -1297,6 +1297,7 @@ export class ReportController {
   }
 
   static createReportDelegate: (type: Report, contents: Record<string, any>) => Promise<DocxCreateResponse>
+  static createReportPdfDelegate: (type: Report, contents: Record<string, any>) => Promise<DocxCreateResponse>
   // static createReportRecordsDelegate: (type: Report, contents: Record<string, any>) => Promise<DocxCreateResponse>
 
   @BackendMethod({ allowed: Allow.authenticated })
@@ -1339,6 +1340,7 @@ export class ReportController {
     };
 
     return await ReportController.createReportDelegate(Report.report_personal_donor_donations, dataToRender)
+    // return await ReportController.createReportPdfDelegate(Report.report_personal_donor_donations, dataToRender)
   }
 
   private static formatDateForFilter(d: Date): string {

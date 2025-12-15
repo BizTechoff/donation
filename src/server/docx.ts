@@ -8,6 +8,7 @@ import { ReportController } from "../shared/controllers/report.controller";
 import { Letter } from "../shared/enum/letter";
 import { Report } from '../shared/enum/report';
 import { DocxContentControl, DocxCreateResponse } from "../shared/type/letter.type";
+import { createPersonalDonorReportPdf } from "./pdf.make";
 
 config()
 
@@ -17,6 +18,8 @@ const isProduction = process.env['NODE_ENV'] === "production";
 LetterController.createLetterDelegate = async (type: Letter, contents = [] as DocxContentControl[]) => await createLetterDocX(type, contents)
 console.info('createLetterDelegate succesfuly registered.')
 ReportController.createReportDelegate = async (report: Report, contents: Record<string, any>) => await createReportDocX(report, contents)
+console.info('createReportDelegate succesfuly registered.')
+ReportController.createReportPdfDelegate = async (report: Report, contents: Record<string, any>) => await createReportPdf(report, contents)
 console.info('createReportDelegate succesfuly registered.')
 
 
@@ -104,6 +107,41 @@ export const createLetterDocX = async (type: Letter, contents = [] as DocxConten
     result.fileName = fileName;
 
     return result
+}
+
+export const createReportPdf = async (report: Report, contents: Record<string, any>) => {
+    var result: DocxCreateResponse = { success: false, url: '', error: '', fileName: '' }
+
+    try {
+        // Map the contents to the PDF data structure
+        const pdfData = {
+            donorNameHebrew: contents['שם_תורם_מלא_עברית'] || '',
+            donorNameEnglish: contents['שם_תורם_מלא_אנגלית'] || '',
+            fullAddress: contents['FullAddress'] || '',
+            fromDate: contents['מתאריך'] || '',
+            toDate: contents['עד_תאריך'] || '',
+            donations: (contents['stops'] || []).map((d: any) => ({
+                date: d['תאריך'] || '',
+                dateHebrew: d['תאריך_עברי'] || '',
+                commitment: String(d['התחייבות'] || ''),
+                amount: d['סכום'] || '',
+                notes: d['הערות'] || ''
+            }))
+        };
+
+        const pdfBuffer = await createPersonalDonorReportPdf(pdfData);
+        const base64 = pdfBuffer.toString('base64');
+
+        result.success = true;
+        result.url = `data:application/pdf;base64,${base64}`;
+        result.fileName = `${report.caption}.pdf`;
+        result.error = '';
+    } catch (error) {
+        result.error = `Error creating PDF: ${error instanceof Error ? error.message : String(error)}`;
+        console.error(result.error);
+    }
+
+    return result;
 }
 
 

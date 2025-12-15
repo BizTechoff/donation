@@ -2055,31 +2055,45 @@ toggleIsPrintAndProduceOnce() {
       );
       console.log('printPersonalDonorReport:', JSON.stringify(result));
 
-
       if (result.success) {
-        // יצירת לינק להורדה
-        const link = document.createElement('a');
-        link.href = result.url;
-        link.download = `דוח אישי לתורם.docx` // result.fileName!;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        // Extract base64 and mimeType from data URL
+        // Format: data:mimeType;base64,base64Data
+        const dataUrlMatch = result.url.match(/^data:([^;]+);base64,(.+)$/);
+        if (!dataUrlMatch) {
+          console.error('Invalid data URL format');
+          alert('שגיאה בפורמט הקובץ');
+          return;
+        }
 
-        //      const viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(result.url)}&embedded=true`;
-        // window.open(viewerUrl, '_blank');
+        const mimeType = dataUrlMatch[1];
+        const base64 = dataUrlMatch[2];
+
+        const blob = this.base64ToBlob(base64, mimeType);
+        const url = URL.createObjectURL(blob);
+
+        const printWindow = window.open(url, '_blank');
+        printWindow?.addEventListener('load', () => {
+          printWindow.print();
+        });
       } else {
         console.error('Error:', result.error);
+        alert('שגיאה ביצירת הדוח');
       }
 
     } catch (error) {
       console.error('Error loading personal donor report:', error);
       alert('שגיאה בהדפסת הדוח');
     }
-    // this.isPersonalReportPrintMode = true;
-    // setTimeout(() => {
-    //   window.print();
-    //   this.isPersonalReportPrintMode = false;
-    // }, 100);
+  }
+
+  private base64ToBlob(base64: string, mimeType: string): Blob {
+    const byteCharacters = atob(base64);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    return new Blob([byteArray], { type: mimeType });
   }
 
   async printPersonalDonorReport1() {
