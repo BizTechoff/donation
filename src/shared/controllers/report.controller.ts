@@ -1,4 +1,4 @@
-import { Allow, BackendMethod, remult } from 'remult';
+import { Allow, BackendMethod, Fields, remult } from 'remult';
 import { Donation } from '../entity/donation';
 import { Donor } from '../entity/donor';
 import { DonorContact } from '../entity/donor-contact';
@@ -1301,7 +1301,12 @@ export class ReportController {
   // static createReportRecordsDelegate: (type: Report, contents: Record<string, any>) => Promise<DocxCreateResponse>
 
   @BackendMethod({ allowed: Allow.authenticated })
-  static async createPersonalDonorReport(donorId: string, from: Date, to: Date): Promise<DocxCreateResponse> {
+  static async createPersonalDonorReport(donorId: string, fromDateStr: string, toDateStr: string): Promise<DocxCreateResponse> {
+    // Parse dates from ISO strings (YYYY-MM-DD format) to avoid timezone issues
+    const from = ReportController.parseLocalDate(fromDateStr);
+    const to = ReportController.parseLocalDate(toDateStr);
+    console.log('from', from);
+    console.log('to', to);
 
     const data = await ReportController.getPersonalDonorReport(
       donorId, from, to)
@@ -1350,6 +1355,23 @@ export class ReportController {
     const month = String(date.getUTCMonth() + 1).padStart(2, '0');
     const day = String(date.getUTCDate()).padStart(2, '0');
     return `${day}/${month}/${year}`;
+  }
+
+  /**
+   * Parse date string (YYYY-MM-DD or Date ISO string) to Date object
+   * Handles timezone issues by creating date at noon UTC
+   */
+  private static parseLocalDate(dateStr: string): Date {
+    if (!dateStr) return new Date();
+
+    // If it's already an ISO date string with time, extract just the date part
+    const datePart = dateStr.split('T')[0];
+
+    // Parse YYYY-MM-DD
+    const [year, month, day] = datePart.split('-').map(Number);
+
+    // Create date at noon UTC to avoid timezone edge cases
+    return new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
   }
 
   private static getFieldValue(field: string, donor: Donor, donorPlace?: DonorPlace) {

@@ -2044,11 +2044,17 @@ toggleIsPrintAndProduceOnce() {
   }
 
   async printPersonalDonorReport() {
+    console.log('this.personalReportFromDate:', this.personalReportFromDate);
+    console.log('this.personalReportToDate:', this.personalReportToDate);
     try {
+      // Convert dates to ISO string format (YYYY-MM-DD) to avoid timezone issues
+      const fromDateStr = this.formatDateToISOString(this.personalReportFromDate!);
+      const toDateStr = this.formatDateToISOString(this.personalReportToDate || new Date());
+
       const result = await ReportController.createPersonalDonorReport(
         this.selectedDonorForPersonalReport!.id,
-        this.personalReportFromDate!,
-        this.personalReportToDate || new Date()
+        fromDateStr,
+        toDateStr
       );
       console.log('printPersonalDonorReport:', JSON.stringify(result));
 
@@ -2095,10 +2101,14 @@ toggleIsPrintAndProduceOnce() {
 
   async printPersonalDonorReport1() {
     try {
+      // Convert dates to ISO string format (YYYY-MM-DD) to avoid timezone issues
+      const fromDateStr = this.formatDateToISOString(this.personalReportFromDate!);
+      const toDateStr = this.formatDateToISOString(this.personalReportToDate || new Date());
+
       const result = await ReportController.createPersonalDonorReport(
         this.selectedDonorForPersonalReport!.id,
-        this.personalReportFromDate!,
-        this.personalReportToDate || new Date()
+        fromDateStr,
+        toDateStr
       );
       console.log('printPersonalDonorReport:', JSON.stringify(result));
 
@@ -2142,6 +2152,18 @@ toggleIsPrintAndProduceOnce() {
     const month = (d.getMonth() + 1).toString().padStart(2, '0');
     const year = d.getFullYear();
     return `${day}/${month}/${year}`;
+  }
+
+  /**
+   * Format date to ISO string (YYYY-MM-DD) for sending to server
+   * Uses local date parts to avoid timezone issues
+   */
+  private formatDateToISOString(date: Date): string {
+    const d = new Date(date);
+    const year = d.getFullYear();
+    const month = (d.getMonth() + 1).toString().padStart(2, '0');
+    const day = d.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 
   formatDateEnglish(date: Date): string {
