@@ -35,6 +35,9 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   editingDonation?: Donation;
   today = new Date().toISOString().split('T')[0];
 
+  // Flag to track if base data was loaded
+  private baseDataLoaded = false;
+
   totalAmountCache = 0;
 
   // Pagination
@@ -77,9 +80,6 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   ) {}
 
   async ngOnInit() {
-    // Load base data once
-    await this.loadBase();
-
     // Listen for global filter changes
     this.subscriptions.add(
       this.globalFilterService.filters$.subscribe(() => {
@@ -87,49 +87,24 @@ export class DonationsListComponent implements OnInit, OnDestroy {
       })
     );
 
-    // Initial data load
+    // Initial data load (includes base data on first call)
     await this.refreshData();
-  }
-
-  /**
-   * Load base data once - called only on component initialization
-   */
-  private async loadBase() {
-    await this.busy.doWhileShowingBusy(async () => {
-      // Set CSS variables for mobile labels
-      this.updateMobileLabels();
-
-      // Listen for language changes
-      this.subscriptions.add(
-        this.i18n.terms$.subscribe(() => {
-          this.updateMobileLabels();
-        })
-      );
-
-      // Load currency types from server (includes rates, symbols, labels)
-      this.currencyTypes = await this.payerService.getCurrencyTypes();
-
-      // Build rate map for quick lookup
-      this.currencyTypes.forEach(currency => {
-        this.currencyRates.set(currency.id, currency.rateInShekel);
-      });
-
-      // Load reference data (donors, campaigns, methods)
-      await Promise.all([
-        this.loadDonors(),
-        this.loadCampaigns(),
-        this.loadDonationMethods()
-      ]);
-    });
   }
 
   /**
    * Refresh data based on current filters and sorting
    * Called whenever filters or sorting changes
+   * On first call, also loads base data (currency types, donors, campaigns, methods)
    */
   private async refreshData() {
     await this.busy.doWhileShowingBusy(async () => {
       try {
+        // Load base data once on first call
+        if (!this.baseDataLoaded) {
+          await this.loadBaseData();
+          this.baseDataLoaded = true;
+        }
+
         // Build filters object with both local and global filters
         const filters: DonationFilters = {
           searchTerm: this.searchTerm?.trim() || undefined,
@@ -160,6 +135,36 @@ export class DonationsListComponent implements OnInit, OnDestroy {
         this.totalPages = 0;
       }
     });
+  }
+
+  /**
+   * Load base data once - called only on first refreshData call
+   */
+  private async loadBaseData() {
+    // Set CSS variables for mobile labels
+    this.updateMobileLabels();
+
+    // Listen for language changes
+    this.subscriptions.add(
+      this.i18n.terms$.subscribe(() => {
+        this.updateMobileLabels();
+      })
+    );
+
+    // Load currency types from server (includes rates, symbols, labels)
+    this.currencyTypes = await this.payerService.getCurrencyTypes();
+
+    // Build rate map for quick lookup
+    this.currencyTypes.forEach(currency => {
+      this.currencyRates.set(currency.id, currency.rateInShekel);
+    });
+
+    // Load reference data (donors, campaigns, methods)
+    await Promise.all([
+      this.loadDonors(),
+      this.loadCampaigns(),
+      this.loadDonationMethods()
+    ]);
   }
 
   private updateMobileLabels() {

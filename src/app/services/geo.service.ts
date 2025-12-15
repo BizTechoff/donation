@@ -289,12 +289,27 @@ export class GeoService {
           throw new Error('Google Maps API key not returned from server');
         }
 
-        // Check if script already exists
-        const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
+        // Check if script already exists with correct language
+        const currentLang = this.getUserLanguage();
+        const existingScript = document.querySelector('script[src*="maps.googleapis.com"]') as HTMLScriptElement;
+
         if (existingScript) {
-          this.googleMapsLoaded = true;
-          resolve();
-          return;
+          const scriptHasCorrectLang = existingScript.src.includes(`language=${currentLang}`);
+
+          if (scriptHasCorrectLang) {
+            this.googleMapsLoaded = true;
+            resolve();
+            return;
+          } else {
+            // Language changed - remove old script and reload
+            console.log(`Google Maps language changed to ${currentLang}, reloading API...`);
+            existingScript.remove();
+            // Clear google maps object
+            if (typeof google !== 'undefined') {
+              (window as any).google = undefined;
+            }
+            this.googleMapsLoaded = false;
+          }
         }
 
         // Create and load the script

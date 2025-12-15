@@ -1374,13 +1374,11 @@
 
     .filter-row {
       display: flex;
-      gap: 1.5rem;
+      gap: 2rem;
       align-items: flex-end;
       flex-wrap: wrap;
 
       .filter-group {
-        flex: 1;
-        min-width: 180px;
         display: flex;
         flex-direction: column;
         gap: 0.5rem;
@@ -1403,24 +1401,110 @@
           }
         }
 
+        // עיצוב שדה תורם
+        &.donor-filter-group {
+          flex: 0 0 auto;
+          margin-bottom: calc(1.2em + 0.25rem);
+
+          .donor-filter-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+
+            .donor-filter-input {
+              width: 200px;
+              padding: 0.7rem 0.9rem;
+              padding-left: 75px;
+              border: 2px solid #e0e6ed;
+              border-radius: 8px;
+              font-size: 0.95rem;
+              cursor: pointer;
+              background: linear-gradient(to bottom, #fff, #fafbfc);
+              transition: all 0.2s ease;
+              box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+
+              &:hover {
+                border-color: #667eea;
+                box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+              }
+            }
+
+            .donor-filter-search-btn,
+            .donor-filter-clear-btn {
+              position: absolute;
+              left: 8px;
+              background: none;
+              border: none;
+              padding: 6px;
+              cursor: pointer;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              border-radius: 6px;
+              transition: all 0.2s ease;
+
+              mat-icon {
+                font-size: 20px;
+                width: 20px;
+                height: 20px;
+                color: #667eea;
+              }
+
+              &:hover {
+                background: rgba(102, 126, 234, 0.12);
+                transform: scale(1.05);
+              }
+            }
+
+            .donor-filter-clear-btn {
+              left: 40px;
+
+              mat-icon {
+                color: #e74c3c;
+              }
+
+              &:hover {
+                background: rgba(231, 76, 60, 0.12);
+              }
+            }
+          }
+        }
+
+        // עיצוב שדות תאריך
         &.date-filter-group {
+          flex: 0 0 auto;
+
+          app-date-fast-input ::ng-deep .date-fast-input {
+            width: 120px;
+            padding: 0.7rem;
+            border: 2px solid #e0e6ed;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            direction: ltr;
+            text-align: left;
+
+            &:focus {
+              outline: none;
+              border-color: #3498db;
+            }
+
+            &::placeholder {
+              color: #aab7c4;
+            }
+          }
+
           .hebrew-date-hint {
             font-size: 0.8rem;
             color: #7f8c8d;
             margin-top: 0.25rem;
-            height: 1.2em; // Fixed height to prevent layout shift
+            height: 1.2em;
             line-height: 1.2em;
           }
         }
       }
 
-      // Add margin-bottom to non-date filter groups to align with date groups
-      .filter-group.donor-filter-group {
-        margin-bottom: calc(1.2em + 0.25rem); // Match hebrew-date-hint height + margin
-      }
-
       .filter-actions {
-        margin-bottom: calc(1.2em + 0.25rem); // Match hebrew-date-hint height + margin
+        margin-bottom: calc(1.2em + 0.25rem);
       }
 
       .filter-actions {

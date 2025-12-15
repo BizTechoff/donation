@@ -26,7 +26,7 @@ import { HebrewDateService } from './services/hebrew-date.service'
   styleUrls: ['./app.component.scss'],
 })
 export class AppComponent implements OnInit {
-  version = '2025.12.11' // environment.production ? '2025.08.05' : '2025.07.31'
+  version = '2025.12.15' // environment.production ? '2025.08.05' : '2025.07.31'
   currentHebrewDate = this.hebrewDate.convertGregorianToHebrew(new Date())?.formatted
 
   // Active reminders count - will be updated in ngOnInit

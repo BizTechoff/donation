@@ -18,9 +18,11 @@ import { ActiveFilter, FilterOption, NavigationRecord } from '../../shared/modal
 export class DonorListComponent implements OnInit, OnDestroy {
 
   donors: Donor[] = [];
-  // filteredDonors: Donor[] = [];
   loading = false;
   private subscription = new Subscription();
+
+  // Flag to track if base data was loaded
+  private baseDataLoaded = false;
 
   // Expose Math to template
   Math = Math;
@@ -60,9 +62,6 @@ export class DonorListComponent implements OnInit, OnDestroy {
   ) { }
 
   async ngOnInit() {
-    // Load base data once (user settings, mobile labels, etc.)
-    await this.loadBase();
-
     // Subscribe to filter changes
     this.subscription.add(
       this.globalFilterService.filters$.subscribe(() => {
@@ -70,37 +69,24 @@ export class DonorListComponent implements OnInit, OnDestroy {
       })
     );
 
-    // Initial data load
+    // Initial data load (includes base data on first call)
     await this.refreshData();
-  }
-
-  /**
-   * Load base data once - called only on component initialization
-   */
-  private async loadBase() {
-    // Load current user and their settings
-    await this.loadUserSettings();
-
-    // Set CSS variables for mobile labels
-    this.updateMobileLabels();
-
-    // Listen for language changes
-    this.i18n.terms$.subscribe(() => {
-      this.updateMobileLabels();
-    });
-
-    // Load all donors for navigation header
-    await this.loadAllDonors();
-    this.setupFilterOptions();
   }
 
   /**
    * Refresh data based on current filters and sorting
    * Called whenever filters or sorting changes
+   * On first call, also loads base data (user settings, mobile labels, etc.)
    */
   private async refreshData() {
     await this.busy.doWhileShowingBusy(async () => {
       try {
+        // Load base data once on first call
+        if (!this.baseDataLoaded) {
+          await this.loadBaseData();
+          this.baseDataLoaded = true;
+        }
+
         // Prepare search term (trim and undefined if empty)
         const searchTerm = this.searchTerm?.trim() || undefined;
 
@@ -133,13 +119,30 @@ export class DonorListComponent implements OnInit, OnDestroy {
         this.donorTotalDonationsMap = relatedData.donorTotalDonationsMap;
         this.donorLastDonationDateMap = relatedData.donorLastDonationDateMap;
 
-        // No need for local filtering anymore - all done on server
-        // this.filteredDonors = [...this.donors];
-
       } catch (error) {
         console.error('Error refreshing donors:', error);
       }
     });
+  }
+
+  /**
+   * Load base data once - called only on first refreshData call
+   */
+  private async loadBaseData() {
+    // Load current user and their settings
+    await this.loadUserSettings();
+
+    // Set CSS variables for mobile labels
+    this.updateMobileLabels();
+
+    // Listen for language changes
+    this.i18n.terms$.subscribe(() => {
+      this.updateMobileLabels();
+    });
+
+    // Load all donors for navigation header
+    await this.loadAllDonors();
+    this.setupFilterOptions();
   }
 
   private updateMobileLabels() {

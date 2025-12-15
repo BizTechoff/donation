@@ -1924,26 +1924,23 @@ toggleIsPrintAndProduceOnce() {
       return;
     }
 
-    const fromDate = new Date(this.personalReportFromDate);
+    const fromDate = this.personalReportFromDate instanceof Date
+      ? this.personalReportFromDate
+      : new Date(this.personalReportFromDate);
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Helper to format date as YYYY-MM-DD string for input[type="date"]
-    const formatDateForInput = (date: Date): string => {
-      const year = date.getFullYear();
-      const month = (date.getMonth() + 1).toString().padStart(2, '0');
-      const day = date.getDate().toString().padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    };
-
     // Case 1: If "to" date is empty, fill with today
     if (!this.personalReportToDate) {
-      this.personalReportToDate = formatDateForInput(today) as any;
+      this.personalReportToDate = today;
     } else {
-      const toDate = new Date(this.personalReportToDate);
+      const toDate = this.personalReportToDate instanceof Date
+        ? this.personalReportToDate
+        : new Date(this.personalReportToDate);
       // Case 2: If "to" date is less than "from" date, set "to" = "from"
       if (toDate < fromDate) {
-        this.personalReportToDate = formatDateForInput(fromDate) as any;
+        this.personalReportToDate = new Date(fromDate);
       }
       // Case 3: If "to" date is greater than "from" - don't touch!
     }

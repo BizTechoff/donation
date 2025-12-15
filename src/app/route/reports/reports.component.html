@@ -806,16 +806,22 @@
           <!-- מתאריך -->
           <div class="filter-group date-filter-group">
             <label>מתאריך</label>
-            <input type="date" class="form-control" [(ngModel)]="personalReportFromDate"
-              (change)="onPersonalReportFromDateChange()">
+            <app-date-fast-input
+              [(ngModel)]="personalReportFromDate"
+              (dateChange)="onPersonalReportFromDateChange()"
+              placeholder="dd/mm/yyyy">
+            </app-date-fast-input>
             <small class="hebrew-date-hint">{{personalReportFromDateHebrew || '\u00A0'}}</small>
           </div>
 
           <!-- עד תאריך -->
           <div class="filter-group date-filter-group">
             <label>עד תאריך</label>
-            <input type="date" class="form-control" [(ngModel)]="personalReportToDate"
-              (change)="onPersonalReportToDateChange()">
+            <app-date-fast-input
+              [(ngModel)]="personalReportToDate"
+              (dateChange)="onPersonalReportToDateChange()"
+              placeholder="dd/mm/yyyy">
+            </app-date-fast-input>
             <small class="hebrew-date-hint">{{personalReportToDateHebrew || '\u00A0'}}</small>
           </div>
 

@@ -114,10 +114,12 @@ import { ReminderSnoozeModalComponent } from './routes/modals/reminder-snooze-mo
 import { CampaignDonationsModalComponent } from './routes/modals/campaign-donations-modal/campaign-donations-modal.component'
 import { GlobalSearchComponent } from './components/global-search/global-search.component'
 import { AutoYearDirective } from './shared/directives/auto-year.directive'
+import { DateFastInputComponent } from './components/date-fast-input/date-fast-input.component'
 
 @NgModule({
   declarations: [
     AutoYearDirective,
+    DateFastInputComponent,
     AppComponent,
     UsersComponent,
     HomeComponent,

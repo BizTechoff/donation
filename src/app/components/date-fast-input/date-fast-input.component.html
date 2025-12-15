@@ -1,0 +1,14 @@
+<input
+  type="text"
+  class="date-fast-input"
+  [id]="id"
+  [name]="name"
+  [placeholder]="placeholder"
+  [disabled]="disabled"
+  [required]="required"
+  [(ngModel)]="displayValue"
+  (input)="onInputChange($event)"
+  (blur)="onBlur()"
+  (keydown)="onKeydown($event)"
+  autocomplete="off"
+/>
