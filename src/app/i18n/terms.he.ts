@@ -542,7 +542,7 @@ export const termsHe = {
   categoryFilter: 'חוג',
   categoryPlaceholder: 'חוג...',
   activeInactiveFilter: 'פעיל/לא פעיל',
-  clearFilters: 'נקה מפיינים',
+  clearFilters: 'נקה פילטרים',
   refreshButton: 'רענן',
   loadingCampaigns: 'טוען קמפיינים...',
   campaignsTable: 'טבלת קמפיינים',

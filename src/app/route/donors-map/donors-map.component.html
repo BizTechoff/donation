@@ -21,7 +21,7 @@
     </div>
 
     <!-- Summary Cards -->
-    <div class="summary-cards">
+    <!-- <div class="summary-cards">
       <div class="summary-card">
         <div class="card-icon">👥</div>
         <div class="card-content">
@@ -50,7 +50,7 @@
           <span class="count">{{ donorsOnMap }}</span>
         </div>
       </div>
-    </div>
+    </div> -->
 
     <!-- Filters Section -->
     <div class="filters-section">
@@ -108,13 +108,13 @@
       </div>
 
       <!-- Results Counter -->
-      <div class="results-counter">
+      <!-- <div class="results-counter">
         {{ i18n.terms.showing || 'מציג' }}:
         <strong>{{ donorsOnMap }}</strong>
         {{ i18n.terms.outOf || 'מתוך' }}
         <strong>{{ totalDonors }}</strong>
         {{ i18n.terms.donors || 'תורמים' }}
-      </div>
+      </div> -->
     </div>
   </div>
 
@@ -123,6 +123,15 @@
     <!-- Map Container - Full screen -->
     <div class="map-container">
       <div id="donors-map" class="google-map" #mapElement></div>
+
+      <!-- Results Counter - floating on map -->
+      <div class="results-counter-overlay">
+        {{ i18n.terms.showing || 'מציג' }}:
+        <strong>{{ donorsOnMap }}</strong>
+        {{ i18n.terms.outOf || 'מתוך' }}
+        <strong>{{ totalDonors }}</strong>
+        {{ i18n.terms.donors || 'תורמים' }}
+      </div>
 
       <!-- Color legend - always visible on map -->
       <div class="map-legend">

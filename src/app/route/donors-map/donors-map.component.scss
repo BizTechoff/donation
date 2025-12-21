@@ -225,7 +225,7 @@
   // Filters Section
   .filters-section {
     background: #f8f9fa;
-    padding: 15px 30px;
+    padding: 5px 30px;
     border-bottom: 1px solid #e1e8ed;
 
     .filter-row {
@@ -352,7 +352,7 @@
   overflow: hidden;
   margin-bottom: 10px;
   min-height: 300px;
-  
+
   .google-map {
     height: 100%;
     width: 100%;
@@ -360,7 +360,25 @@
 
     @media (min-width: 768px) {
       min-height: 400px;
-      height: 500px;
+      // height: 500px;
+    }
+  }
+
+  .results-counter-overlay {
+    position: absolute;
+    top: 10px;
+    inset-inline-start: 10px;
+    background: white;
+    border-radius: 8px;
+    padding: 10px 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    font-size: 14px;
+    color: #34495e;
+
+    strong {
+      color: #667eea;
+      font-size: 15px;
     }
   }
 }
@@ -504,7 +522,7 @@
     }
 
     .filters-section {
-      padding: 12px 20px;
+      padding: 2px 20px;
 
       .filter-row {
         grid-template-columns: 1fr;

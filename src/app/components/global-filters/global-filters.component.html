@@ -11,7 +11,7 @@
   <div class="filters-content" (click)="$event.stopPropagation()">
 
     <!-- Filter Header -->
-    <div class="filters-header">
+    <div class="filters-header" [title]="(i18n.terms$ | async)?.clearFilters">
       <h3>{{ (i18n.terms$ | async)?.globalFilters }}</h3>
       <button mat-icon-button (click)="clearFilters()" [disabled]="!hasActiveFilters"
               [matTooltip]="(i18n.terms$ | async)?.clearAll || ''">
