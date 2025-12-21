@@ -60,16 +60,25 @@ export class CitySelectionModalComponent implements OnInit {
     });
   }
 
-  // Filter cities based on search term
+  // Filter cities based on search term, with selected items first in multi-select mode
   getFilteredCities(): CityData[] {
-    if (!this.searchTerm.trim()) {
-      return this.availableCities;
+    let cities = this.availableCities;
+
+    if (this.searchTerm.trim()) {
+      const term = this.searchTerm.toLowerCase();
+      cities = cities.filter(cityData =>
+        cityData.city?.toLowerCase().includes(term)
+      );
     }
 
-    const term = this.searchTerm.toLowerCase();
-    return this.availableCities.filter(cityData =>
-      cityData.city?.toLowerCase().includes(term)
-    );
+    // In multi-select mode, show selected items first
+    if (this.args?.multiSelect) {
+      const selected = cities.filter(c => this.isCitySelected(c.city));
+      const unselected = cities.filter(c => !this.isCitySelected(c.city));
+      return [...selected, ...unselected];
+    }
+
+    return cities;
   }
 
   // Select city and close dialog immediately (single select mode)

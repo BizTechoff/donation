@@ -53,7 +53,8 @@
             <span class="sort-icon" *ngIf="getSortIcon('email')">{{ getSortIcon('email') }}</span>
           </th>
           <th class="sortable" [class.sorted]="isSorted('totalDonations')" (click)="toggleSort('totalDonations', $event)">
-            {{ (i18n.terms$ | async)?.totalDonationsHeader }}
+            <div>{{ (i18n.terms$ | async)?.totalDonationsHeader }}</div>
+            <small>({{ (i18n.terms$ | async)?.inLast12Months }})</small>
             <span class="sort-icon" *ngIf="getSortIcon('totalDonations')">{{ getSortIcon('totalDonations') }}</span>
           </th>
           <th class="sortable" [class.sorted]="isSorted('lastDonationDate')" (click)="toggleSort('lastDonationDate', $event)">
@@ -74,8 +75,15 @@
           <td>{{getDonorAddress(donor.id)}}</td>
           <td>{{getDonorPhone(donor.id)}}</td>
           <td>{{getDonorEmail(donor.id)}}</td>
-          <td>{{getDonorTotalDonations(donor.id) | number:'1.2-2'}}</td>
-          <td>{{ formatHebrewDate(getDonorLastDonationDate(donor.id)) }}</td>
+          <td>
+            <div>{{getDonorTotalDonations(donor.id) | number:'1.2-2'}}</div>
+            <small *ngIf="getDonorDonationsCount(donor.id) === 1">(סה"כ תרומה אחת)</small>
+            <small *ngIf="getDonorDonationsCount(donor.id) > 1">(סה"כ: {{getDonorDonationsCount(donor.id)}} תרומות)</small>
+          </td>
+          <td>
+            <div>{{ formatHebrewDate(getDonorLastDonationDate(donor.id)) }}</div>
+            <small *ngIf="getDonorLastDonationAmount(donor.id)">({{getCurrencySymbol(donor.id)}}{{getDonorLastDonationAmount(donor.id) | number:'1.0-0'}})</small>
+          </td>
           <td class="actions">
             <button class="btn-icon btn-donations" (click)="openDonorDonations(donor); $event.stopPropagation()" [title]="(i18n.terms$ | async)?.donations || 'תרומות'">💰</button>
             <button class="btn-icon btn-gifts" (click)="openDonorGifts(donor); $event.stopPropagation()" [title]="(i18n.terms$ | async)?.gifts || 'מתנות'">🎁</button>

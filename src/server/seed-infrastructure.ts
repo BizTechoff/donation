@@ -558,7 +558,7 @@ export async function seedInfrastructure() {
     const addressTypesData = [
       { name: 'בית', description: 'כתובת מגורים ראשית' },
       { name: 'שטיבלך', description: 'בית כנסת או מקום תפילה' },
-      { name: 'עבודה', description: 'מקום עבודה' },
+      { name: 'עבודה', description: 'מקום משרד' },
       { name: 'נופש', description: 'כתובת נופש או משנית' }
     ]
     const createdAddressTypes = []

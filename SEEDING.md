@@ -24,7 +24,7 @@ npm run seed-infrastructure
 
 ---
 
-### 2. `seed-data.ts` - נתונים מהמערכת הישנה
+### 2. `seed-data.ts` - נתונים מהפלטפורמת הישנה
 יבוא מלא של כל הנתונים מקבצי Excel:
 
 **📊 סטטיסטיקה:**
@@ -90,7 +90,7 @@ npm run seed-data
 
 ### תרומות (Donations)
 - סכומים במטבעות שונים (דולר, ליש"ט)
-- תאריכים מדויקים מהמערכת הישנה
+- תאריכים מדויקים מהפלטפורמת הישנה
 - קישור לתורם וקמפיין
 - דגלונים (תרומה חריגה, חדר תה, קבלה הוצאה)
 

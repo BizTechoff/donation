@@ -64,19 +64,28 @@ export class CountrySelectionModalComponent implements OnInit {
     });
   }
 
-  // Filter countries based on search term
+  // Filter countries based on search term, with selected items first in multi-select mode
   getFilteredCountries(): Country[] {
-    if (!this.searchTerm.trim()) {
-      return this.availableCountries;
+    let countries = this.availableCountries;
+
+    if (this.searchTerm.trim()) {
+      const term = this.searchTerm.toLowerCase();
+      countries = countries.filter(country =>
+        country.name?.toLowerCase().includes(term) ||
+        country.nameEn?.toLowerCase().includes(term) ||
+        country.code?.toLowerCase().includes(term) ||
+        country.phonePrefix?.toLowerCase().includes(term)
+      );
     }
 
-    const term = this.searchTerm.toLowerCase();
-    return this.availableCountries.filter(country =>
-      country.name?.toLowerCase().includes(term) ||
-      country.nameEn?.toLowerCase().includes(term) ||
-      country.code?.toLowerCase().includes(term) ||
-      country.phonePrefix?.toLowerCase().includes(term)
-    );
+    // In multi-select mode, show selected items first
+    if (this.args?.multiSelect) {
+      const selected = countries.filter(c => this.isCountrySelected(c));
+      const unselected = countries.filter(c => !this.isCountrySelected(c));
+      return [...selected, ...unselected];
+    }
+
+    return countries;
   }
 
   // Select country and close dialog immediately (single select mode)

@@ -62,16 +62,26 @@ export class AudienceSelectionModalComponent implements OnInit {
     });
   }
 
+  // Filter audiences based on search term, with selected items first in multi-select mode
   getFilteredAudiences(): TargetAudience[] {
-    if (!this.searchTerm.trim()) {
-      return this.availableAudiences;
+    let audiences = this.availableAudiences;
+
+    if (this.searchTerm.trim()) {
+      const term = this.searchTerm.toLowerCase();
+      audiences = audiences.filter(audience =>
+        audience.name?.toLowerCase().includes(term) ||
+        audience.description?.toLowerCase().includes(term)
+      );
     }
 
-    const term = this.searchTerm.toLowerCase();
-    return this.availableAudiences.filter(audience =>
-      audience.name?.toLowerCase().includes(term) ||
-      audience.description?.toLowerCase().includes(term)
-    );
+    // In multi-select mode, show selected items first
+    if (this.args?.multiSelect) {
+      const selected = audiences.filter(a => this.isAudienceSelected(a));
+      const unselected = audiences.filter(a => !this.isAudienceSelected(a));
+      return [...selected, ...unselected];
+    }
+
+    return audiences;
   }
 
   selectAudience(audience: TargetAudience) {
@@ -128,7 +138,8 @@ export class AudienceSelectionModalComponent implements OnInit {
   async deleteAudience(audience: TargetAudience, event: Event) {
     event.stopPropagation();
 
-    if (!confirm(`האם אתה בטוח שברצונך למחוק את קהל היעד "${audience.name}"?`)) {
+    const confirmMessage = `${this.i18n.terms.confirmDeleteTargetAudience} "${audience.name}"?`;
+    if (!confirm(confirmMessage)) {
       return;
     }
 
@@ -136,10 +147,10 @@ export class AudienceSelectionModalComponent implements OnInit {
       try {
         await TargetAudienceController.deleteTargetAudience(audience.id);
         await this.loadAudiences();
-        this.ui.info('קהל היעד נמחק בהצלחה');
+        this.ui.info(this.i18n.terms.targetAudienceDeletedSuccessfully);
       } catch (error) {
         console.error('Error deleting target audience:', error);
-        this.ui.error('שגיאה במחיקת קהל היעד');
+        this.ui.error(this.i18n.terms.errorDeletingTargetAudience);
       }
     });
   }

@@ -378,6 +378,7 @@ export const termsEn = {
   hasidi: 'Hasidic',
   name: 'Name',
   totalDonationsHeader: 'Average Donations',
+  inLast12Months: 'in the last 12 months',
   lastDonation: 'Last Donation',
   active: 'Active',
   inactive: 'Inactive',
@@ -1711,5 +1712,30 @@ export const termsEn = {
   allBlessingTypes: 'All Blessing Types',
   memorialDayDescription: 'Certificates for Special Day',
   activeCertificates: 'Active Certificates',
-  activeCertificatesDay: 'Active Day Certificates'
+  activeCertificatesDay: 'Active Day Certificates',
+
+  // Target Audience Selection Modal
+  targetAudience: 'Target Audience',
+  targetAudienceNotFound: 'Target audience (not found)',
+  manageTargetAudiences: 'Manage Target Audiences',
+  newTargetAudience: 'New Target Audience',
+  noTargetAudiencesFound: 'No target audiences found',
+  targetAudienceName: 'Target Audience Name',
+  searchByNameOrDescription: 'Search by name or description...',
+  confirmDeleteTargetAudience: 'Are you sure you want to delete the target audience',
+  targetAudienceDeletedSuccessfully: 'Target audience deleted successfully',
+  errorDeletingTargetAudience: 'Error deleting target audience',
+
+  // Global Filters
+  globalFilters: 'Global Filters',
+  clearAll: 'Clear All',
+  byCampaign: 'By Campaign',
+  byCountry: 'By Country',
+  byCity: 'By City',
+  byNeighborhood: 'By Neighborhood',
+  byTargetAudience: 'By Target Audience',
+  countries: 'Countries',
+  cities: 'Cities',
+  neighborhoods: 'Neighborhoods',
+  targetAudiences: 'Target Audiences'
 }

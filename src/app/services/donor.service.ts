@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
 import { remult } from 'remult';
-import { Donor,  DonorPlace, DonorContact, DonorEvent, Event, Place, Donation } from '../../shared/entity';
-import { DonorController } from '../../shared/controllers/donor.controller';
-import { GlobalFilters, GlobalFilterService } from './global-filter.service';
 import { DonorMapController, DonorMapData } from '../../shared/controllers/donor-map.controller';
+import { DonorController } from '../../shared/controllers/donor.controller';
+import { Donation, Donor, DonorContact, DonorEvent, DonorPlace, Event, Place } from '../../shared/entity';
+import { GlobalFilters, GlobalFilterService } from './global-filter.service';
 
 @Injectable({
   providedIn: 'root'
@@ -15,7 +15,7 @@ export class DonorService {
   private eventRepo = remult.repo(Event);
   private donationRepo = remult.repo(Donation);
 
-  constructor(private globalFilterService: GlobalFilterService) {}
+  constructor(private globalFilterService: GlobalFilterService) { }
 
   async findAll(): Promise<Donor[]> {
     return await DonorController.findAll();
@@ -132,7 +132,8 @@ export class DonorService {
     const allDonations = await this.donationRepo.find({
       where: {
         donorId: { $in: donorIds }
-      }
+      },
+      include: { donor: true }
     });
 
     // Build maps
@@ -157,7 +158,7 @@ export class DonorService {
     });
 
     if (homeDonorPlace?.addressType?.description &&
-        homeAddressTypes.includes(homeDonorPlace.addressType.description)) {
+      homeAddressTypes.includes(homeDonorPlace.addressType.description)) {
       return homeDonorPlace.place;
     }
 
@@ -229,6 +230,8 @@ export class DonorService {
     const donorCountryIdMap = new Map<string, string>();
     const donorTotalDonationsMap = new Map<string, number>();
     const donorLastDonationDateMap = new Map<string, Date>();
+    const donorLastDonationAmountMap = new Map<string, number>();
+    const donorLastDonationCurrency = new Map<string, string>();
 
     // Process places
     allPlaces.forEach(dp => {
@@ -260,24 +263,36 @@ export class DonorService {
       }
     });
 
-    // Process donations - calculate average per donor (excluding exceptional donations)
+    // Process donations - calculate average per donor in last 12 months (excluding exceptional donations)
     const donorDonationsCount = new Map<string, number>();
     const donorDonationsSum = new Map<string, number>();
+
+    // Calculate date 12 months ago
+    const twelveMonthsAgo = new Date();
+    twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
 
     allDonations.forEach(donation => {
       if (!donation.donorId) return;
 
-      // Track last donation date (for all donations, not just non-exceptional)
+
+      // Track last donation date and amount (for all donations, not just non-exceptional)
       if (donation.donationDate) {
         const currentLastDate = donorLastDonationDateMap.get(donation.donorId);
         if (!currentLastDate || new Date(donation.donationDate) > currentLastDate) {
           donorLastDonationDateMap.set(donation.donorId, new Date(donation.donationDate));
+          donorLastDonationAmountMap.set(donation.donorId, donation.amount || 0);
+          donorLastDonationCurrency.set(donation.donorId, donation.currency || 'ILS');
         }
       }
 
-      // Skip exceptional donations (isExceptional) for average calculation
-      if (donation.isExceptional) return;
+      // Skip donations that have partners (shared donations)
+      if (donation.partnerIds && donation.partnerIds.length > 0 && donation.partnerIds.includes(donation.donor?.id!)) return;
 
+      // Skip donations older than 12 months for average calculation
+      if (donation.donationDate && new Date(donation.donationDate) < twelveMonthsAgo) return;
+
+      // Skip exceptional donations for average calculation
+      if (donation.isExceptional) return;
       const currentSum = donorDonationsSum.get(donation.donorId) || 0;
       const currentCount = donorDonationsCount.get(donation.donorId) || 0;
 
@@ -300,7 +315,10 @@ export class DonorService {
       donorBirthDateMap,
       donorCountryIdMap,
       donorTotalDonationsMap,
-      donorLastDonationDateMap
+      donorDonationsCount,
+      donorLastDonationDateMap,
+      donorLastDonationAmountMap,
+      donorLastDonationCurrency
     };
   }
 
@@ -316,7 +334,10 @@ export class DonorService {
       donorBirthDateMap: new Map<string, Date>(),
       donorCountryIdMap: new Map<string, string>(),
       donorTotalDonationsMap: new Map<string, number>(),
-      donorLastDonationDateMap: new Map<string, Date>()
+      donorDonationsCount: new Map<string, number>(),
+      donorLastDonationDateMap: new Map<string, Date>(),
+      donorLastDonationAmountMap: new Map<string, number>(),
+      donorLastDonationCurrency: new Map<string, string>()
     };
   }
 }

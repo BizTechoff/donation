@@ -8,14 +8,6 @@
   overflow: hidden;
   transition: all 0.3s ease;
 
-  &[dir="rtl"] {
-    direction: rtl;
-  }
-
-  &[dir="ltr"] {
-    direction: ltr;
-  }
-
   // Fullscreen mode
   &.fullscreen {
     position: fixed;

@@ -1,17 +1,17 @@
 <div class="audience-selection-modal">
   <h2 mat-dialog-title>
-    {{ args.title || ((i18n.terms$ | async)?.selectTargetAudienceTitle || 'בחירת קהל יעד') }}
+    {{ ((i18n.terms$ | async)?.selectTargetAudienceTitle || 'בחירת קהל יעד') }}
     <button mat-icon-button class="close-button" (click)="closeDialog()">
       <mat-icon>close</mat-icon>
     </button>
   </h2>
 
   <mat-dialog-content>
-    <!-- Search and Create New -->
-    <div class="search-section">
+    <!-- Header Row: Search and Create New Button -->
+    <div class="header-row">
       <mat-form-field appearance="outline" class="search-field">
-        <mat-label>חיפוש</mat-label>
-        <input matInput [(ngModel)]="searchTerm" placeholder="חפש לפי שם או תיאור...">
+        <mat-label>{{ (i18n.terms$ | async)?.search }}</mat-label>
+        <input matInput [(ngModel)]="searchTerm" [placeholder]="(i18n.terms$ | async)?.searchByNameOrDescription || ''">
         <button mat-icon-button matSuffix *ngIf="searchTerm" (click)="clearSearch()">
           <mat-icon>clear</mat-icon>
         </button>
@@ -20,61 +20,66 @@
 
       <button mat-raised-button color="accent" (click)="createNewAudience()">
         <mat-icon>add</mat-icon>
-        קהל יעד חדש
+        {{ (i18n.terms$ | async)?.newTargetAudience }}
       </button>
     </div>
 
-    <!-- Audiences List -->
-    <div class="audiences-list">
+    <!-- Audiences Table -->
+    <div class="audiences-table-container">
       <div *ngIf="getFilteredAudiences().length === 0" class="no-results">
-        לא נמצאו קהלי יעד
+        {{ (i18n.terms$ | async)?.noTargetAudiencesFound }}
       </div>
 
-      <mat-list>
-        <mat-list-item
-          *ngFor="let audience of getFilteredAudiences()"
-          class="audience-item"
-          [class.selected]="isAudienceSelected(audience)"
-          (click)="selectAudience(audience)">
-
-          <div class="audience-content">
-            <div class="audience-header">
-              <mat-icon *ngIf="args.multiSelect" class="checkbox-icon">
+      <table class="audiences-table" *ngIf="getFilteredAudiences().length > 0">
+        <thead>
+          <tr>
+            <th *ngIf="args.multiSelect" class="col-checkbox"></th>
+            <th class="col-name">{{ (i18n.terms$ | async)?.targetAudienceName }}</th>
+            <th class="col-donors">{{ (i18n.terms$ | async)?.donors }}</th>
+            <th class="col-created">{{ (i18n.terms$ | async)?.createdDate }}</th>
+            <th class="col-actions">{{ (i18n.terms$ | async)?.actions }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let audience of getFilteredAudiences()"
+              [class.selected]="isAudienceSelected(audience)"
+              (click)="selectAudience(audience)">
+            <td *ngIf="args.multiSelect" class="col-checkbox">
+              <mat-icon class="checkbox-icon">
                 {{ isAudienceSelected(audience) ? 'check_box' : 'check_box_outline_blank' }}
               </mat-icon>
-              <span class="audience-name">{{ audience.name }}</span>
-              <span class="donor-count">({{ audience.donorCount || 0 }} תורמים)</span>
-            </div>
-
-            <div class="audience-description" *ngIf="audience.description">
-              {{ audience.description }}
-            </div>
-
-            <div class="audience-meta">
-              <span class="created-date">נוצר: {{ audience.createdDate | date:'short' }}</span>
-            </div>
-
-            <div class="audience-actions" (click)="$event.stopPropagation()">
-              <button mat-icon-button (click)="editAudience(audience, $event)" matTooltip="עריכה">
+            </td>
+            <td class="col-name">
+              <div class="audience-name">{{ audience.name }}</div>
+              <div class="audience-description" *ngIf="audience.description">{{ audience.description }}</div>
+            </td>
+            <td class="col-donors">
+              <span class="donor-count">{{ audience.donorCount || 0 }}</span>
+            </td>
+            <td class="col-created">
+              {{ audience.createdDate | date:'dd/MM/yyyy' }}
+            </td>
+            <td class="col-actions" (click)="$event.stopPropagation()">
+              <button mat-icon-button (click)="editAudience(audience, $event)" [matTooltip]="(i18n.terms$ | async)?.edit">
                 <mat-icon>edit</mat-icon>
               </button>
-              <button mat-icon-button (click)="deleteAudience(audience, $event)" matTooltip="מחיקה" color="warn">
+              <button mat-icon-button (click)="deleteAudience(audience, $event)" [matTooltip]="(i18n.terms$ | async)?.delete" color="warn">
                 <mat-icon>delete</mat-icon>
               </button>
-            </div>
-          </div>
-        </mat-list-item>
-      </mat-list>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </mat-dialog-content>
 
   <mat-dialog-actions *ngIf="args.multiSelect">
     <button mat-raised-button color="primary" (click)="finishMultiSelect()">
       <mat-icon>done</mat-icon>
-      {{ (i18n.terms$ | async)?.selectButton || 'בחר' }} ({{ selectedAudiences.length }})
+      {{ (i18n.terms$ | async)?.selectButton }} ({{ selectedAudiences.length }})
     </button>
     <button mat-button (click)="closeDialog()">
-      ביטול
+      {{ (i18n.terms$ | async)?.cancel }}
     </button>
   </mat-dialog-actions>
 </div>

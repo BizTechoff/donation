@@ -21,15 +21,21 @@
   font-weight: bold;
 }
 
-.filters-menu {
+::ng-deep .filters-menu {
   min-width: 320px;
   max-width: 450px;
+
+  .mat-mdc-menu-content {
+    padding: 0 !important;
+  }
 
   .filters-content {
     padding: 16px;
     min-width: 300px;
-    max-height: 80vh;
-    overflow-y: auto;
+    border: 3px solid #667eea;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    background-color: #fafafa;
   }
 }
 
@@ -37,77 +43,83 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin: -16px -16px 16px -16px;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 5px 5px 0 0;
 
   h3 {
     margin: 0;
-    font-weight: 500;
-  }
-}
-
-.filter-field {
-  width: 100%;
-  margin-bottom: 12px;
-
-  &.date-field,
-  &.amount-field {
-    width: calc(50% - 8px);
+    font-weight: 600;
+    font-size: 16px;
   }
 
-  &.clickable-field {
-    cursor: pointer;
+  button {
+    color: white;
 
-    input {
-      cursor: pointer;
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.2);
     }
 
-    mat-icon {
-      pointer-events: none;
-    }
-
-    .clear-filter-btn {
-      pointer-events: all;
-
-      &:hover {
-        background-color: rgba(0, 0, 0, 0.04);
-      }
+    &:disabled {
+      color: rgba(255, 255, 255, 0.5);
     }
   }
 }
 
-.date-range-container,
-.amount-range-container {
+.filter-buttons {
   display: flex;
-  gap: 16px;
-  align-items: center;
-  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+
+  .filter-btn {
+    font-size: 13px;
+    border-color: #667eea;
+    color: #667eea;
+
+    &:hover {
+      background-color: rgba(102, 126, 234, 0.1);
+    }
+  }
 }
 
 .active-filters {
-  margin-top: 20px;
+  margin-top: 8px;
   padding-top: 16px;
   border-top: 1px solid #e0e0e0;
 
-  h4 {
-    margin: 0 0 12px 0;
-    font-size: 14px;
-    font-weight: 500;
-    color: #666;
-  }
-
-  mat-chip-set {
+  .filter-group {
     display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
+    flex-direction: column;
+    margin-bottom: 14px;
 
-  mat-chip {
-    font-size: 12px;
+    &:last-child {
+      margin-bottom: 0;
+    }
 
-    mat-icon {
-      font-size: 16px;
-      width: 16px;
-      height: 16px;
+    .group-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #667eea;
+      margin-bottom: 8px;
+    }
+
+    mat-chip-set {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    mat-chip {
+      font-size: 12px;
+
+      mat-icon {
+        font-size: 16px;
+        width: 16px;
+        height: 16px;
+      }
     }
   }
 }

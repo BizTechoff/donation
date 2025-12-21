@@ -64,15 +64,13 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
   
   async loadData() {
     try {
-      // Load campaigns
+      // Load all campaigns (including inactive ones to display their names in filters)
       this.campaigns = await this.campaignRepo.find({
-        where: { isActive: true },
         orderBy: { name: 'asc' as 'asc' }
       });
 
-      // Load countries
+      // Load all countries (including inactive ones to display their names in filters)
       this.countries = await this.countryRepo.find({
-        where: { isActive: true },
         orderBy: { name: 'asc' as 'asc' }
       });
 
@@ -81,7 +79,7 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
       this.cities = placeData.cities;
       this.neighborhoods = placeData.neighborhoods;
 
-      // Load target audiences (including inactive ones to display their names in filters)
+      // Load all target audiences (including inactive ones to display their names in filters)
       this.targetAudiences = await this.targetAudienceRepo.find({
         orderBy: { name: 'asc' as 'asc' }
       });
@@ -144,55 +142,7 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
 
   getTargetAudienceName(targetAudienceId: string): string {
     const targetAudience = this.targetAudiences.find(ta => ta.id === targetAudienceId);
-    return targetAudience?.name || `קהל יעד (לא נמצא)`;
-  }
-
-  getSelectedTargetAudiencesDisplay(): string {
-    const selectedIds = this.currentFilters.targetAudienceIds || [];
-    if (selectedIds.length === 0) {
-      return '';
-    }
-
-    const names = selectedIds.map(id => this.getTargetAudienceName(id));
-    return names.join(', ');
-  }
-
-  getSelectedCampaignsDisplay(): string {
-    const selectedIds = this.currentFilters.campaignIds || [];
-    if (selectedIds.length === 0) {
-      return '';
-    }
-
-    const names = selectedIds.map(id => this.getCampaignName(id));
-    return names.join(', ');
-  }
-
-  getSelectedCountriesDisplay(): string {
-    const selectedIds = this.currentFilters.countryIds || [];
-    if (selectedIds.length === 0) {
-      return '';
-    }
-
-    const names = selectedIds.map(id => this.getCountryDisplayName(id));
-    return names.join(', ');
-  }
-
-  getSelectedCitiesDisplay(): string {
-    const selectedIds = this.currentFilters.cityIds || [];
-    if (selectedIds.length === 0) {
-      return '';
-    }
-
-    return selectedIds.join(', ');
-  }
-
-  getSelectedNeighborhoodsDisplay(): string {
-    const selectedIds = this.currentFilters.neighborhoodIds || [];
-    if (selectedIds.length === 0) {
-      return '';
-    }
-
-    return selectedIds.join(', ');
+    return targetAudience?.name || this.i18n.terms.targetAudienceNotFound;
   }
 
   removeCampaignFilter(campaignId: string) {
@@ -252,7 +202,7 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
       (await import('../../routes/modals/campaign-selection-modal/campaign-selection-modal.component')).CampaignSelectionModalComponent,
       (modal: any) => {
         modal.args = {
-          title: 'בחירת קמפיין',
+          title: this.i18n.terms.selectCampaignTitle,
           multiSelect: true,
           selectedIds: this.currentFilters.campaignIds || []
         };
@@ -281,20 +231,17 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
       (await import('../../routes/modals/country-selection-modal/country-selection-modal.component')).CountrySelectionModalComponent,
       (modal: any) => {
         modal.args = {
-          title: 'בחירת מדינה',
+          title: this.i18n.terms.selectCountryTitle,
           multiSelect: true,
           selectedIds: this.currentFilters.countryIds || []
         };
       }
     );
 
-console.log('#############', result, JSON.stringify(result))
-
     // Only update if user actually made a selection (not null/undefined from cancel)
     if (result !== null && result !== undefined) {
       if (Array.isArray(result) && result.length > 0) {
         const selectedIds = result.map((c: Country) => c.id);
-        console.table(selectedIds)
         this.updateFilter('countryIds', selectedIds.length > 0 ? selectedIds : undefined);
       } else if (Array.isArray(result) && result.length === 0) {
         // User explicitly cleared all selections
@@ -313,7 +260,7 @@ console.log('#############', result, JSON.stringify(result))
       (await import('../../routes/modals/city-selection-modal/city-selection-modal.component')).CitySelectionModalComponent,
       (modal: any) => {
         modal.args = {
-          title: 'בחירת עיר',
+          title: this.i18n.terms.selectCityTitle,
           multiSelect: true,
           selectedCities: this.currentFilters.cityIds || [],
           countryId: this.currentFilters.countryIds && this.currentFilters.countryIds.length === 1
@@ -344,7 +291,7 @@ console.log('#############', result, JSON.stringify(result))
       (await import('../../routes/modals/neighborhood-selection-modal/neighborhood-selection-modal.component')).NeighborhoodSelectionModalComponent,
       (modal: any) => {
         modal.args = {
-          title: 'בחירת שכונה',
+          title: this.i18n.terms.selectNeighborhoodTitle,
           multiSelect: true,
           selectedNeighborhoods: this.currentFilters.neighborhoodIds || [],
           city: this.currentFilters.cityIds && this.currentFilters.cityIds.length === 1
@@ -375,7 +322,7 @@ console.log('#############', result, JSON.stringify(result))
     event.stopPropagation();
 
     const result = await this.ui.openAudienceSelection({
-      title: 'ניהול קהלי יעד',
+      title: this.i18n.terms.manageTargetAudiences,
       multiSelect: true,
       selectedIds: this.currentFilters.targetAudienceIds || []
     });

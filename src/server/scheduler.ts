@@ -146,7 +146,7 @@ async function sendEmailNotification(reminder: Reminder) {
     }
 
     body += `\n\nבברכה,\n`
-    body += `מערכת ניהול תרומות`
+    body += `פלטפורמת ניהול תרומות`
 
     // TODO: Replace with actual email sending service
     // For now, just log the email content

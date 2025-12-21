@@ -200,7 +200,7 @@
             {{ suggestion.isFromDatabase ? 'bookmark' : 'place' }}
           </mat-icon>
           <span class="address-text">{{ getDisplayAddress(suggestion) }}</span>
-          <!-- סמן "שמור" למקומות מהמערכת -->
+          <!-- סמן "שמור" למקומות מהפלטפורמת -->
           <mat-icon
             *ngIf="suggestion.isFromDatabase"
             class="saved-indicator"

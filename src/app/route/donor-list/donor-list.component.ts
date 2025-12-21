@@ -8,6 +8,7 @@ import { I18nService } from '../../i18n/i18n.service';
 import { DonorService } from '../../services/donor.service';
 import { GlobalFilterService } from '../../services/global-filter.service';
 import { HebrewDateService } from '../../services/hebrew-date.service';
+import { CurrencyType, PayerService } from '../../services/payer.service';
 import { ActiveFilter, FilterOption, NavigationRecord } from '../../shared/modal-navigation-header/modal-navigation-header.component';
 
 @Component({
@@ -32,7 +33,11 @@ export class DonorListComponent implements OnInit, OnDestroy {
   donorPhoneMap = new Map<string, string>();
   donorFullAddressMap = new Map<string, string>();
   donorTotalDonationsMap = new Map<string, number>();
+  donorDonationsCount = new Map<string, number>();
   donorLastDonationDateMap = new Map<string, Date>();
+  donorLastDonationAmountMap = new Map<string, number>();
+  donorLastDonationCurrency = new Map<string, string>();
+  currencyTypes: CurrencyType[] = [];
 
   // Navigation header properties
   allDonors: NavigationRecord[] = [];
@@ -58,10 +63,14 @@ export class DonorListComponent implements OnInit, OnDestroy {
     private donorService: DonorService,
     private globalFilterService: GlobalFilterService,
     private busy: BusyService,
-    private hebrewDateService: HebrewDateService
+    private hebrewDateService: HebrewDateService,
+    private payerService: PayerService
   ) { }
 
   async ngOnInit() {
+    // Load currency types
+    this.currencyTypes = await this.payerService.getCurrencyTypes();
+
     // Subscribe to filter changes
     this.subscription.add(
       this.globalFilterService.filters$.subscribe(() => {
@@ -117,7 +126,10 @@ export class DonorListComponent implements OnInit, OnDestroy {
         this.donorPhoneMap = relatedData.donorPhoneMap;
         this.donorFullAddressMap = relatedData.donorFullAddressMap;
         this.donorTotalDonationsMap = relatedData.donorTotalDonationsMap;
+        this.donorDonationsCount = relatedData.donorDonationsCount;
         this.donorLastDonationDateMap = relatedData.donorLastDonationDateMap;
+        this.donorLastDonationAmountMap = relatedData.donorLastDonationAmountMap;
+        this.donorLastDonationCurrency = relatedData.donorLastDonationCurrency;
 
       } catch (error) {
         console.error('Error refreshing donors:', error);
@@ -245,8 +257,22 @@ export class DonorListComponent implements OnInit, OnDestroy {
     return this.donorTotalDonationsMap.get(donorId) || 0;
   }
 
+  getDonorDonationsCount(donorId: string): number {
+    return this.donorDonationsCount.get(donorId) || 0;
+  }
+
   getDonorLastDonationDate(donorId: string): Date | undefined {
     return this.donorLastDonationDateMap.get(donorId);
+  }
+
+  getDonorLastDonationAmount(donorId: string): number {
+    return this.donorLastDonationAmountMap.get(donorId) || 0;
+  }
+
+  getCurrencySymbol(donorId: string): string {
+    const currency = this.donorLastDonationCurrency.get(donorId) || 'ILS';
+    const currencyType = this.currencyTypes.find(c => c.id === currency);
+    return currencyType?.symbol || '₪';
   }
 
   private async loadAllDonors() {

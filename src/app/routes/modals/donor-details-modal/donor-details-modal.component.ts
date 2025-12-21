@@ -166,7 +166,7 @@ export class DonorDetailsModalComponent implements OnInit {
           homeDonorPlace.addressTypeId = undefined;
           homeDonorPlace.isPrimary = true;
           homeDonorPlace.isActive = true;
-          homeDonorPlace.description = 'כתובת מגורים';
+          homeDonorPlace.description = 'בית';
           this.donorPlaces.push(homeDonorPlace);
         }
 
@@ -317,6 +317,7 @@ export class DonorDetailsModalComponent implements OnInit {
     if (birthDateEvent) {
       // Create a new DonorEvent (not saved to DB yet, just in memory)
       const donorEvent = this.donorEventRepo.create({
+        id: '',
         donorId: '', // Will be set when donor is saved
         eventId: birthDateEvent.id,
         date: undefined,
@@ -372,7 +373,7 @@ export class DonorDetailsModalComponent implements OnInit {
     if (this.args?.initialPlace) {// Create default "כתובת מגורים" place
       const homePlace = this.donorPlaceRepo.create({
         donorId: '', // Will be set when donor is saved
-        description: 'כתובת מגורים',
+        description: 'בית',
         isPrimary: true,
         isActive: true,
         place: this.args.initialPlace
@@ -695,24 +696,7 @@ export class DonorDetailsModalComponent implements OnInit {
         // Save donor places
         for (const donorPlace of this.donorPlaces) {
           donorPlace.donorId = this.donor.id;
-
-          // Create a clean object for saving to prevent Remult errors with null relations
-          // Only include scalar fields, not relation objects
-          const cleanPlace = this.donorPlaceRepo.create();
-          cleanPlace.id = donorPlace.id;
-          cleanPlace.donorId = donorPlace.donorId;
-          cleanPlace.placeId = donorPlace.placeId;
-          cleanPlace.addressTypeId = donorPlace.addressTypeId || undefined;
-          cleanPlace.description = donorPlace.description;
-          cleanPlace.isPrimary = donorPlace.isPrimary;
-          cleanPlace.isActive = donorPlace.isActive;
-          cleanPlace.createdDate = donorPlace.createdDate;
-          cleanPlace.updatedDate = donorPlace.updatedDate;
-
-          await this.donorPlaceRepo.save(cleanPlace);
-
-          // Update the original donorPlace with the saved ID to prevent duplicates on next save
-          donorPlace.id = cleanPlace.id;
+          await this.donorPlaceRepo.save(donorPlace);
         }
 
         // Save donor notes
@@ -971,7 +955,7 @@ export class DonorDetailsModalComponent implements OnInit {
     if (confirm('האם אתה בטוח שברצונך להסיר את האירוע?')) {
       try {
         // If the event has an ID, it was already saved to DB and needs to be deleted
-        if (donorEvent.id) {
+        if (donorEvent?.id?.length) {
           // Delete associated reminder if exists (find by sourceEntityId)
           try {
             const reminder = await remult.repo(Reminder).findFirst({
@@ -1028,6 +1012,7 @@ export class DonorDetailsModalComponent implements OnInit {
       }
 
       const newContact = this.donorContactRepo.create({
+        id: '',
         donorId: this.donor?.id || '',
         type: type,
         phoneNumber: type === 'phone' ? '' : undefined,
@@ -1050,13 +1035,13 @@ export class DonorDetailsModalComponent implements OnInit {
   async removeDonorContact(donorContact: DonorContact) {
     if (confirm('האם אתה בטוח שברצונך להסיר את איש הקשר?')) {
       try {
-        // Check if it has an ID (was already saved to DB)
-        if (donorContact.id) {
-          await this.donorContactRepo.delete(donorContact);
+        // Delete from DB if saved (has ID)
+        if (donorContact?.id?.length) {
+          await this.donorContactRepo.delete(donorContact.id);
         }
 
         // Remove from local array
-        const index = this.donorContacts.findIndex(dc => dc === donorContact);
+        const index = this.donorContacts.findIndex(dc => dc.id === donorContact.id);
         if (index > -1) {
           this.donorContacts.splice(index, 1);
         }
@@ -1099,7 +1084,7 @@ export class DonorDetailsModalComponent implements OnInit {
         homeDonorPlace.donor = this.donor
         homeDonorPlace.isPrimary = true;
         homeDonorPlace.isActive = true;
-        homeDonorPlace.description = 'כתובת מגורים';
+        homeDonorPlace.description = 'בית';
         this.donorPlaces.push(homeDonorPlace);
       }
       else {
@@ -1138,9 +1123,9 @@ export class DonorDetailsModalComponent implements OnInit {
   async removeDonorPlace(donorPlace: DonorPlace) {
     if (confirm('האם אתה בטוח שברצונך להסיר את הכתובת?')) {
       try {
-        // Check if it has an ID (was already saved to DB)
-        if (donorPlace.id) {
-          await this.donorPlaceRepo.delete(donorPlace);
+        // Delete from DB if saved (has ID)
+        if (donorPlace?.id?.length) {
+          await this.donorPlaceRepo.delete(donorPlace.id);
         }
 
         // Remove from local array
@@ -1209,6 +1194,7 @@ export class DonorDetailsModalComponent implements OnInit {
 
       // Create new note with selected type
       const newNote = this.donorNoteRepo.create({
+        id: '',
         donorId: this.donor?.id || '',
         noteType: result.noteType,
         noteTypeId: result.noteTypeId,
@@ -1228,9 +1214,10 @@ export class DonorDetailsModalComponent implements OnInit {
   async removeDonorNote(donorNote: DonorNote) {
     if (confirm('האם אתה בטוח שברצונך להסיר את ההערה?')) {
       try {
-        // Soft delete by setting isActive to false
-        donorNote.isActive = false;
-        await remult.repo(DonorNote).save(donorNote);
+        if (donorNote?.id?.length) {// Soft delete by setting isActive to false
+          donorNote.isActive = false;
+          await remult.repo(DonorNote).delete(donorNote);
+        }
 
         // Remove from local array
         const index = this.donorNotes.findIndex(dn => dn.id === donorNote.id);
@@ -1264,6 +1251,7 @@ export class DonorDetailsModalComponent implements OnInit {
   async addNewReceptionHour() {
     try {
       const newReceptionHour = this.donorReceptionHourRepo.create({
+        id: '',
         donorId: this.donor?.id || '',
         startTime: '',
         endTime: '',
@@ -1286,7 +1274,7 @@ export class DonorDetailsModalComponent implements OnInit {
     if (confirm('האם אתה בטוח שברצונך להסיר את טווח השעות?')) {
       try {
         // Check if it has an ID (was already saved to DB)
-        if (receptionHour.id) {
+        if (receptionHour?.id?.length) {
           await this.donorReceptionHourRepo.delete(receptionHour);
         }
 
@@ -2101,9 +2089,9 @@ export class DonorDetailsModalComponent implements OnInit {
           this.selectedCircles = [...this.selectedCircles, circleToAdd];
 
           // Save the updated circleIds to database only if this is an existing donor
-          if (!this.isNewDonor && this.donor.id) {
-            await remult.repo(Donor).save(this.donor);
-          }
+          // if (!this.isNewDonor && this.donor.id) {
+          //   await remult.repo(Donor).save(this.donor);
+          // }
 
           this.changed = true;
           console.log('Added circle:', circleToAdd.name);
@@ -2155,9 +2143,9 @@ export class DonorDetailsModalComponent implements OnInit {
     }
 
     // Save the updated circleIds to database only if this is an existing donor
-    if (!this.isNewDonor && this.donor.id) {
-      await remult.repo(Donor).save(this.donor);
-    }
+    // if (!this.isNewDonor && this.donor.id) {
+    //   await remult.repo(Donor).save(this.donor);
+    // }
 
     // Remove from selectedCircles
     const selectedIndex = this.selectedCircles.findIndex(c => c.id === circle.id);

@@ -1,5 +1,5 @@
 
-<button mat-icon-button 
+<button mat-icon-button
         [matMenuTriggerFor]="filtersMenu"
         [class.filters-active]="hasActiveFilters"
         matTooltip="{{ (i18n.terms$ | async)?.filters }}">
@@ -12,215 +12,100 @@
 
     <!-- Filter Header -->
     <div class="filters-header">
-      <h3>{{ (i18n.terms$ | async)?.filters }}</h3>
-      <button mat-icon-button (click)="clearFilters()" [disabled]="!hasActiveFilters">
+      <h3>{{ (i18n.terms$ | async)?.globalFilters }}</h3>
+      <button mat-icon-button (click)="clearFilters()" [disabled]="!hasActiveFilters"
+              [matTooltip]="(i18n.terms$ | async)?.clearAll || ''">
         <mat-icon>clear_all</mat-icon>
       </button>
     </div>
 
-    <!-- Campaign Filter -->
-    <mat-form-field appearance="outline" class="filter-field clickable-field" (click)="openCampaignSelectionModal($event)">
-      <mat-label>{{ (i18n.terms$ | async)?.campaign }}</mat-label>
-      <input matInput
-             [value]="getSelectedCampaignsDisplay()"
-             readonly
-             [placeholder]="(i18n.terms$ | async)?.selectCampaignPlaceholder || ''">
-      <button *ngIf="currentFilters.campaignIds && currentFilters.campaignIds.length > 0"
-              mat-icon-button
-              matSuffix
-              class="clear-filter-btn"
-              (click)="clearFilter('campaignIds'); $event.stopPropagation()"
-              matTooltip="נקה">
-        <mat-icon>close</mat-icon>
+    <!-- Filter Buttons -->
+    <div class="filter-buttons">
+      <button mat-stroked-button class="filter-btn" (click)="openCampaignSelectionModal($event)">
+        + {{ (i18n.terms$ | async)?.byCampaign }}
       </button>
-      <mat-icon *ngIf="!currentFilters.campaignIds || currentFilters.campaignIds.length === 0" matSuffix>search</mat-icon>
-    </mat-form-field>
-
-    <!-- Country Filter -->
-    <mat-form-field appearance="outline" class="filter-field clickable-field" (click)="openCountrySelectionModal($event)">
-      <mat-label>{{ (i18n.terms$ | async)?.country }}</mat-label>
-      <input matInput
-             [value]="getSelectedCountriesDisplay()"
-             readonly
-             [placeholder]="(i18n.terms$ | async)?.selectCountryPlaceholder || ''">
-      <button *ngIf="currentFilters.countryIds && currentFilters.countryIds.length > 0"
-              mat-icon-button
-              matSuffix
-              class="clear-filter-btn"
-              (click)="clearFilter('countryIds'); $event.stopPropagation()"
-              matTooltip="נקה">
-        <mat-icon>close</mat-icon>
+      <button mat-stroked-button class="filter-btn" (click)="openCountrySelectionModal($event)">
+        + {{ (i18n.terms$ | async)?.byCountry }}
       </button>
-      <mat-icon *ngIf="!currentFilters.countryIds || currentFilters.countryIds.length === 0" matSuffix>search</mat-icon>
-    </mat-form-field>
-
-    <!-- City Filter -->
-    <mat-form-field appearance="outline" class="filter-field clickable-field" (click)="openCitySelectionModal($event)">
-      <mat-label>עיר</mat-label>
-      <input matInput
-             [value]="getSelectedCitiesDisplay()"
-             readonly
-             [placeholder]="(i18n.terms$ | async)?.selectCityPlaceholder || ''">
-      <button *ngIf="currentFilters.cityIds && currentFilters.cityIds.length > 0"
-              mat-icon-button
-              matSuffix
-              class="clear-filter-btn"
-              (click)="clearFilter('cityIds'); $event.stopPropagation()"
-              matTooltip="נקה">
-        <mat-icon>close</mat-icon>
+      <button mat-stroked-button class="filter-btn" (click)="openCitySelectionModal($event)">
+        + {{ (i18n.terms$ | async)?.byCity }}
       </button>
-      <mat-icon *ngIf="!currentFilters.cityIds || currentFilters.cityIds.length === 0" matSuffix>search</mat-icon>
-    </mat-form-field>
-
-    <!-- Neighborhood Filter -->
-    <mat-form-field appearance="outline" class="filter-field clickable-field" (click)="openNeighborhoodSelectionModal($event)">
-      <mat-label>שכונה</mat-label>
-      <input matInput
-             [value]="getSelectedNeighborhoodsDisplay()"
-             readonly
-             [placeholder]="(i18n.terms$ | async)?.selectNeighborhoodPlaceholder || ''">
-      <button *ngIf="currentFilters.neighborhoodIds && currentFilters.neighborhoodIds.length > 0"
-              mat-icon-button
-              matSuffix
-              class="clear-filter-btn"
-              (click)="clearFilter('neighborhoodIds'); $event.stopPropagation()"
-              matTooltip="נקה">
-        <mat-icon>close</mat-icon>
+      <button mat-stroked-button class="filter-btn" (click)="openNeighborhoodSelectionModal($event)">
+        + {{ (i18n.terms$ | async)?.byNeighborhood }}
       </button>
-      <mat-icon *ngIf="!currentFilters.neighborhoodIds || currentFilters.neighborhoodIds.length === 0" matSuffix>search</mat-icon>
-    </mat-form-field>
-
-    <!-- Target Audience Filter -->
-    <mat-form-field appearance="outline" class="filter-field clickable-field" (click)="openAudienceSelectionModal($event)">
-      <mat-label>קהל יעד</mat-label>
-      <input matInput
-             [value]="getSelectedTargetAudiencesDisplay()"
-             readonly
-             [placeholder]="(i18n.terms$ | async)?.selectTargetAudiencePlaceholder || ''">
-      <button *ngIf="currentFilters.targetAudienceIds && currentFilters.targetAudienceIds.length > 0"
-              mat-icon-button
-              matSuffix
-              class="clear-filter-btn"
-              (click)="clearFilter('targetAudienceIds'); $event.stopPropagation()"
-              matTooltip="נקה">
-        <mat-icon>close</mat-icon>
+      <button mat-stroked-button class="filter-btn" (click)="openAudienceSelectionModal($event)">
+        + {{ (i18n.terms$ | async)?.byTargetAudience }}
       </button>
-      <mat-icon *ngIf="!currentFilters.targetAudienceIds || currentFilters.targetAudienceIds.length === 0" matSuffix>search</mat-icon>
-    </mat-form-field>
+    </div>
 
-    <!-- Date Range -->
-    <!-- <div class="date-range-container">
-      <mat-form-field appearance="outline" class="filter-field date-field">
-        <mat-label>{{ (i18n.terms$ | async)?.fromDate }}</mat-label>
-        <input matInput
-               [matDatepicker]="fromPicker"
-               [value]="currentFilters.dateFrom"
-               [max]="currentFilters.dateTo"
-               (dateChange)="onDateFromChange($event.value)">
-        <mat-datepicker-toggle matSuffix [for]="fromPicker"></mat-datepicker-toggle>
-        <mat-datepicker #fromPicker></mat-datepicker>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline" class="filter-field date-field">
-        <mat-label>{{ (i18n.terms$ | async)?.toDate }}</mat-label>
-        <input matInput
-               [matDatepicker]="toPicker"
-               [value]="currentFilters.dateTo"
-               [min]="currentFilters.dateFrom"
-               (dateChange)="onDateToChange($event.value)">
-        <mat-datepicker-toggle matSuffix [for]="toPicker"></mat-datepicker-toggle>
-        <mat-datepicker #toPicker></mat-datepicker>
-      </mat-form-field>
-    </div> -->
-
-    <!-- Amount Range -->
-    <!-- <div class="amount-range-container">
-      <mat-form-field appearance="outline" class="filter-field amount-field">
-        <mat-label>{{ (i18n.terms$ | async)?.minAmount }}</mat-label>
-        <input matInput
-               type="number"
-               [value]="currentFilters.amountMin || ''"
-               [max]="currentFilters.amountMax"
-               (input)="onAmountMinInput($event)">
-      </mat-form-field>
-
-      <mat-form-field appearance="outline" class="filter-field amount-field">
-        <mat-label>{{ (i18n.terms$ | async)?.maxAmount }}</mat-label>
-        <input matInput
-               type="number"
-               [value]="currentFilters.amountMax || ''"
-               [min]="currentFilters.amountMin"
-               (input)="onAmountMaxInput($event)">
-      </mat-form-field>
-    </div> -->
-
-    <!-- Active Filters Chips -->
+    <!-- Active Filters - Grouped by Type -->
     <div *ngIf="hasActiveFilters" class="active-filters">
-      <h4>{{ (i18n.terms$ | async)?.activeFilters }}</h4>
-      <mat-chip-set>
-        <mat-chip *ngFor="let campaignId of currentFilters.campaignIds || []"
-                  [removable]="true"
-                  (removed)="removeCampaignFilter(campaignId)">
-          {{ (i18n.terms$ | async)?.campaign }}: {{ getCampaignName(campaignId) }}
-          <mat-icon matChipRemove>cancel</mat-icon>
-        </mat-chip>
 
-        <mat-chip *ngFor="let countryId of currentFilters.countryIds || []"
-                  [removable]="true"
-                  (removed)="removeCountryFilter(countryId)">
-          {{ (i18n.terms$ | async)?.country }}: {{ getCountryDisplayName(countryId) }}
-          <mat-icon matChipRemove>cancel</mat-icon>
-        </mat-chip>
+      <!-- Campaigns Group -->
+      <div *ngIf="currentFilters.campaignIds && currentFilters.campaignIds.length > 0" class="filter-group">
+        <span class="group-label">{{ (i18n.terms$ | async)?.campaigns }}:</span>
+        <mat-chip-set>
+          <mat-chip *ngFor="let campaignId of currentFilters.campaignIds"
+                    [removable]="true"
+                    (removed)="removeCampaignFilter(campaignId)">
+            {{ getCampaignName(campaignId) }}
+            <mat-icon matChipRemove>cancel</mat-icon>
+          </mat-chip>
+        </mat-chip-set>
+      </div>
 
-        <mat-chip *ngFor="let city of currentFilters.cityIds || []"
-                  [removable]="true"
-                  (removed)="removeCityFilter(city)">
-          עיר: {{ city }}
-          <mat-icon matChipRemove>cancel</mat-icon>
-        </mat-chip>
+      <!-- Countries Group -->
+      <div *ngIf="currentFilters.countryIds && currentFilters.countryIds.length > 0" class="filter-group">
+        <span class="group-label">{{ (i18n.terms$ | async)?.countries }}:</span>
+        <mat-chip-set>
+          <mat-chip *ngFor="let countryId of currentFilters.countryIds"
+                    [removable]="true"
+                    (removed)="removeCountryFilter(countryId)">
+            {{ getCountryDisplayName(countryId) }}
+            <mat-icon matChipRemove>cancel</mat-icon>
+          </mat-chip>
+        </mat-chip-set>
+      </div>
 
-        <mat-chip *ngFor="let neighborhood of currentFilters.neighborhoodIds || []"
-                  [removable]="true"
-                  (removed)="removeNeighborhoodFilter(neighborhood)">
-          שכונה: {{ neighborhood }}
-          <mat-icon matChipRemove>cancel</mat-icon>
-        </mat-chip>
+      <!-- Cities Group -->
+      <div *ngIf="currentFilters.cityIds && currentFilters.cityIds.length > 0" class="filter-group">
+        <span class="group-label">{{ (i18n.terms$ | async)?.cities }}:</span>
+        <mat-chip-set>
+          <mat-chip *ngFor="let city of currentFilters.cityIds"
+                    [removable]="true"
+                    (removed)="removeCityFilter(city)">
+            {{ city }}
+            <mat-icon matChipRemove>cancel</mat-icon>
+          </mat-chip>
+        </mat-chip-set>
+      </div>
 
-        <mat-chip *ngFor="let targetAudienceId of currentFilters.targetAudienceIds || []"
-                  [removable]="true"
-                  (removed)="removeTargetAudienceFilter(targetAudienceId)">
-          קהל יעד: {{ getTargetAudienceName(targetAudienceId) }}
-          <mat-icon matChipRemove>cancel</mat-icon>
-        </mat-chip>
+      <!-- Neighborhoods Group -->
+      <div *ngIf="currentFilters.neighborhoodIds && currentFilters.neighborhoodIds.length > 0" class="filter-group">
+        <span class="group-label">{{ (i18n.terms$ | async)?.neighborhoods }}:</span>
+        <mat-chip-set>
+          <mat-chip *ngFor="let neighborhood of currentFilters.neighborhoodIds"
+                    [removable]="true"
+                    (removed)="removeNeighborhoodFilter(neighborhood)">
+            {{ neighborhood }}
+            <mat-icon matChipRemove>cancel</mat-icon>
+          </mat-chip>
+        </mat-chip-set>
+      </div>
 
-        <mat-chip *ngIf="currentFilters.dateFrom"
-                  [removable]="true"
-                  (removed)="clearFilter('dateFrom')">
-          {{ (i18n.terms$ | async)?.fromDate }}: {{ currentFilters.dateFrom | date:'short' }}
-          <mat-icon matChipRemove>cancel</mat-icon>
-        </mat-chip>
+      <!-- Target Audiences Group -->
+      <div *ngIf="currentFilters.targetAudienceIds && currentFilters.targetAudienceIds.length > 0" class="filter-group">
+        <span class="group-label">{{ (i18n.terms$ | async)?.targetAudiences }}:</span>
+        <mat-chip-set>
+          <mat-chip *ngFor="let targetAudienceId of currentFilters.targetAudienceIds"
+                    [removable]="true"
+                    (removed)="removeTargetAudienceFilter(targetAudienceId)">
+            {{ getTargetAudienceName(targetAudienceId) }}
+            <mat-icon matChipRemove>cancel</mat-icon>
+          </mat-chip>
+        </mat-chip-set>
+      </div>
 
-        <mat-chip *ngIf="currentFilters.dateTo"
-                  [removable]="true"
-                  (removed)="clearFilter('dateTo')">
-          {{ (i18n.terms$ | async)?.toDate }}: {{ currentFilters.dateTo | date:'short' }}
-          <mat-icon matChipRemove>cancel</mat-icon>
-        </mat-chip>
-
-        <mat-chip *ngIf="currentFilters.amountMin !== undefined"
-                  [removable]="true"
-                  (removed)="clearFilter('amountMin')">
-          {{ (i18n.terms$ | async)?.minAmount }}: {{ currentFilters.amountMin }}
-          <mat-icon matChipRemove>cancel</mat-icon>
-        </mat-chip>
-
-        <mat-chip *ngIf="currentFilters.amountMax !== undefined"
-                  [removable]="true"
-                  (removed)="clearFilter('amountMax')">
-          {{ (i18n.terms$ | async)?.maxAmount }}: {{ currentFilters.amountMax }}
-          <mat-icon matChipRemove>cancel</mat-icon>
-        </mat-chip>
-      </mat-chip-set>
     </div>
   </div>
 </mat-menu>

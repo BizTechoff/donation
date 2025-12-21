@@ -311,8 +311,8 @@ export const termsHe = {
   profile: 'פרופיל',
 
   // Home Page - Welcome Section
-  donationManagementSystem: 'מערכת לניהול גיוס תרומות',
-  advancedSystemDescription: 'מערכת מתקדמת לניהול תרומות, קמפיינים ותורמים',
+  donationManagementSystem: 'פלטפורמת לניהול גיוס תרומות',
+  advancedSystemDescription: 'פלטפורמת מתקדמת לניהול תרומות, קמפיינים ותורמים',
   raisedToDate: '₪ נאספו עד היום',
   activeDonorsLabel: 'תורמים פעילים',
   campaignsCompleted: 'קמפיינים הושלמו',
@@ -331,13 +331,13 @@ export const termsHe = {
   reportsAnalyticsFeature: 'דוחות',
   reportsAnalyticsDescription: 'דוחות מפורטים, גרפים וניתוחים סטטיסטיים',
   readyToStart: 'מוכנים להתחיל?',
-  joinSystemDescription: 'הצטרפו למערכת וקבלו גישה לכל התכונות המתקדמות',
+  joinSystemDescription: 'הצטרפו לפלטפורמת וקבלו גישה לכל התכונות המתקדמות',
   systemLogin: 'התחברות למערכת',
   newRegistration: 'הרשמה חדשה',
 
   // Home Page - Dashboard Section
   helloUser: 'שלום {name}! 👋',
-  activitySummary: 'הנה סיכום פעילות המערכת שלך',
+  activitySummary: 'הנה סיכום פעילות הפלטפורמת שלך',
   totalDonationsTitle: 'סה"כ תרומות',
   donationsCountDynamic: '{count} תרומות',
   activeDonorsTitle: 'תורמים פעילים',
@@ -378,6 +378,7 @@ export const termsHe = {
   hasidi: 'חסידי',
   name: 'שם',
   totalDonationsHeader: 'ממוצע תרומות',
+  inLast12Months: 'ב-12 החודשים האחרונים',
   lastDonation: 'תרומה אחרונה',
   active: 'פעיל',
   inactive: 'לא פעיל',
@@ -1709,5 +1710,30 @@ export const termsHe = {
   allBlessingTypes: 'כל סוגי הברכות',
   memorialDayDescription: 'נציבים ליום מיוחד',
   activeCertificates: 'נציבים פעילים',
-  activeCertificatesDay: 'נציבי יום פעילים'
+  activeCertificatesDay: 'נציבי יום פעילים',
+
+  // Target Audience Selection Modal
+  targetAudience: 'קהל יעד',
+  targetAudienceNotFound: 'קהל יעד (לא נמצא)',
+  manageTargetAudiences: 'ניהול קהלי יעד',
+  newTargetAudience: 'קהל יעד חדש',
+  noTargetAudiencesFound: 'לא נמצאו קהלי יעד',
+  targetAudienceName: 'שם קהל היעד',
+  searchByNameOrDescription: 'חפש לפי שם או תיאור...',
+  confirmDeleteTargetAudience: 'האם אתה בטוח שברצונך למחוק את קהל היעד',
+  targetAudienceDeletedSuccessfully: 'קהל היעד נמחק בהצלחה',
+  errorDeletingTargetAudience: 'שגיאה במחיקת קהל היעד',
+
+  // Global Filters
+  globalFilters: 'פילטרים גלובליים',
+  clearAll: 'נקה הכל',
+  byCampaign: 'לפי קמפיין',
+  byCountry: 'לפי מדינה',
+  byCity: 'לפי עיר',
+  byNeighborhood: 'לפי שכונה',
+  byTargetAudience: 'לפי קהל יעד',
+  countries: 'מדינות',
+  cities: 'ערים',
+  neighborhoods: 'שכונות',
+  targetAudiences: 'קהלי יעד'
 }

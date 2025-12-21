@@ -42,7 +42,7 @@ export class EmailController {
         <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 30px 0;">
 
         <p style="font-size: 12px; color: #95a5a6; text-align: center;">
-          אימייל זה נשלח אוטומטית ממערכת ניהול התרומות
+          אימייל זה נשלח אוטומטית מפלטפורמת ניהול התרומות
         </p>
       </div>
     `;

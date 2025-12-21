@@ -64,16 +64,25 @@ export class NeighborhoodSelectionModalComponent implements OnInit {
     });
   }
 
-  // Filter neighborhoods based on search term
+  // Filter neighborhoods based on search term, with selected items first in multi-select mode
   getFilteredNeighborhoods(): NeighborhoodData[] {
-    if (!this.searchTerm.trim()) {
-      return this.availableNeighborhoods;
+    let neighborhoods = this.availableNeighborhoods;
+
+    if (this.searchTerm.trim()) {
+      const term = this.searchTerm.toLowerCase();
+      neighborhoods = neighborhoods.filter(neighborhoodData =>
+        neighborhoodData.neighborhood?.toLowerCase().includes(term)
+      );
     }
 
-    const term = this.searchTerm.toLowerCase();
-    return this.availableNeighborhoods.filter(neighborhoodData =>
-      neighborhoodData.neighborhood?.toLowerCase().includes(term)
-    );
+    // In multi-select mode, show selected items first
+    if (this.args?.multiSelect) {
+      const selected = neighborhoods.filter(n => this.isNeighborhoodSelected(n.neighborhood));
+      const unselected = neighborhoods.filter(n => !this.isNeighborhoodSelected(n.neighborhood));
+      return [...selected, ...unselected];
+    }
+
+    return neighborhoods;
   }
 
   // Select neighborhood and close dialog immediately (single select mode)

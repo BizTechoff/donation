@@ -1,5 +1,5 @@
 import { Component } from '@angular/core'
-import { I18nService, Language } from './i18n.service'
+import { I18nService } from './i18n.service'
 
 @Component({
   selector: 'app-language-switcher',
@@ -44,7 +44,7 @@ import { I18nService, Language } from './i18n.service'
   `]
 })
 export class LanguageSwitcherComponent {
-  constructor(public i18n: I18nService) {}
+  constructor(public i18n: I18nService) { }
 
   get availableLanguages() {
     return this.i18n.getAvailableLanguages()
@@ -52,6 +52,7 @@ export class LanguageSwitcherComponent {
 
   toggleLanguage(): void {
     this.i18n.switchLanguage()
+    window?.location.reload()
   }
 
   getCurrentLanguageIcon(): string {
@@ -59,7 +60,7 @@ export class LanguageSwitcherComponent {
   }
 
   getToggleTooltip(): string {
-    return this.i18n.currentLanguage === 'he' 
+    return this.i18n.currentLanguage === 'he'
       ? 'Switch to English'
       : 'עבור לעברית'
   }

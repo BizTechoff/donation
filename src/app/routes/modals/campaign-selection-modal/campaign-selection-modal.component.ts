@@ -65,17 +65,26 @@ export class CampaignSelectionModalComponent implements OnInit {
     });
   }
 
-  // Filter campaigns based on search term
+  // Filter campaigns based on search term, with selected items first in multi-select mode
   getFilteredCampaigns(): Campaign[] {
-    if (!this.searchTerm.trim()) {
-      return this.availableCampaigns;
+    let campaigns = this.availableCampaigns;
+
+    if (this.searchTerm.trim()) {
+      const term = this.searchTerm.toLowerCase();
+      campaigns = campaigns.filter(campaign =>
+        campaign.name?.toLowerCase().includes(term) ||
+        campaign.description?.toLowerCase().includes(term)
+      );
     }
 
-    const term = this.searchTerm.toLowerCase();
-    return this.availableCampaigns.filter(campaign =>
-      campaign.name?.toLowerCase().includes(term) ||
-      campaign.description?.toLowerCase().includes(term)
-    );
+    // In multi-select mode, show selected items first
+    if (this.args.multiSelect) {
+      const selected = campaigns.filter(c => this.isCampaignSelected(c));
+      const unselected = campaigns.filter(c => !this.isCampaignSelected(c));
+      return [...selected, ...unselected];
+    }
+
+    return campaigns;
   }
 
   // Select campaign and close dialog immediately (single select mode)

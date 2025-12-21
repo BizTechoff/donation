@@ -178,7 +178,6 @@
 .main-content-layout {
   display: flex;
   gap: 24px;
-  direction: rtl;
 }
 
 .left-column {
@@ -352,7 +351,6 @@
   padding: 20px 24px;
   background: #f8f9fa;
   border-top: 1px solid #e9ecef;
-  direction: rtl;
 
   button {
     min-width: 120px;
@@ -436,14 +434,6 @@
 
   .modal-header {
     flex-direction: row-reverse;
-  }
-
-  .main-content-layout {
-    direction: rtl;
-  }
-
-  .form-row {
-    direction: rtl;
   }
 
   .form-group label {
