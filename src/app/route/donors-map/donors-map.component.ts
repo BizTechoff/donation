@@ -120,6 +120,10 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
       this.addDonationForDonor(donorId);
     };
 
+    (window as any).openDonorDonations = (donorId: string, donorName: string) => {
+      this.openDonorDonations(donorId, donorName);
+    };
+
     // Subscribe to global filter changes - skip first emit to avoid double load
     this.subscription.add(
       this.globalFilterService.filters$.subscribe((filters) => {
@@ -618,33 +622,48 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
         </div>
         <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin-top: 10px;">
           <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-            <span><strong>💰 ${this.i18n.terms.totalDonationsLabel}:</strong></span>
+            <span><strong>💰 <a href="javascript:void(0)" onclick="window.openDonorDonations('${donorData.donor.id}', '${donorData.donor.lastAndFirstName.replace(/'/g, "\\'")}')" style="color: #3498db; text-decoration: underline; cursor: pointer;">${this.i18n.terms.totalDonationsLabel}</a>:</strong></span>
             <div style="text-align: left;">
               <span>${donorData.stats.totalDonationsCurrencySymbol}${donorData.stats.totalDonations.toLocaleString()}</span>
-              ${donorData.stats.totalDonationsPartnerCount > 0 ? `<div style="font-size: 11px; color: #7f8c8d;">(שותף ב: ${donorData.stats.totalDonationsPartnerCount})</div>` : ''}
             </div>
           </div>
           <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
             <span><strong>📊 ${this.i18n.terms.donationCountLabel}:</strong></span>
             <div style="text-align: left;">
               <span>${donorData.stats.donationCount}</span>
-              ${donorData.stats.donationCountPartnerCount > 0 ? `<div style="font-size: 11px; color: #7f8c8d;">(שותף ב: ${donorData.stats.donationCountPartnerCount})</div>` : ''}
             </div>
           </div>
           <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
             <span><strong>📈 ${this.i18n.terms.averageDonationLabel}:</strong></span>
             <div style="text-align: left;">
               <span>${donorData.stats.averageDonationCurrencySymbol}${donorData.stats.averageDonation.toLocaleString()}</span>
-              ${donorData.stats.averageDonationPartnerCount > 0 ? `<div style="font-size: 11px; color: #7f8c8d;">(שותף ב: ${donorData.stats.averageDonationPartnerCount})</div>` : ''}
             </div>
           </div>
-          <div style="display: flex; justify-content: space-between;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
             <span><strong>📅 ${this.i18n.terms.lastDonationLabel}:</strong></span>
             <div style="text-align: left;">
               <span>${lastDonationText}</span>
-              ${donorData.stats.lastDonationAmount > 0 ? `<div style="font-size: 11px; color: #27ae60;">(${donorData.stats.lastDonationCurrencySymbol}${donorData.stats.lastDonationAmount.toLocaleString()})</div>` : ''}
+              ${donorData.stats.lastDonationAmount > 0 ? `<div style="font-size: 11px; color: #27ae60;">(${donorData.stats.lastDonationCurrencySymbol}${donorData.stats.lastDonationAmount.toLocaleString()}${donorData.stats.lastDonationIsPartner ? ' - שותף' : ''})</div>` : ''}
             </div>
           </div>
+          ${donorData.stats.partnerDonationsCount > 0 ? `
+          <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+            <span><strong>🤝 שותף:</strong></span>
+            <div style="text-align: left;">
+              <span>${donorData.stats.partnerDonationsCount} תרומות</span>
+              <div style="font-size: 11px; color: #7f8c8d;">(סה"כ: ${donorData.stats.partnerDonationsCurrencySymbol}${donorData.stats.partnerDonationsTotal.toLocaleString()})</div>
+            </div>
+          </div>
+          ` : ''}
+          ${donorData.stats.commitmentCount > 0 ? `
+          <div style="display: flex; justify-content: space-between;">
+            <span><strong>📝 התחייבויות:</strong></span>
+            <div style="text-align: left;">
+              <span>${donorData.stats.commitmentCount}</span>
+              <div style="font-size: 11px; color: #7f8c8d;">(סה"כ: ${donorData.stats.commitmentCurrencySymbol}${donorData.stats.commitmentTotal.toLocaleString()})</div>
+            </div>
+          </div>
+          ` : ''}
         </div>
       </div>
     `;
@@ -756,6 +775,10 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
         this.addMarkersToMap();
       });
     }
+  }
+
+  async openDonorDonations(donorId: string, donorName: string) {
+    await this.ui.donorDonationsDialog(donorId, 'donations', donorName);
   }
 
   async togglePolygonMode() {
@@ -1098,5 +1121,6 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     // Clean up global functions
     delete (window as any).openDonorDetails;
     delete (window as any).addDonationForDonor;
+    delete (window as any).openDonorDonations;
   }
 }

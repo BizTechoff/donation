@@ -1,6 +1,7 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { remult } from 'remult';
 import { Subscription } from 'rxjs';
+import { DonorMapController, DonorMapData } from '../../../shared/controllers/donor-map.controller';
 import { Donor, DonorPlace, User } from '../../../shared/entity';
 import { BusyService } from '../../common-ui-elements/src/angular/wait/busy-service';
 import { UIToolsService } from '../../common/UIToolsService';
@@ -8,7 +9,6 @@ import { I18nService } from '../../i18n/i18n.service';
 import { DonorService } from '../../services/donor.service';
 import { GlobalFilterService } from '../../services/global-filter.service';
 import { HebrewDateService } from '../../services/hebrew-date.service';
-import { PayerService } from '../../services/payer.service';
 import { ActiveFilter, FilterOption, NavigationRecord } from '../../shared/modal-navigation-header/modal-navigation-header.component';
 
 @Component({
@@ -28,18 +28,8 @@ export class DonorListComponent implements OnInit, OnDestroy {
   // Expose Math to template
   Math = Math;
 
-  // Maps for donor-related data
-  donorEmailMap = new Map<string, string>();
-  donorPhoneMap = new Map<string, string>();
-  donorFullAddressMap = new Map<string, string>();
-  donorTotalDonationsMap = new Map<string, number>();
-  donorDonationsCount = new Map<string, number>();
-  donorLastDonationDateMap = new Map<string, Date>();
-  donorLastDonationAmountMap = new Map<string, number>();
-  donorLastDonationCurrency = new Map<string, string>();
-  donorLastDonationReason = new Map<string, string>();
-  // Currency types with rates
-  currencyTypes = this.payerService.getCurrencyTypesRecord()
+  // Map for donor stats from DonorMapController
+  donorDataMap = new Map<string, DonorMapData>();
 
 
   // Navigation header properties
@@ -66,14 +56,10 @@ export class DonorListComponent implements OnInit, OnDestroy {
     private donorService: DonorService,
     private globalFilterService: GlobalFilterService,
     private busy: BusyService,
-    private hebrewDateService: HebrewDateService,
-    private payerService: PayerService
+    private hebrewDateService: HebrewDateService
   ) { }
 
   async ngOnInit() {
-    // Load currency types
-    this.currencyTypes = this.payerService.getCurrencyTypesRecord();
-
     // Subscribe to filter changes
     this.subscription.add(
       this.globalFilterService.filters$.subscribe(() => {
@@ -119,21 +105,16 @@ export class DonorListComponent implements OnInit, OnDestroy {
 
         console.log('refreshData: Loaded', this.donors.length, 'donors');
 
-        // Load all related data efficiently using DonorService
-        const relatedData = await this.donorService.loadDonorRelatedData(
+        // Load all related data using DonorMapController (same as map popup)
+        const donorDataList = await DonorMapController.loadDonorsMapDataByIds(
           this.donors.map(d => d.id)
         );
 
-        // Store in maps for easy lookup
-        this.donorEmailMap = relatedData.donorEmailMap;
-        this.donorPhoneMap = relatedData.donorPhoneMap;
-        this.donorFullAddressMap = relatedData.donorFullAddressMap;
-        this.donorTotalDonationsMap = relatedData.donorTotalDonationsMap;
-        this.donorDonationsCount = relatedData.donorDonationsCount;
-        this.donorLastDonationDateMap = relatedData.donorLastDonationDateMap;
-        this.donorLastDonationAmountMap = relatedData.donorLastDonationAmountMap;
-        this.donorLastDonationCurrency = relatedData.donorLastDonationCurrency;
-        this.donorLastDonationReason = relatedData.donorLastDonationReason;
+        // Store in map for easy lookup
+        this.donorDataMap.clear();
+        donorDataList.forEach(data => {
+          this.donorDataMap.set(data.donor.id, data);
+        });
 
       } catch (error) {
         console.error('Error refreshing donors:', error);
@@ -245,42 +226,49 @@ export class DonorListComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Helper methods to get donor-related data from maps
+  // Helper methods to get donor-related data from DonorMapData
+  getDonorData(donorId: string): DonorMapData | undefined {
+    return this.donorDataMap.get(donorId);
+  }
+
   getDonorEmail(donorId: string): string {
-    return this.donorEmailMap.get(donorId) || '-';
+    return this.donorDataMap.get(donorId)?.email || '-';
   }
 
   getDonorPhone(donorId: string): string {
-    return this.donorPhoneMap.get(donorId) || '-';
+    return this.donorDataMap.get(donorId)?.phone || '-';
   }
 
   getDonorAddress(donorId: string): string {
-    return this.donorFullAddressMap.get(donorId) || '-';
+    return this.donorDataMap.get(donorId)?.fullAddress || '-';
   }
 
-  getDonorTotalDonations(donorId: string): number {
-    return this.donorTotalDonationsMap.get(donorId) || 0;
+  getDonorAverageDonation(donorId: string): number {
+    return this.donorDataMap.get(donorId)?.stats.averageDonation || 0;
+  }
+
+  getDonorAverageDonationCurrencySymbol(donorId: string): string {
+    return this.donorDataMap.get(donorId)?.stats.averageDonationCurrencySymbol || '₪';
   }
 
   getDonorDonationsCount(donorId: string): number {
-    return this.donorDonationsCount.get(donorId) || 0;
+    return this.donorDataMap.get(donorId)?.stats.donationCount || 0;
   }
 
   getDonorLastDonationDate(donorId: string): Date | undefined {
-    return this.donorLastDonationDateMap.get(donorId);
+    return this.donorDataMap.get(donorId)?.stats.lastDonationDate || undefined;
   }
 
   getDonorLastDonationAmount(donorId: string): number {
-    return this.donorLastDonationAmountMap.get(donorId) || 0;
+    return this.donorDataMap.get(donorId)?.stats.lastDonationAmount || 0;
   }
 
-  getCurrencySymbol(donorId: string): string {
-    const currencyId = this.donorLastDonationCurrency.get(donorId)
-    return currencyId ? this.currencyTypes[currencyId]?.symbol : ''
+  getDonorLastDonationCurrencySymbol(donorId: string): string {
+    return this.donorDataMap.get(donorId)?.stats.lastDonationCurrencySymbol || '₪';
   }
 
-  getDonorLastDonationReason(donorId: string): string {
-    return this.donorLastDonationReason.get(donorId) || '';
+  isDonorLastDonationAsPartner(donorId: string): boolean {
+    return this.donorDataMap.get(donorId)?.stats.lastDonationIsPartner || false;
   }
 
   private async loadAllDonors() {
@@ -291,19 +279,13 @@ export class DonorListComponent implements OnInit, OnDestroy {
         orderBy: { firstName: 'asc', lastName: 'asc' }
       });
 
-      // Load DonorPlaces for all donors
-      const donorPlaceRepo = remult.repo(DonorPlace);
-      const donorPlaces = await donorPlaceRepo.find({
-        where: { donorId: { $in: donors.map(d => d.id) }, isPrimary: true },
-        include: { place: { include: { country: true } } }
-      });
+      // Load primary DonorPlaces for all donors (בית first, then any other)
+      const donorPlacesMap = await DonorPlace.getPrimaryForDonors(donors.map(d => d.id));
 
       // Create a map of donorId -> primary place
       const placesMap = new Map();
-      for (const dp of donorPlaces) {
-        if (dp.donorId) {
-          placesMap.set(dp.donorId, dp.place);
-        }
+      for (const [donorId, dp] of donorPlacesMap) {
+        placesMap.set(donorId, dp.place);
       }
 
       this.allDonors = donors.map(donor => {

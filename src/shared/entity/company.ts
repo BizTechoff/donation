@@ -13,9 +13,9 @@ import { Place } from './place'
 @Entity<Company>('companies', {
   allowApiCrud: Allow.authenticated,
   allowApiRead: Allow.authenticated,
-  allowApiUpdate: [Roles.admin],
+  allowApiUpdate: Allow.authenticated,
   allowApiDelete: [Roles.admin],
-  allowApiInsert: [Roles.admin],
+  allowApiInsert: Allow.authenticated,
   saving: async (company) => {
     if (isBackend()) {
       if (company._.isNew()) {

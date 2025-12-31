@@ -1,15 +1,11 @@
-import { Allow, Entity, Fields, Relations } from 'remult';
+import { Allow, Entity, Fields, IdEntity, Relations } from 'remult';
 import { LetterTitle } from './letter-title';
 
 @Entity('letterTitleDefaults', {
   allowApiCrud: Allow.authenticated,
   caption: 'ברירות מחדל לכותרות מכתב'
 })
-export class LetterTitleDefault {
-  @Fields.uuid({
-    caption: 'מזהה'
-  })
-  id = '';
+export class LetterTitleDefault extends IdEntity {
 
   @Fields.string({
     caption: 'מזהה כותרת',

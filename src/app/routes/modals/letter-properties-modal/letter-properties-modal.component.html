@@ -180,7 +180,7 @@
           <div class="line-text">{{ line.text }}</div>
           <div class="line-actions">
             <button mat-icon-button (click)="togglePrefixPin(i)"
-              [matTooltip]="line.isPinned ? 'הסר מברירת מחדל' : 'קבע כברירת מחדל'"
+              [matTooltip]="line.isPinned ? 'הסר מברירת מחדל' : 'קבע כברירת מחדל למכתב זה'"
               [class.pin-active]="line.isPinned"
               *ngIf="line.id">
               <mat-icon>push_pin</mat-icon>
@@ -251,7 +251,7 @@
           <div class="line-text">{{ line.text }}</div>
           <div class="line-actions">
             <button mat-icon-button (click)="toggleSuffixPin(i)"
-              [matTooltip]="line.isPinned ? 'הסר מברירת מחדל' : 'קבע כברירת מחדל'"
+              [matTooltip]="line.isPinned ? 'הסר מברירת מחדל' : 'קבע כברירת מחדל לסוג מכתב זה'"
               [class.pin-active]="line.isPinned"
               *ngIf="line.id">
               <mat-icon>push_pin</mat-icon>

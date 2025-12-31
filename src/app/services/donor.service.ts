@@ -92,15 +92,9 @@ export class DonorService {
       return this.createEmptyMaps();
     }
 
-    // Load all places at once
-    const allPlaces = await this.donorPlaceRepo.find({
-      where: {
-        donorId: { $in: donorIds },
-        isPrimary: true,
-        isActive: true
-      },
-      include: { place: { include: { country: true } } }
-    });
+    // Load primary places for all donors (בית first, then any other)
+    const allPlacesMap = await DonorPlace.getPrimaryForDonors(donorIds);
+    const allPlaces = Array.from(allPlacesMap.values());
 
     // Load all contacts at once
     const allContacts = await this.donorContactRepo.find({

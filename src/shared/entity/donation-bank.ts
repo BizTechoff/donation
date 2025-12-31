@@ -14,7 +14,7 @@ import { Roles } from '../enum/roles'
 @Entity<DonationBank>('donation_banks', {
   allowApiCrud: Allow.authenticated,
   allowApiRead: Allow.authenticated,
-  allowApiUpdate: [Roles.admin],
+  allowApiUpdate: Allow.authenticated,
   allowApiDelete: [Roles.admin],
   allowApiInsert: Allow.authenticated,
   saving: async (donationBank) => {

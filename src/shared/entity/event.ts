@@ -10,9 +10,9 @@ import { Roles } from '../enum/roles'
 @Entity<Event>('events', {
   allowApiCrud: Allow.authenticated,
   allowApiRead: Allow.authenticated,
-  allowApiUpdate: [Roles.admin],
+  allowApiUpdate: Allow.authenticated,
   allowApiDelete: [Roles.admin],
-  allowApiInsert: [Roles.admin],
+  allowApiInsert: Allow.authenticated,
 })
 export class Event extends IdEntity {
   @Fields.string({

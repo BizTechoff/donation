@@ -13,7 +13,7 @@ import { Roles } from '../enum/roles'
 @Entity<Payment>('payments', {
   allowApiCrud: Allow.authenticated,
   allowApiRead: Allow.authenticated,
-  allowApiUpdate: [Roles.admin],
+  allowApiUpdate: Allow.authenticated,
   allowApiDelete: [Roles.admin],
   allowApiInsert: Allow.authenticated,
   saving: async (payment) => {

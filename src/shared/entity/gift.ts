@@ -11,9 +11,9 @@ import { Roles } from '../enum/roles'
 @Entity<Gift>('gifts', {
   allowApiCrud: Allow.authenticated,
   allowApiRead: Allow.authenticated,
-  allowApiUpdate: [Roles.admin],
+  allowApiUpdate: Allow.authenticated,
   allowApiDelete: [Roles.admin],
-  allowApiInsert: [Roles.admin],
+  allowApiInsert: Allow.authenticated,
   saving: async (gift) => {
     if (isBackend()) {
       if (gift._.isNew()) {

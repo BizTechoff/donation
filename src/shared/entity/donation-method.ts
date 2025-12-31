@@ -15,9 +15,9 @@ import { getCurrentTerms } from '../entity-captions'
 @Entity<DonationMethod>('donation_methods', {
   allowApiCrud: Allow.authenticated,
   allowApiRead: Allow.authenticated,
-  allowApiUpdate: [Roles.admin],
+  allowApiUpdate: Allow.authenticated,
   allowApiDelete: [Roles.admin],
-  allowApiInsert: [Roles.admin],
+  allowApiInsert: Allow.authenticated,
   saving: async (method) => {
     if (isBackend()) {
       if (method._.isNew()) {

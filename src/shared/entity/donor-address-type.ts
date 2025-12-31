@@ -11,7 +11,7 @@ import { Roles } from '../enum/roles'
 @Entity<DonorAddressType>('donor_address_types', {
   allowApiCrud: Allow.authenticated,
   allowApiRead: Allow.authenticated,
-  allowApiUpdate: [Roles.admin],
+  allowApiUpdate: Allow.authenticated,
   allowApiDelete: [Roles.admin],
   allowApiInsert: Allow.authenticated,
   saving: async (addressType) => {

@@ -11,9 +11,9 @@ import { Roles } from '../enum/roles'
 @Entity<BlessingBookType>('blessing_book_types', {
   allowApiCrud: Allow.authenticated,
   allowApiRead: Allow.authenticated,
-  allowApiUpdate: [Roles.admin],
+  allowApiUpdate: Allow.authenticated,
   allowApiDelete: [Roles.admin],
-  allowApiInsert: [Roles.admin],
+  allowApiInsert: Allow.authenticated,
   saving: async (blessingType) => {
     if (isBackend()) {
       if (blessingType._.isNew()) {

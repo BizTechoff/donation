@@ -109,18 +109,16 @@ export class ReportController {
 
       // 🏙️ If city filter is active, get donor IDs for those cities
       if (globalFilterCityIds && globalFilterCityIds.length > 0) {
-        const donorPlaces = await remult.repo(DonorPlace).find({
-          where: {
-            isPrimary: true,
-            isActive: true
-          },
-          include: { place: true }
+        // טען את כל הכתובות הפעילות ומצא את הראשית לכל תורם
+        const allDonorPlaces = await remult.repo(DonorPlace).find({
+          where: { isActive: true },
+          include: { place: true, addressType: true }
         });
+        const primaryPlacesMap = DonorPlace.getPrimaryPlacesMap(allDonorPlaces);
 
-        const cityFilteredDonorIds = donorPlaces
-          .filter(dp => dp.place?.city && globalFilterCityIds!.includes(dp.place.city))
-          .map(dp => dp.donorId!)
-          .filter(Boolean);
+        const cityFilteredDonorIds = Array.from(primaryPlacesMap.entries())
+          .filter(([, dp]) => dp.place?.city && globalFilterCityIds!.includes(dp.place.city))
+          .map(([donorId]) => donorId);
 
         console.log(`  → City filter: Found ${cityFilteredDonorIds.length} donors in selected cities`);
 
@@ -483,15 +481,8 @@ export class ReportController {
     const detailsMap = new Map<string, { address?: string; phones?: string[]; emails?: string[] }>();
 
     try {
-      // Load all donor places for the given donors in one query
-      const allPlaces = await remult.repo(DonorPlace).find({
-        where: {
-          donorId: { $in: donorIds },
-          isPrimary: true,
-          isActive: true
-        },
-        include: { place: true }
-      });
+      // Load primary places for all donors (בית first, then any other)
+      const primaryPlacesMap = await DonorPlace.getPrimaryForDonors(donorIds);
 
       // Load all contacts for the given donors in one query
       const allContacts = await remult.repo(DonorContact).find({
@@ -503,7 +494,7 @@ export class ReportController {
 
       // Group data by donorId
       for (const donorId of donorIds) {
-        const primaryPlace = allPlaces.find(dp => dp.donorId === donorId);
+        const primaryPlace = primaryPlacesMap.get(donorId);
         const address = primaryPlace?.place
           ? `${primaryPlace.place.street || ''} ${primaryPlace.place.city || ''}`.trim()
           : undefined;
@@ -536,13 +527,8 @@ export class ReportController {
     donorId: string
   ): Promise<{ address?: string; phones?: string[]; emails?: string[] }> {
     try {
-      // Load all donor places and filter manually
-      const allPlaces = await remult.repo(DonorPlace).find({
-        include: { place: true }
-      });
-      const primaryPlace = allPlaces.find(dp =>
-        dp.donorId === donorId && dp.isPrimary && dp.isActive
-      );
+      // Load primary place for donor
+      const primaryPlace = await DonorPlace.getPrimaryForDonor(donorId);
 
       const address = primaryPlace?.place
         ? `${primaryPlace.place.street || ''} ${primaryPlace.place.city || ''}`.trim()
@@ -818,18 +804,16 @@ export class ReportController {
 
       // 🏙️ If city filter is active, get donor IDs for those cities
       if (globalFilterCityIds && globalFilterCityIds.length > 0) {
-        const donorPlaces = await remult.repo(DonorPlace).find({
-          where: {
-            isPrimary: true,
-            isActive: true
-          },
-          include: { place: true }
+        // טען את כל הכתובות הפעילות ומצא את הראשית לכל תורם
+        const allDonorPlaces = await remult.repo(DonorPlace).find({
+          where: { isActive: true },
+          include: { place: true, addressType: true }
         });
+        const primaryPlacesMap = DonorPlace.getPrimaryPlacesMap(allDonorPlaces);
 
-        const cityFilteredDonorIds = donorPlaces
-          .filter(dp => dp.place?.city && globalFilterCityIds!.includes(dp.place.city))
-          .map(dp => dp.donorId!)
-          .filter(Boolean);
+        const cityFilteredDonorIds = Array.from(primaryPlacesMap.entries())
+          .filter(([, dp]) => dp.place?.city && globalFilterCityIds!.includes(dp.place.city))
+          .map(([donorId]) => donorId);
 
         console.log(`  → City filter (Payments): Found ${cityFilteredDonorIds.length} donors in selected cities`);
 
@@ -1046,18 +1030,16 @@ export class ReportController {
 
       // 🏙️ If city filter is active, get donor IDs for those cities
       if (globalFilterCityIds && globalFilterCityIds.length > 0) {
-        const donorPlaces = await remult.repo(DonorPlace).find({
-          where: {
-            isPrimary: true,
-            isActive: true
-          },
-          include: { place: true }
+        // טען את כל הכתובות הפעילות ומצא את הראשית לכל תורם
+        const allDonorPlaces = await remult.repo(DonorPlace).find({
+          where: { isActive: true },
+          include: { place: true, addressType: true }
         });
+        const primaryPlacesMap = DonorPlace.getPrimaryPlacesMap(allDonorPlaces);
 
-        const cityFilteredDonorIds = donorPlaces
-          .filter(dp => dp.place?.city && globalFilterCityIds!.includes(dp.place.city))
-          .map(dp => dp.donorId!)
-          .filter(Boolean);
+        const cityFilteredDonorIds = Array.from(primaryPlacesMap.entries())
+          .filter(([, dp]) => dp.place?.city && globalFilterCityIds!.includes(dp.place.city))
+          .map(([donorId]) => donorId);
 
         console.log(`  → City filter (Yearly): Found ${cityFilteredDonorIds.length} donors in selected cities`);
 
@@ -1213,12 +1195,8 @@ export class ReportController {
         throw new Error('Donor not found');
       }
 
-      // Load donor's primary place
-      const donorPlace = await remult.repo(DonorPlace).findFirst({
-        donorId: donorId,
-        isPrimary: true,
-        isActive: true
-      }, { include: { place: true } });
+      // Load donor's primary place (בית first, then any other)
+      const donorPlace = await DonorPlace.getPrimaryForDonor(donorId);
 
       // Load donations for this donor in the date range
       const donorDonations = await remult.repo(Donation).find({

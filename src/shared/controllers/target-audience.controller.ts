@@ -158,19 +158,19 @@ export class TargetAudienceController {
       where: { isActive: true }
     })
 
-    // Get all donor places with location
-    const donorPlaceRepo = remult.repo(DonorPlace)
-    const allDonorPlaces = await donorPlaceRepo.find({
-      where: { isActive: true, isPrimary: true },
-      include: { place: true }
+    // Get primary donor places with location (בית first, then any other)
+    const allDonorPlaces = await remult.repo(DonorPlace).find({
+      where: { isActive: true },
+      include: { place: true, addressType: true }
     })
+    const primaryPlacesMap = DonorPlace.getPrimaryPlacesMap(allDonorPlaces)
 
     // Find donors inside polygon
     const donorsInPolygon: string[] = []
 
     for (const donor of allDonors) {
       // Find primary donor place
-      const donorPlace = allDonorPlaces.find(dp => dp.donorId === donor.id)
+      const donorPlace = primaryPlacesMap.get(donor.id)
 
       if (donorPlace && donorPlace.place && donorPlace.place.latitude && donorPlace.place.longitude) {
         const point = {

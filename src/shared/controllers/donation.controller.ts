@@ -404,36 +404,17 @@ export class DonationController {
       }
     }
 
-    // Load home addresses for all donors
+    // Load primary addresses for all donors (בית first, then any other)
     const donorIds = [...new Set(donations.map(d => d.donorId).filter(id => id))];
     if (donorIds.length > 0) {
-      const donorPlaces = await remult.repo(DonorPlace).find({
-        where: {
-          donorId: { $in: donorIds },
-          isActive: true
-        },
-        include: {
-          place: { include: { country: true } },
-          addressType: true
-        }
-      });
-
-      // Create map of donor ID to home address
-      const donorPlacesMap = new Map<string, DonorPlace>();
-      for (const dp of donorPlaces) {
-        if (dp.donorId && dp.addressType?.name === 'בית') {
-          if (!donorPlacesMap.has(dp.donorId)) {
-            donorPlacesMap.set(dp.donorId, dp);
-          }
-        }
-      }
+      const donorPlacesMap = await DonorPlace.getPrimaryForDonors(donorIds);
 
       // Attach home address to each donation's donor
       for (const donation of donations) {
         if (donation.donor && donation.donorId) {
-          const homePlace = donorPlacesMap.get(donation.donorId);
-          if (homePlace) {
-            (donation.donor as any).homeAddress = homePlace.place?.getDisplayAddress() || '-';
+          const primaryPlace = donorPlacesMap.get(donation.donorId);
+          if (primaryPlace) {
+            (donation.donor as any).homeAddress = primaryPlace.place?.getDisplayAddress() || '-';
           } else {
             (donation.donor as any).homeAddress = '-';
           }

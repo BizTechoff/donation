@@ -11,11 +11,11 @@ import { remult } from 'remult'
 import { Roles } from '../enum/roles'
 
 @Entity<Country>('countries', {
-  allowApiCrud: [Roles.admin],
+  allowApiCrud: Allow.authenticated,
   allowApiRead: Allow.authenticated,
-  allowApiUpdate: [Roles.admin],
+  allowApiUpdate: Allow.authenticated,
   allowApiDelete: [Roles.admin],
-  allowApiInsert: [Roles.admin],
+  allowApiInsert: Allow.authenticated,
   saving: async (country) => {
     if (isBackend()) {
       if (country._.isNew()) {
