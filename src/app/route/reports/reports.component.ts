@@ -16,6 +16,7 @@ import { CampaignSelectionModalComponent } from '../../routes/modals/campaign-se
 import { DonorSelectionModalComponent } from '../../routes/modals/donor-selection-modal/donor-selection-modal.component';
 import { ExcelExportService } from '../../services/excel-export.service';
 import { GlobalFilterService } from '../../services/global-filter.service';
+import { PrintService, PrintColumn } from '../../services/print.service';
 import { HebrewDateService } from '../../services/hebrew-date.service';
 import { PayerService } from '../../services/payer.service';
 import { ReportService } from '../../services/report.service';
@@ -53,6 +54,8 @@ interface PaymentReportData {
   currency: string;
   address?: string;
   city?: string;
+  phones?: string[];
+  emails?: string[];
   lastDonationDate?: Date;
 }
 
@@ -259,7 +262,8 @@ export class ReportsComponent implements OnInit, OnDestroy {
     private excelService: ExcelExportService,
     private globalFilterService: GlobalFilterService,
     private hebrewDateService: HebrewDateService,
-    private payerService: PayerService
+    private payerService: PayerService,
+    private printService: PrintService
   ) { }
 
   async ngOnInit() {
@@ -1094,8 +1098,22 @@ export class ReportsComponent implements OnInit, OnDestroy {
   }
 
   async printReport() {
-    // TODO: Implement print functionality
-    alert('פונקצית הדפסה - בפיתוח');
+    switch (this.activeReport) {
+      case 'donations':
+        await this.printDonationsReport();
+        break;
+      case 'yearly':
+        this.printYearlySummaryReport();
+        break;
+      case 'payments':
+        this.printPaymentsReport();
+        break;
+      case 'blessings':
+        this.printBlessingsReport();
+        break;
+      default:
+        alert('הדפסה לדוח זה עדיין לא נתמכת');
+    }
   }
 
   toggleExpandedView() {
@@ -2236,5 +2254,199 @@ export class ReportsComponent implements OnInit, OnDestroy {
     const sortCol = this.personalDonorSortColumns.find(col => col.field === field);
     if (!sortCol) return '';
     return sortCol.direction === 'asc' ? '↑' : '↓';
+  }
+
+  // ===============================================
+  // PRINT REPORT
+  // ===============================================
+
+  private async printDonationsReport() {
+    // Load all data without pagination for print
+    const fullReportResponse = await this.reportService.getGroupedDonationsReport({
+      groupBy: this.filters.groupBy,
+      showDonorDetails: this.filters.showDonorDetails,
+      showActualPayments: this.filters.showActualPayments,
+      showCurrencySummary: this.filters.showCurrencySummary,
+      selectedDonorIds: this.filters.selectedDonorIds.length > 0 ? this.filters.selectedDonorIds : undefined,
+      selectedCampaign: this.filters.selectedCampaign || undefined,
+      selectedDonorType: this.filters.selectedDonorType || undefined,
+      selectedYear: this.filters.selectedYear,
+      conversionRates: this.conversionRates,
+      page: 1,
+      pageSize: 999999, // Get all records
+      sortBy: this.sortBy,
+      sortDirection: this.sortDirection
+    });
+
+    const columns: PrintColumn[] = [
+      { header: 'שם', field: 'donorName' }
+    ];
+
+    // Add donor details columns if enabled and grouping by donor
+    if (this.filters.showDonorDetails && this.filters.groupBy === 'donor') {
+      columns.push({
+        header: 'כתובת',
+        field: 'donorDetails.address',
+        customFormatter: (val, row) => row.donorDetails?.address || '-'
+      });
+      columns.push({
+        header: 'טלפונים',
+        field: 'donorDetails.phones',
+        customFormatter: (val, row) => row.donorDetails?.phones?.join(', ') || '-'
+      });
+      columns.push({
+        header: 'אימיילים',
+        field: 'donorDetails.emails',
+        customFormatter: (val, row) => row.donorDetails?.emails?.join(', ') || '-'
+      });
+    }
+
+    // Add year columns
+    for (const year of fullReportResponse.hebrewYears) {
+      columns.push({
+        header: year,
+        field: `yearlyTotals.${year}`,
+        format: 'currency',
+        customFormatter: (val, row) => {
+          const yearData = row.yearlyTotals?.[year];
+          if (!yearData) return '-';
+          // Sum all currencies for this year
+          const total = Object.values(yearData).reduce((sum: number, amt: any) => sum + (amt || 0), 0);
+          return total > 0 ? `₪${total.toLocaleString('he-IL')}` : '-';
+        }
+      });
+    }
+
+    if (this.filters.showActualPayments) {
+      columns.push({
+        header: 'תשלומים בפועל',
+        field: 'actualPayments',
+        format: 'currency'
+      });
+    }
+
+    const filters = [
+      { label: 'קיבוץ לפי', value: this.getGroupByLabel() },
+      { label: 'שנים', value: this.filters.selectedYear === 'last4' ? '4 שנים אחרונות' : String(this.filters.selectedYear) },
+      { label: 'תורמים', value: this.filters.selectedDonorIds.length > 0 ? `${this.filters.selectedDonorIds.length} תורמים נבחרו` : '' },
+      { label: 'קמפיין', value: this.getSelectedCampaignText() !== 'בחר קמפיין' ? this.getSelectedCampaignText() : '' }
+    ];
+
+    this.printService.print({
+      title: 'דוח תרומות מקובץ',
+      subtitle: `לפי ${this.getGroupByLabel()}`,
+      filters,
+      columns,
+      data: fullReportResponse.reportData,
+      totals: [
+        { label: 'סה"כ רשומות', value: fullReportResponse.totalRecords }
+      ]
+    });
+  }
+
+  private printYearlySummaryReport() {
+    const columns: PrintColumn[] = [
+      { header: 'שנה', field: 'hebrewYear' },
+      { header: 'סה"כ בש"ח', field: 'totalInShekel', format: 'currency' }
+    ];
+
+    // Add currency columns
+    if (this.yearlySummaryData.length > 0) {
+      const currencies = Object.keys(this.yearlySummaryData[0].currencies || {});
+      for (const currency of currencies) {
+        columns.push({
+          header: currency,
+          field: `currencies.${currency}`,
+          format: 'number',
+          customFormatter: (val, row) => {
+            const amount = row.currencies?.[currency] || 0;
+            return amount > 0 ? amount.toLocaleString('he-IL') : '-';
+          }
+        });
+      }
+    }
+
+    const filters = [
+      { label: 'שנים', value: this.filters.selectedYear === 'last4' ? 'כל השנים' : String(this.filters.selectedYear) }
+    ];
+
+    this.printService.print({
+      title: 'דוח סיכום שנים',
+      filters,
+      columns,
+      data: this.yearlySummaryData
+    });
+  }
+
+  private printPaymentsReport() {
+    const columns: PrintColumn[] = [
+      { header: 'שם תורם', field: 'donorName' },
+      {
+        header: 'כתובת',
+        field: 'address',
+        customFormatter: (val, row) => row.address || '-'
+      },
+      {
+        header: 'טלפונים',
+        field: 'phones',
+        customFormatter: (val, row) => row.phones?.join(', ') || '-'
+      },
+      {
+        header: 'אימיילים',
+        field: 'emails',
+        customFormatter: (val, row) => row.emails?.join(', ') || '-'
+      },
+      { header: 'התחייבות', field: 'promisedAmount', format: 'currency' },
+      { header: 'שולם בפועל', field: 'actualAmount', format: 'currency' },
+      { header: 'יתרה', field: 'remainingDebt', format: 'currency' },
+      {
+        header: 'סטטוס', field: 'status',
+        customFormatter: (val) => {
+          switch (val) {
+            case 'fullyPaid': return 'שולם במלואו';
+            case 'partiallyPaid': return 'שולם חלקית';
+            case 'notPaid': return 'לא שולם';
+            default: return val;
+          }
+        }
+      }
+    ];
+
+    // Calculate summary from all data (not paginated)
+    const summary = this.getPaymentStatusSummary();
+    this.printService.print({
+      title: 'דוח מצב תשלומים',
+      columns,
+      data: this.paymentReportData, // Already contains all data (pagination is client-side only)
+      totals: [
+        { label: 'שולם במלואו', value: summary.fullyPaid },
+        { label: 'שולם חלקית', value: summary.partiallyPaid },
+        { label: 'לא שולם', value: summary.notPaid },
+        { label: 'סה"כ חוב', value: `₪${summary.totalDebt.toLocaleString('he-IL')}` }
+      ]
+    });
+  }
+
+  private printBlessingsReport() {
+    const columns: PrintColumn[] = [
+      { header: 'שם משפחה', field: 'lastName' },
+      { header: 'שם פרטי', field: 'firstName' },
+      { header: 'סוג ספר ברכות', field: 'blessingBookType' },
+      { header: 'קמפיין', field: 'campaignName' },
+      { header: 'סטטוס', field: 'status' }
+    ];
+
+    const summary = this.getBlessingSummary();
+    this.printService.print({
+      title: 'דוח ברכות',
+      columns,
+      data: this.blessingReportData,
+      totals: [
+        { label: 'מוכנה', value: summary.preMade },
+        { label: 'מותאמת אישית', value: summary.custom },
+        { label: 'לא נבחר', value: summary.notChosen },
+        { label: 'סה"כ', value: summary.total }
+      ]
+    });
   }
 }

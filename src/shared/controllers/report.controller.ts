@@ -381,7 +381,7 @@ export class ReportController {
       switch (filters.groupBy) {
         case 'donor':
           groupKey = donation.donorId || 'unknown';
-          groupName = donation.donor?.fullName || 'תורם אלמוני';
+          groupName = donation.donor?.lastAndFirstName || 'תורם אלמוני';
           break;
         case 'campaign':
           groupKey = donation.campaignId || 'unknown';
@@ -910,6 +910,8 @@ export class ReportController {
         lastDonationDate: Date;
         address?: string;
         city?: string;
+        phones?: string[];
+        emails?: string[];
       }>();
 
       // Process donations (commitments)
@@ -936,7 +938,9 @@ export class ReportController {
             donationCount: 0,
             lastDonationDate: donation.donationDate,
             address: donorDetails?.address || '',
-            city: city
+            city: city,
+            phones: donorDetails?.phones || [],
+            emails: donorDetails?.emails || []
           });
         }
 
@@ -979,7 +983,7 @@ export class ReportController {
           }
 
           return {
-            donorName: data.donor.fullName || `${data.donor.firstName} ${data.donor.lastName}`,
+            donorName: data.donor.lastAndFirstName, // || `${data.donor.firstName} ${data.donor.lastName}`,
             promisedAmount: data.totalCommitment,
             actualAmount: data.totalActual,
             remainingDebt: remainingDebt,
@@ -987,6 +991,8 @@ export class ReportController {
             currency: 'ILS', // Always in shekel after conversion
             address: data.address || '',
             city: data.city || '',
+            phones: data.phones || [],
+            emails: data.emails || [],
             lastDonationDate: data.lastDonationDate
           };
         })
@@ -1291,7 +1297,7 @@ export class ReportController {
       // Process partner donations
       for (const donation of partnerDonations) {
         const hebrewDate = await HebrewDateController.convertGregorianToHebrew(donation.donationDate);
-        const mainDonorName = donation.donor?.fullName || 'תורם לא ידוע';
+        const mainDonorName = donation.donor?.lastAndFirstName || 'תורם לא ידוע';
 
         donationsData.push({
           date: donation.donationDate,
@@ -1313,7 +1319,7 @@ export class ReportController {
       const reportData: PersonalDonorReportData = {
         donor: {
           title: donor.title || '',
-          fullName: donor.fullName || `${donor.firstName} ${donor.lastName}`,
+          fullName: donor.lastAndFirstName,// donor.fullName || `${donor.firstName} ${donor.lastName}`,
           suffix: donor.suffix || '',
           titleEnglish: donor.titleEnglish || '',
           fullNameEnglish: donor.fullNameEnglish || `${donor.firstNameEnglish || ''} ${donor.lastNameEnglish || ''}`.trim(),
@@ -1486,6 +1492,8 @@ export interface PaymentReportData {
   currency: string;
   address?: string;
   city?: string;
+  phones?: string[];
+  emails?: string[];
   lastDonationDate?: Date;
 }
 
