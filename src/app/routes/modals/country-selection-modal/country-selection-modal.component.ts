@@ -1,11 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
 import { BusyService, DialogConfig, openDialog } from 'common-ui-elements';
-import { Country } from '../../../../shared/entity/country';
 import { remult } from 'remult';
-import { I18nService } from '../../../i18n/i18n.service';
-import { CountryDetailsModalComponent } from '../country-details-modal/country-details-modal.component';
 import { CountryController } from '../../../../shared/controllers/country.controller';
+import { Country } from '../../../../shared/entity/country';
+import { I18nService } from '../../../i18n/i18n.service';
+import { PayerService } from '../../../services/payer.service';
+import { CountryDetailsModalComponent } from '../country-details-modal/country-details-modal.component';
 
 export interface CountrySelectionModalArgs {
   title?: string;
@@ -33,13 +34,15 @@ export class CountrySelectionModalComponent implements OnInit {
   availableCountries: Country[] = [];
   countryRepo = remult.repo(Country);
 
+  currencyTypes = this.payer. getCurrencyTypesRecord()
   // Search
   searchTerm = '';
 
   constructor(
     public i18n: I18nService,
     public dialogRef: MatDialogRef<any>,
-    private busy: BusyService
+    private busy: BusyService,
+    private payer: PayerService
   ) {}
 
   async ngOnInit() {

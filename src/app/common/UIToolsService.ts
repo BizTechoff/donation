@@ -77,7 +77,7 @@ export class UIToolsService implements UITools {
   isScreenSmall() {
     return this.mediaMatcher.matches
   }
-  async yesNoQuestion(question: string, isAQuestion = false) {
+  async yesNoQuestion(question: string, isAQuestion = true) {
     return await openDialog(
       YesNoQuestionComponent,
       (d) => (d.args = { message: question, isAQuestion: isAQuestion }),

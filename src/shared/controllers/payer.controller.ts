@@ -1,5 +1,5 @@
 import { Allow, BackendMethod, Controller } from 'remult';
-import { CurrencyType, PayerService } from '../../app/services/payer.service';
+import { PayerService } from '../../app/services/payer.service';
 
 /**
  * Controller for payer-related operations including currency conversions

@@ -899,9 +899,9 @@
                 <tr *ngFor="let donation of personalDonorReportData.donations">
                   <td>{{formatDateForReport(donation.date)}}</td>
                   <td>{{donation.dateHebrew}}</td>
-                  <td>{{donation.commitment > 0 ? donation.commitment + ' ' + getCurrencySymbol(donation.currencySymbol)
+                  <td>{{donation.commitment > 0 ? donation.commitment + ' ' + getCurrencySymbol(donation.currencyId)
                     : '' }}</td>
-                  <td>{{donation.amount}} {{getCurrencySymbol(donation.currencySymbol)}}</td>
+                  <td>{{donation.amount}} {{getCurrencySymbol(donation.currencyId)}}</td>
                   <td>{{donation.notes}}</td>
                 </tr>
               </tbody>

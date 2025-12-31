@@ -50,12 +50,7 @@ export class Country extends IdEntity {
   @Fields.string({
     caption: 'מטבע',
   })
-  currency = ''
-
-  @Fields.string({
-    caption: 'סמל מטבע',
-  })
-  currencySymbol = ''
+  currencyId = ''
 
   @Fields.boolean({
     caption: 'פעיל',

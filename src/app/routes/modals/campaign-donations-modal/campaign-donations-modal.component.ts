@@ -1,13 +1,14 @@
-import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { DialogConfig } from 'common-ui-elements';
-import { Donation, Donor, DonationMethod, Campaign } from '../../../../shared/entity';
 import { remult } from 'remult';
-import { I18nService } from '../../../i18n/i18n.service';
+import { Campaign, Donation, DonationMethod, Donor } from '../../../../shared/entity';
 import { UIToolsService } from '../../../common/UIToolsService';
-import { HebrewDateService } from '../../../services/hebrew-date.service';
+import { I18nService } from '../../../i18n/i18n.service';
 import { DonorService } from '../../../services/donor.service';
+import { HebrewDateService } from '../../../services/hebrew-date.service';
+import { PayerService } from '../../../services/payer.service';
 
 export interface CampaignDonationsModalArgs {
   campaignId: string;
@@ -58,6 +59,7 @@ export class CampaignDonationsModalComponent implements OnInit {
   // Table configuration
   displayedColumns: string[] = ['donationDate', 'donor', 'amount', 'currency', 'method', 'type', 'actions'];
 
+  currencyTypes = this.payer.getCurrencyTypesRecord()
   // Totals
   totalAmount = 0;
   totalDonations = 0;
@@ -69,8 +71,9 @@ export class CampaignDonationsModalComponent implements OnInit {
     private cdr: ChangeDetectorRef,
     private hebrewDateService: HebrewDateService,
     public dialogRef: MatDialogRef<CampaignDonationsModalComponent>,
-    private donorService: DonorService
-  ) {}
+    private donorService: DonorService,
+    private payer: PayerService
+  ) { }
 
   async ngOnInit() {
     await this.loadCampaign();
@@ -309,10 +312,9 @@ export class CampaignDonationsModalComponent implements OnInit {
   }
 
   // Format helpers
-  formatCurrency(amount: number, currency?: string): string {
-    if (!amount) return '₪0';
-    const currencySymbol = this.getCurrencySymbol(currency || 'ILS');
-    return `${currencySymbol}${amount.toLocaleString('he-IL')}`;
+  formatCurrency(amount: number, currency: string): string {
+    if (!amount) return `0`;
+    return `${this.currencyTypes[currency]?.symbol}${amount.toLocaleString('he-IL')}`;
   }
 
   getCurrencySymbol(currency: string): string {

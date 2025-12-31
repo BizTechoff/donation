@@ -11,7 +11,7 @@ import { DonationOrganization } from '../entity/donation-organization';
 import { Donor } from '../entity/donor';
 import { Organization } from '../entity/organization';
 import { DonorPlace } from '../entity/donor-place';
-import { CurrencyType } from '../../app/services/payer.service';
+import { CurrencyType } from '../type/currency.type';
 
 export interface DonationFilters {
   searchTerm?: string;
@@ -286,7 +286,8 @@ export class DonationController {
             orderBy.amount = sort.direction;
             break;
           case 'currency':
-            orderBy.currency = sort.direction;
+          case 'currencyId':
+            orderBy.currencyId = sort.direction;
             break;
           case 'donationDate':
             orderBy.donationDate = sort.direction;
@@ -440,7 +441,7 @@ export class DonationController {
   }
 
   @BackendMethod({ allowed: Allow.authenticated })
-  static async sumFilteredDonations(filters: DonationFilters, currencies: CurrencyType[]): Promise<number> {
+  static async sumFilteredDonations(filters: DonationFilters, currencies: Record<string, CurrencyType>): Promise<number> {
     const whereClause = await DonationController.buildWhereClause(filters);
     if (whereClause === null) {
       return 0;
@@ -450,15 +451,9 @@ export class DonationController {
       where: Object.keys(whereClause).length > 0 ? whereClause : undefined
     });
 
-    // Build conversion rates map from provided currencies
-    const conversionRates: { [key: string]: number } = {};
-    currencies.forEach(currency => {
-      conversionRates[currency.id] = currency.rateInShekel;
-    });
-
     // Sum all amounts converted to shekels
     return donations.reduce((sum, donation) => {
-      const rate = conversionRates[donation.currency] || 1;
+      const rate = currencies[donation.currencyId]?.rateInShekel || 1;
       return sum + (donation.amount * rate);
     }, 0);
   }

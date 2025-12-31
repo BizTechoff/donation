@@ -44,8 +44,10 @@ export class Organization extends IdEntity {// ארגונים שתורמים ב�
 
   @Fields.string({
     caption: 'מטבע',
+    // Note: Stored as currency ID (e.g., 'ILS', 'USD')
+    // Use getCurrencyType() from PayerService to get full CurrencyType object
   })
-  currency = 'ILS'
+  currencyId = 'ILS'
 
   @Fields.string({
     caption: 'מספר חשבון',

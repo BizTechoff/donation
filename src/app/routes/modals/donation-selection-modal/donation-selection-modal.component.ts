@@ -6,6 +6,7 @@ import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
 import { DonationDetailsModalComponent } from '../donation-details-modal/donation-details-modal.component';
 import { DonationController } from '../../../../shared/controllers/donation.controller';
+import { PayerService } from '../../../services/payer.service';
 
 export interface DonationSelectionModalArgs {
   title?: string;
@@ -50,13 +51,16 @@ export class DonationSelectionModalComponent implements OnInit {
   totalPages = 0;
   Math = Math;
 
+currencyTypes = this.payer.getCurrencyTypesRecord()
+
   // Sorting
   sortColumns: Array<{ field: string; direction: 'asc' | 'desc' }> = [];
 
   constructor(
     public i18n: I18nService,
     public dialogRef: MatDialogRef<any>,
-    private busy: BusyService
+    private busy: BusyService,
+    private payer: PayerService
   ) {}
 
   async ngOnInit() {
@@ -358,7 +362,7 @@ export class DonationSelectionModalComponent implements OnInit {
   getDonationDisplayText(donation: Donation): string {
     const donor = this.getDonor(donation.donorId);
     const donorName = donor?.fullName || donor?.firstName || 'תורם לא ידוע';
-    return `${donorName} - ${donation.amount} ${donation.currency}`;
+    return `${donorName} - ${donation.amount} ${this.currencyTypes[donation.currencyId]?.symbol || donation.currencyId}`;
   }
 
   // Format date

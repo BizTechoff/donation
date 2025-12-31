@@ -45,8 +45,10 @@ export class Bank extends IdEntity {
 
   @Fields.string({
     caption: 'מטבע',
+    // Note: Stored as currency ID (e.g., 'ILS', 'USD')
+    // Use getCurrencyType() from PayerService to get full CurrencyType object
   })
-  currency = 'ILS'
+  currencyId = 'ILS'
 
   @Fields.string({
     caption: 'מספר בנק',

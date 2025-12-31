@@ -243,7 +243,7 @@ export class RemindersComponent implements OnInit, OnDestroy {
   }
 
   async deleteReminder(reminder: Reminder) {
-    const donorName = reminder.donor?.fullName || this.i18n.terms.unknown;
+    const donorName = reminder.donor?.lastAndFirstName
     if (confirm(`${this.i18n.terms.confirmDeleteDonor?.replace('{name}', reminder.title || '')}`)) {
       try {
         // No need to clean up source entity link - we use forward reference only
@@ -287,7 +287,7 @@ export class RemindersComponent implements OnInit, OnDestroy {
   }
 
   getDonorName(reminder: Reminder): string {
-    return reminder.donor?.fullName || this.i18n.terms.generalType;
+    return reminder.donor?.lastAndFirstName || ''
   }
 
   getReminderDonorPhone(reminder: Reminder): string {

@@ -64,9 +64,9 @@
                     <mat-icon class="detail-icon">phone</mat-icon>
                     {{ country.phonePrefix }}
                   </span>
-                  <span *ngIf="country.currencySymbol" class="detail-item">
+                  <span *ngIf="currencyTypes[country.currencyId]" class="detail-item">
                     <mat-icon class="detail-icon">attach_money</mat-icon>
-                    {{ country.currencySymbol }}
+                    {{ currencyTypes[country.currencyId] }}
                   </span>
                 </div>
               </div>

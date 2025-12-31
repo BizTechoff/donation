@@ -173,7 +173,8 @@
               <label>{{i18n.terms.amount}} *</label>
             </div>
             <input type="number" class="form-control" [(ngModel)]="donation.amount"
-              [placeholder]="i18n.terms.enterAmount" min="0" step="0.01">
+              [placeholder]="i18n.terms.enterAmount" min="0" step="0.01"
+              (focus)="$any($event.target).select()">
           </div>
 
           <div class="form-group">
@@ -181,9 +182,9 @@
               <mat-icon class="field-icon">monetization_on</mat-icon>
               <label>{{i18n.terms.currency}}</label>
             </div>
-            <select class="form-control" [(ngModel)]="donation.currency">
-              <option *ngFor="let currency of currencyTypes" [value]="currency.id">
-                {{ currency.label }}
+            <select class="form-control" [(ngModel)]="donation.currencyId">
+              <option *ngFor="let currency of currencyTypes | keyvalue" [value]="currency.key">
+                {{ currency.value.label }} ({{ currency.value.symbol }})
               </option>
             </select>
           </div>
@@ -462,8 +463,7 @@
                 </div>
                 <div class="payment-amount-display" *ngIf="getPaymentAmount()">
                   <span class="payment-amount-label">כל תשלום:</span>
-                  <span class="payment-amount-value">{{ getPaymentAmount() }} {{ getCurrencySymbol(donation.currency)
-                    }}</span>
+                  <span class="payment-amount-value">{{ getPaymentAmount() }} {{ currencyTypes[donation.currencyId]?.symbol }}</span>
                 </div>
               </div>
             </div>

@@ -30,50 +30,32 @@
         <div class="form-grid">
           <div class="form-group full-width">
             <label>שם מדינה *</label>
-            <input type="text"
-                   class="form-control"
-                   [(ngModel)]="country.name"
-                   placeholder="הזן שם מדינה">
+            <input type="text" class="form-control" [(ngModel)]="country.name" placeholder="הזן שם מדינה">
           </div>
 
           <div class="form-group full-width">
             <label>שם מדינה באנגלית</label>
-            <input type="text"
-                   class="form-control"
-                   [(ngModel)]="country.nameEn"
-                   placeholder="Enter country name">
+            <input type="text" class="form-control" [(ngModel)]="country.nameEn" placeholder="Enter country name">
           </div>
 
           <div class="form-group">
             <label>קוד מדינה</label>
-            <input type="text"
-                   class="form-control"
-                   [(ngModel)]="country.code"
-                   placeholder="IL">
+            <input type="text" class="form-control" [(ngModel)]="country.code" placeholder="IL">
           </div>
 
           <div class="form-group">
             <label>קידומת טלפון</label>
-            <input type="text"
-                   class="form-control"
-                   [(ngModel)]="country.phonePrefix"
-                   placeholder="+972">
+            <input type="text" class="form-control" [(ngModel)]="country.phonePrefix" placeholder="+972">
           </div>
 
           <div class="form-group">
             <label>מטבע</label>
-            <input type="text"
-                   class="form-control"
-                   [(ngModel)]="country.currency"
-                   placeholder="ILS">
+            <input type="text" class="form-control" [(ngModel)]="country.currencyId" placeholder="ILS">
           </div>
 
           <div class="form-group">
             <label>סמל מטבע</label>
-            <input type="text"
-                   class="form-control"
-                   [(ngModel)]="country.currencySymbol"
-                   placeholder="₪">
+            <span>{{ currencyTypes[country.currencyId]?.symbol }}</span>
           </div>
 
           <div class="form-group full-width">

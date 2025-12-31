@@ -104,9 +104,7 @@ export class DonorSelectionModalComponent implements OnInit {
     if (this.filterText.trim()) {
       const term = this.filterText.toLowerCase();
       filtered = filtered.filter(donor =>
-        donor.firstName?.toLowerCase().includes(term) ||
-        donor.lastName?.toLowerCase().includes(term) ||
-        donor.fullName?.toLowerCase().includes(term) ||
+        donor.lastAndFirstName?.toLowerCase().includes(term) ||
         this.getDonorPhone(donor.id)?.toLowerCase().includes(term) ||
         this.getDonorEmail(donor.id)?.toLowerCase().includes(term)
       );
@@ -356,6 +354,6 @@ export class DonorSelectionModalComponent implements OnInit {
 
   // Get donor display name
   getDonorDisplayName(donor: Donor): string {
-    return donor.fullName || `${donor.firstName || ''} ${donor.lastName || ''}`.trim();
+    return donor.lastAndFirstName
   }
 }

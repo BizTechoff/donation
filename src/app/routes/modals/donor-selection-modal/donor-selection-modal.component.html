@@ -39,7 +39,7 @@
             <td *ngIf="args.multiSelect" class="checkbox-col">
               <input type="checkbox" [checked]="isDonorSelected(donor)" (click)="$event.stopPropagation()">
             </td>
-            <td>{{ donor.fullName }}</td>
+            <td>{{ donor.lastAndFirstName }}</td>
             <td>{{ getDonorPhone(donor.id) }}</td>
             <td>{{ getDonorEmail(donor.id) }}</td>
             <td>{{ getDonorPlace(donor.id)?.fullAddress }}</td>

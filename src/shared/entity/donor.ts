@@ -149,6 +149,30 @@ export class Donor extends IdEntity {
   })
   fullNameEnglish!: string
 
+  // Computed field for fullName - so it's available when loaded from server
+  @Fields.string<Donor>({
+    caption: 'שם מלא',
+    serverExpression: (donor) => {
+      const parts = []
+      if (donor.lastName) parts.push(donor.lastName)
+      if (donor.firstName) parts.push(donor.firstName)
+      return parts.join(' ').trim()
+    }
+  })
+  lastAndFirstName!: string
+
+  // Computed field for fullNameEnglish - so it's available when loaded from server
+  @Fields.string<Donor>({
+    caption: 'שם מלא באנגלית',
+    serverExpression: (donor) => {
+      const parts = []
+      if (donor.lastNameEnglish) parts.push(donor.lastNameEnglish)
+      if (donor.firstNameEnglish) parts.push(donor.firstNameEnglish)
+      return parts.join(' ').trim()
+    }
+  })
+  lastAndFirstNameEnglish!: string
+
   @Fields.string({
     caption: 'תעודת זהות'//,
     // validate: [Validators.unique],

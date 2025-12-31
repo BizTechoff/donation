@@ -85,10 +85,10 @@
                 <label>{{ (i18n.terms$ | async)?.currency || 'מטבע' }}</label>
               </div>
               <select class="form-control"
-                      [(ngModel)]="organization.currency"
+                      [(ngModel)]="organization.currencyId"
                       (ngModelChange)="onFieldChange()">
-                <option *ngFor="let currency of currencyTypes" [value]="currency.id">
-                  {{ currency.label }}
+                <option *ngFor="let currency of currencyTypes | keyvalue" [value]="currency.key">
+                  {{ currency.value.label }} ({{ currency.value.symbol }})
                 </option>
               </select>
             </div>

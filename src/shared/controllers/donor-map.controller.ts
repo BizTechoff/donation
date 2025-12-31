@@ -63,7 +63,7 @@ export interface DonorMapData {
 
 export class DonorMapController {
 
-  static HIGH_DONOR_AMOUNT =  1500
+  static HIGH_DONOR_AMOUNT = 1500
   static RECENT_DONOR_MONTHS = 3
 
   /**
@@ -94,8 +94,8 @@ export class DonorMapController {
 
     // Donation-based filters (minDonationCount, minTotalDonations, maxTotalDonations)
     const needsDonationData = (mapFilters.minDonationCount && mapFilters.minDonationCount > 0) ||
-                               (mapFilters.minTotalDonations && mapFilters.minTotalDonations > 0) ||
-                               (mapFilters.maxTotalDonations && mapFilters.maxTotalDonations < 999999999);
+      (mapFilters.minTotalDonations && mapFilters.minTotalDonations > 0) ||
+      (mapFilters.maxTotalDonations && mapFilters.maxTotalDonations < 999999999);
 
     if (needsDonationData) {
       // טען תרומות
@@ -234,14 +234,13 @@ export class DonorMapController {
     // טען שערי המרה של מטבעות
     const { PayerService } = await import('../../app/services/payer.service');
     const payerService = new PayerService();
-    const currencyTypes = await payerService.getCurrencyTypes();
-    const currencyRates = new Map(currencyTypes.map(c => [c.id, c.rateInShekel]));
+    const currencyTypes = payerService.getCurrencyTypesRecord();
 
     // חשב סטטיסטיקות תרומות לכל תורם (המר הכל לשקלים)
     const donationStatsByDonor = new Map<string, { total: number; lastDate: Date | null }>();
     donations.forEach(donation => {
       // המר סכום לשקלים
-      const rate = currencyRates.get(donation.currency) || 1;
+      const rate = currencyTypes[donation.currencyId]?.rateInShekel || 1;
       const amountInShekel = donation.amount * rate;
 
       const existing = donationStatsByDonor.get(donation.donorId);
@@ -288,7 +287,7 @@ export class DonorMapController {
           donorId: d.id,
           lat: locationMap.get(d.id)!.lat,
           lng: locationMap.get(d.id)!.lng,
-          donorName: d.fullName || `${d.firstName || ''} ${d.lastName || ''}`.trim(),
+          donorName: d.lastAndFirstName,
           status
         };
       });
@@ -385,12 +384,11 @@ export class DonorMapController {
     // טען שערי המרה של מטבעות
     const { PayerService } = await import('../../app/services/payer.service');
     const payerService = new PayerService();
-    const currencyTypes = await payerService.getCurrencyTypes();
-    const currencyRates = new Map(currencyTypes.map(c => [c.id, c.rateInShekel]));
+    const currencyTypes = await payerService.getCurrencyTypesRecord();
 
     // חשב סכום כולל בשקלים
     const totalAmount = donations.reduce((sum, d) => {
-      const rate = currencyRates.get(d.currency) || 1;
+      const rate = currencyTypes[d.currencyId]?.rateInShekel || 1;
       return sum + (d.amount * rate);
     }, 0);
     const totalCount = donations.length;
@@ -486,9 +484,9 @@ export class DonorMapController {
     const MAX_DONORS = 1000; // הגבלה רק כשטוענים הכל (בלי פילטור)
     const donors = donorIds && donorIds.length > 0
       ? await donorRepo.find({
-          where: { id: donorIds }
-          // אין limit כאן - אם כבר סיננו, נציג את כל התוצאות
-        })
+        where: { id: donorIds }
+        // אין limit כאן - אם כבר סיננו, נציג את כל התוצאות
+      })
       : await donorRepo.find({ limit: MAX_DONORS }); // הגבלה רק כשטוענים הכל
 
     console.log(`DonorMapController: Loading ${donors.length} donors for map`);
@@ -555,13 +553,12 @@ export class DonorMapController {
     // טען שערי המרה של מטבעות
     const { PayerService } = await import('../../app/services/payer.service');
     const payerService = new PayerService();
-    const currencyTypes = await payerService.getCurrencyTypes();
-    const currencyRates = new Map(currencyTypes.map(c => [c.id, c.rateInShekel]));
+    const currencyTypes = await payerService.getCurrencyTypesRecord();
 
     // Calculate stats efficiently using a single pass, converting all amounts to ILS
     donationStats.forEach(donation => {
       // המר סכום לשקלים
-      const rate = currencyRates.get(donation.currency) || 1;
+      const rate = currencyTypes[donation.currencyId]?.rateInShekel || 1;
       const amountInShekel = donation.amount * rate;
 
       const existing = donationsByDonor.get(donation.donorId);

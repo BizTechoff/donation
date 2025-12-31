@@ -425,10 +425,10 @@ export class ReportController {
       }
 
       // Add amount to year and currency
-      if (!group.yearlyTotals[hebrewYearFormatted][donation.currency]) {
-        group.yearlyTotals[hebrewYearFormatted][donation.currency] = 0;
+      if (!group.yearlyTotals[hebrewYearFormatted][donation.currencyId]) {
+        group.yearlyTotals[hebrewYearFormatted][donation.currencyId] = 0;
       }
-      group.yearlyTotals[hebrewYearFormatted][donation.currency] += donation.amount;
+      group.yearlyTotals[hebrewYearFormatted][donation.currencyId] += donation.amount;
     }
 
     // Calculate actual payments if requested
@@ -464,7 +464,7 @@ export class ReportController {
         }
 
         // Convert to shekel
-        const currency = donation.currency;
+        const currency = donation.currencyId;
         const amountInShekel = payment.amount * (filters.conversionRates[currency] || 1);
         group.actualPayments[hebrewYearFormatted] += amountInShekel;
       }
@@ -621,7 +621,7 @@ export class ReportController {
 
     for (const donation of donations) {
       // Normalize currency name to standard code
-      const normalizedCurrency = ReportController.normalizeCurrencyName(donation.currency);
+      const normalizedCurrency = ReportController.normalizeCurrencyName(donation.currencyId);
 
       // Get Hebrew year of this donation (use cache)
       const hebrewYearFormatted = await getHebrewYearFormatted(donation.donationDate);
@@ -770,12 +770,13 @@ export class ReportController {
    */
   @BackendMethod({ allowed: Allow.authenticated })
   static async getPaymentsReport(
-    conversionRates: { [currency: string]: number }
+    conversionRates: { [currency: string]: number },
+    localFilters?: { selectedDonorIds?: string[] }
   ): Promise<PaymentReportData[]> {
     try {
       // 🎯 Fetch global filters from user.settings
       const currentUserId = remult.user?.id;
-      let globalFilterDonorIds: string[] | undefined = undefined;
+      let globalFilterDonorIds: string[] | undefined = localFilters?.selectedDonorIds;
       let globalFilterCampaignIds: string[] | undefined = undefined;
       let globalFilterDateFrom: Date | undefined = undefined;
       let globalFilterDateTo: Date | undefined = undefined;
@@ -789,14 +790,30 @@ export class ReportController {
         const globalFilters = user?.settings?.globalFilters;
 
         if (globalFilters) {
-          globalFilterDonorIds = globalFilters.donorIds;
+          // Merge local filter with global filter (local takes precedence if set)
+          if (localFilters?.selectedDonorIds && localFilters.selectedDonorIds.length > 0) {
+            // If both local and global donor filters exist, intersect them
+            if (globalFilters.donorIds && globalFilters.donorIds.length > 0) {
+              globalFilterDonorIds = localFilters.selectedDonorIds.filter(id => globalFilters.donorIds!.includes(id));
+            } else {
+              globalFilterDonorIds = localFilters.selectedDonorIds;
+            }
+          } else {
+            globalFilterDonorIds = globalFilters.donorIds;
+          }
           globalFilterCampaignIds = globalFilters.campaignIds;
           globalFilterDateFrom = globalFilters.dateFrom;
           globalFilterDateTo = globalFilters.dateTo;
           globalFilterAmountMin = globalFilters.amountMin;
           globalFilterAmountMax = globalFilters.amountMax;
           globalFilterCityIds = globalFilters.cityIds;
+        } else if (localFilters?.selectedDonorIds && localFilters.selectedDonorIds.length > 0) {
+          // No global filters, but local filter exists
+          globalFilterDonorIds = localFilters.selectedDonorIds;
         }
+      } else if (localFilters?.selectedDonorIds && localFilters.selectedDonorIds.length > 0) {
+        // No user, but local filter exists
+        globalFilterDonorIds = localFilters.selectedDonorIds;
       }
 
       // 🏙️ If city filter is active, get donor IDs for those cities
@@ -900,7 +917,7 @@ export class ReportController {
         if (!donation.donor) continue;
 
         const donorId = donation.donor.id;
-        const amountInShekel = donation.amount * (conversionRates[donation.currency] || 1);
+        const amountInShekel = donation.amount * (conversionRates[donation.currencyId] || 1);
 
         if (!donorMap.has(donorId)) {
           const donorDetails = donorDetailsMap.get(donorId);
@@ -943,7 +960,7 @@ export class ReportController {
         if (!data) continue;
 
         // Convert payment to shekel
-        const amountInShekel = payment.amount * (conversionRates[donation.currency] || 1);
+        const amountInShekel = payment.amount * (conversionRates[donation.currencyId] || 1);
         data.totalActual += amountInShekel;
       }
 
@@ -991,7 +1008,8 @@ export class ReportController {
    */
   @BackendMethod({ allowed: Allow.authenticated })
   static async getYearlySummaryReport(
-    conversionRates: { [currency: string]: number }
+    conversionRates: { [currency: string]: number },
+    localFilters?: { selectedYear?: string | number }
   ): Promise<YearlySummaryData[]> {
     try {
       // 🎯 Fetch global filters from user.settings
@@ -1088,6 +1106,33 @@ export class ReportController {
         console.log(`  → Global amount filter: ${before} → ${donations.length}`);
       }
 
+      // Apply local year filter
+      if (localFilters?.selectedYear && localFilters.selectedYear !== 'last4') {
+        const before = donations.length;
+        // Parse Hebrew year string to get numeric Hebrew year
+        let targetHebrewYear: number;
+        if (typeof localFilters.selectedYear === 'number') {
+          targetHebrewYear = localFilters.selectedYear;
+        } else {
+          // It's a Hebrew year string like "תשפ"ה" - parse it
+          targetHebrewYear = await HebrewDateController.parseHebrewYear(localFilters.selectedYear);
+        }
+
+        // Get date range for the Hebrew year
+        const dateRange = await HebrewDateController.getHebrewYearDateRange(targetHebrewYear);
+        console.log(`  → Filtering by Hebrew year ${targetHebrewYear}:`, {
+          startDate: dateRange.startDate,
+          endDate: dateRange.endDate
+        });
+
+        // Filter donations within the Hebrew year date range
+        donations = donations.filter(d => {
+          const donationDate = new Date(d.donationDate);
+          return donationDate >= dateRange.startDate && donationDate <= dateRange.endDate;
+        });
+        console.log(`  → Local year filter (${localFilters.selectedYear}): ${before} → ${donations.length}`);
+      }
+
       // Group by year
       const yearlyMap = new Map<number, { currencies: { [currency: string]: number }, hebrewYear?: string }>();
 
@@ -1108,7 +1153,7 @@ export class ReportController {
 
         const yearData = yearlyMap.get(year)!;
         // Normalize currency code to standard format
-        const normalizedCurrency = ReportController.normalizeCurrencyName(donation.currency);
+        const normalizedCurrency = ReportController.normalizeCurrencyName(donation.currencyId);
         if (!yearData.currencies[normalizedCurrency]) {
           yearData.currencies[normalizedCurrency] = 0;
         }
@@ -1232,7 +1277,7 @@ export class ReportController {
           dateHebrew: hebrewDate.formatted,
           commitment: commitment,
           amount: donation.amount,
-          currencySymbol: donation.currency,
+          currencyId: donation.currencyId,
           notes: donation.reason || ''
         });
       }
@@ -1253,7 +1298,7 @@ export class ReportController {
           dateHebrew: hebrewDate.formatted,
           commitment: 0,
           amount: donation.amount,
-          currencySymbol: donation.currency,
+          currencyId: donation.currencyId,
           notes: `שותף בתרומה עם ${mainDonorName}`
         });
       }
@@ -1475,7 +1520,7 @@ export interface PersonalDonorReportData {
     dateHebrew: string;
     commitment: number;
     amount: number;
-    currencySymbol: string;
+    currencyId: string;
     notes: string;
   }[];
 }

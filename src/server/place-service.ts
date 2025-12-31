@@ -42,7 +42,7 @@ export class PlaceService {
         nameEn: countryName || countryCode,
         code: countryCode.toUpperCase(),
         phonePrefix: '', // Should be filled manually in seed-countries.ts
-        currency: 'USD', // Default, should be filled manually in seed-countries.ts
+        currencyId: 'USD', // Default, should be filled manually in seed-countries.ts
         currencySymbol: '$', // Default, should be filled manually in seed-countries.ts
         isActive: true
       });
@@ -59,7 +59,7 @@ export class PlaceService {
         nameEn: countryName,
         code: '',
         phonePrefix: '',
-        currency: 'USD',
+        currencyId: 'USD',
         currencySymbol: '$',
         isActive: true
       });

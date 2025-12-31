@@ -577,7 +577,7 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
       <div style="direction: ${direction}; font-family: Arial, sans-serif; min-width: 250px; text-align: ${textAlign};">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
           <h4 style="margin: 0; color: #2c3e50; cursor: pointer; text-decoration: underline;" onclick="window.openDonorDetails('${donorData.donor.id}')">
-            ${donorData.donor.fullName}
+            ${donorData.donor.lastAndFirstName}
           </h4>
           <button style="
             background: #27ae60;
@@ -1006,8 +1006,7 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
             nameEn: countryName,
             code: countryCode.toUpperCase(),
             phonePrefix: '',
-            currency: 'USD',
-            currencySymbol: '$',
+            currencyId: 'USD',
             isActive: true
           });
         }

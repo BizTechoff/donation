@@ -79,7 +79,7 @@
           <label>{{ (i18n.terms$ | async)?.year }}</label>
           <select class="form-control" [(ngModel)]="selectedYear" (ngModelChange)="applyFilters()">
             <option value="">{{ (i18n.terms$ | async)?.allYears }}</option>
-            <option *ngFor="let year of years" [value]="year">{{ year }}</option>
+            <option *ngFor="let year of years" [value]="year">{{ hebrewYearLabels[year] || year }}</option>
           </select>
         </div>
 

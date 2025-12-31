@@ -6,7 +6,7 @@ import { Bank, Place } from '../../../../shared/entity';
 import { AddressComponents } from '../../../common/osm-address-input/osm-address-input.component';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
-import { PayerService, CurrencyType } from '../../../services/payer.service';
+import { PayerService } from '../../../services/payer.service';
 
 export interface BankDetailsModalArgs {
   bankId?: string; // undefined for new bank, or bank ID for edit
@@ -34,7 +34,7 @@ export class BankDetailsModalComponent implements OnInit {
   isNew = false;
 
   // Currency types from service
-  currencyTypes: CurrencyType[] = [];
+  currencyTypes = this.payerService.getCurrencyTypesRecord();
 
   constructor(
     public i18n: I18nService,
@@ -42,11 +42,9 @@ export class BankDetailsModalComponent implements OnInit {
     private cdr: ChangeDetectorRef,
     private payerService: PayerService,
     public dialogRef: MatDialogRef<BankDetailsModalComponent>
-  ) {}
+  ) { }
 
   async ngOnInit() {
-    // Load currency types from service
-    this.currencyTypes = await this.payerService.getCurrencyTypes();
     await this.initializeBank();
 
     // Prevent accidental close for new bank
@@ -62,7 +60,7 @@ export class BankDetailsModalComponent implements OnInit {
         // New bank
         this.isNew = true;
         this.bank = this.bankRepo.create();
-        this.bank.currency = 'ILS';
+        this.bank.currencyId = 'ILS';
         this.bank.isActive = true;
         this.originalBankData = JSON.stringify(this.bank);
       } else {

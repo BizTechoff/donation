@@ -82,7 +82,7 @@ export class Donation extends IdEntity {
     // Note: Stored as currency ID (e.g., 'ILS', 'USD')
     // Use getCurrencyType() from PayerService to get full CurrencyType object
   })
-  currency = 'ILS'
+  currencyId = 'ILS'
 
   @Relations.toOne<Donation, Donor>(() => Donor, {
     caption: 'תורם',

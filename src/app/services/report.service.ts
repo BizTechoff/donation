@@ -29,15 +29,21 @@ export class ReportService {
    * Get Payments Report (Commitment vs Actual)
    * Applies global filters from user.settings automatically
    */
-  async getPaymentsReport(conversionRates: { [currency: string]: number }): Promise<PaymentReportData[]> {
-    return await ReportController.getPaymentsReport(conversionRates);
+  async getPaymentsReport(
+    conversionRates: { [currency: string]: number },
+    localFilters?: { selectedDonorIds?: string[] }
+  ): Promise<PaymentReportData[]> {
+    return await ReportController.getPaymentsReport(conversionRates, localFilters);
   }
 
   /**
    * Get Yearly Summary Report
    * Applies global filters from user.settings automatically
    */
-  async getYearlySummaryReport(conversionRates: { [currency: string]: number }): Promise<YearlySummaryData[]> {
-    return await ReportController.getYearlySummaryReport(conversionRates);
+  async getYearlySummaryReport(
+    conversionRates: { [currency: string]: number },
+    localFilters?: { selectedYear?: string | number }
+  ): Promise<YearlySummaryData[]> {
+    return await ReportController.getYearlySummaryReport(conversionRates, localFilters);
   }
 }

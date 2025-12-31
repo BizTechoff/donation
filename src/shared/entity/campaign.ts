@@ -54,9 +54,9 @@ export class Campaign extends IdEntity {
   @Fields.string({
     caption: 'מטבע',
     // Note: Stored as currency ID (e.g., 'ILS', 'USD')
-    // Use getCurrencyType() method to get full CurrencyType object
+    // Use getCurrencyType() from PayerService to get full CurrencyType object
   })
-  currency = 'ILS'
+  currencyId = 'ILS'
 
   @Fields.date({
     caption: 'תאריך התחלה',

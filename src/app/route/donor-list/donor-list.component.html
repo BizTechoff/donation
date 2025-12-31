@@ -61,6 +61,7 @@
             {{ (i18n.terms$ | async)?.lastDonation }}
             <span class="sort-icon" *ngIf="getSortIcon('lastDonationDate')">{{ getSortIcon('lastDonationDate') }}</span>
           </th>
+          <!-- <th>סיבת התרומה</th> -->
           <th>{{ (i18n.terms$ | async)?.actions }}</th>
         </tr>
       </thead>
@@ -68,7 +69,7 @@
         <tr *ngFor="let donor of this.donors">
           <td>
             <div class="donor-name">
-              <strong>{{donor.fullName}}</strong>
+              <strong>{{donor.lastAndFirstName}}</strong>
               <small *ngIf="donor.idNumber">({{ (i18n.terms$ | async)?.idNumberShort }}: {{donor.idNumber}})</small>
             </div>
           </td>
@@ -84,6 +85,7 @@
             <div>{{ formatHebrewDate(getDonorLastDonationDate(donor.id)) }}</div>
             <small *ngIf="getDonorLastDonationAmount(donor.id)">({{getCurrencySymbol(donor.id)}}{{getDonorLastDonationAmount(donor.id) | number:'1.0-0'}})</small>
           </td>
+          <!-- <td>{{ getDonorLastDonationReason(donor.id) }}</td> -->
           <td class="actions">
             <button class="btn-icon btn-donations" (click)="openDonorDonations(donor); $event.stopPropagation()" [title]="(i18n.terms$ | async)?.donations || 'תרומות'">💰</button>
             <button class="btn-icon btn-gifts" (click)="openDonorGifts(donor); $event.stopPropagation()" [title]="(i18n.terms$ | async)?.gifts || 'מתנות'">🎁</button>
@@ -92,7 +94,7 @@
           </td>
         </tr>
         <tr *ngIf="!loading && this.donors.length === 0">
-          <td colspan="7" class="no-data">
+          <td colspan="8" class="no-data">
             <p>{{ (i18n.terms$ | async)?.noDataFound }}</p>
           </td>
         </tr>

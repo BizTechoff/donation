@@ -117,9 +117,9 @@
                 </div>
               </td>
               <td class="amount-cell">
-                <strong>{{formatCurrency(donation.amount, donation.currency)}}</strong>
+                <strong>{{formatCurrency(donation.amount, donation.currencyId)}}</strong>
               </td>
-              <td>{{donation.currency || 'ILS'}}</td>
+              <td>{{currencyTypes[donation.currencyId]?.label}}</td>
               <td>{{getMethodName(donation)}}</td>
               <td>
                 <span class="type-badge" [class.commitment]="donation.donationType === 'commitment'">

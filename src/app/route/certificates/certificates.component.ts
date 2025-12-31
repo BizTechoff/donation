@@ -303,7 +303,7 @@ export class CertificatesComponent implements OnInit, OnDestroy {
   }
 
   getDonorName(certificate: Certificate): string {
-    return certificate.donor?.fullName || '-';
+    return certificate.donor?.lastAndFirstName || '-';
   }
 
   getCertificateTypeText(certificate: Certificate): string {

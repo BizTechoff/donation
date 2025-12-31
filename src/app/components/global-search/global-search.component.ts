@@ -24,6 +24,7 @@ import { DonorDetailsModalComponent } from '../../routes/modals/donor-details-mo
 import { OrganizationDetailsModalComponent } from '../../routes/modals/organization-details-modal/organization-details-modal.component';
 import { PaymentDetailsModalComponent } from '../../routes/modals/payment-details-modal/payment-details-modal.component';
 import { ReminderDetailsModalComponent } from '../../routes/modals/reminder-details-modal/reminder-details-modal.component';
+import { PayerService } from '../../services/payer.service';
 
 interface SearchResult {
   type: 'donor' | 'donation' | 'campaign' | 'certificate' | 'reminder' | 'payment' | 'company' | 'bank' | 'organization' | 'circle';
@@ -69,7 +70,10 @@ export class GlobalSearchComponent implements OnInit, OnDestroy {
   private saveTimeout: any;
   private resizeObserver?: ResizeObserver;
 
-  constructor(private elementRef: ElementRef) { }
+  // Currency types from service
+  private currencyTypes = this.payerService.getCurrencyTypesRecord();
+
+  constructor(private elementRef: ElementRef, private payerService: PayerService) { }
 
   async ngOnInit() {
     // Load saved settings
@@ -223,7 +227,7 @@ export class GlobalSearchComponent implements OnInit, OnDestroy {
     return donors.map(donor => ({
       type: 'donor' as const,
       id: donor.id,
-      title: donor.fullName || `${donor.firstName} ${donor.lastName}`,
+      title: donor.lastAndFirstName,
       subtitle: '', // No email/phone shown in subtitle for privacy
       icon: 'person',
       entity: donor
@@ -244,7 +248,7 @@ export class GlobalSearchComponent implements OnInit, OnDestroy {
 
     // Filter by donor name or campaign name if not a number
     const filtered = isNumber ? donations : donations.filter(d => {
-      const donorName = d.donor?.fullName || '';
+      const donorName = d.donor?.lastAndFirstName || ''
       const campaignName = d.campaign?.name || '';
       return donorName.toLowerCase().includes(term) ||
         campaignName.toLowerCase().includes(term);
@@ -253,8 +257,8 @@ export class GlobalSearchComponent implements OnInit, OnDestroy {
     return filtered.slice(0, 5).map(donation => ({
       type: 'donation' as const,
       id: donation.id!,
-      title: `תרומה - ${donation.amount} ${donation.currency}`,
-      subtitle: `${donation.donor?.fullName || ''} ${donation.campaign?.name ? '• ' + donation.campaign.name : ''}`,
+      title: `תרומה - ${donation.amount} ${this.currencyTypes[donation.currencyId]?.symbol || donation.currencyId}`,
+      subtitle: donation.donor?.lastAndFirstName,
       icon: 'payments',
       entity: donation
     }));
@@ -294,7 +298,7 @@ export class GlobalSearchComponent implements OnInit, OnDestroy {
       type: 'certificate' as const,
       id: cert.id!,
       title: `תעודה - ${cert.recipientName || cert.eventName}`,
-      subtitle: cert.donor?.fullName || '',
+      subtitle: cert.donor?.lastAndFirstName || '',
       icon: 'description',
       entity: cert
     }));
@@ -315,7 +319,7 @@ export class GlobalSearchComponent implements OnInit, OnDestroy {
     return reminders.map(reminder => ({
       type: 'reminder' as const,
       id: reminder.id!,
-      title: `תזכורת - ${reminder.title || reminder.donor?.fullName || ''}`,
+      title: `תזכורת - ${reminder.title || reminder.donor?.lastAndFirstName || ''}`,
       subtitle: reminder.description || '',
       icon: 'notifications',
       entity: reminder
@@ -339,7 +343,7 @@ export class GlobalSearchComponent implements OnInit, OnDestroy {
       type: 'payment' as const,
       id: payment.id!,
       title: `תשלום - ${payment.amount} ₪`,
-      subtitle: `${payment.paymentIdentifier || payment.reference || ''} • ${payment.donation?.donor?.fullName || ''}`,
+      subtitle: `${payment.paymentIdentifier || payment.reference || ''} • ${payment.donation?.donor?.lastAndFirstName || ''}`,
       icon: 'receipt',
       entity: payment
     }));

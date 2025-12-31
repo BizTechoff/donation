@@ -1,15 +1,15 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { Campaign, User, Place } from '../../../../shared/entity';
+import { DialogConfig, openDialog } from 'common-ui-elements';
 import { remult } from 'remult';
-import { I18nService } from '../../../i18n/i18n.service';
+import { Campaign, Place, User } from '../../../../shared/entity';
+import { DONOR_LEVELS_ARRAY } from '../../../../shared/enum/donor-levels';
 import { UIToolsService } from '../../../common/UIToolsService';
-import { DONOR_LEVELS_ARRAY, DonorLevel } from '../../../../shared/enum/donor-levels';
-import { CampaignBlessingBookModalComponent, CampaignBlessingBookModalArgs } from '../campaign-blessing-book-modal/campaign-blessing-book-modal.component';
-import { CampaignInvitedListModalComponent, CampaignInvitedListModalArgs } from '../campaign-invited-list-modal/campaign-invited-list-modal.component';
-import { openDialog, DialogConfig } from 'common-ui-elements';
-import { PayerService, CurrencyType } from '../../../services/payer.service';
+import { I18nService } from '../../../i18n/i18n.service';
+import { PayerService } from '../../../services/payer.service';
+import { CampaignBlessingBookModalArgs, CampaignBlessingBookModalComponent } from '../campaign-blessing-book-modal/campaign-blessing-book-modal.component';
+import { CampaignInvitedListModalArgs, CampaignInvitedListModalComponent } from '../campaign-invited-list-modal/campaign-invited-list-modal.component';
 
 export interface CampaignDetailsModalArgs {
   campaignId: string; // Can be 'new' for new campaign or campaign ID
@@ -43,7 +43,7 @@ export class CampaignDetailsModalComponent implements OnInit {
   availableLevels = DONOR_LEVELS_ARRAY;
 
   // Currency types from service
-  currencyTypes: CurrencyType[] = [];
+  currencyTypes = this.payerService.getCurrencyTypesRecord();
 
   constructor(
     public i18n: I18nService,
@@ -52,11 +52,9 @@ export class CampaignDetailsModalComponent implements OnInit {
     private cdr: ChangeDetectorRef,
     private payerService: PayerService,
     public dialogRef: MatDialogRef<CampaignDetailsModalComponent>
-  ) {}
+  ) { }
 
   async ngOnInit() {
-    // Load currency types from service
-    this.currencyTypes = await this.payerService.getCurrencyTypes();
     await this.initializeCampaign();
     await this.loadDropdownData();
   }
@@ -70,7 +68,7 @@ export class CampaignDetailsModalComponent implements OnInit {
         this.isNewCampaign = true;
         this.campaign = this.campaignRepo.create();
         this.campaign.startDate = new Date();
-        this.campaign.currency = 'ILS';
+        this.campaign.currencyId = 'ILS';
         this.campaign.campaignType = 'רגיל';
         this.campaign.isActive = true;
         this.campaign.targetAmount = 0;
@@ -380,7 +378,7 @@ export class CampaignDetailsModalComponent implements OnInit {
 
     const currency = currencyMap[countryCode.toUpperCase()];
     if (currency) {
-      this.campaign.currency = currency;
+      this.campaign.currencyId = currency;
       console.log(`Currency auto-selected: ${currency} for country code: ${countryCode}`);
     }
   }
@@ -390,30 +388,30 @@ export class CampaignDetailsModalComponent implements OnInit {
 
     // Check for common country/city patterns
     if (locationLower.includes('israel') || locationLower.includes('ישראל') ||
-        locationLower.includes('jerusalem') || locationLower.includes('ירושלים') ||
-        locationLower.includes('tel aviv') || locationLower.includes('תל אביב')) {
-      this.campaign.currency = 'ILS';
+      locationLower.includes('jerusalem') || locationLower.includes('ירושלים') ||
+      locationLower.includes('tel aviv') || locationLower.includes('תל אביב')) {
+      this.campaign.currencyId = 'ILS';
     } else if (locationLower.includes('usa') || locationLower.includes('america') ||
-               locationLower.includes('ארה"ב') || locationLower.includes('אמריקה') ||
-               locationLower.includes('new york') || locationLower.includes('brooklyn') ||
-               locationLower.includes('miami') || locationLower.includes('los angeles')) {
-      this.campaign.currency = 'USD';
+      locationLower.includes('ארה"ב') || locationLower.includes('אמריקה') ||
+      locationLower.includes('new york') || locationLower.includes('brooklyn') ||
+      locationLower.includes('miami') || locationLower.includes('los angeles')) {
+      this.campaign.currencyId = 'USD';
     } else if (locationLower.includes('canada') || locationLower.includes('קנדה') ||
-               locationLower.includes('toronto') || locationLower.includes('montreal')) {
-      this.campaign.currency = 'CAD';
+      locationLower.includes('toronto') || locationLower.includes('montreal')) {
+      this.campaign.currencyId = 'CAD';
     } else if (locationLower.includes('uk') || locationLower.includes('england') ||
-               locationLower.includes('london') || locationLower.includes('בריטניה')) {
-      this.campaign.currency = 'GBP';
+      locationLower.includes('london') || locationLower.includes('בריטניה')) {
+      this.campaign.currencyId = 'GBP';
     } else if (locationLower.includes('france') || locationLower.includes('צרפת') ||
-               locationLower.includes('germany') || locationLower.includes('גרמניה') ||
-               locationLower.includes('italy') || locationLower.includes('spain') ||
-               locationLower.includes('netherlands') || locationLower.includes('belgium') ||
-               locationLower.includes('paris') || locationLower.includes('berlin') ||
-               locationLower.includes('rome') || locationLower.includes('madrid')) {
-      this.campaign.currency = 'EUR';
+      locationLower.includes('germany') || locationLower.includes('גרמניה') ||
+      locationLower.includes('italy') || locationLower.includes('spain') ||
+      locationLower.includes('netherlands') || locationLower.includes('belgium') ||
+      locationLower.includes('paris') || locationLower.includes('berlin') ||
+      locationLower.includes('rome') || locationLower.includes('madrid')) {
+      this.campaign.currencyId = 'EUR';
     } else if (locationLower.includes('australia') || locationLower.includes('אוסטרליה') ||
-               locationLower.includes('sydney') || locationLower.includes('melbourne')) {
-      this.campaign.currency = 'AUD';
+      locationLower.includes('sydney') || locationLower.includes('melbourne')) {
+      this.campaign.currencyId = 'AUD';
     }
   }
 

@@ -5,6 +5,7 @@ import { remult } from 'remult';
 import { Gift } from '../../../../shared/entity';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
+import { PayerService } from '../../../services/payer.service';
 
 export interface GiftDetailsModalArgs {
   giftId: string; // Can be 'new' for new gift or gift ID
@@ -30,9 +31,13 @@ export class GiftDetailsModalComponent implements OnInit {
   loading = false;
   isNew = false;
 
+  // Currency types from service
+  currencyTypes = this.payerService.getCurrencyTypesRecord();
+
   constructor(
     public i18n: I18nService,
     private ui: UIToolsService,
+    private payerService: PayerService,
     public dialogRef: MatDialogRef<GiftDetailsModalComponent>
   ) {}
 

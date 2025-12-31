@@ -125,7 +125,7 @@ async function fineTuneCampaigns(excelData: ExcelDonationRow[]) {
     campaign.campaignType = 'דינער'
     campaign.isActive = false
     campaign.startDate = new Date()
-    campaign.currency = 'ILS'
+    campaign.currencyId = 'ILS'
     campaign.targetAmount = 0
     campaign.raisedAmount = 0
     campaign.createdById = '' // נשאיר ריק

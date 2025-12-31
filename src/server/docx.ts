@@ -20,7 +20,7 @@ console.info('createLetterDelegate succesfuly registered.')
 ReportController.createReportDelegate = async (report: Report, contents: Record<string, any>) => await createReportDocX(report, contents)
 console.info('createReportDelegate succesfuly registered.')
 ReportController.createReportPdfDelegate = async (report: Report, contents: Record<string, any>) => await createReportPdf(report, contents)
-console.info('createReportDelegate succesfuly registered.')
+console.info('createReportPdfDelegate succesfuly registered.')
 
 
 export const createLetterDocX = async (type: Letter, contents = [] as DocxContentControl[]) => {

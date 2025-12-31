@@ -39,6 +39,7 @@ export class DonorGiftsListComponent implements OnInit, OnDestroy {
   searchDonorName = '';
 
   years: number[] = [];
+  hebrewYearLabels: { [key: number]: string } = {};
 
   // Pagination
   currentPage = 1;
@@ -180,11 +181,15 @@ export class DonorGiftsListComponent implements OnInit, OnDestroy {
     });
   }
 
-  generateYearsList() {
+  async generateYearsList() {
     const currentHebrewYear = this.hebrewDateService.getCurrentHebrewYear();
     this.years = [];
+    this.hebrewYearLabels = {};
     for (let i = currentHebrewYear; i >= currentHebrewYear - 10; i--) {
       this.years.push(i);
+      // Get formatted Hebrew year label
+      const label = await this.hebrewDateService.formatHebrewYear(i);
+      this.hebrewYearLabels[i] = label;
     }
   }
 
@@ -389,7 +394,7 @@ export class DonorGiftsListComponent implements OnInit, OnDestroy {
 
   getDonorName(donorGift: DonorGift): string {
     if (!donorGift.donor) return '-';
-    return `${donorGift.donor.firstName || ''} ${donorGift.donor.lastName || ''}`.trim() || '-';
+    return donorGift.donor.lastAndFirstName
   }
 
   formatDate(date: Date | undefined): string {

@@ -168,7 +168,7 @@
           <td>{{ getDonorHomeAddress(donation) }}</td>
           <!-- <td class="amount">{{ formatAmountInShekel(donation) }}</td> -->
           <td class="amount">{{donation.amount | number}}</td>
-          <td>{{ getCurrencyName(donation.currency) }}</td>
+          <td>{{ currencyTypes[donation.currencyId]?.symbol }}</td>
           <td>{{ formatHebrewDate(donation.donationDate) }}</td>
           <td>
             <span class="method-badge method-{{donation.donationMethod?.type}}">{{ getMethodName(donation) }}</span>

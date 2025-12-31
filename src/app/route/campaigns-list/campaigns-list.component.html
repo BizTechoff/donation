@@ -240,7 +240,7 @@
 
         <div class="form-group">
           <label>{{ (i18n.terms$ | async)?.currency }}</label>
-          <select class="form-control" [(ngModel)]="editingCampaign!.currency" (change)="onLocationChange()">
+          <select class="form-control" [(ngModel)]="editingCampaign!.currencyId" (change)="onLocationChange()">
             <option value="ILS">{{ (i18n.terms$ | async)?.shekelOption }}</option>
             <option value="USD">{{ (i18n.terms$ | async)?.dollarOption }}</option>
             <option value="EUR">{{ (i18n.terms$ | async)?.euroOption }}</option>

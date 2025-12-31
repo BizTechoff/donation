@@ -8,11 +8,12 @@ import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
 import { DonorService } from '../../../services/donor.service';
 import { LetterService } from '../../../services/letter.service';
-import { PayerService, CurrencyType } from '../../../services/payer.service';
+import { PayerService } from '../../../services/payer.service';
 import { BankSelectionModalComponent } from '../bank-selection-modal/bank-selection-modal.component';
 import { DonorDetailsModalComponent } from '../donor-details-modal/donor-details-modal.component';
 import { DonorSelectionModalComponent } from '../donor-selection-modal/donor-selection-modal.component';
 import { OrganizationSelectionModalComponent } from '../organization-selection-modal/organization-selection-modal.component';
+import { CurrencyType } from '../../../../shared/type/currency.type';
 
 export interface DonationDetailsModalArgs {
   donationId: string; // Can be 'new' for new donation or donation ID
@@ -70,7 +71,7 @@ export class DonationDetailsModalComponent implements OnInit {
   selectedPaymentMethod?: DonationMethod;
   selectedOrganization?: Organization;
   selectedBank?: Bank;
-  currencyTypes: CurrencyType[] = [];
+  currencyTypes = this.payerService.getCurrencyTypesRecord();
 
   constructor(
     public i18n: I18nService,
@@ -85,9 +86,6 @@ export class DonationDetailsModalComponent implements OnInit {
   async ngOnInit() {
     this.loading = true;
     try {
-      // Load currency types from service
-      this.currencyTypes = await this.payerService.getCurrencyTypes();
-
       await this.ui.busy.doWhileShowingBusy(async () => {
         if (!this.args?.donationId) return;
 
@@ -102,7 +100,7 @@ export class DonationDetailsModalComponent implements OnInit {
           this.isNewDonation = true;
           this.donation = this.donationRepo.create();
           this.donation.donationDate = new Date();
-          this.donation.currency = 'ILS';
+          this.donation.currencyId = 'ILS';
 
           // Set amount from args if provided
           if (this.args.amount) {
@@ -703,8 +701,8 @@ export class DonationDetailsModalComponent implements OnInit {
       }
 
       // Update currency to match campaign currency
-      if (this.selectedCampaign.currency) {
-        this.donation.currency = this.selectedCampaign.currency;
+      if (this.selectedCampaign.currencyId) {
+        this.donation.currencyId = this.selectedCampaign.currencyId;
         this.changed = true;
       }
 
@@ -838,7 +836,7 @@ export class DonationDetailsModalComponent implements OnInit {
   async onDonorChange(donorId: string) {
     if (!donorId) {
       // If no donor selected, default to ILS
-      this.donation.currency = 'ILS';
+      this.donation.currencyId = 'ILS';
       this.selectedDonor = undefined;
       return;
     }
@@ -862,7 +860,7 @@ export class DonationDetailsModalComponent implements OnInit {
     } catch (error) {
       console.error('Error in onDonorChange:', error);
       // Default to ILS on error
-      this.donation.currency = 'ILS';
+      this.donation.currencyId = 'ILS';
     }
   }
 
@@ -888,20 +886,20 @@ export class DonationDetailsModalComponent implements OnInit {
       });
 
       // If donor has a primary place with country and currency, use it
-      if (donorPlaces.length > 0 && donorPlaces[0].place?.country?.currency) {
-        const currency = donorPlaces[0].place.country.currency;
-        this.donation.currency = currency;
+      if (donorPlaces.length > 0 && donorPlaces[0].place?.country?.currencyId) {
+        const currency = donorPlaces[0].place.country.currencyId;
+        this.donation.currencyId = currency;
         console.log(`Currency auto-set to ${currency} based on donor's country: ${donorPlaces[0].place.country.name}`);
         return;
       }
 
       // Default to ILS if no place/country found
-      this.donation.currency = 'ILS';
+      this.donation.currencyId = 'ILS';
       console.log('No country found for donor, defaulting to ILS');
     } catch (error: any) {
       console.error('Error updating currency based on donor country:', error);
       // Default to ILS on error
-      this.donation.currency = 'ILS';
+      this.donation.currencyId = 'ILS';
     }
   }
 

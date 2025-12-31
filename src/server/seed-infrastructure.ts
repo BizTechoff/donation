@@ -383,7 +383,7 @@ async function seedCountries() {
         country.nameEn = countryData.nameEn
         country.code = countryData.code
         country.phonePrefix = countryData.phonePrefix
-        country.currency = countryData.currency
+        country.currencyId = countryData.currency
         country.currencySymbol = currencySymbols[countryData.currency] || countryData.currency
         country.isActive = true
         await country.save()
@@ -404,8 +404,8 @@ async function seedCountries() {
           existing.phonePrefix = countryData.phonePrefix
           needsUpdate = true
         }
-        if (!existing.currency && countryData.currency) {
-          existing.currency = countryData.currency
+        if (!existing.currencyId && countryData.currency) {
+          existing.currencyId = countryData.currency
           needsUpdate = true
         }
         if (!existing.currencySymbol && countryData.currency) {
@@ -502,7 +502,7 @@ async function findOrCreateCountry(countryCode: string): Promise<Country | undef
         nameEn: defaultData.nameEn,
         code: countryCode,
         phonePrefix: defaultData.phonePrefix,
-        currency: defaultData.currency,
+        currencyId: defaultData.currency,
         currencySymbol: defaultData.currency === 'USD' ? '$' : defaultData.currency === 'ILS' ? '₪' : defaultData.currency === 'EUR' ? '€' : defaultData.currency === 'GBP' ? '£' : defaultData.currency === 'CAD' ? 'C$' : defaultData.currency,
         isActive: true
       })
@@ -768,7 +768,7 @@ export async function seedInfrastructure() {
         const organization = remult.repo(Organization).create({
           name: orgData.name,
           placeId: place.id,  // This is the UUID (place.id), not the Google placeId
-          currency: country?.currency || 'USD',
+          currency: country?.currencyId || 'USD',
           isActive: true
         })
         await organization.save()
@@ -941,7 +941,7 @@ export async function seedInfrastructure() {
         const bank = remult.repo(Bank).create({
           name: bankData.name,
           placeId: place.id,  // This is the UUID (place.id), not the Google placeId
-          currency: country?.currency || 'USD',
+          currency: country?.currencyId || 'USD',
           isActive: true
         })
         await bank.save()

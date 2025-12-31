@@ -113,9 +113,9 @@ type GroupByOption = 'donor' | 'campaign' | 'paymentMethod' | 'fundraiser';
   styleUrls: ['./reports.component.scss']
 })
 export class ReportsComponent implements OnInit, OnDestroy {
-toggleIsPrintAndProduceOnce() {
-  // this.isPrintAndProduceOnce = !this.isPrintAndProduceOnce
-}
+  toggleIsPrintAndProduceOnce() {
+    // this.isPrintAndProduceOnce = !this.isPrintAndProduceOnce
+  }
 
   printAndProduceOnce() {
     this.loadPersonalDonorReport()
@@ -233,6 +233,8 @@ toggleIsPrintAndProduceOnce() {
     tagPosition: 'top-right' as 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
   };
 
+  currencyTypes = this.payerService.getCurrencyTypesRecord()
+
   // Personal Donor Report
   personalDonorReportData: PersonalDonorReportData | null = null;
   selectedDonorForPersonalReport: Donor | null = null;
@@ -303,30 +305,6 @@ toggleIsPrintAndProduceOnce() {
       console.error('Error loading Hebrew year:', error);
       // Fallback
       this.hebrewYears = ['תשפ"ג', 'תשפ"ד', 'תשפ"ה', 'תשפ"ו'];
-    }
-  }
-
-  async loadCurrencyRates() {
-    try {
-      // Load currency rates from PayerService
-      const currencyTypes = await this.payerService.getCurrencyTypes();
-
-      // Build conversion rates map from currency types
-      this.conversionRates = {};
-      currencyTypes.forEach(currency => {
-        this.conversionRates[currency.id] = currency.rateInShekel;
-      });
-
-      console.log('Loaded conversion rates from PayerService:', this.conversionRates);
-    } catch (error) {
-      console.error('Error loading currency rates:', error);
-      // Fallback to default rates if loading fails
-      this.conversionRates = {
-        'ILS': 1,
-        'USD': 3.2,
-        'EUR': 3.73,
-        'GBP': 4.58
-      };
     }
   }
 
@@ -539,19 +517,8 @@ toggleIsPrintAndProduceOnce() {
     return validCodes.includes(normalized) ? normalized : 'ILS';
   }
 
-  getCurrencySymbol(currency: string): string {
-    // Normalize currency first
-    const currencyCode = this.normalizeCurrencyCode(currency);
-
-    // Map currency codes to symbols
-    const symbols: { [key: string]: string } = {
-      'ILS': '₪',
-      'USD': '$',
-      'EUR': '€',
-      'GBP': '£'
-    };
-
-    return symbols[currencyCode] || currencyCode;
+  getCurrencySymbol(currencyId: string): string {
+    return this.currencyTypes[currencyId]?.symbol
   }
 
   formatCurrencyWithSymbol(amount: number, currency: string): string {
@@ -639,7 +606,6 @@ toggleIsPrintAndProduceOnce() {
     console.log('📦 Loading base data...');
     await Promise.all([
       this.loadCurrentHebrewYear(),
-      this.loadCurrencyRates(),
       this.loadFilterOptions()
     ]);
     console.log('✅ Base data loaded successfully');
@@ -914,8 +880,12 @@ toggleIsPrintAndProduceOnce() {
   async loadPaymentsReport() {
     // דוח תשלומים - Commitment vs Actual
     try {
+      // Build local filters
+      const localFilters = {
+        selectedDonorIds: this.filters.selectedDonorIds.length > 0 ? this.filters.selectedDonorIds : undefined
+      };
       // Global filters are now applied on the backend automatically via user.settings
-      this.paymentReportData = await this.reportService.getPaymentsReport(this.conversionRates);
+      this.paymentReportData = await this.reportService.getPaymentsReport(this.conversionRates, localFilters);
 
       // Update pagination info
       this.paymentTotalCount = this.paymentReportData.length;
@@ -934,8 +904,12 @@ toggleIsPrintAndProduceOnce() {
   async loadYearlySummaryReport() {
     // דוח שנתי - סיכום לפי שנים
     try {
+      // Build local filters
+      const localFilters = {
+        selectedYear: this.filters.selectedYear
+      };
       // Global filters are now applied on the backend automatically via user.settings
-      this.yearlySummaryData = await this.reportService.getYearlySummaryReport(this.conversionRates);
+      this.yearlySummaryData = await this.reportService.getYearlySummaryReport(this.conversionRates, localFilters);
 
       // Update pagination info
       this.yearlySummaryTotalCount = this.yearlySummaryData.length;

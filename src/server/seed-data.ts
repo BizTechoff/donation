@@ -41197,7 +41197,7 @@ export async function seedLegacyData() {
         const donation = donationRepo.create({
           donor: donor,
           amount: donationData.amount,
-          currency: donationData.currency,
+          currencyId: donationData.currency,
           donationDate: new Date(donationData.donationDate),
           donationMethod: paymentMethod,
           accountNumber: donationData.accountNumber || '',

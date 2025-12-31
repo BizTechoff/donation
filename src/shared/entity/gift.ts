@@ -46,6 +46,13 @@ export class Gift extends IdEntity {
   estimatedValue = 0
 
   @Fields.string({
+    caption: 'מטבע',
+    // Note: Stored as currency ID (e.g., 'ILS', 'USD')
+    // Use getCurrencyType() from PayerService to get full CurrencyType object
+  })
+  currencyId = 'ILS'
+
+  @Fields.string({
     caption: 'הערות',
   })
   notes = ''

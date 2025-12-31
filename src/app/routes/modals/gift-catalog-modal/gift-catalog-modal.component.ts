@@ -6,6 +6,7 @@ import { Gift } from '../../../../shared/entity';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
 import { GiftDetailsModalComponent } from '../gift-details-modal/gift-details-modal.component';
+import { PayerService } from '../../../services/payer.service';
 
 @DialogConfig({
   hasBackdrop: true,
@@ -25,9 +26,13 @@ export class GiftCatalogModalComponent implements OnInit {
   loading = false;
   searchText = '';
 
+  // Currency types from service
+  currencyTypes = this.payerService.getCurrencyTypesRecord();
+
   constructor(
     public i18n: I18nService,
     private ui: UIToolsService,
+    private payerService: PayerService,
     public dialogRef: MatDialogRef<GiftCatalogModalComponent>
   ) {}
 

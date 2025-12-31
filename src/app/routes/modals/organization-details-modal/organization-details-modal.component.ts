@@ -6,7 +6,8 @@ import { Organization, Place } from '../../../../shared/entity';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
 import { AddressComponents } from '../../../common/osm-address-input/osm-address-input.component';
-import { PayerService, CurrencyType } from '../../../services/payer.service';
+import { PayerService } from '../../../services/payer.service';
+import { CurrencyType } from '../../../../shared/type/currency.type';
 
 export interface OrganizationDetailsModalArgs {
   organizationId?: string; // undefined for new organization, or organization ID for edit
@@ -37,7 +38,7 @@ export class OrganizationDetailsModalComponent implements OnInit {
   isNew = false;
 
   // Currency types from service
-  currencyTypes: CurrencyType[] = [];
+  currencyTypes = this.payerService.getCurrencyTypesRecord();
 
   constructor(
     public i18n: I18nService,
@@ -48,8 +49,6 @@ export class OrganizationDetailsModalComponent implements OnInit {
   ) {}
 
   async ngOnInit() {
-    // Load currency types from service
-    this.currencyTypes = await this.payerService.getCurrencyTypes();
     await this.initializeOrganization();
 
     // Prevent accidental close for new organization
@@ -65,7 +64,7 @@ export class OrganizationDetailsModalComponent implements OnInit {
         // New organization
         this.isNew = true;
         this.organization = this.organizationRepo.create();
-        this.organization.currency = 'ILS';
+        this.organization.currencyId = 'ILS';
         this.organization.isActive = true;
         this.originalOrganizationData = JSON.stringify(this.organization);
       } else {

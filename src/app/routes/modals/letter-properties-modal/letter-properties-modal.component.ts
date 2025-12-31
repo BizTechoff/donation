@@ -487,7 +487,7 @@ export class LetterPropertiesModalComponent implements OnInit {
           'GBP': '£',
           'JPY': '¥'
         };
-        result = currencySymbols[this.donation.currency || 'ILS'] || this.donation.currency || '₪';
+        result = currencySymbols[this.donation.currencyId || 'ILS'] || this.donation.currencyId || '₪';
         break
       }
 

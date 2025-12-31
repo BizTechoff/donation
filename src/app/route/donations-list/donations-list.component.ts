@@ -4,12 +4,12 @@ import { remult } from 'remult';
 import { Subscription } from 'rxjs';
 import { DonationController, DonationFilters } from '../../../shared/controllers/donation.controller';
 import { Campaign, Donation, DonationMethod, Donor, DonorPlace } from '../../../shared/entity';
+import { BusyService } from '../../common-ui-elements/src/angular/wait/busy-service';
 import { UIToolsService } from '../../common/UIToolsService';
 import { I18nService } from '../../i18n/i18n.service';
 import { GlobalFilterService } from '../../services/global-filter.service';
-import { BusyService } from '../../common-ui-elements/src/angular/wait/busy-service';
-import { CurrencyType, PayerService } from '../../services/payer.service';
 import { HebrewDateService } from '../../services/hebrew-date.service';
+import { PayerService } from '../../services/payer.service';
 
 @Component({
   selector: 'app-donations-list',
@@ -66,8 +66,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   private subscriptions = new Subscription();
 
   // Currency types with rates
-  currencyTypes: CurrencyType[] = [];
-  private currencyRates: Map<string, number> = new Map();
+  currencyTypes = this.payerService.getCurrencyTypesRecord()
 
   constructor(
     public i18n: I18nService,
@@ -77,7 +76,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
     private busy: BusyService,
     private payerService: PayerService,
     private hebrewDateService: HebrewDateService
-  ) {}
+  ) { }
 
   async ngOnInit() {
     // Listen for global filter changes
@@ -150,14 +149,6 @@ export class DonationsListComponent implements OnInit, OnDestroy {
         this.updateMobileLabels();
       })
     );
-
-    // Load currency types from server (includes rates, symbols, labels)
-    this.currencyTypes = await this.payerService.getCurrencyTypes();
-
-    // Build rate map for quick lookup
-    this.currencyTypes.forEach(currency => {
-      this.currencyRates.set(currency.id, currency.rateInShekel);
-    });
 
     // Load reference data (donors, campaigns, methods)
     await Promise.all([
@@ -248,11 +239,11 @@ export class DonationsListComponent implements OnInit, OnDestroy {
 
     try {
       await this.editingDonation.save();
-      
+
       if (this.editingDonation.donationMethod) {
         await this.editingDonation.donationMethod.updateStats(this.editingDonation.amount);
       }
-      
+
       if (this.editingDonation.campaign) {
         await this.editingDonation.campaign.updateRaisedAmount(this.editingDonation.amount);
       }
@@ -430,7 +421,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   }
 
   getCurrencySymbol(): string {
-    switch (this.editingDonation?.currency) {
+    switch (this.editingDonation?.currencyId) {
       case 'ILS': return '₪';
       case 'USD': return '$';
       case 'EUR': return '€';
@@ -458,7 +449,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   }
 
   getDonorName(donation: Donation): string {
-    return donation.donor?.fullName || '-';
+    return donation.donor?.lastAndFirstName || '-';
   }
 
   getDonorHomeAddress(donation: Donation): string {
@@ -467,7 +458,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   }
 
   getAmountInShekel(donation: Donation): number {
-    const rate = this.currencyRates.get(donation.currency) || 1;
+    const rate = this.currencyTypes[donation.currencyId]?.rateInShekel || 1;
     return donation.amount * rate;
   }
 
@@ -489,11 +480,6 @@ export class DonationsListComponent implements OnInit, OnDestroy {
 
   getCampaignName(donation: Donation): string {
     return donation.campaign?.name || '-';
-  }
-
-  getCurrencyName(currencyCode: string): string {
-    const currency = this.currencyTypes.find(c => c.id === currencyCode);
-    return currency?.symbol || currencyCode;
   }
 
   getMethodName(donation: Donation): string {

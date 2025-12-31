@@ -47,7 +47,7 @@
                 <div class="progress-fill" [style.width.%]="campaign.progressPercentage"></div>
               </div>
               <span class="progress-text">{{campaign.progressPercentage}}% ({{campaign.raisedAmount}} /
-                {{campaign.targetAmount}} {{campaign.currency}})</span>
+                {{campaign.targetAmount}} {{currencyTypes[campaign.currencyId]?.symbol}})</span>
             </div>
           </div>
         </div>
@@ -152,10 +152,10 @@
                 <mat-icon class="field-icon">monetization_on</mat-icon>
                 <label>{{ (i18n.terms$ | async)?.currencyLabel }}</label>
               </div>
-              <select class="form-control" [(ngModel)]="campaign.currency" [disabled]="!canEdit"
+              <select class="form-control" [(ngModel)]="campaign.currencyId" [disabled]="!canEdit"
                 (ngModelChange)="markAsChanged()">
-                <option *ngFor="let currency of currencyTypes" [value]="currency.id">
-                  {{ currency.label }}
+                <option *ngFor="let currency of currencyTypes | keyvalue" [value]="currency.key">
+                  {{ currency.value.label }} ({{ currency.value.symbol }})
                 </option>
               </select>
             </div>

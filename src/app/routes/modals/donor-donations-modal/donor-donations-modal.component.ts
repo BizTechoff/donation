@@ -7,6 +7,7 @@ import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { HebrewDateService } from '../../../services/hebrew-date.service';
+import { PayerService } from '../../../services/payer.service';
 
 export interface DonorDonationsModalArgs {
   donorId: string;
@@ -69,6 +70,8 @@ export class DonorDonationsModalComponent implements OnInit {
     return this.displayedColumns;
   }
 
+currencyTypes = this.payer.getCurrencyTypesRecord()
+
   // Totals
   totalAmount = 0;
   totalDonations = 0;
@@ -79,7 +82,8 @@ export class DonorDonationsModalComponent implements OnInit {
     private snackBar: MatSnackBar,
     private cdr: ChangeDetectorRef,
     public dialogRef: MatDialogRef<DonorDonationsModalComponent>,
-    private hebrewDateService: HebrewDateService
+    private hebrewDateService: HebrewDateService,
+    private payer: PayerService
   ) {}
 
   async ngOnInit() {
@@ -87,7 +91,7 @@ export class DonorDonationsModalComponent implements OnInit {
   }
 
   get modalTitle(): string {
-    const donorName = this.donor?.fullName || this.args.donorName || '';
+    const donorName = this.donor?.lastAndFirstName || '';
     switch (this.args.donationType) {
       case 'donations':
         return `תרומות של ${donorName}`;
@@ -276,7 +280,7 @@ export class DonorDonationsModalComponent implements OnInit {
   }
 
   async deleteDonation(donation: Donation) {
-    if (await this.ui.yesNoQuestion(`האם אתה בטוח שברצונך למחוק את התרומה של ${donation.amount} ${donation.currency}?`)) {
+    if (await this.ui.yesNoQuestion(`האם אתה בטוח שברצונך למחוק את התרומה של ${donation.donor?.lastAndFirstName} (${donation.amount} ${this.currencyTypes[donation.currencyId]?.symbol || donation.currencyId})?`)) {
       try {
         await this.donationRepo.delete(donation);
         await this.loadDonations();

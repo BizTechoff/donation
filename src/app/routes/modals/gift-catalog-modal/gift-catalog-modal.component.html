@@ -66,7 +66,7 @@
             <td>{{gift.category || '-'}}</td>
             <td class="value-cell">
               <span *ngIf="gift.estimatedValue">
-                {{gift.estimatedValue | number:'1.0-0'}} ₪
+                {{gift.estimatedValue | number:'1.0-0'}} {{currencyTypes[gift.currencyId]?.symbol || '₪'}}
               </span>
               <span *ngIf="!gift.estimatedValue">-</span>
             </td>

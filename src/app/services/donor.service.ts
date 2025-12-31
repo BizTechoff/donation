@@ -232,6 +232,7 @@ export class DonorService {
     const donorLastDonationDateMap = new Map<string, Date>();
     const donorLastDonationAmountMap = new Map<string, number>();
     const donorLastDonationCurrency = new Map<string, string>();
+    const donorLastDonationReason = new Map<string, string>();
 
     // Process places
     allPlaces.forEach(dp => {
@@ -281,7 +282,8 @@ export class DonorService {
         if (!currentLastDate || new Date(donation.donationDate) > currentLastDate) {
           donorLastDonationDateMap.set(donation.donorId, new Date(donation.donationDate));
           donorLastDonationAmountMap.set(donation.donorId, donation.amount || 0);
-          donorLastDonationCurrency.set(donation.donorId, donation.currency || 'ILS');
+          donorLastDonationCurrency.set(donation.donorId, donation.currencyId || 'ILS');
+          donorLastDonationReason.set(donation.donorId, donation.reason || '');
         }
       }
 
@@ -318,7 +320,8 @@ export class DonorService {
       donorDonationsCount,
       donorLastDonationDateMap,
       donorLastDonationAmountMap,
-      donorLastDonationCurrency
+      donorLastDonationCurrency,
+      donorLastDonationReason
     };
   }
 
@@ -337,7 +340,8 @@ export class DonorService {
       donorDonationsCount: new Map<string, number>(),
       donorLastDonationDateMap: new Map<string, Date>(),
       donorLastDonationAmountMap: new Map<string, number>(),
-      donorLastDonationCurrency: new Map<string, string>()
+      donorLastDonationCurrency: new Map<string, string>(),
+      donorLastDonationReason: new Map<string, string>()
     };
   }
 }

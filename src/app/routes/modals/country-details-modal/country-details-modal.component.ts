@@ -5,6 +5,7 @@ import { remult } from 'remult';
 import { Country } from '../../../../shared/entity/country';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
+import { PayerService } from '../../../services/payer.service';
 
 export interface CountryDetailsModalArgs {
   countryId?: string; // undefined for new country, or country ID for edit
@@ -26,12 +27,15 @@ export class CountryDetailsModalComponent implements OnInit {
   country?: Country;
   countryRepo = remult.repo(Country);
 
+currencyTypes = this.payer.getCurrencyTypesRecord()
+
   loading = false;
   isNew = false;
 
   constructor(
     public i18n: I18nService,
     private ui: UIToolsService,
+    private payer: PayerService,
     public dialogRef: MatDialogRef<CountryDetailsModalComponent>
   ) {}
 

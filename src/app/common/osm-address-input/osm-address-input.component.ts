@@ -269,8 +269,8 @@ export class OsmAddressInputComponent implements ControlValueAccessor, OnDestroy
             nameEn: countryName,
             code: countryCode.toUpperCase(),
             phonePrefix: '', // יש למלא ידנית
-            currency: 'USD', // ברירת מחדל - יש למלא ידנית
-            currencySymbol: '$', // ברירת מחדל - יש למלא ידנית
+            currencyId: 'USD', // ברירת מחדל - יש למלא ידנית
+            // currencySymbol: '$', // ברירת מחדל - יש למלא ידנית
             isActive: true
           });
 
