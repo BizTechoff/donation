@@ -1,7 +1,7 @@
 import { config } from "dotenv";
 import { NextFunction, Request, Response } from "express";
-import nodemailer, { createTransport } from 'nodemailer';
-import Mail from "nodemailer/lib/mailer";
+import nodemailer from 'nodemailer';
+import { EmailController } from "../shared/controllers/email.controller";
 import { EmailRequest, EmailResponse } from "../shared/email.type";
 
 config()
@@ -22,7 +22,9 @@ console.log('email.ts.isProduction: ', isProduction)
 // const oAuth2Client = new google.auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
 // oAuth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
 
-console.log('sendEmail loaded')
+EmailController.sendEmailDelegate = async (req: EmailRequest) => await doSendEmail(req)
+console.info('sendEmailDelegate succesfuly registered.')
+
 
 export const sendEmail = async (req: Request, res: Response, next: NextFunction) => {
     console.log('sendEmail called')
@@ -98,7 +100,8 @@ export const doSendEmail = async (req: EmailRequest) => {
 
                     const mailOptions = {
                         from: process.env['EMAIL_SENDER'],
-                        to: isProduction ? req.emails.join(';') : 'biztechoff.app@gmail.com',
+                        to: isProduction ? 'yyg856@gmail.com' : 'biztechoff.app@gmail.com',
+                        // to: isProduction ? req.emails.join(';') : 'biztechoff.app@gmail.com',
                         // to: isProduction ? 'legaltaxi.app@gmail.com' : 'biztechoff.app@gmail.com',
                         subject: `${req.subject}` + (isProduction ? `` : ` (${req.emails.join(';')})`),
                         html: req.html,

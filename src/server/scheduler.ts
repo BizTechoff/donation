@@ -1,5 +1,4 @@
 import { remult } from 'remult'
-import { ReminderController } from '../shared/controllers/reminder.controller'
 import { Reminder } from '../shared/entity/reminder'
 
 /**
@@ -50,7 +49,7 @@ export async function checkAndSendReminders() {
 }
 
 /**
- * Send notification for a specific reminder based on the alert method
+ * Send notification for a specific reminder using the entity method
  */
 async function sendReminderNotification(reminder: Reminder) {
   console.log(`[Scheduler] Processing reminder: ${reminder.title} (ID: ${reminder.id})`)
@@ -59,8 +58,18 @@ async function sendReminderNotification(reminder: Reminder) {
 
   switch (alertMethod) {
     case 'email':
-      // if(!reminder.ale)
-      await sendEmailNotification(reminder)
+      // Use the entity method which handles all the logic:
+      // - Checks sendAlert, isCompleted, isActive
+      // - For non-recurring: checks alertSent
+      // - Sends email
+      // - Updates alertSent
+      // - For recurring: calculates next date
+      const result = await reminder.sendAlertNotification()
+      if (result.success) {
+        console.log(`[Scheduler] Alert sent successfully for: ${reminder.title}`)
+      } else {
+        console.log(`[Scheduler] Alert not sent: ${result.error}`)
+      }
       break
 
     case 'popup':
@@ -76,117 +85,6 @@ async function sendReminderNotification(reminder: Reminder) {
 
     default:
       console.log(`[Scheduler] Unknown alert method '${alertMethod}' for reminder: ${reminder.title}`)
-  }
-
-  // Update the reminder to mark that notification was sent
-  // For recurring: move to next occurrence
-  // For one-time: mark as completed
-  if (reminder.isRecurring) {
-    const nextDate = await ReminderController.calculateNextReminderDate({
-      isRecurring: reminder.isRecurring,
-      recurringPattern: reminder.recurringPattern,
-      dueDate: reminder.dueDate,
-      dueTime: reminder.dueTime,
-      recurringWeekDay: reminder.recurringWeekDay,
-      recurringDayOfMonth: reminder.recurringDayOfMonth,
-      recurringMonth: reminder.recurringMonth,
-      yearlyRecurringType: reminder.yearlyRecurringType,
-      specialOccasion: reminder.specialOccasion
-    })
-    if (nextDate) {
-      reminder.nextReminderDate = nextDate
-      await reminder.save()
-      console.log(`[Scheduler] Updated next reminder date to: ${nextDate}`)
-    }
-  } else {
-    // For non-recurring reminders, mark alert as sent
-    reminder.alertSent = new Date()
-    await reminder.save()
-    console.log(`[Scheduler] Marked alert as sent for non-recurring reminder`)
-  }
-}
-
-/**
- * Send email notification for a reminder
- */
-async function sendEmailNotification(reminder: Reminder) {
-  try {
-    // Get the user
-    const user = reminder.assignedTo
-    if (!user) {
-      console.warn(`[Scheduler] No user assigned to reminder: ${reminder.title}`)
-      return
-    }
-
-    // TODO: Add email field to User entity or get email from user contacts
-    // For now, just log that we would send an email
-    console.log(`[Scheduler] Would send email to user ${user.name} for reminder: ${reminder.title}`)
-
-    // Prepare email content
-    const subject = `תזכורת: ${reminder.title}`
-
-    let body = `שלום ${user.name},\n\n`
-    body += `יש לך תזכורת:\n\n`
-    body += `כותרת: ${reminder.title}\n`
-    body += `סוג: ${reminder.typeText}\n`
-    body += `עדיפות: ${reminder.priorityText}\n`
-
-    if (reminder.description) {
-      body += `תיאור: ${reminder.description}\n`
-    }
-
-    if (reminder.donor) {
-      body += `תורם קשור: ${reminder.donor.fullName}\n`
-    }
-
-    body += `תאריך יעד: ${reminder.dueDate.toLocaleDateString('he-IL')}\n`
-
-    if (reminder.dueTime) {
-      body += `שעת יעד: ${reminder.dueTime}\n`
-    }
-
-    body += `\n\nבברכה,\n`
-    body += `פלטפורמת ניהול תרומות`
-
-    // TODO: Replace with actual email sending service
-    // For now, just log the email content
-    console.log('[Scheduler] Email notification:')
-    console.log(`  To: ${user.name}`)
-    console.log(`  Subject: ${subject}`)
-    console.log(`  Body: ${body}`)
-
-    // When implementing actual email sending, use a service like:
-    // - nodemailer
-    // - SendGrid
-    // - AWS SES
-    // - Mailgun
-    // etc.
-
-    /*
-    Example with nodemailer:
-
-    const nodemailer = require('nodemailer');
-
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: process.env.SMTP_PORT,
-      secure: true,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASSWORD
-      }
-    });
-
-    await transporter.sendMail({
-      from: process.env.EMAIL_FROM,
-      to: user.email,
-      subject: subject,
-      text: body
-    });
-    */
-
-  } catch (error) {
-    console.error(`[Scheduler] Error sending email for reminder ${reminder.id}:`, error)
   }
 }
 

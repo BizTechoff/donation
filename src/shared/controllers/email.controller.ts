@@ -2,6 +2,10 @@ import { Allow, BackendMethod } from 'remult';
 import { EmailRequest, EmailResponse } from '../email.type';
 
 export class EmailController {
+
+
+  static sendEmailDelegate: (req: EmailRequest) => Promise<EmailResponse>
+
   @BackendMethod({ allowed: Allow.authenticated })
   static async sendBlessingRequestEmail(
     donorEmail: string,
@@ -60,10 +64,7 @@ export class EmailController {
   static async sendCustomEmail(
     emailRequest: EmailRequest
   ): Promise<EmailResponse> {
-    return {} as EmailResponse
-    // This code only runs on the backend
-    // Use dynamic require to avoid webpack bundling
-    // const { doSendEmail } = require('../../server/email');
-    // return await doSendEmail(emailRequest);
+    return await EmailController.sendEmailDelegate(emailRequest)
   }
+  
 }
