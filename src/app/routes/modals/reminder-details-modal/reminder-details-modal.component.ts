@@ -10,6 +10,7 @@ import { HebrewDateService } from '../../../services/hebrew-date.service';
 import { ReminderService } from '../../../services/reminder.service';
 import { DonationSelectionModalComponent } from '../donation-selection-modal/donation-selection-modal.component';
 import { DonorSelectionModalComponent } from '../donor-selection-modal/donor-selection-modal.component';
+import { ReminderCompleteModalComponent } from '../reminder-complete-modal/reminder-complete-modal.component';
 
 export interface ReminderDetailsModalArgs {
   reminderId?: string; // 'new' for new reminder or reminder ID for editing
@@ -835,6 +836,35 @@ export class ReminderDetailsModalComponent implements OnInit {
       { value: 'ט"ו באב', label: 'ט"ו באב' },
       { value: 'ראש חודש', label: 'ראש חודש' }
     ];
+  }
+
+  async markAsCompleted() {
+    if (!this.reminder) return;
+
+    try {
+      // Open the complete modal
+      const option = await ReminderCompleteModalComponent.open(this.reminder.isRecurring, this.reminder.title);
+      if (!option) {
+        return; // User cancelled
+      }
+
+      // Handle based on selected option
+      if (option === 'completeAndRemindNext') {
+        // For recurring: move to next occurrence
+        await this.reminder.complete();
+        this.ui.info('התזכורת סומנה כהושלמה ותופיע שוב במועד הבא');
+      } else {
+        // completeFinal: mark as completed permanently
+        await this.reminder.complete(undefined, true);
+        this.ui.info('התזכורת סומנה כהושלמה');
+      }
+
+      this.changed = true;
+      this.dialogRef.close(true);
+    } catch (error) {
+      console.error('Error completing reminder:', error);
+      this.ui.error('שגיאה בסימון התזכורת כהושלמה');
+    }
   }
 
   static async open(args: ReminderDetailsModalArgs): Promise<boolean> {

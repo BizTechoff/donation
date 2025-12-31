@@ -217,14 +217,6 @@
                 *ngIf="!reminder.isCompleted" (click)="completeReminder(reminder)">✅</button>
               <button class="btn-icon btn-edit" [title]="(i18n.terms$ | async)?.editReminder"
                 (click)="editReminder(reminder)">✏</button>
-              <!-- <div class="snooze-dropdown" *ngIf="!reminder.isCompleted">
-                <button class="btn-icon btn-postpone" [title]="(i18n.terms$ | async)?.snoozeReminder">⏰</button>
-                <div class="snooze-menu">
-                  <button (click)="snoozeReminder(reminder, 1)">{{ (i18n.terms$ | async)?.snoozeOneDay }}</button>
-                  <button (click)="snoozeReminder(reminder, 7)">{{ (i18n.terms$ | async)?.snoozeOneWeek }}</button>
-                  <button (click)="snoozeReminder(reminder, 30)">{{ (i18n.terms$ | async)?.snoozeOneMonth }}</button>
-                </div>
-              </div> -->
               <button class="btn-icon btn-delete" [title]="(i18n.terms$ | async)?.deleteReminder"
                 (click)="deleteReminder(reminder)">🗑</button>
             </td>

@@ -18,8 +18,8 @@ import { ReminderController } from '../controllers/reminder.controller'
 @Entity<Reminder>('reminders', {
   allowApiCrud: Allow.authenticated,
   allowApiRead: Allow.authenticated,
-  allowApiUpdate: [Roles.admin],
-  allowApiDelete: [Roles.admin],
+  allowApiUpdate: Allow.authenticated,
+  allowApiDelete: Allow.authenticated,
   allowApiInsert: Allow.authenticated,
   saving: async (reminder) => {
     if (isBackend()) {
@@ -328,10 +328,10 @@ export class Reminder extends IdEntity {
   }
 
   @BackendMethod({ allowed: Allow.authenticated })
-  async complete(notes?: string) {
-    // For recurring reminders: just move to next occurrence
+  async complete(notes?: string, endRecurring: boolean = false) {
+    // For recurring reminders: move to next occurrence (unless endRecurring=true)
     // For one-time reminders: mark as completed
-    if (this.isRecurring) {
+    if (this.isRecurring && !endRecurring) {
       // Calculate next occurrence
       this.nextReminderDate = await ReminderController.calculateNextReminderDate({
         isRecurring: this.isRecurring,
@@ -346,7 +346,7 @@ export class Reminder extends IdEntity {
       })
       // Keep the reminder active (don't set isCompleted)
     } else {
-      // One-time reminder: mark as completed
+      // One-time reminder OR recurring with endRecurring=true: mark as completed
       this.isCompleted = true
       this.completedDate = new Date()
       if (notes) {
@@ -411,6 +411,132 @@ export class Reminder extends IdEntity {
 
     await nextReminder.save()
     return nextReminder
+  }
+
+  /**
+   * Send alert notification for this reminder (email/popup)
+   * Called by scheduler when reminder is due
+   * Returns success status
+   */
+  @BackendMethod({ allowed: Allow.authenticated })
+  async sendAlertNotification(): Promise<{ success: boolean; error?: string }> {
+    // Check if alert should be sent
+    if (!this.sendAlert || this.isCompleted || !this.isActive) {
+      return { success: false, error: 'Alert not needed' }
+    }
+    // For non-recurring reminders, check if alert was already sent
+    if (!this.isRecurring && this.alertSent) {
+      return { success: false, error: 'Alert already sent' }
+    }
+
+    const alertMethod = this.alertMethod || 'popup'
+    let emailSent = false
+
+    // Handle email alerts
+    if (alertMethod === 'email') {
+      // Need to load assignedTo if not loaded
+      const user = this.assignedTo || (this.assignedToId ? await remult.repo(User).findId(this.assignedToId) : null)
+
+      if (!user?.email?.trim()) {
+        return { success: false, error: 'No email address for assigned user' }
+      }
+
+      // Parse emails (separated by ; or ,)
+      const emails = user.email.split(/[;,]/).map(e => e.trim()).filter(e => e.length > 0)
+
+      if (emails.length === 0) {
+        return { success: false, error: 'No valid email addresses' }
+      }
+
+      // Load donor if needed for email content
+      const donor = this.donor || (this.donorId ? await remult.repo(Donor).findId(this.donorId) : null)
+
+      // Build HTML email
+      const subject = `תזכורת: ${this.title}`
+      const html = `
+        <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; direction: rtl;">
+          <h2 style="color: #2c3e50; text-align: center;">תזכורת</h2>
+
+          <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="color: #2c3e50; margin-top: 0;">${this.title}</h3>
+
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #7f8c8d; width: 100px;">סוג:</td>
+                <td style="padding: 8px 0; color: #2c3e50;">${this.typeText}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #7f8c8d;">עדיפות:</td>
+                <td style="padding: 8px 0; color: #2c3e50;">${this.priorityText}</td>
+              </tr>
+              ${this.description ? `
+              <tr>
+                <td style="padding: 8px 0; color: #7f8c8d;">תיאור:</td>
+                <td style="padding: 8px 0; color: #2c3e50;">${this.description}</td>
+              </tr>
+              ` : ''}
+              ${donor ? `
+              <tr>
+                <td style="padding: 8px 0; color: #7f8c8d;">תורם:</td>
+                <td style="padding: 8px 0; color: #2c3e50;">${donor.fullName}</td>
+              </tr>
+              ` : ''}
+              <tr>
+                <td style="padding: 8px 0; color: #7f8c8d;">תאריך יעד:</td>
+                <td style="padding: 8px 0; color: #2c3e50;">${this.dueDate.toLocaleDateString('he-IL')}</td>
+              </tr>
+              ${this.dueTime ? `
+              <tr>
+                <td style="padding: 8px 0; color: #7f8c8d;">שעה:</td>
+                <td style="padding: 8px 0; color: #2c3e50;">${this.dueTime}</td>
+              </tr>
+              ` : ''}
+            </table>
+          </div>
+
+          <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 30px 0;">
+
+          <p style="font-size: 12px; color: #95a5a6; text-align: center;">
+            הודעה זו נשלחה אוטומטית מפלטפורמת ניהול התרומות
+          </p>
+        </div>
+      `
+
+      try {
+        const { EmailController } = await import('../controllers/email.controller')
+        const response = await EmailController.sendCustomEmail({ emails, subject, html })
+
+        if (response?.success) {
+          emailSent = true
+        } else {
+          return { success: false, error: response?.errorText || 'Email sending failed' }
+        }
+      } catch (error) {
+        return { success: false, error: `Email error: ${error}` }
+      }
+    }
+
+    // Mark alert as sent (keeps history of last alert for recurring)
+    this.alertSent = new Date()
+
+    // For recurring reminders, calculate next date
+    if (this.isRecurring) {
+      this.nextReminderDate = await ReminderController.calculateNextReminderDate({
+        isRecurring: this.isRecurring,
+        recurringPattern: this.recurringPattern,
+        dueDate: this.dueDate,
+        dueTime: this.dueTime,
+        recurringWeekDay: this.recurringWeekDay,
+        recurringDayOfMonth: this.recurringDayOfMonth,
+        recurringMonth: this.recurringMonth,
+        yearlyRecurringType: this.yearlyRecurringType,
+        specialOccasion: this.specialOccasion
+      })
+    }
+
+    await this.save()
+
+    return { success: true }
   }
 
 }

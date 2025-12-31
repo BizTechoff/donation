@@ -297,9 +297,18 @@
 
     <!-- Footer Buttons -->
     <div class="modal-footer">
-      <button mat-button (click)="cancel()">{{ (i18n.terms$ | async)?.cancel }}</button>
-      <button mat-raised-button color="primary" (click)="save()" [disabled]="loading">
-        {{ isNewReminder ? (i18n.terms$ | async)?.createReminder : (i18n.terms$ | async)?.saveChanges }}
-      </button>
+      <div class="footer-actions-left">
+        <button mat-raised-button color="accent" (click)="markAsCompleted()"
+          *ngIf="!isNewReminder && reminder && !reminder.isCompleted" [disabled]="loading">
+          <mat-icon>check_circle</mat-icon>
+          סמן כהושלמה
+        </button>
+      </div>
+      <div class="footer-actions-right">
+        <button mat-button (click)="cancel()">{{ (i18n.terms$ | async)?.cancel }}</button>
+        <button mat-raised-button color="primary" (click)="save()" [disabled]="loading">
+          {{ isNewReminder ? (i18n.terms$ | async)?.createReminder : (i18n.terms$ | async)?.saveChanges }}
+        </button>
+      </div>
     </div>
 </div>

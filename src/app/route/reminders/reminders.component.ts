@@ -1,14 +1,15 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { remult } from 'remult';
 import { Subscription } from 'rxjs';
-import { Donor, Reminder, DonorContact, DonorEvent, Event, User } from '../../../shared/entity';
+import { Donor, Reminder, User } from '../../../shared/entity';
 import { DialogConfig } from '../../common-ui-elements';
 import { UIToolsService } from '../../common/UIToolsService';
 import { I18nService } from '../../i18n/i18n.service';
-import { GlobalFilterService } from '../../services/global-filter.service';
+import { ReminderCompleteModalComponent } from '../../routes/modals/reminder-complete-modal/reminder-complete-modal.component';
 import { DonorService } from '../../services/donor.service';
-import { ReminderService } from '../../services/reminder.service';
+import { GlobalFilterService } from '../../services/global-filter.service';
 import { HebrewDateService } from '../../services/hebrew-date.service';
+import { ReminderService } from '../../services/reminder.service';
 
 @DialogConfig({
   hasBackdrop: true
@@ -244,7 +245,8 @@ export class RemindersComponent implements OnInit, OnDestroy {
 
   async deleteReminder(reminder: Reminder) {
     const donorName = reminder.donor?.lastAndFirstName
-    if (confirm(`${this.i18n.terms.confirmDeleteDonor?.replace('{name}', reminder.title || '')}`)) {
+    const yes = await this.ui.yesNoQuestion(`${this.i18n.terms.confirmDeleteDonor?.replace('{name}', reminder.title || '')}`)
+    if (yes) {
       try {
         // No need to clean up source entity link - we use forward reference only
         await reminder.delete();
@@ -256,13 +258,13 @@ export class RemindersComponent implements OnInit, OnDestroy {
   }
 
   async completeReminder(reminder: Reminder) {
-    // Ask for confirmation
-    const confirmMessage = 'האם לסמן את התזכורת הנוכחית כהושלמה?';
-    if (!confirm(confirmMessage)) {
-      return;
-    }
-
     try {
+      // Open the complete modal
+      const option = await ReminderCompleteModalComponent.open(reminder.isRecurring, reminder.title);
+      if (!option) {
+        return; // User cancelled
+      }
+
       // Reload the reminder from the server to get the full entity with methods
       const fullReminder = await this.reminderRepo.findId(reminder.id);
       if (!fullReminder) {
@@ -270,7 +272,15 @@ export class RemindersComponent implements OnInit, OnDestroy {
         return;
       }
 
-      await fullReminder.complete();
+      // Handle based on selected option
+      if (option === 'completeAndRemindNext') {
+        // For recurring: move to next occurrence
+        await fullReminder.complete();
+      } else {
+        // completeFinal: mark as completed permanently
+        await fullReminder.complete(undefined, true);
+      }
+
       await this.loadReminders();
     } catch (error) {
       console.error('Error completing reminder:', error);

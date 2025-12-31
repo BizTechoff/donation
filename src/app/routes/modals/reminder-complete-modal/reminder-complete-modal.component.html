@@ -1,0 +1,57 @@
+<div class="reminder-complete-modal">
+  <div class="modal-header">
+    <div class="header-content">
+      <div class="header-icon">
+        <mat-icon>check_circle</mat-icon>
+      </div>
+      <div class="header-text">
+        <h2>סמן כהושלמה</h2>
+        <p class="header-subtitle" *ngIf="args?.reminderTitle">{{ args.reminderTitle }}</p>
+      </div>
+    </div>
+    <button class="modal-close" (click)="cancel()" matTooltip="סגור">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <div class="modal-body">
+    <div class="complete-options">
+      <!-- For recurring reminders: two options -->
+      <ng-container *ngIf="args?.isRecurring">
+        <button mat-raised-button class="complete-option" (click)="selectOption('completeAndRemindNext')">
+          <mat-icon>replay</mat-icon>
+          <div class="option-text">
+            <span class="option-title">סמן כהושלמה והזכר לי בפעם הבאה</span>
+            <span class="option-subtitle">התזכורת תופיע שוב במועד הבא</span>
+          </div>
+        </button>
+
+        <button mat-raised-button class="complete-option final" (click)="selectOption('completeFinal')">
+          <mat-icon>done_all</mat-icon>
+          <div class="option-text">
+            <span class="option-title">סמן כהושלמה סופית</span>
+            <span class="option-subtitle">התזכורת לא תופיע יותר</span>
+          </div>
+        </button>
+      </ng-container>
+
+      <!-- For non-recurring reminders: single option -->
+      <ng-container *ngIf="!args?.isRecurring">
+        <button mat-raised-button class="complete-option single" (click)="selectOption('completeFinal')">
+          <mat-icon>check_circle</mat-icon>
+          <div class="option-text">
+            <span class="option-title">סמן כהושלמה</span>
+            <span class="option-subtitle">התזכורת תסומן כהושלמה</span>
+          </div>
+        </button>
+      </ng-container>
+    </div>
+  </div>
+
+  <div class="modal-footer">
+    <button mat-stroked-button (click)="cancel()" class="cancel-button">
+      <mat-icon>close</mat-icon>
+      ביטול
+    </button>
+  </div>
+</div>
