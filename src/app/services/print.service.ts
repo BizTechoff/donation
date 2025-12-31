@@ -22,21 +22,42 @@ export interface PrintConfig {
   providedIn: 'root'
 })
 export class PrintService {
+  private printFrame: HTMLIFrameElement | null = null;
 
   print(config: PrintConfig) {
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-      alert('נא לאפשר חלונות קופצים להדפסה');
+    const html = this.generatePrintHtml(config);
+
+    // Remove existing iframe if any
+    if (this.printFrame) {
+      document.body.removeChild(this.printFrame);
+    }
+
+    // Create hidden iframe
+    this.printFrame = document.createElement('iframe');
+    this.printFrame.style.position = 'absolute';
+    this.printFrame.style.top = '-10000px';
+    this.printFrame.style.left = '-10000px';
+    this.printFrame.style.width = '0';
+    this.printFrame.style.height = '0';
+    this.printFrame.style.border = 'none';
+
+    document.body.appendChild(this.printFrame);
+
+    const frameDoc = this.printFrame.contentDocument || this.printFrame.contentWindow?.document;
+    if (!frameDoc) {
+      alert('שגיאה ביצירת חלון הדפסה');
       return;
     }
 
-    const html = this.generatePrintHtml(config);
-    printWindow.document.write(html);
-    printWindow.document.close();
+    frameDoc.open();
+    frameDoc.write(html);
+    frameDoc.close();
 
     // Wait for content to load then print
-    printWindow.onload = () => {
-      printWindow.print();
+    this.printFrame.onload = () => {
+      setTimeout(() => {
+        this.printFrame?.contentWindow?.print();
+      }, 100);
     };
   }
 
