@@ -111,10 +111,12 @@ import { CityDetailsModalComponent } from './routes/modals/city-details-modal/ci
 import { NeighborhoodSelectionModalComponent } from './routes/modals/neighborhood-selection-modal/neighborhood-selection-modal.component'
 import { NeighborhoodDetailsModalComponent } from './routes/modals/neighborhood-details-modal/neighborhood-details-modal.component'
 import { ReminderSnoozeModalComponent } from './routes/modals/reminder-snooze-modal/reminder-snooze-modal.component'
+import { ReminderCompleteModalComponent } from './routes/modals/reminder-complete-modal/reminder-complete-modal.component'
 import { CampaignDonationsModalComponent } from './routes/modals/campaign-donations-modal/campaign-donations-modal.component'
 import { GlobalSearchComponent } from './components/global-search/global-search.component'
 import { AutoYearDirective } from './shared/directives/auto-year.directive'
 import { DateFastInputComponent } from './components/date-fast-input/date-fast-input.component'
+import { A11yModule } from "@angular/cdk/a11y";
 
 @NgModule({
   declarations: [
@@ -194,6 +196,7 @@ import { DateFastInputComponent } from './components/date-fast-input/date-fast-i
     NeighborhoodSelectionModalComponent,
     NeighborhoodDetailsModalComponent,
     ReminderSnoozeModalComponent,
+    ReminderCompleteModalComponent,
     CampaignDonationsModalComponent,
     GlobalSearchComponent
   ],
@@ -230,8 +233,9 @@ import { DateFastInputComponent } from './components/date-fast-input/date-fast-i
     MatSlideToggleModule,
     MatTabsModule,
     DragDropModule,
-    CommonUIElementsModule
-  ],
+    CommonUIElementsModule,
+    A11yModule
+],
   providers: [
     UIToolsService,
     AdminGuard,

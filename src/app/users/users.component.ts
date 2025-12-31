@@ -30,7 +30,7 @@ export class UsersComponent implements OnInit {
     // orderBy: { name: 'asc' },
     rowsInPage: 100,
 
-    columnSettings: (user) => [user.name, user.admin, user.secretary, user.donator, user.disabled, user.commission],
+    columnSettings: (user) => [user.name, user.email, user.admin, user.secretary, user.donator, user.disabled, user.commission],
     rowCssClass: (row) => (row.disabled ? 'canceled' : ''),
     gridButtons: [
       {

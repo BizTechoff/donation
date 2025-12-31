@@ -32,9 +32,13 @@
         <span class="btn-icon">🔄</span>
         {{ (i18n.terms$ | async)?.refreshData }}
       </button>
-      <button class="btn btn-outline" (click)="exportSpecificReport('excel')">
+      <!-- <button class="btn btn-outline" (click)="exportSpecificReport('excel')">
         <span class="btn-icon">📊</span>
         Excel
+      </button> -->
+      <button *ngIf="this.activeReport !== 'personalDonor'" class="btn btn-outline" (click)="printReport()">
+        <span class="btn-icon">🖨️</span>
+        הדפסה
       </button>
     </div>
   </div>
@@ -76,7 +80,7 @@
       <div class="filter-group" *ngIf="activeReport === 'donations' || activeReport === 'yearly'">
         <label>{{ (i18n.terms$ | async)?.filterByYears }}</label>
         <select class="form-control" [(ngModel)]="filters.selectedYear" (ngModelChange)="applyFilters()">
-          <option value="last4">4 שנים אחורנות</option>
+          <option value="last4">{{ activeReport === 'yearly' ? 'כל השנים' : '4 שנים אחרונות' }}</option>
           <option *ngFor="let year of availableYears" [value]="year">{{year}}</option>
         </select>
       </div>
@@ -462,13 +466,13 @@
               </td>
               <td><strong>{{formatCurrencyWithSymbol(curr.totalAmount, curr.currency)}}</strong></td>
             </tr>
-            <tr class="shgetratesekel-row">
+            <!-- <tr class="shgetratesekel-row">
               <td><strong>בשקלים</strong></td>
               <td *ngFor="let year of hebrewYears">
                 ₪{{getCurrencySummaryYearTotal(year).toLocaleString()}}
               </td>
               <td><strong>₪{{getTotalInShekel().toLocaleString()}}</strong></td>
-            </tr>
+            </tr> -->
           </tbody>
         </table>
       </div>
@@ -599,12 +603,12 @@
               <th>{{ (i18n.terms$ | async)?.shekel || 'שקל' }}</th>
               <th>{{ (i18n.terms$ | async)?.dollar || 'דולר' }}</th>
               <th>{{ (i18n.terms$ | async)?.euro || 'יורו' }}</th>
-              <th class="sortable" [class.sorted]="isYearlySummarySorted('totalInShekel')"
+              <!-- <th class="sortable" [class.sorted]="isYearlySummarySorted('totalInShekel')"
                 (click)="toggleYearlySummarySort('totalInShekel', $event)">
                 {{ (i18n.terms$ | async)?.totalByShekel || 'סה"כ בשקלים' }}
                 <span class="sort-icon" *ngIf="getYearlySummarySortIcon('totalInShekel')">{{
                   getYearlySummarySortIcon('totalInShekel') }}</span>
-              </th>
+              </th> -->
             </tr>
           </thead>
           <tbody>
@@ -620,7 +624,7 @@
                 Math.round(yearData.currencies['USD']).toLocaleString() : '-'}}</td>
               <td>{{(yearData.currencies['EUR'] || 0) > 0 ? '€' +
                 Math.round(yearData.currencies['EUR']).toLocaleString() : '-'}}</td>
-              <td><strong>₪{{Math.round(yearData.totalInShekel).toLocaleString()}}</strong></td>
+              <!-- <td><strong>₪{{Math.round(yearData.totalInShekel).toLocaleString()}}</strong></td> -->
             </tr>
           </tbody>
           <tfoot *ngIf="yearlySummaryData.length > 0">
@@ -632,8 +636,8 @@
               </td>
               <td>{{getTotalByCurrency('EUR') > 0 ? '€' + Math.round(getTotalByCurrency('EUR')).toLocaleString() : '-'}}
               </td>
-              <td><strong style="color: #27ae60;">₪{{Math.round(getGrandTotalInShekel()).toLocaleString()}}</strong>
-              </td>
+              <!-- <td><strong style="color: #27ae60;">₪{{Math.round(getGrandTotalInShekel()).toLocaleString()}}</strong>
+              </td> -->
             </tr>
           </tfoot>
         </table>

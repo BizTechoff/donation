@@ -19,7 +19,7 @@ import { Roles } from '../enum/roles'
 @Entity<Donation>('donations', {
   allowApiCrud: Allow.authenticated,
   allowApiRead: Allow.authenticated,
-  allowApiUpdate: [Roles.admin],
+  allowApiUpdate: Allow.authenticated,
   allowApiDelete: [Roles.admin],
   allowApiInsert: Allow.authenticated,
   defaultOrderBy: { donationDate: 'desc', createdDate: 'desc' },

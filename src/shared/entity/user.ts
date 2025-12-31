@@ -40,6 +40,9 @@ export class User extends IdEntity {
   @Fields.string({ includeInApi: false })
   password = ''
 
+  @Fields.string({ caption: terms.email, inputType: 'email' })
+  email = ''
+
   @Fields.date({
     allowApiUpdate: false,
   })

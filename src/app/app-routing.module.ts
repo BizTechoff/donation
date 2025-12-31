@@ -30,7 +30,7 @@ const routes: Routes = [
   // ---------------
   { path: terms.reminders, component: RemindersComponent, canActivate: [AuthenticatedGuard], data: { name: 'reminders' } },
   { path: terms.donorsMap, component: DonorsMapComponent, canActivate: [AuthenticatedGuard], data: { name: 'donorsMap' } },
-  { path: terms.reports, component: ReportsComponent, canActivate: [AdminGuard], data: { name: 'reports' } },
+  { path: terms.reports, component: ReportsComponent, canActivate: [AuthenticatedGuard], data: { name: 'reports' } },
   // ---------------
   { path: terms.userAccounts, component: UsersComponent, canActivate: [AdminGuard], data: { name: 'userAccounts' } },
   // { path: 'seed-data', component: SeedDataComponent, canActivate: [AdminGuard], data: { name: 'seedData' } },
