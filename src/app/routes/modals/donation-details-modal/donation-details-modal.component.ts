@@ -376,7 +376,8 @@ export class DonationDetailsModalComponent implements OnInit {
     if (!this.donation) return;
 
     const confirmMessage = this.i18n.currentTerms.confirmDeleteDonation?.replace('{amount}', this.donation.amount.toString()) || '';
-    if (confirm(confirmMessage)) {
+    const yes = await this.ui.yesNoQuestion(confirmMessage);
+    if (yes) {
       try {
         // Use remult.repo() for deleting in the app (client side)
         await this.donationRepo.delete(this.donation);

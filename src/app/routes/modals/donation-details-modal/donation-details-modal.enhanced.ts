@@ -7,11 +7,12 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { Donation, Donor, Campaign, DonationMethod } from '../../../../shared/entity';
 import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
-import { 
-  ModalNavigationHeaderComponent, 
-  NavigationRecord, 
-  FilterOption, 
-  ActiveFilter 
+import { UIToolsService } from '../../../services/ui-tools.service';
+import {
+  ModalNavigationHeaderComponent,
+  NavigationRecord,
+  FilterOption,
+  ActiveFilter
 } from '../../../shared/modal-navigation-header/modal-navigation-header.component';
 
 export interface DonationDetailsModalArgs {
@@ -50,7 +51,7 @@ export class DonationDetailsModalComponent implements OnInit {
   loading = false;
   isNewDonation = false;
 
-  constructor(public i18n: I18nService) {}
+  constructor(public i18n: I18nService, private ui: UIToolsService) {}
 
   async ngOnInit() {
     await this.loadDropdownData();
@@ -312,7 +313,8 @@ export class DonationDetailsModalComponent implements OnInit {
   async deleteDonation() {
     if (!this.donation) return;
 
-    if (confirm('האם אתה בטוח שברצונך למחוק תרומה זו?')) {
+    const yes = await this.ui.yesNoQuestion('האם אתה בטוח שברצונך למחוק תרומה זו?');
+    if (yes) {
       try {
         await this.donation.delete();
         this.changed = true;

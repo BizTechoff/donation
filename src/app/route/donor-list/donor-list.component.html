@@ -78,8 +78,8 @@
           <td>{{getDonorEmail(donor.id)}}</td>
           <td>
             <div>{{getDonorTotalDonations(donor.id) | number:'1.2-2'}}</div>
-            <small *ngIf="getDonorDonationsCount(donor.id) === 1">(סה"כ תרומה אחת)</small>
-            <small *ngIf="getDonorDonationsCount(donor.id) > 1">(סה"כ: {{getDonorDonationsCount(donor.id)}} תרומות)</small>
+            <small *ngIf="getDonorDonationsCount(donor.id) === 1">(תרומה אחת)</small>
+            <small *ngIf="getDonorDonationsCount(donor.id) > 1">({{getDonorDonationsCount(donor.id)}} תרומות)</small>
           </td>
           <td>
             <div>{{ formatHebrewDate(getDonorLastDonationDate(donor.id)) }}</div>

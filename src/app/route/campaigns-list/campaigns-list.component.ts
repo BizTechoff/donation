@@ -310,7 +310,8 @@ export class CampaignsListComponent implements OnInit, OnDestroy {
   }
 
   async deleteCampaign(campaign: Campaign) {
-    if (confirm(`${this.i18n.currentTerms.deleteCampaignConfirm || 'Are you sure you want to delete campaign'} ${campaign.name}?`)) {
+    const yes = await this.ui.yesNoQuestion(`${this.i18n.currentTerms.deleteCampaignConfirm || 'Are you sure you want to delete campaign'} ${campaign.name}?`);
+    if (yes) {
       try {
         await campaign.delete();
         await this.refreshData();

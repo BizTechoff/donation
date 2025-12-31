@@ -825,7 +825,8 @@ export class DonorDetailsModalComponent implements OnInit {
     if (!this.donor) return;
 
     const confirmMessage = this.i18n.currentTerms.confirmDeleteDonor?.replace('{name}', this.donor.fullName || '') || '';
-    if (confirm(confirmMessage)) {
+    const yes = await this.ui.yesNoQuestion(confirmMessage);
+    if (yes) {
       try {
         await this.donor.delete();
         this.dialogRef.close(true);
@@ -952,7 +953,8 @@ export class DonorDetailsModalComponent implements OnInit {
       return;
     }
 
-    if (confirm('האם אתה בטוח שברצונך להסיר את האירוע?')) {
+    const yes = await this.ui.yesNoQuestion('האם אתה בטוח שברצונך להסיר את האירוע?');
+    if (yes) {
       try {
         // If the event has an ID, it was already saved to DB and needs to be deleted
         if (donorEvent?.id?.length) {
@@ -1033,7 +1035,8 @@ export class DonorDetailsModalComponent implements OnInit {
   }
 
   async removeDonorContact(donorContact: DonorContact) {
-    if (confirm('האם אתה בטוח שברצונך להסיר את איש הקשר?')) {
+    const yes = await this.ui.yesNoQuestion('האם אתה בטוח שברצונך להסיר את איש הקשר?');
+    if (yes) {
       try {
         // Delete from DB if saved (has ID)
         if (donorContact?.id?.length) {
@@ -1121,7 +1124,8 @@ export class DonorDetailsModalComponent implements OnInit {
   }
 
   async removeDonorPlace(donorPlace: DonorPlace) {
-    if (confirm('האם אתה בטוח שברצונך להסיר את הכתובת?')) {
+    const yes = await this.ui.yesNoQuestion('האם אתה בטוח שברצונך להסיר את הכתובת?');
+    if (yes) {
       try {
         // Delete from DB if saved (has ID)
         if (donorPlace?.id?.length) {
@@ -1212,7 +1216,8 @@ export class DonorDetailsModalComponent implements OnInit {
   }
 
   async removeDonorNote(donorNote: DonorNote) {
-    if (confirm('האם אתה בטוח שברצונך להסיר את ההערה?')) {
+    const yes = await this.ui.yesNoQuestion('האם אתה בטוח שברצונך להסיר את ההערה?');
+    if (yes) {
       try {
         if (donorNote?.id?.length) {// Soft delete by setting isActive to false
           donorNote.isActive = false;
@@ -1271,7 +1276,8 @@ export class DonorDetailsModalComponent implements OnInit {
   }
 
   async removeDonorReceptionHour(receptionHour: DonorReceptionHour) {
-    if (confirm('האם אתה בטוח שברצונך להסיר את טווח השעות?')) {
+    const yes = await this.ui.yesNoQuestion('האם אתה בטוח שברצונך להסיר את טווח השעות?');
+    if (yes) {
       try {
         // Check if it has an ID (was already saved to DB)
         if (receptionHour?.id?.length) {

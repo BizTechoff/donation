@@ -130,7 +130,7 @@
             <td mat-cell *matCellDef="let donorBlessing">
               <div class="donor-cell" (click)="openDonorDetails(donorBlessing.donor)">
                 <mat-icon class="cell-icon">person</mat-icon>
-                <span class="donor-name">{{donorBlessing.donor.fullName}}</span>
+                <span class="donor-name">{{donorBlessing.donor.lastAndFirstName}}</span>
               </div>
             </td>
           </ng-container>

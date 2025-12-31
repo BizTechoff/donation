@@ -223,7 +223,8 @@ export class DonorListComponent implements OnInit, OnDestroy {
 
   async deleteDonor(donor: Donor) {
     const confirmMessage = this.i18n.currentTerms.confirmDeleteDonor?.replace('{name}', donor.fullName || '') || '';
-    if (confirm(confirmMessage)) {
+    const yes = await this.ui.yesNoQuestion(confirmMessage);
+    if (yes) {
       try {
         await remult.repo(Donor).delete(donor);
         this.donors = this.donors.filter(d => d.id !== donor.id);

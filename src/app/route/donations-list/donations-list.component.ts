@@ -257,7 +257,8 @@ export class DonationsListComponent implements OnInit, OnDestroy {
 
   async deleteDonation(donation: Donation) {
     const confirmMessage = this.i18n.currentTerms.confirmDeleteDonation?.replace('{donor}', donation.donor?.fullName || '') || '';
-    if (confirm(confirmMessage)) {
+    const yes = await this.ui.yesNoQuestion(confirmMessage);
+    if (yes) {
       try {
         await donation.delete();
         await this.refreshData(); // This will also update the cache

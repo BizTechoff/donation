@@ -5,7 +5,7 @@
     <div class="header-top">
       <h1>{{ (i18n.terms$ | async)?.campaignsManagement }}</h1>
       <div class="header-actions">
-        <button class="btn btn-secondary" (click)="recalculateAllCampaigns()" [disabled]="loading"
+        <button *ngIf="false" class="btn btn-secondary" (click)="recalculateAllCampaigns()" [disabled]="loading"
                 [matTooltip]="'חשב מחדש את סכומי התרומות לכל הקמפיינים'">
           🔄 חישוב מחדש
         </button>
