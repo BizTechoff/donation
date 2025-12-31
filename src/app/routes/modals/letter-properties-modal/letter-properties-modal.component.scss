@@ -449,6 +449,17 @@
     transform: translateX(-2px);
   }
 
+  // שורה נעוצה - הדגשה מיוחדת
+  &.pinned {
+    background: linear-gradient(135deg, rgba(230, 126, 34, 0.12), rgba(211, 84, 0, 0.08));
+    border-color: #e67e22;
+    box-shadow: 0 2px 8px rgba(230, 126, 34, 0.15);
+
+    .line-order {
+      background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+    }
+  }
+
   .line-order {
     flex-shrink: 0;
     width: 32px;
@@ -487,6 +498,24 @@
 
       &:disabled {
         opacity: 0.3;
+      }
+
+      // כפתור נעץ
+      &.pin-active {
+        mat-icon {
+          color: #e67e22;
+          transform: rotate(-45deg);
+        }
+      }
+
+      &:not(.pin-active) {
+        mat-icon {
+          color: #bdc3c7;
+        }
+
+        &:hover mat-icon {
+          color: #e67e22;
+        }
       }
     }
   }

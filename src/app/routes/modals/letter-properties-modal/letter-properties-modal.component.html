@@ -1,7 +1,7 @@
 <!-- Letter Properties Modal -->
 <div class="letter-properties-modal">
 
-
+<!-- {{this.selectedLetterType?.caption}} -->
 <!--
 ניחום אבלים
 ----------------
@@ -175,10 +175,16 @@
 
       <!-- Selected Prefix Lines -->
       <div class="selected-lines" *ngIf="selectedPrefixLines.length > 0">
-        <div class="selected-line" *ngFor="let line of selectedPrefixLines; let i = index">
+        <div class="selected-line" *ngFor="let line of selectedPrefixLines; let i = index" [class.pinned]="line.isPinned">
           <div class="line-order">{{ i + 1 }}</div>
-          <div class="line-text">{{ line }}</div>
+          <div class="line-text">{{ line.text }}</div>
           <div class="line-actions">
+            <button mat-icon-button (click)="togglePrefixPin(i)"
+              [matTooltip]="line.isPinned ? 'הסר מברירת מחדל' : 'קבע כברירת מחדל'"
+              [class.pin-active]="line.isPinned"
+              *ngIf="line.id">
+              <mat-icon>push_pin</mat-icon>
+            </button>
             <button mat-icon-button (click)="movePrefixLineUp(i)" [disabled]="i === 0" matTooltip="הזז למעלה">
               <mat-icon>arrow_upward</mat-icon>
             </button>
@@ -186,7 +192,7 @@
               matTooltip="הזז למטה">
               <mat-icon>arrow_downward</mat-icon>
             </button>
-            <button mat-icon-button (click)="removePrefixLine(i)" matTooltip="הסר">
+            <button mat-icon-button (click)="removePrefixLine(i)" matTooltip="הסר" *ngIf="!line.isPinned">
               <mat-icon>delete</mat-icon>
             </button>
           </div>
@@ -240,10 +246,16 @@
 
       <!-- Selected Suffix Lines -->
       <div class="selected-lines" *ngIf="selectedSuffixLines.length > 0">
-        <div class="selected-line" *ngFor="let line of selectedSuffixLines; let i = index">
+        <div class="selected-line" *ngFor="let line of selectedSuffixLines; let i = index" [class.pinned]="line.isPinned">
           <div class="line-order">{{ i + 1 }}</div>
-          <div class="line-text">{{ line }}</div>
+          <div class="line-text">{{ line.text }}</div>
           <div class="line-actions">
+            <button mat-icon-button (click)="toggleSuffixPin(i)"
+              [matTooltip]="line.isPinned ? 'הסר מברירת מחדל' : 'קבע כברירת מחדל'"
+              [class.pin-active]="line.isPinned"
+              *ngIf="line.id">
+              <mat-icon>push_pin</mat-icon>
+            </button>
             <button mat-icon-button (click)="moveSuffixLineUp(i)" [disabled]="i === 0" matTooltip="הזז למעלה">
               <mat-icon>arrow_upward</mat-icon>
             </button>
@@ -251,7 +263,7 @@
               matTooltip="הזז למטה">
               <mat-icon>arrow_downward</mat-icon>
             </button>
-            <button mat-icon-button (click)="removeSuffixLine(i)" matTooltip="הסר">
+            <button mat-icon-button (click)="removeSuffixLine(i)" matTooltip="הסר" *ngIf="!line.isPinned">
               <mat-icon>delete</mat-icon>
             </button>
           </div>

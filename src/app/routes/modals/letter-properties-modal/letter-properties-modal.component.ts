@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
 import { DialogConfig, openDialog } from 'common-ui-elements';
 import { remult } from 'remult';
-import { Company, Donation, DonorPlace, LetterTitle } from '../../../../shared/entity';
+import { Company, Donation, DonorPlace, LetterTitle, LetterTitleDefault } from '../../../../shared/entity';
 import { Letter } from '../../../../shared/enum/letter';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
@@ -24,6 +24,12 @@ export interface FieldValue {
   displayName: string;
   value: string;
   isMultiline: boolean;
+}
+
+export interface SelectedLine {
+  id: string;      // LetterTitle id
+  text: string;    // הטקסט של הברכה
+  isPinned: boolean; // האם נעוץ לסוג מכתב זה
 }
 
 export interface LetterCategory {
@@ -60,12 +66,12 @@ export class LetterPropertiesModalComponent implements OnInit {
 
   // Prefix options (opening lines)
   availablePrefixLines: string[] = [];
-  selectedPrefixLines: string[] = [];
+  selectedPrefixLines: SelectedLine[] = [];
   customPrefixLine = '';
 
   // Suffix options (closing lines)
   availableSuffixLines: string[] = [];
-  selectedSuffixLines: string[] = [];
+  selectedSuffixLines: SelectedLine[] = [];
   customSuffixLine = '';
 
   loading = false;
@@ -222,9 +228,66 @@ export class LetterPropertiesModalComponent implements OnInit {
     }
   }
 
-  selectLetterType(type: Letter) {
+  async selectLetterType(type: Letter) {
+    this.selectedPrefixLines.splice(0)
+    this.selectedSuffixLines.splice(0)
     this.selectedLetterType = type;
     this.updateFieldValues();
+    await this.loadDefaultTitles();
+  }
+
+  // טעינת כותרות ברירת מחדל לסוג המכתב הנבחר
+  async loadDefaultTitles() {
+    if (!this.selectedLetterType) return;
+
+    try {
+      const letterTitleDefaultRepo = remult.repo(LetterTitleDefault);
+      const letterTitleRepo = remult.repo(LetterTitle);
+
+      // טעינת ברירות מחדל לפתיחה (prefix)
+      const prefixDefaults = await letterTitleDefaultRepo.find({
+        where: {
+          letterName: this.selectedLetterType.caption,
+          position: 'prefix'
+        },
+        orderBy: { sortOrder: 'asc' }
+      });
+
+      // טעינת הכותרות עצמן
+      for (const def of prefixDefaults) {
+        const title = await letterTitleRepo.findId(def.letterTitleId);
+        if (title && title.active && !this.selectedPrefixLines.some(l => l.id === title.id)) {
+          this.selectedPrefixLines.push({
+            id: title.id,
+            text: title.text,
+            isPinned: true
+          });
+        }
+      }
+
+      // טעינת ברירות מחדל לסגירה (suffix)
+      const suffixDefaults = await letterTitleDefaultRepo.find({
+        where: {
+          letterName: this.selectedLetterType.caption,
+          position: 'suffix'
+        },
+        orderBy: { sortOrder: 'asc' }
+      });
+
+      // טעינת הכותרות עצמן
+      for (const def of suffixDefaults) {
+        const title = await letterTitleRepo.findId(def.letterTitleId);
+        if (title && title.active && !this.selectedSuffixLines.some(l => l.id === title.id)) {
+          this.selectedSuffixLines.push({
+            id: title.id,
+            text: title.text,
+            isPinned: true
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error loading default titles:', error);
+    }
   }
 
   backToCategories() {
@@ -454,7 +517,7 @@ export class LetterPropertiesModalComponent implements OnInit {
       }
       case 'תואר_מלא': {
         const parts = [] as string[]
-        parts.push(...this.selectedPrefixLines)
+        parts.push(...this.selectedPrefixLines.map(l => l.text))
         result = parts.join('\n')
         break
       }
@@ -467,7 +530,7 @@ export class LetterPropertiesModalComponent implements OnInit {
         break
       }
       case 'סיומת_מכתב': {
-        result = this.selectedSuffixLines.join('\n');
+        result = this.selectedSuffixLines.map(l => l.text).join('\n');
         break
       }
       case 'תרומה': {
@@ -611,74 +674,243 @@ export class LetterPropertiesModalComponent implements OnInit {
   // Prefix management
   async openPrefixSelectionModal() {
     const result = await openDialog(LetterTitleSelectionModalComponent, (it) => {
-      it.args = { type: 'prefix' };
+      it.args = {
+        type: 'prefix',
+        letterName: this.selectedLetterType?.caption
+      };
     }) as LetterTitle | null;
 
-    if (result && result.text && !this.selectedPrefixLines.includes(result.text)) {
-      this.selectedPrefixLines.push(result.text);
+    if (result && result.text && !this.selectedPrefixLines.some(l => l.id === result.id)) {
+      this.selectedPrefixLines.push({
+        id: result.id,
+        text: result.text,
+        isPinned: false
+      });
     }
   }
 
   addPrefixLine(line: string) {
-    if (line && !this.selectedPrefixLines.includes(line)) {
-      this.selectedPrefixLines.push(line);
+    if (line && !this.selectedPrefixLines.some(l => l.text === line)) {
+      this.selectedPrefixLines.push({
+        id: '',
+        text: line,
+        isPinned: false
+      });
     }
   }
 
   removePrefixLine(index: number) {
+    const line = this.selectedPrefixLines[index];
+    if (line.isPinned) {
+      this.ui.info('לא ניתן להסיר ברכה נעוצה. בטל קודם את הנעיצה.');
+      return;
+    }
     this.selectedPrefixLines.splice(index, 1);
   }
 
-  movePrefixLineUp(index: number) {
+  async movePrefixLineUp(index: number) {
     if (index > 0) {
       const temp = this.selectedPrefixLines[index];
       this.selectedPrefixLines[index] = this.selectedPrefixLines[index - 1];
       this.selectedPrefixLines[index - 1] = temp;
+      await this.updatePinnedSortOrder('prefix');
     }
   }
 
-  movePrefixLineDown(index: number) {
+  async movePrefixLineDown(index: number) {
     if (index < this.selectedPrefixLines.length - 1) {
       const temp = this.selectedPrefixLines[index];
       this.selectedPrefixLines[index] = this.selectedPrefixLines[index + 1];
       this.selectedPrefixLines[index + 1] = temp;
+      await this.updatePinnedSortOrder('prefix');
+    }
+  }
+
+  // Toggle pin for prefix line
+  async togglePrefixPin(index: number) {
+    const line = this.selectedPrefixLines[index];
+    if (!line.id || !this.selectedLetterType) {
+      this.ui.info('לא ניתן לנעוץ ברכה זו');
+      return;
+    }
+
+    try {
+      this.loading = true;
+      const letterTitleDefaultRepo = remult.repo(LetterTitleDefault);
+
+      if (line.isPinned) {
+        // הסר נעיצה
+        const existing = await letterTitleDefaultRepo.findFirst({
+          letterTitleId: line.id,
+          letterName: this.selectedLetterType.caption,
+          position: 'prefix'
+        });
+        if (existing) {
+          await letterTitleDefaultRepo.delete(existing);
+          line.isPinned = false;
+          this.ui.info('ברירת המחדל הוסרה');
+        }
+      } else {
+        // הוסף נעיצה
+        const maxOrder = await this.getMaxPinnedSortOrder('prefix');
+        await letterTitleDefaultRepo.insert({
+          letterTitleId: line.id,
+          letterName: this.selectedLetterType.caption,
+          position: 'prefix',
+          sortOrder: maxOrder + 1
+        });
+        line.isPinned = true;
+        this.ui.info('נשמר כברירת מחדל');
+      }
+    } catch (error) {
+      console.error('Error toggling pin:', error);
+      this.ui.error('שגיאה בעדכון ברירת מחדל');
+    } finally {
+      this.loading = false;
     }
   }
 
   // Suffix management
   async openSuffixSelectionModal() {
     const result = await openDialog(LetterTitleSelectionModalComponent, (it) => {
-      it.args = { type: 'suffix' };
+      it.args = {
+        type: 'suffix',
+        letterName: this.selectedLetterType?.caption
+      };
     }) as LetterTitle | null;
 
-    if (result && result.text && !this.selectedSuffixLines.includes(result.text)) {
-      this.selectedSuffixLines.push(result.text);
+    if (result && result.text && !this.selectedSuffixLines.some(l => l.id === result.id)) {
+      this.selectedSuffixLines.push({
+        id: result.id,
+        text: result.text,
+        isPinned: false
+      });
     }
   }
 
   addSuffixLine(line: string) {
-    if (line && !this.selectedSuffixLines.includes(line)) {
-      this.selectedSuffixLines.push(line);
+    if (line && !this.selectedSuffixLines.some(l => l.text === line)) {
+      this.selectedSuffixLines.push({
+        id: '',
+        text: line,
+        isPinned: false
+      });
     }
   }
 
   removeSuffixLine(index: number) {
+    const line = this.selectedSuffixLines[index];
+    if (line.isPinned) {
+      this.ui.info('לא ניתן להסיר ברכה נעוצה. בטל קודם את הנעיצה.');
+      return;
+    }
     this.selectedSuffixLines.splice(index, 1);
   }
 
-  moveSuffixLineUp(index: number) {
+  async moveSuffixLineUp(index: number) {
     if (index > 0) {
       const temp = this.selectedSuffixLines[index];
       this.selectedSuffixLines[index] = this.selectedSuffixLines[index - 1];
       this.selectedSuffixLines[index - 1] = temp;
+      await this.updatePinnedSortOrder('suffix');
     }
   }
 
-  moveSuffixLineDown(index: number) {
+  async moveSuffixLineDown(index: number) {
     if (index < this.selectedSuffixLines.length - 1) {
       const temp = this.selectedSuffixLines[index];
       this.selectedSuffixLines[index] = this.selectedSuffixLines[index + 1];
       this.selectedSuffixLines[index + 1] = temp;
+      await this.updatePinnedSortOrder('suffix');
+    }
+  }
+
+  // Toggle pin for suffix line
+  async toggleSuffixPin(index: number) {
+    const line = this.selectedSuffixLines[index];
+    if (!line.id || !this.selectedLetterType) {
+      this.ui.info('לא ניתן לנעוץ ברכה זו');
+      return;
+    }
+
+    try {
+      this.loading = true;
+      const letterTitleDefaultRepo = remult.repo(LetterTitleDefault);
+
+      if (line.isPinned) {
+        // הסר נעיצה
+        const existing = await letterTitleDefaultRepo.findFirst({
+          letterTitleId: line.id,
+          letterName: this.selectedLetterType.caption,
+          position: 'suffix'
+        });
+        if (existing) {
+          await letterTitleDefaultRepo.delete(existing);
+          line.isPinned = false;
+          this.ui.info('ברירת המחדל הוסרה');
+        }
+      } else {
+        // הוסף נעיצה
+        const maxOrder = await this.getMaxPinnedSortOrder('suffix');
+        await letterTitleDefaultRepo.insert({
+          letterTitleId: line.id,
+          letterName: this.selectedLetterType.caption,
+          position: 'suffix',
+          sortOrder: maxOrder + 1
+        });
+        line.isPinned = true;
+        this.ui.info('נשמר כברירת מחדל');
+      }
+    } catch (error) {
+      console.error('Error toggling pin:', error);
+      this.ui.error('שגיאה בעדכון ברירת מחדל');
+    } finally {
+      this.loading = false;
+    }
+  }
+
+  // Get max sort order for pinned defaults
+  async getMaxPinnedSortOrder(position: 'prefix' | 'suffix'): Promise<number> {
+    if (!this.selectedLetterType) return 0;
+
+    const letterTitleDefaultRepo = remult.repo(LetterTitleDefault);
+    const defaults = await letterTitleDefaultRepo.find({
+      where: {
+        letterName: this.selectedLetterType.caption,
+        position
+      },
+      orderBy: { sortOrder: 'desc' },
+      limit: 1
+    });
+
+    return defaults.length > 0 ? defaults[0].sortOrder : 0;
+  }
+
+  // עדכון סדר המיון של כל הברכות הנעוצות לפי הסדר הנוכחי ברשימה
+  async updatePinnedSortOrder(position: 'prefix' | 'suffix') {
+    if (!this.selectedLetterType) return;
+
+    try {
+      const letterTitleDefaultRepo = remult.repo(LetterTitleDefault);
+      const lines = position === 'prefix' ? this.selectedPrefixLines : this.selectedSuffixLines;
+
+      // עדכון סדר לכל שורה נעוצה
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        if (line.isPinned && line.id) {
+          const existing = await letterTitleDefaultRepo.findFirst({
+            letterTitleId: line.id,
+            letterName: this.selectedLetterType.caption,
+            position
+          });
+          if (existing && existing.sortOrder !== i) {
+            existing.sortOrder = i;
+            await letterTitleDefaultRepo.save(existing);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error updating sort order:', error);
     }
   }
 
@@ -706,8 +938,8 @@ export class LetterPropertiesModalComponent implements OnInit {
         this.args.donationId,
         this.selectedLetterType,
         fieldValuesMap,
-        this.selectedPrefixLines,
-        this.selectedSuffixLines
+        this.selectedPrefixLines.map(l => l.text),
+        this.selectedSuffixLines.map(l => l.text)
       );
 
       if (response.success) {

@@ -3,12 +3,13 @@ import { MatDialogRef } from '@angular/material/dialog';
 import { DialogConfig } from 'common-ui-elements';
 import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { remult } from 'remult';
-import { LetterTitle } from '../../../../shared/entity';
+import { LetterTitle, LetterTitleDefault } from '../../../../shared/entity';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
 
 export interface LetterTitleSelectionModalArgs {
   type: 'prefix' | 'suffix';
+  letterName?: string; // שם סוג המכתב (caption) לשמירת ברירת מחדל
 }
 
 @DialogConfig({
@@ -26,6 +27,10 @@ export class LetterTitleSelectionModalComponent implements OnInit {
 
   letterTitles: LetterTitle[] = [];
   letterTitleRepo = remult.repo(LetterTitle);
+  letterTitleDefaultRepo = remult.repo(LetterTitleDefault);
+
+  // מפה של כותרות שמסומנות כברירת מחדל לסוג המכתב הנוכחי
+  pinnedTitleIds: Set<string> = new Set();
 
   editingTitle?: LetterTitle;
   isCreating = false;
@@ -39,6 +44,7 @@ export class LetterTitleSelectionModalComponent implements OnInit {
 
   async ngOnInit() {
     await this.loadLetterTitles();
+    await this.loadPinnedDefaults();
   }
 
   async loadLetterTitles() {
@@ -172,6 +178,96 @@ export class LetterTitleSelectionModalComponent implements OnInit {
       return;
     }
     this.dialogRef.close(title);
+  }
+
+  // טעינת ברירות מחדל נעוצות לסוג המכתב הנוכחי
+  async loadPinnedDefaults() {
+    if (!this.args.letterName) return;
+
+    try {
+      const defaults = await this.letterTitleDefaultRepo.find({
+        where: {
+          letterName: this.args.letterName,
+          position: this.args.type
+        }
+      });
+
+      this.pinnedTitleIds = new Set(defaults.map(d => d.letterTitleId));
+    } catch (error) {
+      console.error('Error loading pinned defaults:', error);
+    }
+  }
+
+  // בדיקה האם כותרת נעוצה
+  isPinned(titleId: string): boolean {
+    return this.pinnedTitleIds.has(titleId);
+  }
+
+  // החלפת מצב נעיצה
+  async togglePin(title: LetterTitle, event: Event) {
+    event.stopPropagation();
+
+    if (!this.args.letterName) {
+      this.ui.info('לא ניתן לנעוץ ברירת מחדל ללא סוג מכתב');
+      return;
+    }
+
+    try {
+      this.loading = true;
+
+      if (this.isPinned(title.id)) {
+        // הסר את הנעיצה
+        const existing = await this.letterTitleDefaultRepo.findFirst({
+          letterTitleId: title.id,
+          letterName: this.args.letterName,
+          position: this.args.type
+        });
+
+        if (existing) {
+          await this.letterTitleDefaultRepo.delete(existing);
+          this.pinnedTitleIds.delete(title.id);
+          this.ui.info('ברירת המחדל הוסרה');
+        }
+      } else {
+        // הוסף נעיצה חדשה
+        const maxSortOrder = await this.getMaxPinnedSortOrder();
+        await this.letterTitleDefaultRepo.insert({
+          letterTitleId: title.id,
+          letterName: this.args.letterName,
+          position: this.args.type,
+          sortOrder: maxSortOrder + 1
+        });
+
+        this.pinnedTitleIds.add(title.id);
+        this.ui.info('נשמר כברירת מחדל');
+      }
+    } catch (error) {
+      console.error('Error toggling pin:', error);
+      this.ui.error('שגיאה בעדכון ברירת מחדל');
+    } finally {
+      this.loading = false;
+    }
+  }
+
+  // קבלת סדר מיון מקסימלי לנעיצות קיימות
+  async getMaxPinnedSortOrder(): Promise<number> {
+    if (!this.args.letterName) return 0;
+
+    const defaults = await this.letterTitleDefaultRepo.find({
+      where: {
+        letterName: this.args.letterName,
+        position: this.args.type
+      },
+      orderBy: { sortOrder: 'desc' },
+      limit: 1
+    });
+
+    return defaults.length > 0 ? defaults[0].sortOrder : 0;
+  }
+
+  // בדיקה האם ניתן לנעוץ (יש letterName)
+  canPin(): boolean {
+    return !!this.args.letterName;
   }
 
   closeModal() {

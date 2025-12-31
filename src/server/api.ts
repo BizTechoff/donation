@@ -20,7 +20,7 @@ import { PlaceController } from '../shared/controllers/place.controller'
 import { ReminderController } from '../shared/controllers/reminder.controller'
 import { ReportController } from '../shared/controllers/report.controller'
 import { TargetAudienceController } from '../shared/controllers/target-audience.controller'
-import { Bank, Circle, Company, DonationBank, DonationOrganization, DonorAddressType, DonorContact, DonorGift, DonorNote, DonorPlace, DonorReceptionHour, DonorRelation, Gift, LetterTitle, NoteType, Organization, Payment, TargetAudience } from '../shared/entity'
+import { Bank, Circle, Company, DonationBank, DonationOrganization, DonorAddressType, DonorContact, DonorGift, DonorNote, DonorPlace, DonorReceptionHour, DonorRelation, Gift, LetterTitle, LetterTitleDefault, NoteType, Organization, Payment, TargetAudience } from '../shared/entity'
 import { Blessing } from '../shared/entity/blessing'
 import { BlessingBookType } from '../shared/entity/blessing-book-type'
 import { Campaign } from '../shared/entity/campaign'
@@ -43,9 +43,9 @@ import { geocodeMissingPlaces } from './geocode-places'
 export const entities = [
   User, Donor, Donation, Campaign, DonationMethod, Reminder,
   Certificate, Event, DonorEvent, Blessing, Country, Place, DonationPartner,
-  DonationFile, Bank, Organization, Company, Circle, DonorRelation, DonorContact, 
-  DonorPlace, DonorNote, DonorReceptionHour, NoteType, DonationBank, DonationOrganization, 
-  Payment, DonorAddressType, BlessingBookType, LetterTitle, Gift, DonorGift, TargetAudience]
+  DonationFile, Bank, Organization, Company, Circle, DonorRelation, DonorContact,
+  DonorPlace, DonorNote, DonorReceptionHour, NoteType, DonationBank, DonationOrganization,
+  Payment, DonorAddressType, BlessingBookType, LetterTitle, LetterTitleDefault, Gift, DonorGift, TargetAudience]
 export const api = remultExpress({
   admin: true,
   controllers: [SignInController, UpdatePasswordController, DonorController,

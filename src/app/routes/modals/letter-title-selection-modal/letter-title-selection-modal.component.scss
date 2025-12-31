@@ -357,6 +357,25 @@
     &:disabled {
       opacity: 0.3;
     }
+
+    // Pin button styles
+    &.pinned {
+      mat-icon {
+        color: #e67e22;
+        transform: rotate(-45deg);
+      }
+    }
+
+    &:not(.pinned) {
+      mat-icon {
+        color: #bdc3c7;
+        transform: rotate(0deg);
+      }
+
+      &:hover mat-icon {
+        color: #e67e22;
+      }
+    }
   }
 }
 
