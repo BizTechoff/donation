@@ -1,5 +1,7 @@
-import { Component, ElementRef, EventEmitter, forwardRef, Input, OnDestroy, OnInit, Output, ViewChild } from '@angular/core';
+import { Component, ElementRef, EventEmitter, forwardRef, Input, OnDestroy, OnInit, Output, ViewChild, TemplateRef, ViewContainerRef } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { Overlay, OverlayRef, OverlayPositionBuilder } from '@angular/cdk/overlay';
+import { TemplatePortal } from '@angular/cdk/portal';
 import { HebrewDateService } from '../../services/hebrew-date.service';
 import { I18nService } from '../../i18n/i18n.service';
 
@@ -29,6 +31,12 @@ export class ModernDualDatePickerComponent implements OnInit, OnDestroy, Control
 
   @ViewChild('hebrewPopup', { static: false }) hebrewPopup!: ElementRef;
   @ViewChild('gregorianPopup', { static: false }) gregorianPopup!: ElementRef;
+  @ViewChild('hebrewTrigger', { static: false }) hebrewTrigger!: ElementRef;
+  @ViewChild('gregorianTrigger', { static: false }) gregorianTrigger!: ElementRef;
+  @ViewChild('calendarOverlayTemplate') calendarOverlayTemplate!: TemplateRef<any>;
+
+  // CDK Overlay
+  private overlayRef: OverlayRef | null = null;
 
   // Current date values
   currentDate: Date | null = null;
@@ -76,7 +84,9 @@ export class ModernDualDatePickerComponent implements OnInit, OnDestroy, Control
 
   constructor(
     private hebrewDateService: HebrewDateService,
-    public i18n: I18nService
+    public i18n: I18nService,
+    private overlay: Overlay,
+    private viewContainerRef: ViewContainerRef
   ) {
     // Add this instance to the global set
     ModernDualDatePickerComponent.allInstances.add(this);
@@ -190,6 +200,38 @@ export class ModernDualDatePickerComponent implements OnInit, OnDestroy, Control
     document.addEventListener('click', this.clickOutsideListener, true);
   }
 
+  // Create and show overlay for calendar popups
+  private createOverlay(triggerElement: ElementRef) {
+    if (this.overlayRef) {
+      this.overlayRef.dispose();
+    }
+
+    const positionStrategy = this.overlay.position()
+      .flexibleConnectedTo(triggerElement)
+      .withPositions([
+        { originX: 'center', originY: 'bottom', overlayX: 'center', overlayY: 'top', offsetY: 4 },
+        { originX: 'center', originY: 'top', overlayX: 'center', overlayY: 'bottom', offsetY: -4 }
+      ])
+      .withPush(true)
+      .withViewportMargin(10);
+
+    this.overlayRef = this.overlay.create({
+      positionStrategy,
+      hasBackdrop: false,
+      scrollStrategy: this.overlay.scrollStrategies.reposition()
+    });
+
+    const portal = new TemplatePortal(this.calendarOverlayTemplate, this.viewContainerRef);
+    this.overlayRef.attach(portal);
+  }
+
+  private disposeOverlay() {
+    if (this.overlayRef) {
+      this.overlayRef.dispose();
+      this.overlayRef = null;
+    }
+  }
+
   // Hebrew calendar methods
   toggleHebrewPopup(event: Event) {
     event.stopPropagation();
@@ -207,6 +249,17 @@ export class ModernDualDatePickerComponent implements OnInit, OnDestroy, Control
     } else {
       // Traditional mode - close the other calendar
       this.showGregorianPopup = false;
+    }
+
+    if (this.showHebrewPopup) {
+      // Create overlay after a small delay to ensure DOM is ready
+      setTimeout(() => {
+        if (this.hebrewTrigger) {
+          this.createOverlay(this.hebrewTrigger);
+        }
+      }, 0);
+    } else {
+      this.disposeOverlay();
     }
 
     if (this.showHebrewPopup && this.currentDate) {
@@ -376,6 +429,17 @@ export class ModernDualDatePickerComponent implements OnInit, OnDestroy, Control
       this.showHebrewPopup = false;
     }
 
+    if (this.showGregorianPopup) {
+      // Create overlay after a small delay to ensure DOM is ready
+      setTimeout(() => {
+        if (this.gregorianTrigger) {
+          this.createOverlay(this.gregorianTrigger);
+        }
+      }, 0);
+    } else {
+      this.disposeOverlay();
+    }
+
     if (this.showGregorianPopup && this.currentDate) {
       this.gregorianSelectedDate = new Date(this.currentDate);
       this.gregorianMonth = this.gregorianSelectedDate.getMonth();
@@ -515,6 +579,7 @@ export class ModernDualDatePickerComponent implements OnInit, OnDestroy, Control
   closeAllPopups() {
     this.showHebrewPopup = false;
     this.showGregorianPopup = false;
+    this.disposeOverlay();
   }
 
   // Close popups on all other instances when opening this one
