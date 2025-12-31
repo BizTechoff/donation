@@ -21,6 +21,7 @@ export interface DonationFilters {
   amountFrom?: number;
   selectedCampaignId?: string;
   donorId?: string;
+  selectedDonationType?: string;
   // globalFilters removed - now fetched from user.settings in backend
 }
 
@@ -274,8 +275,16 @@ export class DonationController {
       whereClause.donorId = filters.donorId;
     }
 
+    // Apply donation type filter
+    if (filters.selectedDonationType) {
+      whereClause.donationType = filters.selectedDonationType;
+    }
+
     // Build orderBy from sortColumns or use default
     let orderBy: any = { donationDate: 'desc' as 'desc' }; // Default sort
+    // Track fields that require post-fetch sorting (related entities)
+    let postFetchSortColumns: Array<{ field: string; direction: 'asc' | 'desc' }> = [];
+
     if (sortColumns && sortColumns.length > 0) {
       orderBy = {};
       sortColumns.forEach(sort => {
@@ -292,8 +301,17 @@ export class DonationController {
           case 'donationDate':
             orderBy.donationDate = sort.direction;
             break;
-          // Note: donorName, address, meth
-          // od, campaign, fundraiser sorting would require joins and are done client-side
+          case 'donationType':
+            orderBy.donationType = sort.direction;
+            break;
+          // Fields that require post-fetch sorting (related entities)
+          case 'donorName':
+          case 'address':
+          case 'method':
+          case 'campaign':
+          case 'fundraiser':
+            postFetchSortColumns.push(sort);
+            break;
           default:
             console.log('DonationController: Unsupported sort field for server-side:', fieldName);
             break;
@@ -423,6 +441,43 @@ export class DonationController {
       }
     }
 
+    // Apply post-fetch sorting for related entity fields
+    if (postFetchSortColumns.length > 0) {
+      donations.sort((a, b) => {
+        for (const sort of postFetchSortColumns) {
+          let aValue: string = '';
+          let bValue: string = '';
+
+          switch (sort.field) {
+            case 'donorName':
+              aValue = `${a.donor?.firstName || ''} ${a.donor?.lastName || ''}`.trim().toLowerCase();
+              bValue = `${b.donor?.firstName || ''} ${b.donor?.lastName || ''}`.trim().toLowerCase();
+              break;
+            case 'address':
+              aValue = ((a.donor as any)?.homeAddress || '').toLowerCase();
+              bValue = ((b.donor as any)?.homeAddress || '').toLowerCase();
+              break;
+            case 'method':
+              aValue = (a.donationMethod?.name || '').toLowerCase();
+              bValue = (b.donationMethod?.name || '').toLowerCase();
+              break;
+            case 'campaign':
+              aValue = (a.campaign?.name || '').toLowerCase();
+              bValue = (b.campaign?.name || '').toLowerCase();
+              break;
+            case 'fundraiser':
+              aValue = (a.donor?.fundraiser?.name || '').toLowerCase();
+              bValue = (b.donor?.fundraiser?.name || '').toLowerCase();
+              break;
+          }
+
+          if (aValue < bValue) return sort.direction === 'asc' ? -1 : 1;
+          if (aValue > bValue) return sort.direction === 'asc' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+
     return donations;
   }
 
@@ -432,6 +487,9 @@ export class DonationController {
     if (whereClause === null) {
       return 0;
     }
+
+    // Count only full donations (exclude commitments)
+    whereClause.donationType = { $ne: 'commitment' };
 
     const count = await remult.repo(Donation).count(
       Object.keys(whereClause).length > 0 ? whereClause : undefined
@@ -446,6 +504,47 @@ export class DonationController {
     if (whereClause === null) {
       return 0;
     }
+
+    // Sum only full donations (exclude commitments)
+    whereClause.donationType = { $ne: 'commitment' };
+
+    const donations = await remult.repo(Donation).find({
+      where: Object.keys(whereClause).length > 0 ? whereClause : undefined
+    });
+
+    // Sum all amounts converted to shekels
+    return donations.reduce((sum, donation) => {
+      const rate = currencies[donation.currencyId]?.rateInShekel || 1;
+      return sum + (donation.amount * rate);
+    }, 0);
+  }
+
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async countCommitments(filters: DonationFilters): Promise<number> {
+    const whereClause = await DonationController.buildWhereClause(filters);
+    if (whereClause === null) {
+      return 0;
+    }
+
+    // Override donationType to only count commitments
+    whereClause.donationType = 'commitment';
+
+    const count = await remult.repo(Donation).count(
+      Object.keys(whereClause).length > 0 ? whereClause : undefined
+    );
+
+    return count;
+  }
+
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async sumCommitments(filters: DonationFilters, currencies: Record<string, CurrencyType>): Promise<number> {
+    const whereClause = await DonationController.buildWhereClause(filters);
+    if (whereClause === null) {
+      return 0;
+    }
+
+    // Override donationType to only sum commitments
+    whereClause.donationType = 'commitment';
 
     const donations = await remult.repo(Donation).find({
       where: Object.keys(whereClause).length > 0 ? whereClause : undefined

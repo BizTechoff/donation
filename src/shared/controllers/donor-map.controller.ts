@@ -39,16 +39,31 @@ export interface MapStatistics {
 
 /**
  * סטטיסטיקות תרומות של תורם עבור המפה
- * כל הסכומים הם בשקלים (₪)
+ * לא כולל התחייבויות, כולל שותפויות
  */
 export interface DonorMapStats {
   donorId: string;
-  donationCount: number;
-  /** סך כל התרומות בשקלים */
+
+  // סה"כ תרומות (לא כולל התחייבויות, כולל שותפויות)
   totalDonations: number;
-  /** ממוצע תרומה בשקלים */
+  totalDonationsPartnerCount: number;
+  totalDonationsCurrencySymbol: string;
+
+  // מספר תרומות (לא כולל התחייבויות, כולל שותפויות)
+  donationCount: number;
+  donationCountPartnerCount: number;
+
+  // ממוצע 12 חודשים אחרונים (לא כולל חריגות, לא כולל התחייבויות, כולל שותפויות)
   averageDonation: number;
+  averageDonationPartnerCount: number;
+  averageDonationCurrencySymbol: string;
+
+  // תרומה אחרונה
   lastDonationDate: Date | null;
+  lastDonationAmount: number;
+  lastDonationCurrencySymbol: string;
+  lastDonationIsPartner: boolean;
+
   status: 'active' | 'inactive' | 'high-donor' | 'recent-donor';
 }
 
@@ -540,14 +555,27 @@ export class DonorMapController {
     });
 
     console.time('Load donations');
-    // טען סטטיסטיקות תרומות
-    const donationsByDonor = new Map<string, { count: number; total: number; lastDate: Date | null }>();
-
-    const donationStats = await donationRepo.find({
-      where: { donorId: donorIdsList }
-    });
+    // טען תרומות - גם כתורם ראשי וגם כשותף
+    // לא כולל התחייבויות (donationType !== 'commitment')
+    const [donationsAsPrimary, donationsAsPartner] = await Promise.all([
+      // תרומות שהתורם הוא הראשי
+      donationRepo.find({
+        where: {
+          donorId: { $in: donorIdsList },
+          donationType: { $ne: 'commitment' }
+        }
+      }),
+      // תרומות שהתורם הוא שותף
+      donationRepo.find({
+        where: {
+          donationType: { $ne: 'commitment' }
+        }
+      }).then(donations => donations.filter(d =>
+        d.partnerIds && d.partnerIds.some(pid => donorIdsList.includes(pid))
+      ))
+    ]);
     console.timeEnd('Load donations');
-    console.log(`Loaded ${donationStats.length} donations for ${donorIdsList.length} donors`);
+    console.log(`Loaded ${donationsAsPrimary.length} primary donations and ${donationsAsPartner.length} partner donations`);
 
     console.time('Calculate donation stats');
     // טען שערי המרה של מטבעות
@@ -555,45 +583,167 @@ export class DonorMapController {
     const payerService = new PayerService();
     const currencyTypes = await payerService.getCurrencyTypesRecord();
 
-    // Calculate stats efficiently using a single pass, converting all amounts to ILS
-    donationStats.forEach(donation => {
-      // המר סכום לשקלים
-      const rate = currencyTypes[donation.currencyId]?.rateInShekel || 1;
-      const amountInShekel = donation.amount * rate;
+    // חישוב 12 חודשים אחרונים לממוצע
+    const twelveMonthsAgo = new Date();
+    twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
 
-      const existing = donationsByDonor.get(donation.donorId);
-      if (!existing) {
-        donationsByDonor.set(donation.donorId, {
-          count: 1,
-          total: amountInShekel,
-          lastDate: donation.donationDate
-        });
-      } else {
-        existing.count++;
-        existing.total += amountInShekel;
-        if (!existing.lastDate || (donation.donationDate && new Date(donation.donationDate) > new Date(existing.lastDate))) {
-          existing.lastDate = donation.donationDate;
-        }
-      }
+    // מבנה נתונים לסטטיסטיקות מפורטות
+    interface DonorStatsData {
+      // סה"כ תרומות - לפי מטבע (ללא המרה)
+      totalAmountByCurrency: Map<string, number>;
+      totalCount: number;
+      totalPartnerCount: number;
+
+      // ממוצע 12 חודשים (לא כולל חריגות) - לפי מטבע
+      avg12MonthsByCurrency: Map<string, number>;
+      avg12MonthsCount: number;
+      avg12MonthsPartnerCount: number;
+
+      // תרומה אחרונה
+      lastDonation: {
+        date: Date | null;
+        amount: number;
+        currencyId: string;
+        isPartner: boolean;
+      };
+    }
+
+    const donorStatsMap = new Map<string, DonorStatsData>();
+
+    // פונקציה לאתחול סטטיסטיקות תורם
+    const initDonorStats = (): DonorStatsData => ({
+      totalAmountByCurrency: new Map(),
+      totalCount: 0,
+      totalPartnerCount: 0,
+      avg12MonthsByCurrency: new Map(),
+      avg12MonthsCount: 0,
+      avg12MonthsPartnerCount: 0,
+      lastDonation: { date: null, amount: 0, currencyId: '', isPartner: false }
     });
+
+    // פונקציה לעדכון סטטיסטיקות
+    const updateStats = (donorId: string, donation: Donation, isPartner: boolean) => {
+      let stats = donorStatsMap.get(donorId);
+      if (!stats) {
+        stats = initDonorStats();
+        donorStatsMap.set(donorId, stats);
+      }
+
+      // עדכון סה"כ - שמור לפי מטבע (ללא המרה)
+      const currentTotal = stats.totalAmountByCurrency.get(donation.currencyId) || 0;
+      stats.totalAmountByCurrency.set(donation.currencyId, currentTotal + donation.amount);
+      stats.totalCount++;
+      if (isPartner) stats.totalPartnerCount++;
+
+      // עדכון ממוצע 12 חודשים (לא כולל חריגות) - לפי מטבע
+      if (donation.donationDate && new Date(donation.donationDate) >= twelveMonthsAgo && !donation.isExceptional) {
+        const currentAvg = stats.avg12MonthsByCurrency.get(donation.currencyId) || 0;
+        stats.avg12MonthsByCurrency.set(donation.currencyId, currentAvg + donation.amount);
+        stats.avg12MonthsCount++;
+        if (isPartner) stats.avg12MonthsPartnerCount++;
+      }
+
+      // עדכון תרומה אחרונה
+      if (!stats.lastDonation.date || (donation.donationDate && new Date(donation.donationDate) > new Date(stats.lastDonation.date))) {
+        stats.lastDonation = {
+          date: donation.donationDate,
+          amount: donation.amount,
+          currencyId: donation.currencyId,
+          isPartner
+        };
+      }
+    };
+
+    // עבור על תרומות ראשיות
+    donationsAsPrimary.forEach(donation => {
+      updateStats(donation.donorId, donation, false);
+    });
+
+    // עבור על תרומות כשותף
+    // חשוב: דלג על התורם הראשי אם הוא גם ברשימת השותפים כדי לא לספור פעמיים
+    donationsAsPartner.forEach(donation => {
+      donation.partnerIds?.forEach(partnerId => {
+        if (donorIdsList.includes(partnerId) && partnerId !== donation.donorId) {
+          updateStats(partnerId, donation, true);
+        }
+      });
+    });
+
+    /**
+     * פונקציה לחישוב סכום כולל ומטבע תצוגה
+     * אם יש מטבע אחד בלבד - מחזיר את הסכום המקורי במטבע המקורי (ללא המרה)
+     * אם יש כמה מטבעות - ממיר הכל למטבע של כתובת הבית של התורם
+     */
+    const calculateTotalAndCurrency = (
+      amountByCurrency: Map<string, number>,
+      donorId: string
+    ): { total: number; currencyId: string } => {
+      if (amountByCurrency.size === 0) {
+        return { total: 0, currencyId: 'ILS' };
+      }
+
+      // אם יש מטבע אחד בלבד - החזר את הסכום המקורי במטבע המקורי
+      if (amountByCurrency.size === 1) {
+        const currencyId = amountByCurrency.keys().next().value || 'ILS';
+        const total = amountByCurrency.get(currencyId) || 0;
+        return { total, currencyId };
+      }
+
+      // אם יש כמה מטבעות - המר הכל למטבע של כתובת הבית
+      const donorPlace = donorPlaceMap.get(donorId);
+      const targetCurrencyId = donorPlace?.place?.country?.currencyId || 'ILS';
+      const targetRate = currencyTypes[targetCurrencyId]?.rateInShekel || 1;
+
+      let totalInTarget = 0;
+      amountByCurrency.forEach((amount, currencyId) => {
+        const sourceRate = currencyTypes[currencyId]?.rateInShekel || 1;
+        // המר לשקלים ואז למטבע היעד
+        const amountInShekel = amount * sourceRate;
+        const amountInTarget = amountInShekel / targetRate;
+        totalInTarget += amountInTarget;
+      });
+
+      return { total: totalInTarget, currencyId: targetCurrencyId };
+    };
+
     console.timeEnd('Calculate donation stats');
 
     console.time('Build result objects');
     // בנה את התוצאה עם כל הנתונים והסטטיסטיקות
     const result: DonorMapData[] = donors.map(donor => {
-      const stats = donationsByDonor.get(donor.id);
+      const stats = donorStatsMap.get(donor.id);
       const donorPlace = donorPlaceMap.get(donor.id) || null;
 
-      // חשב סטטיסטיקות
-      const donationCount = stats?.count || 0;
-      const totalDonations = stats?.total || 0;
-      const averageDonation = donationCount > 0 ? totalDonations / donationCount : 0;
-      const lastDonationDate = stats?.lastDate || null;
+      // חשב סטטיסטיקות - עם לוגיקת מטבע חכמה
+      const donationCount = stats?.totalCount || 0;
+      const lastDonationDate = stats?.lastDonation.date || null;
 
-      // קבע סטטוס
+      // חשב סה"כ תרומות עם מטבע מתאים
+      const totalResult = calculateTotalAndCurrency(
+        stats?.totalAmountByCurrency || new Map(),
+        donor.id
+      );
+
+      // חשב ממוצע 12 חודשים עם מטבע מתאים
+      const avgResult = calculateTotalAndCurrency(
+        stats?.avg12MonthsByCurrency || new Map(),
+        donor.id
+      );
+      const averageDonation = stats?.avg12MonthsCount ? avgResult.total / stats.avg12MonthsCount : 0;
+
+      // מטבע תרומה אחרונה - תמיד המטבע המקורי
+      const lastCurrency = stats?.lastDonation.currencyId || 'ILS';
+
+      // קבע סטטוס - לצורך סטטוס צריך להמיר לשקלים לצורך השוואה
+      let totalInShekelForStatus = 0;
+      stats?.totalAmountByCurrency.forEach((amount, currencyId) => {
+        const rate = currencyTypes[currencyId]?.rateInShekel || 1;
+        totalInShekelForStatus += amount * rate;
+      });
+
       let status: 'active' | 'inactive' | 'high-donor' | 'recent-donor' = 'inactive';
       if (donor.isActive) {
-        if (totalDonations > DonorMapController.HIGH_DONOR_AMOUNT) {
+        if (totalInShekelForStatus > DonorMapController.HIGH_DONOR_AMOUNT) {
           status = 'high-donor';
         } else if (lastDonationDate) {
           const threeMonthsAgo = new Date();
@@ -631,10 +781,23 @@ export class DonorMapController {
         fullAddress: fullAddress || null,
         stats: {
           donorId: donor.id,
+          // סה"כ תרומות
+          totalDonations: totalResult.total,
+          totalDonationsPartnerCount: stats?.totalPartnerCount || 0,
+          totalDonationsCurrencySymbol: currencyTypes[totalResult.currencyId]?.symbol || '₪',
+          // מספר תרומות
           donationCount,
-          totalDonations,
+          donationCountPartnerCount: stats?.totalPartnerCount || 0,
+          // ממוצע 12 חודשים
           averageDonation,
+          averageDonationPartnerCount: stats?.avg12MonthsPartnerCount || 0,
+          averageDonationCurrencySymbol: currencyTypes[avgResult.currencyId]?.symbol || '₪',
+          // תרומה אחרונה
           lastDonationDate,
+          lastDonationAmount: stats?.lastDonation.amount || 0,
+          lastDonationCurrencySymbol: currencyTypes[lastCurrency]?.symbol || '₪',
+          lastDonationIsPartner: stats?.lastDonation.isPartner || false,
+          // סטטוס
           status
         }
       };

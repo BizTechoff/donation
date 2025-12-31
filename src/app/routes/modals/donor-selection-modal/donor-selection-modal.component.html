@@ -12,7 +12,7 @@
       <div class="filter-row">
         <div class="filter-group">
           <label>{{ (i18n.terms$ | async)?.searchLabel }}</label>
-          <input type="text" [(ngModel)]="filterText" (ngModelChange)="applyFilters()" [placeholder]="(i18n.terms$ | async)?.searchDonorPlaceholder || ''">
+          <input #searchInput type="text" [(ngModel)]="filterText" (ngModelChange)="applyFilters()" [placeholder]="(i18n.terms$ | async)?.searchDonorPlaceholder || ''" autofocus cdkFocusInitial>
         </div>
         <button class="btn-create" (click)="createNewDonor()">{{ (i18n.terms$ | async)?.createNewDonorButton }}</button>
       </div>

@@ -558,6 +558,17 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  /**
+   * Get the Google Maps marker for a specific donor by ID
+   */
+  getMarkerOf(donorId: string): google.maps.Marker | undefined {
+    const index = this.markersData.findIndex(m => m.donorId === donorId);
+    if (index !== -1 && index < this.markers.length) {
+      return this.markers[index];
+    }
+    return undefined;
+  }
+
   createPopupContent(donorData: DonorMapData): string {
     let lastDonationText = this.i18n.terms.noDataAvailable;
     if (donorData.stats.lastDonationDate) {
@@ -608,19 +619,31 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
         <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin-top: 10px;">
           <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
             <span><strong>💰 ${this.i18n.terms.totalDonationsLabel}:</strong></span>
-            <span>₪${donorData.stats.totalDonations.toLocaleString()}</span>
+            <div style="text-align: left;">
+              <span>${donorData.stats.totalDonationsCurrencySymbol}${donorData.stats.totalDonations.toLocaleString()}</span>
+              ${donorData.stats.totalDonationsPartnerCount > 0 ? `<div style="font-size: 11px; color: #7f8c8d;">(שותף ב: ${donorData.stats.totalDonationsPartnerCount})</div>` : ''}
+            </div>
           </div>
           <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
             <span><strong>📊 ${this.i18n.terms.donationCountLabel}:</strong></span>
-            <span>${donorData.stats.donationCount}</span>
+            <div style="text-align: left;">
+              <span>${donorData.stats.donationCount}</span>
+              ${donorData.stats.donationCountPartnerCount > 0 ? `<div style="font-size: 11px; color: #7f8c8d;">(שותף ב: ${donorData.stats.donationCountPartnerCount})</div>` : ''}
+            </div>
           </div>
           <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
             <span><strong>📈 ${this.i18n.terms.averageDonationLabel}:</strong></span>
-            <span>₪${donorData.stats.averageDonation.toLocaleString()}</span>
+            <div style="text-align: left;">
+              <span>${donorData.stats.averageDonationCurrencySymbol}${donorData.stats.averageDonation.toLocaleString()}</span>
+              ${donorData.stats.averageDonationPartnerCount > 0 ? `<div style="font-size: 11px; color: #7f8c8d;">(שותף ב: ${donorData.stats.averageDonationPartnerCount})</div>` : ''}
+            </div>
           </div>
           <div style="display: flex; justify-content: space-between;">
             <span><strong>📅 ${this.i18n.terms.lastDonationLabel}:</strong></span>
-            <span>${lastDonationText}</span>
+            <div style="text-align: left;">
+              <span>${lastDonationText}</span>
+              ${donorData.stats.lastDonationAmount > 0 ? `<div style="font-size: 11px; color: #27ae60;">(${donorData.stats.lastDonationCurrencySymbol}${donorData.stats.lastDonationAmount.toLocaleString()})</div>` : ''}
+            </div>
           </div>
         </div>
       </div>
@@ -714,6 +737,10 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
       setTimeout(async () => {
         await this.loadData();
         this.addMarkersToMap();
+        const marker = this.getMarkerOf(donorId);
+        if (marker) {
+          this.onMarkerClick(donorId, marker);
+        }
       });
     }
   }

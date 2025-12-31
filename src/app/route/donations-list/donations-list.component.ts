@@ -39,6 +39,8 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   private baseDataLoaded = false;
 
   totalAmountCache = 0;
+  totalCommitmentAmount = 0;
+  totalCommitmentCount = 0;
 
   // Pagination
   currentPage = 1;
@@ -62,6 +64,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   selectedMethodId = '';
   amountFrom: number | undefined;
   selectedCampaignId = '';
+  selectedDonationType = '';
   private filterTimeout: any;
   private subscriptions = new Subscription();
 
@@ -111,15 +114,18 @@ export class DonationsListComponent implements OnInit, OnDestroy {
           dateTo: this.dateTo ? this.formatDateForFilter(this.dateTo) : undefined,
           selectedMethodId: this.selectedMethodId?.trim() || undefined,
           amountFrom: this.amountFrom,
-          selectedCampaignId: this.selectedCampaignId?.trim() || undefined
+          selectedCampaignId: this.selectedCampaignId?.trim() || undefined,
+          selectedDonationType: this.selectedDonationType?.trim() || undefined
         };
 
         console.log('refreshData: Fetching donations with filters:', filters, 'page:', this.currentPage, 'sorting:', this.sortColumns);
 
-        // Get total count, total amount, and donations from server with all filters and sorting
-        [this.totalCount, this.totalAmountCache, this.donations] = await Promise.all([
+        // Get total count, total amount, commitments, and donations from server with all filters and sorting
+        [this.totalCount, this.totalAmountCache, this.totalCommitmentCount, this.totalCommitmentAmount, this.donations] = await Promise.all([
           DonationController.countFilteredDonations(filters),
           DonationController.sumFilteredDonations(filters, this.currencyTypes),
+          DonationController.countCommitments(filters),
+          DonationController.sumCommitments(filters, this.currencyTypes),
           DonationController.findFilteredDonations(filters, this.currentPage, this.pageSize, this.sortColumns)
         ]);
 
@@ -131,6 +137,8 @@ export class DonationsListComponent implements OnInit, OnDestroy {
         this.donations = [];
         this.totalCount = 0;
         this.totalAmountCache = 0;
+        this.totalCommitmentCount = 0;
+        this.totalCommitmentAmount = 0;
         this.totalPages = 0;
       }
     });
@@ -496,6 +504,12 @@ export class DonationsListComponent implements OnInit, OnDestroy {
     };
 
     return typeLabels[donation.donationMethod.type] || donation.donationMethod.name;
+  }
+
+  getDonationTypeDisplay(donation: Donation): string {
+    return donation.donationType === 'commitment'
+      ? this.i18n.terms.commitment
+      : this.i18n.terms.fullDonation;
   }
 
 

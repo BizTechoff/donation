@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
 import { DialogConfig, openDialog } from 'common-ui-elements';
 import { remult } from 'remult';
@@ -33,6 +33,8 @@ export interface DonationDetailsModalArgs {
   styleUrls: ['./donation-details-modal.component.scss']
 })
 export class DonationDetailsModalComponent implements OnInit {
+  @ViewChild('amountInput') amountInput!: ElementRef<HTMLInputElement>;
+
   args!: DonationDetailsModalArgs;
   changed = false;
 
@@ -234,6 +236,22 @@ export class DonationDetailsModalComponent implements OnInit {
     // Prevent accidental close for new donation
     if (this.isNewDonation) {
       this.dialogRef.disableClose = true;
+    }
+
+    // Focus logic for new donations:
+    // If donor was provided and found - focus on amount
+    // Otherwise - open donor selection modal
+    if (this.isNewDonation) {
+      setTimeout(() => {
+        if (this.selectedDonor) {
+          // Donor found - focus on amount
+          this.amountInput?.nativeElement?.focus();
+          this.amountInput?.nativeElement?.select();
+        } else {
+          // No donor - open donor selection modal
+          this.openDonorSelectionModal();
+        }
+      }, 100);
     }
   }
 

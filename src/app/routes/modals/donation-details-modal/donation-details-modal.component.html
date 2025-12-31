@@ -172,7 +172,7 @@
               <mat-icon class="field-icon">attach_money</mat-icon>
               <label>{{i18n.terms.amount}} *</label>
             </div>
-            <input type="number" class="form-control" [(ngModel)]="donation.amount"
+            <input #amountInput type="number" class="form-control" [(ngModel)]="donation.amount"
               [placeholder]="i18n.terms.enterAmount" min="0" step="0.01"
               (focus)="$any($event.target).select()">
           </div>

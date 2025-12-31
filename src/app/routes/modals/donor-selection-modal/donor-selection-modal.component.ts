@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
 import { BusyService, DialogConfig, openDialog } from 'common-ui-elements';
 import { Donor, Place } from '../../../../shared/entity';
@@ -25,6 +25,8 @@ export interface DonorSelectionModalArgs {
   styleUrls: ['./donor-selection-modal.component.scss']
 })
 export class DonorSelectionModalComponent implements OnInit {
+  @ViewChild('searchInput') searchInput!: ElementRef<HTMLInputElement>;
+
   args!: DonorSelectionModalArgs;
   selectedDonor: Donor | null = null;
   selectedDonors: Donor[] = []; // For multi-select mode
@@ -61,6 +63,13 @@ export class DonorSelectionModalComponent implements OnInit {
 
   async ngOnInit() {
     await this.loadDonors();
+    this.setFocusOnSearch();
+  }
+
+  private setFocusOnSearch() {
+    setTimeout(() => {
+      this.searchInput?.nativeElement?.focus();
+    }, 100);
   }
 
   async loadDonors() {

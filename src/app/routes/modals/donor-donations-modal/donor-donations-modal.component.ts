@@ -49,6 +49,7 @@ export class DonorDonationsModalComponent implements OnInit {
   filterCampaign = '';
   filterMethod = '';
   filterStatus = '';
+  filterDonationType = '';
 
   // Sorting
   sortColumns: Array<{ field: string; direction: 'asc' | 'desc' }> = [];
@@ -150,7 +151,7 @@ currencyTypes = this.payer.getCurrencyTypesRecord()
     // Apply filters based on donation type
     switch (this.args.donationType) {
       case 'donations':
-        whereClause.donationType = 'full';
+        // הצג גם תרומות וגם התחייבויות - לא מסננים לפי donationType
         break;
       case 'receipts':
         whereClause.receiptIssued = true;
@@ -214,7 +215,10 @@ currencyTypes = this.payer.getCurrencyTypesRecord()
 
       const matchesStatus = !this.filterStatus;
 
-      return matchesText && matchesCampaign && matchesMethod && matchesStatus;
+      const matchesDonationType = !this.filterDonationType ||
+        donation.donationType === this.filterDonationType;
+
+      return matchesText && matchesCampaign && matchesMethod && matchesStatus && matchesDonationType;
     });
   }
 
@@ -240,6 +244,28 @@ currencyTypes = this.payer.getCurrencyTypesRecord()
     return this.filteredDonorGifts.filter(dg => !dg.isDelivered).length;
   }
 
+  // תרומות מלאות (לא התחייבויות)
+  get fullDonationsCount(): number {
+    return this.filteredDonations.filter(d => d.donationType !== 'commitment').length;
+  }
+
+  get fullDonationsTotal(): number {
+    return this.filteredDonations
+      .filter(d => d.donationType !== 'commitment')
+      .reduce((sum, d) => sum + d.amount, 0);
+  }
+
+  // התחייבויות
+  get commitmentDonationsCount(): number {
+    return this.filteredDonations.filter(d => d.donationType === 'commitment').length;
+  }
+
+  get commitmentDonationsTotal(): number {
+    return this.filteredDonations
+      .filter(d => d.donationType === 'commitment')
+      .reduce((sum, d) => sum + d.amount, 0);
+  }
+
   getFilteredTotal(): number {
     return this.filteredDonations.reduce((sum, donation) => sum + donation.amount, 0);
   }
@@ -259,6 +285,12 @@ currencyTypes = this.payer.getCurrencyTypesRecord()
       case 'cancelled': return 'בוטל';
       default: return status;
     }
+  }
+
+  getDonationTypeDisplay(donation: Donation): string {
+    return donation.donationType === 'commitment'
+      ? this.i18n.terms.commitment
+      : this.i18n.terms.fullDonation;
   }
 
   getStatusClass(status: string): string {

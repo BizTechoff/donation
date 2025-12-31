@@ -11,7 +11,7 @@
         <div class="header-text">
           <h2>{{modalTitle}}</h2>
           <p class="header-subtitle" *ngIf="!loading && !isGiftsMode">
-            סה"כ {{totalDonations}} תרומות • {{totalAmount | number:'1.2-2'}} ₪
+            תרומות: {{fullDonationsCount}} ({{fullDonationsTotal | number:'1.2-2'}} ₪)<ng-container *ngIf="commitmentDonationsCount > 0"> <span class="subtitle-divider">|</span> <span class="commitment-text">התחייבויות: {{commitmentDonationsCount}} ({{commitmentDonationsTotal | number:'1.2-2'}} ₪)</span></ng-container>
           </p>
           <p class="header-subtitle" *ngIf="!loading && isGiftsMode">
             סה"כ {{totalDonations}} מתנות
@@ -62,15 +62,14 @@
             </select>
           </div>
 
-          <!-- <div class="filter-group">
-            <mat-icon class="filter-icon">info</mat-icon>
-            <select class="filter-select" [(ngModel)]="filterStatus">
-              <option value="">כל הסטטוסים</option>
-              <option value="pending">בהמתנה</option>
-              <option value="completed">הושלם</option>
-              <option value="cancelled">בוטל</option>
+          <div class="filter-group" *ngIf="!isGiftsMode">
+            <mat-icon class="filter-icon">category</mat-icon>
+            <select class="filter-select" [(ngModel)]="filterDonationType">
+              <option value="">כל הסוגים</option>
+              <option value="full">תרומה מלאה</option>
+              <option value="commitment">התחייבות</option>
             </select>
-          </div> -->
+          </div>
 
           <div class="filter-actions">
             <button mat-raised-button
@@ -93,6 +92,10 @@
                 תאריך
                 <span class="sort-icon" *ngIf="getSortIcon('donationDate')">{{ getSortIcon('donationDate') }}</span>
               </th>
+              <th class="sortable" [class.sorted]="isSorted('donationType')" (click)="toggleSort('donationType', $event)">
+                סוג
+                <span class="sort-icon" *ngIf="getSortIcon('donationType')">{{ getSortIcon('donationType') }}</span>
+              </th>
               <th class="sortable" [class.sorted]="isSorted('amount')" (click)="toggleSort('amount', $event)">
                 סכום
                 <span class="sort-icon" *ngIf="getSortIcon('amount')">{{ getSortIcon('amount') }}</span>
@@ -108,15 +111,17 @@
             <tr *ngFor="let donation of paginatedDonations">
               <td>
                 <div class="date-cell">
-                  <!-- <mat-icon class="cell-icon">event</mat-icon> -->
                   {{formatHebrewDate(donation.donationDate)}}
                 </div>
               </td>
               <td>
+                <span [class.commitment-highlight]="donation.donationType === 'commitment'">
+                  {{ getDonationTypeDisplay(donation) }}
+                </span>
+              </td>
+              <td>
                 <div class="amount-cell">
-                  <!-- <mat-icon class="cell-icon">attach_money</mat-icon> -->
-                  <span class="amount">{{donation.amount | number:'1.2-2'}}</span>
-                  <!-- <span class="currency">{{donation.currency}}</span> -->
+                  <span class="amount" [class.commitment-highlight]="donation.donationType === 'commitment'">{{donation.amount | number:'1.2-2'}}</span>
                 </div>
               </td>
               <td>
@@ -165,9 +170,9 @@
               </td>
             </tr>
             <tr *ngIf="filteredDonations.length === 0">
-              <td colspan="7" class="no-data">
+              <td colspan="8" class="no-data">
                 <div class="no-data-message">
-                  <mat-icon class="no-data-icon">{{modalIcon}}</mat-icon>
+                  <!-- <mat-icon class="no-data-icon">{{modalIcon}}</mat-icon> -->
                   <h3>אין תרומות להצגה</h3>
                   <p>לא נמצאו תרומות עבור התורם הזה או לפי הפילטרים שנבחרו</p>
                 </div>
@@ -297,12 +302,23 @@
       <div class="footer-summary" *ngIf="!isGiftsMode">
         <div class="summary-item">
           <mat-icon>receipt_long</mat-icon>
-          <span>סה"כ תרומות: {{filteredDonations.length}}</span>
+          <span>סה"כ תרומות: {{fullDonationsCount}}</span>
         </div>
         <div class="summary-item">
           <mat-icon>attach_money</mat-icon>
-          <span>סה"כ סכום: {{getFilteredTotal() | number:'1.2-2'}} ₪</span>
+          <span>סכום: {{fullDonationsTotal | number:'1.2-2'}} ₪</span>
         </div>
+        <ng-container *ngIf="commitmentDonationsCount > 0">
+          <div class="summary-divider">|</div>
+          <div class="summary-item commitment">
+            <mat-icon>pending_actions</mat-icon>
+            <span>סה"כ התחייבויות: {{commitmentDonationsCount}}</span>
+          </div>
+          <div class="summary-item commitment">
+            <mat-icon>attach_money</mat-icon>
+            <span>סכום: {{commitmentDonationsTotal | number:'1.2-2'}} ₪</span>
+          </div>
+        </ng-container>
       </div>
 
       <div class="footer-summary" *ngIf="isGiftsMode">

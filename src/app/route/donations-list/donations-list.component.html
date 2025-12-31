@@ -32,13 +32,20 @@
           <span class="count">{{ totalCount }}</span>
         </div>
       </div>
-      <!-- <div class="summary-card avg">
-        <div class="card-icon">📊</div>
+      <div class="summary-card commitment">
+        <div class="card-icon">📋</div>
         <div class="card-content">
-          <h3>{{ (i18n.terms$ | async)?.completedDonationsCount }}</h3>
-          <span class="count">{{ completedDonationsCount }}</span>
+          <h3>סה"כ התחייבויות</h3>
+          <span class="amount">₪{{ totalCommitmentAmount | number }}</span>
         </div>
-      </div> -->
+      </div>
+      <div class="summary-card commitment-count">
+        <div class="card-icon">🔢</div>
+        <div class="card-content">
+          <h3>מס' התחייבויות</h3>
+          <span class="count">{{ totalCommitmentCount }}</span>
+        </div>
+      </div>
     </div>
 
     <!-- פילטרים -->
@@ -107,6 +114,18 @@
             <option *ngFor="let campaign of campaigns" [value]="campaign.id">{{ campaign.name }}</option>
           </select>
         </div>
+
+        <div class="filter-group">
+          <label>{{ (i18n.terms$ | async)?.donationType }}</label>
+          <select
+            class="form-control"
+            [(ngModel)]="selectedDonationType"
+            (ngModelChange)="onFilterChange()">
+            <option value="">{{ (i18n.terms$ | async)?.everything }}</option>
+            <option value="full">{{ (i18n.terms$ | async)?.fullDonation }}</option>
+            <option value="commitment">{{ (i18n.terms$ | async)?.commitment }}</option>
+          </select>
+        </div>
       </div>
     </div>
   </div>
@@ -135,6 +154,10 @@
             {{ (i18n.terms$ | async)?.amountInShekelColumn }}
             <span class="sort-icon" *ngIf="getSortIcon('amountInShekel')">{{ getSortIcon('amountInShekel') }}</span>
           </th> -->
+          <th class="sortable" [class.sorted]="isSorted('donationType')" (click)="toggleSort('donationType', $event)">
+            {{ (i18n.terms$ | async)?.donationType }}
+            <span class="sort-icon" *ngIf="getSortIcon('donationType')">{{ getSortIcon('donationType') }}</span>
+          </th>
           <th class="sortable" [class.sorted]="isSorted('amount')" (click)="toggleSort('amount', $event)">
             {{ (i18n.terms$ | async)?.amountColumn }}
             <span class="sort-icon" *ngIf="getSortIcon('amount')">{{ getSortIcon('amount') }}</span>
@@ -167,7 +190,12 @@
           <td><strong>{{ getDonorName(donation) }}</strong></td>
           <td>{{ getDonorHomeAddress(donation) }}</td>
           <!-- <td class="amount">{{ formatAmountInShekel(donation) }}</td> -->
-          <td class="amount">{{donation.amount | number}}</td>
+          <td>
+            <span [class.commitment-highlight]="donation.donationType === 'commitment'">
+              {{ getDonationTypeDisplay(donation) }}
+            </span>
+          </td>
+          <td class="amount" [class.commitment-highlight]="donation.donationType === 'commitment'">{{donation.amount | number}}</td>
           <td>{{ currencyTypes[donation.currencyId]?.symbol }}</td>
           <td>{{ formatHebrewDate(donation.donationDate) }}</td>
           <td>
@@ -186,7 +214,7 @@
           </td>
         </tr>
         <tr *ngIf="!loading && donations.length === 0">
-          <td colspan="10" class="no-data">
+          <td colspan="11" class="no-data">
             <p>{{ (i18n.terms$ | async)?.noDataFound }}</p>
           </td>
         </tr>

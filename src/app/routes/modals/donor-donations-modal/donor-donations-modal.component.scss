@@ -1,4 +1,11 @@
 // Donor Donations Modal Styles
+
+// הדגשת התחייבויות - ברמה גלובלית
+.commitment-highlight {
+  color: #e67e22 !important;
+  font-weight: 600 !important;
+}
+
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -86,6 +93,15 @@
         margin: 0.25rem 0 0 0;
         opacity: 0.9;
         font-size: 0.875rem;
+
+        .subtitle-divider {
+          opacity: 0.6;
+          margin: 0 0.5rem;
+        }
+
+        .commitment-text {
+          color: #f5b041;
+        }
       }
     }
   }
@@ -317,6 +333,12 @@
       }
     }
 
+    // הדגשת התחייבויות
+    .commitment-highlight {
+      color: #e67e22 !important;
+      font-weight: 600 !important;
+    }
+
     .no-data {
       color: #999;
       font-style: italic;
@@ -494,7 +516,8 @@
 
   .footer-summary {
     display: flex;
-    gap: 2rem;
+    gap: 1.5rem;
+    align-items: center;
 
     .summary-item {
       display: flex;
@@ -509,6 +532,20 @@
         width: 1rem;
         height: 1rem;
       }
+
+      &.commitment {
+        color: #e67e22;
+
+        mat-icon {
+          color: #e67e22;
+        }
+      }
+    }
+
+    .summary-divider {
+      color: #ddd;
+      font-size: 1.2rem;
+      padding: 0 0.5rem;
     }
   }
 

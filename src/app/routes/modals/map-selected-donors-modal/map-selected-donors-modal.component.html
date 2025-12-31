@@ -55,15 +55,18 @@
                 <div class="donor-stats">
                   <span class="stat-item">
                     <mat-icon class="stat-icon">attach_money</mat-icon>
-                    סה"כ: ₪{{ donorData.stats.totalDonations.toLocaleString() }}
+                    סה"כ: {{ donorData.stats.totalDonationsCurrencySymbol }}{{ donorData.stats.totalDonations.toLocaleString() }}
+                    <span *ngIf="donorData.stats.totalDonationsPartnerCount > 0" class="partner-info">(שותף ב: {{ donorData.stats.totalDonationsPartnerCount }})</span>
                   </span>
                   <span class="stat-item">
                     <mat-icon class="stat-icon">card_giftcard</mat-icon>
                     {{ donorData.stats.donationCount }} תרומות
+                    <span *ngIf="donorData.stats.donationCountPartnerCount > 0" class="partner-info">(שותף ב: {{ donorData.stats.donationCountPartnerCount }})</span>
                   </span>
                   <span class="stat-item">
                     <mat-icon class="stat-icon">trending_up</mat-icon>
-                    ממוצע: ₪{{ donorData.stats.averageDonation.toLocaleString() }}
+                    ממוצע: {{ donorData.stats.averageDonationCurrencySymbol }}{{ donorData.stats.averageDonation.toLocaleString() }}
+                    <span *ngIf="donorData.stats.averageDonationPartnerCount > 0" class="partner-info">(שותף ב: {{ donorData.stats.averageDonationPartnerCount }})</span>
                   </span>
                 </div>
 
@@ -86,6 +89,7 @@
                 <div class="donor-last-donation" *ngIf="donorData.stats.lastDonationDate">
                   <mat-icon class="detail-icon">calendar_today</mat-icon>
                   תרומה אחרונה: {{ formatHebrewDate(donorData.stats.lastDonationDate) }}
+                  <span *ngIf="donorData.stats.lastDonationAmount > 0" class="last-donation-amount">({{ donorData.stats.lastDonationCurrencySymbol }}{{ donorData.stats.lastDonationAmount.toLocaleString() }})</span>
                 </div>
               </div>
             </div>
