@@ -8,7 +8,7 @@
         <mat-icon>{{isNewDonation ? 'add_circle' : 'attach_money'}}</mat-icon>
       </div>
       <div class="header-text">
-        <h2>{{isNewDonation ? i18n.terms.newDonation : i18n.terms.donationDetails}}</h2>
+        <h2>{{ donorName }} - {{isNewDonation ? i18n.terms.newDonation : i18n.terms.donationDetails}}</h2>
         <p class="header-subtitle" *ngIf="!isNewDonation && donation">
           {{getDonorDisplayName(selectedDonor)}}
         </p>
@@ -615,9 +615,10 @@
         {{i18n.terms.addReminderButton}}
       </button>
 
-      <button
-        *ngIf="!isNewDonation && selectedPaymentMethod && selectedPaymentMethod.type === 'standing_order' && donation.donationType !== 'commitment' &&
-        ((donation.standingOrderType === 'bank' && donationBanks.length) || (donation.standingOrderType === 'organization' && donationOrganizations.length))"
+        <!-- *ngIf="!isNewDonation && selectedPaymentMethod && selectedPaymentMethod.type === 'standing_order' && donation.donationType !== 'commitment' &&
+        ((donation.standingOrderType === 'bank' && donationBanks.length) || (donation.standingOrderType === 'organization' && donationOrganizations.length))" -->
+
+      <button *ngIf="!isNewDonation && donation && donation.donationType === 'commitment'"
         mat-stroked-button class="action-button payment-list-btn" (click)="openPaymentList()" title="תנועות">
         <mat-icon>payment</mat-icon>
         תנועות

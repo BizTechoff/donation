@@ -13,7 +13,6 @@ import { BankSelectionModalComponent } from '../bank-selection-modal/bank-select
 import { DonorDetailsModalComponent } from '../donor-details-modal/donor-details-modal.component';
 import { DonorSelectionModalComponent } from '../donor-selection-modal/donor-selection-modal.component';
 import { OrganizationSelectionModalComponent } from '../organization-selection-modal/organization-selection-modal.component';
-import { CurrencyType } from '../../../../shared/type/currency.type';
 
 export interface DonationDetailsModalArgs {
   donationId: string; // Can be 'new' for new donation or donation ID
@@ -65,6 +64,7 @@ export class DonationDetailsModalComponent implements OnInit {
   organizationRepo = remult.repo(Organization);
   bankRepo = remult.repo(Bank);
 
+  donorName = ''
   loading = false;
   isNewDonation = false;
   hasReminderFlag = false;
@@ -83,7 +83,7 @@ export class DonationDetailsModalComponent implements OnInit {
     private donorService: DonorService,
     private payerService: PayerService,
     public dialogRef: MatDialogRef<DonationDetailsModalComponent>
-  ) {}
+  ) { }
 
   async ngOnInit() {
     this.loading = true;
@@ -553,6 +553,11 @@ export class DonationDetailsModalComponent implements OnInit {
       try {
         console.log('loadSelectedDonor: Loading donor with ID:', this.donation.donorId);
         this.selectedDonor = await this.donorRepo.findId(this.donation.donorId) || undefined;
+
+        this.donorName = ''
+        if (this.selectedDonor) {
+          this.donorName += this.selectedDonor.lastAndFirstName
+        }
         console.log('loadSelectedDonor: Loaded donor:', this.selectedDonor?.firstName, this.selectedDonor?.lastName);
 
         // Load companies for payer selection
