@@ -24,6 +24,7 @@ export interface FieldValue {
   displayName: string;
   value: string;
   isMultiline: boolean;
+  isEnglish: boolean;
 }
 
 export interface SelectedLine {
@@ -315,7 +316,8 @@ export class LetterPropertiesModalComponent implements OnInit {
         fieldName: field,
         displayName: this.getFieldDisplayName(field),
         value: await this.getFieldValue(field),
-        isMultiline: this.isMultilineField(field)
+        isMultiline: this.isMultilineField(field),
+        isEnglish: this.isEnglishField(field)
       }));
 
     const allFields = await Promise.all(fieldPromises);
@@ -324,6 +326,11 @@ export class LetterPropertiesModalComponent implements OnInit {
 
   isMultilineField(field: string): boolean {
     const multilineFields = ['FullAddress', 'תואר_מלא', 'סיומת_מכתב'];
+    return multilineFields.includes(field);
+  }
+
+  isEnglishField(field: string): boolean {
+    const multilineFields = ['FullAddress'];
     return multilineFields.includes(field);
   }
 
@@ -522,7 +529,21 @@ export class LetterPropertiesModalComponent implements OnInit {
         break
       }
       case 'שם_עברית': {
-        result = `${this.donation.donor?.firstName || ''} ${this.donation.donor?.lineage === 'israel' ? '' : this.donation.donor?.lineage || ''} ${this.donation.donor?.lastName || ''} `.trim()
+        result = this.donation.donor?.firstName || ''
+        result = result.trim()
+        if (this.donation.donor?.lineage) {
+          if (this.donation.donor.lineage !== 'israel') {
+            if (this.donation.donor.lineage === 'levi') {
+              result += ' הלוי '
+            }
+            else if (this.donation.donor.lineage === 'cohen') {
+              result += ' הכהן '
+            }
+          }
+        }
+        result = result.trim()
+        result += ` ${this.donation.donor?.lastName || ''}`
+        result = result.trim()
         break
       }
       case 'סיומת_עברית': {

@@ -219,12 +219,14 @@
             <textarea
               *ngIf="fieldValue.isMultiline"
               class="form-control field-textarea"
+              [style.textAlign]="fieldValue.isEnglish ? 'left' : 'right'"
               rows="3"
               [(ngModel)]="fieldValue.value"
               (ngModelChange)="onFieldValueChange(fieldValue, $event)"
             ></textarea>
             <input
               *ngIf="!fieldValue.isMultiline"
+              [style.textAlign]="fieldValue.isEnglish ? 'left' : 'right'"
               type="text"
               class="form-control field-input-text"
               [(ngModel)]="fieldValue.value"
