@@ -291,7 +291,7 @@ export const termsHe = {
   // Languages
   hebrew: 'עברית',
   english: 'English',
-  yiddish: 'יידיש',
+  yiddish: 'ייִדיש',
 
   // Form Labels
   selectDonor: 'בחר תורם',
