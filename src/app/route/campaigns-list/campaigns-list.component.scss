@@ -270,7 +270,7 @@
   padding-left: 10px; // Compensate for scrollbar width
 
   .grid-col {
-    padding: 15px 12px;
+    padding: 10px 12px;
     font-weight: 600;
     font-size: 14px;
     border-left: 1px solid rgba(255, 255, 255, 0.2);
@@ -353,11 +353,12 @@
     }
 
     .grid-col {
-      padding: 15px 12px;
+      padding: 8px 12px;
       font-size: 14px;
       display: flex;
       align-items: center;
       border-left: 1px solid #ecf0f1;
+      min-height: auto;
 
       &:last-child {
         border-left: none;

@@ -243,10 +243,10 @@ export class UIToolsService implements UITools {
     )
   }
 
-  async paymentDetailsDialog(paymentId: string, options?: { donationId?: string; amount?: number }): Promise<boolean> {
+  async paymentDetailsDialog(paymentId: string, options?: { donationId?: string }): Promise<boolean> {
     return await openDialog(
       (await import('../routes/modals/payment-details-modal/payment-details-modal.component')).PaymentDetailsModalComponent,
-      (dlg) => dlg.args = { paymentId, donationId: options?.donationId, amount: options?.amount }
+      (dlg) => dlg.args = { paymentId, donationId: options?.donationId }
     )
   }
 

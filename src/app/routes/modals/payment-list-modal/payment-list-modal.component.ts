@@ -127,8 +127,7 @@ export class PaymentListModalComponent implements OnInit {
 
   async addPayment() {
     const result = await this.ui.paymentDetailsDialog('new', {
-      donationId: this.args.donationId,
-      amount: this.donation?.amount
+      donationId: this.args.donationId
     });
 
     if (result) {

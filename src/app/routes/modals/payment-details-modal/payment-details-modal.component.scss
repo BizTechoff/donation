@@ -61,6 +61,44 @@
   padding: 20px;
 }
 
+.commitment-info {
+  background: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+
+  .info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #e0e0e0;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    &.remaining {
+      font-weight: 600;
+      font-size: 16px;
+    }
+
+    .info-label {
+      color: #666;
+    }
+
+    .info-value {
+      font-weight: 500;
+      color: #333;
+
+      &.warning {
+        color: #d32f2f;
+      }
+    }
+  }
+}
+
 .form-container {
   display: flex;
   flex-direction: column;

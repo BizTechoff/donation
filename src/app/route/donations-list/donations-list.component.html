@@ -199,7 +199,7 @@
               {{ getDonationTypeDisplay(donation) }}
             </span>
           </td>
-          <td class="amount" [class.commitment-highlight]="donation.donationType === 'commitment'">{{donation.amount | number}}</td>
+          <td class="amount" [class.commitment-highlight]="donation.donationType === 'commitment'">{{ getAmountDisplay(donation) }}</td>
           <td>{{ currencyTypes[donation.currencyId]?.symbol }}</td>
           <td>{{ formatHebrewDate(donation.donationDate) }}</td>
           <td>

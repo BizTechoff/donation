@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
 import { DialogConfig } from 'common-ui-elements';
-import { Payment } from '../../../../shared/entity';
+import { Payment, Donation } from '../../../../shared/entity';
 import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
 import { UIToolsService } from '../../../common/UIToolsService';
@@ -9,7 +9,6 @@ import { UIToolsService } from '../../../common/UIToolsService';
 export interface PaymentDetailsModalArgs {
   paymentId: string; // Can be 'new' for new payment or payment ID
   donationId?: string; // Required for new payments
-  amount?: number; // Optional pre-filled amount
 }
 
 @DialogConfig({
@@ -23,10 +22,16 @@ export interface PaymentDetailsModalArgs {
 export class PaymentDetailsModalComponent implements OnInit {
   args!: PaymentDetailsModalArgs;
   payment!: Payment;
+  donation?: Donation;
   isNewPayment = false;
   loading = false;
 
+  // For validation display
+  totalPaidSoFar = 0;
+  remainingAmount = 0;
+
   paymentRepo = remult.repo(Payment);
+  donationRepo = remult.repo(Donation);
 
   constructor(
     public i18n: I18nService,
@@ -49,21 +54,47 @@ export class PaymentDetailsModalComponent implements OnInit {
           this.payment.donationId = this.args.donationId;
         }
 
-        if (this.args.amount) {
-          this.payment.amount = this.args.amount;
-        }
-
+        // Amount stays empty (0) - user must fill it manually
+        this.payment.amount = 0;
         this.payment.paymentDate = new Date();
       } else {
         this.payment = await this.paymentRepo.findId(this.args.paymentId) || this.paymentRepo.create();
         this.isNewPayment = false;
       }
+
+      // Load donation and calculate totals
+      await this.loadDonationAndTotals();
     } catch (error) {
       console.error('Error loading payment:', error);
       this.ui.error('שגיאה בטעינת פרטי התשלום');
     } finally {
       this.loading = false;
     }
+  }
+
+  async loadDonationAndTotals() {
+    if (!this.payment.donationId) return;
+
+    // Load donation
+    const donation = await this.donationRepo.findId(this.payment.donationId);
+    if (!donation) return;
+    this.donation = donation;
+
+    // Get all existing payments for this donation (excluding current payment if editing)
+    const existingPayments = await this.paymentRepo.find({
+      where: {
+        donationId: this.payment.donationId,
+        isActive: true
+      }
+    });
+
+    // Calculate total paid so far (excluding current payment if editing)
+    this.totalPaidSoFar = existingPayments
+      .filter(p => this.isNewPayment || p.id !== this.payment.id)
+      .reduce((sum, p) => sum + p.amount, 0);
+
+    // Calculate remaining amount
+    this.remainingAmount = this.donation.amount - this.totalPaidSoFar;
   }
 
   async save() {
@@ -82,6 +113,16 @@ export class PaymentDetailsModalComponent implements OnInit {
       if (!this.payment.paymentDate) {
         this.ui.error('חובה לציין תאריך תשלום');
         return;
+      }
+
+      // Validate that total payments don't exceed commitment amount
+      if (this.donation) {
+        const newTotal = this.totalPaidSoFar + this.payment.amount;
+        if (newTotal > this.donation.amount) {
+          const excess = newTotal - this.donation.amount;
+          this.ui.error(`סכום התשלום חורג מסך ההתחייבות ב-${excess.toLocaleString()}. יתרה לתשלום: ${this.remainingAmount.toLocaleString()}`);
+          return;
+        }
       }
 
       this.loading = true;

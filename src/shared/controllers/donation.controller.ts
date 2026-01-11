@@ -11,6 +11,7 @@ import { DonationOrganization } from '../entity/donation-organization';
 import { Donor } from '../entity/donor';
 import { Organization } from '../entity/organization';
 import { DonorPlace } from '../entity/donor-place';
+import { Payment } from '../entity/payment';
 import { CurrencyType } from '../type/currency.type';
 
 export interface DonationFilters {
@@ -559,6 +560,35 @@ export class DonationController {
    * Build where clause for filtering donations
    * Returns null if no results should be returned (e.g., no matching donors)
    */
+  /**
+   * Get payment totals for commitment donations
+   * Returns a map of donationId -> total paid amount
+   */
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async getPaymentTotalsForCommitments(donationIds: string[]): Promise<Record<string, number>> {
+    if (!donationIds || donationIds.length === 0) {
+      return {};
+    }
+
+    const payments = await remult.repo(Payment).find({
+      where: {
+        donationId: { $in: donationIds },
+        isActive: true,
+        status: 'completed'
+      }
+    });
+
+    // Group payments by donationId and sum amounts
+    const totals: Record<string, number> = {};
+    for (const payment of payments) {
+      if (payment.donationId) {
+        totals[payment.donationId] = (totals[payment.donationId] || 0) + payment.amount;
+      }
+    }
+
+    return totals;
+  }
+
   private static async buildWhereClause(filters: DonationFilters): Promise<any | null> {
     // 🎯 Fetch global filters from user.settings
     const currentUserId = remult.user?.id;

@@ -42,6 +42,9 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   totalCommitmentAmount = 0;
   totalCommitmentCount = 0;
 
+  // Map of donationId -> total paid amount for commitments
+  commitmentPaymentTotals: Record<string, number> = {};
+
   // Pagination
   currentPage = 1;
   pageSize = 50;
@@ -130,6 +133,16 @@ export class DonationsListComponent implements OnInit, OnDestroy {
         ]);
 
         this.totalPages = Math.ceil(this.totalCount / this.pageSize);
+
+        // Load payment totals for commitment donations
+        const commitmentIds = this.donations
+          .filter(d => d.donationType === 'commitment')
+          .map(d => d.id);
+        if (commitmentIds.length > 0) {
+          this.commitmentPaymentTotals = await DonationController.getPaymentTotalsForCommitments(commitmentIds);
+        } else {
+          this.commitmentPaymentTotals = {};
+        }
 
         console.log('refreshData: Loaded', this.donations.length, 'donations, total:', this.totalCount, 'totalAmount:', this.totalAmountCache);
       } catch (error) {
@@ -630,5 +643,18 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   truncateReason(reason: string | undefined): string {
     if (!reason) return '-';
     return reason.length > 30 ? reason.substring(0, 30) + '...' : reason;
+  }
+
+  /**
+   * Get display string for donation amount
+   * For commitments: shows "paid / total" format
+   * For regular donations: shows just the amount
+   */
+  getAmountDisplay(donation: Donation): string {
+    if (donation.donationType === 'commitment') {
+      const paidAmount = this.commitmentPaymentTotals[donation.id] || 0;
+      return `${paidAmount.toLocaleString()} / ${donation.amount.toLocaleString()}`;
+    }
+    return donation.amount.toLocaleString();
   }
 }

@@ -1488,11 +1488,16 @@ export class DonationDetailsModalComponent implements OnInit {
     try {
       const result = await openDialog(
         ReasonSelectionModalComponent,
-        (modal: ReasonSelectionModalComponent) => {}
+        (modal: ReasonSelectionModalComponent) => { }
       ) as string | undefined;
 
       if (result !== undefined) {
-        this.donation.reason = result;
+        if (result) {
+          this.donation.reason = 'לרגל ' + result;
+        }
+        else {
+          this.donation.reason = result;
+        }
       }
     } catch (error) {
       console.error('Error opening reason selection modal:', error);
