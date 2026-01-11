@@ -22,7 +22,7 @@ export class UsersComponent implements OnInit {
   }
 
   users: GridSettings<User> = new GridSettings<User>(remult.repo(User), {
-    allowDelete: false,
+    allowDelete: remult.isAllowed(Roles.admin),
     allowInsert: true,
     allowUpdate: true,
     columnOrderStateKey: 'users',
