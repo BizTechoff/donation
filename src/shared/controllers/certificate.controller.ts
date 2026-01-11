@@ -60,25 +60,40 @@ export class CertificateController {
       });
     }
 
+    // If parasha filter is applied, we need to fetch all and filter in memory
+    // because parasha is calculated per date, not stored in DB
+    const hasParashaFilter = filters.fromParasha && filters.fromParasha.trim() !== '';
+
     const findOptions: any = {
       where: Object.keys(whereClause).length > 0 ? whereClause : undefined,
       orderBy,
       include: { donor: true, createdBy: true, reminder: true }
     };
 
-    // Add pagination if provided
-    if (page && pageSize) {
+    // Only add pagination if no parasha filter (otherwise we filter first, then paginate)
+    if (!hasParashaFilter && page && pageSize) {
       findOptions.page = page;
       findOptions.limit = pageSize;
     }
 
-    const certificates = await remult.repo(Certificate).find(findOptions);
+    let certificates = await remult.repo(Certificate).find(findOptions);
 
     // Load related entities manually if needed
     for (const certificate of certificates) {
       if (certificate.donorId && !certificate.donor) {
         const donor = await remult.repo(Donor).findId(certificate.donorId);
         if (donor) certificate.donor = donor;
+      }
+    }
+
+    // Apply parasha filter if specified
+    if (hasParashaFilter) {
+      certificates = CertificateController.filterByParasha(certificates, filters.fromParasha!);
+
+      // Apply pagination after parasha filter
+      if (page && pageSize) {
+        const startIndex = (page - 1) * pageSize;
+        certificates = certificates.slice(startIndex, startIndex + pageSize);
       }
     }
 
@@ -89,6 +104,17 @@ export class CertificateController {
   static async countFilteredCertificates(filters: CertificateFilters): Promise<number> {
     const whereClause = await CertificateController.buildWhereClause(filters);
     if (whereClause === null) return 0;
+
+    const hasParashaFilter = filters.fromParasha && filters.fromParasha.trim() !== '';
+
+    // If parasha filter, we need to count after filtering
+    if (hasParashaFilter) {
+      const certificates = await remult.repo(Certificate).find({
+        where: Object.keys(whereClause).length > 0 ? whereClause : undefined
+      });
+      const filtered = CertificateController.filterByParasha(certificates, filters.fromParasha!);
+      return filtered.length;
+    }
 
     const count = await remult.repo(Certificate).count(
       Object.keys(whereClause).length > 0 ? whereClause : undefined
@@ -107,9 +133,15 @@ export class CertificateController {
       };
     }
 
-    const certificates = await remult.repo(Certificate).find({
+    let certificates = await remult.repo(Certificate).find({
       where: Object.keys(whereClause).length > 0 ? whereClause : undefined
     });
+
+    // Apply parasha filter if specified
+    const hasParashaFilter = filters.fromParasha && filters.fromParasha.trim() !== '';
+    if (hasParashaFilter) {
+      certificates = CertificateController.filterByParasha(certificates, filters.fromParasha!);
+    }
 
     return {
       memorialCertificates: certificates.filter(c => c.type === 'memorial').length,
@@ -199,37 +231,32 @@ export class CertificateController {
       whereClause.donorId = { $in: donorIds };
     }
 
-    // Apply parasha filter
-    if (filters.fromParasha) {
-      const parashaRange = await HebrewDateController.getParshaDateRange(filters.fromParasha);
-
-console.log('parashaRange',  parashaRange)
-      if (parashaRange) {
-        const parashaStartDate = parashaRange.startDate;
-        const parashaEndDate = parashaRange.endDate;
-console.log('parashaStartDate',  parashaStartDate,parashaEndDate)
-        // If we already have date filters, intersect with parasha range
-        if (whereClause.eventDate) {
-          // Combine existing date filters with parasha range
-          const existingGte = whereClause.eventDate.$gte;
-          const existingLte = whereClause.eventDate.$lte;
-
-          whereClause.eventDate = {
-            $gte: existingGte && existingGte > parashaStartDate ? existingGte : parashaStartDate,
-            $lte: existingLte && existingLte < parashaEndDate ? existingLte : parashaEndDate
-          };
-        } else {
-          whereClause.eventDate = {
-            $gte: parashaStartDate,
-            $lte: parashaEndDate
-          };
-        }
-      } else {
-        // Parasha not found - return no results
-        return null;
-      }
-    }
+    // Note: parasha filter is applied after fetching results (see filterByParasha method)
+    // This is because we need to check each certificate's eventDate against the parasha
 
     return whereClause;
+  }
+
+  /**
+   * Filter certificates by parasha - checks if each certificate's eventDate falls on the selected parasha
+   * This works across all years - it just checks if the parasha name matches
+   */
+  private static filterByParasha(certificates: Certificate[], parashaName: string): Certificate[] {
+    if (!parashaName) return certificates;
+
+    // Convert Hebrew parasha name to English for comparison
+    const parashaNameEnglish = HebrewDateController.getEnglishParshaName(parashaName);
+
+    return certificates.filter(cert => {
+      if (!cert.eventDate) return false;
+
+      const certParasha = HebrewDateController.getParshaForDateSync(cert.eventDate);
+      if (!certParasha) return false;
+
+      // Compare - handle combined parshiyot (e.g., "Vayakhel-Pekudei" contains "Vayakhel")
+      return certParasha === parashaNameEnglish ||
+             certParasha.includes(parashaNameEnglish) ||
+             parashaNameEnglish.includes(certParasha);
+    });
   }
 }

@@ -76,6 +76,40 @@ export class HebrewDateController {
   private static readonly PARSHA_HEBREW_TO_ENGLISH: Record<string, string> = Object.fromEntries(
     Object.entries(HebrewDateController.PARSHA_ENGLISH_TO_HEBREW).map(([eng, heb]) => [heb, eng])
   );
+
+  /**
+   * Get English parsha name from Hebrew name
+   */
+  static getEnglishParshaName(hebrewName: string): string {
+    return HebrewDateController.PARSHA_HEBREW_TO_ENGLISH[hebrewName] || hebrewName;
+  }
+
+  /**
+   * Get Hebrew parsha name from English name
+   */
+  static getHebrewParshaName(englishName: string): string {
+    return HebrewDateController.PARSHA_ENGLISH_TO_HEBREW[englishName] || englishName;
+  }
+
+  /**
+   * Get Parsha for a date - synchronous version for server-side filtering
+   * Returns English parsha name
+   */
+  static getParshaForDateSync(date: Date, isDiaspora: boolean = false): string | null {
+    const dateObj = date instanceof Date ? date : new Date(date);
+    const hDate = new HDate(dateObj);
+    const hyear = hDate.getFullYear();
+
+    const sedra = new Sedra(hyear, !isDiaspora);
+    const parsha = sedra.lookup(hDate);
+
+    if (parsha && parsha.parsha && parsha.parsha.length > 0) {
+      return parsha.parsha.map((p: string) => p).join('-');
+    }
+
+    return null;
+  }
+
   /**
    * Convert Gregorian date to Hebrew date
    * @param date Gregorian date
