@@ -182,6 +182,10 @@
             {{ (i18n.terms$ | async)?.fundraiserColumn }}
             <span class="sort-icon" *ngIf="getSortIcon('fundraiser')">{{ getSortIcon('fundraiser') }}</span>
           </th>
+          <th class="sortable" [class.sorted]="isSorted('reason')" (click)="toggleSort('reason', $event)">
+            {{ (i18n.terms$ | async)?.reason }}
+            <span class="sort-icon" *ngIf="getSortIcon('reason')">{{ getSortIcon('reason') }}</span>
+          </th>
           <th>{{ (i18n.terms$ | async)?.actionsColumn }}</th>
         </tr>
       </thead>
@@ -203,6 +207,7 @@
           </td>
           <td>{{ getCampaignName(donation) }}</td>
           <td>{{ donation.donor?.fundraiser?.name || '-' }}</td>
+          <td class="reason-cell" [title]="donation.reason || ''">{{ truncateReason(donation.reason) }}</td>
           <td class="actions">
             <button class="btn-icon btn-letter" (click)="printLetter(donation)"
               [title]="(i18n.terms$ | async)?.letterGeneration">✉</button>
@@ -214,7 +219,7 @@
           </td>
         </tr>
         <tr *ngIf="!loading && donations.length === 0">
-          <td colspan="11" class="no-data">
+          <td colspan="12" class="no-data">
             <p>{{ (i18n.terms$ | async)?.noDataFound }}</p>
           </td>
         </tr>

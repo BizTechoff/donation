@@ -626,4 +626,9 @@ export class DonationsListComponent implements OnInit, OnDestroy {
     if (!sort) return '';
     return sort.direction === 'asc' ? '↑' : '↓';
   }
+
+  truncateReason(reason: string | undefined): string {
+    if (!reason) return '-';
+    return reason.length > 30 ? reason.substring(0, 30) + '...' : reason;
+  }
 }
