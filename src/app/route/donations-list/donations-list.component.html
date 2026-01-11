@@ -187,8 +187,8 @@
       </thead>
       <tbody>
         <tr *ngFor="let donation of donations">
-          <td><strong>{{ getDonorName(donation) }}</strong></td>
-          <td>{{ getDonorHomeAddress(donation) }}</td>
+          <td class="donor-name"><strong>{{ getDonorName(donation) }}</strong></td>
+          <td class="donor-address">{{ getDonorHomeAddress(donation) }}</td>
           <!-- <td class="amount">{{ formatAmountInShekel(donation) }}</td> -->
           <td>
             <span [class.commitment-highlight]="donation.donationType === 'commitment'">

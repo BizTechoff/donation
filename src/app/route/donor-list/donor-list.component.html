@@ -73,7 +73,7 @@
               <small *ngIf="donor.idNumber">({{ (i18n.terms$ | async)?.idNumberShort }}: {{donor.idNumber}})</small>
             </div>
           </td>
-          <td>{{getDonorAddress(donor.id)}}</td>
+          <td class="donor-address">{{getDonorAddress(donor.id)}}</td>
           <td>{{getDonorPhone(donor.id)}}</td>
           <td>{{getDonorEmail(donor.id)}}</td>
           <td>

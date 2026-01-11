@@ -126,7 +126,7 @@
       </thead>
       <tbody>
         <tr *ngFor="let donorGift of donorGifts">
-          <td>{{ getDonorName(donorGift) }}</td>
+          <td class="donor-name">{{ getDonorName(donorGift) }}</td>
           <td>{{ donorGift.gift?.name || '-' }}</td>
           <td>{{ formatHebrewDate(donorGift.deliveryDate) }}</td>
           <td>

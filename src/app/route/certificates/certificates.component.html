@@ -125,7 +125,7 @@
       </thead>
       <tbody>
         <tr *ngFor="let certificate of certificates">
-          <td>
+          <td class="donor-name">
             <strong>{{certificate.recipientName}}</strong>
             <small *ngIf="certificate.donor">{{getDonorName(certificate)}}</small>
           </td>

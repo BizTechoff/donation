@@ -378,8 +378,8 @@
           </thead>
           <tbody>
             <tr *ngFor="let row of groupedDonationReport">
-              <td><strong>{{row.donorName}}</strong></td>
-              <td *ngIf="filters.showDonorDetails && filters.groupBy === 'donor'">{{row.donorDetails?.address || '-'}}
+              <td class="donor-name"><strong>{{row.donorName}}</strong></td>
+              <td class="donor-address" *ngIf="filters.showDonorDetails && filters.groupBy === 'donor'">{{row.donorDetails?.address || '-'}}
               </td>
               <td *ngIf="filters.showDonorDetails && filters.groupBy === 'donor'">
                 <div *ngIf="row.donorDetails && row.donorDetails.phones && row.donorDetails.phones.length > 0">
@@ -548,8 +548,8 @@
           </thead>
           <tbody>
             <tr *ngFor="let payment of paginatedPaymentReport">
-              <td>{{payment.donorName}}</td>
-              <td>{{payment.address || '-'}}</td>
+              <td class="donor-name">{{payment.donorName}}</td>
+              <td class="donor-address">{{payment.address || '-'}}</td>
               <td>{{payment.city || '-'}}</td>
               <td>{{formatHebrewDate(payment.lastDonationDate)}}</td>
               <td>{{formatCurrency(payment.promisedAmount)}}</td>
@@ -739,8 +739,8 @@
           </thead>
           <tbody>
             <tr *ngFor="let blessing of paginatedBlessingsReport">
-              <td>{{blessing.lastName}}</td>
-              <td>{{blessing.firstName}}</td>
+              <td class="donor-name">{{blessing.lastName}}</td>
+              <td class="donor-address">{{blessing.firstName}}</td>
               <td>
                 <span class="blessing-type">
                   {{blessing.blessingBookType}}
