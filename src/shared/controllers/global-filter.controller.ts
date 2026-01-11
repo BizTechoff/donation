@@ -82,6 +82,18 @@ export class GlobalFilterController {
       if (donorIds.length === 0) return []; // אין התאמות
     }
 
+    // סינון לפי טווח סכום תרומה
+    const amountFiltered = await GlobalFilterController.getDonorIdsFromAmountRange(filters);
+    if (amountFiltered !== undefined) {
+      if (donorIds) {
+        // חיתוך - רק תורמים שבשני הקטגוריות
+        donorIds = donorIds.filter(id => amountFiltered.includes(id));
+      } else {
+        donorIds = amountFiltered;
+      }
+      if (donorIds.length === 0) return []; // אין התאמות
+    }
+
     return donorIds;
   }
 
@@ -145,6 +157,34 @@ export class GlobalFilterController {
       )
     ];
 
+    return donorIds;
+  }
+
+  /**
+   * מחזיר donorIds מסוננים לפי טווח סכום תרומה
+   * מחזיר תורמים שיש להם לפחות תרומה אחת בטווח הסכומים
+   */
+  private static async getDonorIdsFromAmountRange(filters: GlobalFilters): Promise<string[] | undefined> {
+    if (filters.amountMin === undefined && filters.amountMax === undefined) {
+      return undefined; // אין פילטר סכום
+    }
+
+    // בנה תנאי סינון לפי סכום
+    const amountWhere: any = {};
+    if (filters.amountMin !== undefined) {
+      amountWhere.$gte = filters.amountMin;
+    }
+    if (filters.amountMax !== undefined) {
+      amountWhere.$lte = filters.amountMax;
+    }
+
+    // מצא תרומות בטווח הסכומים
+    const donations = await remult.repo(Donation).find({
+      where: { amount: amountWhere }
+    });
+
+    // החזר רשימת תורמים ייחודיים
+    const donorIds = [...new Set(donations.map(d => d.donorId).filter((id): id is string => !!id))];
     return donorIds;
   }
 

@@ -38,6 +38,25 @@
       </button>
     </div>
 
+    <!-- Amount Range Filter -->
+    <div class="amount-filter-section">
+      <span class="section-label">{{ (i18n.terms$ | async)?.byAmount }}:</span>
+      <!-- <small>{{ (i18n.terms$ | async)?.byAmount }}</small> -->
+      <div class="amount-inputs">
+        <input type="number"
+               class="amount-input"
+               [placeholder]="(i18n.terms$ | async)?.amountFrom || 'מסכום'"
+               [value]="currentFilters.amountMin"
+               (input)="onAmountMinInput($event)">
+        <span class="amount-separator">-</span>
+        <input type="number"
+               class="amount-input"
+               [placeholder]="(i18n.terms$ | async)?.amountTo || 'עד סכום'"
+               [value]="currentFilters.amountMax"
+               (input)="onAmountMaxInput($event)">
+      </div>
+    </div>
+
     <!-- Active Filters - Grouped by Type -->
     <div *ngIf="hasActiveFilters" class="active-filters">
 
@@ -101,6 +120,17 @@
                     [removable]="true"
                     (removed)="removeTargetAudienceFilter(targetAudienceId)">
             {{ getTargetAudienceName(targetAudienceId) }}
+            <mat-icon matChipRemove>cancel</mat-icon>
+          </mat-chip>
+        </mat-chip-set>
+      </div>
+
+      <!-- Amount Range Group -->
+      <div *ngIf="currentFilters.amountMin !== undefined || currentFilters.amountMax !== undefined" class="filter-group">
+        <span class="group-label">{{ (i18n.terms$ | async)?.amount }}:</span>
+        <mat-chip-set>
+          <mat-chip [removable]="true" (removed)="clearAmountFilter()">
+            {{ getAmountFilterDisplay() }}
             <mat-icon matChipRemove>cancel</mat-icon>
           </mat-chip>
         </mat-chip-set>

@@ -46,6 +46,23 @@ export interface DonationSelectionData {
 
 export class DonationController {
 
+  /**
+   * Get only donation IDs matching global filters - much faster for maps
+   */
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async findFilteredDonationIds(): Promise<string[]> {
+    const donations = await DonationController.findFilteredDonations({}, undefined, 10000);
+    return donations.map(d => d.id);
+  }
+
+  /**
+   * Get donations matching global filters with full donor info (for map display)
+   */
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async findFilteredDonationsForMap(): Promise<Donation[]> {
+    return await DonationController.findFilteredDonations({}, undefined, 10000);
+  }
+
   @BackendMethod({ allowed: Allow.authenticated })
   static async getDonationsForSelection(excludeIds?: string[]): Promise<DonationSelectionData> {
     // Load donations using global filters from user.settings

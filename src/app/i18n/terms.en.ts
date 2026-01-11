@@ -1734,6 +1734,7 @@ export const termsEn = {
   byCity: 'By City',
   byNeighborhood: 'By Neighborhood',
   byTargetAudience: 'By Target Audience',
+  byAmount: 'By Donation Amount',
   countries: 'Countries',
   cities: 'Cities',
   neighborhoods: 'Neighborhoods',

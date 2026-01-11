@@ -195,6 +195,27 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
     this.updateFilter('amountMax', value);
   }
 
+  clearAmountFilter() {
+    this.filterService.updateFilters({
+      amountMin: undefined,
+      amountMax: undefined
+    });
+  }
+
+  getAmountFilterDisplay(): string {
+    const min = this.currentFilters.amountMin;
+    const max = this.currentFilters.amountMax;
+
+    if (min !== undefined && max !== undefined) {
+      return `${min.toLocaleString()} - ${max.toLocaleString()}`;
+    } else if (min !== undefined) {
+      return `מ-${min.toLocaleString()}`;
+    } else if (max !== undefined) {
+      return `עד ${max.toLocaleString()}`;
+    }
+    return '';
+  }
+
   async openCampaignSelectionModal(event: Event) {
     event.stopPropagation();
 

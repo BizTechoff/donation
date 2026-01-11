@@ -1732,6 +1732,7 @@ export const termsHe = {
   byCity: 'לפי עיר',
   byNeighborhood: 'לפי שכונה',
   byTargetAudience: 'לפי קהל יעד',
+  byAmount: 'לפי סכום תרומה',
   countries: 'מדינות',
   cities: 'ערים',
   neighborhoods: 'שכונות',
