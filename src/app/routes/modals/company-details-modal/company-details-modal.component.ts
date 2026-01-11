@@ -99,7 +99,7 @@ export class CompanyDetailsModalComponent implements OnInit {
 
     try {
       this.loading = true;
-      await this.company.save();
+      await remult.repo(Company).save(this.company);
 
       this.ui.info(this.isNew ? 'החברה נוספה בהצלחה' : 'החברה עודכנה בהצלחה');
 

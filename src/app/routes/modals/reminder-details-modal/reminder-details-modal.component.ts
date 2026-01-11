@@ -375,7 +375,7 @@ export class ReminderDetailsModalComponent implements OnInit {
       // Note: Next reminder date calculation is handled by the backend in the saving hook
       // No need to calculate it here - the backend will auto-populate Hebrew fields and calculate
 
-      await this.reminder.save();
+      await remult.repo(Reminder).save(this.reminder);
 
       // Show success message with next reminder info
       const nextDateInfo = this.getNextReminderInfo();

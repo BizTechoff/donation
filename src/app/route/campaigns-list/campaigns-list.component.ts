@@ -300,7 +300,7 @@ export class CampaignsListComponent implements OnInit, OnDestroy {
     if (!this.editingCampaign) return;
 
     try {
-      await this.editingCampaign.save();
+      await remult.repo(Campaign).save(this.editingCampaign);
       await this.refreshData();
       this.closeModal();
     } catch (error) {
@@ -313,7 +313,7 @@ export class CampaignsListComponent implements OnInit, OnDestroy {
     const yes = await this.ui.yesNoQuestion(`${this.i18n.currentTerms.deleteCampaignConfirm || 'Are you sure you want to delete campaign'} ${campaign.name}?`);
     if (yes) {
       try {
-        await campaign.delete();
+        await remult.repo(Campaign).delete(campaign);
         await this.refreshData();
       } catch (error) {
         console.error('Error deleting campaign:', error);

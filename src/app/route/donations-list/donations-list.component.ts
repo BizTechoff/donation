@@ -246,7 +246,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
     if (!this.editingDonation) return;
 
     try {
-      await this.editingDonation.save();
+      await remult.repo(Donation).save(this.editingDonation);
 
       if (this.editingDonation.donationMethod) {
         await this.editingDonation.donationMethod.updateStats(this.editingDonation.amount);
@@ -268,7 +268,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
     const yes = await this.ui.yesNoQuestion(confirmMessage);
     if (yes) {
       try {
-        await donation.delete();
+        await remult.repo(Donation).delete(donation);
         await this.refreshData(); // This will also update the cache
       } catch (error) {
         console.error('Error deleting donation:', error);

@@ -138,7 +138,7 @@ export class CircleDetailsModalComponent implements OnInit {
 
     try {
       this.loading = true;
-      await this.circle.save();
+      await remult.repo(Circle).save(this.circle);
 
       this.ui.info(this.isNew ? 'החוג נוסף בהצלחה' : 'החוג עודכן בהצלחה');
 

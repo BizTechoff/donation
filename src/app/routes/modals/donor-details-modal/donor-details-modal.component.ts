@@ -828,7 +828,7 @@ export class DonorDetailsModalComponent implements OnInit {
     const yes = await this.ui.yesNoQuestion(confirmMessage);
     if (yes) {
       try {
-        await this.donor.delete();
+        await remult.repo(Donor).delete(this.donor);
         this.dialogRef.close(true);
       } catch (error) {
         console.error('Error deleting donor:', error);

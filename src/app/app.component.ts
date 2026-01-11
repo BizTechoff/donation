@@ -162,7 +162,7 @@ export class AppComponent implements OnInit {
           title: this.i18n.currentTerms.updateInfo,
           fields: [user.$.name],
           ok: async () => {
-            await user._.save()
+            await remult.repo(User).save(user)
           },
         })
     )

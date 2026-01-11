@@ -397,7 +397,7 @@ export class CampaignDonationsModalComponent implements OnInit {
 
     try {
       this.loading = true;
-      await donation.delete();
+      await remult.repo(Donation).delete(donation);
       this.snackBar.open('התרומה נמחקה בהצלחה', 'סגור', { duration: 3000 });
       await this.loadDonations();
       await this.loadCampaign();

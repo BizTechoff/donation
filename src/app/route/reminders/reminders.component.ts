@@ -244,12 +244,11 @@ export class RemindersComponent implements OnInit, OnDestroy {
   }
 
   async deleteReminder(reminder: Reminder) {
-    const donorName = reminder.donor?.lastAndFirstName
-    const yes = await this.ui.yesNoQuestion(`${this.i18n.terms.confirmDeleteDonor?.replace('{name}', reminder.title || '')}`)
+    const yes = await this.ui.yesNoQuestion(`${this.i18n.currentTerms.confirmDeleteDonor?.replace('{name}', reminder.title || '')}`)
     if (yes) {
       try {
         // No need to clean up source entity link - we use forward reference only
-        await reminder.delete();
+        await remult.repo(Reminder).delete(reminder);
         await this.loadReminders();
       } catch (error) {
         console.error('Error deleting reminder:', error);

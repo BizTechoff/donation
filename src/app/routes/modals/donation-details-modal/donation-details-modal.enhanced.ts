@@ -239,7 +239,7 @@ export class DonationDetailsModalComponent implements OnInit {
       // Issue tax receipt logic here
       this.donation.receiptIssued = true;
       this.donation.receiptDate = new Date();
-      await this.donation.save();
+      await remult.repo(Donation).save(this.donation);
       alert('קבלה הונפקה בהצלחה');
     } catch (error) {
       console.error('Error issuing receipt:', error);
@@ -272,7 +272,7 @@ export class DonationDetailsModalComponent implements OnInit {
         receiptDate: undefined
       });
       
-      await newDonation.save();
+      await remult.repo(Donation).save(newDonation);
       this.args.donationId = newDonation.id;
       await this.initializeDonation();
       await this.loadAllDonations();
@@ -294,7 +294,7 @@ export class DonationDetailsModalComponent implements OnInit {
 
     try {
       const wasNew = this.isNewDonation;
-      await this.donation.save();
+      await remult.repo(Donation).save(this.donation);
       
       this.changed = wasNew || this.hasChanges();
       
@@ -316,7 +316,7 @@ export class DonationDetailsModalComponent implements OnInit {
     const yes = await this.ui.yesNoQuestion('האם אתה בטוח שברצונך למחוק תרומה זו?');
     if (yes) {
       try {
-        await this.donation.delete();
+        await remult.repo(Donation).delete(this.donation);
         this.changed = true;
         // The dialog will automatically close
       } catch (error) {

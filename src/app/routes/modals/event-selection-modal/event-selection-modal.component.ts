@@ -77,7 +77,7 @@ export class EventSelectionModalComponent implements OnInit {
         category: 'אישי'
       });
 
-      await newEvent.save();
+      await remult.repo(Event).save(newEvent);
 
       // Add to available events list
       this.availableEvents.push(newEvent);
@@ -144,7 +144,7 @@ export class EventSelectionModalComponent implements OnInit {
         sortOrder: this.availableEvents.length
       });
 
-      await newEvent.save();
+      await remult.repo(Event).save(newEvent);
 
       // Add to available events list
       this.availableEvents.push(newEvent);

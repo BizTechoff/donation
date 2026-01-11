@@ -103,7 +103,7 @@ export class BankDetailsModalComponent implements OnInit {
 
     try {
       this.loading = true;
-      await this.bank.save();
+      await remult.repo(Bank).save(this.bank);
 
       this.ui.info(this.isNew ? 'הבנק נוסף בהצלחה' : 'הבנק עודכן בהצלחה');
 

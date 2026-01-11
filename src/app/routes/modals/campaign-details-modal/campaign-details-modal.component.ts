@@ -155,7 +155,7 @@ export class CampaignDetailsModalComponent implements OnInit {
         }
       }
 
-      await this.campaign.save();
+      await remult.repo(Campaign).save(this.campaign);
       this.snackBar.open('הקמפיין נשמר בהצלחה', 'סגור', { duration: 3000 });
       this.originalCampaignData = JSON.stringify(this.campaign);
       this.changed = false;
@@ -176,7 +176,7 @@ export class CampaignDetailsModalComponent implements OnInit {
 
     try {
       this.loading = true;
-      await this.campaign.delete();
+      await remult.repo(Campaign).delete(this.campaign);
       this.snackBar.open('הקמפיין נמחק בהצלחה', 'סגור', { duration: 3000 });
       this.dialogRef.close(true);
     } catch (error: any) {
@@ -492,7 +492,7 @@ export class CampaignDetailsModalComponent implements OnInit {
         }
 
         // Save the campaign
-        await this.campaign.save();
+        await remult.repo(Campaign).save(this.campaign);
         this.snackBar.open('הקמפיין נשמר', 'סגור', { duration: 2000 });
         this.originalCampaignData = JSON.stringify(this.campaign);
         this.changed = false;
@@ -535,7 +535,7 @@ export class CampaignDetailsModalComponent implements OnInit {
         }
 
         // Save the campaign
-        await this.campaign.save();
+        await remult.repo(Campaign).save(this.campaign);
         this.snackBar.open('הקמפיין נשמר', 'סגור', { duration: 2000 });
         this.originalCampaignData = JSON.stringify(this.campaign);
         this.changed = false;
@@ -607,7 +607,7 @@ export class CampaignDetailsModalComponent implements OnInit {
         }
 
         // Save the campaign
-        await this.campaign.save();
+        await remult.repo(Campaign).save(this.campaign);
         this.snackBar.open('הקמפיין נשמר', 'סגור', { duration: 2000 });
         this.originalCampaignData = JSON.stringify(this.campaign);
         this.changed = false;
@@ -646,7 +646,7 @@ export class CampaignDetailsModalComponent implements OnInit {
         }
 
         // Save the campaign
-        await this.campaign.save();
+        await remult.repo(Campaign).save(this.campaign);
         this.snackBar.open('הקמפיין נשמר', 'סגור', { duration: 2000 });
         this.originalCampaignData = JSON.stringify(this.campaign);
         this.changed = false;

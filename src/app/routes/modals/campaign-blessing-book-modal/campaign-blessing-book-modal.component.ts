@@ -471,7 +471,7 @@ export class CampaignBlessingBookModalComponent implements OnInit {
 
     try {
       donorBlessing.blessing.status = 'בטיפול';
-      await donorBlessing.blessing.save();
+      await remult.repo(Blessing).save(donorBlessing.blessing);
       donorBlessing.blessingStatus = this.getBlessingStatus(donorBlessing.blessing);
       this.calculateStatistics();
       this.ui.info('הברכה סומנה כנשלחה');
