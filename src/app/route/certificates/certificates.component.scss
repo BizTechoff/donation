@@ -340,7 +340,7 @@
       }
 
       .grid-col {
-        padding: 15px 12px;
+        padding: 2px 8px;
         font-size: 14px;
         border-left: 1px solid #ecf0f1;
         display: flex;
@@ -428,6 +428,22 @@
         margin: 0;
       }
     }
+  }
+}
+
+// Table styles
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  thead th {
+    padding: 10px 12px;
+  }
+
+  tbody td {
+    padding: 2px 8px;
+    font-size: 14px;
+    border-bottom: 1px solid #ecf0f1;
   }
 }
 

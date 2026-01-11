@@ -31,10 +31,10 @@ export class ReasonSelectionModalComponent {
   ];
 
   subOptions: SubOption[] = [
-    { key: 'son', label: 'הבן' },
-    { key: 'daughter', label: 'הבת' },
-    { key: 'grandson', label: 'הנכד' },
-    { key: 'granddaughter', label: 'הנכדה' }
+    { key: 'son', label: 'בנכם' },
+    { key: 'daughter', label: 'בתכם' },
+    { key: 'grandson', label: 'נכדכם' },
+    { key: 'granddaughter', label: 'נכדתכם' }
   ];
 
   selectedMain: ReasonOption | null = null;

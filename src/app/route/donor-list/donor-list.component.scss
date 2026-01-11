@@ -229,7 +229,7 @@
     }
 
     .grid-col {
-      // padding: 8px 12px;
+      padding: 2px;
       font-size: 14px;
       display: flex;
       align-items: center;
@@ -259,6 +259,22 @@
   }
 }
 
+// Table styles
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  thead th {
+    padding: 10px 12px;
+  }
+
+  tbody td {
+    padding: 2px 8px;
+    font-size: 14px;
+    border-bottom: 1px solid #ecf0f1;
+  }
+}
+
 .donor-name {
   display: flex;
   flex-direction: column;
@@ -266,14 +282,14 @@
 
   strong {
     color: #2c3e50;
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 600;
   }
 
   small {
     color: #7f8c8d;
-    font-size: 12px;
-    margin-top: 3px;
+    font-size: 11px;
+    margin-top: 1px;
   }
 }
 

@@ -11,7 +11,7 @@
         <div class="header-text">
           <h2>{{modalTitle}}</h2>
           <p class="header-subtitle" *ngIf="!loading">
-            סה"כ {{totalPayments}} תנועות • {{totalAmount | number:'1.2-2'}} ₪
+            סה"כ {{totalPayments}} תנועות • {{totalAmount | number:'1.2-2'}}
           </p>
         </div>
       </div>
@@ -76,9 +76,9 @@
             <th mat-header-cell *matHeaderCellDef mat-sort-header>סכום</th>
             <td mat-cell *matCellDef="let payment">
               <div class="amount-cell">
-                <mat-icon class="cell-icon">attach_money</mat-icon>
+                <!-- <mat-icon class="cell-icon">attach_money</mat-icon> -->
                 <span class="amount">{{payment.amount | number:'1.2-2'}}</span>
-                <span class="currency">₪</span>
+                <!-- <span class="currency">₪</span> -->
               </div>
             </td>
           </ng-container>
@@ -146,7 +146,7 @@
         </div>
         <div class="summary-item">
           <mat-icon>attach_money</mat-icon>
-          <span>סה"כ סכום: {{getFilteredTotal() | number:'1.2-2'}} ₪</span>
+          <span>סה"כ סכום: {{getFilteredTotal() | number:'1.2-2'}}</span>
         </div>
       </div>
 

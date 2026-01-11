@@ -412,6 +412,22 @@
   }
 }
 
+// Table styles
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  thead th {
+    padding: 10px 12px;
+  }
+
+  tbody td {
+    padding: 2px 8px;
+    font-size: 14px;
+    border-bottom: 1px solid #ecf0f1;
+  }
+}
+
 .btn-icon {
   background: none;
   border: none;

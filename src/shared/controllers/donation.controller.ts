@@ -573,8 +573,7 @@ export class DonationController {
     const payments = await remult.repo(Payment).find({
       where: {
         donationId: { $in: donationIds },
-        isActive: true,
-        status: 'completed'
+        isActive: true
       }
     });
 
