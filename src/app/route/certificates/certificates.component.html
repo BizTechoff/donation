@@ -133,7 +133,10 @@
             <span class="cert-type-badge type-{{certificate.type}}">{{getCertificateTypeText(certificate)}}</span>
           </td>
           <td>
-            <span class="event-date">{{ formatHebrewDate(certificate.eventDate) }}</span>
+            <div class="event-date-col">
+              <span class="event-date">{{ formatHebrewDate(certificate.eventDate) }}</span>
+              <small class="parasha" *ngIf="getParashaForDate(certificate.eventDate)">({{ getParashaForDate(certificate.eventDate) }})</small>
+            </div>
           </td>
           <td class="amount-col">
             <span class="amount" *ngIf="certificate.amount">₪{{certificate.amount | number}}</span>

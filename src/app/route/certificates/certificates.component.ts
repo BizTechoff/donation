@@ -532,6 +532,16 @@ export class CertificatesComponent implements OnInit, OnDestroy {
     }
   }
 
+  getParashaForDate(date: Date | undefined): string | null {
+    if (!date) return null;
+    try {
+      return this.hebrewDateService.getParshaForDate(new Date(date));
+    } catch (error) {
+      console.error('Error getting parasha:', error);
+      return null;
+    }
+  }
+
   getNextReminderDate(certificate: Certificate): string {
     const reminderDate = this.certificateReminderMap.get(certificate.id);
     return this.formatHebrewDate(reminderDate);

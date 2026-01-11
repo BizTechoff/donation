@@ -691,3 +691,21 @@
 .donor-name {
   text-align: right;
 }
+
+.event-date-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+
+  .event-date {
+    font-weight: 500;
+    color: #2c3e50;
+  }
+
+  .parasha {
+    font-size: 11px;
+    color: #7f8c8d;
+    margin-top: 2px;
+  }
+}

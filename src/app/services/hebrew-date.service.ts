@@ -163,6 +163,64 @@ export class HebrewDateService {
     return null;
   }
 
+  // Parsha names in Hebrew (matching the list used in certificates component)
+  private parshaHebrew: Record<string, string> = {
+    'Bereshit': 'בראשית',
+    'Noach': 'נח',
+    'Lech-Lecha': 'לך לך',
+    'Vayera': 'וירא',
+    'Chayei Sara': 'חיי שרה',
+    'Toldot': 'תולדות',
+    'Vayetzei': 'ויצא',
+    'Vayishlach': 'וישלח',
+    'Vayeshev': 'וישב',
+    'Miketz': 'מקץ',
+    'Vayigash': 'ויגש',
+    'Vayechi': 'ויחי',
+    'Shemot': 'שמות',
+    'Vaera': 'וארא',
+    'Bo': 'בא',
+    'Beshalach': 'בשלח',
+    'Yitro': 'יתרו',
+    'Mishpatim': 'משפטים',
+    'Terumah': 'תרומה',
+    'Tetzaveh': 'תצוה',
+    'Ki Tisa': 'כי תשא',
+    'Vayakhel': 'ויקהל',
+    'Pekudei': 'פקודי',
+    'Vayikra': 'ויקרא',
+    'Tzav': 'צו',
+    'Shmini': 'שמיני',
+    'Tazria': 'תזריע',
+    'Metzora': 'מצורע',
+    'Achrei Mot': 'אחרי מות',
+    'Kedoshim': 'קדושים',
+    'Emor': 'אמור',
+    'Behar': 'בהר',
+    'Bechukotai': 'בחוקותי',
+    'Bamidbar': 'במדבר',
+    'Nasso': 'נשא',
+    'Beha\'alotcha': 'בהעלותך',
+    'Sh\'lach': 'שלח לך',
+    'Korach': 'קרח',
+    'Chukat': 'חקת',
+    'Balak': 'בלק',
+    'Pinchas': 'פינחס',
+    'Matot': 'מטות',
+    'Masei': 'מסעי',
+    'Devarim': 'דברים',
+    'Vaetchanan': 'ואתחנן',
+    'Eikev': 'עקב',
+    'Re\'eh': 'ראה',
+    'Shoftim': 'שופטים',
+    'Ki Teitzei': 'כי תצא',
+    'Ki Tavo': 'כי תבוא',
+    'Nitzavim': 'נצבים',
+    'Vayeilech': 'וילך',
+    'Ha\'azinu': 'האזינו',
+    'Vezot Habracha': 'וזאת הברכה'
+  };
+
   /**
    * Get Parsha (Torah portion) for a Shabbat date
    */
@@ -177,7 +235,9 @@ export class HebrewDateService {
     const parsha = sedra.lookup(hDate);
 
     if (parsha && parsha.parsha && parsha.parsha.length > 0) {
-      return parsha.parsha.map((p: string) => p).join('-');
+      // Convert to Hebrew names
+      const hebrewNames = parsha.parsha.map((p: string) => this.parshaHebrew[p] || p);
+      return hebrewNames.join('-');
     }
 
     return null;
