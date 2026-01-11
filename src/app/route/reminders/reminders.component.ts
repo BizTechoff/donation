@@ -303,20 +303,24 @@ export class RemindersComponent implements OnInit, OnDestroy {
   getReminderDonorPhone(reminder: Reminder): string {
     return reminder.donor?.id ? this.donorPhoneMap.get(reminder.donor.id) || '' : '';
   }
-
-  getTypeText(type: string): string {
-    const typeMap: Record<string, string> = {
-      'donation_followup': this.i18n.terms.donationFollowUp,
-      'thank_you': this.i18n.terms.thankYouReminder,
-      'birthday': this.i18n.terms.birthdayType,
-      'memorial': this.i18n.terms.memorialType,
-      'meeting': this.i18n.terms.meetingType,
-      'phone_call': this.i18n.terms.phoneCallType,
-      'email': this.i18n.terms.emailType,
-      'general': this.i18n.terms.generalType
-    };
-    return typeMap[type] || type;
-  }
+  
+getTypeText(type: string): string {
+  const typeMap: Record<string, string> = {
+    'donation_followup': this.i18n.terms.donationFollowUp,
+    'thank_you': this.i18n.terms.thankYouLetter,
+    'receipt': this.i18n.terms.receipt,
+    'birthday': this.i18n.terms.birthdayType,
+    'holiday': this.i18n.terms.holiday,
+    'general': this.i18n.terms.generalType,
+    'meeting': this.i18n.terms.meetingType,
+    'phone_call': this.i18n.terms.phoneCallType,
+    'gift': this.i18n.terms.giftReminderType,
+    'memorialDay': this.i18n.terms.memorialDayType,
+    'memorial': this.i18n.terms.memorialMonumentType,
+    'yahrzeit': this.i18n.terms.yahrzeitType
+  };
+  return typeMap[type] || type;
+}
 
   getPriorityText(priority: string): string {
     const priorityMap: Record<string, string> = {
