@@ -171,19 +171,17 @@ export class DonorController {
     pageSize?: number,
     sortColumns?: Array<{ field: string; direction: 'asc' | 'desc' }>
   ): Promise<Donor[]> {
-    // 🎯 Fetch global filters from user.settings
-    const currentUserId = remult.user?.id;
-    let globalFilters: GlobalFilters = {};
-    if (currentUserId) {
-      const { User } = await import('../entity/user');
-      const user = await remult.repo(User).findId(currentUserId);
-      globalFilters = user?.settings?.globalFilters || {};
+    const { GlobalFilterController } = await import('./global-filter.controller');
+
+    // 🎯 קבל donorIds מסוננים מ-GlobalFilterController (כולל כל הפילטרים: מיקום, קהל יעד, קמפיין, סכום)
+    const donorIds = await GlobalFilterController.getDonorIdsFromUserSettings();
+
+    console.log('DonorController.findFilteredDonors - donorIds from GlobalFilter:', donorIds?.length ?? 'all');
+
+    // אם יש פילטרים גלובליים ואין תוצאות - החזר מערך ריק
+    if (donorIds !== undefined && donorIds.length === 0) {
+      return [];
     }
-
-    // Merge global filters with additional filters
-    const filters: GlobalFilters = { ...globalFilters, ...additionalFilters };
-
-    console.log('DonorController.findFilteredDonors', filters, 'searchTerm:', searchTerm);
 
     // Build orderBy from sortColumns or use default
     let orderBy: any = { lastName: 'asc' as 'asc' }; // Default sort
@@ -201,141 +199,6 @@ export class DonorController {
         }
         // Note: address, phone, email sorting would require joins and are done client-side
       });
-    }
-
-    // Start with all active donors
-    let donorIds: string[] | undefined = undefined;
-
-    // Apply place-based filters (country, city, neighborhood)
-    if (filters.countryIds?.length || filters.cityIds?.length || filters.neighborhoodIds?.length) {
-      const placeWhere: any = {};
-
-      if (filters.countryIds && filters.countryIds.length > 0) {
-        placeWhere.countryId = { $in: filters.countryIds };
-        console.log(`DonorController: Filtering by countryIds:`, filters.countryIds);
-
-        // Debug: Check what countryIds actually exist in Places
-        const distinctCountries = await remult.repo(Place).find({ limit: 100 });
-        const uniqueCountryIds = [...new Set(distinctCountries.map(p => p.countryId).filter(id => id))];
-        console.log(`DonorController: DEBUG - Unique countryIds in Places (first 100):`, uniqueCountryIds);
-        console.log(`DonorController: DEBUG - Looking for countryId:`, filters.countryIds[0]);
-        console.log(`DonorController: DEBUG - Does it exist in Places?:`, uniqueCountryIds.includes(filters.countryIds[0]));
-
-        // Debug: Check Countries table
-        const Country = (await import('../entity/country')).Country;
-        const allCountries = await remult.repo(Country).find();
-        const usaCountry = allCountries.find(c => c.name === 'ארצות הברית' || c.name === 'United States' || c.name === 'USA');
-        console.log(`DonorController: DEBUG - USA Country:`, usaCountry ? { id: usaCountry.id, name: usaCountry.name } : 'NOT FOUND');
-        console.log(`DonorController: DEBUG - OLD USA ID in Places: 2b172f98-33a9-4540-9996-28d51148eb4b`);
-        console.log(`DonorController: DEBUG - NEW USA ID in Countries:`, usaCountry?.id);
-      }
-
-      if (filters.cityIds && filters.cityIds.length > 0) {
-        placeWhere.city = { $in: filters.cityIds };
-        console.log(`DonorController: Filtering by cityIds:`, filters.cityIds);
-      }
-
-      if (filters.neighborhoodIds && filters.neighborhoodIds.length > 0) {
-        placeWhere.neighborhood = { $in: filters.neighborhoodIds };
-        console.log(`DonorController: Filtering by neighborhoodIds:`, filters.neighborhoodIds);
-      }
-
-      console.log(`DonorController: placeWhere query:`, JSON.stringify(placeWhere, null, 2));
-
-      // Find matching places
-      const matchingPlaces = await remult.repo(Place).find({ where: placeWhere });
-      const matchingPlaceIds = matchingPlaces.map(p => p.id);
-
-      console.log(`DonorController: Found ${matchingPlaces.length} places matching location filters`);
-      console.log(`DonorController: Sample places (first 3):`, matchingPlaces.slice(0, 3).map(p => ({ id: p.id, city: p.city, countryId: p.countryId })));
-
-      // Debug: Check how many places have countryId populated
-      if (filters.countryIds && filters.countryIds.length > 0 && matchingPlaces.length === 0) {
-        const allPlaces = await remult.repo(Place).find({ limit: 10 });
-        console.log(`DonorController: DEBUG - Sample of all places (first 10):`, allPlaces.map(p => ({
-          id: p.id,
-          city: p.city,
-          countryId: p.countryId,
-          fullAddress: p.fullAddress
-        })));
-
-        const allPlacesCount = await remult.repo(Place).count();
-        console.log(`DonorController: DEBUG - Total places in DB: ${allPlacesCount}`);
-
-        // Count places with non-null countryId
-        const placesWithCountryCount = allPlaces.filter(p => p.countryId).length;
-        console.log(`DonorController: DEBUG - Places with countryId in sample: ${placesWithCountryCount} out of ${allPlaces.length}`);
-      }
-
-      if (matchingPlaceIds.length === 0) {
-        return []; // No matching places found
-      }
-
-      // Find DonorPlace entries with matching places
-      const donorPlaces = await remult.repo(DonorPlace).find({
-        where: {
-          placeId: { $in: matchingPlaceIds },
-          isActive: true
-        }
-      });
-
-      donorIds = [...new Set(donorPlaces.map(dp => dp.donorId).filter((id): id is string => !!id))];
-      console.log(`DonorController: Found ${donorIds?.length || 0} unique donors with matching locations`);
-
-      if (donorIds.length === 0) {
-        return [];
-      }
-    }
-
-    // Apply campaign filter
-    if (filters.campaignIds && filters.campaignIds.length > 0) {
-      const Donation = (await import('../entity/donation')).Donation;
-      const donations = await remult.repo(Donation).find({
-        where: { campaignId: { $in: filters.campaignIds } }
-      });
-
-      const campaignDonorIds = [...new Set(donations.map(d => d.donorId).filter(id => id))];
-
-      if (donorIds) {
-        // Intersect with existing donor IDs
-        donorIds = donorIds.filter(id => campaignDonorIds.includes(id));
-      } else {
-        donorIds = campaignDonorIds;
-      }
-
-      console.log(`DonorController: After campaign filter: ${donorIds.length} donors`);
-
-      if (donorIds.length === 0) {
-        return [];
-      }
-    }
-
-    // Apply target audience filter
-    if (filters.targetAudienceIds && filters.targetAudienceIds.length > 0) {
-      const TargetAudience = (await import('../entity/target-audience')).TargetAudience;
-      const targetAudiences = await remult.repo(TargetAudience).find({
-        where: { id: { $in: filters.targetAudienceIds } }
-      });
-
-      // Collect all donor IDs from all matching target audiences
-      const audienceDonorIds = [
-        ...new Set(
-          targetAudiences.flatMap(ta => ta.donorIds || [])
-        )
-      ];
-
-      if (donorIds) {
-        // Intersect with existing donor IDs
-        donorIds = donorIds.filter(id => audienceDonorIds.includes(id));
-      } else {
-        donorIds = audienceDonorIds;
-      }
-
-      console.log(`DonorController: After target audience filter: ${donorIds.length} donors`);
-
-      if (donorIds.length === 0) {
-        return [];
-      }
     }
 
     // Build final where clause
@@ -381,108 +244,14 @@ export class DonorController {
 
   @BackendMethod({ allowed: Allow.authenticated })
   static async countFilteredDonors(searchTerm?: string, additionalFilters?: Partial<GlobalFilters>): Promise<number> {
-    // 🎯 Fetch global filters from user.settings
-    const currentUserId = remult.user?.id;
-    let globalFilters: GlobalFilters = {};
-    if (currentUserId) {
-      const { User } = await import('../entity/user');
-      const user = await remult.repo(User).findId(currentUserId);
-      globalFilters = user?.settings?.globalFilters || {};
-    }
+    const { GlobalFilterController } = await import('./global-filter.controller');
 
-    // Merge global filters with additional filters
-    const filters: GlobalFilters = { ...globalFilters, ...additionalFilters };
+    // 🎯 קבל donorIds מסוננים מ-GlobalFilterController (כולל כל הפילטרים: מיקום, קהל יעד, קמפיין, סכום)
+    const donorIds = await GlobalFilterController.getDonorIdsFromUserSettings();
 
-    // Start with all active donors
-    let donorIds: string[] | undefined = undefined;
-
-    // Apply place-based filters (country, city, neighborhood)
-    if (filters.countryIds?.length || filters.cityIds?.length || filters.neighborhoodIds?.length) {
-      const placeWhere: any = {};
-
-      if (filters.countryIds && filters.countryIds.length > 0) {
-        placeWhere.countryId = { $in: filters.countryIds };
-      }
-
-      if (filters.cityIds && filters.cityIds.length > 0) {
-        placeWhere.city = { $in: filters.cityIds };
-      }
-
-      if (filters.neighborhoodIds && filters.neighborhoodIds.length > 0) {
-        placeWhere.neighborhood = { $in: filters.neighborhoodIds };
-      }
-
-      // Find matching places
-      const matchingPlaces = await remult.repo(Place).find({ where: placeWhere });
-      const matchingPlaceIds = matchingPlaces.map(p => p.id);
-
-      console.log(`DonorController.countFiltered: Found ${matchingPlaces.length} places matching location filters`);
-
-      if (matchingPlaceIds.length === 0) {
-        return 0;
-      }
-
-      // Find DonorPlace entries with matching places
-      const donorPlaces = await remult.repo(DonorPlace).find({
-        where: {
-          placeId: { $in: matchingPlaceIds },
-          isActive: true
-        }
-      });
-
-      donorIds = [...new Set(donorPlaces.map(dp => dp.donorId).filter((id): id is string => !!id))];
-      console.log(`DonorController.countFiltered: Found ${donorIds?.length || 0} unique donors with matching locations`);
-
-      if (donorIds.length === 0) {
-        return 0;
-      }
-    }
-
-    // Apply campaign filter
-    if (filters.campaignIds && filters.campaignIds.length > 0) {
-      const Donation = (await import('../entity/donation')).Donation;
-      const donations = await remult.repo(Donation).find({
-        where: { campaignId: { $in: filters.campaignIds } }
-      });
-
-      const campaignDonorIds = [...new Set(donations.map(d => d.donorId).filter(id => id))];
-
-      if (donorIds) {
-        // Intersect with existing donor IDs
-        donorIds = donorIds.filter(id => campaignDonorIds.includes(id));
-      } else {
-        donorIds = campaignDonorIds;
-      }
-
-      if (donorIds.length === 0) {
-        return 0;
-      }
-    }
-
-    // Apply target audience filter
-    if (filters.targetAudienceIds && filters.targetAudienceIds.length > 0) {
-      const TargetAudience = (await import('../entity/target-audience')).TargetAudience;
-      const targetAudiences = await remult.repo(TargetAudience).find({
-        where: { id: { $in: filters.targetAudienceIds } }
-      });
-
-      // Collect all donor IDs from all matching target audiences
-      const audienceDonorIds = [
-        ...new Set(
-          targetAudiences.flatMap(ta => ta.donorIds || [])
-        )
-      ];
-
-      if (donorIds) {
-        // Intersect with existing donor IDs
-        donorIds = donorIds.filter(id => audienceDonorIds.includes(id));
-      } else {
-        donorIds = audienceDonorIds;
-      }
-
-      if (donorIds.length === 0) {
-        return 0;
-      }
+    // אם יש פילטרים גלובליים ואין תוצאות - החזר 0
+    if (donorIds !== undefined && donorIds.length === 0) {
+      return 0;
     }
 
     // Build final where clause

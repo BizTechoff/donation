@@ -1,7 +1,8 @@
 import { Component, OnInit, OnDestroy, ViewChild, HostListener, ElementRef, ChangeDetectorRef } from '@angular/core';
 import { MatMenuTrigger } from '@angular/material/menu';
 import { remult } from 'remult';
-import { Subscription } from 'rxjs';
+import { Subject, Subscription } from 'rxjs';
+import { debounceTime } from 'rxjs/operators';
 import { openDialog } from 'common-ui-elements';
 import { GlobalFilterService, GlobalFilters } from '../../services/global-filter.service';
 import { Campaign } from '../../../shared/entity/campaign';
@@ -33,6 +34,10 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
 
   private subscription = new Subscription();
 
+  // Debounce subjects for amount inputs
+  private amountMinSubject = new Subject<number | undefined>();
+  private amountMaxSubject = new Subject<number | undefined>();
+
   constructor(
     private filterService: GlobalFilterService,
     public i18n: I18nService,
@@ -48,6 +53,24 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
         this.currentFilters = filters;
         // Trigger change detection after filters update
         this.cdr.detectChanges();
+      })
+    );
+
+    // Setup debounce for amount min input (800ms delay)
+    this.subscription.add(
+      this.amountMinSubject.pipe(debounceTime(800)).subscribe(async value => {
+        console.log('GlobalFilters: Updating amountMin to', value);
+        await this.updateFilter('amountMin', value);
+        console.log('GlobalFilters: amountMin updated');
+      })
+    );
+
+    // Setup debounce for amount max input (800ms delay)
+    this.subscription.add(
+      this.amountMaxSubject.pipe(debounceTime(800)).subscribe(async value => {
+        console.log('GlobalFilters: Updating amountMax to', value);
+        await this.updateFilter('amountMax', value);
+        console.log('GlobalFilters: amountMax updated');
       })
     );
 
@@ -186,13 +209,13 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
   onAmountMinInput(event: Event) {
     const input = event.target as HTMLInputElement;
     const value = input.value ? +input.value : undefined;
-    this.updateFilter('amountMin', value);
+    this.amountMinSubject.next(value);
   }
 
   onAmountMaxInput(event: Event) {
     const input = event.target as HTMLInputElement;
     const value = input.value ? +input.value : undefined;
-    this.updateFilter('amountMax', value);
+    this.amountMaxSubject.next(value);
   }
 
   clearAmountFilter() {
