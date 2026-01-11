@@ -1,0 +1,46 @@
+<div class="modal-overlay">
+  <div class="modal-content reason-modal">
+    <div class="modal-header">
+      <h2>{{ showSubOptions ? selectedMain?.label : 'בחירת סיבה' }}</h2>
+      <button class="modal-close" (click)="onClose()">&times;</button>
+    </div>
+
+    <div class="modal-body">
+      <!-- Main Options -->
+      <div class="options-grid" *ngIf="!showSubOptions">
+        <div *ngFor="let option of mainOptions"
+             class="option-card"
+             [class.other-option]="option.key === 'other'"
+             (click)="selectMain(option)">
+          <div class="option-icon">
+            <span *ngIf="option.key === 'birth'">👶</span>
+            <span *ngIf="option.key === 'engagement'">💍</span>
+            <span *ngIf="option.key === 'wedding'">💒</span>
+            <span *ngIf="option.key === 'other'">✏️</span>
+          </div>
+          <div class="option-label">{{ option.label }}</div>
+        </div>
+      </div>
+
+      <!-- Sub Options -->
+      <div class="options-grid sub-options" *ngIf="showSubOptions">
+        <div *ngFor="let subOption of subOptions"
+             class="option-card sub-card"
+             (click)="selectSub(subOption)">
+          <div class="option-icon">
+            <span *ngIf="subOption.key === 'son'">👦</span>
+            <span *ngIf="subOption.key === 'daughter'">👧</span>
+            <span *ngIf="subOption.key === 'grandson'">👦</span>
+            <span *ngIf="subOption.key === 'granddaughter'">👧</span>
+          </div>
+          <div class="option-label">{{ subOption.label }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" *ngIf="showSubOptions" (click)="goBack()">חזרה</button>
+      <button class="btn btn-secondary" (click)="onClose()">ביטול</button>
+    </div>
+  </div>
+</div>

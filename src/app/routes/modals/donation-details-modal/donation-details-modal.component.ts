@@ -13,6 +13,7 @@ import { BankSelectionModalComponent } from '../bank-selection-modal/bank-select
 import { DonorDetailsModalComponent } from '../donor-details-modal/donor-details-modal.component';
 import { DonorSelectionModalComponent } from '../donor-selection-modal/donor-selection-modal.component';
 import { OrganizationSelectionModalComponent } from '../organization-selection-modal/organization-selection-modal.component';
+import { ReasonSelectionModalComponent } from '../reason-selection-modal/reason-selection-modal.component';
 
 export interface DonationDetailsModalArgs {
   donationId: string; // Can be 'new' for new donation or donation ID
@@ -1478,6 +1479,24 @@ export class DonationDetailsModalComponent implements OnInit {
       ? this.donation.amount
       : this.donation.amount / this.donation.numberOfPayments;
     return amountPerPayment.toFixed(2);
+  }
+
+  /**
+   * Open reason selection modal
+   */
+  async openReasonSelectionModal() {
+    try {
+      const result = await openDialog(
+        ReasonSelectionModalComponent,
+        (modal: ReasonSelectionModalComponent) => {}
+      ) as string | undefined;
+
+      if (result !== undefined) {
+        this.donation.reason = result;
+      }
+    } catch (error) {
+      console.error('Error opening reason selection modal:', error);
+    }
   }
 
 }
