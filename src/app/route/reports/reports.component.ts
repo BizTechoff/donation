@@ -2321,7 +2321,14 @@ export class ReportsComponent implements OnInit, OnDestroy {
       columns.push({
         header: 'תשלומים בפועל',
         field: 'actualPayments',
-        format: 'currency'
+        customFormatter: (val, row) => {
+          if (!row.actualPayments) return '-';
+          const payments = fullReportResponse.hebrewYears
+            .map(year => row.actualPayments[year] ? `${year}: ₪${row.actualPayments[year].toLocaleString('he-IL')}` : '')
+            .filter(p => p)
+            .join(', ');
+          return payments || '-';
+        }
       });
     }
 
