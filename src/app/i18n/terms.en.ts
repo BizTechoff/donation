@@ -1738,5 +1738,28 @@ export const termsEn = {
   countries: 'Countries',
   cities: 'Cities',
   neighborhoods: 'Neighborhoods',
-  targetAudiences: 'Target Audiences'
+  targetAudiences: 'Target Audiences',
+
+  // Donations Report - Display Options
+  groupByLabel: 'Group By',
+  groupByDonor: 'Donor',
+  groupByCampaign: 'Campaign',
+  groupByPaymentMethod: 'Payment Method',
+  groupByFundraiser: 'Fundraiser',
+  showDonorDetailsLabel: 'Show Donor Details',
+  showActualPaymentsLabel: 'Show Actual Payments',
+  showCurrencySummaryLabel: 'Show Currency Summary',
+  showDonationDetailsLabel: 'Show Donation Details',
+  printButton: 'Print',
+
+  // Donations Report - Sub-table columns
+  yearColumnSubTable: 'Year',
+  dateColumnSubTable: 'Date',
+  amountColumnSubTable: 'Amount',
+  reasonColumnSubTable: 'Reason',
+
+  // Donations Report - Currency Summary Table
+  currencySummaryTitle: 'Summary by Currency',
+  currencyColumnSummary: 'Currency',
+  totalColumnSummary: 'Total'
 }

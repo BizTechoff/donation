@@ -1736,5 +1736,28 @@ export const termsHe = {
   countries: 'מדינות',
   cities: 'ערים',
   neighborhoods: 'שכונות',
-  targetAudiences: 'קהלי יעד'
+  targetAudiences: 'קהלי יעד',
+
+  // Donations Report - Display Options
+  groupByLabel: 'קיבוץ לפי',
+  groupByDonor: 'תורם',
+  groupByCampaign: 'קמפיין',
+  groupByPaymentMethod: 'אמצעי תשלום',
+  groupByFundraiser: 'מתרים',
+  showDonorDetailsLabel: 'הצג פרטי תורם',
+  showActualPaymentsLabel: 'הצג תרומות בפועל',
+  showCurrencySummaryLabel: 'הצג סיכום מטבעות',
+  showDonationDetailsLabel: 'הצג פירוט תרומות',
+  printButton: 'הדפסה',
+
+  // Donations Report - Sub-table columns
+  yearColumnSubTable: 'שנה',
+  dateColumnSubTable: 'תאריך',
+  amountColumnSubTable: 'סכום',
+  reasonColumnSubTable: 'סיבה',
+
+  // Donations Report - Currency Summary Table
+  currencySummaryTitle: 'סיכום לפי מטבעות',
+  currencyColumnSummary: 'מטבע',
+  totalColumnSummary: 'סה"כ'
 }
