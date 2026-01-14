@@ -1883,6 +1883,10 @@
 
 .donor-name {
   text-align: right;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
 }
 
 .donor-address {
