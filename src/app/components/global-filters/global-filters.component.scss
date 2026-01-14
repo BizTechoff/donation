@@ -32,10 +32,13 @@
   .filters-content {
     padding: 16px;
     min-width: 300px;
+    max-width: 100%;
     border: 3px solid #667eea;
     border-top: none;
     border-radius: 0 0 8px 8px;
     background-color: #fafafa;
+    overflow: hidden;
+    box-sizing: border-box;
   }
 }
 
@@ -94,12 +97,15 @@
   background-color: rgba(102, 126, 234, 0.05);
   border-radius: 8px;
   border: 1px solid rgba(102, 126, 234, 0.2);
+  overflow: hidden;
+  flex-wrap: wrap;
 
   .section-label {
     font-size: 13px;
     font-weight: 600;
     color: #667eea;
     white-space: nowrap;
+    flex-shrink: 0;
   }
 
   .amount-inputs {
@@ -107,16 +113,19 @@
     align-items: center;
     gap: 8px;
     flex: 1;
+    min-width: 0;
   }
 
   .amount-input {
     flex: 1;
-    padding: 8px 12px;
+    padding: 8px 10px;
     border: 1px solid #ddd;
     border-radius: 4px;
     font-size: 14px;
     text-align: center;
+    min-width: 70px;
     max-width: 100px;
+    box-sizing: border-box;
 
     &:focus {
       outline: none;
@@ -126,13 +135,14 @@
 
     &::placeholder {
       color: #999;
-      font-size: 12px;
+      font-size: 11px;
     }
   }
 
   .amount-separator {
     color: #667eea;
     font-weight: bold;
+    flex-shrink: 0;
   }
 }
 

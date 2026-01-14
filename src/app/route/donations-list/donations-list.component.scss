@@ -757,6 +757,18 @@
 
 .donor-name {
   text-align: right;
+
+  .donor-link {
+    color: #667eea;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s ease;
+
+    &:hover {
+      color: #764ba2;
+      text-decoration: underline;
+    }
+  }
 }
 
 .donor-address {

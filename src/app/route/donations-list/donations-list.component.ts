@@ -262,6 +262,14 @@ export class DonationsListComponent implements OnInit, OnDestroy {
     }
   }
 
+  async openDonorDetails(donation: Donation) {
+    if (!donation.donorId) return;
+    const changed = await this.ui.donorDetailsDialog(donation.donorId);
+    if (changed) {
+      await this.refreshData();
+    }
+  }
+
   async saveDonation() {
     if (!this.editingDonation) return;
 

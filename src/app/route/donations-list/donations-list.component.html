@@ -198,7 +198,11 @@
       </thead>
       <tbody>
         <tr *ngFor="let donation of donations">
-          <td class="donor-name"><strong>{{ getDonorName(donation) }}</strong></td>
+          <td class="donor-name">
+            <a class="donor-link" (click)="openDonorDetails(donation); $event.stopPropagation()">
+              <strong>{{ getDonorName(donation) }}</strong>
+            </a>
+          </td>
           <td class="donor-address">{{ getDonorHomeAddress(donation) }}</td>
           <!-- <td class="amount">{{ formatAmountInShekel(donation) }}</td> -->
           <td>

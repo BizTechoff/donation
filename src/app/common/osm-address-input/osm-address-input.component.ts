@@ -362,10 +362,10 @@ export class OsmAddressInputComponent implements ControlValueAccessor, OnDestroy
     this.showAddressDetails = !this.showAddressDetails;
   }
 
-  onDetailChange(): void {
+  async onDetailChange(): Promise<void> {
     if (!this.place) return;
 
-    // עדכון הכתובת המלאה בהתאם לשינויים (WITHOUT SAVING - HYBRID APPROACH)
+    // עדכון הכתובת המלאה בהתאם לשינויים
     const parts = [];
 
     if (this.place.street) parts.push(this.place.street);
@@ -381,9 +381,18 @@ export class OsmAddressInputComponent implements ControlValueAccessor, OnDestroy
     this.searchValue = this.place.fullAddress;
     this.onChange(this.searchValue);
 
-    // שליחת ה-Place המעודכן להורה (ללא save - ההורה ישמור אותו)
+    // שמירת השינויים ל-DB
+    try {
+      if (this.place.id) {
+        this.place = await remult.repo(Place).save(this.place);
+        console.log('Place saved to DB:', this.place);
+      }
+    } catch (error) {
+      console.error('Error saving place:', error);
+    }
+
+    // שליחת ה-Place המעודכן להורה
     this.placeChange.emit(this.place);
-    console.log('Place updated (not saved yet):', this.place);
   }
 
   getCountryDisplayName(): string {
