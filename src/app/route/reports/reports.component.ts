@@ -566,6 +566,15 @@ export class ReportsComponent implements OnInit, OnDestroy {
     return donations.filter(d => d.hebrewYear === year);
   }
 
+  /**
+   * Check if name starts with English character (LTR)
+   */
+  isEnglishName(name: string): boolean {
+    if (!name) return false;
+    const firstChar = name.trim().charAt(0);
+    return /^[A-Za-z]/.test(firstChar);
+  }
+
   formatDate(date: Date): string {
     return new Date(date).toLocaleDateString('he-IL');
   }

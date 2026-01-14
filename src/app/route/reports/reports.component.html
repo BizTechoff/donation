@@ -38,7 +38,7 @@
       </button> -->
       <button *ngIf="this.activeReport !== 'personalDonor'" class="btn btn-outline" (click)="printReport()">
         <span class="btn-icon">🖨️</span>
-        הדפסה
+        {{ (i18n.terms$ | async)?.printButton }}
       </button>
     </div>
   </div>
@@ -67,12 +67,12 @@
 
       <!-- סוג קיבוץ -->
       <div class="filter-group" *ngIf="activeReport === 'donations'">
-        <label>קיבוץ לפי</label>
+        <label>{{ (i18n.terms$ | async)?.groupByLabel }}</label>
         <select class="form-control" [(ngModel)]="filters.groupBy" (ngModelChange)="applyFilters()">
-          <option value="donor">תורם</option>
-          <option value="campaign">קמפיין</option>
-          <option value="paymentMethod">אמצעי תשלום</option>
-          <option value="fundraiser">מתרים</option>
+          <option value="donor">{{ (i18n.terms$ | async)?.groupByDonor }}</option>
+          <option value="campaign">{{ (i18n.terms$ | async)?.groupByCampaign }}</option>
+          <option value="paymentMethod">{{ (i18n.terms$ | async)?.groupByPaymentMethod }}</option>
+          <option value="fundraiser">{{ (i18n.terms$ | async)?.groupByFundraiser }}</option>
         </select>
       </div>
 
@@ -134,19 +134,19 @@
     <div class="display-options-row" *ngIf="activeReport === 'donations'">
       <label class="checkbox-label">
         <input type="checkbox" [(ngModel)]="filters.showDonorDetails" (ngModelChange)="applyFilters()">
-        הצג פרטי תורם
+        {{ (i18n.terms$ | async)?.showDonorDetailsLabel }}
       </label>
       <label class="checkbox-label">
         <input type="checkbox" [(ngModel)]="filters.showActualPayments" (ngModelChange)="applyFilters()">
-        הצג תרומות בפועל
+        {{ (i18n.terms$ | async)?.showActualPaymentsLabel }}
       </label>
       <label class="checkbox-label">
         <input type="checkbox" [(ngModel)]="filters.showCurrencySummary" (ngModelChange)="applyFilters()">
-        הצג סיכום מטבעות
+        {{ (i18n.terms$ | async)?.showCurrencySummaryLabel }}
       </label>
       <label class="checkbox-label">
         <input type="checkbox" [(ngModel)]="filters.showDonationDetails" (ngModelChange)="applyFilters()">
-        הצג פירוט תרומות
+        {{ (i18n.terms$ | async)?.showDonationDetailsLabel }}
       </label>
     </div>
   </div>
@@ -387,11 +387,13 @@
               <tr class="main-row" [class.expanded]="row.isExpanded"
                   [class.clickable]="filters.showDonationDetails && row.donations?.length"
                   (click)="filters.showDonationDetails && row.donations?.length ? row.isExpanded = !row.isExpanded : null">
-                <td class="donor-name">
-                  <span class="expand-icon" *ngIf="filters.showDonationDetails && row.donations?.length">
-                    {{row.isExpanded ? '▶' : '▼'}}
+                <td [style.direction]="isEnglishName(row.donorName) ? 'ltr' : 'rtl'">
+                  <span class="donor-name-wrapper">
+                    <span class="expand-icon" *ngIf="filters.showDonationDetails && row.donations?.length">
+                      {{row.isExpanded ? '▶' : '▼'}}
+                    </span>
+                    <strong>{{row.donorName}}</strong>
                   </span>
-                  <strong>{{row.donorName}}</strong>
                 </td>
                 <td class="donor-address" *ngIf="filters.showDonorDetails && filters.groupBy === 'donor'">{{row.donorDetails?.address || '-'}}
                 </td>
@@ -427,10 +429,10 @@
                     <table class="donation-details-table">
                       <thead>
                         <tr>
-                          <th>שנה</th>
-                          <th>תאריך</th>
-                          <th>סכום</th>
-                          <th>סיבה</th>
+                          <th>{{ (i18n.terms$ | async)?.yearColumnSubTable }}</th>
+                          <th>{{ (i18n.terms$ | async)?.dateColumnSubTable }}</th>
+                          <th>{{ (i18n.terms$ | async)?.amountColumnSubTable }}</th>
+                          <th>{{ (i18n.terms$ | async)?.reasonColumnSubTable }}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -491,13 +493,13 @@
 
       <!-- טבלת סיכום מטבעות -->
       <div *ngIf="filters.showCurrencySummary && currencySummaryData.length > 0" class="currency-summary-section">
-        <h3>סיכום לפי מטבעות</h3>
+        <h3>{{ (i18n.terms$ | async)?.currencySummaryTitle }}</h3>
         <table class="data-table currency-summary">
           <thead>
             <tr>
-              <th>מטבע</th>
+              <th>{{ (i18n.terms$ | async)?.currencyColumnSummary }}</th>
               <th *ngFor="let year of hebrewYears">{{year}}</th>
-              <th>סה"כ</th>
+              <th>{{ (i18n.terms$ | async)?.totalColumnSummary }}</th>
             </tr>
           </thead>
           <tbody>
