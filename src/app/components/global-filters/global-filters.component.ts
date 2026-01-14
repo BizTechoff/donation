@@ -168,42 +168,42 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
     return targetAudience?.name || this.i18n.terms.targetAudienceNotFound;
   }
 
-  removeCampaignFilter(campaignId: string) {
+  async removeCampaignFilter(campaignId: string) {
     const currentIds = this.currentFilters.campaignIds || [];
     const updatedIds = currentIds.filter(id => id !== campaignId);
-    this.updateFilter('campaignIds', updatedIds.length > 0 ? updatedIds : undefined);
+    await this.updateFilter('campaignIds', updatedIds.length > 0 ? updatedIds : undefined);
   }
 
-  removeCountryFilter(countryId: string) {
+  async removeCountryFilter(countryId: string) {
     const currentIds = this.currentFilters.countryIds || [];
     const updatedIds = currentIds.filter(id => id !== countryId);
-    this.updateFilter('countryIds', updatedIds.length > 0 ? updatedIds : undefined);
+    await this.updateFilter('countryIds', updatedIds.length > 0 ? updatedIds : undefined);
   }
 
-  removeTargetAudienceFilter(targetAudienceId: string) {
+  async removeTargetAudienceFilter(targetAudienceId: string) {
     const currentIds = this.currentFilters.targetAudienceIds || [];
     const updatedIds = currentIds.filter(id => id !== targetAudienceId);
-    this.updateFilter('targetAudienceIds', updatedIds.length > 0 ? updatedIds : undefined);
+    await this.updateFilter('targetAudienceIds', updatedIds.length > 0 ? updatedIds : undefined);
   }
 
-  removeCityFilter(city: string) {
+  async removeCityFilter(city: string) {
     const currentIds = this.currentFilters.cityIds || [];
     const updatedIds = currentIds.filter(id => id !== city);
-    this.updateFilter('cityIds', updatedIds.length > 0 ? updatedIds : undefined);
+    await this.updateFilter('cityIds', updatedIds.length > 0 ? updatedIds : undefined);
   }
 
-  removeNeighborhoodFilter(neighborhood: string) {
+  async removeNeighborhoodFilter(neighborhood: string) {
     const currentIds = this.currentFilters.neighborhoodIds || [];
     const updatedIds = currentIds.filter(id => id !== neighborhood);
-    this.updateFilter('neighborhoodIds', updatedIds.length > 0 ? updatedIds : undefined);
+    await this.updateFilter('neighborhoodIds', updatedIds.length > 0 ? updatedIds : undefined);
   }
   
-  onDateFromChange(date: Date | null) {
-    this.updateFilter('dateFrom', date);
+  async onDateFromChange(date: Date | null) {
+    await this.updateFilter('dateFrom', date);
   }
 
-  onDateToChange(date: Date | null) {
-    this.updateFilter('dateTo', date);
+  async onDateToChange(date: Date | null) {
+    await this.updateFilter('dateTo', date);
   }
 
   onAmountMinInput(event: Event) {
@@ -218,8 +218,8 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
     this.amountMaxSubject.next(value);
   }
 
-  clearAmountFilter() {
-    this.filterService.updateFilters({
+  async clearAmountFilter() {
+    await this.filterService.updateFilters({
       amountMin: undefined,
       amountMax: undefined
     });
@@ -241,6 +241,7 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
 
   async openCampaignSelectionModal(event: Event) {
     event.stopPropagation();
+    this.menuTrigger?.closeMenu();
 
     const result = await openDialog(
       (await import('../../routes/modals/campaign-selection-modal/campaign-selection-modal.component')).CampaignSelectionModalComponent,
@@ -270,6 +271,7 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
 
   async openCountrySelectionModal(event: Event) {
     event.stopPropagation();
+    this.menuTrigger?.closeMenu();
 
     const result = await openDialog(
       (await import('../../routes/modals/country-selection-modal/country-selection-modal.component')).CountrySelectionModalComponent,
@@ -299,6 +301,7 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
 
   async openCitySelectionModal(event: Event) {
     event.stopPropagation();
+    this.menuTrigger?.closeMenu();
 
     const result = await openDialog(
       (await import('../../routes/modals/city-selection-modal/city-selection-modal.component')).CitySelectionModalComponent,
@@ -330,6 +333,7 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
 
   async openNeighborhoodSelectionModal(event: Event) {
     event.stopPropagation();
+    this.menuTrigger?.closeMenu();
 
     const result = await openDialog(
       (await import('../../routes/modals/neighborhood-selection-modal/neighborhood-selection-modal.component')).NeighborhoodSelectionModalComponent,
@@ -364,6 +368,7 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
 
   async openAudienceSelectionModal(event: Event) {
     event.stopPropagation();
+    this.menuTrigger?.closeMenu();
 
     const result = await this.ui.openAudienceSelection({
       title: this.i18n.terms.manageTargetAudiences,
