@@ -65,8 +65,7 @@
 
   // Summary cards in header
   .summary-cards {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    display: flex;
     gap: 10px;
     padding: 10px 30px;
     background: #f8f9fa;
@@ -86,6 +85,16 @@
       &:hover {
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+      }
+
+      // Total donations and commitments - expand to fill space
+      &.total, &.commitment {
+        flex: 1;
+      }
+
+      // Count cards - auto width
+      &.donors, &.commitment-count {
+        flex: 0 0 auto;
       }
 
       &.total {
