@@ -8,6 +8,14 @@ export interface PrintColumn {
   align?: 'right' | 'left' | 'center';
 }
 
+export interface SubRowConfig {
+  enabled: boolean;
+  dataField: string; // Field name that contains sub-rows array
+  columns: PrintColumn[]; // Columns for sub-table
+  groupByField?: string; // Optional field to group sub-rows (e.g., 'hebrewYear')
+  groupByValues?: string[]; // Values to group by (e.g., ['תשפ"ה', 'תשפ"ד'])
+}
+
 export interface PrintConfig {
   title: string;
   subtitle?: string;
@@ -16,6 +24,7 @@ export interface PrintConfig {
   data: any[];
   totals?: { label: string; value: string | number }[];
   direction?: 'rtl' | 'ltr';
+  subRows?: SubRowConfig; // Configuration for sub-rows (donation details)
 }
 
 @Injectable({
@@ -200,6 +209,45 @@ export class PrintService {
       font-weight: bold;
     }
 
+    /* Sub-table styles */
+    .sub-row-container {
+      background: #f8f9fc !important;
+    }
+
+    .sub-row-cell {
+      padding: 8px 16px 12px 32px !important;
+      border: none !important;
+      border-right: 3px solid #667eea !important;
+    }
+
+    .sub-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      margin: 0;
+    }
+
+    .sub-table thead th {
+      background: #667eea !important;
+      color: white;
+      padding: 6px 10px;
+      font-size: 10px;
+      font-weight: 600;
+      text-align: ${textAlign};
+    }
+
+    .sub-table tbody td {
+      padding: 5px 10px;
+      font-size: 10px;
+      border-bottom: 1px solid #eee;
+      text-align: ${textAlign};
+    }
+
+    .sub-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
     .print-footer {
       margin-top: 30px;
       padding-top: 10px;
@@ -232,6 +280,25 @@ export class PrintService {
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
       }
+
+      .sub-row-container {
+        background: #f8f9fc !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .sub-row-cell {
+        border-right: 3px solid #667eea !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .sub-table thead th {
+        background: #667eea !important;
+        color: white !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
     }
   </style>
 </head>
@@ -251,7 +318,7 @@ export class PrintService {
       </tr>
     </thead>
     <tbody>
-      ${this.generateRowsHtml(config.columns, config.data, textAlign)}
+      ${this.generateRowsHtml(config.columns, config.data, textAlign, config.subRows)}
     </tbody>
   </table>
 
@@ -282,16 +349,85 @@ export class PrintService {
     </div>`;
   }
 
-  private generateRowsHtml(columns: PrintColumn[], data: any[], defaultAlign: string): string {
-    return data.map(row => `
-      <tr>
+  private generateRowsHtml(columns: PrintColumn[], data: any[], defaultAlign: string, subRowConfig?: SubRowConfig): string {
+    return data.map(row => {
+      // Main row
+      let html = `
+      <tr class="main-row">
         ${columns.map(col => {
           const value = this.getCellValue(col, row);
           const align = col.align || defaultAlign;
           return `<td class="align-${align}">${value}</td>`;
         }).join('')}
-      </tr>
-    `).join('');
+      </tr>`;
+
+      // Sub-rows if enabled
+      if (subRowConfig?.enabled) {
+        const subData = row[subRowConfig.dataField];
+        if (subData && Array.isArray(subData) && subData.length > 0) {
+          const colSpan = columns.length;
+
+          // Group sub-rows by year if configured
+          if (subRowConfig.groupByField && subRowConfig.groupByValues) {
+            html += `
+            <tr class="sub-row-container">
+              <td colspan="${colSpan}" class="sub-row-cell">
+                <table class="sub-table">
+                  <thead>
+                    <tr>
+                      ${subRowConfig.columns.map(col => `<th>${col.header}</th>`).join('')}
+                    </tr>
+                  </thead>
+                  <tbody>`;
+
+            for (const groupValue of subRowConfig.groupByValues) {
+              const groupedItems = subData.filter((item: any) => item[subRowConfig.groupByField!] === groupValue);
+              for (const subRow of groupedItems) {
+                html += `
+                    <tr>
+                      ${subRowConfig.columns.map(col => {
+                        const value = this.getCellValue(col, subRow);
+                        return `<td>${value}</td>`;
+                      }).join('')}
+                    </tr>`;
+              }
+            }
+
+            html += `
+                  </tbody>
+                </table>
+              </td>
+            </tr>`;
+          } else {
+            // No grouping - just show all sub-rows
+            html += `
+            <tr class="sub-row-container">
+              <td colspan="${colSpan}" class="sub-row-cell">
+                <table class="sub-table">
+                  <thead>
+                    <tr>
+                      ${subRowConfig.columns.map(col => `<th>${col.header}</th>`).join('')}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${subData.map((subRow: any) => `
+                    <tr>
+                      ${subRowConfig.columns.map(col => {
+                        const value = this.getCellValue(col, subRow);
+                        return `<td>${value}</td>`;
+                      }).join('')}
+                    </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </td>
+            </tr>`;
+          }
+        }
+      }
+
+      return html;
+    }).join('');
   }
 
   private getCellValue(column: PrintColumn, row: any): string {

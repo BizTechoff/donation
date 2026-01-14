@@ -128,21 +128,26 @@
         </div>
       </div>
 
-      <!-- אפשרויות תצוגה -->
-      <div class="display-options" *ngIf="activeReport === 'donations'">
-        <label class="checkbox-label">
-          <input type="checkbox" [(ngModel)]="filters.showDonorDetails" (ngModelChange)="applyFilters()">
-          הצג פרטי תורם
-        </label>
-        <label class="checkbox-label">
-          <input type="checkbox" [(ngModel)]="filters.showActualPayments" (ngModelChange)="applyFilters()">
-          הצג תרומות בפועל
-        </label>
-        <label class="checkbox-label">
-          <input type="checkbox" [(ngModel)]="filters.showCurrencySummary" (ngModelChange)="applyFilters()">
-          הצג סיכום מטבעות
-        </label>
-      </div>
+    </div>
+
+    <!-- אפשרויות תצוגה - שורה נפרדת -->
+    <div class="display-options-row" *ngIf="activeReport === 'donations'">
+      <label class="checkbox-label">
+        <input type="checkbox" [(ngModel)]="filters.showDonorDetails" (ngModelChange)="applyFilters()">
+        הצג פרטי תורם
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" [(ngModel)]="filters.showActualPayments" (ngModelChange)="applyFilters()">
+        הצג תרומות בפועל
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" [(ngModel)]="filters.showCurrencySummary" (ngModelChange)="applyFilters()">
+        הצג סיכום מטבעות
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" [(ngModel)]="filters.showDonationDetails" (ngModelChange)="applyFilters()">
+        הצג פירוט תרומות
+      </label>
     </div>
   </div>
 
@@ -377,35 +382,72 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let row of groupedDonationReport">
-              <td class="donor-name"><strong>{{row.donorName}}</strong></td>
-              <td class="donor-address" *ngIf="filters.showDonorDetails && filters.groupBy === 'donor'">{{row.donorDetails?.address || '-'}}
-              </td>
-              <td *ngIf="filters.showDonorDetails && filters.groupBy === 'donor'">
-                <div *ngIf="row.donorDetails && row.donorDetails.phones && row.donorDetails.phones.length > 0">
-                  <div *ngFor="let phone of row.donorDetails.phones">{{phone}}</div>
-                </div>
-                <span
-                  *ngIf="!row.donorDetails || !row.donorDetails.phones || row.donorDetails.phones.length === 0">-</span>
-              </td>
-              <td *ngIf="filters.showDonorDetails && filters.groupBy === 'donor'">
-                <div *ngIf="row.donorDetails && row.donorDetails.emails && row.donorDetails.emails.length > 0">
-                  <div *ngFor="let email of row.donorDetails.emails">{{email}}</div>
-                </div>
-                <span
-                  *ngIf="!row.donorDetails || !row.donorDetails.emails || row.donorDetails.emails.length === 0">-</span>
-              </td>
-              <td *ngFor="let year of hebrewYears">
-                {{formatYearTotal(row.yearlyTotals, year)}}
-              </td>
-              <td *ngIf="filters.showActualPayments">
-                <div *ngFor="let year of hebrewYears">
-                  <span *ngIf="row.actualPayments && row.actualPayments[year]">
-                    {{year}}: ₪{{row.actualPayments[year].toLocaleString()}}
+            <ng-container *ngFor="let row of groupedDonationReport; let i = index">
+              <!-- Main row -->
+              <tr class="main-row" [class.expanded]="row.isExpanded"
+                  [class.clickable]="filters.showDonationDetails && row.donations?.length"
+                  (click)="filters.showDonationDetails && row.donations?.length ? row.isExpanded = !row.isExpanded : null">
+                <td class="donor-name">
+                  <span class="expand-icon" *ngIf="filters.showDonationDetails && row.donations?.length">
+                    {{row.isExpanded ? '▶' : '▼'}}
                   </span>
-                </div>
-              </td>
-            </tr>
+                  <strong>{{row.donorName}}</strong>
+                </td>
+                <td class="donor-address" *ngIf="filters.showDonorDetails && filters.groupBy === 'donor'">{{row.donorDetails?.address || '-'}}
+                </td>
+                <td *ngIf="filters.showDonorDetails && filters.groupBy === 'donor'">
+                  <div *ngIf="row.donorDetails && row.donorDetails.phones && row.donorDetails.phones.length > 0">
+                    <div *ngFor="let phone of row.donorDetails.phones">{{phone}}</div>
+                  </div>
+                  <span
+                    *ngIf="!row.donorDetails || !row.donorDetails.phones || row.donorDetails.phones.length === 0">-</span>
+                </td>
+                <td *ngIf="filters.showDonorDetails && filters.groupBy === 'donor'">
+                  <div *ngIf="row.donorDetails && row.donorDetails.emails && row.donorDetails.emails.length > 0">
+                    <div *ngFor="let email of row.donorDetails.emails">{{email}}</div>
+                  </div>
+                  <span
+                    *ngIf="!row.donorDetails || !row.donorDetails.emails || row.donorDetails.emails.length === 0">-</span>
+                </td>
+                <td *ngFor="let year of hebrewYears">
+                  {{formatYearTotal(row.yearlyTotals, year)}}
+                </td>
+                <td *ngIf="filters.showActualPayments">
+                  <div *ngFor="let year of hebrewYears">
+                    <span *ngIf="row.actualPayments && row.actualPayments[year]">
+                      {{year}}: ₪{{row.actualPayments[year].toLocaleString()}}
+                    </span>
+                  </div>
+                </td>
+              </tr>
+              <!-- Donation details sub-table -->
+              <tr *ngIf="filters.showDonationDetails && row.isExpanded && row.donations?.length" class="details-row">
+                <td [attr.colspan]="getColumnsCount()">
+                  <div class="donation-details-container">
+                    <table class="donation-details-table">
+                      <thead>
+                        <tr>
+                          <th>שנה</th>
+                          <th>תאריך</th>
+                          <th>סכום</th>
+                          <th>סיבה</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <ng-container *ngFor="let year of hebrewYears">
+                          <tr *ngFor="let donation of getDonationsForYear(row.donations, year)" class="donation-detail-row">
+                            <td>{{donation.hebrewYear}}</td>
+                            <td>{{donation.date | date:'dd/MM/yyyy'}}</td>
+                            <td>{{formatCurrencyWithSymbol(donation.amount, donation.currency)}}</td>
+                            <td>{{donation.reason || '-'}}</td>
+                          </tr>
+                        </ng-container>
+                      </tbody>
+                    </table>
+                  </div>
+                </td>
+              </tr>
+            </ng-container>
           </tbody>
         </table>
 

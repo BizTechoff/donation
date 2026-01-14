@@ -78,6 +78,15 @@ interface BlessingReportData {
   campaignName: string;
 }
 
+interface DonationDetail {
+  date: Date;
+  amount: number;
+  currency: string;
+  reason?: string;
+  campaignName?: string;
+  hebrewYear?: string;
+}
+
 interface GroupedDonationReport {
   donorId?: string;
   donorName: string;
@@ -94,6 +103,8 @@ interface GroupedDonationReport {
   actualPayments?: {
     [hebrewYear: string]: number; // in shekel
   };
+  donations?: DonationDetail[]; // Donation breakdown
+  isExpanded?: boolean; // For UI toggle
 }
 
 interface CurrencySummary {
@@ -220,7 +231,8 @@ export class ReportsComponent implements OnInit, OnDestroy {
     groupBy: 'donor' as GroupByOption,
     showDonorDetails: true,
     showActualPayments: false,
-    showCurrencySummary: true
+    showCurrencySummary: true,
+    showDonationDetails: true // Show donation breakdown under each row
   };
 
   // Available options for filters
@@ -531,6 +543,29 @@ export class ReportsComponent implements OnInit, OnDestroy {
     return `${symbol}${formattedAmount}`;
   }
 
+  /**
+   * Get the total number of columns for colspan calculation
+   */
+  getColumnsCount(): number {
+    let count = 1; // Name column
+    if (this.filters.showDonorDetails && this.filters.groupBy === 'donor') {
+      count += 3; // Address, Phones, Emails
+    }
+    count += this.hebrewYears.length; // Year columns
+    if (this.filters.showActualPayments) {
+      count += 1; // Actual payments column
+    }
+    return count;
+  }
+
+  /**
+   * Get donations filtered by Hebrew year
+   */
+  getDonationsForYear(donations: DonationDetail[] | undefined, year: string): DonationDetail[] {
+    if (!donations) return [];
+    return donations.filter(d => d.hebrewYear === year);
+  }
+
   formatDate(date: Date): string {
     return new Date(date).toLocaleDateString('he-IL');
   }
@@ -793,6 +828,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
         showDonorDetails: this.filters.showDonorDetails,
         showActualPayments: this.filters.showActualPayments,
         showCurrencySummary: this.filters.showCurrencySummary,
+        showDonationDetails: this.filters.showDonationDetails,
         selectedDonorIds: this.filters.selectedDonorIds.length > 0 ? this.filters.selectedDonorIds : undefined,
         selectedCampaign: this.filters.selectedCampaign || undefined,
         selectedDonorType: this.filters.selectedDonorType || undefined,
@@ -860,25 +896,15 @@ export class ReportsComponent implements OnInit, OnDestroy {
 
   formatYearTotal(yearlyTotals: { [hebrewYear: string]: { [currency: string]: number } }, hebrewYear: string): string {
     const yearData = yearlyTotals[hebrewYear];
-    if (!yearData) return '0';
+    if (!yearData) return '-';
 
-    const currencies = Object.entries(yearData);
-    if (currencies.length === 0) return '0';
+    const currencies = Object.entries(yearData).filter(([, amount]) => amount > 0);
+    if (currencies.length === 0) return '-';
 
-    // Debug: check what currencies we have
-    console.log(`Year ${hebrewYear} currencies:`, currencies);
-
-    // If only one currency - show with its symbol
-    if (currencies.length === 1) {
-      const [currency, amount] = currencies[0];
-      // console.log(`Formatting: currency="${currency}", amount=${amount}`);
-      return this.formatCurrencyWithSymbol(amount, currency);
-    }
-
-    // Multiple currencies - convert all to shekel and show total
-    const total = this.getYearTotal(yearlyTotals, hebrewYear);
-    const formattedTotal = Math.round(total).toLocaleString('he-IL');
-    return `₪${formattedTotal}`;
+    // Show each currency separately (e.g., "₪100 | €36 | $50")
+    return currencies
+      .map(([currency, amount]) => this.formatCurrencyWithSymbol(amount, currency))
+      .join(' | ');
   }
 
   async loadPaymentsReport() {
@@ -1137,6 +1163,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
         showDonorDetails: this.filters.showDonorDetails,
         showActualPayments: this.filters.showActualPayments,
         showCurrencySummary: this.filters.showCurrencySummary,
+        showDonationDetails: false, // Don't need donation details for Excel export
         selectedDonorIds: this.filters.selectedDonorIds.length > 0 ? this.filters.selectedDonorIds : undefined,
         selectedCampaign: this.filters.selectedCampaign || undefined,
         selectedDonorType: this.filters.selectedDonorType || undefined,
@@ -2267,6 +2294,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
       showDonorDetails: this.filters.showDonorDetails,
       showActualPayments: this.filters.showActualPayments,
       showCurrencySummary: this.filters.showCurrencySummary,
+      showDonationDetails: this.filters.showDonationDetails,
       selectedDonorIds: this.filters.selectedDonorIds.length > 0 ? this.filters.selectedDonorIds : undefined,
       selectedCampaign: this.filters.selectedCampaign || undefined,
       selectedDonorType: this.filters.selectedDonorType || undefined,
@@ -2306,13 +2334,8 @@ export class ReportsComponent implements OnInit, OnDestroy {
       columns.push({
         header: year,
         field: `yearlyTotals.${year}`,
-        format: 'currency',
         customFormatter: (val, row) => {
-          const yearData = row.yearlyTotals?.[year];
-          if (!yearData) return '-';
-          // Sum all currencies for this year
-          const total = Object.values(yearData).reduce((sum: number, amt: any) => sum + (amt || 0), 0);
-          return total > 0 ? `₪${total.toLocaleString('he-IL')}` : '-';
+          return this.formatYearTotal(row.yearlyTotals || {}, year);
         }
       });
     }
@@ -2339,6 +2362,24 @@ export class ReportsComponent implements OnInit, OnDestroy {
       { label: 'קמפיין', value: this.getSelectedCampaignText() !== 'בחר קמפיין' ? this.getSelectedCampaignText() : '' }
     ];
 
+    // Build sub-rows config for donation details
+    const subRowsConfig = this.filters.showDonationDetails ? {
+      enabled: true,
+      dataField: 'donations',
+      groupByField: 'hebrewYear',
+      groupByValues: fullReportResponse.hebrewYears,
+      columns: [
+        { header: 'שנה', field: 'hebrewYear' },
+        { header: 'תאריך', field: 'date', format: 'date' as const },
+        {
+          header: 'סכום',
+          field: 'amount',
+          customFormatter: (val: any, row: any) => this.formatCurrencyWithSymbol(row.amount, row.currency)
+        },
+        { header: 'סיבה', field: 'reason', customFormatter: (val: any) => val || '-' }
+      ]
+    } : undefined;
+
     this.printService.print({
       title: 'דוח תרומות מקובץ',
       subtitle: `לפי ${this.getGroupByLabel()}`,
@@ -2347,7 +2388,8 @@ export class ReportsComponent implements OnInit, OnDestroy {
       data: fullReportResponse.reportData,
       totals: [
         { label: 'סה"כ רשומות', value: fullReportResponse.totalRecords }
-      ]
+      ],
+      subRows: subRowsConfig
     });
   }
 

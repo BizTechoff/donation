@@ -1084,6 +1084,35 @@
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.08);
 
+  .display-options-row {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e0e6ed;
+
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+      font-size: 0.9rem;
+      color: #2c3e50;
+      white-space: nowrap;
+
+      input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        cursor: pointer;
+        accent-color: #667eea;
+      }
+    }
+  }
+
   .display-options {
     display: flex;
     flex-direction: row;
@@ -1289,6 +1318,88 @@
       display: inline-block;
       font-weight: bold;
       opacity: 0.8;
+    }
+  }
+
+  // Expandable rows for donation details
+  tr.main-row {
+    &.clickable {
+      cursor: pointer;
+
+      &:hover {
+        background-color: rgba(102, 126, 234, 0.08);
+      }
+    }
+
+    &.expanded {
+      background-color: rgba(102, 126, 234, 0.05);
+    }
+
+    .expand-icon {
+      display: inline-block;
+      width: 20px;
+      font-size: 10px;
+      color: #667eea;
+      transition: transform 0.2s;
+    }
+  }
+
+  tr.details-row {
+    background-color: #f8f9fc;
+
+    > td {
+      padding: 0 !important;
+      border: none;
+    }
+  }
+
+  .donation-details-container {
+    padding: 12px 20px 16px 40px;
+    border-right: 3px solid #667eea;
+    margin: 0;
+  }
+
+  .donation-details-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+
+    thead {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+
+      th {
+        padding: 10px 14px;
+        text-align: right;
+        font-weight: 600;
+        color: white;
+        font-size: 0.85rem;
+        white-space: nowrap;
+      }
+    }
+
+    tbody {
+      tr.donation-detail-row {
+        border-bottom: 1px solid #eee;
+        transition: background-color 0.15s;
+
+        &:hover {
+          background-color: #f5f7fa;
+        }
+
+        &:last-child {
+          border-bottom: none;
+        }
+
+        td {
+          padding: 10px 14px;
+          font-size: 0.9rem;
+          color: #2c3e50;
+          vertical-align: middle;
+        }
+      }
     }
   }
 }

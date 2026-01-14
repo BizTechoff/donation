@@ -8,6 +8,15 @@ import { Report } from '../enum/report';
 import { DocxCreateResponse } from '../type/letter.type';
 import { HebrewDateController } from './hebrew-date.controller';
 
+export interface DonationDetailData {
+  date: Date;
+  amount: number;
+  currency: string;
+  reason?: string;
+  campaignName?: string;
+  hebrewYear?: string; // For grouping by year in display
+}
+
 export interface GroupedDonationReportData {
   donorId?: string;
   donorName: string;
@@ -24,6 +33,7 @@ export interface GroupedDonationReportData {
   actualPayments?: {
     [hebrewYear: string]: number; // in shekel
   };
+  donations?: DonationDetailData[]; // Donation breakdown
 }
 
 export interface CurrencySummaryData {
@@ -56,6 +66,7 @@ export interface ReportFilters {
   showDonorDetails: boolean;
   showActualPayments: boolean;
   showCurrencySummary: boolean;
+  showDonationDetails?: boolean; // Show donation breakdown under each row
   selectedDonor?: string;
   selectedDonorIds?: string[]; // For multi-select donor filter
   selectedCampaign?: string;
@@ -401,7 +412,8 @@ export class ReportController {
           donorId: filters.groupBy === 'donor' ? groupKey : undefined,
           donorName: groupName,
           yearlyTotals: {},
-          actualPayments: filters.showActualPayments ? {} : undefined
+          actualPayments: filters.showActualPayments ? {} : undefined,
+          donations: filters.showDonationDetails ? [] : undefined
         };
 
         // Add donor details if requested and grouping by donor (use pre-loaded data)
@@ -416,6 +428,18 @@ export class ReportController {
 
       // Determine Hebrew year of donation (use cache)
       const hebrewYearFormatted = await getHebrewYearFormatted(donation.donationDate);
+
+      // Add donation detail if requested
+      if (filters.showDonationDetails && group.donations) {
+        group.donations.push({
+          date: donation.donationDate,
+          amount: donation.amount,
+          currency: donation.currencyId,
+          reason: donation.reason || undefined,
+          campaignName: donation.campaign?.name || undefined,
+          hebrewYear: hebrewYearFormatted
+        });
+      }
 
       // Initialize year if not exists
       if (!group.yearlyTotals[hebrewYearFormatted]) {
