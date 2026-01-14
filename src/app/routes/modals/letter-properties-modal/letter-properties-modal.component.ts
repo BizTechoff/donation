@@ -311,7 +311,7 @@ export class LetterPropertiesModalComponent implements OnInit {
     }
 
     const fieldPromises = this.selectedLetterType.fields
-      .filter(field => field !== 'letter_prefix' && field !== 'letter_suffix')
+      .filter(field => field !== 'letter_prefix' && field !== 'letter_suffix' && field !== 'תואר_מלא' && field !== 'סיומת_מכתב')
       .map(async field => ({
         fieldName: field,
         displayName: this.getFieldDisplayName(field),
@@ -490,7 +490,7 @@ export class LetterPropertiesModalComponent implements OnInit {
         const parts = [] as string[]
 
         const row1 =
-          `${this.donation.donor?.titleEnglish} ${this.donation.donor?.maritalStatus === 'married' ? '& Mrs.' : ''} ${this.donation.donor?.firstNameEnglish[0]?.toUpperCase()} ${this.toCamelCase(this.donation.donor?.lastNameEnglish || '')}` || ''
+          `${this.donation.donor?.titleEnglish} ${this.donation.donor?.maritalStatus === 'married' && !this.donation.donor?.titleEnglish?.includes('Mrs.') ? '& Mrs.' : ''} ${this.donation.donor?.firstNameEnglish[0]?.toUpperCase()} ${this.toCamelCase(this.donation.donor?.lastNameEnglish || '')}` || ''
 
         const address = await remult.repo(DonorPlace).findFirst({ donor: this.donation.donor })
         const row2 = `${address?.place?.apartment} ${address?.place?.building}` || ''
@@ -523,9 +523,7 @@ export class LetterPropertiesModalComponent implements OnInit {
         break
       }
       case 'תואר_מלא': {
-        const parts = [] as string[]
-        parts.push(...this.selectedPrefixLines.map(l => l.text))
-        result = parts.join('\n')
+        result = this.selectedPrefixLines.map(l => l.text).join('\n');
         break
       }
       case 'שם_עברית': {
@@ -954,6 +952,14 @@ export class LetterPropertiesModalComponent implements OnInit {
       this.fieldValues.forEach(fv => {
         fieldValuesMap[fv.fieldName] = fv.value || '';
       });
+
+      // Add auto-calculated fields from prefix/suffix lines (only if field exists in letter type)
+      if (this.selectedPrefixLines.length > 0 && this.selectedLetterType.fields.includes('תואר_מלא')) {
+        fieldValuesMap['תואר_מלא'] = this.selectedPrefixLines.map(l => l.text).join('\n');
+      }
+      if (this.selectedSuffixLines.length > 0 && this.selectedLetterType.fields.includes('סיומת_מכתב')) {
+        fieldValuesMap['סיומת_מכתב'] = this.selectedSuffixLines.map(l => l.text).join('\n');
+      }
 
       const response = await this.letterService.createLetter(
         this.args.donationId,
