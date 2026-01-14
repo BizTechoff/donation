@@ -480,6 +480,10 @@ export class DonationController {
     return donations;
   }
 
+  /**
+   * Count all donations matching filters (for pagination)
+   * Includes both full donations and commitments based on filter
+   */
   @BackendMethod({ allowed: Allow.authenticated })
   static async countFilteredDonations(filters: DonationFilters): Promise<number> {
     const whereClause = await DonationController.buildWhereClause(filters);
@@ -487,8 +491,33 @@ export class DonationController {
       return 0;
     }
 
+    // Count all records matching the filter (donationType is already applied in buildWhereClause if specified)
+    const count = await remult.repo(Donation).count(
+      Object.keys(whereClause).length > 0 ? whereClause : undefined
+    );
+
+    return count;
+  }
+
+  /**
+   * Count only full donations (not commitments) - for the summary card
+   */
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async countFullDonations(filters: DonationFilters): Promise<number> {
+    const whereClause = await DonationController.buildWhereClause(filters);
+    if (whereClause === null) {
+      return 0;
+    }
+
+    // If user selected "commitment" type, don't count full donations
+    if (filters.selectedDonationType === 'commitment') {
+      return 0;
+    }
+
     // Count only full donations (exclude commitments)
-    whereClause.donationType = { $ne: 'commitment' };
+    if (!filters.selectedDonationType) {
+      whereClause.donationType = { $ne: 'commitment' };
+    }
 
     const count = await remult.repo(Donation).count(
       Object.keys(whereClause).length > 0 ? whereClause : undefined
@@ -518,6 +547,40 @@ export class DonationController {
     }, 0);
   }
 
+  /**
+   * Get donation totals grouped by currency (full donations only, not commitments)
+   */
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async sumFilteredDonationsByCurrency(filters: DonationFilters): Promise<Record<string, number>> {
+    const whereClause = await DonationController.buildWhereClause(filters);
+    if (whereClause === null) {
+      return {};
+    }
+
+    // If user selected "commitment" type, don't sum full donations
+    if (filters.selectedDonationType === 'commitment') {
+      return {};
+    }
+
+    // Sum only full donations (exclude commitments)
+    if (!filters.selectedDonationType) {
+      whereClause.donationType = { $ne: 'commitment' };
+    }
+
+    const donations = await remult.repo(Donation).find({
+      where: Object.keys(whereClause).length > 0 ? whereClause : undefined
+    });
+
+    // Group by currency and sum
+    const byCurrency: Record<string, number> = {};
+    for (const donation of donations) {
+      const currency = donation.currencyId || 'ILS';
+      byCurrency[currency] = (byCurrency[currency] || 0) + donation.amount;
+    }
+
+    return byCurrency;
+  }
+
   @BackendMethod({ allowed: Allow.authenticated })
   static async countCommitments(filters: DonationFilters): Promise<number> {
     const whereClause = await DonationController.buildWhereClause(filters);
@@ -525,8 +588,15 @@ export class DonationController {
       return 0;
     }
 
-    // Override donationType to only count commitments
-    whereClause.donationType = 'commitment';
+    // If user selected "full" type, don't count commitments
+    if (filters.selectedDonationType === 'full') {
+      return 0;
+    }
+
+    // Count only commitments
+    if (!filters.selectedDonationType) {
+      whereClause.donationType = 'commitment';
+    }
 
     const count = await remult.repo(Donation).count(
       Object.keys(whereClause).length > 0 ? whereClause : undefined
@@ -554,6 +624,52 @@ export class DonationController {
       const rate = currencies[donation.currencyId]?.rateInShekel || 1;
       return sum + (donation.amount * rate);
     }, 0);
+  }
+
+  /**
+   * Get commitment totals grouped by currency with payment totals
+   * Returns: { currencyId: { total: number, paid: number } }
+   */
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async sumCommitmentsByCurrency(filters: DonationFilters): Promise<Record<string, { total: number; paid: number }>> {
+    const whereClause = await DonationController.buildWhereClause(filters);
+    if (whereClause === null) {
+      return {};
+    }
+
+    // If user selected "full" type, don't sum commitments
+    if (filters.selectedDonationType === 'full') {
+      return {};
+    }
+
+    // Sum only commitments
+    if (!filters.selectedDonationType) {
+      whereClause.donationType = 'commitment';
+    }
+
+    const donations = await remult.repo(Donation).find({
+      where: Object.keys(whereClause).length > 0 ? whereClause : undefined
+    });
+
+    // Get payment totals for these commitments
+    const donationIds = donations.map(d => d.id);
+    let paymentTotals: Record<string, number> = {};
+    if (donationIds.length > 0) {
+      paymentTotals = await DonationController.getPaymentTotalsForCommitments(donationIds);
+    }
+
+    // Group by currency and sum
+    const byCurrency: Record<string, { total: number; paid: number }> = {};
+    for (const donation of donations) {
+      const currency = donation.currencyId || 'ILS';
+      if (!byCurrency[currency]) {
+        byCurrency[currency] = { total: 0, paid: 0 };
+      }
+      byCurrency[currency].total += donation.amount;
+      byCurrency[currency].paid += paymentTotals[donation.id] || 0;
+    }
+
+    return byCurrency;
   }
 
   /**
@@ -645,6 +761,11 @@ export class DonationController {
     // Apply donation method filter
     if (filters.selectedMethodId) {
       whereClause.donationMethodId = filters.selectedMethodId;
+    }
+
+    // Apply donation type filter (only in buildWhereClause, not overridden by count/sum methods)
+    if (filters.selectedDonationType) {
+      whereClause.donationType = filters.selectedDonationType;
     }
 
     // Apply local amount filter

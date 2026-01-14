@@ -15,35 +15,42 @@
         <div class="card-icon">💰</div>
         <div class="card-content">
           <h3>{{ (i18n.terms$ | async)?.totalDonationsSum }}</h3>
-          <span class="amount">₪{{ totalAmount | number }}</span>
+          <div class="currency-totals" [class.single-currency]="donationTotalsByCurrency.length <= 1">
+            <div class="currency-row" *ngFor="let item of donationTotalsByCurrency">
+              <span class="amount">{{ item.symbol }}{{ item.amount | number }}</span>
+            </div>
+            <div class="currency-row" *ngIf="donationTotalsByCurrency.length === 0">
+              <span class="amount">-</span>
+            </div>
+          </div>
         </div>
       </div>
-      <!-- <div class="summary-card monthly">
-        <div class="card-icon">📅</div>
-        <div class="card-content">
-          <h3>{{ (i18n.terms$ | async)?.pendingApprovalAmount }}</h3>
-          <span class="amount">₪{{ pendingAmount | number }}</span>
-        </div>
-      </div> -->
       <div class="summary-card donors">
         <div class="card-icon">👥</div>
         <div class="card-content">
           <h3>{{ (i18n.terms$ | async)?.numberOfDonations }}</h3>
-          <span class="count">{{ totalCount }}</span>
+          <span class="count">{{ totalFullDonationsCount }}</span>
         </div>
       </div>
       <div class="summary-card commitment">
         <div class="card-icon">📋</div>
         <div class="card-content">
           <h3>סה"כ התחייבויות</h3>
-          <span class="amount">₪{{ totalCommitmentAmount | number }}</span>
+          <div class="currency-totals" [class.single-currency]="commitmentTotalsByCurrency.length <= 1">
+            <div class="currency-row" *ngFor="let item of commitmentTotalsByCurrency">
+              <span class="amount commitment-amount">{{ item.paid | number }} / {{ item.symbol }}{{ item.total | number }}</span>
+            </div>
+            <div class="currency-row" *ngIf="commitmentTotalsByCurrency.length === 0">
+              <span class="amount">-</span>
+            </div>
+          </div>
         </div>
       </div>
       <div class="summary-card commitment-count">
         <div class="card-icon">🔢</div>
         <div class="card-content">
           <h3>מס' התחייבויות</h3>
-          <span class="count">{{ totalCommitmentCount }}</span>
+          <span class="count commitment-count-value">{{ totalCommitmentCount }}</span>
         </div>
       </div>
     </div>
@@ -229,19 +236,23 @@
 
     <!-- Table Footer: Sticky bottom - Pagination -->
     <div class="table-footer">
+      <div class="pagination-info">
+        <span>{{ (i18n.terms$ | async)?.showing }} {{(currentPage - 1) * pageSize + 1}} - {{Math.min(currentPage * pageSize, totalCount)}} {{ (i18n.terms$ | async)?.of }} {{totalCount}}</span>
+      </div>
+
       <div class="pagination-controls">
         <button
           class="btn-page"
           (click)="firstPage()"
           [disabled]="currentPage === 1 || loading">
-          ⏮ {{ (i18n.terms$ | async)?.first }}
+          {{ (i18n.terms$ | async)?.first }} ⏭
         </button>
 
         <button
           class="btn-page"
           (click)="previousPage()"
           [disabled]="currentPage === 1 || loading">
-          ← {{ (i18n.terms$ | async)?.previous }}
+          {{ (i18n.terms$ | async)?.previous }} →
         </button>
 
         <div class="page-numbers">
@@ -259,19 +270,15 @@
           class="btn-page"
           (click)="nextPage()"
           [disabled]="currentPage === totalPages || loading">
-          {{ (i18n.terms$ | async)?.next }} →
+          ← {{ (i18n.terms$ | async)?.next }}
         </button>
 
         <button
           class="btn-page"
           (click)="lastPage()"
           [disabled]="currentPage === totalPages || loading">
-          {{ (i18n.terms$ | async)?.last }} ⏭
+          ⏮ {{ (i18n.terms$ | async)?.last }}
         </button>
-      </div>
-
-      <div class="pagination-info">
-        <span>{{ (i18n.terms$ | async)?.showing }} {{(currentPage - 1) * pageSize + 1}} - {{Math.min(currentPage * pageSize, totalCount)}} {{ (i18n.terms$ | async)?.of }} {{totalCount}}</span>
       </div>
     </div>
   </div>

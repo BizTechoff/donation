@@ -41,6 +41,11 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   totalAmountCache = 0;
   totalCommitmentAmount = 0;
   totalCommitmentCount = 0;
+  totalFullDonationsCount = 0; // Count of full donations only (for summary card)
+
+  // Totals grouped by currency
+  donationsByCurrency: Record<string, number> = {};
+  commitmentsByCurrency: Record<string, { total: number; paid: number }> = {};
 
   // Map of donationId -> total paid amount for commitments
   commitmentPaymentTotals: Record<string, number> = {};
@@ -124,11 +129,12 @@ export class DonationsListComponent implements OnInit, OnDestroy {
         console.log('refreshData: Fetching donations with filters:', filters, 'page:', this.currentPage, 'sorting:', this.sortColumns);
 
         // Get total count, total amount, commitments, and donations from server with all filters and sorting
-        [this.totalCount, this.totalAmountCache, this.totalCommitmentCount, this.totalCommitmentAmount, this.donations] = await Promise.all([
+        [this.totalCount, this.totalFullDonationsCount, this.donationsByCurrency, this.totalCommitmentCount, this.commitmentsByCurrency, this.donations] = await Promise.all([
           DonationController.countFilteredDonations(filters),
-          DonationController.sumFilteredDonations(filters, this.currencyTypes),
+          DonationController.countFullDonations(filters),
+          DonationController.sumFilteredDonationsByCurrency(filters),
           DonationController.countCommitments(filters),
-          DonationController.sumCommitments(filters, this.currencyTypes),
+          DonationController.sumCommitmentsByCurrency(filters),
           DonationController.findFilteredDonations(filters, this.currentPage, this.pageSize, this.sortColumns)
         ]);
 
@@ -149,9 +155,10 @@ export class DonationsListComponent implements OnInit, OnDestroy {
         console.error('Error refreshing donations:', error);
         this.donations = [];
         this.totalCount = 0;
-        this.totalAmountCache = 0;
+        this.totalFullDonationsCount = 0;
+        this.donationsByCurrency = {};
         this.totalCommitmentCount = 0;
-        this.totalCommitmentAmount = 0;
+        this.commitmentsByCurrency = {};
         this.totalPages = 0;
       }
     });
@@ -228,8 +235,8 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   }
 
   async loadCampaigns() {
+    // Load all campaigns (not just active) so users can filter by past campaigns too
     this.campaigns = await this.campaignRepo.find({
-      where: { isActive: true },
       orderBy: { name: 'asc' }
     });
   }
@@ -468,6 +475,33 @@ export class DonationsListComponent implements OnInit, OnDestroy {
 
   get pendingAmount(): number {
     return 0; // Status field removed
+  }
+
+  /**
+   * Get sorted array of donation totals by currency for display
+   */
+  get donationTotalsByCurrency(): { currency: string; symbol: string; amount: number }[] {
+    return Object.entries(this.donationsByCurrency)
+      .map(([currency, amount]) => ({
+        currency,
+        symbol: this.currencyTypes[currency]?.symbol || currency,
+        amount
+      }))
+      .sort((a, b) => b.amount - a.amount); // Sort by amount descending
+  }
+
+  /**
+   * Get sorted array of commitment totals by currency for display
+   */
+  get commitmentTotalsByCurrency(): { currency: string; symbol: string; total: number; paid: number }[] {
+    return Object.entries(this.commitmentsByCurrency)
+      .map(([currency, data]) => ({
+        currency,
+        symbol: this.currencyTypes[currency]?.symbol || currency,
+        total: data.total,
+        paid: data.paid
+      }))
+      .sort((a, b) => b.total - a.total); // Sort by total descending
   }
 
   getDonorName(donation: Donation): string {
