@@ -360,7 +360,7 @@ export const termsHe = {
   donorListTitle: 'רשימת תורמים',
   addNewDonor: 'הוסף תורם חדש',
   generalSearch: 'חיפוש כללי',
-  searchNameAddressPhone: 'שם, כתובת, טלפון...',
+  searchNameAddressPhone: 'חפש לפי שם, כתובת, טלפון...',
   level: 'רמה',
   all: 'הכל',
   platinum: 'פלטינום',
