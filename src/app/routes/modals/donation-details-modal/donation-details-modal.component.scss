@@ -1441,6 +1441,11 @@
 
   .form-control {
     flex: 1;
+    min-width: 0; // Allow text truncation
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    padding-left: 12px;
   }
 
   .edit-icon-btn {
