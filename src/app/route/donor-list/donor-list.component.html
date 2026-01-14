@@ -1,17 +1,10 @@
 <div class="module-container">
 
-  <!-- HEADER: Sticky top - כותרת + כפתור הוספה + פילטרים -->
+  <!-- HEADER: Sticky top - פילטרים + כפתור הוספה -->
   <div class="module-header">
-    <div class="header-top">
-      <h1>{{ (i18n.terms$ | async)?.donorListTitle }}</h1>
-      <button class="btn btn-primary add-donor-btn" (click)="createDonor()">
-        {{ (i18n.terms$ | async)?.addNewDonor }}
-      </button>
-    </div>
-
     <div class="filters-section">
       <div class="filter-row">
-        <div class="filter-group">
+        <div class="filter-group search-group">
           <label>{{ (i18n.terms$ | async)?.generalSearch }}</label>
           <input
             type="text"
@@ -20,6 +13,9 @@
             [(ngModel)]="searchTerm"
             (ngModelChange)="onLocalFilterChange()">
         </div>
+        <button class="btn btn-primary add-donor-btn" (click)="createDonor()">
+          {{ (i18n.terms$ | async)?.addNewDonor }}
+        </button>
       </div>
     </div>
   </div>

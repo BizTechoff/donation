@@ -69,14 +69,20 @@
     border-bottom: 1px solid #e1e8ed;
 
     .filter-row {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      display: flex;
+      align-items: flex-end;
       gap: 15px;
     }
 
     .filter-group {
       display: flex;
       flex-direction: column;
+
+      &.search-group {
+        flex: 1;
+        
+        // max-width: 400px;
+      }
 
       label {
         font-weight: 600;
@@ -97,6 +103,29 @@
           border-color: #667eea;
           box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
+      }
+    }
+
+    .add-donor-btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      white-space: nowrap;
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      }
+
+      &:active {
+        transform: translateY(0);
       }
     }
   }
