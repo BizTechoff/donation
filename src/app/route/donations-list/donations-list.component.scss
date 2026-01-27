@@ -222,6 +222,34 @@
         min-height: 18px; // גובה אחיד ל-label
       }
 
+      &.filter-action {
+        justify-content: flex-end;
+
+        .add-donation-btn {
+          background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+          color: white;
+          padding: 8px 20px;
+          border: none;
+          border-radius: 6px;
+          font-size: 13px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+          height: 36px;
+          white-space: nowrap;
+
+          &:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+          }
+
+          &:active {
+            transform: translateY(0);
+          }
+        }
+      }
+
       .form-control {
         padding: 8px 10px;
         border: 2px solid #e0e0e0;

@@ -2,12 +2,6 @@
 
   <!-- HEADER: Sticky top - כותרת + כפתור הוספה + פילטרים -->
   <div class="module-header">
-    <div class="header-top">
-      <h1>{{ (i18n.terms$ | async)?.donationRecording }}</h1>
-      <button class="btn btn-primary add-donation-btn" (click)="createDonation()">
-        {{ (i18n.terms$ | async)?.recordNewDonation }}
-      </button>
-    </div>
 
     <!-- סיכום כרטיסים -->
     <div class="summary-cards">
@@ -132,6 +126,12 @@
             <option value="full">{{ (i18n.terms$ | async)?.fullDonation }}</option>
             <option value="commitment">{{ (i18n.terms$ | async)?.commitment }}</option>
           </select>
+        </div>
+
+        <div class="filter-group filter-action">
+          <button class="btn btn-primary add-donation-btn" (click)="createDonation()">
+            {{ (i18n.terms$ | async)?.recordNewDonation }}
+          </button>
         </div>
       </div>
     </div>
