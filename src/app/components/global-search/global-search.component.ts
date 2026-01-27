@@ -109,8 +109,8 @@ export class GlobalSearchComponent implements OnInit, OnDestroy {
   @HostListener('window:keydown', ['$event'])
   handleKeyboardEvent(event: KeyboardEvent) {
     // Ctrl+K or Cmd+K or Ctrl+ל (Hebrew) to toggle (case insensitive)
-    const key = event.key.toLowerCase();
-    if ((event.ctrlKey || event.metaKey) && (key === 'k' || key === 'K' || event.key === 'ל')) {
+    const key = event.key?.toLowerCase();
+    if ((event.ctrlKey || event.metaKey) && (key === 'k' || event.key === 'ל')) {
       event.preventDefault();
       this.toggle();
     }
