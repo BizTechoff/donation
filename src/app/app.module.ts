@@ -30,6 +30,7 @@ import { MatPaginatorModule } from '@angular/material/paginator'
 import { MatProgressBarModule } from '@angular/material/progress-bar'
 import { MatSlideToggleModule } from '@angular/material/slide-toggle'
 import { MatTabsModule } from '@angular/material/tabs'
+import { MatButtonToggleModule } from '@angular/material/button-toggle'
 import { DragDropModule } from '@angular/cdk/drag-drop'
 import { CommonUIElementsModule } from 'common-ui-elements'
 import { UsersComponent } from './users/users.component'
@@ -234,6 +235,7 @@ import { A11yModule } from "@angular/cdk/a11y";
     MatProgressBarModule,
     MatSlideToggleModule,
     MatTabsModule,
+    MatButtonToggleModule,
     DragDropModule,
     CommonUIElementsModule,
     A11yModule

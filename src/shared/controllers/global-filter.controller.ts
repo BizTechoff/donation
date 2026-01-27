@@ -94,6 +94,18 @@ export class GlobalFilterController {
       if (donorIds.length === 0) return []; // אין התאמות
     }
 
+    // סינון לפי אנ"ש / תלמידנו
+    const anashAlumniFiltered = await GlobalFilterController.getDonorIdsFromAnashAlumni(filters);
+    if (anashAlumniFiltered !== undefined) {
+      if (donorIds) {
+        // חיתוך - רק תורמים שבשני הקטגוריות
+        donorIds = donorIds.filter(id => anashAlumniFiltered.includes(id));
+      } else {
+        donorIds = anashAlumniFiltered;
+      }
+      if (donorIds.length === 0) return []; // אין התאמות
+    }
+
     return donorIds;
   }
 
@@ -185,6 +197,35 @@ export class GlobalFilterController {
 
     // החזר רשימת תורמים ייחודיים
     const donorIds = [...new Set(donations.map(d => d.donorId).filter((id): id is string => !!id))];
+    return donorIds;
+  }
+
+  /**
+   * מחזיר donorIds מסוננים לפי אנ"ש / תלמידנו
+   */
+  private static async getDonorIdsFromAnashAlumni(filters: GlobalFilters): Promise<string[] | undefined> {
+    if (filters.isAnash === undefined && filters.isAlumni === undefined) {
+      return undefined; // אין פילטר אנ"ש/תלמידנו
+    }
+
+    const allDonors = await remult.repo(Donor).find();
+
+    const donorIds = allDonors
+      .filter(donor => {
+        // סינון לפי אנ"ש
+        if (filters.isAnash !== undefined) {
+          if (filters.isAnash && !donor.isAnash) return false;
+          if (!filters.isAnash && donor.isAnash) return false;
+        }
+        // סינון לפי תלמידנו
+        if (filters.isAlumni !== undefined) {
+          if (filters.isAlumni && !donor.isAlumni) return false;
+          if (!filters.isAlumni && donor.isAlumni) return false;
+        }
+        return true;
+      })
+      .map(donor => donor.id);
+
     return donorIds;
   }
 

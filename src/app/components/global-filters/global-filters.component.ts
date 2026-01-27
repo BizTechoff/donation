@@ -134,7 +134,9 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
       (this.currentFilters.dateFrom !== undefined && this.currentFilters.dateFrom !== null) ||
       (this.currentFilters.dateTo !== undefined && this.currentFilters.dateTo !== null) ||
       (this.currentFilters.amountMin !== undefined && this.currentFilters.amountMin !== null) ||
-      (this.currentFilters.amountMax !== undefined && this.currentFilters.amountMax !== null);
+      (this.currentFilters.amountMax !== undefined && this.currentFilters.amountMax !== null) ||
+      (this.currentFilters.isAnash !== undefined) ||
+      (this.currentFilters.isAlumni !== undefined);
 
     return hasValues;
   }
@@ -150,6 +152,8 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
     if (this.currentFilters.dateTo) count++;
     if (this.currentFilters.amountMin !== undefined) count++;
     if (this.currentFilters.amountMax !== undefined) count++;
+    if (this.currentFilters.isAnash !== undefined) count++;
+    if (this.currentFilters.isAlumni !== undefined) count++;
     return count;
   }
   
@@ -223,6 +227,14 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
       amountMin: undefined,
       amountMax: undefined
     });
+  }
+
+  async onIsAnashChange(value: boolean | undefined) {
+    await this.updateFilter('isAnash', value);
+  }
+
+  async onIsAlumniChange(value: boolean | undefined) {
+    await this.updateFilter('isAlumni', value);
   }
 
   getAmountFilterDisplay(): string {
