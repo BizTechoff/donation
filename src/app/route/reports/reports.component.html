@@ -56,14 +56,22 @@
   </div>
 
   <!-- מסננים ספציפיים לדוחות -->
-  <div class="specific-filters" *ngIf="activeReport !== 'general'">
-    <!-- כפתור הרחבה -->
-    <button class="expand-toggle-btn" (click)="toggleExpandedView()"
-      [matTooltip]="isExpandedView ? 'תצוגה רגילה' : 'הרחב דוח'" [dir]="'rtl'">
-      <mat-icon>{{ isExpandedView ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
-    </button>
+  <div class="specific-filters" *ngIf="activeReport !== 'general'" [class.collapsed]="!filtersExpanded">
+    <!-- כותרת אקורדיון -->
+    <div class="filters-accordion-header" (click)="toggleFiltersExpanded()">
+      <div class="accordion-title">
+        <mat-icon class="accordion-arrow" [class.expanded]="filtersExpanded">expand_more</mat-icon>
+        <span>מסננים</span>
+      </div>
+      <!-- כפתור הרחבה -->
+      <button class="expand-toggle-btn" (click)="toggleExpandedView(); $event.stopPropagation()"
+        [matTooltip]="isExpandedView ? 'תצוגה רגילה' : 'הרחב דוח'" [dir]="'rtl'">
+        <mat-icon>{{ isExpandedView ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
+      </button>
+    </div>
 
-    <div class="filter-row">
+    <div class="filters-accordion-content" [class.expanded]="filtersExpanded">
+      <div class="filter-row">
 
       <!-- סוג קיבוץ -->
       <div class="filter-group" *ngIf="activeReport === 'donations'">
@@ -130,24 +138,25 @@
 
     </div>
 
-    <!-- אפשרויות תצוגה - שורה נפרדת -->
-    <div class="display-options-row" *ngIf="activeReport === 'donations'">
-      <label class="checkbox-label">
-        <input type="checkbox" [(ngModel)]="filters.showDonorDetails" (ngModelChange)="applyFilters()">
-        {{ (i18n.terms$ | async)?.showDonorDetailsLabel }}
-      </label>
-      <label class="checkbox-label">
-        <input type="checkbox" [(ngModel)]="filters.showActualPayments" (ngModelChange)="applyFilters()">
-        {{ (i18n.terms$ | async)?.showActualPaymentsLabel }}
-      </label>
-      <label class="checkbox-label">
-        <input type="checkbox" [(ngModel)]="filters.showCurrencySummary" (ngModelChange)="applyFilters()">
-        {{ (i18n.terms$ | async)?.showCurrencySummaryLabel }}
-      </label>
-      <label class="checkbox-label">
-        <input type="checkbox" [(ngModel)]="filters.showDonationDetails" (ngModelChange)="applyFilters()">
-        {{ (i18n.terms$ | async)?.showDonationDetailsLabel }}
-      </label>
+      <!-- אפשרויות תצוגה - שורה נפרדת -->
+      <div class="display-options-row" *ngIf="activeReport === 'donations'">
+        <label class="checkbox-label">
+          <input type="checkbox" [(ngModel)]="filters.showDonorDetails" (ngModelChange)="applyFilters()">
+          {{ (i18n.terms$ | async)?.showDonorDetailsLabel }}
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" [(ngModel)]="filters.showActualPayments" (ngModelChange)="applyFilters()">
+          {{ (i18n.terms$ | async)?.showActualPaymentsLabel }}
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" [(ngModel)]="filters.showCurrencySummary" (ngModelChange)="applyFilters()">
+          {{ (i18n.terms$ | async)?.showCurrencySummaryLabel }}
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" [(ngModel)]="filters.showDonationDetails" (ngModelChange)="applyFilters()">
+          {{ (i18n.terms$ | async)?.showDonationDetailsLabel }}
+        </label>
+      </div>
     </div>
   </div>
 
@@ -422,32 +431,34 @@
                   </div>
                 </td>
               </tr>
-              <!-- Donation details sub-table -->
-              <tr *ngIf="filters.showDonationDetails && row.isExpanded && row.donations?.length" class="details-row">
-                <td [attr.colspan]="getColumnsCount()">
-                  <div class="donation-details-container">
-                    <table class="donation-details-table">
-                      <thead>
-                        <tr>
-                          <th>{{ (i18n.terms$ | async)?.yearColumnSubTable }}</th>
-                          <th>{{ (i18n.terms$ | async)?.dateColumnSubTable }}</th>
-                          <th>{{ (i18n.terms$ | async)?.amountColumnSubTable }}</th>
-                          <th>{{ (i18n.terms$ | async)?.reasonColumnSubTable }}</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <ng-container *ngFor="let year of hebrewYears">
-                          <tr *ngFor="let donation of getDonationsForYear(row.donations, year)" class="donation-detail-row">
-                            <td>{{donation.hebrewYear}}</td>
-                            <td>{{donation.date | date:'dd/MM/yyyy'}}</td>
-                            <td>{{formatCurrencyWithSymbol(donation.amount, donation.currency)}}</td>
-                            <td>{{donation.reason || '-'}}</td>
-                          </tr>
-                        </ng-container>
-                      </tbody>
-                    </table>
+              <!-- Donation details - aligned under year columns -->
+              <tr *ngIf="filters.showDonationDetails && row.isExpanded && row.donations?.length" class="details-row inline-details">
+                <!-- Empty cells for name and donor details columns -->
+                <td class="details-spacer"></td>
+                <td class="details-spacer" *ngIf="filters.showDonorDetails && filters.groupBy === 'donor'"></td>
+                <td class="details-spacer" *ngIf="filters.showDonorDetails && filters.groupBy === 'donor'"></td>
+                <td class="details-spacer" *ngIf="filters.showDonorDetails && filters.groupBy === 'donor'"></td>
+                <!-- Donation details under each year column -->
+                <td *ngFor="let year of hebrewYears" class="year-details-cell">
+                  <div class="donation-details-column">
+                    <div *ngFor="let donation of getDonationsForYear(row.donations, year)"
+                         class="donation-detail-line clickable"
+                         [title]="donation.donationType === 'commitment' ? 'התחייבות' : donation.donationType === 'partner' ? 'שותף' : 'תרומה'"
+                         (click)="openDonationDetails(donation.donationId, $event)">
+                      <span class="detail-main-row">
+                        <span class="detail-date">{{donation.hebrewDateFormatted || (donation.date | date:'dd/MM/yyyy')}}</span>
+                        <span class="detail-amount" [class.commitment]="donation.donationType === 'commitment'" [class.partner]="donation.donationType === 'partner'">
+                          <ng-container *ngIf="donation.donationType === 'commitment' || donation.donationType === 'partner'">({{formatCurrencyWithSymbol(donation.amount, donation.currency)}})</ng-container>
+                          <ng-container *ngIf="donation.donationType !== 'commitment' && donation.donationType !== 'partner'">{{formatCurrencyWithSymbol(donation.amount, donation.currency)}}</ng-container>
+                        </span>
+                      </span>
+                      <span class="detail-reason" *ngIf="donation.reason">{{donation.reason}}</span>
+                    </div>
+                    <div *ngIf="getDonationsForYear(row.donations, year).length === 0" class="no-donations">-</div>
                   </div>
                 </td>
+                <!-- Empty cell for actual payments column -->
+                <td class="details-spacer" *ngIf="filters.showActualPayments"></td>
               </tr>
             </ng-container>
           </tbody>

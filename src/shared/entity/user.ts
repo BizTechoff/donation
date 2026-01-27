@@ -134,6 +134,7 @@ export class User extends IdEntity {
     };
     reports?: {
       lastSelectedTab?: 'general' | 'donations' | 'payments' | 'yearly' | 'blessings' | 'personalDonor';
+      filtersExpanded?: boolean;
     };
     globalSearch?: {
       x?: number;

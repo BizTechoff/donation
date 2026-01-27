@@ -20,6 +20,7 @@ import { PrintService, PrintColumn } from '../../services/print.service';
 import { HebrewDateService } from '../../services/hebrew-date.service';
 import { PayerService } from '../../services/payer.service';
 import { ReportService } from '../../services/report.service';
+import { UIToolsService } from '../../common/UIToolsService';
 
 interface ChartData {
   label: string;
@@ -79,12 +80,15 @@ interface BlessingReportData {
 }
 
 interface DonationDetail {
+  donationId?: string;
   date: Date;
+  hebrewDateFormatted?: string;
   amount: number;
   currency: string;
   reason?: string;
   campaignName?: string;
   hebrewYear?: string;
+  donationType?: 'full' | 'commitment' | 'partner';
 }
 
 interface GroupedDonationReport {
@@ -137,6 +141,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
   }
   Math = Math; // Make Math available in template
   isExpandedView = false;
+  filtersExpanded = true; // Accordion state for filters section
   isPrintAndProduceOnce = true
   private subscription = new Subscription();
 
@@ -187,8 +192,8 @@ export class ReportsComponent implements OnInit, OnDestroy {
   totalRecords = 0;
   totalPages = 0;
   currentPage = 1;
-  pageSize = 10;
-  pageSizeOptions = [5, 10, 25, 50, 100];
+  pageSize = 20;
+  pageSizeOptions = [10, 20, 50, 100];
 
   // Sorting data - Donations Report
   sortBy = 'donorName';
@@ -275,7 +280,8 @@ export class ReportsComponent implements OnInit, OnDestroy {
     private globalFilterService: GlobalFilterService,
     private hebrewDateService: HebrewDateService,
     private payerService: PayerService,
-    private printService: PrintService
+    private printService: PrintService,
+    private uiTools: UIToolsService
   ) { }
 
   async ngOnInit() {
@@ -567,6 +573,15 @@ export class ReportsComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Open donation details modal
+   */
+  async openDonationDetails(donationId: string | undefined, event: Event) {
+    event.stopPropagation(); // Prevent row expand/collapse
+    if (!donationId) return;
+    await this.uiTools.donationDetailsDialog(donationId);
+  }
+
+  /**
    * Check if name starts with English character (LTR)
    */
   isEnglishName(name: string): boolean {
@@ -761,9 +776,10 @@ export class ReportsComponent implements OnInit, OnDestroy {
         }
 
         user.settings.reports.lastSelectedTab = this.activeReport;
+        user.settings.reports.filtersExpanded = this.filtersExpanded;
         await userRepo.save(user);
 
-        console.log('Saved last report selection:', this.activeReport);
+        console.log('Saved last report selection:', this.activeReport, 'filtersExpanded:', this.filtersExpanded);
       }
     } catch (error) {
       console.error('Error saving last report selection:', error);
@@ -784,9 +800,21 @@ export class ReportsComponent implements OnInit, OnDestroy {
         this.activeReport = user.settings.reports.lastSelectedTab;
         console.log('Loaded last report selection:', this.activeReport);
       }
+      if (user?.settings?.reports?.filtersExpanded !== undefined) {
+        this.filtersExpanded = user.settings.reports.filtersExpanded;
+        console.log('Loaded filtersExpanded:', this.filtersExpanded);
+      }
     } catch (error) {
       console.error('Error loading last report selection:', error);
     }
+  }
+
+  /**
+   * Toggle filters accordion and save state
+   */
+  toggleFiltersExpanded() {
+    this.filtersExpanded = !this.filtersExpanded;
+    this.saveLastReportSelection();
   }
 
   /**
