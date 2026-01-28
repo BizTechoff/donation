@@ -2443,25 +2443,36 @@ export class ReportsComponent implements OnInit, OnDestroy {
 
   private printYearlySummaryReport() {
     const columns: PrintColumn[] = [
-      { header: 'שנה', field: 'hebrewYear' },
-      { header: 'סה"כ בש"ח', field: 'totalInShekel', format: 'currency' }
-    ];
-
-    // Add currency columns
-    if (this.yearlySummaryData.length > 0) {
-      const currencies = Object.keys(this.yearlySummaryData[0].currencies || {});
-      for (const currency of currencies) {
-        columns.push({
-          header: currency,
-          field: `currencies.${currency}`,
-          format: 'number',
-          customFormatter: (val, row) => {
-            const amount = row.currencies?.[currency] || 0;
-            return amount > 0 ? amount.toLocaleString('he-IL') : '-';
-          }
-        });
+      {
+        header: 'שנה',
+        field: 'hebrewYear',
+        customFormatter: (val, row) => `${row.hebrewYear} (${row.year})`
+      },
+      {
+        header: 'שקל',
+        field: 'currencies.ILS',
+        customFormatter: (val, row) => {
+          const amount = row.currencies?.['ILS'] || 0;
+          return amount > 0 ? '₪' + Math.round(amount).toLocaleString('he-IL') : '-';
+        }
+      },
+      {
+        header: 'דולר',
+        field: 'currencies.USD',
+        customFormatter: (val, row) => {
+          const amount = row.currencies?.['USD'] || 0;
+          return amount > 0 ? '$' + Math.round(amount).toLocaleString('he-IL') : '-';
+        }
+      },
+      {
+        header: 'יורו',
+        field: 'currencies.EUR',
+        customFormatter: (val, row) => {
+          const amount = row.currencies?.['EUR'] || 0;
+          return amount > 0 ? '€' + Math.round(amount).toLocaleString('he-IL') : '-';
+        }
       }
-    }
+    ];
 
     const filters = [
       { label: 'שנים', value: this.filters.selectedYear === 'last4' ? 'כל השנים' : String(this.filters.selectedYear) }
@@ -2471,7 +2482,12 @@ export class ReportsComponent implements OnInit, OnDestroy {
       title: 'דוח סיכום שנים',
       filters,
       columns,
-      data: this.yearlySummaryData
+      data: this.yearlySummaryData,
+      totals: [
+        { label: 'סה"כ שקל', value: this.getTotalByCurrency('ILS') > 0 ? '₪' + Math.round(this.getTotalByCurrency('ILS')).toLocaleString('he-IL') : '-' },
+        { label: 'סה"כ דולר', value: this.getTotalByCurrency('USD') > 0 ? '$' + Math.round(this.getTotalByCurrency('USD')).toLocaleString('he-IL') : '-' },
+        { label: 'סה"כ יורו', value: this.getTotalByCurrency('EUR') > 0 ? '€' + Math.round(this.getTotalByCurrency('EUR')).toLocaleString('he-IL') : '-' }
+      ]
     });
   }
 
@@ -2484,29 +2500,18 @@ export class ReportsComponent implements OnInit, OnDestroy {
         customFormatter: (val, row) => row.address || '-'
       },
       {
-        header: 'טלפונים',
-        field: 'phones',
-        customFormatter: (val, row) => row.phones?.join(', ') || '-'
+        header: 'עיר',
+        field: 'city',
+        customFormatter: (val, row) => row.city || '-'
       },
       {
-        header: 'אימיילים',
-        field: 'emails',
-        customFormatter: (val, row) => row.emails?.join(', ') || '-'
+        header: 'תאריך אחרון',
+        field: 'lastDonationDate',
+        customFormatter: (val, row) => row.lastDonationDate ? this.formatHebrewDate(row.lastDonationDate) : '-'
       },
       { header: 'התחייבות', field: 'promisedAmount', format: 'currency' },
       { header: 'שולם בפועל', field: 'actualAmount', format: 'currency' },
-      { header: 'יתרה', field: 'remainingDebt', format: 'currency' },
-      {
-        header: 'סטטוס', field: 'status',
-        customFormatter: (val) => {
-          switch (val) {
-            case 'fullyPaid': return 'שולם במלואו';
-            case 'partiallyPaid': return 'שולם חלקית';
-            case 'notPaid': return 'לא שולם';
-            default: return val;
-          }
-        }
-      }
+      { header: 'יתרה', field: 'remainingDebt', format: 'currency' }
     ];
 
     // Calculate summary from all data (not paginated)
@@ -2529,8 +2534,11 @@ export class ReportsComponent implements OnInit, OnDestroy {
       { header: 'שם משפחה', field: 'lastName' },
       { header: 'שם פרטי', field: 'firstName' },
       { header: 'סוג ספר ברכות', field: 'blessingBookType' },
-      { header: 'קמפיין', field: 'campaignName' },
-      { header: 'סטטוס', field: 'status' }
+      { header: 'הערות', field: 'notes', customFormatter: (val) => val || '-' },
+      { header: 'סטטוס', field: 'status' },
+      { header: 'טלפון', field: 'phone', customFormatter: (val) => val || '-' },
+      { header: 'נייד', field: 'mobile', customFormatter: (val) => val || '-' },
+      { header: 'אימייל', field: 'email', customFormatter: (val) => val || '-' }
     ];
 
     const summary = this.getBlessingSummary();
