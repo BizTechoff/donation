@@ -2343,102 +2343,150 @@ export class ReportsComponent implements OnInit, OnDestroy {
       sortDirection: this.sortDirection
     });
 
-    const columns: PrintColumn[] = [
-      { header: 'שם', field: 'donorName' }
-    ];
+    // Generate custom HTML that matches the display exactly
+    const html = this.generateDonationsReportHtml(fullReportResponse);
+    this.printHtml(html);
+  }
 
-    // Add donor details columns if enabled and grouping by donor
-    if (this.filters.showDonorDetails && this.filters.groupBy === 'donor') {
-      columns.push({
-        header: 'כתובת',
-        field: 'donorDetails.address',
-        customFormatter: (val, row) => row.donorDetails?.address || '-'
-      });
-      columns.push({
-        header: 'טלפונים',
-        field: 'donorDetails.phones',
-        customFormatter: (val, row) => row.donorDetails?.phones?.join(', ') || '-'
-      });
-      columns.push({
-        header: 'אימיילים',
-        field: 'donorDetails.emails',
-        customFormatter: (val, row) => row.donorDetails?.emails?.join(', ') || '-'
-      });
+  private generateDonationsReportHtml(reportData: any): string {
+    const hebrewYears = reportData.hebrewYears;
+    const data = reportData.reportData;
+    const showDonorDetails = this.filters.showDonorDetails && this.filters.groupBy === 'donor';
+    const showDonationDetails = this.filters.showDonationDetails;
+    const showActualPayments = this.filters.showActualPayments;
+
+    // Calculate column count for details row
+    let detailsColSpan = 1; // name column
+    if (showDonorDetails) detailsColSpan += 3; // address, phones, emails
+
+    return `
+<!DOCTYPE html>
+<html dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>דוח תרומות מקובץ</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Tahoma, Arial, sans-serif; font-size: 11px; padding: 15px; direction: rtl; }
+    .print-header { text-align: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #333; }
+    .print-header h1 { font-size: 20px; margin-bottom: 5px; }
+    .print-header .subtitle { font-size: 12px; color: #666; }
+    .print-date { font-size: 10px; color: #888; margin-top: 5px; }
+    table { width: 100%; border-collapse: collapse; }
+    th { background: #4a5568; color: white; padding: 8px 6px; text-align: right; font-weight: 600; font-size: 11px; border: 1px solid #2d3748; }
+    td { padding: 6px; border: 1px solid #e2e8f0; text-align: right; font-size: 10px; vertical-align: top; }
+    tr:nth-child(even) { background: #f7fafc; }
+    .main-row td { font-weight: 500; }
+    .details-row { background: #f8f9fc !important; }
+    .details-row td { border-top: none; padding-top: 2px; }
+    .year-details-cell { padding: 4px !important; }
+    .donation-detail-line { padding: 3px 0; border-bottom: 1px dotted #ddd; }
+    .donation-detail-line:last-child { border-bottom: none; }
+    .detail-main-row { display: flex; justify-content: space-between; gap: 8px; }
+    .detail-date { color: #666; font-size: 9px; }
+    .detail-amount { font-weight: 600; }
+    .detail-amount.commitment, .detail-amount.partner { color: #888; font-style: italic; }
+    .detail-reason { font-size: 9px; color: #888; display: block; }
+    .no-donations { color: #ccc; text-align: center; }
+    .print-footer { margin-top: 15px; padding-top: 10px; border-top: 1px solid #ccc; text-align: center; font-size: 10px; color: #888; }
+    @media print {
+      body { padding: 10px; }
+      th { background: #4a5568 !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      tr:nth-child(even) { background: #f7fafc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .details-row { background: #f8f9fc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     }
+  </style>
+</head>
+<body>
+  <div class="print-header">
+    <h1>דוח תרומות מקובץ</h1>
+    <div class="subtitle">לפי ${this.getGroupByLabel()}</div>
+    <div class="print-date">תאריך הדפסה: ${new Date().toLocaleDateString('he-IL')} ${new Date().toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}</div>
+  </div>
 
-    // Add year columns
-    for (const year of fullReportResponse.hebrewYears) {
-      columns.push({
-        header: year,
-        field: `yearlyTotals.${year}`,
-        customFormatter: (val, row) => {
-          return this.formatYearTotal(row.yearlyTotals || {}, year);
-        }
-      });
-    }
+  <table>
+    <thead>
+      <tr>
+        <th>שם</th>
+        ${showDonorDetails ? '<th>כתובת</th><th>טלפונים</th><th>אימיילים</th>' : ''}
+        ${hebrewYears.map((year: string) => `<th>${year}</th>`).join('')}
+        ${showActualPayments ? '<th>תשלומים בפועל</th>' : ''}
+      </tr>
+    </thead>
+    <tbody>
+      ${data.map((row: any) => this.generateDonationRowHtml(row, hebrewYears, showDonorDetails, showDonationDetails, showActualPayments, detailsColSpan)).join('')}
+    </tbody>
+  </table>
 
-    if (this.filters.showActualPayments) {
-      columns.push({
-        header: 'תשלומים בפועל',
-        field: 'actualPayments',
-        customFormatter: (val, row) => {
-          if (!row.actualPayments) return '-';
-          const payments = fullReportResponse.hebrewYears
-            .map(year => row.actualPayments[year] ? `${year}: ₪${row.actualPayments[year].toLocaleString('he-IL')}` : '')
-            .filter(p => p)
-            .join(', ');
-          return payments || '-';
-        }
-      });
-    }
+  <div class="print-footer">
+    סה"כ ${data.length} רשומות
+  </div>
+</body>
+</html>`;
+  }
 
-    const filters = [
-      { label: 'קיבוץ לפי', value: this.getGroupByLabel() },
-      { label: 'שנים', value: this.filters.selectedYear === 'last4' ? '4 שנים אחרונות' : String(this.filters.selectedYear) },
-      { label: 'תורמים', value: this.filters.selectedDonorIds.length > 0 ? `${this.filters.selectedDonorIds.length} תורמים נבחרו` : '' },
-      { label: 'קמפיין', value: this.getSelectedCampaignText() !== 'בחר קמפיין' ? this.getSelectedCampaignText() : '' }
-    ];
+  private generateDonationRowHtml(row: any, hebrewYears: string[], showDonorDetails: boolean, showDonationDetails: boolean, showActualPayments: boolean, detailsColSpan: number): string {
+    // Main row
+    let html = `<tr class="main-row">
+      <td><strong>${row.donorName}</strong></td>
+      ${showDonorDetails ? `
+        <td>${row.donorDetails?.address || '-'}</td>
+        <td>${row.donorDetails?.phones?.join('<br>') || '-'}</td>
+        <td>${row.donorDetails?.emails?.join('<br>') || '-'}</td>
+      ` : ''}
+      ${hebrewYears.map((year: string) => `<td>${this.formatYearTotal(row.yearlyTotals || {}, year)}</td>`).join('')}
+      ${showActualPayments ? `<td>${this.formatActualPayments(row.actualPayments, hebrewYears)}</td>` : ''}
+    </tr>`;
 
-    // Build sub-rows config for donation details
-    const subRowsConfig = this.filters.showDonationDetails ? {
-      enabled: true,
-      dataField: 'donations',
-      groupByField: 'hebrewYear',
-      groupByValues: fullReportResponse.hebrewYears,
-      columns: [
-        { header: 'שנה', field: 'hebrewYear' },
-        {
-          header: 'תאריך',
-          field: 'hebrewDateFormatted',
-          customFormatter: (val: any, row: any) => row.hebrewDateFormatted || new Date(row.date).toLocaleDateString('he-IL')
-        },
-        {
-          header: 'סכום',
-          field: 'amount',
-          customFormatter: (val: any, row: any) => {
-            const formatted = this.formatCurrencyWithSymbol(row.amount, row.currency);
-            // תרומות שותפים והתחייבויות מוצגות בסוגריים
-            if (row.donationType === 'commitment' || row.donationType === 'partner') {
-              return `(${formatted})`;
-            }
-            return formatted;
+    // Details row - donation details under each year column
+    if (showDonationDetails && row.donations?.length) {
+      html += `<tr class="details-row">
+        <td></td>
+        ${showDonorDetails ? '<td></td><td></td><td></td>' : ''}
+        ${hebrewYears.map((year: string) => {
+          const yearDonations = this.getDonationsForYear(row.donations, year);
+          if (yearDonations.length === 0) {
+            return '<td class="year-details-cell"><div class="no-donations">-</div></td>';
           }
-        },
-        { header: 'סיבה', field: 'reason', customFormatter: (val: any) => val || '-' }
-      ]
-    } : undefined;
+          return `<td class="year-details-cell">
+            ${yearDonations.map((d: any) => `
+              <div class="donation-detail-line">
+                <span class="detail-main-row">
+                  <span class="detail-date">${d.hebrewDateFormatted || new Date(d.date).toLocaleDateString('he-IL')}</span>
+                  <span class="detail-amount ${d.donationType === 'commitment' ? 'commitment' : d.donationType === 'partner' ? 'partner' : ''}">${(d.donationType === 'commitment' || d.donationType === 'partner') ? '(' : ''}${this.formatCurrencyWithSymbol(d.amount, d.currency)}${(d.donationType === 'commitment' || d.donationType === 'partner') ? ')' : ''}</span>
+                </span>
+                ${d.reason ? `<span class="detail-reason">${d.reason}</span>` : ''}
+              </div>
+            `).join('')}
+          </td>`;
+        }).join('')}
+        ${showActualPayments ? '<td></td>' : ''}
+      </tr>`;
+    }
 
-    this.printService.print({
-      title: 'דוח תרומות מקובץ',
-      subtitle: `לפי ${this.getGroupByLabel()}`,
-      filters,
-      columns,
-      data: fullReportResponse.reportData,
-      totals: [
-        { label: 'סה"כ רשומות', value: fullReportResponse.totalRecords }
-      ],
-      subRows: subRowsConfig
-    });
+    return html;
+  }
+
+  private formatActualPayments(actualPayments: any, hebrewYears: string[]): string {
+    if (!actualPayments) return '-';
+    const payments = hebrewYears
+      .map(year => actualPayments[year] ? `${year}: ₪${actualPayments[year].toLocaleString('he-IL')}` : '')
+      .filter(p => p)
+      .join('<br>');
+    return payments || '-';
+  }
+
+  private printHtml(html: string) {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert('לא ניתן לפתוח חלון הדפסה. בדוק שחוסם חלונות קופצים מושבת.');
+      return;
+    }
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.onload = () => {
+      printWindow.print();
+    };
   }
 
   private printYearlySummaryReport() {
