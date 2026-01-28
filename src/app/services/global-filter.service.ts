@@ -21,11 +21,13 @@ export interface GlobalFilters {
   isAlumni?: TriStateFilter;  // סינון לפי תלמידנו (ברירת מחדל: All)
 }
 
+const DEFAULT_FILTERS: GlobalFilters = { isAnash: TriStateFilter.All, isAlumni: TriStateFilter.All };
+
 @Injectable({
   providedIn: 'root'
 })
 export class GlobalFilterService {
-  private filtersSubject = new BehaviorSubject<GlobalFilters>({});
+  private filtersSubject = new BehaviorSubject<GlobalFilters>(DEFAULT_FILTERS);
   public filters$: Observable<GlobalFilters> = this.filtersSubject.asObservable();
 
   private userRepo = remult.repo(User);
@@ -77,8 +79,8 @@ export class GlobalFilterService {
 
   async clearFilters() {
     // ⚠️ Save to DB first, THEN notify subscribers
-    await this.saveFiltersToUserSettings({});
-    this.filtersSubject.next({});
+    await this.saveFiltersToUserSettings(DEFAULT_FILTERS);
+    this.filtersSubject.next(DEFAULT_FILTERS);
   }
 
   async clearFilter(key: keyof GlobalFilters) {

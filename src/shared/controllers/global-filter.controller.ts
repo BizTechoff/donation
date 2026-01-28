@@ -205,7 +205,10 @@ export class GlobalFilterController {
    * מחזיר donorIds מסוננים לפי אנ"ש / תלמידנו
    */
   private static async getDonorIdsFromAnashAlumni(filters: GlobalFilters): Promise<string[] | undefined> {
-    if (filters.isAnash === undefined && filters.isAlumni === undefined) {
+    // אם שני הפילטרים הם All (או undefined לתאימות אחורה), אין צורך לסנן
+    const isAnashAll = !filters.isAnash || filters.isAnash === TriStateFilter.All;
+    const isAlumniAll = !filters.isAlumni || filters.isAlumni === TriStateFilter.All;
+    if (isAnashAll && isAlumniAll) {
       return undefined; // אין פילטר אנ"ש/תלמידנו
     }
 

@@ -22,7 +22,7 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
 
   @ViewChild(MatMenuTrigger) menuTrigger!: MatMenuTrigger;
 
-  currentFilters: GlobalFilters = {};
+  currentFilters: GlobalFilters = { isAnash: TriStateFilter.All, isAlumni: TriStateFilter.All };
   campaigns: Campaign[] = [];
   countries: Country[] = [];
   cities: string[] = [];
