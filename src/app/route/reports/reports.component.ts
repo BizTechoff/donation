@@ -2407,11 +2407,22 @@ export class ReportsComponent implements OnInit, OnDestroy {
       groupByValues: fullReportResponse.hebrewYears,
       columns: [
         { header: 'שנה', field: 'hebrewYear' },
-        { header: 'תאריך', field: 'date', format: 'date' as const },
+        {
+          header: 'תאריך',
+          field: 'hebrewDateFormatted',
+          customFormatter: (val: any, row: any) => row.hebrewDateFormatted || new Date(row.date).toLocaleDateString('he-IL')
+        },
         {
           header: 'סכום',
           field: 'amount',
-          customFormatter: (val: any, row: any) => this.formatCurrencyWithSymbol(row.amount, row.currency)
+          customFormatter: (val: any, row: any) => {
+            const formatted = this.formatCurrencyWithSymbol(row.amount, row.currency);
+            // תרומות שותפים והתחייבויות מוצגות בסוגריים
+            if (row.donationType === 'commitment' || row.donationType === 'partner') {
+              return `(${formatted})`;
+            }
+            return formatted;
+          }
         },
         { header: 'סיבה', field: 'reason', customFormatter: (val: any) => val || '-' }
       ]
