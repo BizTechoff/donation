@@ -106,7 +106,7 @@ export class CampaignsListComponent implements OnInit, OnDestroy {
           isActive: this.filterActive ? this.filterActive === 'true' : undefined
         };
 
-        console.log('refreshData: Fetching campaigns with localFilters:', localFilters, 'page:', this.currentPage, 'sorting:', this.sortColumns);
+        // console.log('refreshData: Fetching campaigns with localFilters:', localFilters, 'page:', this.currentPage, 'sorting:', this.sortColumns);
 
         // Get total count, summary data, and campaigns from server
         // Global filters are fetched from user.settings in the backend
@@ -125,7 +125,7 @@ export class CampaignsListComponent implements OnInit, OnDestroy {
         this.totalTargetAmount = summary.totalTargetAmount;
         this.totalRaisedAmount = summary.totalRaisedAmount;
 
-        console.log('refreshData: Loaded', this.campaigns.length, 'campaigns, total:', this.totalCount, 'active:', this.activeCampaigns);
+        console.log('refreshData 1: Loaded', this.campaigns.length, 'campaigns, total:', this.totalCount, 'active:', this.activeCampaigns);
 
         // Load blessing counts for all campaigns
         await this.loadBlessingCounts();

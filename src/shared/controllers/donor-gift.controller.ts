@@ -2,7 +2,7 @@ import { Allow, BackendMethod, Controller } from 'remult';
 import { remult } from 'remult';
 import { DonorGift } from '../entity';
 import { GlobalFilters } from '../../app/services/global-filter.service';
-import { DonorController } from './donor.controller';
+import { GlobalFilterController } from './global-filter.controller';
 
 export interface DonorGiftFilters {
   searchDonorName?: string;
@@ -20,7 +20,10 @@ export class DonorGiftController {
     pageSize?: number,
     sortColumns?: Array<{ field: string; direction: 'asc' | 'desc' }>
   ): Promise<DonorGift[]> {
-    // 🎯 Fetch global filters from user.settings
+    // 🎯 Fetch global filters using GlobalFilterController
+    const globalFilterDonorIds = await GlobalFilterController.getDonorIdsFromUserSettings();
+
+    // Get global filters for date filtering
     const currentUserId = remult.user?.id;
     let globalFilters: GlobalFilters | undefined = undefined;
     if (currentUserId) {
@@ -29,7 +32,7 @@ export class DonorGiftController {
       globalFilters = user?.settings?.globalFilters;
     }
 
-    console.log('DonorGiftController.findFilteredDonorGifts', globalFilters, localFilters);
+    console.log('DonorGiftController.findFilteredDonorGifts', globalFilterDonorIds, localFilters);
 
     // Build orderBy from sortColumns or use default
     let orderBy: any = { deliveryDate: 'desc' };
@@ -50,19 +53,13 @@ export class DonorGiftController {
     let whereClause: any = {};
 
     // Apply global filters - get filtered donor IDs
-    let filteredDonorIds: string[] | undefined = undefined;
-    if (globalFilters && (globalFilters.countryIds?.length || globalFilters.cityIds?.length ||
-        globalFilters.neighborhoodIds?.length || globalFilters.campaignIds?.length ||
-        globalFilters.targetAudienceIds?.length)) {
-      const donors = await DonorController.findFilteredDonors();
-      filteredDonorIds = donors.map(d => d.id);
-
-      if (filteredDonorIds.length === 0) {
+    // undefined = אין פילטר, [] = יש פילטר אבל אף תורם לא עונה לו
+    if (globalFilterDonorIds !== undefined) {
+      if (globalFilterDonorIds.length === 0) {
         return []; // No matching donors, return empty donor gifts
       }
-
       // Filter donor gifts by donor IDs
-      whereClause.donorId = { $in: filteredDonorIds };
+      whereClause.donorId = { $in: globalFilterDonorIds };
     }
 
     // Apply local filters
@@ -128,7 +125,10 @@ export class DonorGiftController {
   static async countFilteredDonorGifts(
     localFilters: DonorGiftFilters
   ): Promise<number> {
-    // 🎯 Fetch global filters from user.settings
+    // 🎯 Fetch global filters using GlobalFilterController
+    const globalFilterDonorIds = await GlobalFilterController.getDonorIdsFromUserSettings();
+
+    // Get global filters for date filtering
     const currentUserId = remult.user?.id;
     let globalFilters: GlobalFilters | undefined = undefined;
     if (currentUserId) {
@@ -141,19 +141,13 @@ export class DonorGiftController {
     let whereClause: any = {};
 
     // Apply global filters - get filtered donor IDs
-    let filteredDonorIds: string[] | undefined = undefined;
-    if (globalFilters && (globalFilters.countryIds?.length || globalFilters.cityIds?.length ||
-        globalFilters.neighborhoodIds?.length || globalFilters.campaignIds?.length ||
-        globalFilters.targetAudienceIds?.length)) {
-      const donors = await DonorController.findFilteredDonors();
-      filteredDonorIds = donors.map(d => d.id);
-
-      if (filteredDonorIds.length === 0) {
+    // undefined = אין פילטר, [] = יש פילטר אבל אף תורם לא עונה לו
+    if (globalFilterDonorIds !== undefined) {
+      if (globalFilterDonorIds.length === 0) {
         return 0; // No matching donors, return 0 count
       }
-
       // Filter donor gifts by donor IDs
-      whereClause.donorId = { $in: filteredDonorIds };
+      whereClause.donorId = { $in: globalFilterDonorIds };
     }
 
     // Apply local filters
@@ -212,7 +206,10 @@ export class DonorGiftController {
   static async getStats(
     localFilters: DonorGiftFilters
   ): Promise<{ deliveredCount: number; pendingCount: number }> {
-    // 🎯 Fetch global filters from user.settings
+    // 🎯 Fetch global filters using GlobalFilterController
+    const globalFilterDonorIds = await GlobalFilterController.getDonorIdsFromUserSettings();
+
+    // Get global filters for date filtering
     const currentUserId = remult.user?.id;
     let globalFilters: GlobalFilters | undefined = undefined;
     if (currentUserId) {
@@ -225,19 +222,13 @@ export class DonorGiftController {
     let whereClause: any = {};
 
     // Apply global filters - get filtered donor IDs
-    let filteredDonorIds: string[] | undefined = undefined;
-    if (globalFilters && (globalFilters.countryIds?.length || globalFilters.cityIds?.length ||
-        globalFilters.neighborhoodIds?.length || globalFilters.campaignIds?.length ||
-        globalFilters.targetAudienceIds?.length)) {
-      const donors = await DonorController.findFilteredDonors();
-      filteredDonorIds = donors.map(d => d.id);
-
-      if (filteredDonorIds.length === 0) {
+    // undefined = אין פילטר, [] = יש פילטר אבל אף תורם לא עונה לו
+    if (globalFilterDonorIds !== undefined) {
+      if (globalFilterDonorIds.length === 0) {
         return { deliveredCount: 0, pendingCount: 0 }; // No matching donors
       }
-
       // Filter donor gifts by donor IDs
-      whereClause.donorId = { $in: filteredDonorIds };
+      whereClause.donorId = { $in: globalFilterDonorIds };
     }
 
     // Apply local filters

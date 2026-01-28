@@ -39,7 +39,9 @@ import { User } from '../shared/entity/user'
 import { checkAndSendReminders } from './scheduler'
 import { GlobalFilterController } from '../shared/controllers/global-filter.controller'
 import { geocodeMissingPlaces } from './geocode-places'
+import { SqlDatabase } from 'remult'
 
+// SqlDatabase.LogToConsole = true
 export const entities = [
   User, Donor, Donation, Campaign, DonationMethod, Reminder,
   Certificate, Event, DonorEvent, Blessing, Country, Place, DonationPartner,

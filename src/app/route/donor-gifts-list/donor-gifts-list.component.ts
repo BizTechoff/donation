@@ -107,7 +107,7 @@ export class DonorGiftsListComponent implements OnInit, OnDestroy {
           selectedYear: this.selectedYear?.trim() || undefined
         };
 
-        console.log('refreshData: Fetching donor gifts with localFilters:', localFilters, 'page:', this.currentPage, 'sorting:', this.sortColumns);
+        // console.log('refreshData: Fetching donor gifts with localFilters:', localFilters, 'page:', this.currentPage, 'sorting:', this.sortColumns);
 
         // Get total count, stats, and donor gifts from server
         // Global filters are fetched from user.settings in the backend
@@ -127,7 +127,7 @@ export class DonorGiftsListComponent implements OnInit, OnDestroy {
         // Load reminders for current page
         await this.loadReminders();
 
-        console.log('refreshData: Loaded', this.donorGifts.length, 'donor gifts, total:', this.totalCount);
+        console.log('refreshData 2: Loaded', this.donorGifts.length, 'donor gifts, total:', this.totalCount);
 
       } catch (error) {
         console.error('Error refreshing donor gifts:', error);

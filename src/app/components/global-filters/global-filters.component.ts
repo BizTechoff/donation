@@ -75,8 +75,10 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
       })
     );
 
+    // console.log('BEFORE', this.currentFilters?.isAnash)
     // Load dropdown data
     await this.loadData();
+    // console.log('AFTER', this.currentFilters?.isAnash)
 
     // Force change detection after data is loaded to update display
     this.cdr.detectChanges();

@@ -1,12 +1,12 @@
 import { Allow, BackendMethod, remult } from 'remult';
 import { GlobalFilters } from '../../app/services/global-filter.service';
-import { Donor } from '../entity/donor';
-import { Place } from '../entity/place';
-import { DonorPlace } from '../entity/donor-place';
-import { TargetAudience } from '../entity/target-audience';
-import { Donation } from '../entity/donation';
 import { Campaign } from '../entity/campaign';
-import { TriStateFilter, matchesTriStateFilter } from '../enum/tri-state-filter';
+import { Donation } from '../entity/donation';
+import { Donor } from '../entity/donor';
+import { DonorPlace } from '../entity/donor-place';
+import { Place } from '../entity/place';
+import { TargetAudience } from '../entity/target-audience';
+import { TriStateFilter } from '../enum/tri-state-filter';
 
 /**
  * GlobalFilterController - מרכז שליטה לפילטרים גלובליים
@@ -29,7 +29,7 @@ export class GlobalFilterController {
     let globalFilters: GlobalFilters = {};
     if (currentUserId) {
       const { User } = await import('../entity/user');
-      const user = await remult.repo(User).findId(currentUserId);
+      const user = await remult.repo(User).findId(currentUserId, {useCache: false});
       globalFilters = user?.settings?.globalFilters || {};
     }
 
@@ -205,28 +205,43 @@ export class GlobalFilterController {
    * מחזיר donorIds מסוננים לפי אנ"ש / תלמידנו
    */
   private static async getDonorIdsFromAnashAlumni(filters: GlobalFilters): Promise<string[] | undefined> {
+    // console.log('getDonorIdsFromAnashAlumni')
     // אם שני הפילטרים הם All (או undefined לתאימות אחורה), אין צורך לסנן
     const isAnashAll = !filters.isAnash || filters.isAnash === TriStateFilter.All;
     const isAlumniAll = !filters.isAlumni || filters.isAlumni === TriStateFilter.All;
     if (isAnashAll && isAlumniAll) {
+      // console.log('getDonorIdsFromAnashAlumni 1')
       return undefined; // אין פילטר אנ"ש/תלמידנו
     }
+    // console.log('getDonorIdsFromAnashAlumni anash', filters.isAnash, filters.isAnash === TriStateFilter.Yes, filters.isAnash === TriStateFilter.No)
+    // console.log('getDonorIdsFromAnashAlumni alumni', filters.isAlumni, filters.isAlumni === TriStateFilter.Yes, filters.isAlumni === TriStateFilter.No)
 
     const allDonors = await remult.repo(Donor).find();
+    // console.log('getDonorIdsFromAnashAlumni allDonors', allDonors.length)
 
     const donorIds = allDonors
       .filter(donor => {
-        // סינון לפי אנ"ש (using TriStateFilter)
-        if (!matchesTriStateFilter(donor.isAnash, filters.isAnash)) {
-          return false;
+        var result = true
+        if (donor.fullName.includes('אבראמטשיק')) {
+          // console.log('getDonorIdsFromAnashAlumni', '####', '@@@@@', donor.isAnash, donor.isAlumni)
         }
-        // סינון לפי תלמידנו (using TriStateFilter)
-        if (!matchesTriStateFilter(donor.isAlumni, filters.isAlumni)) {
-          return false;
+        if (filters.isAnash === TriStateFilter.Yes) {
+          result &&= (donor.isAnash === true)
         }
-        return true;
+        if (filters.isAnash === TriStateFilter.No) {
+          result &&= (donor.isAnash === false)
+        }
+        if (filters.isAlumni === TriStateFilter.Yes) {
+          result &&= (donor.isAlumni === true)
+        }
+        if (filters.isAlumni === TriStateFilter.No) {
+          result &&= (donor.isAlumni === false)
+        }
+        return result
       })
       .map(donor => donor.id);
+
+    // console.log('getDonorIdsFromAnashAlumni donorIds', donorIds.length)
 
     return donorIds;
   }
@@ -258,72 +273,4 @@ export class GlobalFilterController {
     return donorIds;
   }
 
-  // /**
-  //  * בונה whereClause לקמפיינים
-  //  * כולל סינון לפי מיקום (location) ורשימת מוזמנים (invitedDonorIds)
-  //  */
-  // @BackendMethod({ allowed: Allow.authenticated })
-  // static async buildWhereForCampaigns(
-  //   filters: GlobalFilters,
-  //   existingWhere: any = {}
-  // ): Promise<any> {
-  //   const whereClause = { ...existingWhere };
-
-  //   // סינון לפי תאריכים (קיים כבר)
-  //   if (filters.dateFrom || filters.dateTo) {
-  //     whereClause.startDate = {};
-  //     if (filters.dateFrom) {
-  //       whereClause.startDate.$gte = filters.dateFrom;
-  //     }
-  //     if (filters.dateTo) {
-  //       whereClause.startDate.$lte = filters.dateTo;
-  //     }
-  //   }
-
-  //   // סינון לפי רשימת מוזמנים - צריך donorIds
-  //   const donorIds = await GlobalFilterController.getDonorIds(filters);
-  //   if (donorIds !== undefined) {
-  //     if (donorIds.length === 0) {
-  //       // אין תורמים תואמים - נחזיר תנאי שלא יחזיר תוצאות
-  //       whereClause.id = { $in: [] };
-  //     } else {
-  //       // סינון קמפיינים שיש בהם לפחות אחד מהתורמים המסוננים ברשימת המוזמנים
-  //       whereClause.$or = [
-  //         { invitedDonorIds: { $contains: donorIds } }
-  //       ];
-  //     }
-  //   }
-
-  //   return whereClause;
-  // }
-
-  // /**
-  //  * בונה whereClause לתזכורות
-  //  * תזכורת יכולה להיות מקושרת לתורם או לתרומה
-  //  */
-  // @BackendMethod({ allowed: Allow.authenticated })
-  // static async buildWhereForReminders(
-  //   filters: GlobalFilters,
-  //   existingWhere: any = {}
-  // ): Promise<any> {
-  //   const whereClause = { ...existingWhere };
-
-  //   // סינון לפי donorIds
-  //   const donorIds = await GlobalFilterController.getDonorIds(filters);
-  //   if (donorIds !== undefined) {
-  //     if (donorIds.length === 0) {
-  //       // אין תורמים תואמים
-  //       whereClause.id = { $in: [] };
-  //     } else {
-  //       // תזכורת יכולה להיות קשורה ישירות לתורם, או דרך תרומה
-  //       whereClause.$or = [
-  //         { donorId: { $in: donorIds } },
-  //         // TODO: אם יש donationId, צריך לבדוק את donation.donorId
-  //         // זה ידרוש join או שאילתה נפרדת
-  //       ];
-  //     }
-  //   }
-
-  //   return whereClause;
-  // }
 }

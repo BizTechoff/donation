@@ -95,9 +95,11 @@ export class ReportController {
   static async getGroupedDonationsReport(
     filters: ReportFilters
   ): Promise<GroupedReportResponse> {
+    console.log('getGroupedDonationsReport',JSON.stringify(filters))
     try {
       // 🎯 Fetch global filters using GlobalFilterController (handles all filter types: city, anash, alumni, etc.)
       const globalFilterDonorIds = await GlobalFilterController.getDonorIdsFromUserSettings();
+    console.log('getGroupedDonationsReport',JSON.stringify(globalFilterDonorIds))
 
       // Get other global filters for date/amount filtering
       const currentUserId = remult.user?.id;
@@ -155,10 +157,10 @@ export class ReportController {
       const allDonations: Donation[] = [];
       for (const hebrewYear of yearsToLoad) {
         const dateRange = await HebrewDateController.getHebrewYearDateRange(hebrewYear);
-        console.log(`🔍 Loading donations for Hebrew year ${hebrewYear}:`, {
-          startDate: dateRange.startDate,
-          endDate: dateRange.endDate
-        });
+        // console.log(`🔍 Loading donations for Hebrew year ${hebrewYear}:`, {
+        //   startDate: dateRange.startDate,
+        //   endDate: dateRange.endDate
+        // });
 
         const yearDonations = await remult.repo(Donation).find({
           where: {
@@ -178,20 +180,20 @@ export class ReportController {
             createdBy: true
           }
         });
-        console.log(`✅ Found ${yearDonations.length} donations for year ${hebrewYear}`);
+        // console.log(`✅ Found ${yearDonations.length} donations for year ${hebrewYear}`);
         allDonations.push(...yearDonations);
       }
-      console.log(`📊 Total donations loaded: ${allDonations.length}`);
+      // console.log(`📊 Total donations loaded: ${allDonations.length}`);
 
       // Apply additional filters
       let filteredDonations = allDonations;
-      console.log('🔍 Applying filters:', {
-        selectedDonor: filters.selectedDonor,
-        selectedDonorIds: filters.selectedDonorIds,
-        selectedCampaign: filters.selectedCampaign,
-        selectedDonorType: filters.selectedDonorType,
-        selectedYear: filters.selectedYear
-      });
+      // console.log('🔍 Applying filters:', {
+      //   selectedDonor: filters.selectedDonor,
+      //   selectedDonorIds: filters.selectedDonorIds,
+      //   selectedCampaign: filters.selectedCampaign,
+      //   selectedDonorType: filters.selectedDonorType,
+      //   selectedYear: filters.selectedYear
+      // });
 
       // Single donor filter (legacy)
       if (filters.selectedDonor) {
@@ -210,12 +212,19 @@ export class ReportController {
       }
 
       // 🎯 Apply global donor filter (from user.settings)
-      if (globalFilterDonorIds && globalFilterDonorIds.length > 0) {
-        const before = filteredDonations.length;
-        filteredDonations = filteredDonations.filter(d =>
-          d.donorId && globalFilterDonorIds!.includes(d.donorId)
-        );
-        console.log(`  → Global donor filter: ${before} → ${filteredDonations.length} (${globalFilterDonorIds.length} donors in global filter)`);
+      // undefined = אין פילטר, [] = יש פילטר אבל אף תורם לא עונה לו
+      if (globalFilterDonorIds !== undefined) {
+        if (globalFilterDonorIds.length === 0) {
+          // מערך ריק = אף תורם לא עונה לפילטר - להחזיר תוצאות ריקות
+          filteredDonations = [];
+          console.log(`  → Global donor filter: empty array - no donors match filter`);
+        } else {
+          const before = filteredDonations.length;
+          filteredDonations = filteredDonations.filter(d =>
+            d.donorId && globalFilterDonorIds!.includes(d.donorId)
+          );
+          console.log(`  → Global donor filter: ${before} → ${filteredDonations.length} (${globalFilterDonorIds.length} donors in global filter)`);
+        }
       }
 
       if (filters.selectedCampaign) {
@@ -810,7 +819,8 @@ export class ReportController {
 
       // If local filter exists, intersect with global filter
       if (localFilters?.selectedDonorIds && localFilters.selectedDonorIds.length > 0) {
-        if (globalFilterDonorIds && globalFilterDonorIds.length > 0) {
+        if (globalFilterDonorIds !== undefined) {
+          // חיתוך עם הפילטר הגלובלי (אם ריק - התוצאה תהיה ריקה)
           globalFilterDonorIds = localFilters.selectedDonorIds.filter(id => globalFilterDonorIds!.includes(id));
         } else {
           globalFilterDonorIds = localFilters.selectedDonorIds;
@@ -850,10 +860,16 @@ export class ReportController {
       console.log(`📊 Loaded ${donations.length} donations for payments report`);
 
       // Apply global filters
-      if (globalFilterDonorIds && globalFilterDonorIds.length > 0) {
-        const before = donations.length;
-        donations = donations.filter(d => d.donorId && globalFilterDonorIds!.includes(d.donorId));
-        console.log(`  → Global donor filter: ${before} → ${donations.length}`);
+      // undefined = אין פילטר, [] = יש פילטר אבל אף תורם לא עונה לו
+      if (globalFilterDonorIds !== undefined) {
+        if (globalFilterDonorIds.length === 0) {
+          donations = [];
+          console.log(`  → Global donor filter: empty array - no donors match filter`);
+        } else {
+          const before = donations.length;
+          donations = donations.filter(d => d.donorId && globalFilterDonorIds!.includes(d.donorId));
+          console.log(`  → Global donor filter: ${before} → ${donations.length}`);
+        }
       }
 
       if (globalFilterCampaignIds && globalFilterCampaignIds.length > 0) {
@@ -1047,10 +1063,16 @@ export class ReportController {
       console.log(`📊 Loaded ${donations.length} donations for yearly summary report`);
 
       // Apply global filters
-      if (globalFilterDonorIds && globalFilterDonorIds.length > 0) {
-        const before = donations.length;
-        donations = donations.filter(d => d.donorId && globalFilterDonorIds!.includes(d.donorId));
-        console.log(`  → Global donor filter: ${before} → ${donations.length}`);
+      // undefined = אין פילטר, [] = יש פילטר אבל אף תורם לא עונה לו
+      if (globalFilterDonorIds !== undefined) {
+        if (globalFilterDonorIds.length === 0) {
+          donations = [];
+          console.log(`  → Global donor filter: empty array - no donors match filter`);
+        } else {
+          const before = donations.length;
+          donations = donations.filter(d => d.donorId && globalFilterDonorIds!.includes(d.donorId));
+          console.log(`  → Global donor filter: ${before} → ${donations.length}`);
+        }
       }
 
       if (globalFilterCampaignIds && globalFilterCampaignIds.length > 0) {
@@ -1196,7 +1218,7 @@ export class ReportController {
         orderBy: { donationDate: 'asc' }
       });
 
-      console.log(`   Found ${donorDonations.length} direct donations`);
+      // console.log(`   Found ${donorDonations.length} direct donations`);
 
       // Load donations where this donor is a partner
       const allDonationsInRange = await remult.repo(Donation).find({
@@ -1213,7 +1235,7 @@ export class ReportController {
         d.partnerIds && d.partnerIds.includes(donorId) && d.donorId !== donorId
       );
 
-      console.log(`   Found ${partnerDonations.length} partner donations`);
+      // console.log(`   Found ${partnerDonations.length} partner donations`);
 
       // Load payments for all these donations
       const allDonationIds = [

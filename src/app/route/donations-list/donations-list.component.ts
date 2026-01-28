@@ -126,7 +126,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
           selectedDonationType: this.selectedDonationType?.trim() || undefined
         };
 
-        console.log('refreshData: Fetching donations with filters:', filters, 'page:', this.currentPage, 'sorting:', this.sortColumns);
+        // console.log('refreshData: Fetching donations with filters:', filters, 'page:', this.currentPage, 'sorting:', this.sortColumns);
 
         // Get total count, total amount, commitments, and donations from server with all filters and sorting
         [this.totalCount, this.totalFullDonationsCount, this.donationsByCurrency, this.totalCommitmentCount, this.commitmentsByCurrency, this.donations] = await Promise.all([
@@ -150,7 +150,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
           this.commitmentPaymentTotals = {};
         }
 
-        console.log('refreshData: Loaded', this.donations.length, 'donations, total:', this.totalCount, 'totalAmount:', this.totalAmountCache);
+        console.log('refreshData 3: Loaded', this.donations.length, 'donations, total:', this.totalCount, 'totalAmount:', this.totalAmountCache);
       } catch (error) {
         console.error('Error refreshing donations:', error);
         this.donations = [];

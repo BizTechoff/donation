@@ -88,7 +88,7 @@ export class DonorListComponent implements OnInit, OnDestroy {
         // Prepare search term (trim and undefined if empty)
         const searchTerm = this.searchTerm?.trim() || undefined;
 
-        console.log('refreshData: Fetching donors with searchTerm:', searchTerm, 'page:', this.currentPage, 'sorting:', this.sortColumns);
+        // console.log('refreshData: Fetching donors with searchTerm:', searchTerm, 'page:', this.currentPage, 'sorting:', this.sortColumns);
 
         // Get total count for pagination with search term
         this.totalCount = await this.donorService.countFiltered(searchTerm);
@@ -103,7 +103,7 @@ export class DonorListComponent implements OnInit, OnDestroy {
           this.sortColumns
         );
 
-        console.log('refreshData: Loaded', this.donors.length, 'donors');
+        // console.log('refreshData 4: Loaded', this.donors.length, 'donors');
 
         // Load all related data using DonorMapController (same as map popup)
         const donorDataList = await DonorMapController.loadDonorsMapDataByIds(
@@ -452,9 +452,10 @@ export class DonorListComponent implements OnInit, OnDestroy {
       const userRepo = remult.repo(User);
       const userId = remult.user?.id;
       if (userId) {
-        const user = await userRepo.findId(userId);
+        const user = await userRepo.findId(userId, {useCache: false});
         if (user) {
           this.currentUser = user;
+          // console.log('loadUserSettings',this.currentUser?.settings)
           // Load saved sort settings
           if (this.currentUser?.settings?.donorList?.sort) {
             this.sortColumns = this.currentUser.settings.donorList.sort;

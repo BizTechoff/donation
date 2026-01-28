@@ -465,9 +465,9 @@ export class DonorMapController {
     // Merge global filters with additional filters (from client)
     const mergedFilters: GlobalFilters = { ...globalFilters, ...additionalFilters };
 
-    console.log('DonorMapController: Global filters:', globalFilters);
-    console.log('DonorMapController: Additional filters:', additionalFilters);
-    console.log('DonorMapController: Merged filters:', mergedFilters);
+    // console.log('DonorMapController: Global filters:', globalFilters);
+    // console.log('DonorMapController: Additional filters:', additionalFilters);
+    // console.log('DonorMapController: Merged filters:', mergedFilters);
 
     // קבל IDs ממוסננים (משתמש בפילטרים הממוזגים)
     console.time('Get filtered donor IDs');

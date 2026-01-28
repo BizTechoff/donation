@@ -42,6 +42,8 @@ export class GlobalFilterService {
   }
 
   async updateFilter(key: keyof GlobalFilters, value: any) {
+console.log(`updateFilter: { key: ${key}, value: ${value} }`)
+
     const currentFilters = this.filtersSubject.value;
     let updatedFilters = { ...currentFilters, [key]: value };
 
