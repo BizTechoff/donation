@@ -2477,15 +2477,37 @@ export class ReportsComponent implements OnInit, OnDestroy {
   }
 
   private printHtml(html: string) {
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-      alert('לא ניתן לפתוח חלון הדפסה. בדוק שחוסם חלונות קופצים מושבת.');
+    // Use hidden iframe like printService does
+    let printFrame = document.getElementById('donations-print-frame') as HTMLIFrameElement;
+    if (printFrame) {
+      document.body.removeChild(printFrame);
+    }
+
+    printFrame = document.createElement('iframe');
+    printFrame.id = 'donations-print-frame';
+    printFrame.style.position = 'absolute';
+    printFrame.style.top = '-10000px';
+    printFrame.style.left = '-10000px';
+    printFrame.style.width = '0';
+    printFrame.style.height = '0';
+    printFrame.style.border = 'none';
+
+    document.body.appendChild(printFrame);
+
+    const frameDoc = printFrame.contentDocument || printFrame.contentWindow?.document;
+    if (!frameDoc) {
+      alert('שגיאה ביצירת חלון הדפסה');
       return;
     }
-    printWindow.document.write(html);
-    printWindow.document.close();
-    printWindow.onload = () => {
-      printWindow.print();
+
+    frameDoc.open();
+    frameDoc.write(html);
+    frameDoc.close();
+
+    printFrame.onload = () => {
+      setTimeout(() => {
+        printFrame.contentWindow?.print();
+      }, 100);
     };
   }
 
