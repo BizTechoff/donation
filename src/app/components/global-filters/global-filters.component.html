@@ -42,18 +42,18 @@
     <div class="donor-type-filter-section">
       <div class="donor-type-toggle">
         <span class="toggle-label">אנ"ש:</span>
-        <mat-button-toggle-group [value]="currentFilters.isAnash" (change)="onIsAnashChange($event.value)">
-          <mat-button-toggle [value]="undefined">הכל</mat-button-toggle>
-          <mat-button-toggle [value]="true">כן</mat-button-toggle>
-          <mat-button-toggle [value]="false">לא</mat-button-toggle>
+        <mat-button-toggle-group [value]="currentFilters.isAnash || 'all'" (change)="onIsAnashChange($event.value)">
+          <mat-button-toggle value="all">הכל</mat-button-toggle>
+          <mat-button-toggle value="yes">כן</mat-button-toggle>
+          <mat-button-toggle value="no">ללא</mat-button-toggle>
         </mat-button-toggle-group>
       </div>
       <div class="donor-type-toggle">
         <span class="toggle-label">תלמידנו:</span>
-        <mat-button-toggle-group [value]="currentFilters.isAlumni" (change)="onIsAlumniChange($event.value)">
-          <mat-button-toggle [value]="undefined">הכל</mat-button-toggle>
-          <mat-button-toggle [value]="true">כן</mat-button-toggle>
-          <mat-button-toggle [value]="false">לא</mat-button-toggle>
+        <mat-button-toggle-group [value]="currentFilters.isAlumni || 'all'" (change)="onIsAlumniChange($event.value)">
+          <mat-button-toggle value="all">הכל</mat-button-toggle>
+          <mat-button-toggle value="yes">כן</mat-button-toggle>
+          <mat-button-toggle value="no">ללא</mat-button-toggle>
         </mat-button-toggle-group>
       </div>
     </div>

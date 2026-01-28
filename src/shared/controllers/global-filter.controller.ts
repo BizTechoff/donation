@@ -6,6 +6,7 @@ import { DonorPlace } from '../entity/donor-place';
 import { TargetAudience } from '../entity/target-audience';
 import { Donation } from '../entity/donation';
 import { Campaign } from '../entity/campaign';
+import { TriStateFilter, matchesTriStateFilter } from '../enum/tri-state-filter';
 
 /**
  * GlobalFilterController - מרכז שליטה לפילטרים גלובליים
@@ -212,15 +213,13 @@ export class GlobalFilterController {
 
     const donorIds = allDonors
       .filter(donor => {
-        // סינון לפי אנ"ש
-        if (filters.isAnash !== undefined) {
-          if (filters.isAnash && !donor.isAnash) return false;
-          if (!filters.isAnash && donor.isAnash) return false;
+        // סינון לפי אנ"ש (using TriStateFilter)
+        if (!matchesTriStateFilter(donor.isAnash, filters.isAnash)) {
+          return false;
         }
-        // סינון לפי תלמידנו
-        if (filters.isAlumni !== undefined) {
-          if (filters.isAlumni && !donor.isAlumni) return false;
-          if (!filters.isAlumni && donor.isAlumni) return false;
+        // סינון לפי תלמידנו (using TriStateFilter)
+        if (!matchesTriStateFilter(donor.isAlumni, filters.isAlumni)) {
+          return false;
         }
         return true;
       })

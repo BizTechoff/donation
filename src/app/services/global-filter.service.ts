@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { remult } from 'remult';
 import { User } from '../../shared/entity/user';
+import { TriStateFilter } from '../../shared/enum/tri-state-filter';
 
 export interface GlobalFilters {
   campaignIds?: string[];
@@ -16,8 +17,8 @@ export interface GlobalFilters {
   amountMax?: number;
   searchTerm?: string;
   minDonationCount?: number;  // מספר מינימלי של תרומות (לא סכום!)
-  isAnash?: boolean;  // סינון לפי אנ"ש - true=רק אנ"ש, false=רק לא אנ"ש, undefined=הכל
-  isAlumni?: boolean;  // סינון לפי תלמידנו - true=רק תלמידנו, false=רק לא תלמידנו, undefined=הכל
+  isAnash?: TriStateFilter;  // סינון לפי אנ"ש
+  isAlumni?: TriStateFilter;  // סינון לפי תלמידנו
 }
 
 @Injectable({

@@ -11,6 +11,7 @@ import { TargetAudience } from '../../../shared/entity/target-audience';
 import { I18nService } from '../../i18n/i18n.service';
 import { PlaceController } from '../../../shared/controllers/place.controller';
 import { UIToolsService } from '../../common/UIToolsService';
+import { TriStateFilter } from '../../../shared/enum/tri-state-filter';
 
 @Component({
   selector: 'app-global-filters',
@@ -229,12 +230,14 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
     });
   }
 
-  async onIsAnashChange(value: boolean | undefined) {
-    await this.updateFilter('isAnash', value);
+  async onIsAnashChange(value: TriStateFilter) {
+    // If 'all' selected, remove the filter entirely
+    await this.updateFilter('isAnash', value === TriStateFilter.All ? undefined : value);
   }
 
-  async onIsAlumniChange(value: boolean | undefined) {
-    await this.updateFilter('isAlumni', value);
+  async onIsAlumniChange(value: TriStateFilter) {
+    // If 'all' selected, remove the filter entirely
+    await this.updateFilter('isAlumni', value === TriStateFilter.All ? undefined : value);
   }
 
   getAmountFilterDisplay(): string {
