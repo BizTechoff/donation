@@ -90,42 +90,37 @@
 
 .donor-type-filter-section {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
   margin-bottom: 16px;
   padding: 12px;
   background-color: rgba(102, 126, 234, 0.05);
   border-radius: 8px;
   border: 1px solid rgba(102, 126, 234, 0.2);
 
-  .donor-type-toggle {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+  .section-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #667eea;
+    white-space: nowrap;
+  }
 
-    .toggle-label {
-      font-size: 13px;
-      font-weight: 600;
-      color: #667eea;
-      min-width: 70px;
-    }
+  mat-button-toggle-group {
+    border-radius: 6px;
+    overflow: hidden;
 
-    mat-button-toggle-group {
-      border-radius: 6px;
-      overflow: hidden;
+    ::ng-deep .mat-button-toggle {
+      font-size: 12px;
 
-      ::ng-deep .mat-button-toggle {
-        font-size: 12px;
+      &.mat-button-toggle-checked {
+        background-color: #667eea;
+        color: white;
+      }
 
-        &.mat-button-toggle-checked {
-          background-color: #667eea;
-          color: white;
-        }
-
-        .mat-button-toggle-label-content {
-          padding: 0 12px;
-          line-height: 32px;
-        }
+      .mat-button-toggle-label-content {
+        padding: 0 12px;
+        line-height: 32px;
       }
     }
   }

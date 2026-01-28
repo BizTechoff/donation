@@ -17,8 +17,8 @@ export interface GlobalFilters {
   amountMax?: number;
   searchTerm?: string;
   minDonationCount?: number;  // מספר מינימלי של תרומות (לא סכום!)
-  isAnash?: TriStateFilter;  // סינון לפי אנ"ש
-  isAlumni?: TriStateFilter;  // סינון לפי תלמידנו
+  isAnash?: TriStateFilter;  // סינון לפי אנ"ש (ברירת מחדל: All)
+  isAlumni?: TriStateFilter;  // סינון לפי תלמידנו (ברירת מחדל: All)
 }
 
 @Injectable({

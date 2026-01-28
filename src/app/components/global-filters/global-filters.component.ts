@@ -126,7 +126,7 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
   
   get hasActiveFilters(): boolean {
     // Check if there are actual values, not just keys
-    const hasValues =
+    return !!(
       (this.currentFilters.campaignIds && this.currentFilters.campaignIds.length > 0) ||
       (this.currentFilters.countryIds && this.currentFilters.countryIds.length > 0) ||
       (this.currentFilters.cityIds && this.currentFilters.cityIds.length > 0) ||
@@ -136,12 +136,11 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
       (this.currentFilters.dateTo !== undefined && this.currentFilters.dateTo !== null) ||
       (this.currentFilters.amountMin !== undefined && this.currentFilters.amountMin !== null) ||
       (this.currentFilters.amountMax !== undefined && this.currentFilters.amountMax !== null) ||
-      (this.currentFilters.isAnash !== undefined) ||
-      (this.currentFilters.isAlumni !== undefined);
-
-    return hasValues;
+      (this.currentFilters.isAnash && this.currentFilters.isAnash !== TriStateFilter.All) ||
+      (this.currentFilters.isAlumni && this.currentFilters.isAlumni !== TriStateFilter.All)
+    );
   }
-  
+
   get activeFiltersCount(): number {
     let count = 0;
     if (this.currentFilters.campaignIds && this.currentFilters.campaignIds.length > 0) count += this.currentFilters.campaignIds.length;
@@ -153,8 +152,8 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
     if (this.currentFilters.dateTo) count++;
     if (this.currentFilters.amountMin !== undefined) count++;
     if (this.currentFilters.amountMax !== undefined) count++;
-    if (this.currentFilters.isAnash !== undefined) count++;
-    if (this.currentFilters.isAlumni !== undefined) count++;
+    if (this.currentFilters.isAnash && this.currentFilters.isAnash !== TriStateFilter.All) count++;
+    if (this.currentFilters.isAlumni && this.currentFilters.isAlumni !== TriStateFilter.All) count++;
     return count;
   }
   
@@ -230,14 +229,14 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
     });
   }
 
-  async onIsAnashChange(value: TriStateFilter) {
-    // If 'all' selected, remove the filter entirely
-    await this.updateFilter('isAnash', value === TriStateFilter.All ? undefined : value);
+  async onIsAnashToggle(value: 'yes' | 'no', checked: boolean) {
+    // If checked, set the filter; if unchecked, reset to 'all'
+    await this.updateFilter('isAnash', checked ? value as TriStateFilter : TriStateFilter.All);
   }
 
-  async onIsAlumniChange(value: TriStateFilter) {
-    // If 'all' selected, remove the filter entirely
-    await this.updateFilter('isAlumni', value === TriStateFilter.All ? undefined : value);
+  async onIsAlumniToggle(value: 'yes' | 'no', checked: boolean) {
+    // If checked, set the filter; if unchecked, reset to 'all'
+    await this.updateFilter('isAlumni', checked ? value as TriStateFilter : TriStateFilter.All);
   }
 
   getAmountFilterDisplay(): string {

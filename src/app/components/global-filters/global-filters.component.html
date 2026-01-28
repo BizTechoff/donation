@@ -40,22 +40,29 @@
 
     <!-- Donor Type Filters (Anash / Alumni) -->
     <div class="donor-type-filter-section">
-      <div class="donor-type-toggle">
-        <span class="toggle-label">אנ"ש:</span>
-        <mat-button-toggle-group [value]="currentFilters.isAnash || 'all'" (change)="onIsAnashChange($event.value)">
-          <mat-button-toggle value="all">הכל</mat-button-toggle>
-          <mat-button-toggle value="yes">כן</mat-button-toggle>
-          <mat-button-toggle value="no">ללא</mat-button-toggle>
-        </mat-button-toggle-group>
-      </div>
-      <div class="donor-type-toggle">
-        <span class="toggle-label">תלמידנו:</span>
-        <mat-button-toggle-group [value]="currentFilters.isAlumni || 'all'" (change)="onIsAlumniChange($event.value)">
-          <mat-button-toggle value="all">הכל</mat-button-toggle>
-          <mat-button-toggle value="yes">כן</mat-button-toggle>
-          <mat-button-toggle value="no">ללא</mat-button-toggle>
-        </mat-button-toggle-group>
-      </div>
+      <span class="section-label">אנ"ש:</span>
+      <mat-button-toggle-group multiple>
+        <mat-button-toggle [checked]="currentFilters.isAnash === 'yes'"
+                           (change)="onIsAnashToggle('yes', $event.source.checked)">
+          רק אנ"ש
+        </mat-button-toggle>
+        <mat-button-toggle [checked]="currentFilters.isAnash === 'no'"
+                           (change)="onIsAnashToggle('no', $event.source.checked)">
+          ללא אנ"ש
+        </mat-button-toggle>
+      </mat-button-toggle-group>
+
+      <span class="section-label" style="margin-right: 16px;">תלמידנו:</span>
+      <mat-button-toggle-group multiple>
+        <mat-button-toggle [checked]="currentFilters.isAlumni === 'yes'"
+                           (change)="onIsAlumniToggle('yes', $event.source.checked)">
+          רק תלמידנו
+        </mat-button-toggle>
+        <mat-button-toggle [checked]="currentFilters.isAlumni === 'no'"
+                           (change)="onIsAlumniToggle('no', $event.source.checked)">
+          ללא תלמידנו
+        </mat-button-toggle>
+      </mat-button-toggle-group>
     </div>
 
     <!-- Amount Range Filter -->
