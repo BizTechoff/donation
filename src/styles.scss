@@ -331,6 +331,20 @@ th {
   z-index: 9999 !important;
 }
 
+// Fix for global filters menu - lower z-index so dialogs appear on top
+.cdk-overlay-pane:has(.filters-menu) {
+  z-index: 900 !important;
+}
+
+// Ensure mat-dialog always appears above mat-menu
+.cdk-global-overlay-wrapper:has(.mat-mdc-dialog-container) {
+  z-index: 1100 !important;
+
+  .cdk-overlay-pane {
+    z-index: 1100 !important;
+  }
+}
+
 // Fix for date picker overlay - ensure it's always above modals
 .cdk-overlay-container > .cdk-overlay-connected-position-bounding-box {
   z-index: 10000 !important;

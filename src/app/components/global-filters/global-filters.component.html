@@ -1,22 +1,32 @@
 
 <button mat-icon-button
         [matMenuTriggerFor]="filtersMenu"
-        [class.filters-active]="hasActiveFilters"
+        [class.filters-active]="hasAppliedFilters"
         matTooltip="{{ (i18n.terms$ | async)?.filters }}">
   <mat-icon>filter_list</mat-icon>
-  <span *ngIf="activeFiltersCount > 0" class="filter-count">{{ activeFiltersCount }}</span>
+  <span *ngIf="appliedFiltersCount > 0" class="filter-count">{{ appliedFiltersCount }}</span>
 </button>
 
 <mat-menu #filtersMenu="matMenu" class="filters-menu" [dir]="i18n.lang.RTL ? 'rtl' : 'ltr'" [hasBackdrop]="false">
   <div class="filters-content" (click)="$event.stopPropagation()">
 
     <!-- Filter Header -->
-    <div class="filters-header" [title]="(i18n.terms$ | async)?.clearFilters">
+    <div class="filters-header">
       <h3>{{ (i18n.terms$ | async)?.globalFilters }}</h3>
-      <button mat-icon-button (click)="clearFilters()" [disabled]="!hasActiveFilters"
-              [matTooltip]="(i18n.terms$ | async)?.clearAll || ''">
-        <mat-icon>clear_all</mat-icon>
-      </button>
+      <div class="header-actions">
+        <button mat-icon-button
+                class="apply-btn"
+                [class.has-changes]="hasPendingChanges"
+                (click)="applyFilters()"
+                [disabled]="!hasPendingChanges"
+                matTooltip="החל שינויים">
+          <mat-icon>check</mat-icon>
+        </button>
+        <button mat-icon-button (click)="clearFilters()" [disabled]="!hasActiveFilters"
+                [matTooltip]="(i18n.terms$ | async)?.clearAll || ''">
+          <mat-icon>clear_all</mat-icon>
+        </button>
+      </div>
     </div>
 
     <!-- Filter Buttons -->
