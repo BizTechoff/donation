@@ -32,10 +32,10 @@
         <span class="btn-icon">🔄</span>
         {{ (i18n.terms$ | async)?.refreshData }}
       </button>
-      <!-- <button class="btn btn-outline" (click)="exportSpecificReport('excel')">
+      <button *ngIf="activeReport === 'donations'" class="btn btn-outline" (click)="exportDonorsToExcel()">
         <span class="btn-icon">📊</span>
-        Excel
-      </button> -->
+        ייצוא Excel
+      </button>
       <button *ngIf="this.activeReport !== 'personalDonor'" class="btn btn-outline" (click)="printReport()">
         <span class="btn-icon">🖨️</span>
         {{ (i18n.terms$ | async)?.printButton }}
@@ -140,9 +140,17 @@
 
       <!-- אפשרויות תצוגה - שורה נפרדת -->
       <div class="display-options-row" *ngIf="activeReport === 'donations'">
-        <label class="checkbox-label">
-          <input type="checkbox" [(ngModel)]="filters.showDonorDetails" (ngModelChange)="applyFilters()">
-          {{ (i18n.terms$ | async)?.showDonorDetailsLabel }}
+        <label class="checkbox-label" *ngIf="filters.groupBy === 'donor'">
+          <input type="checkbox" [(ngModel)]="filters.showDonorAddress" (ngModelChange)="applyFilters()">
+          כתובת
+        </label>
+        <label class="checkbox-label" *ngIf="filters.groupBy === 'donor'">
+          <input type="checkbox" [(ngModel)]="filters.showDonorPhone" (ngModelChange)="applyFilters()">
+          טלפון
+        </label>
+        <label class="checkbox-label" *ngIf="filters.groupBy === 'donor'">
+          <input type="checkbox" [(ngModel)]="filters.showDonorEmail" (ngModelChange)="applyFilters()">
+          אימייל
         </label>
         <label class="checkbox-label">
           <input type="checkbox" [(ngModel)]="filters.showActualPayments" (ngModelChange)="applyFilters()">
@@ -369,17 +377,17 @@
                 {{ (i18n.terms$ | async)?.nameColumn }} <mat-icon
                   class="sort-icon">{{getSortIcon('donorName')}}</mat-icon>
               </th>
-              <th *ngIf="filters.showDonorDetails && filters.groupBy === 'donor'" class="sortable-header"
+              <th *ngIf="filters.showDonorAddress && filters.groupBy === 'donor'" class="sortable-header"
                 (click)="onSortChange('address')">
                 {{ (i18n.terms$ | async)?.addressColumn }} <mat-icon
                   class="sort-icon">{{getSortIcon('address')}}</mat-icon>
               </th>
-              <th *ngIf="filters.showDonorDetails && filters.groupBy === 'donor'" class="sortable-header"
+              <th *ngIf="filters.showDonorPhone && filters.groupBy === 'donor'" class="sortable-header"
                 (click)="onSortChange('phones')">
                 {{ (i18n.terms$ | async)?.phonesColumn }} <mat-icon
                   class="sort-icon">{{getSortIcon('phones')}}</mat-icon>
               </th>
-              <th *ngIf="filters.showDonorDetails && filters.groupBy === 'donor'" class="sortable-header"
+              <th *ngIf="filters.showDonorEmail && filters.groupBy === 'donor'" class="sortable-header"
                 (click)="onSortChange('emails')">
                 {{ (i18n.terms$ | async)?.emailsColumn }} <mat-icon
                   class="sort-icon">{{getSortIcon('emails')}}</mat-icon>
@@ -404,16 +412,16 @@
                     <strong>{{row.donorName}}</strong>
                   </span>
                 </td>
-                <td class="donor-address" *ngIf="filters.showDonorDetails && filters.groupBy === 'donor'">{{row.donorDetails?.address || '-'}}
+                <td class="donor-address" *ngIf="filters.showDonorAddress && filters.groupBy === 'donor'">{{row.donorDetails?.address || '-'}}
                 </td>
-                <td *ngIf="filters.showDonorDetails && filters.groupBy === 'donor'">
+                <td *ngIf="filters.showDonorPhone && filters.groupBy === 'donor'">
                   <div *ngIf="row.donorDetails && row.donorDetails.phones && row.donorDetails.phones.length > 0">
                     <div *ngFor="let phone of row.donorDetails.phones">{{phone}}</div>
                   </div>
                   <span
                     *ngIf="!row.donorDetails || !row.donorDetails.phones || row.donorDetails.phones.length === 0">-</span>
                 </td>
-                <td *ngIf="filters.showDonorDetails && filters.groupBy === 'donor'">
+                <td *ngIf="filters.showDonorEmail && filters.groupBy === 'donor'">
                   <div *ngIf="row.donorDetails && row.donorDetails.emails && row.donorDetails.emails.length > 0">
                     <div *ngFor="let email of row.donorDetails.emails">{{email}}</div>
                   </div>
@@ -435,21 +443,27 @@
               <tr *ngIf="filters.showDonationDetails && row.isExpanded && row.donations?.length" class="details-row inline-details">
                 <!-- Empty cells for name and donor details columns -->
                 <td class="details-spacer"></td>
-                <td class="details-spacer" *ngIf="filters.showDonorDetails && filters.groupBy === 'donor'"></td>
-                <td class="details-spacer" *ngIf="filters.showDonorDetails && filters.groupBy === 'donor'"></td>
-                <td class="details-spacer" *ngIf="filters.showDonorDetails && filters.groupBy === 'donor'"></td>
+                <td class="details-spacer" *ngIf="filters.showDonorAddress && filters.groupBy === 'donor'"></td>
+                <td class="details-spacer" *ngIf="filters.showDonorPhone && filters.groupBy === 'donor'"></td>
+                <td class="details-spacer" *ngIf="filters.showDonorEmail && filters.groupBy === 'donor'"></td>
                 <!-- Donation details under each year column -->
                 <td *ngFor="let year of hebrewYears" class="year-details-cell">
                   <div class="donation-details-column">
                     <div *ngFor="let donation of getDonationsForYear(row.donations, year)"
                          class="donation-detail-line clickable"
-                         [title]="donation.donationType === 'commitment' ? 'התחייבות' : donation.donationType === 'partner' ? 'שותף' : 'תרומה'"
+                         [title]="(donation.isStandingOrder || donation.isUnlimitedStandingOrder) ? 'הוראת קבע' : donation.donationType === 'commitment' ? 'התחייבות' : donation.donationType === 'partner' ? 'שותף' : 'תרומה'"
                          (click)="openDonationDetails(donation.donationId, $event)">
                       <span class="detail-main-row">
                         <span class="detail-date">{{donation.hebrewDateFormatted || (donation.date | date:'dd/MM/yyyy')}}</span>
-                        <span class="detail-amount" [class.commitment]="donation.donationType === 'commitment'" [class.partner]="donation.donationType === 'partner'">
-                          <ng-container *ngIf="donation.donationType === 'commitment' || donation.donationType === 'partner'">({{formatCurrencyWithSymbol(donation.amount, donation.currency)}})</ng-container>
-                          <ng-container *ngIf="donation.donationType !== 'commitment' && donation.donationType !== 'partner'">{{formatCurrencyWithSymbol(donation.amount, donation.currency)}}</ng-container>
+                        <span class="detail-amount" [class.commitment]="donation.donationType === 'commitment' && !donation.isStandingOrder && !donation.isUnlimitedStandingOrder" [class.partner]="donation.donationType === 'partner'" [class.standing-order]="donation.isStandingOrder || donation.isUnlimitedStandingOrder">
+                          <!-- Standing order (limited or unlimited): paid / expected -->
+                          <ng-container *ngIf="donation.isStandingOrder || donation.isUnlimitedStandingOrder">{{formatCurrencyWithSymbol(donation.paymentTotal || 0, donation.currency)}} / {{formatCurrencyWithSymbol(donation.originalAmount || donation.amount, donation.currency)}}</ng-container>
+                          <!-- Commitment (not standing order): (paid / total) -->
+                          <ng-container *ngIf="donation.donationType === 'commitment' && !donation.isStandingOrder && !donation.isUnlimitedStandingOrder">({{formatCurrencyWithSymbol(donation.paymentTotal || 0, donation.currency)}} / {{formatCurrencyWithSymbol(donation.originalAmount || donation.amount, donation.currency)}})</ng-container>
+                          <!-- Partner: (amount) -->
+                          <ng-container *ngIf="donation.donationType === 'partner' && !donation.isStandingOrder && !donation.isUnlimitedStandingOrder">({{formatCurrencyWithSymbol(donation.amount, donation.currency)}})</ng-container>
+                          <!-- Regular: amount -->
+                          <ng-container *ngIf="donation.donationType !== 'commitment' && donation.donationType !== 'partner' && !donation.isStandingOrder && !donation.isUnlimitedStandingOrder">{{formatCurrencyWithSymbol(donation.amount, donation.currency)}}</ng-container>
                         </span>
                       </span>
                       <span class="detail-reason" *ngIf="donation.reason">{{donation.reason}}</span>
@@ -865,22 +879,36 @@
           <!-- מתאריך -->
           <div class="filter-group date-filter-group">
             <label>מתאריך</label>
-            <app-date-fast-input
-              [(ngModel)]="personalReportFromDate"
-              (dateChange)="onPersonalReportFromDateChange()"
-              placeholder="dd/mm/yyyy">
-            </app-date-fast-input>
+            <div class="date-input-wrapper">
+              <app-date-fast-input
+                [(ngModel)]="personalReportFromDate"
+                (dateChange)="onPersonalReportFromDateChange()"
+                placeholder="dd/mm/yyyy">
+              </app-date-fast-input>
+              <input type="date" #fromDatePicker class="hidden-date-picker"
+                (change)="onNativeDatePick($event, 'from')">
+              <button type="button" class="date-picker-btn" (click)="fromDatePicker.showPicker()" matTooltip="בחר תאריך" dir="rtl">
+                <mat-icon>calendar_today</mat-icon>
+              </button>
+            </div>
             <small class="hebrew-date-hint">{{personalReportFromDateHebrew || '\u00A0'}}</small>
           </div>
 
           <!-- עד תאריך -->
           <div class="filter-group date-filter-group">
             <label>עד תאריך</label>
-            <app-date-fast-input
-              [(ngModel)]="personalReportToDate"
-              (dateChange)="onPersonalReportToDateChange()"
-              placeholder="dd/mm/yyyy">
-            </app-date-fast-input>
+            <div class="date-input-wrapper">
+              <app-date-fast-input
+                [(ngModel)]="personalReportToDate"
+                (dateChange)="onPersonalReportToDateChange()"
+                placeholder="dd/mm/yyyy">
+              </app-date-fast-input>
+              <input type="date" #toDatePicker class="hidden-date-picker"
+                (change)="onNativeDatePick($event, 'to')">
+              <button type="button" class="date-picker-btn" (click)="toDatePicker.showPicker()" matTooltip="בחר תאריך" dir="rtl">
+                <mat-icon>calendar_today</mat-icon>
+              </button>
+            </div>
             <small class="hebrew-date-hint">{{personalReportToDateHebrew || '\u00A0'}}</small>
           </div>
 

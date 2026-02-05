@@ -1,11 +1,13 @@
 import { Allow, BackendMethod, Fields, remult } from 'remult';
 import { Donation } from '../entity/donation';
+import { DonationMethod } from '../entity/donation-method';
 import { Donor } from '../entity/donor';
 import { DonorContact } from '../entity/donor-contact';
 import { DonorPlace } from '../entity/donor-place';
 import { Payment } from '../entity/payment';
 import { Report } from '../enum/report';
 import { DocxCreateResponse } from '../type/letter.type';
+import { calculateEffectiveAmount, calculatePeriodsElapsed, isPaymentBased, isStandingOrder } from '../utils/donation-utils';
 import { HebrewDateController } from './hebrew-date.controller';
 import { GlobalFilterController } from './global-filter.controller';
 
@@ -13,7 +15,13 @@ export interface DonationDetailData {
   donationId?: string; // ID of the donation for opening details modal
   date: Date;
   hebrewDateFormatted?: string; // Hebrew date formatted for display
-  amount: number;
+  amount: number; // Effective amount (paymentTotal for commitments/standing orders, donation.amount for regular)
+  originalAmount?: number; // Original donation amount (for commitments/standing orders) or expected amount (for unlimited standing orders)
+  paymentTotal?: number; // Total payments received (for commitments/standing orders)
+  paymentCount?: number; // Number of payments made (for standing orders)
+  perPaymentAmount?: number; // Amount per payment (for standing orders)
+  isStandingOrder?: boolean; // Whether this is a limited standing order donation
+  isUnlimitedStandingOrder?: boolean; // Whether this is an unlimited standing order donation
   currency: string;
   reason?: string;
   campaignName?: string;
@@ -279,7 +287,25 @@ export class ReportController {
 
       console.log(`✅ Final filtered donations: ${filteredDonations.length}`);
 
-      // Load payments if requested
+      // Load payment totals for payment-based donations (commitments + standing orders)
+      const paymentTotalsMap: Record<string, number> = {};
+      if (filteredDonations.length > 0) {
+        const paymentBasedIds = filteredDonations
+          .filter(d => isPaymentBased(d))
+          .map(d => d.id!)
+          .filter(Boolean);
+
+        if (paymentBasedIds.length > 0) {
+          const allPaymentsForTotals = await remult.repo(Payment).find({
+            where: { donationId: { $in: paymentBasedIds } }
+          });
+          for (const payment of allPaymentsForTotals) {
+            paymentTotalsMap[payment.donationId] = (paymentTotalsMap[payment.donationId] || 0) + payment.amount;
+          }
+        }
+      }
+
+      // Load payments if requested (for actualPayments column)
       const allPayments: Payment[] = [];
       if (filters.showActualPayments && filteredDonations.length > 0) {
         const donationIds = filteredDonations.map(d => d.id!);
@@ -296,14 +322,16 @@ export class ReportController {
       let reportData = await ReportController.groupDonations(
         filteredDonations,
         allPayments,
-        filters
+        filters,
+        paymentTotalsMap
       );
 
       // Calculate currency summary (before pagination)
       const currencySummary = await ReportController.calculateCurrencySummary(
         filteredDonations,
         filters.conversionRates,
-        hebrewYears
+        hebrewYears,
+        paymentTotalsMap
       );
 
       // Calculate total (before pagination)
@@ -343,7 +371,8 @@ export class ReportController {
   private static async groupDonations(
     donations: Donation[],
     payments: Payment[],
-    filters: ReportFilters
+    filters: ReportFilters,
+    paymentTotalsMap: Record<string, number> = {}
   ): Promise<GroupedDonationReportData[]> {
     const grouped = new Map<string, GroupedDonationReportData>();
 
@@ -428,11 +457,30 @@ export class ReportController {
 
       // Add donation detail if requested
       if (filters.showDonationDetails && group.donations) {
+        const donationPaymentTotal = paymentTotalsMap[donation.id!] || 0;
+        const donationIsStandingOrder = isStandingOrder(donation);
+        const donationIsPaymentBased = isPaymentBased(donation);
+        const donationIsUnlimitedStandingOrder = donationIsStandingOrder && donation.unlimitedPayments;
+
+        // For unlimited standing orders: expected = periods elapsed × amount per payment
+        // For limited standing orders / commitments: expected = donation.amount (total)
+        let expectedAmount: number | undefined;
+        if (donationIsUnlimitedStandingOrder) {
+          const periodsElapsed = calculatePeriodsElapsed(donation);
+          expectedAmount = periodsElapsed * donation.amount;
+        } else if (donationIsPaymentBased) {
+          expectedAmount = donation.amount;
+        }
+
         group.donations.push({
           donationId: donation.id,
           date: donation.donationDate,
           hebrewDateFormatted: hebrewDateInfo.dateFormatted,
-          amount: donation.amount,
+          amount: calculateEffectiveAmount(donation, donationPaymentTotal),
+          originalAmount: expectedAmount,
+          paymentTotal: donationIsPaymentBased ? donationPaymentTotal : undefined,
+          isStandingOrder: (donationIsStandingOrder && !donation.unlimitedPayments) || undefined,
+          isUnlimitedStandingOrder: donationIsUnlimitedStandingOrder || undefined,
           currency: donation.currencyId,
           reason: donation.reason || undefined,
           campaignName: donation.campaign?.name || undefined,
@@ -447,11 +495,11 @@ export class ReportController {
         group.yearlyTotals[hebrewYearFormatted] = {};
       }
 
-      // Add amount to year and currency
+      // Add amount to year and currency (using effective amount for standing orders/commitments)
       if (!group.yearlyTotals[hebrewYearFormatted][donation.currencyId]) {
         group.yearlyTotals[hebrewYearFormatted][donation.currencyId] = 0;
       }
-      group.yearlyTotals[hebrewYearFormatted][donation.currencyId] += donation.amount;
+      group.yearlyTotals[hebrewYearFormatted][donation.currencyId] += calculateEffectiveAmount(donation, paymentTotalsMap[donation.id!]);
     }
 
     // Add partner donations to donation details (only for sub-table display, not for totals)
@@ -641,7 +689,8 @@ export class ReportController {
   private static async calculateCurrencySummary(
     donations: Donation[],
     conversionRates: { [currency: string]: number },
-    hebrewYears: string[]
+    hebrewYears: string[],
+    paymentTotalsMap: Record<string, number> = {}
   ): Promise<CurrencySummaryData[]> {
     // Map: currency -> { year -> amount }
     const currencyYearTotals = new Map<string, { [year: string]: number }>();
@@ -678,7 +727,7 @@ export class ReportController {
         yearTotals[hebrewYearFormatted] = 0;
       }
 
-      yearTotals[hebrewYearFormatted] += donation.amount;
+      yearTotals[hebrewYearFormatted] += calculateEffectiveAmount(donation, paymentTotalsMap[donation.id!]);
     }
 
     // Convert to array with totals
@@ -849,15 +898,18 @@ export class ReportController {
         }
       }
 
-      // Load all donations with donor information
+      // Load only commitment donations (not standing orders - they are not pledges)
+      // הו"ק היא לא התחייבות - היא אמצעי תשלום, לא הבטחה מחייבת
       let donations = await remult.repo(Donation).find({
+        where: { donationType: 'commitment' },
         include: {
-          donor: true
+          donor: true,
+          donationMethod: true
         },
         orderBy: { donationDate: 'desc' }
       });
 
-      console.log(`📊 Loaded ${donations.length} donations for payments report`);
+      console.log(`📊 Loaded ${donations.length} commitment donations for payments report`);
 
       // Apply global filters
       // undefined = אין פילטר, [] = יש פילטר אבל אף תורם לא עונה לו
@@ -926,12 +978,16 @@ export class ReportController {
         emails?: string[];
       }>();
 
-      // Process donations (commitments)
+      // Process donations (commitments and standing orders)
       for (const donation of donations) {
         if (!donation.donor) continue;
 
         const donorId = donation.donor.id;
-        const amountInShekel = donation.amount * (conversionRates[donation.currencyId] || 1);
+        const rate = conversionRates[donation.currencyId] || 1;
+
+        // התחייבות: donation.amount הוא סכום ההתחייבות המלא
+        const commitmentAmount = donation.amount;
+        const amountInShekel = commitmentAmount * rate;
 
         if (!donorMap.has(donorId)) {
           const donorDetails = donorDetailsMap.get(donorId);
@@ -1055,9 +1111,10 @@ export class ReportController {
         }
       }
 
-      // Load all donations
+      // Load all donations with donationMethod for isPaymentBased check
       let donations = await remult.repo(Donation).find({
-        orderBy: { donationDate: 'desc' }
+        orderBy: { donationDate: 'desc' },
+        include: { donationMethod: true }
       });
 
       console.log(`📊 Loaded ${donations.length} donations for yearly summary report`);
@@ -1129,6 +1186,15 @@ export class ReportController {
         console.log(`  → Local year filter (${localFilters.selectedYear}): ${before} → ${donations.length}`);
       }
 
+      // Load payment totals for payment-based donations (commitments and standing orders)
+      const paymentBasedIds = donations.filter(d => isPaymentBased(d)).map(d => d.id).filter(Boolean);
+      let paymentTotals: Record<string, number> = {};
+      if (paymentBasedIds.length > 0) {
+        const { DonationController } = await import('./donation.controller');
+        paymentTotals = await DonationController.getPaymentTotalsForCommitments(paymentBasedIds);
+      }
+      console.log(`  → Loaded payment totals for ${paymentBasedIds.length} payment-based donations`);
+
       // Group by year
       const yearlyMap = new Map<number, { currencies: { [currency: string]: number }, hebrewYear?: string }>();
 
@@ -1153,7 +1219,8 @@ export class ReportController {
         if (!yearData.currencies[normalizedCurrency]) {
           yearData.currencies[normalizedCurrency] = 0;
         }
-        yearData.currencies[normalizedCurrency] += donation.amount;
+        // Use effective amount (what was actually paid) for commitments and standing orders
+        yearData.currencies[normalizedCurrency] += calculateEffectiveAmount(donation, paymentTotals[donation.id]);
       }
 
       // Convert to array with totals
@@ -1215,7 +1282,8 @@ export class ReportController {
             $lte: toDate
           }
         },
-        orderBy: { donationDate: 'asc' }
+        orderBy: { donationDate: 'asc' },
+        include: { donationMethod: true }
       });
 
       // console.log(`   Found ${donorDonations.length} direct donations`);
@@ -1228,7 +1296,7 @@ export class ReportController {
             $lte: toDate
           }
         },
-        include: { donor: true }
+        include: { donor: true, donationMethod: true }
       });
 
       const partnerDonations = allDonationsInRange.filter(d =>
@@ -1262,13 +1330,16 @@ export class ReportController {
       // Process direct donations
       for (const donation of donorDonations) {
         const hebrewDate = await HebrewDateController.convertGregorianToHebrew(donation.donationDate);
-        const commitment = paymentMap.get(donation.id!) || 0;
+        // commitment column: only for commitment donations, shows the pledged amount
+        const commitmentAmount = donation.donationType === 'commitment' ? donation.amount : 0;
+        // amount column: what was actually paid (effective amount)
+        const paidAmount = calculateEffectiveAmount(donation, paymentMap.get(donation.id!));
 
         donationsData.push({
           date: donation.donationDate,
           dateHebrew: hebrewDate.formatted,
-          commitment: commitment,
-          amount: donation.amount,
+          commitment: commitmentAmount,
+          amount: paidAmount,
           currencyId: donation.currencyId,
           notes: donation.reason || ''
         });
@@ -1284,12 +1355,16 @@ export class ReportController {
       for (const donation of partnerDonations) {
         const hebrewDate = await HebrewDateController.convertGregorianToHebrew(donation.donationDate);
         const mainDonorName = donation.donor?.lastAndFirstName || 'תורם לא ידוע';
+        // commitment column: only for commitment donations
+        const commitmentAmount = donation.donationType === 'commitment' ? donation.amount : 0;
+        // amount column: what was actually paid (effective amount)
+        const paidAmount = calculateEffectiveAmount(donation, paymentMap.get(donation.id!));
 
         donationsData.push({
           date: donation.donationDate,
           dateHebrew: hebrewDate.formatted,
-          commitment: 0,
-          amount: donation.amount,
+          commitment: commitmentAmount,
+          amount: paidAmount,
           currencyId: donation.currencyId,
           notes: `שותף בתרומה עם ${mainDonorName}`
         });

@@ -21,6 +21,8 @@ import { HebrewDateService } from '../../services/hebrew-date.service';
 import { PayerService } from '../../services/payer.service';
 import { ReportService } from '../../services/report.service';
 import { UIToolsService } from '../../common/UIToolsService';
+import { DonationController } from '../../../shared/controllers/donation.controller';
+import { calculateEffectiveAmount, isPaymentBased } from '../../../shared/utils/donation-utils';
 
 interface ChartData {
   label: string;
@@ -84,6 +86,12 @@ interface DonationDetail {
   date: Date;
   hebrewDateFormatted?: string;
   amount: number;
+  originalAmount?: number;
+  paymentTotal?: number;
+  paymentCount?: number;
+  perPaymentAmount?: number;
+  isStandingOrder?: boolean;
+  isUnlimitedStandingOrder?: boolean;
   currency: string;
   reason?: string;
   campaignName?: string;
@@ -234,7 +242,9 @@ export class ReportsComponent implements OnInit, OnDestroy {
     selectedCampaign: '',
     selectedCurrency: 'all',
     groupBy: 'donor' as GroupByOption,
-    showDonorDetails: true,
+    showDonorAddress: true,
+    showDonorPhone: true,
+    showDonorEmail: true,
     showActualPayments: false,
     showCurrencySummary: true,
     showDonationDetails: true // Show donation breakdown under each row
@@ -333,7 +343,9 @@ export class ReportsComponent implements OnInit, OnDestroy {
 
   private async loadGeneralStats() {
     // Note: Global filters are now applied on the backend automatically via user.settings
-    const donations = await this.donationRepo.find();
+    const donations = await this.donationRepo.find({
+      include: { donationMethod: true }
+    });
     console.log('📊 Donations loaded:', donations.length);
 
     const donors = await this.donorRepo.find();
@@ -342,8 +354,14 @@ export class ReportsComponent implements OnInit, OnDestroy {
     const campaigns = await this.campaignRepo.find();
     console.log('📊 Campaigns loaded:', campaigns.length);
 
+    // Load payment totals for commitment and standing order donations
+    const paymentBasedIds = donations.filter(d => isPaymentBased(d)).map(d => d.id).filter(Boolean);
+    const paymentTotals = paymentBasedIds.length > 0
+      ? await DonationController.getPaymentTotalsForCommitments(paymentBasedIds)
+      : {};
+
     this.totalStats.donations = donations.length;
-    this.totalStats.amount = donations.reduce((sum, d) => sum + d.amount, 0);
+    this.totalStats.amount = donations.reduce((sum, d) => sum + calculateEffectiveAmount(d, paymentTotals[d.id]), 0);
     this.totalStats.donors = donors.length;
     this.totalStats.campaigns = campaigns.length;
     this.totalStats.avgDonation = this.totalStats.donations > 0 ?
@@ -354,8 +372,15 @@ export class ReportsComponent implements OnInit, OnDestroy {
   private async loadMonthlyTrends() {
     // Note: Global filters are now applied on the backend automatically via user.settings
     const donations = await this.donationRepo.find({
-      orderBy: { donationDate: 'asc' }
+      orderBy: { donationDate: 'asc' },
+      include: { donationMethod: true }
     });
+
+    // Load payment totals for commitment and standing order donations
+    const paymentBasedIds = donations.filter(d => isPaymentBased(d)).map(d => d.id).filter(Boolean);
+    const paymentTotals = paymentBasedIds.length > 0
+      ? await DonationController.getPaymentTotalsForCommitments(paymentBasedIds)
+      : {};
 
     const monthlyMap = new Map<string, { donations: number, amount: number }>();
 
@@ -371,7 +396,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
 
       const monthData = monthlyMap.get(monthKey)!;
       monthData.donations++;
-      monthData.amount += donation.amount;
+      monthData.amount += calculateEffectiveAmount(donation, paymentTotals[donation.id]);
     });
 
     this.monthlyData = Array.from(monthlyMap.entries()).map(([month, data]) => ({
@@ -398,7 +423,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
   private async loadDonorAnalysis() {
     // Note: Global filters are now applied on the backend automatically via user.settings
     const donations = await this.donationRepo.find({
-      include: { donor: true }
+      include: { donor: true, donationMethod: true }
     });
 
     // Load donor places for all donors
@@ -419,11 +444,17 @@ export class ReportsComponent implements OnInit, OnDestroy {
       }
     });
 
+    // Load payment totals for commitment and standing order donations
+    const paymentBasedIds = donations.filter(d => isPaymentBased(d)).map(d => d.id).filter(Boolean);
+    const paymentTotals = paymentBasedIds.length > 0
+      ? await DonationController.getPaymentTotalsForCommitments(paymentBasedIds)
+      : {};
+
     // ניתוח לפי סוג תורם
     const typeMap = new Map<string, number>();
     donations.forEach(donation => {
       const type = donation.donor?.donorType || 'אחר';
-      typeMap.set(type, (typeMap.get(type) || 0) + donation.amount);
+      typeMap.set(type, (typeMap.get(type) || 0) + calculateEffectiveAmount(donation, paymentTotals[donation.id]));
     });
 
     const totalAmount = Array.from(typeMap.values()).reduce((sum, amount) => sum + amount, 0);
@@ -439,7 +470,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
     donations.forEach(donation => {
       const city = donation.donorId ? donorCityMap.get(donation.donorId) : undefined;
       const region = city || 'לא צוין';
-      regionMap.set(region, (regionMap.get(region) || 0) + donation.amount);
+      regionMap.set(region, (regionMap.get(region) || 0) + calculateEffectiveAmount(donation, paymentTotals[donation.id]));
     });
 
     const regionTotal = Array.from(regionMap.values()).reduce((sum, amount) => sum + amount, 0);
@@ -458,8 +489,14 @@ export class ReportsComponent implements OnInit, OnDestroy {
     // תורמים מובילים
     // Note: Global filters are now applied on the backend automatically via user.settings
     const donations = await this.donationRepo.find({
-      include: { donor: true }
+      include: { donor: true, donationMethod: true }
     });
+
+    // Load payment totals for commitment and standing order donations
+    const paymentBasedIds = donations.filter(d => isPaymentBased(d)).map(d => d.id).filter(Boolean);
+    const paymentTotals = paymentBasedIds.length > 0
+      ? await DonationController.getPaymentTotalsForCommitments(paymentBasedIds)
+      : {};
 
     const donorMap = new Map<string, { donor: any, total: number, count: number }>();
     donations.forEach(donation => {
@@ -472,7 +509,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
         });
       }
       const donorData = donorMap.get(donorKey)!;
-      donorData.total += donation.amount;
+      donorData.total += calculateEffectiveAmount(donation, paymentTotals[donation.id]);
       donorData.count++;
     });
 
@@ -495,15 +532,22 @@ export class ReportsComponent implements OnInit, OnDestroy {
       limit: 20,
       include: {
         donor: true,
-        campaign: true
+        campaign: true,
+        donationMethod: true
       }
     });
+
+    // Load payment totals for payment-based donations (commitments + standing orders)
+    const paymentBasedIds = recentDonations.filter(d => isPaymentBased(d)).map(d => d.id).filter(Boolean);
+    const paymentTotals = paymentBasedIds.length > 0
+      ? await DonationController.getPaymentTotalsForCommitments(paymentBasedIds)
+      : {};
 
     this.recentActivity = recentDonations.map(donation => ({
       type: 'donation',
       date: donation.donationDate,
       description: `תרומה מ${donation.donor?.fullName || 'תורם אלמוני'}`,
-      amount: donation.amount,
+      amount: calculateEffectiveAmount(donation, paymentTotals[donation.id]),
       campaign: donation.campaign?.name,
       details: donation
     }));
@@ -550,12 +594,21 @@ export class ReportsComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Returns true if any donor detail column is visible (for backend data loading)
+   */
+  get showAnyDonorDetails(): boolean {
+    return this.filters.showDonorAddress || this.filters.showDonorPhone || this.filters.showDonorEmail;
+  }
+
+  /**
    * Get the total number of columns for colspan calculation
    */
   getColumnsCount(): number {
     let count = 1; // Name column
-    if (this.filters.showDonorDetails && this.filters.groupBy === 'donor') {
-      count += 3; // Address, Phones, Emails
+    if (this.filters.groupBy === 'donor') {
+      if (this.filters.showDonorAddress) count++;
+      if (this.filters.showDonorPhone) count++;
+      if (this.filters.showDonorEmail) count++;
     }
     count += this.hebrewYears.length; // Year columns
     if (this.filters.showActualPayments) {
@@ -777,9 +830,19 @@ export class ReportsComponent implements OnInit, OnDestroy {
 
         user.settings.reports.lastSelectedTab = this.activeReport;
         user.settings.reports.filtersExpanded = this.filtersExpanded;
+        user.settings.reports.pageSize = this.pageSize;
+        user.settings.reports.donationFilters = {
+          groupBy: this.filters.groupBy,
+          showDonorAddress: this.filters.showDonorAddress,
+          showDonorPhone: this.filters.showDonorPhone,
+          showDonorEmail: this.filters.showDonorEmail,
+          showActualPayments: this.filters.showActualPayments,
+          showCurrencySummary: this.filters.showCurrencySummary,
+          showDonationDetails: this.filters.showDonationDetails,
+        };
         await userRepo.save(user);
 
-        console.log('Saved last report selection:', this.activeReport, 'filtersExpanded:', this.filtersExpanded);
+        console.log('Saved report settings:', this.activeReport, 'donationFilters:', user.settings.reports.donationFilters);
       }
     } catch (error) {
       console.error('Error saving last report selection:', error);
@@ -803,6 +866,21 @@ export class ReportsComponent implements OnInit, OnDestroy {
       if (user?.settings?.reports?.filtersExpanded !== undefined) {
         this.filtersExpanded = user.settings.reports.filtersExpanded;
         console.log('Loaded filtersExpanded:', this.filtersExpanded);
+      }
+      if (user?.settings?.reports?.pageSize) {
+        this.pageSize = user.settings.reports.pageSize;
+        console.log('Loaded pageSize:', this.pageSize);
+      }
+      const df = user?.settings?.reports?.donationFilters;
+      if (df) {
+        if (df.groupBy) this.filters.groupBy = df.groupBy as any;
+        if (df.showDonorAddress !== undefined) this.filters.showDonorAddress = df.showDonorAddress;
+        if (df.showDonorPhone !== undefined) this.filters.showDonorPhone = df.showDonorPhone;
+        if (df.showDonorEmail !== undefined) this.filters.showDonorEmail = df.showDonorEmail;
+        if (df.showActualPayments !== undefined) this.filters.showActualPayments = df.showActualPayments;
+        if (df.showCurrencySummary !== undefined) this.filters.showCurrencySummary = df.showCurrencySummary;
+        if (df.showDonationDetails !== undefined) this.filters.showDonationDetails = df.showDonationDetails;
+        console.log('Loaded donationFilters:', df);
       }
     } catch (error) {
       console.error('Error loading last report selection:', error);
@@ -862,7 +940,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
       // Global filters are fetched from user.settings in the backend
       const reportResponse = await this.reportService.getGroupedDonationsReport({
         groupBy: this.filters.groupBy,
-        showDonorDetails: this.filters.showDonorDetails,
+        showDonorDetails: this.showAnyDonorDetails,
         showActualPayments: this.filters.showActualPayments,
         showCurrencySummary: this.filters.showCurrencySummary,
         showDonationDetails: this.filters.showDonationDetails,
@@ -891,6 +969,11 @@ export class ReportsComponent implements OnInit, OnDestroy {
       this.hebrewYears = reportResponse.hebrewYears;
       this.groupedDonationReport = reportResponse.reportData;
       this.currencySummaryData = reportResponse.currencySummary;
+
+      // Auto-expand all rows when showDonationDetails is active
+      if (this.filters.showDonationDetails) {
+        this.groupedDonationReport.forEach(row => row.isExpanded = true);
+      }
       this.totalRecords = reportResponse.totalRecords;
       this.totalPages = reportResponse.totalPages;
       this.currentPage = reportResponse.currentPage;
@@ -1158,6 +1241,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
   async applyFilters() {
     // רענון הדוח הנוכחי עם הפילטרים החדשים
     await this.refreshData();
+    await this.saveLastReportSelection();
   }
 
   async printReport() {
@@ -1191,13 +1275,51 @@ export class ReportsComponent implements OnInit, OnDestroy {
     }
   }
 
+  async exportDonorsToExcel() {
+    try {
+      // Load all donor data with details
+      const fullReportResponse = await this.reportService.getGroupedDonationsReport({
+        groupBy: 'donor',
+        showDonorDetails: true,
+        showActualPayments: false,
+        showCurrencySummary: false,
+        showDonationDetails: false,
+        selectedDonorIds: this.filters.selectedDonorIds.length > 0 ? this.filters.selectedDonorIds : undefined,
+        selectedCampaign: this.filters.selectedCampaign || undefined,
+        selectedDonorType: this.filters.selectedDonorType || undefined,
+        selectedYear: this.filters.selectedYear,
+        conversionRates: this.conversionRates,
+        page: 1,
+        pageSize: 999999,
+        sortBy: this.sortBy,
+        sortDirection: this.sortDirection
+      });
+
+      const columns: import('../../services/excel-export.service').ExcelColumn<any>[] = [
+        { header: 'שם', mapper: (row: any) => row.donorName, width: 25 },
+        { header: 'כתובת', mapper: (row: any) => row.donorDetails?.address || '-', width: 30 },
+        { header: 'טלפון', mapper: (row: any) => row.donorDetails?.phones?.join(', ') || '-', width: 20 },
+        { header: 'אימייל', mapper: (row: any) => row.donorDetails?.emails?.join(', ') || '-', width: 30 }
+      ];
+
+      await this.excelService.export({
+        data: fullReportResponse.reportData,
+        columns,
+        sheetName: 'תורמים',
+        fileName: this.excelService.generateFileName('תורמים')
+      });
+    } catch (error) {
+      console.error('Error exporting donors to Excel:', error);
+    }
+  }
+
   async exportDonationsReportToExcel() {
     try {
       // Load all data without pagination for export
       // Global filters are fetched from user.settings in the backend
       const fullReportResponse = await this.reportService.getGroupedDonationsReport({
         groupBy: this.filters.groupBy,
-        showDonorDetails: this.filters.showDonorDetails,
+        showDonorDetails: this.showAnyDonorDetails,
         showActualPayments: this.filters.showActualPayments,
         showCurrencySummary: this.filters.showCurrencySummary,
         showDonationDetails: false, // Don't need donation details for Excel export
@@ -1233,9 +1355,10 @@ export class ReportsComponent implements OnInit, OnDestroy {
 
       // Add headers
       const headers = ['שם'];
-      if (this.filters.showDonorDetails && this.filters.groupBy === 'donor') {
-        headers.push('כתובת', 'טלפונים', 'אימיילים');
-      }
+      const isDonorGroupBy = this.filters.groupBy === 'donor';
+      if (isDonorGroupBy && this.filters.showDonorAddress) headers.push('כתובת');
+      if (isDonorGroupBy && this.filters.showDonorPhone) headers.push('טלפונים');
+      if (isDonorGroupBy && this.filters.showDonorEmail) headers.push('אימיילים');
       fullReportResponse.hebrewYears.forEach(year => headers.push(year));
       if (this.filters.showActualPayments) {
         headers.push('תשלומים בפועל');
@@ -1246,12 +1369,14 @@ export class ReportsComponent implements OnInit, OnDestroy {
       fullReportResponse.reportData.forEach(row => {
         const dataRow: any[] = [row.donorName];
 
-        if (this.filters.showDonorDetails && this.filters.groupBy === 'donor') {
-          dataRow.push(
-            row.donorDetails?.address || '-',
-            row.donorDetails?.phones?.join(', ') || '-',
-            row.donorDetails?.emails?.join(', ') || '-'
-          );
+        if (isDonorGroupBy && this.filters.showDonorAddress) {
+          dataRow.push(row.donorDetails?.address || '-');
+        }
+        if (isDonorGroupBy && this.filters.showDonorPhone) {
+          dataRow.push(row.donorDetails?.phones?.join(', ') || '-');
+        }
+        if (isDonorGroupBy && this.filters.showDonorEmail) {
+          dataRow.push(row.donorDetails?.emails?.join(', ') || '-');
         }
 
         fullReportResponse.hebrewYears.forEach(year => {
@@ -1273,9 +1398,9 @@ export class ReportsComponent implements OnInit, OnDestroy {
 
       // Set column widths
       const colWidths = [{ wch: 25 }]; // Name column
-      if (this.filters.showDonorDetails && this.filters.groupBy === 'donor') {
-        colWidths.push({ wch: 30 }, { wch: 20 }, { wch: 30 }); // Address, Phones, Emails
-      }
+      if (isDonorGroupBy && this.filters.showDonorAddress) colWidths.push({ wch: 30 });
+      if (isDonorGroupBy && this.filters.showDonorPhone) colWidths.push({ wch: 20 });
+      if (isDonorGroupBy && this.filters.showDonorEmail) colWidths.push({ wch: 30 });
       fullReportResponse.hebrewYears.forEach(() => colWidths.push({ wch: 15 })); // Year columns
       if (this.filters.showActualPayments) {
         colWidths.push({ wch: 30 }); // Payments column
@@ -1385,6 +1510,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
   async onPageSizeChange(size: number) {
     this.pageSize = size;
     this.currentPage = 1; // Reset to first page
+    await this.saveLastReportSelection();
     await this.refreshData();
   }
 
@@ -1974,6 +2100,20 @@ export class ReportsComponent implements OnInit, OnDestroy {
     }
   }
 
+  onNativeDatePick(event: Event, target: 'from' | 'to') {
+    const input = event.target as HTMLInputElement;
+    if (!input.value) return;
+    const date = new Date(input.value);
+    if (isNaN(date.getTime())) return;
+    if (target === 'from') {
+      this.personalReportFromDate = date;
+      this.onPersonalReportFromDateChange();
+    } else {
+      this.personalReportToDate = date;
+      this.onPersonalReportToDateChange();
+    }
+  }
+
   onPersonalReportFromDateChange() {
     if (!this.personalReportFromDate) {
       this.updatePersonalReportHebrewDates();
@@ -2328,7 +2468,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
     // Load all data without pagination for print
     const fullReportResponse = await this.reportService.getGroupedDonationsReport({
       groupBy: this.filters.groupBy,
-      showDonorDetails: this.filters.showDonorDetails,
+      showDonorDetails: this.showAnyDonorDetails,
       showActualPayments: this.filters.showActualPayments,
       showCurrencySummary: this.filters.showCurrencySummary,
       showDonationDetails: this.filters.showDonationDetails,
@@ -2351,13 +2491,18 @@ export class ReportsComponent implements OnInit, OnDestroy {
   private generateDonationsReportHtml(reportData: any): string {
     const hebrewYears = reportData.hebrewYears;
     const data = reportData.reportData;
-    const showDonorDetails = this.filters.showDonorDetails && this.filters.groupBy === 'donor';
+    const isDonorGroupBy = this.filters.groupBy === 'donor';
+    const showAddress = this.filters.showDonorAddress && isDonorGroupBy;
+    const showPhone = this.filters.showDonorPhone && isDonorGroupBy;
+    const showEmail = this.filters.showDonorEmail && isDonorGroupBy;
     const showDonationDetails = this.filters.showDonationDetails;
     const showActualPayments = this.filters.showActualPayments;
 
     // Calculate column count for details row
     let detailsColSpan = 1; // name column
-    if (showDonorDetails) detailsColSpan += 3; // address, phones, emails
+    if (showAddress) detailsColSpan++;
+    if (showPhone) detailsColSpan++;
+    if (showEmail) detailsColSpan++;
 
     return `
 <!DOCTYPE html>
@@ -2374,7 +2519,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
     .print-date { font-size: 10px; color: #888; margin-top: 5px; }
     table { width: 100%; border-collapse: collapse; }
     th { background: #4a5568; color: white; padding: 8px 6px; text-align: right; font-weight: 600; font-size: 11px; border: 1px solid #2d3748; }
-    td { padding: 6px; border: 1px solid #e2e8f0; text-align: right; font-size: 10px; vertical-align: top; }
+    td { padding: 2px 6px; border: 1px solid #e2e8f0; text-align: right; font-size: 10px; vertical-align: top; }
     tr:nth-child(even) { background: #f7fafc; }
     .main-row td { font-weight: 500; }
     .details-row { background: #f8f9fc !important; }
@@ -2386,6 +2531,8 @@ export class ReportsComponent implements OnInit, OnDestroy {
     .detail-date { color: #666; font-size: 9px; }
     .detail-amount { font-weight: 600; }
     .detail-amount.commitment, .detail-amount.partner { color: #888; font-style: italic; }
+    .detail-amount.standing-order { color: #2980b9; }
+    .standing-order-breakdown { font-size: 8px; color: #888; text-align: center; }
     .detail-reason { font-size: 9px; color: #888; display: block; }
     .no-donations { color: #ccc; text-align: center; }
     .print-footer { margin-top: 15px; padding-top: 10px; border-top: 1px solid #ccc; text-align: center; font-size: 10px; color: #888; }
@@ -2408,13 +2555,15 @@ export class ReportsComponent implements OnInit, OnDestroy {
     <thead>
       <tr>
         <th>שם</th>
-        ${showDonorDetails ? '<th>כתובת</th><th>טלפונים</th><th>אימיילים</th>' : ''}
+        ${showAddress ? '<th>כתובת</th>' : ''}
+        ${showPhone ? '<th>טלפונים</th>' : ''}
+        ${showEmail ? '<th>אימיילים</th>' : ''}
         ${hebrewYears.map((year: string) => `<th>${year}</th>`).join('')}
         ${showActualPayments ? '<th>תשלומים בפועל</th>' : ''}
       </tr>
     </thead>
     <tbody>
-      ${data.map((row: any) => this.generateDonationRowHtml(row, hebrewYears, showDonorDetails, showDonationDetails, showActualPayments, detailsColSpan)).join('')}
+      ${data.map((row: any) => this.generateDonationRowHtml(row, hebrewYears, showAddress, showPhone, showEmail, showDonationDetails, showActualPayments, detailsColSpan)).join('')}
     </tbody>
   </table>
 
@@ -2425,15 +2574,13 @@ export class ReportsComponent implements OnInit, OnDestroy {
 </html>`;
   }
 
-  private generateDonationRowHtml(row: any, hebrewYears: string[], showDonorDetails: boolean, showDonationDetails: boolean, showActualPayments: boolean, detailsColSpan: number): string {
+  private generateDonationRowHtml(row: any, hebrewYears: string[], showAddress: boolean, showPhone: boolean, showEmail: boolean, showDonationDetails: boolean, showActualPayments: boolean, detailsColSpan: number): string {
     // Main row
     let html = `<tr class="main-row">
       <td><strong>${row.donorName}</strong></td>
-      ${showDonorDetails ? `
-        <td>${row.donorDetails?.address || '-'}</td>
-        <td>${row.donorDetails?.phones?.join('<br>') || '-'}</td>
-        <td>${row.donorDetails?.emails?.join('<br>') || '-'}</td>
-      ` : ''}
+      ${showAddress ? `<td class="donor-address-cell" style="text-align: left; direction: ltr;">${row.donorDetails?.address || '-'}</td>` : ''}
+      ${showPhone ? `<td>${row.donorDetails?.phones?.join('<br>') || '-'}</td>` : ''}
+      ${showEmail ? `<td>${row.donorDetails?.emails?.join('<br>') || '-'}</td>` : ''}
       ${hebrewYears.map((year: string) => `<td>${this.formatYearTotal(row.yearlyTotals || {}, year)}</td>`).join('')}
       ${showActualPayments ? `<td>${this.formatActualPayments(row.actualPayments, hebrewYears)}</td>` : ''}
     </tr>`;
@@ -2442,22 +2589,40 @@ export class ReportsComponent implements OnInit, OnDestroy {
     if (showDonationDetails && row.donations?.length) {
       html += `<tr class="details-row">
         <td></td>
-        ${showDonorDetails ? '<td></td><td></td><td></td>' : ''}
+        ${showAddress ? '<td></td>' : ''}
+        ${showPhone ? '<td></td>' : ''}
+        ${showEmail ? '<td></td>' : ''}
         ${hebrewYears.map((year: string) => {
           const yearDonations = this.getDonationsForYear(row.donations, year);
           if (yearDonations.length === 0) {
             return '<td class="year-details-cell"><div class="no-donations">-</div></td>';
           }
           return `<td class="year-details-cell">
-            ${yearDonations.map((d: any) => `
+            ${yearDonations.map((d: any) => {
+              let amountHtml = '';
+              const amountClass = (d.isStandingOrder || d.isUnlimitedStandingOrder) ? 'standing-order' : d.donationType === 'commitment' ? 'commitment' : d.donationType === 'partner' ? 'partner' : '';
+
+              if (d.isStandingOrder || d.isUnlimitedStandingOrder) {
+                // Standing order (limited or unlimited): paid / expected
+                amountHtml = `${this.formatCurrencyWithSymbol(d.paymentTotal || 0, d.currency)} / ${this.formatCurrencyWithSymbol(d.originalAmount || d.amount, d.currency)}`;
+              } else if (d.donationType === 'commitment') {
+                // Commitment: (paid / total)
+                amountHtml = `(${this.formatCurrencyWithSymbol(d.paymentTotal || 0, d.currency)} / ${this.formatCurrencyWithSymbol(d.originalAmount || d.amount, d.currency)})`;
+              } else if (d.donationType === 'partner') {
+                amountHtml = `(${this.formatCurrencyWithSymbol(d.amount, d.currency)})`;
+              } else {
+                amountHtml = this.formatCurrencyWithSymbol(d.amount, d.currency);
+              }
+
+              return `
               <div class="donation-detail-line">
                 <span class="detail-main-row">
                   <span class="detail-date">${d.hebrewDateFormatted || new Date(d.date).toLocaleDateString('he-IL')}</span>
-                  <span class="detail-amount ${d.donationType === 'commitment' ? 'commitment' : d.donationType === 'partner' ? 'partner' : ''}">${(d.donationType === 'commitment' || d.donationType === 'partner') ? '(' : ''}${this.formatCurrencyWithSymbol(d.amount, d.currency)}${(d.donationType === 'commitment' || d.donationType === 'partner') ? ')' : ''}</span>
+                  <span class="detail-amount ${amountClass}">${amountHtml}</span>
                 </span>
                 ${d.reason ? `<span class="detail-reason">${d.reason}</span>` : ''}
-              </div>
-            `).join('')}
+              </div>`;
+            }).join('')}
           </td>`;
         }).join('')}
         ${showActualPayments ? '<td></td>' : ''}
@@ -2567,6 +2732,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
       {
         header: 'כתובת',
         field: 'address',
+        align: 'left',
         customFormatter: (val, row) => row.address || '-'
       },
       {

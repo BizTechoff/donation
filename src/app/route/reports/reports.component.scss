@@ -933,7 +933,7 @@
         }
         
         td {
-          padding: 2px 8px;
+          padding: 10px 8px;
           vertical-align: middle;
           font-size: 0.95rem;
           text-align: center;
@@ -1488,6 +1488,16 @@
         &.partner {
           color: #9b59b6;
         }
+
+        &.standing-order {
+          color: #2980b9;
+        }
+      }
+
+      .standing-order-breakdown {
+        font-size: 0.75rem;
+        color: #7f8c8d;
+        text-align: center;
       }
 
       .detail-reason {
@@ -2054,13 +2064,55 @@
 }
 
 // Address cells alignment for all tables
-.data-table td.donor-address,
+.report-table .data-table tbody tr td.donor-address,
 .donation-details-table td.donor-address {
-  text-align: right;
+  text-align: left;
   direction: ltr;
+}
+
+// Date picker wrapper for personal report
+.date-input-wrapper {
   display: flex;
-  justify-content: flex-start;
-  border: none !important;
+  align-items: center;
+  gap: 4px;
+  position: relative;
+
+  app-date-fast-input {
+    flex: 1;
+  }
+
+  .hidden-date-picker {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+  }
+
+  .date-picker-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: white;
+    cursor: pointer;
+    padding: 0;
+    color: #666;
+
+    &:hover {
+      background: #f0f0f0;
+      color: #333;
+    }
+
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+    }
+  }
 }
 
 // Print styles for Personal Donor Report
