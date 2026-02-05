@@ -15,6 +15,7 @@ import { Organization } from './organization'
 import { Bank } from './bank'
 import { Reminder } from './reminder'
 import { Roles } from '../enum/roles'
+import { calculateEffectiveAmount, isPaymentBased } from '../utils/donation-utils'
 
 @Entity<Donation>('donations', {
   allowApiCrud: Allow.authenticated,
@@ -270,19 +271,34 @@ export class Donation extends IdEntity {
 // פונקציה לעדכון ממוצע תרומות של תורם
 async function updateDonorAverage(donorId: string, remult: any) {
   const { Donor } = await import('./donor')
+  const { Payment } = await import('./payment')
   const donations = await remult.repo(Donation).find({
     where: {
       donorId: donorId,
       isExceptional: false
-    }
+    },
+    include: { donationMethod: true }
   })
+
+  // טען סכומי תשלומים בפועל עבור התחייבויות והו"ק
+  const paymentBasedIds = donations.filter((d: Donation) => isPaymentBased(d)).map((d: Donation) => d.id)
+  let paymentTotals: Record<string, number> = {}
+  if (paymentBasedIds.length > 0) {
+    const payments = await remult.repo(Payment).find({
+      where: { donationId: { $in: paymentBasedIds }, isActive: true }
+    })
+    for (const p of payments) {
+      paymentTotals[p.donationId] = (paymentTotals[p.donationId] || 0) + p.amount
+    }
+  }
 
   const donor = await remult.repo(Donor).findId(donorId)
   if (donor) {
     if (donations.length === 0) {
       donor.ns = 0
     } else {
-      const sum = donations.reduce((acc: number, donation: Donation) => acc + donation.amount, 0)
+      const sum = donations.reduce((acc: number, donation: Donation) =>
+        acc + calculateEffectiveAmount(donation, paymentTotals[donation.id]), 0)
       donor.ns = sum / donations.length
     }
     await donor.save()
@@ -292,15 +308,30 @@ async function updateDonorAverage(donorId: string, remult: any) {
 // פונקציה לעדכון סכום שנאסף של קמפיין
 async function updateCampaignRaisedAmount(campaignId: string, remult: any) {
   const { Campaign } = await import('./campaign')
+  const { Payment } = await import('./payment')
   const donations = await remult.repo(Donation).find({
     where: {
       campaignId: campaignId
-    }
+    },
+    include: { donationMethod: true }
   })
+
+  // טען סכומי תשלומים בפועל עבור התחייבויות והו"ק
+  const paymentBasedIds = donations.filter((d: Donation) => isPaymentBased(d)).map((d: Donation) => d.id)
+  let paymentTotals: Record<string, number> = {}
+  if (paymentBasedIds.length > 0) {
+    const payments = await remult.repo(Payment).find({
+      where: { donationId: { $in: paymentBasedIds }, isActive: true }
+    })
+    for (const p of payments) {
+      paymentTotals[p.donationId] = (paymentTotals[p.donationId] || 0) + p.amount
+    }
+  }
 
   const campaign = await remult.repo(Campaign).findId(campaignId)
   if (campaign) {
-    const sum = donations.reduce((acc: number, donation: Donation) => acc + donation.amount, 0)
+    const sum = donations.reduce((acc: number, donation: Donation) =>
+      acc + calculateEffectiveAmount(donation, paymentTotals[donation.id]), 0)
     campaign.raisedAmount = sum
     await campaign.save()
     console.log(`Campaign ${campaign.name} (${campaignId}): Updated raisedAmount to ${sum} from ${donations.length} donations`)

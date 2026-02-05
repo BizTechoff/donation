@@ -13,6 +13,7 @@ import { Organization } from '../entity/organization';
 import { DonorPlace } from '../entity/donor-place';
 import { Payment } from '../entity/payment';
 import { CurrencyType } from '../type/currency.type';
+import { calculateEffectiveAmount, isPaymentBased } from '../utils/donation-utils';
 
 export interface DonationFilters {
   searchTerm?: string;
@@ -102,7 +103,7 @@ export class DonationController {
   static async getDonationDetailsData(donationId: string, donorId?: string): Promise<DonationDetailsData> {
     // Load donation (or null for new)
     const donation = donationId !== 'new' ? await remult.repo(Donation).findId(donationId, {
-      include: { donor: true }
+      include: { donor: true, donationMethod: true }
     }) : null;
 
     // Determine which donorId to use for loading companies
@@ -540,15 +541,16 @@ export class DonationController {
       where: Object.keys(whereClause).length > 0 ? whereClause : undefined
     });
 
-    // Sum all amounts converted to shekels
+    // Sum all effective amounts converted to shekels
     return donations.reduce((sum, donation) => {
       const rate = currencies[donation.currencyId]?.rateInShekel || 1;
-      return sum + (donation.amount * rate);
+      return sum + (calculateEffectiveAmount(donation) * rate);
     }, 0);
   }
 
   /**
    * Get donation totals grouped by currency (full donations only, not commitments)
+   * Returns effective amounts - what was actually paid
    */
   @BackendMethod({ allowed: Allow.authenticated })
   static async sumFilteredDonationsByCurrency(filters: DonationFilters): Promise<Record<string, number>> {
@@ -568,14 +570,22 @@ export class DonationController {
     }
 
     const donations = await remult.repo(Donation).find({
-      where: Object.keys(whereClause).length > 0 ? whereClause : undefined
+      where: Object.keys(whereClause).length > 0 ? whereClause : undefined,
+      include: { donationMethod: true }
     });
 
-    // Group by currency and sum
+    // Load payment totals for payment-based donations (standing orders)
+    const paymentBasedIds = donations.filter(d => isPaymentBased(d)).map(d => d.id).filter(Boolean);
+    let paymentTotals: Record<string, number> = {};
+    if (paymentBasedIds.length > 0) {
+      paymentTotals = await DonationController.getPaymentTotalsForCommitments(paymentBasedIds);
+    }
+
+    // Group by currency and sum effective amounts (what was actually paid)
     const byCurrency: Record<string, number> = {};
     for (const donation of donations) {
       const currency = donation.currencyId || 'ILS';
-      byCurrency[currency] = (byCurrency[currency] || 0) + donation.amount;
+      byCurrency[currency] = (byCurrency[currency] || 0) + calculateEffectiveAmount(donation, paymentTotals[donation.id]);
     }
 
     return byCurrency;
@@ -619,10 +629,16 @@ export class DonationController {
       where: Object.keys(whereClause).length > 0 ? whereClause : undefined
     });
 
-    // Sum all amounts converted to shekels
+    // Load payment totals for commitments
+    const donationIds = donations.map(d => d.id);
+    const paymentTotals = donationIds.length > 0
+      ? await DonationController.getPaymentTotalsForCommitments(donationIds)
+      : {};
+
+    // Sum effective amounts (actual payments) converted to shekels
     return donations.reduce((sum, donation) => {
       const rate = currencies[donation.currencyId]?.rateInShekel || 1;
-      return sum + (donation.amount * rate);
+      return sum + (calculateEffectiveAmount(donation, paymentTotals[donation.id]) * rate);
     }, 0);
   }
 
@@ -666,7 +682,7 @@ export class DonationController {
         byCurrency[currency] = { total: 0, paid: 0 };
       }
       byCurrency[currency].total += donation.amount;
-      byCurrency[currency].paid += paymentTotals[donation.id] || 0;
+      byCurrency[currency].paid += calculateEffectiveAmount(donation, paymentTotals[donation.id]);
     }
 
     return byCurrency;
