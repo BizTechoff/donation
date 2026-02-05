@@ -135,6 +135,16 @@ export class User extends IdEntity {
     reports?: {
       lastSelectedTab?: 'general' | 'donations' | 'payments' | 'yearly' | 'blessings' | 'personalDonor';
       filtersExpanded?: boolean;
+      pageSize?: number;
+      donationFilters?: {
+        groupBy?: string;
+        showDonorAddress?: boolean;
+        showDonorPhone?: boolean;
+        showDonorEmail?: boolean;
+        showActualPayments?: boolean;
+        showCurrencySummary?: boolean;
+        showDonationDetails?: boolean;
+      };
     };
     globalSearch?: {
       x?: number;

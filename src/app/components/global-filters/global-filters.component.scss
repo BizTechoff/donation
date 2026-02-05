@@ -269,6 +269,40 @@
   }
 }
 
+.finish-selection-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #e0e0e0;
+
+  .finish-selection-btn {
+    background-color: #4CAF50 !important;
+    color: white !important;
+    font-weight: 600;
+    font-size: 14px;
+    border-radius: 6px;
+    padding: 4px 24px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+
+    &:hover {
+      background-color: #45a049 !important;
+    }
+
+    &.has-changes {
+      animation: pulse-check 1.2s infinite;
+    }
+  }
+}
+
 // RTL Support
 [dir="rtl"] {
   .filter-count {

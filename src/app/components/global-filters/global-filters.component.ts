@@ -99,15 +99,18 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
         orderBy: { name: 'asc' as 'asc' }
       });
 
-      // Load all countries (including inactive ones to display their names in filters)
-      this.countries = await this.countryRepo.find({
-        orderBy: { name: 'asc' as 'asc' }
-      });
-
-      // Load cities and neighborhoods from backend
-      const placeData = await PlaceController.loadBase();
+      // Load cities, neighborhoods and countryIds from donor-linked places only
+      const placeData = await PlaceController.loadBaseForDonors();
       this.cities = placeData.cities;
       this.neighborhoods = placeData.neighborhoods;
+
+      // Load only countries that have donors linked
+      const allCountries = await this.countryRepo.find({
+        orderBy: { name: 'asc' as 'asc' }
+      });
+      this.countries = placeData.countryIds.length > 0
+        ? allCountries.filter(c => placeData.countryIds.includes(c.id))
+        : allCountries;
 
       // Load all target audiences (including inactive ones to display their names in filters)
       this.targetAudiences = await this.targetAudienceRepo.find({

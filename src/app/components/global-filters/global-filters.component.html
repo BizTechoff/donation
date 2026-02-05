@@ -178,5 +178,16 @@
       </div>
 
     </div>
+
+    <!-- Finish Selection Button -->
+    <div class="finish-selection-row">
+      <button mat-raised-button
+              class="finish-selection-btn"
+              [class.has-changes]="hasPendingChanges"
+              (click)="applyFilters()">
+        <mat-icon>check_circle</mat-icon>
+        סיים בחירה
+      </button>
+    </div>
   </div>
 </mat-menu>
