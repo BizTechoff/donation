@@ -8,6 +8,8 @@ import { I18nService } from '../../../i18n/i18n.service';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { HebrewDateService } from '../../../services/hebrew-date.service';
 import { PayerService } from '../../../services/payer.service';
+import { DonationController } from '../../../../shared/controllers/donation.controller';
+import { calculateEffectiveAmount, isPaymentBased, isStandingOrder, calculatePeriodsElapsed } from '../../../../shared/utils/donation-utils';
 
 export interface DonorDonationsModalArgs {
   donorId: string;
@@ -43,6 +45,9 @@ export class DonorDonationsModalComponent implements OnInit {
   giftRepo = remult.repo(Gift);
 
   loading = false;
+
+  // Payment totals for commitment donations (donationId -> total paid)
+  paymentTotals: Record<string, number> = {};
 
   // Filters
   filterText = '';
@@ -166,6 +171,16 @@ currencyTypes = this.payer.getCurrencyTypesRecord()
         donationMethod: true
       }
     });
+
+    // Load payment totals for commitment and standing order donations
+    const paymentBasedIds = this.donations
+      .filter(d => isPaymentBased(d))
+      .map(d => d.id);
+    if (paymentBasedIds.length > 0) {
+      this.paymentTotals = await DonationController.getPaymentTotalsForCommitments(paymentBasedIds);
+    } else {
+      this.paymentTotals = {};
+    }
   }
 
   async loadDonorGifts() {
@@ -197,7 +212,7 @@ currencyTypes = this.payer.getCurrencyTypesRecord()
       this.totalAmount = 0; // Gifts don't have amounts
     } else {
       this.totalDonations = this.donations.length;
-      this.totalAmount = this.donations.reduce((sum, donation) => sum + donation.amount, 0);
+      this.totalAmount = this.donations.reduce((sum, donation) => sum + calculateEffectiveAmount(donation, this.paymentTotals[donation.id]), 0);
     }
   }
 
@@ -244,7 +259,7 @@ currencyTypes = this.payer.getCurrencyTypesRecord()
     return this.filteredDonorGifts.filter(dg => !dg.isDelivered).length;
   }
 
-  // תרומות מלאות (לא התחייבויות)
+  // תרומות מלאות + הו"ק (לא התחייבויות)
   get fullDonationsCount(): number {
     return this.filteredDonations.filter(d => d.donationType !== 'commitment').length;
   }
@@ -252,7 +267,22 @@ currencyTypes = this.payer.getCurrencyTypesRecord()
   get fullDonationsTotal(): number {
     return this.filteredDonations
       .filter(d => d.donationType !== 'commitment')
-      .reduce((sum, d) => sum + d.amount, 0);
+      .reduce((sum, d) => sum + calculateEffectiveAmount(d, this.paymentTotals[d.id]), 0);
+  }
+
+  // סכומי תרומות מלאות + הו"ק מקובצים לפי מטבע
+  get fullDonationsByCurrency(): Array<{ symbol: string; total: number }> {
+    const map = new Map<string, number>();
+    this.filteredDonations
+      .filter(d => d.donationType !== 'commitment')
+      .forEach(d => {
+        const current = map.get(d.currencyId) || 0;
+        map.set(d.currencyId, current + calculateEffectiveAmount(d, this.paymentTotals[d.id]));
+      });
+    return Array.from(map.entries()).map(([currencyId, total]) => ({
+      symbol: this.currencyTypes[currencyId]?.symbol || currencyId,
+      total
+    }));
   }
 
   // התחייבויות
@@ -263,11 +293,26 @@ currencyTypes = this.payer.getCurrencyTypesRecord()
   get commitmentDonationsTotal(): number {
     return this.filteredDonations
       .filter(d => d.donationType === 'commitment')
-      .reduce((sum, d) => sum + d.amount, 0);
+      .reduce((sum, d) => sum + calculateEffectiveAmount(d, this.paymentTotals[d.id]), 0);
+  }
+
+  // סכומי התחייבויות מקובצים לפי מטבע (סכום בפועל ששולם)
+  get commitmentDonationsByCurrency(): Array<{ symbol: string; total: number }> {
+    const map = new Map<string, number>();
+    this.filteredDonations
+      .filter(d => d.donationType === 'commitment')
+      .forEach(d => {
+        const current = map.get(d.currencyId) || 0;
+        map.set(d.currencyId, current + calculateEffectiveAmount(d, this.paymentTotals[d.id]));
+      });
+    return Array.from(map.entries()).map(([currencyId, total]) => ({
+      symbol: this.currencyTypes[currencyId]?.symbol || currencyId,
+      total
+    }));
   }
 
   getFilteredTotal(): number {
-    return this.filteredDonations.reduce((sum, donation) => sum + donation.amount, 0);
+    return this.filteredDonations.reduce((sum, donation) => sum + calculateEffectiveAmount(donation, this.paymentTotals[donation.id]), 0);
   }
 
   getCampaignName(campaignId: string): string {
@@ -291,6 +336,29 @@ currencyTypes = this.payer.getCurrencyTypesRecord()
     return donation.donationType === 'commitment'
       ? this.i18n.terms.commitment
       : this.i18n.terms.fullDonation;
+  }
+
+  isStandingOrderDonation(donation: Donation): boolean {
+    return isStandingOrder(donation);
+  }
+
+  getAmountDisplay(donation: Donation): string {
+    const fmt = (n: number) => n.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (donation.donationType === 'commitment') {
+      const paid = this.paymentTotals[donation.id] || 0;
+      return `(${fmt(paid)} / ${fmt(donation.amount)})`;
+    }
+    if (isStandingOrder(donation)) {
+      const paid = this.paymentTotals[donation.id] || 0;
+      if (donation.unlimitedPayments) {
+        // הו"ק ללא הגבלה: בפועל / צפי (מספר תקופות צפויות × סכום לתשלום)
+        const expectedPeriods = calculatePeriodsElapsed(donation);
+        const expectedAmount = expectedPeriods * donation.amount;
+        return `${fmt(paid)} / ${fmt(expectedAmount)}`;
+      }
+      return `${fmt(paid)} / ${fmt(donation.amount)}`;
+    }
+    return fmt(donation.amount);
   }
 
   getStatusClass(status: string): string {

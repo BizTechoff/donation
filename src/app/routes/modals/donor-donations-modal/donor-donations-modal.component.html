@@ -11,7 +11,7 @@
         <div class="header-text">
           <h2>{{modalTitle}}</h2>
           <p class="header-subtitle" *ngIf="!loading && !isGiftsMode">
-            תרומות: {{fullDonationsCount}} ({{fullDonationsTotal | number:'1.2-2'}})<ng-container *ngIf="commitmentDonationsCount > 0"> <span class="subtitle-divider">|</span> <span class="commitment-text">התחייבויות: {{commitmentDonationsCount}} ({{commitmentDonationsTotal | number:'1.2-2'}})</span></ng-container>
+            תרומות: {{fullDonationsCount}} <ng-container *ngFor="let c of fullDonationsByCurrency; let i = index">{{i > 0 ? ' + ' : ''}}{{c.symbol}}{{c.total | number:'1.2-2'}}</ng-container><ng-container *ngIf="commitmentDonationsCount > 0"> <span class="subtitle-divider">|</span> <span class="commitment-text">התחייבויות: {{commitmentDonationsCount}} <ng-container *ngFor="let c of commitmentDonationsByCurrency; let i = index">{{i > 0 ? ' + ' : ''}}{{c.symbol}}{{c.total | number:'1.2-2'}}</ng-container></span></ng-container>
           </p>
           <p class="header-subtitle" *ngIf="!loading && isGiftsMode">
             סה"כ {{totalDonations}} מתנות
@@ -96,13 +96,13 @@
                 סוג
                 <span class="sort-icon" *ngIf="getSortIcon('donationType')">{{ getSortIcon('donationType') }}</span>
               </th>
+              <th>אופן תרומה</th>
               <th class="sortable" [class.sorted]="isSorted('amount')" (click)="toggleSort('amount', $event)">
                 סכום
                 <span class="sort-icon" *ngIf="getSortIcon('amount')">{{ getSortIcon('amount') }}</span>
               </th>
               <th>מטבע</th>
               <th>קמפיין</th>
-              <th>אמצעי תשלום</th>
               <th>סיבת התרומה</th>
               <th>פעולות</th>
             </tr>
@@ -120,8 +120,16 @@
                 </span>
               </td>
               <td>
+                <div class="method-cell">
+                  <!-- התחייבות לא שייך לה אופן תרומה -->
+                  {{donation.donationType === 'commitment' ? '-' : getMethodName(donation.donationMethodId)}}
+                </div>
+              </td>
+              <td>
                 <div class="amount-cell">
-                  <span class="amount" [class.commitment-highlight]="donation.donationType === 'commitment'">{{donation.amount | number:'1.2-2'}}</span>
+                  <span class="amount" [class.commitment-highlight]="donation.donationType === 'commitment'">
+                    {{ getAmountDisplay(donation) }}
+                  </span>
                 </div>
               </td>
               <td>
@@ -133,12 +141,6 @@
                   {{getCampaignName(donation.campaignId)}}
                 </div>
                 <span *ngIf="!donation.campaignId" class="no-data">-</span>
-              </td>
-              <td>
-                <div class="method-cell">
-                  <!-- <mat-icon class="cell-icon">payment</mat-icon> -->
-                  {{getMethodName(donation.donationMethodId)}}
-                </div>
               </td>
               <td>
                 <div class="reason-cell">
@@ -304,9 +306,8 @@
           <mat-icon>receipt_long</mat-icon>
           <span>סה"כ תרומות: {{fullDonationsCount}}</span>
         </div>
-        <div class="summary-item">
-          <mat-icon>attach_money</mat-icon>
-          <span>סכום: {{fullDonationsTotal | number:'1.2-2'}}</span>
+        <div class="summary-item" *ngFor="let c of fullDonationsByCurrency">
+          <span>{{c.symbol}}{{c.total | number:'1.2-2'}}</span>
         </div>
         <ng-container *ngIf="commitmentDonationsCount > 0">
           <div class="summary-divider">|</div>
@@ -314,9 +315,8 @@
             <mat-icon>pending_actions</mat-icon>
             <span>סה"כ התחייבויות: {{commitmentDonationsCount}}</span>
           </div>
-          <div class="summary-item commitment">
-            <mat-icon>attach_money</mat-icon>
-            <span>סכום: {{commitmentDonationsTotal | number:'1.2-2'}}</span>
+          <div class="summary-item commitment" *ngFor="let c of commitmentDonationsByCurrency">
+            <span>{{c.symbol}}{{c.total | number:'1.2-2'}}</span>
           </div>
         </ng-container>
       </div>
