@@ -41,18 +41,7 @@ import { calculateEffectiveAmount, isPaymentBased } from '../utils/donation-util
         await updateDonorAverage(donation.donorId, remult)
       }
 
-      // עדכון סכום שנאסף של הקמפיין
-      if (donation.campaignId) {
-        await updateCampaignRaisedAmount(donation.campaignId, remult)
-      }
-
-      // אם הקמפיין שונה (במקרה של עדכון), עדכן גם את הקמפיין הישן
-      if (!event.isNew && event.originalId && event.fields.campaignId.valueChanged()) {
-        const oldCampaignId = event.fields.campaignId.originalValue
-        if (oldCampaignId && oldCampaignId !== donation.campaignId) {
-          await updateCampaignRaisedAmount(oldCampaignId, remult)
-        }
-      }
+      // Note: Campaign raised amount is now calculated on demand, no need to update cached value
     }
   },
   deleted: async (donation) => {
@@ -64,10 +53,7 @@ import { calculateEffectiveAmount, isPaymentBased } from '../utils/donation-util
         await updateDonorAverage(donation.donorId, remult)
       }
 
-      // עדכון סכום שנאסף של הקמפיין לאחר מחיקה
-      if (donation.campaignId) {
-        await updateCampaignRaisedAmount(donation.campaignId, remult)
-      }
+      // Note: Campaign raised amount is now calculated on demand, no need to update cached value
     }
   },
 })
@@ -305,35 +291,4 @@ async function updateDonorAverage(donorId: string, remult: any) {
   }
 }
 
-// פונקציה לעדכון סכום שנאסף של קמפיין
-async function updateCampaignRaisedAmount(campaignId: string, remult: any) {
-  const { Campaign } = await import('./campaign')
-  const { Payment } = await import('./payment')
-  const donations = await remult.repo(Donation).find({
-    where: {
-      campaignId: campaignId
-    },
-    include: { donationMethod: true }
-  })
-
-  // טען סכומי תשלומים בפועל עבור התחייבויות והו"ק
-  const paymentBasedIds = donations.filter((d: Donation) => isPaymentBased(d)).map((d: Donation) => d.id)
-  let paymentTotals: Record<string, number> = {}
-  if (paymentBasedIds.length > 0) {
-    const payments = await remult.repo(Payment).find({
-      where: { donationId: { $in: paymentBasedIds }, isActive: true }
-    })
-    for (const p of payments) {
-      paymentTotals[p.donationId] = (paymentTotals[p.donationId] || 0) + p.amount
-    }
-  }
-
-  const campaign = await remult.repo(Campaign).findId(campaignId)
-  if (campaign) {
-    const sum = donations.reduce((acc: number, donation: Donation) =>
-      acc + calculateEffectiveAmount(donation, paymentTotals[donation.id]), 0)
-    campaign.raisedAmount = sum
-    await campaign.save()
-    console.log(`Campaign ${campaign.name} (${campaignId}): Updated raisedAmount to ${sum} from ${donations.length} donations`)
-  }
-}
+// Note: updateCampaignRaisedAmount was removed - raisedAmount is now calculated on demand

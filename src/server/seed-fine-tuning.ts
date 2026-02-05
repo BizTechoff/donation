@@ -127,7 +127,7 @@ async function fineTuneCampaigns(excelData: ExcelDonationRow[]) {
     campaign.startDate = new Date()
     campaign.currencyId = 'ILS'
     campaign.targetAmount = 0
-    campaign.raisedAmount = 0
+    // Note: raisedAmount is now calculated on demand, not stored
     campaign.createdById = '' // נשאיר ריק
 
     await campaign.save()

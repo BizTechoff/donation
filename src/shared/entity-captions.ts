@@ -95,7 +95,7 @@ export const entityCaptions = {
   campaignName: () => t('campaignName'),
   description: () => t('description'),
   targetAmount: () => t('targetAmount'),
-  raisedAmount: () => t('raisedAmount'),
+  // Note: raisedAmount removed - now calculated on demand
   startDate: () => t('startDate'),
   endDate: () => t('endDate'),
   category: () => t('category'),
