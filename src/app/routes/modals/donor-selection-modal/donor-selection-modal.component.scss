@@ -254,6 +254,15 @@
     }
   }
 
+  .donor-name-cell {
+    text-align: right;
+  }
+
+  .donor-address-cell {
+    text-align: left;
+    direction: ltr;
+  }
+
   .no-data {
     text-align: center;
     padding: 40px;
