@@ -157,14 +157,22 @@
             {{ (i18n.terms$ | async)?.homeAddressColumn }}
             <span class="sort-icon" *ngIf="getSortIcon('address')">{{ getSortIcon('address') }}</span>
           </th>
-          <!-- <th class="sortable" [class.sorted]="isSorted('amountInShekel')" (click)="toggleSort('amountInShekel', $event)">
-            {{ (i18n.terms$ | async)?.amountInShekelColumn }}
-            <span class="sort-icon" *ngIf="getSortIcon('amountInShekel')">{{ getSortIcon('amountInShekel') }}</span>
-          </th> -->
+          <th class="sortable" [class.sorted]="isSorted('donationDate')" (click)="toggleSort('donationDate', $event)">
+            {{ (i18n.terms$ | async)?.dateColumn }}
+            <span class="sort-icon" *ngIf="getSortIcon('donationDate')">{{ getSortIcon('donationDate') }}</span>
+          </th>
           <th class="sortable" [class.sorted]="isSorted('donationType')" (click)="toggleSort('donationType', $event)">
             {{ (i18n.terms$ | async)?.donationType }}
             <span class="sort-icon" *ngIf="getSortIcon('donationType')">{{ getSortIcon('donationType') }}</span>
           </th>
+          <th class="sortable" [class.sorted]="isSorted('method')" (click)="toggleSort('method', $event)">
+            {{ (i18n.terms$ | async)?.methodColumn }}
+            <span class="sort-icon" *ngIf="getSortIcon('method')">{{ getSortIcon('method') }}</span>
+          </th>
+          <!-- <th class="sortable" [class.sorted]="isSorted('amountInShekel')" (click)="toggleSort('amountInShekel', $event)">
+            {{ (i18n.terms$ | async)?.amountInShekelColumn }}
+            <span class="sort-icon" *ngIf="getSortIcon('amountInShekel')">{{ getSortIcon('amountInShekel') }}</span>
+          </th> -->
           <th class="sortable" [class.sorted]="isSorted('amount')" (click)="toggleSort('amount', $event)">
             {{ (i18n.terms$ | async)?.amountColumn }}
             <span class="sort-icon" *ngIf="getSortIcon('amount')">{{ getSortIcon('amount') }}</span>
@@ -172,14 +180,6 @@
           <th class="sortable" [class.sorted]="isSorted('currency')" (click)="toggleSort('currency', $event)">
             {{ (i18n.terms$ | async)?.currencyColumn }}
             <span class="sort-icon" *ngIf="getSortIcon('currency')">{{ getSortIcon('currency') }}</span>
-          </th>
-          <th class="sortable" [class.sorted]="isSorted('donationDate')" (click)="toggleSort('donationDate', $event)">
-            {{ (i18n.terms$ | async)?.dateColumn }}
-            <span class="sort-icon" *ngIf="getSortIcon('donationDate')">{{ getSortIcon('donationDate') }}</span>
-          </th>
-          <th class="sortable" [class.sorted]="isSorted('method')" (click)="toggleSort('method', $event)">
-            {{ (i18n.terms$ | async)?.methodColumn }}
-            <span class="sort-icon" *ngIf="getSortIcon('method')">{{ getSortIcon('method') }}</span>
           </th>
           <th class="sortable" [class.sorted]="isSorted('campaign')" (click)="toggleSort('campaign', $event)">
             {{ (i18n.terms$ | async)?.campaign }}
@@ -204,18 +204,20 @@
             </a>
           </td>
           <td class="donor-address">{{ getDonorHomeAddress(donation) }}</td>
-          <!-- <td class="amount">{{ formatAmountInShekel(donation) }}</td> -->
+          <td>{{ formatHebrewDate(donation.donationDate) }}</td>
           <td>
             <span [class.commitment-highlight]="donation.donationType === 'commitment'">
               {{ getDonationTypeDisplay(donation) }}
             </span>
           </td>
-          <td class="amount" [class.commitment-highlight]="donation.donationType === 'commitment'">{{ getAmountDisplay(donation) }}</td>
-          <td>{{ currencyTypes[donation.currencyId]?.symbol }}</td>
-          <td>{{ formatHebrewDate(donation.donationDate) }}</td>
           <td>
             <span class="method-badge method-{{donation.donationMethod?.type}}">{{ getMethodName(donation) }}</span>
           </td>
+          <!-- <td class="amount">{{ formatAmountInShekel(donation) }}</td> -->
+          <td class="amount" [class.commitment-highlight]="donation.donationType === 'commitment'">
+            <div>{{ getAmountDisplay(donation) }}</div>
+          </td>
+          <td>{{ currencyTypes[donation.currencyId]?.symbol }}</td>
           <td>{{ getCampaignName(donation) }}</td>
           <td>{{ donation.donor?.fundraiser?.name || '-' }}</td>
           <td class="reason-cell" [title]="donation.reason || ''">{{ truncateReason(donation.reason) }}</td>
