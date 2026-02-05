@@ -4,6 +4,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { DialogConfig, openDialog } from 'common-ui-elements';
 import { remult } from 'remult';
 import { Campaign, Place, User } from '../../../../shared/entity';
+import { CampaignController, CurrencyTotal } from '../../../../shared/controllers/campaign.controller';
 import { DONOR_LEVELS_ARRAY } from '../../../../shared/enum/donor-levels';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
@@ -45,6 +46,11 @@ export class CampaignDetailsModalComponent implements OnInit {
   // Currency types from service
   currencyTypes = this.payerService.getCurrencyTypesRecord();
 
+  // Calculated raised amounts
+  raisedByCurrency: CurrencyTotal[] = [];
+  calculatedRaisedAmount = 0;
+  calculatedProgressPercentage = 0;
+
   constructor(
     public i18n: I18nService,
     private ui: UIToolsService,
@@ -72,7 +78,6 @@ export class CampaignDetailsModalComponent implements OnInit {
         this.campaign.campaignType = 'רגיל';
         this.campaign.isActive = true;
         this.campaign.targetAmount = 0;
-        this.campaign.raisedAmount = 0;
         this.campaign.invitedDonorFilters = {};
 
         this.originalCampaignData = JSON.stringify(this.campaign);
@@ -86,6 +91,9 @@ export class CampaignDetailsModalComponent implements OnInit {
         if (foundCampaign) {
           this.campaign = foundCampaign;
           this.originalCampaignData = JSON.stringify(this.campaign);
+
+          // Load calculated raised amounts
+          await this.loadRaisedAmounts();
         } else {
           throw new Error(`Campaign with ID ${this.args.campaignId} not found`);
         }
@@ -122,6 +130,39 @@ export class CampaignDetailsModalComponent implements OnInit {
       } catch (error) {
         console.error('Error loading selected created by:', error);
       }
+    }
+  }
+
+  async loadRaisedAmounts() {
+    if (!this.campaign?.id) return;
+
+    try {
+      const results = await CampaignController.getRaisedAmountsByCurrency([this.campaign.id]);
+      const result = results.find(r => r.campaignId === this.campaign.id);
+
+      if (result) {
+        this.raisedByCurrency = result.totals;
+
+        // Convert raised amounts to ILS for accurate progress calculation
+        const raisedInILS = result.totals.reduce((sum, t) => {
+          const rate = this.currencyTypes[t.currencyId]?.rateInShekel || 1;
+          return sum + (t.total * rate);
+        }, 0);
+
+        // Convert target amount to ILS
+        const targetRate = this.currencyTypes[this.campaign.currencyId]?.rateInShekel || 1;
+        const targetInILS = this.campaign.targetAmount * targetRate;
+
+        // Store the ILS-converted raised amount for display
+        this.calculatedRaisedAmount = raisedInILS;
+
+        // Calculate progress percentage using ILS-converted values
+        if (targetInILS > 0) {
+          this.calculatedProgressPercentage = Math.min(100, Math.round((raisedInILS / targetInILS) * 100));
+        }
+      }
+    } catch (error) {
+      console.error('Error loading raised amounts:', error);
     }
   }
 

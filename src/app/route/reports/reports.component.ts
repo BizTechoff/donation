@@ -2,6 +2,7 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { BusyService, openDialog } from 'common-ui-elements';
 import { remult } from 'remult';
 import { Subscription } from 'rxjs';
+import { CampaignController, CurrencyTotal } from '../../../shared/controllers/campaign.controller';
 import { HebrewDateController } from '../../../shared/controllers/hebrew-date.controller';
 import { PersonalDonorReportData, ReportController } from '../../../shared/controllers/report.controller';
 import { Blessing } from '../../../shared/entity/blessing';
@@ -182,6 +183,9 @@ export class ReportsComponent implements OnInit, OnDestroy {
   topDonors: any[] = [];
   topCampaigns: Campaign[] = [];
   recentActivity: any[] = [];
+
+  // Map for campaign raised amounts by currency (calculated on demand)
+  campaignRaisedByCurrencyMap = new Map<string, CurrencyTotal[]>();
 
   // New report data
   donationReportData: DonationReportData[] = [];
@@ -408,16 +412,44 @@ export class ReportsComponent implements OnInit, OnDestroy {
 
   private async loadCampaignAnalysis() {
     const campaigns = await this.campaignRepo.find({
-      orderBy: { raisedAmount: 'desc' }
+      orderBy: { name: 'asc' }
     });
 
-    const totalRaised = campaigns.reduce((sum, c) => sum + c.raisedAmount, 0);
+    // Fetch raised amounts for all campaigns
+    const campaignIds = campaigns.map(c => c.id);
+    const raisedByCurrency = await CampaignController.getRaisedAmountsByCurrency(campaignIds);
 
-    this.campaignData = campaigns.slice(0, 10).map(campaign => ({
-      label: campaign.name,
-      value: campaign.raisedAmount,
-      percentage: totalRaised > 0 ? (campaign.raisedAmount / totalRaised) * 100 : 0
-    }));
+    // Build map of campaign -> currency totals
+    this.campaignRaisedByCurrencyMap.clear();
+    for (const item of raisedByCurrency) {
+      this.campaignRaisedByCurrencyMap.set(item.campaignId, item.totals);
+    }
+
+    // Sort campaigns by raised amount (converted to ILS) descending
+    const sortedCampaigns = [...campaigns].sort((a, b) => {
+      const raisedA = this.getCampaignRaisedInILS(a.id);
+      const raisedB = this.getCampaignRaisedInILS(b.id);
+      return raisedB - raisedA;
+    });
+
+    const totalRaised = campaigns.reduce((sum, c) => sum + this.getCampaignRaisedInILS(c.id), 0);
+
+    this.campaignData = sortedCampaigns.slice(0, 10).map(campaign => {
+      const raised = this.getCampaignRaisedInILS(campaign.id);
+      return {
+        label: campaign.name,
+        value: raised,
+        percentage: totalRaised > 0 ? (raised / totalRaised) * 100 : 0
+      };
+    });
+  }
+
+  private getCampaignRaisedInILS(campaignId: string): number {
+    const totals = this.campaignRaisedByCurrencyMap.get(campaignId) || [];
+    return totals.reduce((sum, t) => {
+      const rate = this.currencyTypes[t.currencyId]?.rateInShekel || 1;
+      return sum + (t.total * rate);
+    }, 0);
   }
 
   private async loadDonorAnalysis() {
@@ -518,11 +550,25 @@ export class ReportsComponent implements OnInit, OnDestroy {
       .sort((a, b) => b.total - a.total)
       .slice(0, 10);
 
-    // קמפיינים מובילים
-    this.topCampaigns = await this.campaignRepo.find({
-      orderBy: { raisedAmount: 'desc' },
-      limit: 5
-    });
+    // קמפיינים מובילים - sort by raised amount calculated on demand
+    const allCampaigns = await this.campaignRepo.find({});
+    const topCampaignIds = allCampaigns.map(c => c.id);
+
+    // Fetch raised amounts if not already loaded
+    if (this.campaignRaisedByCurrencyMap.size === 0 && topCampaignIds.length > 0) {
+      const raisedByCurrency = await CampaignController.getRaisedAmountsByCurrency(topCampaignIds);
+      for (const item of raisedByCurrency) {
+        this.campaignRaisedByCurrencyMap.set(item.campaignId, item.totals);
+      }
+    }
+
+    this.topCampaigns = [...allCampaigns]
+      .sort((a, b) => {
+        const raisedA = this.getCampaignRaisedInILS(a.id);
+        const raisedB = this.getCampaignRaisedInILS(b.id);
+        return raisedB - raisedA;
+      })
+      .slice(0, 5);
   }
 
   private async loadRecentActivity() {
@@ -775,7 +821,19 @@ export class ReportsComponent implements OnInit, OnDestroy {
 
   getProgressPercentage(campaign: Campaign): number {
     if (campaign.targetAmount === 0) return 0;
-    return Math.min(100, Math.round((campaign.raisedAmount / campaign.targetAmount) * 100));
+
+    // Convert raised amounts to ILS
+    const raisedInILS = this.getCampaignRaisedInILS(campaign.id);
+
+    // Convert target amount to ILS
+    const targetRate = this.currencyTypes[campaign.currencyId]?.rateInShekel || 1;
+    const targetInILS = campaign.targetAmount * targetRate;
+
+    return Math.min(100, Math.round((raisedInILS / targetInILS) * 100));
+  }
+
+  getRaisedAmount(campaign: Campaign): number {
+    return this.getCampaignRaisedInILS(campaign.id);
   }
 
   // New methods for the enhanced reports

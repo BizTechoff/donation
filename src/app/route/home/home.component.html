@@ -184,7 +184,7 @@
               <div class="progress-fill" [style.width.%]="getProgressPercentage(campaign)"></div>
             </div>
             <div class="progress-info">
-              <span>{{formatCurrency(campaign.raisedAmount)}} {{ (i18n.terms$ | async)?.outOf }} {{formatCurrency(campaign.targetAmount)}}</span>
+              <span>{{formatCurrency(getRaisedAmount(campaign))}} {{ (i18n.terms$ | async)?.outOf }} {{formatCurrency(campaign.targetAmount)}}</span>
               <span class="progress-percentage">{{getProgressPercentage(campaign)}}%</span>
             </div>
           </div>

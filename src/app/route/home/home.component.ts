@@ -3,9 +3,11 @@ import { Fields, getFields, remult } from 'remult'
 import { Donation } from '../../../shared/entity/donation'
 import { Donor } from '../../../shared/entity/donor'
 import { Campaign } from '../../../shared/entity/campaign'
+import { CampaignController, CurrencyTotal } from '../../../shared/controllers/campaign.controller'
 import { DonationController } from '../../../shared/controllers/donation.controller'
 import { calculateEffectiveAmount, isPaymentBased } from '../../../shared/utils/donation-utils'
 import { I18nService } from '../../i18n/i18n.service'
+import { PayerService } from '../../services/payer.service'
 
 @Component({
   selector: 'app-home',
@@ -25,7 +27,13 @@ export class HomeComponent implements OnInit {
   monthlyRecurring = 0;
   recentDonations: Donation[] = [];
   topCampaigns: Campaign[] = [];
-  
+
+  // Map for campaign raised amounts by currency (calculated on demand)
+  campaignRaisedByCurrencyMap = new Map<string, CurrencyTotal[]>();
+
+  // Currency types for conversion
+  currencyTypes: Record<string, { symbol: string; label: string; rateInShekel: number }> = {};
+
   loading = true;
 
   // נתונים ללא התחברות - אפקט וואו
@@ -41,7 +49,12 @@ export class HomeComponent implements OnInit {
   donorRepo = remult.repo(Donor);
   campaignRepo = remult.repo(Campaign);
 
-  constructor(public i18n: I18nService) {}
+  constructor(
+    public i18n: I18nService,
+    private payerService: PayerService
+  ) {
+    this.currencyTypes = this.payerService.getCurrencyTypesRecord();
+  }
 
   async ngOnInit() {
     try {
@@ -107,12 +120,43 @@ export class HomeComponent implements OnInit {
   }
 
   private async loadTopCampaigns() {
-    this.topCampaigns = await this.campaignRepo.find({
-      where: { isActive: true },
-      orderBy: { raisedAmount: 'desc' },
-      limit: 3
+    // Load active campaigns
+    const activeCampaigns = await this.campaignRepo.find({
+      where: { isActive: true }
     });
-    this.activeCampaigns = this.topCampaigns.length;
+
+    if (activeCampaigns.length > 0) {
+      // Fetch raised amounts for all campaigns
+      const campaignIds = activeCampaigns.map(c => c.id);
+      const raisedByCurrency = await CampaignController.getRaisedAmountsByCurrency(campaignIds);
+
+      // Build map of campaign -> currency totals
+      this.campaignRaisedByCurrencyMap.clear();
+      for (const item of raisedByCurrency) {
+        this.campaignRaisedByCurrencyMap.set(item.campaignId, item.totals);
+      }
+
+      // Sort campaigns by raised amount (converted to ILS) descending and take top 3
+      this.topCampaigns = [...activeCampaigns]
+        .sort((a, b) => {
+          const raisedA = this.getRaisedAmountInILS(a);
+          const raisedB = this.getRaisedAmountInILS(b);
+          return raisedB - raisedA;
+        })
+        .slice(0, 3);
+    } else {
+      this.topCampaigns = [];
+    }
+
+    this.activeCampaigns = activeCampaigns.length;
+  }
+
+  private getRaisedAmountInILS(campaign: Campaign): number {
+    const totals = this.campaignRaisedByCurrencyMap.get(campaign.id) || [];
+    return totals.reduce((sum, t) => {
+      const rate = this.currencyTypes[t.currencyId]?.rateInShekel || 1;
+      return sum + (t.total * rate);
+    }, 0);
   }
 
   private async loadGeneralStats() {
@@ -134,7 +178,20 @@ export class HomeComponent implements OnInit {
 
   getProgressPercentage(campaign: Campaign): number {
     if (campaign.targetAmount === 0) return 0;
-    return Math.min(100, Math.round((campaign.raisedAmount / campaign.targetAmount) * 100));
+
+    // Convert raised amounts to ILS
+    const raisedInILS = this.getRaisedAmountInILS(campaign);
+
+    // Convert target amount to ILS
+    const targetRate = this.currencyTypes[campaign.currencyId]?.rateInShekel || 1;
+    const targetInILS = campaign.targetAmount * targetRate;
+
+    return Math.min(100, Math.round((raisedInILS / targetInILS) * 100));
+  }
+
+  getRaisedAmount(campaign: Campaign): number {
+    // Return raised amount in ILS for display
+    return this.getRaisedAmountInILS(campaign);
   }
 
   // אנימציות למשתמשים לא מחוברים
