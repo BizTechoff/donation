@@ -52,14 +52,13 @@
     <!-- פילטרים -->
     <div class="filters-section">
       <div class="filter-row">
-        <div class="filter-group">
-          <label>{{ (i18n.terms$ | async)?.donorSearchFilter }}</label>
+        <div class="filter-group search-group">
           <input
             type="text"
             class="form-control"
             [(ngModel)]="searchTerm"
             (ngModelChange)="onFilterChange()"
-            [placeholder]="(i18n.terms$ | async)?.donorNamePlaceholder">
+            [placeholder]="(i18n.terms$ | async)?.searchNameAddressPhone">
         </div>
 
         <div class="filter-group">

@@ -214,6 +214,10 @@
       display: flex;
       flex-direction: column;
 
+      &.search-group {
+        grid-column: span 2;
+      }
+
       label {
         font-weight: 600;
         margin-bottom: 6px;
