@@ -271,6 +271,10 @@ export class DonorListComponent implements OnInit, OnDestroy {
     return this.donorDataMap.get(donorId)?.stats.lastDonationIsPartner || false;
   }
 
+  getDonorLastDonationReason(donorId: string): string {
+    return this.donorDataMap.get(donorId)?.stats.lastDonationReason || '-';
+  }
+
   private async loadAllDonors() {
     try {
       const donorRepo = remult.repo(Donor);
