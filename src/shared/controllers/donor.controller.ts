@@ -207,16 +207,31 @@ export class DonorController {
       whereClause.id = { $in: donorIds };
     }
 
-    // Apply search term filter
+    // Apply search term filter - split by spaces to support full name search
     if (searchTerm && searchTerm.trim()) {
-      const search = searchTerm.trim();
-      whereClause.$or = [
-        { firstName: { $contains: search } },
-        { lastName: { $contains: search } },
-        { firstNameEnglish: { $contains: search } },
-        { lastNameEnglish: { $contains: search } },
-        { idNumber: { $contains: search } }
-      ];
+      const words = searchTerm.trim().split(/\s+/).filter(w => w.length > 0);
+      if (words.length === 1) {
+        // Single word - search in any field
+        const search = words[0];
+        whereClause.$or = [
+          { firstName: { $contains: search } },
+          { lastName: { $contains: search } },
+          { firstNameEnglish: { $contains: search } },
+          { lastNameEnglish: { $contains: search } },
+          { idNumber: { $contains: search } }
+        ];
+      } else {
+        // Multiple words - each word must match at least one field
+        whereClause.$and = words.map(word => ({
+          $or: [
+            { firstName: { $contains: word } },
+            { lastName: { $contains: word } },
+            { firstNameEnglish: { $contains: word } },
+            { lastNameEnglish: { $contains: word } },
+            { idNumber: { $contains: word } }
+          ]
+        }));
+      }
     }
 
     return await remult.repo(Donor).find({
@@ -260,14 +275,29 @@ export class DonorController {
       whereClause.id = { $in: donorIds };
     }
 
-    // Apply search term filter
+    // Apply search term filter - split by spaces to support full name search
     if (searchTerm && searchTerm.trim()) {
-      const search = searchTerm.trim();
-      whereClause.$or = [
-        { firstName: { $contains: search } },
-        { lastName: { $contains: search } },
-        { idNumber: { $contains: search } }
-      ];
+      const words = searchTerm.trim().split(/\s+/).filter(w => w.length > 0);
+      if (words.length === 1) {
+        const search = words[0];
+        whereClause.$or = [
+          { firstName: { $contains: search } },
+          { lastName: { $contains: search } },
+          { firstNameEnglish: { $contains: search } },
+          { lastNameEnglish: { $contains: search } },
+          { idNumber: { $contains: search } }
+        ];
+      } else {
+        whereClause.$and = words.map(word => ({
+          $or: [
+            { firstName: { $contains: word } },
+            { lastName: { $contains: word } },
+            { firstNameEnglish: { $contains: word } },
+            { lastNameEnglish: { $contains: word } },
+            { idNumber: { $contains: word } }
+          ]
+        }));
+      }
     }
 
     return await remult.repo(Donor).count(whereClause);

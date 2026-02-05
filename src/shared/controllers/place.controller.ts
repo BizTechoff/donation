@@ -1,5 +1,6 @@
 import { BackendMethod, remult, Allow } from 'remult'
 import { Place } from '../entity/place'
+import { DonorPlace } from '../entity/donor-place'
 
 export interface CityData {
   city: string;
@@ -15,6 +16,53 @@ export interface NeighborhoodData {
 }
 
 export class PlaceController {
+
+  /**
+   * Loads only cities/neighborhoods/countries that have donors linked via DonorPlace.
+   * Used by global filters to show only relevant filter options.
+   */
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async loadBaseForDonors(): Promise<{
+    cities: string[];
+    neighborhoods: string[];
+    countryIds: string[];
+  }> {
+    const donorPlaceRepo = remult.repo(DonorPlace)
+    const placeRepo = remult.repo(Place)
+
+    // Get all active donor-place links
+    const donorPlaces = await donorPlaceRepo.find({
+      where: { isActive: true }
+    })
+
+    // Get unique placeIds
+    const placeIds = [...new Set(donorPlaces.map(dp => dp.placeId).filter(Boolean))] as string[]
+
+    if (placeIds.length === 0) {
+      return { cities: [], neighborhoods: [], countryIds: [] }
+    }
+
+    // Load only places that have donors
+    const places = await placeRepo.find({
+      where: { id: placeIds }
+    })
+
+    const citiesSet = new Set<string>()
+    const neighborhoodsSet = new Set<string>()
+    const countryIdsSet = new Set<string>()
+
+    places.forEach(place => {
+      if (place.city) citiesSet.add(place.city)
+      if (place.neighborhood) neighborhoodsSet.add(place.neighborhood)
+      if (place.countryId) countryIdsSet.add(place.countryId)
+    })
+
+    return {
+      cities: Array.from(citiesSet).sort(),
+      neighborhoods: Array.from(neighborhoodsSet).sort(),
+      countryIds: Array.from(countryIdsSet)
+    }
+  }
 
   @BackendMethod({ allowed: true })
   static async loadBase(): Promise<{

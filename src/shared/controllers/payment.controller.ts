@@ -1,8 +1,8 @@
-import { BackendMethod, Allow, remult, isBackend } from 'remult';
-import { Payment } from '../entity/payment';
+import { Allow, BackendMethod, remult } from 'remult';
 import { Donation } from '../entity/donation';
 import { DonationBank } from '../entity/donation-bank';
 import { DonationOrganization } from '../entity/donation-organization';
+import { Payment } from '../entity/payment';
 
 interface ExcelRow {
   [key: string]: any;
@@ -19,15 +19,22 @@ interface ParsedPayment {
 export class PaymentController {
 
   @BackendMethod({ allowed: Allow.authenticated })
-  static async getPaymentsByDonation(donationId: string): Promise<Payment[]> {
+  static async getPaymentsByDonation(donationId: string, paymentType = ''): Promise<Payment[]> {
     return await remult.repo(Payment).find({
-      where: { donationId, isActive: true },
+      where: { donationId, type: paymentType || undefined, isActive: true },
       orderBy: { paymentDate: 'desc' }
     });
   }
 
   @BackendMethod({ allowed: Allow.authenticated })
   static async createPayment(payment: Partial<Payment>): Promise<Payment> {
+    // Auto-set type from parent donation if not already set
+    if (!payment.type && payment.donationId) {
+      const donation = await remult.repo(Donation).findId(payment.donationId);
+      if (donation) {
+        payment.type = donation.donationType;
+      }
+    }
     const newPayment = remult.repo(Payment).create(payment);
     await newPayment.save();
     return newPayment;
@@ -57,7 +64,7 @@ export class PaymentController {
   }
 
   @BackendMethod({ allowed: Allow.authenticated })
-  static async processExcelTransactions(donationId: string, excelData: ExcelRow[]): Promise<{
+  static async processExcelTransactions(donationId: string, paymentType:string, excelData: ExcelRow[]): Promise<{
     matched: number;
     created: number;
     errors: string[]
@@ -116,6 +123,7 @@ export class PaymentController {
           donationId,
           paymentIdentifier: parsedPayment.paymentIdentifier,
           paymentDate: parsedPayment.paymentDate,
+          type: paymentType,
           isActive: true
         });
 
@@ -132,6 +140,7 @@ export class PaymentController {
           reference: parsedPayment.reference || '',
           paymentIdentifier: parsedPayment.paymentIdentifier,
           notes: `Imported from Excel - Row ${i + 1}`,
+          type: paymentType,
           isActive: true
         });
 
@@ -174,7 +183,7 @@ export class PaymentController {
     ]);
 
     const amount = typeof amountValue === 'number' ? amountValue :
-                   typeof amountValue === 'string' ? parseFloat(amountValue.replace(/[^\d.-]/g, '')) : 0;
+      typeof amountValue === 'string' ? parseFloat(amountValue.replace(/[^\d.-]/g, '')) : 0;
 
     if (isNaN(amount) || amount <= 0) {
       return null; // Invalid amount
