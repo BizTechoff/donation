@@ -455,7 +455,12 @@ export class LetterPropertiesModalComponent implements OnInit {
         }
 
         if (place) {
-          result = `${place.houseNumber || ''} ${place.street || ''}`.trim();
+          const isUK = place.country?.code === 'GB' || place.country?.code === 'UK';
+          if (isUK) {
+            result = `${place.houseNumber || ''} ${place.street || ''}`.trim();
+          } else {
+            result = `${place.street || ''} ${place.houseNumber || ''}`.trim();
+          }
         }
         break
       }
@@ -494,7 +499,10 @@ export class LetterPropertiesModalComponent implements OnInit {
 
         const address = await remult.repo(DonorPlace).findFirst({ donor: this.donation.donor })
         const row2 = `${address?.place?.apartment} ${address?.place?.building}` || ''
-        const row3 = `${address?.place?.houseNumber} ${address?.place?.street}` || ''
+        const isUKAddr = address?.place?.country?.code === 'GB' || address?.place?.country?.code === 'UK';
+        const row3 = isUKAddr
+          ? `${address?.place?.houseNumber || ''} ${address?.place?.street || ''}`.trim()
+          : `${address?.place?.street || ''} ${address?.place?.houseNumber || ''}`.trim();
         const row4 = `${address?.place?.city} ${address?.place?.country?.code === 'US' ? address?.place?.country?.name : ''} ${address?.place?.postcode}` || ''
         const row5 = address?.place?.country?.name || ''
 
@@ -970,12 +978,12 @@ export class LetterPropertiesModalComponent implements OnInit {
       );
 
       if (response.success) {
-        this.ui.yesNoQuestion('מכתב הופק והורד בהצלחה', false);
-        // this.dialogRef.close({
-        //   selectedType: this.selectedLetterType,
-        //   prefix: this.selectedPrefixLines,
-        //   suffix: this.selectedSuffixLines
-        // } as LetterPropertiesResult);
+        await this.ui.yesNoQuestion('מכתב הופק והורד בהצלחה', false);
+        this.dialogRef.close({
+          selectedType: this.selectedLetterType,
+          prefix: this.selectedPrefixLines.map(l => l.text),
+          suffix: this.selectedSuffixLines.map(l => l.text)
+        } as LetterPropertiesResult);
       } else {
         this.ui.error('שגיאה בהפקת המכתב: ' + response.error);
       }

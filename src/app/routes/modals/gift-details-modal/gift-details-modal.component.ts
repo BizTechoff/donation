@@ -48,12 +48,14 @@ export class GiftDetailsModalComponent implements OnInit {
         this.isNew = true;
         this.gift = this.giftRepo.create();
         this.gift.isActive = true;
+        this.gift.estimatedValue = null as any;
       } else {
         this.isNew = false;
         const loaded = await this.giftRepo.findId(this.args.giftId);
 
         if (loaded) {
           this.gift = loaded;
+          if (!this.gift.estimatedValue) this.gift.estimatedValue = null as any;
         } else {
           throw new Error('Gift not found');
         }
@@ -76,6 +78,7 @@ export class GiftDetailsModalComponent implements OnInit {
       }
 
       this.loading = true;
+      if (!this.gift.estimatedValue) this.gift.estimatedValue = 0;
 
       if (this.isNew) {
         await this.giftRepo.insert(this.gift);

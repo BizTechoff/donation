@@ -16,6 +16,8 @@ import { DonorAddressTypeSelectionModalComponent } from '../donor-address-type-s
 import { DonorDonationsModalArgs, DonorDonationsModalComponent } from '../donor-donations-modal/donor-donations-modal.component';
 import { FamilyRelationDetailsModalComponent } from '../family-relation-details-modal/family-relation-details-modal.component';
 import { NotesSelectionModalArgs, NotesSelectionModalComponent } from '../notes-selection-modal/notes-selection-modal.component';
+import { DonationController } from '../../../../shared/controllers/donation.controller';
+import { calculateEffectiveAmount, isPaymentBased } from '../../../../shared/utils/donation-utils';
 
 export interface DonorDetailsModalArgs {
   donorId: string; // Can be 'new' for new donor or donor ID
@@ -42,6 +44,7 @@ export class DonorDetailsModalComponent implements OnInit {
   donor?: Donor;
   originalDonorData?: string; // To track changes
   donations: Donation[] = [];
+  paymentTotals: Record<string, number> = {};
   donorRepo = remult.repo(Donor);
   donationRepo = remult.repo(Donation);
   countryRepo = remult.repo(Country);
@@ -589,8 +592,15 @@ export class DonorDetailsModalComponent implements OnInit {
     try {
       this.donations = await this.donationRepo.find({
         where: { donorId: this.donor.id },
-        orderBy: { donationDate: 'desc' }
+        orderBy: { donationDate: 'desc' },
+        include: { donationMethod: true }
       });
+
+      // Load payment totals for commitment and standing order donations
+      const paymentBasedIds = this.donations.filter(d => isPaymentBased(d)).map(d => d.id).filter(Boolean);
+      this.paymentTotals = paymentBasedIds.length > 0
+        ? await DonationController.getPaymentTotalsForCommitments(paymentBasedIds)
+        : {};
     } catch (error) {
       console.error('Error loading donations:', error);
     }
@@ -859,7 +869,7 @@ export class DonorDetailsModalComponent implements OnInit {
   }
 
   get totalDonations(): number {
-    return this.donations.reduce((sum, donation) => sum + donation.amount, 0);
+    return this.donations.reduce((sum, donation) => sum + calculateEffectiveAmount(donation, this.paymentTotals[donation.id]), 0);
   }
 
   get donationCount(): number {
