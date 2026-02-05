@@ -11,7 +11,7 @@
         <div class="header-text">
           <h2>תרומות קמפיין: {{campaign?.name}}</h2>
           <p class="header-subtitle" *ngIf="!loading">
-            סה"כ {{totalDonations}} תרומות • {{totalAmount | number:'1.2-2'}} ₪
+            תרומות: {{fullDonationsCount}} <ng-container *ngFor="let c of fullDonationsByCurrency; let i = index">{{i > 0 ? ' + ' : ''}}{{c.symbol}}{{c.total | number:'1.2-2'}}</ng-container><ng-container *ngIf="commitmentDonationsCount > 0"> <span class="subtitle-divider">|</span> <span class="commitment-text">התחייבויות: {{commitmentDonationsCount}} <ng-container *ngFor="let c of commitmentDonationsByCurrency; let i = index">{{i > 0 ? ' + ' : ''}}{{c.symbol}}{{c.total | number:'1.2-2'}}</ng-container></span></ng-container>
           </p>
         </div>
       </div>
@@ -54,7 +54,7 @@
             <select class="filter-select" [(ngModel)]="filterMethod" (ngModelChange)="applyFilters()">
               <option value="">כל אמצעי התשלום</option>
               <option *ngFor="let method of donationMethods" [value]="method.id">
-                {{method.name}}
+                {{getPaymentMethodDisplayName(method)}}
               </option>
             </select>
           </div>
@@ -89,17 +89,21 @@
                 תאריך
                 <span class="sort-icon" *ngIf="getSortIcon('donationDate')">{{ getSortIcon('donationDate') }}</span>
               </th>
-              <th class="sortable" [class.sorted]="isSorted('donor')" (click)="toggleSort('donor', $event)">
-                תורם
-                <span class="sort-icon" *ngIf="getSortIcon('donor')">{{ getSortIcon('donor') }}</span>
+              <th class="sortable" [class.sorted]="isSorted('donationType')" (click)="toggleSort('donationType', $event)">
+                סוג
+                <span class="sort-icon" *ngIf="getSortIcon('donationType')">{{ getSortIcon('donationType') }}</span>
               </th>
+              <th>אופן תרומה</th>
               <th class="sortable" [class.sorted]="isSorted('amount')" (click)="toggleSort('amount', $event)">
                 סכום
                 <span class="sort-icon" *ngIf="getSortIcon('amount')">{{ getSortIcon('amount') }}</span>
               </th>
               <th>מטבע</th>
-              <th>אמצעי תשלום</th>
-              <th>סוג</th>
+              <th class="sortable" [class.sorted]="isSorted('donor')" (click)="toggleSort('donor', $event)">
+                תורם
+                <span class="sort-icon" *ngIf="getSortIcon('donor')">{{ getSortIcon('donor') }}</span>
+              </th>
+              <th>סיבת התרומה</th>
               <th class="actions-column">פעולות</th>
             </tr>
           </thead>
@@ -107,25 +111,38 @@
             <tr *ngFor="let donation of donations" class="data-row">
               <td>
                 <div class="date-cell">
-                  <div class="date-gregorian">{{formatDate(donation.donationDate)}}</div>
-                  <div class="date-hebrew">{{formatHebrewDate(donation.donationDate)}}</div>
+                  {{formatHebrewDate(donation.donationDate)}}
                 </div>
+              </td>
+              <td>
+                <span [class.commitment-highlight]="donation.donationType === 'commitment'">
+                  {{ getDonationTypeDisplay(donation) }}
+                </span>
+              </td>
+              <td>
+                <div class="method-cell">
+                  {{getMethodName(donation)}}
+                </div>
+              </td>
+              <td>
+                <div class="amount-cell">
+                  <span class="amount" [class.commitment-highlight]="donation.donationType === 'commitment'">
+                    {{ getAmountDisplay(donation) }}
+                  </span>
+                </div>
+              </td>
+              <td>
+                <span class="currency-badge">{{currencyTypes[donation.currencyId]?.symbol}}</span>
               </td>
               <td>
                 <div class="donor-cell">
                   {{getDonorName(donation)}}
                 </div>
               </td>
-              <td class="amount-cell">
-                <!-- <strong>{{formatCurrency(donation.amount, donation.currencyId)}}</strong> -->
-                 <strong>{{donation.amount}}</strong>
-              </td>
-              <td>{{currencyTypes[donation.currencyId]?.symbol}}</td>
-              <td>{{getMethodName(donation)}}</td>
               <td>
-                <span class="type-badge" [class.commitment]="donation.donationType === 'commitment'">
-                  {{getDonationType(donation)}}
-                </span>
+                <div class="reason-cell">
+                  {{donation.reason || '-'}}
+                </div>
               </td>
               <td class="actions-cell">
                 <button mat-icon-button
@@ -145,7 +162,7 @@
               </td>
             </tr>
             <tr *ngIf="donations.length === 0">
-              <td colspan="7" class="no-data">
+              <td colspan="8" class="no-data">
                 <mat-icon class="no-data-icon">info</mat-icon>
                 <p>לא נמצאו תרומות לקמפיין זה</p>
               </td>
@@ -205,5 +222,36 @@
       </div>
 
     </div>
+
+    <!-- Modal Footer -->
+    <div class="modal-footer">
+      <div class="footer-summary">
+        <div class="summary-item">
+          <mat-icon>receipt_long</mat-icon>
+          <span>סה"כ תרומות: {{fullDonationsCount}}</span>
+        </div>
+        <div class="summary-item" *ngFor="let c of fullDonationsByCurrency">
+          <span>{{c.symbol}}{{c.total | number:'1.2-2'}}</span>
+        </div>
+        <ng-container *ngIf="commitmentDonationsCount > 0">
+          <div class="summary-divider">|</div>
+          <div class="summary-item commitment">
+            <mat-icon>pending_actions</mat-icon>
+            <span>סה"כ התחייבויות: {{commitmentDonationsCount}}</span>
+          </div>
+          <div class="summary-item commitment" *ngFor="let c of commitmentDonationsByCurrency">
+            <span>{{c.symbol}}{{c.total | number:'1.2-2'}}</span>
+          </div>
+        </ng-container>
+      </div>
+
+      <div class="footer-actions">
+        <button mat-stroked-button (click)="closeModal()" class="cancel-button">
+          <mat-icon>close</mat-icon>
+          סגור
+        </button>
+      </div>
+    </div>
+
   </div>
 </div>

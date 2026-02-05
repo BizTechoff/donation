@@ -4,6 +4,8 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { DialogConfig } from 'common-ui-elements';
 import { remult } from 'remult';
 import { Campaign, Donation, DonationMethod, Donor } from '../../../../shared/entity';
+import { DonationController } from '../../../../shared/controllers/donation.controller';
+import { calculateEffectiveAmount, isPaymentBased, isStandingOrder, calculatePeriodsElapsed } from '../../../../shared/utils/donation-utils';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
 import { DonorService } from '../../../services/donor.service';
@@ -28,6 +30,7 @@ export class CampaignDonationsModalComponent implements OnInit {
 
   campaign?: Campaign;
   donations: Donation[] = [];
+  paymentTotals: Record<string, number> = {};
   donors: Donor[] = [];
   donationMethods: DonationMethod[] = [];
 
@@ -60,9 +63,13 @@ export class CampaignDonationsModalComponent implements OnInit {
   displayedColumns: string[] = ['donationDate', 'donor', 'amount', 'currency', 'method', 'type', 'actions'];
 
   currencyTypes = this.payer.getCurrencyTypesRecord()
-  // Totals
-  totalAmount = 0;
+
+  // Totals - like donor-donations-modal
   totalDonations = 0;
+  fullDonationsCount = 0;
+  commitmentDonationsCount = 0;
+  fullDonationsByCurrency: Array<{ symbol: string; total: number }> = [];
+  commitmentDonationsByCurrency: Array<{ symbol: string; total: number }> = [];
 
   constructor(
     public i18n: I18nService,
@@ -133,7 +140,10 @@ export class CampaignDonationsModalComponent implements OnInit {
         this.totalCount = 0;
         this.totalPages = 0;
         this.totalDonations = 0;
-        this.totalAmount = 0;
+        this.fullDonationsCount = 0;
+        this.commitmentDonationsCount = 0;
+        this.fullDonationsByCurrency = [];
+        this.commitmentDonationsByCurrency = [];
         this.loading = false;
         return;
       }
@@ -174,9 +184,15 @@ export class CampaignDonationsModalComponent implements OnInit {
         }
       });
 
-      // Calculate totals
+      // Load payment totals for commitment and standing order donations
+      const paymentBasedIds = this.donations.filter(d => isPaymentBased(d)).map(d => d.id).filter(Boolean);
+      this.paymentTotals = paymentBasedIds.length > 0
+        ? await DonationController.getPaymentTotalsForCommitments(paymentBasedIds)
+        : {};
+
+      // Calculate totals by currency - like donor-donations-modal
       this.totalDonations = this.totalCount;
-      this.totalAmount = this.donations.reduce((sum, d) => sum + (d.amount || 0), 0);
+      this.calculateTotalsByCurrency();
 
       // Load unique donors for filter dropdown
       const uniqueDonorIds = [...new Set(this.donations.map(d => d.donorId))];
@@ -194,6 +210,41 @@ export class CampaignDonationsModalComponent implements OnInit {
     } finally {
       this.loading = false;
     }
+  }
+
+  /**
+   * Calculate totals by currency, separating full donations from commitments
+   */
+  private calculateTotalsByCurrency() {
+    const fullByCurrency: Record<string, number> = {};
+    const commitmentByCurrency: Record<string, number> = {};
+
+    this.fullDonationsCount = 0;
+    this.commitmentDonationsCount = 0;
+
+    for (const donation of this.donations) {
+      const currency = donation.currencyId || 'ILS';
+      const effectiveAmount = calculateEffectiveAmount(donation, this.paymentTotals[donation.id]);
+
+      if (donation.donationType === 'commitment') {
+        this.commitmentDonationsCount++;
+        commitmentByCurrency[currency] = (commitmentByCurrency[currency] || 0) + effectiveAmount;
+      } else {
+        this.fullDonationsCount++;
+        fullByCurrency[currency] = (fullByCurrency[currency] || 0) + effectiveAmount;
+      }
+    }
+
+    // Convert to arrays with symbols
+    this.fullDonationsByCurrency = Object.entries(fullByCurrency).map(([currencyId, total]) => ({
+      symbol: this.currencyTypes[currencyId]?.symbol || '₪',
+      total
+    }));
+
+    this.commitmentDonationsByCurrency = Object.entries(commitmentByCurrency).map(([currencyId, total]) => ({
+      symbol: this.currencyTypes[currencyId]?.symbol || '₪',
+      total
+    }));
   }
 
   applyFilters() {
@@ -350,13 +401,58 @@ export class CampaignDonationsModalComponent implements OnInit {
   }
 
   getMethodName(donation: Donation): string {
-    return donation.donationMethod?.name || 'לא ידוע';
+    // התחייבות לא שייך לה אופן תרומה
+    if (donation.donationType === 'commitment') return '-';
+    return donation.donationMethod?.name || '-';
   }
 
   getDonationType(donation: Donation): string {
     if (donation.donationType === 'full') return 'תרומה מלאה';
     if (donation.donationType === 'commitment') return 'התחייבות';
     return donation.donationType || '';
+  }
+
+  getDonationTypeDisplay(donation: Donation): string {
+    if (donation.donationType === 'commitment') return 'התחייבות';
+    if (isStandingOrder(donation)) {
+      switch (donation.standingOrderType) {
+        case 'bank': return 'הו"ק בנקאית';
+        case 'creditCard': return 'הו"ק כ.אשראי';
+        case 'organization': return 'הו"ק עמותה';
+        default: return 'הו"ק';
+      }
+    }
+    return 'תרומה';
+  }
+
+  getPaymentMethodDisplayName(method: DonationMethod): string {
+    if (method.type === 'standing_order') {
+      return `${method.name} (הו"ק)`;
+    }
+    return method.name;
+  }
+
+  isStandingOrderDonation(donation: Donation): boolean {
+    return isStandingOrder(donation);
+  }
+
+  getAmountDisplay(donation: Donation): string {
+    const fmt = (n: number) => n.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (donation.donationType === 'commitment') {
+      const paid = this.paymentTotals[donation.id] || 0;
+      return `(${fmt(paid)} / ${fmt(donation.amount)})`;
+    }
+    if (isStandingOrder(donation)) {
+      const paid = this.paymentTotals[donation.id] || 0;
+      if (donation.unlimitedPayments) {
+        // הו"ק ללא הגבלה: בפועל / צפי (מספר תקופות צפויות × סכום לתשלום)
+        const expectedPeriods = calculatePeriodsElapsed(donation);
+        const expectedAmount = expectedPeriods * donation.amount;
+        return `${fmt(paid)} / ${fmt(expectedAmount)}`;
+      }
+      return `${fmt(paid)} / ${fmt(donation.amount)}`;
+    }
+    return fmt(donation.amount);
   }
 
   // Actions
