@@ -1,14 +1,20 @@
 import { Component, OnInit } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
 import { DialogConfig } from 'common-ui-elements';
-import { Payment, Donation } from '../../../../shared/entity';
 import { remult } from 'remult';
-import { I18nService } from '../../../i18n/i18n.service';
+import { Donation, DonationMethod, Payment } from '../../../../shared/entity';
+import { CurrencyType } from '../../../../shared/type/currency.type';
 import { UIToolsService } from '../../../common/UIToolsService';
+import { I18nService } from '../../../i18n/i18n.service';
+import { PayerService } from '../../../services/payer.service';
 
 export interface PaymentDetailsModalArgs {
   paymentId: string; // Can be 'new' for new payment or payment ID
   donationId?: string; // Required for new payments
+  donationType?: string;
+  donationMethod?: DonationMethod;
+  standingOrderType?: string;
+  paymentType?: string;
 }
 
 @DialogConfig({
@@ -26,9 +32,14 @@ export class PaymentDetailsModalComponent implements OnInit {
   isNewPayment = false;
   loading = false;
 
+
   // For validation display
   totalPaidSoFar = 0;
   remainingAmount = 0;
+
+  // Currency
+  currencyTypes: Record<string, CurrencyType> = {};
+  currencies: CurrencyType[] = [];
 
   paymentRepo = remult.repo(Payment);
   donationRepo = remult.repo(Donation);
@@ -36,8 +47,12 @@ export class PaymentDetailsModalComponent implements OnInit {
   constructor(
     public i18n: I18nService,
     private ui: UIToolsService,
+    private payerService: PayerService,
     public dialogRef: MatDialogRef<PaymentDetailsModalComponent>
-  ) {}
+  ) {
+    this.currencyTypes = this.payerService.getCurrencyTypesRecord();
+    this.currencies = Object.values(this.currencyTypes);
+  }
 
   async ngOnInit() {
     await this.loadPayment();
@@ -49,9 +64,14 @@ export class PaymentDetailsModalComponent implements OnInit {
       if (this.args.paymentId === 'new') {
         this.isNewPayment = true;
         this.payment = this.paymentRepo.create();
+        this.payment.type = this.args.paymentType || ''
 
         if (this.args.donationId) {
           this.payment.donationId = this.args.donationId;
+        }
+
+        if (this.args.donationType) {
+          this.payment.type = this.args.donationType
         }
 
         // Amount stays empty (0) - user must fill it manually
@@ -64,6 +84,11 @@ export class PaymentDetailsModalComponent implements OnInit {
 
       // Load donation and calculate totals
       await this.loadDonationAndTotals();
+
+      // Set default currency from donation for new payments
+      if (this.isNewPayment && this.donation) {
+        this.payment.currencyId = this.donation.currencyId || 'ILS';
+      }
     } catch (error) {
       console.error('Error loading payment:', error);
       this.ui.error('שגיאה בטעינת פרטי התשלום');
@@ -75,8 +100,11 @@ export class PaymentDetailsModalComponent implements OnInit {
   async loadDonationAndTotals() {
     if (!this.payment.donationId) return;
 
-    // Load donation
-    const donation = await this.donationRepo.findId(this.payment.donationId);
+    // Load donation with donationMethod
+    const donation = await this.donationRepo.findFirst(
+      { id: this.payment.donationId },
+      { include: { donationMethod: true } }
+    );
     if (!donation) return;
     this.donation = donation;
 
@@ -115,8 +143,8 @@ export class PaymentDetailsModalComponent implements OnInit {
         return;
       }
 
-      // Validate that total payments don't exceed commitment amount
-      if (this.donation) {
+      // Validate that total payments don't exceed commitment amount (only for commitments)
+      if (this.donation?.donationType === 'commitment') {
         const newTotal = this.totalPaidSoFar + this.payment.amount;
         if (newTotal > this.donation.amount) {
           const excess = newTotal - this.donation.amount;
@@ -138,6 +166,20 @@ export class PaymentDetailsModalComponent implements OnInit {
     } finally {
       this.loading = false;
     }
+  }
+
+  getTransactionTypeLabel(): string {
+    if (!this.donation) return '';
+    if (this.donation.donationType === 'commitment') return 'התחייבות';
+    if (this.donation.donationMethod?.type === 'standing_order') {
+      switch (this.donation.standingOrderType) {
+        case 'bank': return 'הו"ק בנקאית';
+        case 'creditCard': return 'הו"ק כרטיס אשראי';
+        case 'organization': return 'הו"ק עמותה';
+        default: return 'הו"ק';
+      }
+    }
+    return this.donation.donationMethod?.name || '';
   }
 
   onClose() {

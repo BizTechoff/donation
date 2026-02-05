@@ -26,6 +26,7 @@ import { Roles } from '../enum/roles'
   },
 })
 export class Payment extends IdEntity {
+  
   @Relations.toOne<Payment, Donation>(() => Donation, {
     caption: 'תרומה',
     field: 'donationId'
@@ -43,6 +44,11 @@ export class Payment extends IdEntity {
     caption: 'סכום תשלום',
   })
   amount = 0
+
+  @Fields.string({
+    caption: 'מטבע',
+  })
+  currencyId = 'ILS'
 
   @Fields.dateOnly({
     caption: 'תאריך תשלום',
@@ -67,6 +73,12 @@ export class Payment extends IdEntity {
     allowNull: true,
   })
   paymentIdentifier = ''
+
+  @Fields.string({
+    caption: 'סוג',
+    allowNull: true,
+  })
+  type = '' // getTransactionTypeLabel 'full' | 'commitment' - נקבע מסוג התרומה
 
   @Fields.string({
     caption: 'הערות',

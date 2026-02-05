@@ -1,8 +1,9 @@
 <!-- Payment List Modal -->
 <div class="modal-overlay" (click)="closeModal()">
   <div class="modal-content payment-list-modal" (click)="$event.stopPropagation()">
-
-    <!-- Modal Header -->
+  <!-- {{this.args | json}}
+  {{this.args.donationMethod?.id || 'NONE'}} -->
+    <!-- Modal Header TO-DELETE_TO-->
     <div class="modal-header">
       <div class="header-content">
         <div class="header-icon">
@@ -31,6 +32,11 @@
       <!-- Filters Section -->
       <div class="filters-section">
         <div class="filters-grid">
+          <div class="filter-group" *ngIf="getTransactionTypeLabel()">
+            <mat-icon class="filter-icon">category</mat-icon>
+            <span class="filter-label">סוג תנועה: <strong>{{getTransactionTypeLabel()}}</strong></span>
+          </div>
+
           <div class="filter-group">
             <mat-icon class="filter-icon">search</mat-icon>
             <input type="text"
@@ -71,15 +77,29 @@
             </td>
           </ng-container>
 
+          <!-- Type Column -->
+          <ng-container matColumnDef="type">
+            <th mat-header-cell *matHeaderCellDef>סוג</th>
+            <td mat-cell *matCellDef="let payment">
+              {{payment.type}}
+            </td>
+          </ng-container>
+
           <!-- Amount Column -->
           <ng-container matColumnDef="amount">
             <th mat-header-cell *matHeaderCellDef mat-sort-header>סכום</th>
             <td mat-cell *matCellDef="let payment">
               <div class="amount-cell">
-                <!-- <mat-icon class="cell-icon">attach_money</mat-icon> -->
                 <span class="amount">{{payment.amount | number:'1.2-2'}}</span>
-                <!-- <span class="currency">₪</span> -->
               </div>
+            </td>
+          </ng-container>
+
+          <!-- Currency Column -->
+          <ng-container matColumnDef="currency">
+            <th mat-header-cell *matHeaderCellDef>מטבע</th>
+            <td mat-cell *matCellDef="let payment">
+              <span class="currency-badge">{{currencyTypes[payment.currencyId]?.symbol || getCurrencySymbol()}}</span>
             </td>
           </ng-container>
 
@@ -98,6 +118,14 @@
             <td mat-cell *matCellDef="let payment">
               <span *ngIf="payment.paymentIdentifier">{{payment.paymentIdentifier}}</span>
               <span *ngIf="!payment.paymentIdentifier" class="no-data">-</span>
+            </td>
+          </ng-container>
+
+          <!-- Notes Column -->
+          <ng-container matColumnDef="notes">
+            <th mat-header-cell *matHeaderCellDef>הערות</th>
+            <td mat-cell *matCellDef="let payment" [title]="payment.notes || ''">
+              {{truncateNotes(payment.notes)}}
             </td>
           </ng-container>
 

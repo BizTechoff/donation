@@ -1,16 +1,20 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { DialogConfig } from 'common-ui-elements';
-import { Payment, Donation } from '../../../../shared/entity';
 import { remult } from 'remult';
-import { I18nService } from '../../../i18n/i18n.service';
-import { UIToolsService } from '../../../common/UIToolsService';
 import { PaymentController } from '../../../../shared/controllers/payment.controller';
+import { Donation, DonationMethod, Payment } from '../../../../shared/entity';
+import { CurrencyType } from '../../../../shared/type/currency.type';
+import { UIToolsService } from '../../../common/UIToolsService';
+import { PayerService } from '../../../services/payer.service';
+import { I18nService } from '../../../i18n/i18n.service';
 
 export interface PaymentListModalArgs {
   donationId: string;
-  donationAmount?: number;
+  donationType?: string;
+  donationMethod?: DonationMethod;
+  standingOrderType?: string;
 }
 
 @DialogConfig({
@@ -36,7 +40,10 @@ export class PaymentListModalComponent implements OnInit {
   filterText = '';
 
   // Table configuration
-  displayedColumns: string[] = ['paymentDate', 'amount', 'reference', 'paymentIdentifier', 'actions'];
+  displayedColumns: string[] = ['paymentDate', 'type', 'amount', 'currency', 'reference', 'paymentIdentifier', 'notes', 'actions'];
+
+  // Currency types lookup
+  currencyTypes: Record<string, CurrencyType> = {};
 
   // Totals
   totalAmount = 0;
@@ -47,11 +54,20 @@ export class PaymentListModalComponent implements OnInit {
     private ui: UIToolsService,
     private snackBar: MatSnackBar,
     private cdr: ChangeDetectorRef,
+    private payerService: PayerService,
     public dialogRef: MatDialogRef<PaymentListModalComponent>
-  ) {}
+  ) {
+    this.currencyTypes = this.payerService.getCurrencyTypesRecord();
+  }
 
   async ngOnInit() {
-    await this.loadData();
+    if (this.args.donationId) {
+      await this.loadData();
+    }
+  }
+
+  getCurrencySymbol(): string {
+    return this.currencyTypes[this.donation?.currencyId || 'ILS']?.symbol || '₪';
   }
 
   get modalTitle(): string {
@@ -65,8 +81,14 @@ export class PaymentListModalComponent implements OnInit {
   async loadData() {
     this.loading = true;
     try {
-      // Load donation
-      this.donation = await this.donationRepo.findId(this.args.donationId) || undefined;
+      // Load donation with donationMethod
+      this.donation = await this.donationRepo.findFirst(
+        { id: this.args.donationId },
+        {
+          include: { donationMethod: true },
+          useCache: false
+        }
+      ) || undefined;
 
       // Load payments
       await this.loadPayments();
@@ -81,7 +103,7 @@ export class PaymentListModalComponent implements OnInit {
   }
 
   async loadPayments() {
-    this.payments = await PaymentController.getPaymentsByDonation(this.args.donationId);
+    this.payments = await PaymentController.getPaymentsByDonation(this.args.donationId, this.getTransactionTypeLabel());
   }
 
   calculateTotals() {
@@ -103,6 +125,32 @@ export class PaymentListModalComponent implements OnInit {
 
   getFilteredTotal(): number {
     return this.filteredPayments.reduce((sum, payment) => sum + payment.amount, 0);
+  }
+
+  getTransactionTypeLabel(): string {
+    if (this.args.donationType === 'commitment') return 'התחייבות';
+    if (this.args.donationMethod?.type === 'standing_order') {
+      switch (this.args.standingOrderType) {
+        case 'bank': return 'הו"ק בנקאית';
+        case 'creditCard': return 'הו"ק כרטיס אשראי';
+        case 'organization': return 'הו"ק עמותה';
+        default: return 'הו"ק';
+      }
+    }
+    return this.donation?.donationMethod?.name || '';
+  }
+
+  // getTypeText(type: string): string {
+  //   switch (type) {
+  //     case 'full': return 'תרומה';
+  //     case 'commitment': return 'התחייבות';
+  //     default: return type || '-';
+  //   }
+  // }
+
+  truncateNotes(notes: string, maxLength = 50): string {
+    if (!notes) return '-';
+    return notes.length > maxLength ? notes.substring(0, maxLength) + '...' : notes;
   }
 
   getStatusText(status: string): string {
@@ -127,7 +175,8 @@ export class PaymentListModalComponent implements OnInit {
 
   async addPayment() {
     const result = await this.ui.paymentDetailsDialog('new', {
-      donationId: this.args.donationId
+      donationId: this.args.donationId,
+      paymentType: this.getTransactionTypeLabel()
     });
 
     if (result) {
@@ -194,6 +243,7 @@ export class PaymentListModalComponent implements OnInit {
         // Send to backend for processing
         const result = await PaymentController.processExcelTransactions(
           this.args.donationId,
+          this.getTransactionTypeLabel(),
           jsonData as any[]
         );
 
