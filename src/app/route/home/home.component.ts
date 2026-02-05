@@ -3,6 +3,8 @@ import { Fields, getFields, remult } from 'remult'
 import { Donation } from '../../../shared/entity/donation'
 import { Donor } from '../../../shared/entity/donor'
 import { Campaign } from '../../../shared/entity/campaign'
+import { DonationController } from '../../../shared/controllers/donation.controller'
+import { calculateEffectiveAmount, isPaymentBased } from '../../../shared/utils/donation-utils'
 import { I18nService } from '../../i18n/i18n.service'
 
 @Component({
@@ -79,9 +81,18 @@ export class HomeComponent implements OnInit {
   }
 
   private async loadDonationStats() {
-    const donations = await this.donationRepo.find();
+    const donations = await this.donationRepo.find({
+      include: { donationMethod: true }
+    });
     this.totalDonations = donations.length;
-    this.totalAmount = donations.reduce((sum, d) => sum + d.amount, 0);
+
+    // Load payment totals for commitment and standing order donations
+    const paymentBasedIds = donations.filter(d => isPaymentBased(d)).map(d => d.id).filter(Boolean);
+    const paymentTotals = paymentBasedIds.length > 0
+      ? await DonationController.getPaymentTotalsForCommitments(paymentBasedIds)
+      : {};
+
+    this.totalAmount = donations.reduce((sum, d) => sum + calculateEffectiveAmount(d, paymentTotals[d.id]), 0);
   }
 
   private async loadRecentDonations() {

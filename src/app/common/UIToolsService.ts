@@ -7,6 +7,7 @@ import {
   openDialog,
   SelectValueDialogComponent,
 } from 'common-ui-elements'
+import { DonationMethod } from '../../shared/entity'
 import { Place } from '../../shared/entity/place'
 import { terms } from '../terms'
 import {
@@ -236,17 +237,26 @@ export class UIToolsService implements UITools {
     )
   }
 
-  async paymentListDialog(donationId: string, donationAmount?: number): Promise<void> {
+  async paymentListDialog(donationId: string, options?: {
+    donationType?: string;
+    donationMethod?: DonationMethod;
+    standingOrderType?: string;
+  }): Promise<void> {
     return await openDialog(
       (await import('../routes/modals/payment-list-modal/payment-list-modal.component')).PaymentListModalComponent,
-      (dlg) => dlg.args = { donationId, donationAmount }
+      (dlg) => dlg.args = {
+        donationId,
+        donationType: options?.donationType,
+        donationMethod: options?.donationMethod,
+        standingOrderType: options?.standingOrderType
+      }
     )
   }
 
-  async paymentDetailsDialog(paymentId: string, options?: { donationId?: string }): Promise<boolean> {
+  async paymentDetailsDialog(paymentId: string, options?: { donationId?: string, paymentType?: string }): Promise<boolean> {
     return await openDialog(
       (await import('../routes/modals/payment-details-modal/payment-details-modal.component')).PaymentDetailsModalComponent,
-      (dlg) => dlg.args = { paymentId, donationId: options?.donationId }
+      (dlg) => dlg.args = { paymentId, donationId: options?.donationId, paymentType: options?.paymentType }
     )
   }
 
