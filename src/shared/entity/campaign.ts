@@ -201,15 +201,40 @@ export class Campaign extends IdEntity {
     if (isBackend()) {
       const { remult } = await import('remult')
       const { Donation } = await import('./donation')
+      const { Payment } = await import('./payment')
+      const { calculateEffectiveAmount } = await import('../utils/donation-utils')
+
       const donations = await remult.repo(Donation).find({
         where: {
           campaignId: this.id
-        }
+        },
+        include: { donationMethod: true }
       })
 
-      this.raisedAmount = donations.reduce((sum: number, donation: any) => sum + donation.amount, 0)
+      // Load all payments for these donations
+      const donationIds = donations.map(d => d.id)
+      const payments = donationIds.length > 0
+        ? await remult.repo(Payment).find({
+            where: { donationId: { $in: donationIds }, isActive: true }
+          })
+        : []
+
+      // Create payment totals map
+      const paymentTotals = new Map<string, number>()
+      for (const payment of payments) {
+        const current = paymentTotals.get(payment.donationId) || 0
+        paymentTotals.set(payment.donationId, current + payment.amount)
+      }
+
+      // Calculate total using effective amounts
+      const oldAmount = this.raisedAmount
+      this.raisedAmount = donations.reduce((sum: number, donation: any) => {
+        const paymentTotal = paymentTotals.get(donation.id)
+        return sum + calculateEffectiveAmount(donation, paymentTotal)
+      }, 0)
+
       await this.save()
-      console.log(`Campaign ${this.name}: Recalculated raisedAmount to ${this.raisedAmount} from ${donations.length} donations`)
+      console.log(`Campaign ${this.name}: Recalculated raisedAmount from ${oldAmount} to ${this.raisedAmount} (${donations.length} donations)`)
     }
   }
 
@@ -218,22 +243,57 @@ export class Campaign extends IdEntity {
     if (isBackend()) {
       const { remult } = await import('remult')
       const { Donation } = await import('./donation')
+      const { Payment } = await import('./payment')
+      const { calculateEffectiveAmount } = await import('../utils/donation-utils')
+
       const campaigns = await remult.repo(Campaign).find()
+
+      // Load all donations with their methods
+      const allDonations = await remult.repo(Donation).find({
+        where: { campaignId: { $ne: '' } },
+        include: { donationMethod: true }
+      })
+
+      // Load all payments
+      const donationIds = allDonations.map(d => d.id)
+      const allPayments = donationIds.length > 0
+        ? await remult.repo(Payment).find({
+            where: { donationId: { $in: donationIds }, isActive: true }
+          })
+        : []
+
+      // Create payment totals map
+      const paymentTotals = new Map<string, number>()
+      for (const payment of allPayments) {
+        const current = paymentTotals.get(payment.donationId) || 0
+        paymentTotals.set(payment.donationId, current + payment.amount)
+      }
+
+      // Group donations by campaign
+      const donationsByCampaign = new Map<string, any[]>()
+      for (const donation of allDonations) {
+        if (!donation.campaignId) continue
+        const list = donationsByCampaign.get(donation.campaignId) || []
+        list.push(donation)
+        donationsByCampaign.set(donation.campaignId, list)
+      }
 
       let updatedCount = 0
       for (const campaign of campaigns) {
-        const donations = await remult.repo(Donation).find({
-          where: {
-            campaignId: campaign.id
-          }
-        })
+        const donations = donationsByCampaign.get(campaign.id) || []
 
-        const calculatedAmount = donations.reduce((sum: number, donation: any) => sum + donation.amount, 0)
+        // Calculate total using effective amounts
+        const calculatedAmount = donations.reduce((sum: number, donation: any) => {
+          const paymentTotal = paymentTotals.get(donation.id)
+          return sum + calculateEffectiveAmount(donation, paymentTotal)
+        }, 0)
+
         if (campaign.raisedAmount !== calculatedAmount) {
+          const oldAmount = campaign.raisedAmount
           campaign.raisedAmount = calculatedAmount
           await campaign.save()
           updatedCount++
-          console.log(`Campaign ${campaign.name}: Updated raisedAmount from ${campaign.raisedAmount} to ${calculatedAmount}`)
+          console.log(`Campaign ${campaign.name}: Updated raisedAmount from ${oldAmount} to ${calculatedAmount}`)
         }
       }
 
