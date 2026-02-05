@@ -281,9 +281,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
         await this.editingDonation.donationMethod.updateStats(this.editingDonation.amount);
       }
 
-      if (this.editingDonation.campaign) {
-        await this.editingDonation.campaign.updateRaisedAmount(this.editingDonation.amount);
-      }
+      // Note: Campaign raised amount is now calculated on demand, no need to update cached value
 
       await this.refreshData(); // This will also update the cache
       this.closeModal();
