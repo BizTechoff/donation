@@ -44,10 +44,12 @@
             </div> -->
             <div class="progress-info" *ngIf="campaign.targetAmount > 0">
               <div class="progress-bar">
-                <div class="progress-fill" [style.width.%]="campaign.progressPercentage"></div>
+                <div class="progress-fill" [style.width.%]="calculatedProgressPercentage"></div>
               </div>
-              <span class="progress-text">{{campaign.progressPercentage}}% ({{campaign.raisedAmount}} /
-                {{campaign.targetAmount}} {{currencyTypes[campaign.currencyId]?.symbol}})</span>
+              <span class="progress-text">{{calculatedProgressPercentage}}% (
+                <ng-container *ngIf="raisedByCurrency.length <= 1">{{calculatedRaisedAmount | number:'1.0-0'}}</ng-container>
+                <ng-container *ngIf="raisedByCurrency.length > 1"><span *ngFor="let c of raisedByCurrency; let i = index">{{i > 0 ? ' + ' : ''}}{{c.symbol}}{{c.total | number:'1.0-0'}}</span></ng-container>
+                / {{campaign.targetAmount}} {{currencyTypes[campaign.currencyId]?.symbol}})</span>
             </div>
           </div>
         </div>
@@ -270,30 +272,23 @@
       <div class="footer-actions-right">
         <button mat-raised-button color="accent" *ngIf="!isNewCampaign" (click)="openCampaignDonations()"
           class="action-button donations-list-button">
-          <mat-icon>list</mat-icon>
+          <span class="btn-emoji">💰</span>
           {{ (i18n.terms$ | async)?.donations }}
         </button>
-
-        <!-- <button mat-raised-button color="primary" *ngIf="!isNewCampaign" (click)="openNewDonation()"
-          class="action-button new-donation-button">
-          <mat-icon>add_circle</mat-icon>
-          {{ (i18n.terms$ | async)?.newDonationButton }}
-        </button> -->
 
         <div class="footer-divider" *ngIf="!isNewCampaign"></div>
 
         <button mat-raised-button color="accent" *ngIf="campaign && campaign.campaignType === 'דינער'" (click)="openInvitedList()"
           class="action-button invited-list-button">
-          <mat-icon>list_alt</mat-icon>
+          <span class="btn-emoji">👥</span>
           {{ (i18n.terms$ | async)?.invitedListButton }}
         </button>
 
         <div class="footer-divider" *ngIf="!isNewCampaign"></div>
 
-
         <button mat-raised-button color="primary" *ngIf="campaign && campaign.campaignType === 'דינער'" (click)="openBlessingBook()"
           class="action-button blessing-book-button">
-          <mat-icon>menu_book</mat-icon>
+          <span class="btn-emoji">📖</span>
           {{ (i18n.terms$ | async)?.blessingBookButton }}
         </button>
         <!-- <div class="footer-divider" *ngIf="!isNewCampaign"></div> -->
