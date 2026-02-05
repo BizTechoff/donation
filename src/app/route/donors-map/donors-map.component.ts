@@ -60,6 +60,9 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
   // Flag to track if map settings were loaded (one-time operation)
   private mapSettingsLoaded = false;
 
+  // Flag to preserve map view (center/zoom) after reload
+  private preserveMapView = false;
+
   // Map filters
   mapFilters: MapFilters = {
     statusFilter: [],
@@ -331,6 +334,29 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.saveMapSettings();
   }
 
+  // Search-specific handler: search + highlight/zoom to found donor(s)
+  async onSearchChange() {
+    await this.loadData();
+    this.saveMapSettings();
+
+    // If search has results, highlight the found donors
+    if (this.mapFilters.searchTerm?.trim() && this.markers.length > 0) {
+      if (this.markers.length === 1) {
+        // Single result: auto-open info window
+        const markerData = this.markersData[0];
+        this.markers[0].setAnimation(google.maps.Animation.BOUNCE);
+        setTimeout(() => this.markers[0]?.setAnimation(null), 2000);
+        await this.onMarkerClick(markerData.donorId, this.markers[0]);
+      } else {
+        // Multiple results: bounce markers briefly
+        this.markers.forEach(marker => {
+          marker.setAnimation(google.maps.Animation.BOUNCE);
+          setTimeout(() => marker.setAnimation(null), 2000);
+        });
+      }
+    }
+  }
+
   initializeMap() {
     console.log('Initializing Google Map...');
 
@@ -471,8 +497,8 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
     console.log('Total markers added:', addedCount);
 
-    // Fit map to markers bounds if there are any markers
-    if (addedCount > 0) {
+    // Fit map to markers bounds if there are any markers (skip if preserving view)
+    if (addedCount > 0 && !this.preserveMapView) {
       this.map.fitBounds(bounds);
 
       // Don't zoom in too much if there's only one marker
@@ -483,6 +509,7 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
         google.maps.event.removeListener(listener);
       });
     }
+    this.preserveMapView = false;
   }
 
   /**
@@ -541,6 +568,14 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
       // Create full popup content
       const fullContent = this.createPopupContent(donorData);
       this.infoWindow.setContent(fullContent);
+
+      // Pan map to ensure info window is fully visible (especially near top edge)
+      const markerPos = marker.getPosition();
+      if (markerPos) {
+        this.map.panTo(markerPos);
+        // Shift view up by 150px to make room for info window above the marker
+        this.map.panBy(0, -150);
+      }
     } catch (error) {
       console.error('Error loading donor details:', error);
       const errorContent = `
@@ -585,6 +620,39 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     }
 
+    // בנה תצוגת סה"כ תרומות לפי מטבע
+    let totalDonationsDisplay = '';
+    if (donorData.stats.totalDonationsByCurrency.length > 0) {
+      totalDonationsDisplay = donorData.stats.totalDonationsByCurrency
+        .map(c => `${c.symbol}${c.total.toLocaleString()}`)
+        .join(' + ');
+    } else {
+      totalDonationsDisplay = `${donorData.stats.totalDonationsCurrencySymbol}${donorData.stats.totalDonations.toLocaleString()}`;
+    }
+
+    // בנה תצוגת תרומה אחרונה - עם תמיכה בהו"ק
+    let lastDonationAmountDisplay = '';
+    let lastDonationAmountTitle = '';
+    if (donorData.stats.lastDonationAmount > 0) {
+      const symbol = donorData.stats.lastDonationCurrencySymbol;
+      if (donorData.stats.lastDonationIsStandingOrder) {
+        // הו"ק - הצג בפועל / צפי או מטרה
+        const effective = donorData.stats.lastDonationEffectiveAmount.toLocaleString();
+        const expected = donorData.stats.lastDonationExpectedAmount.toLocaleString();
+        lastDonationAmountDisplay = `(${symbol}${effective} / ${symbol}${expected}${donorData.stats.lastDonationIsPartner ? ' - שותף' : ''})`;
+        lastDonationAmountTitle = 'שולם בפועל / צפי';
+      } else {
+        // תרומה רגילה
+        lastDonationAmountDisplay = `(${symbol}${donorData.stats.lastDonationAmount.toLocaleString()}${donorData.stats.lastDonationIsPartner ? ' - שותף' : ''})`;
+        lastDonationAmountTitle = 'סכום';
+      }
+    }
+
+    // בנה תצוגת התחייבויות - בפועל / נקוב
+    const commitmentDisplay = donorData.stats.commitmentCount > 0
+      ? `${donorData.stats.commitmentCurrencySymbol}${donorData.stats.commitmentPaidTotal.toLocaleString()} / ${donorData.stats.commitmentCurrencySymbol}${donorData.stats.commitmentPledgedTotal.toLocaleString()}`
+      : '';
+
     const direction = this.i18n.lang.RTL ? 'rtl' : 'ltr';
     const textAlign = this.i18n.lang.RTL ? 'right' : 'left';
 
@@ -624,7 +692,7 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
           <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
             <span><strong>💰 <a href="javascript:void(0)" onclick="window.openDonorDonations('${donorData.donor.id}', '${donorData.donor.lastAndFirstName.replace(/'/g, "\\'")}')" style="color: #3498db; text-decoration: underline; cursor: pointer;">${this.i18n.terms.totalDonationsLabel}</a>:</strong></span>
             <div style="text-align: left;">
-              <span>${donorData.stats.totalDonationsCurrencySymbol}${donorData.stats.totalDonations.toLocaleString()}</span>
+              <span>${totalDonationsDisplay}</span>
             </div>
           </div>
           <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
@@ -634,16 +702,10 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
             </div>
           </div>
           <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-            <span><strong>📈 ${this.i18n.terms.averageDonationLabel}:</strong></span>
-            <div style="text-align: left;">
-              <span>${donorData.stats.averageDonationCurrencySymbol}${donorData.stats.averageDonation.toLocaleString()}</span>
-            </div>
-          </div>
-          <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
             <span><strong>📅 ${this.i18n.terms.lastDonationLabel}:</strong></span>
             <div style="text-align: left;">
               <span>${lastDonationText}</span>
-              ${donorData.stats.lastDonationAmount > 0 ? `<div style="font-size: 11px; color: #27ae60;">(${donorData.stats.lastDonationCurrencySymbol}${donorData.stats.lastDonationAmount.toLocaleString()}${donorData.stats.lastDonationIsPartner ? ' - שותף' : ''})</div>` : ''}
+              ${lastDonationAmountDisplay ? `<div style="font-size: 11px; color: #27ae60;" title="${lastDonationAmountTitle}">${lastDonationAmountDisplay}</div>` : ''}
             </div>
           </div>
           ${donorData.stats.partnerDonationsCount > 0 ? `
@@ -660,7 +722,7 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
             <span><strong>📝 התחייבויות:</strong></span>
             <div style="text-align: left;">
               <span>${donorData.stats.commitmentCount}</span>
-              <div style="font-size: 11px; color: #7f8c8d;">(סה"כ: ${donorData.stats.commitmentCurrencySymbol}${donorData.stats.commitmentTotal.toLocaleString()})</div>
+              <div style="font-size: 11px; color: #7f8c8d;" title="שולם בפועל / סה&quot;כ התחייבות">(${commitmentDisplay})</div>
             </div>
           </div>
           ` : ''}
@@ -751,11 +813,11 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     // Open donor details modal instead of navigating
     const changed = await this.ui.donorDetailsDialog(donorId);
     if (changed) {
-      // Reload data if donor was changed to refresh the map
+      // Preserve map position after reload (don't fitBounds)
       // Use setTimeout to avoid ExpressionChangedAfterItHasBeenCheckedError
       setTimeout(async () => {
+        this.preserveMapView = true;
         await this.loadData();
-        this.addMarkersToMap();
         const marker = this.getMarkerOf(donorId);
         if (marker) {
           this.onMarkerClick(donorId, marker);
@@ -768,11 +830,16 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     // Open donation modal directly with pre-selected donor
     const changed = await this.ui.donationDetailsDialog('new', { donorId });
     if (changed) {
-      // Reload all data if needed to refresh the map with updated stats
+      // Preserve map position after reload (don't fitBounds)
       // Use setTimeout to avoid ExpressionChangedAfterItHasBeenCheckedError
       setTimeout(async () => {
+        this.preserveMapView = true;
         await this.loadData();
-        this.addMarkersToMap();
+        // Re-open info window for this donor after reload
+        const marker = this.getMarkerOf(donorId);
+        if (marker) {
+          this.onMarkerClick(donorId, marker);
+        }
       });
     }
   }
