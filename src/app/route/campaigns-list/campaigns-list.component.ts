@@ -7,9 +7,10 @@ import { I18nService } from '../../i18n/i18n.service';
 import { UIToolsService } from '../../common/UIToolsService';
 import { GlobalFilterService } from '../../services/global-filter.service';
 import { BusyService } from '../../common-ui-elements/src/angular/wait/busy-service';
-import { CampaignController, CampaignFilters } from '../../../shared/controllers/campaign.controller';
+import { CampaignController, CampaignFilters, CampaignRaisedByCurrency, CurrencyTotal } from '../../../shared/controllers/campaign.controller';
 import { HebrewDateService } from '../../services/hebrew-date.service';
 import { Blessing } from '../../../shared/entity/blessing';
+import { PayerService } from '../../services/payer.service';
 
 @Component({
   selector: 'app-campaigns-list',
@@ -44,6 +45,7 @@ export class CampaignsListComponent implements OnInit, OnDestroy {
   activeCampaigns = 0;
   totalTargetAmount = 0;
   totalRaisedAmount = 0;
+  totalRaisedByCurrency: CurrencyTotal[] = [];
 
   // Pagination
   currentPage = 1;
@@ -56,16 +58,24 @@ export class CampaignsListComponent implements OnInit, OnDestroy {
 
   // Maps for campaign-related data
   campaignBlessingCountMap = new Map<string, number>();
+  campaignRaisedByCurrencyMap = new Map<string, CurrencyTotal[]>();
+
+  // Currency types for conversion
+  currencyTypes: Record<string, { symbol: string; label: string; rateInShekel: number }> = {};
 
   constructor(
     public i18n: I18nService,
     private ui: UIToolsService,
     private globalFilterService: GlobalFilterService,
     private busy: BusyService,
-    private hebrewDateService: HebrewDateService
+    private hebrewDateService: HebrewDateService,
+    private payerService: PayerService
   ) {}
 
   async ngOnInit() {
+    // Initialize currency types for conversion
+    this.currencyTypes = this.payerService.getCurrencyTypesRecord();
+
     await this.loadBase();
 
     // Subscribe to global filter changes
@@ -124,11 +134,15 @@ export class CampaignsListComponent implements OnInit, OnDestroy {
         this.activeCampaigns = summary.activeCampaigns;
         this.totalTargetAmount = summary.totalTargetAmount;
         this.totalRaisedAmount = summary.totalRaisedAmount;
+        this.totalRaisedByCurrency = summary.totalRaisedByCurrency || [];
 
         console.log('refreshData 1: Loaded', this.campaigns.length, 'campaigns, total:', this.totalCount, 'active:', this.activeCampaigns);
 
-        // Load blessing counts for all campaigns
-        await this.loadBlessingCounts();
+        // Load blessing counts and raised amounts by currency for all campaigns
+        await Promise.all([
+          this.loadBlessingCounts(),
+          this.loadRaisedAmountsByCurrency()
+        ]);
 
       } catch (error) {
         console.error('Error refreshing campaigns:', error);
@@ -164,6 +178,39 @@ export class CampaignsListComponent implements OnInit, OnDestroy {
       const count = this.campaignBlessingCountMap.get(blessing.campaignId) || 0;
       this.campaignBlessingCountMap.set(blessing.campaignId, count + 1);
     }
+  }
+
+  /**
+   * Load raised amounts by currency for all campaigns in the current page
+   */
+  private async loadRaisedAmountsByCurrency() {
+    if (this.campaigns.length === 0) return;
+
+    const campaignIds = this.campaigns.map(c => c.id);
+    const raisedByCurrency = await CampaignController.getRaisedAmountsByCurrency(campaignIds);
+
+    this.campaignRaisedByCurrencyMap.clear();
+    for (const item of raisedByCurrency) {
+      this.campaignRaisedByCurrencyMap.set(item.campaignId, item.totals);
+    }
+  }
+
+  /**
+   * Get raised amounts by currency for a campaign
+   */
+  getRaisedByCurrency(campaign: Campaign): CurrencyTotal[] {
+    return this.campaignRaisedByCurrencyMap.get(campaign.id) || [];
+  }
+
+  /**
+   * Format raised amounts by currency for display
+   */
+  formatRaisedByCurrency(campaign: Campaign): string {
+    const totals = this.getRaisedByCurrency(campaign);
+    if (totals.length === 0) {
+      return '₪0';
+    }
+    return totals.map(t => `${t.symbol}${t.total.toLocaleString('he-IL')}`).join(' + ');
   }
 
   async loadUsers() {
@@ -223,24 +270,19 @@ export class CampaignsListComponent implements OnInit, OnDestroy {
 
   getProgressPercentage(campaign: Campaign): number {
     if (!campaign.targetAmount || campaign.targetAmount === 0) return 0;
-    return Math.min(100, Math.round((campaign.raisedAmount / campaign.targetAmount) * 100));
-  }
 
-  async recalculateAllCampaigns() {
-    const confirmed = confirm('האם אתה בטוח שברצונך לחשב מחדש את סכומי התרומות לכל הקמפיינים? פעולה זו עשויה לקחת זמן.');
-    if (!confirmed) return;
+    // Convert all raised amounts to ILS for accurate comparison
+    const totals = this.getRaisedByCurrency(campaign);
+    const raisedInILS = totals.reduce((sum, t) => {
+      const rate = this.currencyTypes[t.currencyId]?.rateInShekel || 1;
+      return sum + (t.total * rate);
+    }, 0);
 
-    this.loading = true;
-    try {
-      const updatedCount = await Campaign.recalculateAllCampaignsRaisedAmount();
-      this.ui.info(`חושב מחדש עבור ${updatedCount} קמפיינים`);
-      await this.refreshData();
-    } catch (error) {
-      console.error('Error recalculating campaigns:', error);
-      this.ui.error('שגיאה בחישוב מחדש של הקמפיינים');
-    } finally {
-      this.loading = false;
-    }
+    // Convert target amount to ILS
+    const targetRate = this.currencyTypes[campaign.currencyId]?.rateInShekel || 1;
+    const targetInILS = campaign.targetAmount * targetRate;
+
+    return Math.min(100, Math.round((raisedInILS / targetInILS) * 100));
   }
 
   // Modal event handlers

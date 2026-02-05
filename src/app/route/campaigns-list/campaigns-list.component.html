@@ -5,10 +5,6 @@
     <div class="header-top">
       <h1>{{ (i18n.terms$ | async)?.campaignsManagement }}</h1>
       <div class="header-actions">
-        <button *ngIf="false" class="btn btn-secondary" (click)="recalculateAllCampaigns()" [disabled]="loading"
-                [matTooltip]="'חשב מחדש את סכומי התרומות לכל הקמפיינים'">
-          🔄 חישוב מחדש
-        </button>
         <button class="btn btn-primary add-campaign-btn" (click)="createCampaign()">
           {{ (i18n.terms$ | async)?.newCampaign }}
         </button>
@@ -35,7 +31,12 @@
         <div class="card-icon">📊</div>
         <div class="card-content">
           <h3>{{ (i18n.terms$ | async)?.collectedSoFar }}</h3>
-          <span class="amount">{{formatCurrency(totalRaisedAmount)}}</span>
+          <span class="amount" *ngIf="totalRaisedByCurrency.length <= 1">{{formatCurrency(totalRaisedAmount)}}</span>
+          <span class="amount multi-currency" *ngIf="totalRaisedByCurrency.length > 1">
+            <span *ngFor="let c of totalRaisedByCurrency; let i = index">
+              {{i > 0 ? ' + ' : ''}}{{c.symbol}}{{c.total | number:'1.0-0'}}
+            </span>
+          </span>
         </div>
       </div>
       <div class="summary-card success-rate">
@@ -96,14 +97,8 @@
             {{ (i18n.terms$ | async)?.financialTarget }}
             <span class="sort-icon" *ngIf="getSortIcon('targetAmount')">{{ getSortIcon('targetAmount') }}</span>
           </th>
-          <th class="sortable" [class.sorted]="isSorted('raisedAmount')" (click)="toggleSort('raisedAmount', $event)">
-            {{ (i18n.terms$ | async)?.collected }}
-            <span class="sort-icon" *ngIf="getSortIcon('raisedAmount')">{{ getSortIcon('raisedAmount') }}</span>
-          </th>
-          <th class="sortable" [class.sorted]="isSorted('progressPercentage')" (click)="toggleSort('progressPercentage', $event)">
-            {{ (i18n.terms$ | async)?.progressPercentage }}
-            <span class="sort-icon" *ngIf="getSortIcon('progressPercentage')">{{ getSortIcon('progressPercentage') }}</span>
-          </th>
+          <th>{{ (i18n.terms$ | async)?.collected }}</th>
+          <th>{{ (i18n.terms$ | async)?.progressPercentage }}</th>
           <th>{{ (i18n.terms$ | async)?.inviteesHeader }}</th>
           <th>{{ (i18n.terms$ | async)?.blessingsHeader }}</th>
           <th class="sortable" [class.sorted]="isSorted('startDate')" (click)="toggleSort('startDate', $event)">
@@ -126,7 +121,16 @@
             </div>
           </td>
           <td class="amount">{{formatCurrency(campaign.targetAmount)}}</td>
-          <td class="amount raised">{{formatCurrency(campaign.raisedAmount)}}</td>
+          <td class="amount raised">
+            <ng-container *ngIf="getRaisedByCurrency(campaign).length <= 1">
+              {{formatRaisedByCurrency(campaign)}}
+            </ng-container>
+            <div class="multi-currency" *ngIf="getRaisedByCurrency(campaign).length > 1">
+              <span *ngFor="let c of getRaisedByCurrency(campaign); let i = index">
+                {{i > 0 ? ' + ' : ''}}{{c.symbol}}{{c.total | number:'1.0-0'}}
+              </span>
+            </div>
+          </td>
           <td>
             <div class="progress-container" *ngIf="campaign.targetAmount > 0">
               <div class="progress-bar">
