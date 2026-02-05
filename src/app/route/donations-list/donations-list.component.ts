@@ -696,7 +696,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   getAmountDisplay(donation: Donation): string {
     if (donation.donationType === 'commitment') {
       const paidAmount = this.commitmentPaymentTotals[donation.id] || 0;
-      return `(${paidAmount.toLocaleString()} / ${donation.amount.toLocaleString()})`;
+      return `${paidAmount.toLocaleString()} / ${donation.amount.toLocaleString()}`;
     }
     if (isStandingOrder(donation)) {
       const paidAmount = this.commitmentPaymentTotals[donation.id] || 0;
