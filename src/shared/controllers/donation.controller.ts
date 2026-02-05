@@ -339,16 +339,36 @@ export class DonationController {
     }
 
     // If we have a search term, we need to find matching donors first
+    // Use the same search logic as DonorController - split by spaces to support full name search
     if (filters.searchTerm && filters.searchTerm.trim() !== '') {
-      const searchLower = filters.searchTerm.toLowerCase().trim();
+      const words = filters.searchTerm.trim().split(/\s+/).filter(w => w.length > 0);
+
+      let donorWhereClause: any = {};
+      if (words.length === 1) {
+        // Single word - search in any field
+        const search = words[0];
+        donorWhereClause.$or = [
+          { firstName: { $contains: search } },
+          { lastName: { $contains: search } },
+          { firstNameEnglish: { $contains: search } },
+          { lastNameEnglish: { $contains: search } },
+          { idNumber: { $contains: search } }
+        ];
+      } else {
+        // Multiple words - each word must match at least one field
+        donorWhereClause.$and = words.map(word => ({
+          $or: [
+            { firstName: { $contains: word } },
+            { lastName: { $contains: word } },
+            { firstNameEnglish: { $contains: word } },
+            { lastNameEnglish: { $contains: word } },
+            { idNumber: { $contains: word } }
+          ]
+        }));
+      }
 
       const matchingDonors = await remult.repo(Donor).find({
-        where: {
-          $or: [
-            { firstName: { $contains: searchLower } },
-            { lastName: { $contains: searchLower } }
-          ]
-        }
+        where: donorWhereClause
       });
 
       const searchDonorIds = matchingDonors.map(d => d.id);
