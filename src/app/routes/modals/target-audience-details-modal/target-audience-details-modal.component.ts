@@ -283,10 +283,18 @@ export class TargetAudienceDetailsModalComponent implements OnInit {
     return this.donorMapData.reduce((sum, d) => sum + d.stats.totalDonations, 0);
   }
 
-  // Get average donation
-  getAverageDonation(): number {
-    const count = this.donorMapData.length;
-    return count > 0 ? this.getTotalDonationsSum() / count : 0;
+  // Get total donations grouped by currency
+  getTotalDonationsByCurrency(): Array<{ symbol: string; total: number }> {
+    const byCurrency: { [key: string]: { symbol: string; total: number } } = {};
+    for (const d of this.donorMapData) {
+      for (const c of d.stats.totalDonationsByCurrency) {
+        if (!byCurrency[c.currencyId]) {
+          byCurrency[c.currencyId] = { symbol: c.symbol, total: 0 };
+        }
+        byCurrency[c.currencyId].total += c.total;
+      }
+    }
+    return Object.values(byCurrency);
   }
 
   // Get total donation count

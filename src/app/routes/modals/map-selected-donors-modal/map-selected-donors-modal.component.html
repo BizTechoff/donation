@@ -55,15 +55,11 @@
                 <div class="donor-stats">
                   <span class="stat-item">
                     <mat-icon class="stat-icon">attach_money</mat-icon>
-                    סה"כ: {{ donorData.stats.totalDonationsCurrencySymbol }}{{ donorData.stats.totalDonations.toLocaleString() }}
+                    סה"כ: <ng-container *ngFor="let c of donorData.stats.totalDonationsByCurrency; let i = index">{{ i > 0 ? ' + ' : '' }}{{ c.symbol }}{{ c.total.toLocaleString() }}</ng-container>
                   </span>
                   <span class="stat-item">
                     <mat-icon class="stat-icon">card_giftcard</mat-icon>
                     {{ donorData.stats.donationCount }} תרומות
-                  </span>
-                  <span class="stat-item">
-                    <mat-icon class="stat-icon">trending_up</mat-icon>
-                    ממוצע: {{ donorData.stats.averageDonationCurrencySymbol }}{{ donorData.stats.averageDonation.toLocaleString() }}
                   </span>
                   <span class="stat-item" *ngIf="donorData.stats.partnerDonationsCount > 0">
                     <mat-icon class="stat-icon">group</mat-icon>
@@ -73,7 +69,7 @@
                   <span class="stat-item" *ngIf="donorData.stats.commitmentCount > 0">
                     <mat-icon class="stat-icon">assignment</mat-icon>
                     התחייבויות: {{ donorData.stats.commitmentCount }}
-                    <span class="partner-info">(סה"כ: {{ donorData.stats.commitmentCurrencySymbol }}{{ donorData.stats.commitmentTotal.toLocaleString() }})</span>
+                    <span class="partner-info" title="שולם בפועל / סה&quot;כ התחייבות">({{ donorData.stats.commitmentCurrencySymbol }}{{ donorData.stats.commitmentPaidTotal.toLocaleString() }} / {{ donorData.stats.commitmentCurrencySymbol }}{{ donorData.stats.commitmentPledgedTotal.toLocaleString() }})</span>
                   </span>
                 </div>
 
@@ -96,7 +92,8 @@
                 <div class="donor-last-donation" *ngIf="donorData.stats.lastDonationDate">
                   <mat-icon class="detail-icon">calendar_today</mat-icon>
                   תרומה אחרונה: {{ formatHebrewDate(donorData.stats.lastDonationDate) }}
-                  <span *ngIf="donorData.stats.lastDonationAmount > 0" class="last-donation-amount">({{ donorData.stats.lastDonationCurrencySymbol }}{{ donorData.stats.lastDonationAmount.toLocaleString() }}{{ donorData.stats.lastDonationIsPartner ? ' - שותף' : '' }})</span>
+                  <span *ngIf="donorData.stats.lastDonationAmount > 0 && donorData.stats.lastDonationIsStandingOrder" class="last-donation-amount" title="שולם בפועל / צפי">({{ donorData.stats.lastDonationCurrencySymbol }}{{ donorData.stats.lastDonationEffectiveAmount.toLocaleString() }} / {{ donorData.stats.lastDonationCurrencySymbol }}{{ donorData.stats.lastDonationExpectedAmount.toLocaleString() }}{{ donorData.stats.lastDonationIsPartner ? ' - שותף' : '' }})</span>
+                  <span *ngIf="donorData.stats.lastDonationAmount > 0 && !donorData.stats.lastDonationIsStandingOrder" class="last-donation-amount" title="סכום">({{ donorData.stats.lastDonationCurrencySymbol }}{{ donorData.stats.lastDonationAmount.toLocaleString() }}{{ donorData.stats.lastDonationIsPartner ? ' - שותף' : '' }})</span>
                 </div>
               </div>
             </div>
