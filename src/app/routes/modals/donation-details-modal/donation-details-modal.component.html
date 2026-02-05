@@ -235,7 +235,8 @@
         </div>
       </div>
 
-
+<!-- {{donation.donationMethodId}} -->
+<!-- TO-DELETE-TO -->
       <!-- אמצעי תשלום -->
       <div id="section-payment-method" class="section payment-method-section"
         *ngIf="donation.donationType !== 'commitment'">
@@ -622,8 +623,8 @@
 
         <!-- *ngIf="!isNewDonation && selectedPaymentMethod && selectedPaymentMethod.type === 'standing_order' && donation.donationType !== 'commitment' &&
         ((donation.standingOrderType === 'bank' && donationBanks.length) || (donation.standingOrderType === 'organization' && donationOrganizations.length))" -->
-
-      <button *ngIf="!isNewDonation && donation && donation.donationType === 'commitment'"
+<!-- {{this.selectedPaymentMethod | json}} -->
+      <button *ngIf="!isNewDonation && donation && (donation.donationType === 'commitment' || isStandingOrderPayment)"
         mat-stroked-button class="action-button payment-list-btn" (click)="openPaymentList()" title="תנועות">
         <mat-icon>payment</mat-icon>
         תנועות

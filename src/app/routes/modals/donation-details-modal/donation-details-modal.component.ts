@@ -96,7 +96,7 @@ export class DonationDetailsModalComponent implements OnInit {
         const data = await DonationController.getDonationDetailsData(
           this.args.donationId,
           this.args.donorId
-        );
+        );  
 
         // Initialize donation
         if (this.args.donationId === 'new') {
@@ -183,12 +183,12 @@ export class DonationDetailsModalComponent implements OnInit {
         this.donationOrganizations = data.donationOrganizations;
 
         // Add "עמותה" and "הו"ק" if they don't exist
-        const hasOrganization = this.donationMethods.some(m => m.name === 'עמותה');
-        const hasBankTransfer = this.donationMethods.some(m => m.name === 'הו"ק');
+        const hasOrganization = this.donationMethods.some(m => m.type === 'association');
+        const hasBankTransfer = this.donationMethods.some(m => m.type === 'standing_order');
 
         if (!hasOrganization) {
           const orgMethod = this.donationMethodRepo.create();
-          orgMethod.name = 'עמותה';
+          orgMethod.name = 'שובר עמותה';
           this.donationMethods.push(orgMethod);
         }
 
@@ -319,9 +319,12 @@ export class DonationDetailsModalComponent implements OnInit {
     // Update selected payment method
     if (this.donation?.donationMethodId) {
       this.selectedPaymentMethod = this.donationMethods.find(m => m.id === this.donation.donationMethodId);
+      this.donation.donationMethod = this.selectedPaymentMethod
     } else {
       this.selectedPaymentMethod = undefined;
+      this.donation.donationMethod = undefined
     }
+
   }
 
   private hasChanges(): boolean {
@@ -538,7 +541,13 @@ export class DonationDetailsModalComponent implements OnInit {
 
   async openPaymentList() {
     if (this.donation?.id) {
-      await this.ui.paymentListDialog(this.donation.id, this.donation.amount);
+      await this.donationRepo.save(this.donation)
+      // alert(this.donation.donationMethod)
+      await this.ui.paymentListDialog(this.donation.id, {
+        donationType: this.donation.donationType,
+        donationMethod: this.donation.donationMethod,
+        standingOrderType: this.donation.standingOrderType
+      });
     }
   }
 
@@ -751,7 +760,7 @@ export class DonationDetailsModalComponent implements OnInit {
     console.log('isCashPayment:', this.isCashPayment);
 
     // Handle special payment methods
-    if (this.selectedPaymentMethod?.name === 'כרטיס אשראי') {
+    if (this.selectedPaymentMethod?.type === 'credit_card') {
       this.openPaymentModal();
     }
     // Standing order (הוק) feature removed
@@ -771,7 +780,7 @@ export class DonationDetailsModalComponent implements OnInit {
   }
 
   get isOrganizationPayment(): boolean {
-    return this.selectedPaymentMethod?.name === 'עמותה' ||
+    return this.selectedPaymentMethod?.type === 'association' ||
       this.selectedPaymentMethod?.name?.includes('עמותה') ||
       this.selectedPaymentMethod?.name?.includes('ארגון') || false;
   }
@@ -784,7 +793,7 @@ export class DonationDetailsModalComponent implements OnInit {
   }
 
   get isStandingOrderPayment(): boolean {
-    return this.selectedPaymentMethod?.name === 'הוק' ||
+    return this.selectedPaymentMethod?.type === 'standing_order' ||
       this.selectedPaymentMethod?.name?.includes('הוראת קבע') ||
       this.selectedPaymentMethod?.name?.includes('הו"ק') || false;
   }
