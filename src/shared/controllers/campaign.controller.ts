@@ -138,7 +138,7 @@ export class CampaignController {
     if (campaignIds.length > 0) {
       const { Donation } = await import('../entity/donation');
       const { Payment } = await import('../entity/payment');
-      const { calculateEffectiveAmount } = await import('../utils/donation-utils');
+      const { calculateEffectiveAmount, calculatePaymentTotals } = await import('../utils/donation-utils');
 
       // Get all donations for these campaigns
       const donations = await remult.repo(Donation).find({
@@ -146,7 +146,7 @@ export class CampaignController {
         include: { donationMethod: true }
       });
 
-      // Get all payments for these donations
+      // Get all payments for these donations with type filtering
       const donationIds = donations.map(d => d.id);
       const payments = donationIds.length > 0
         ? await remult.repo(Payment).find({
@@ -154,12 +154,9 @@ export class CampaignController {
           })
         : [];
 
-      // Create payment totals map
-      const paymentTotals = new Map<string, number>();
-      for (const payment of payments) {
-        const current = paymentTotals.get(payment.donationId) || 0;
-        paymentTotals.set(payment.donationId, current + payment.amount);
-      }
+      // Create payment totals map with type filtering
+      const paymentTotalsRecord = calculatePaymentTotals(donations, payments);
+      const paymentTotals = new Map<string, number>(Object.entries(paymentTotalsRecord));
 
       // Sum by currency
       const currencyTotalsMap = new Map<string, number>();
@@ -216,7 +213,7 @@ export class CampaignController {
     const { Donation } = await import('../entity/donation');
     const { Payment } = await import('../entity/payment');
     const { PayerService } = await import('../../app/services/payer.service');
-    const { calculateEffectiveAmount } = await import('../utils/donation-utils');
+    const { calculateEffectiveAmount, calculatePaymentTotals } = await import('../utils/donation-utils');
 
     // Get all donations for these campaigns
     const donations = await remult.repo(Donation).find({
@@ -224,7 +221,7 @@ export class CampaignController {
       include: { donationMethod: true }
     });
 
-    // Get all payments for these donations
+    // Get all payments for these donations with type filtering
     const donationIds = donations.map(d => d.id);
     const payments = donationIds.length > 0
       ? await remult.repo(Payment).find({
@@ -232,12 +229,9 @@ export class CampaignController {
         })
       : [];
 
-    // Create payment totals map
-    const paymentTotals = new Map<string, number>();
-    for (const payment of payments) {
-      const current = paymentTotals.get(payment.donationId) || 0;
-      paymentTotals.set(payment.donationId, current + payment.amount);
-    }
+    // Create payment totals map with type filtering
+    const paymentTotalsRecord = calculatePaymentTotals(donations, payments);
+    const paymentTotals = new Map<string, number>(Object.entries(paymentTotalsRecord));
 
     // Get currency types
     const payerService = new PayerService();
@@ -299,7 +293,7 @@ export class CampaignController {
     const { Donation } = await import('../entity/donation');
     const { Payment } = await import('../entity/payment');
     const { PayerService } = await import('../../app/services/payer.service');
-    const { calculateEffectiveAmount } = await import('../utils/donation-utils');
+    const { calculateEffectiveAmount, calculatePaymentTotals } = await import('../utils/donation-utils');
 
     // Build where clause
     const where: any = { campaignId };
@@ -313,7 +307,7 @@ export class CampaignController {
       include: { donationMethod: true }
     });
 
-    // Get all payments for these donations
+    // Get all payments for these donations with type filtering
     const donationIds = donations.map(d => d.id);
     const payments = donationIds.length > 0
       ? await remult.repo(Payment).find({
@@ -321,12 +315,9 @@ export class CampaignController {
         })
       : [];
 
-    // Create payment totals map
-    const paymentTotals = new Map<string, number>();
-    for (const payment of payments) {
-      const current = paymentTotals.get(payment.donationId) || 0;
-      paymentTotals.set(payment.donationId, current + payment.amount);
-    }
+    // Create payment totals map with type filtering
+    const paymentTotalsRecord = calculatePaymentTotals(donations, payments);
+    const paymentTotals = new Map<string, number>(Object.entries(paymentTotalsRecord));
 
     // Get currency types
     const payerService = new PayerService();

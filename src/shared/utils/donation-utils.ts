@@ -1,4 +1,47 @@
 import { Donation } from '../entity/donation'
+import { Payment } from '../entity/payment'
+
+/**
+ * מחשב סכום תשלומים לכל תרומה, עם סינון לפי סוג התשלום המתאים
+ * - התחייבות: רק תשלומים עם type = 'התחייבות'
+ * - הו"ק: רק תשלומים עם type שמתחיל ב-'הו"ק'
+ *
+ * @param donations - רשימת התרומות (חייב לכלול donationMethod)
+ * @param payments - רשימת התשלומים
+ * @returns מפה של donationId לסכום התשלומים המסונן
+ */
+export function calculatePaymentTotals(
+  donations: Donation[],
+  payments: Payment[]
+): Record<string, number> {
+  if (!donations || donations.length === 0 || !payments || payments.length === 0) {
+    return {}
+  }
+
+  // בנה מפה של donationId לסוג התשלום הצפוי
+  const donationTypeMap = new Map<string, string>()
+  for (const d of donations) {
+    if (d.donationType === 'commitment') {
+      donationTypeMap.set(d.id, 'התחייבות')
+    } else if (d.donationMethod?.type === 'standing_order') {
+      donationTypeMap.set(d.id, 'הו"ק') // התחלה משותפת לכל סוגי ההו"ק
+    }
+  }
+
+  // סכום רק תשלומים שהסוג שלהם תואם לסוג התרומה
+  const totals: Record<string, number> = {}
+  for (const payment of payments) {
+    if (payment.donationId && payment.isActive !== false) {
+      const expectedType = donationTypeMap.get(payment.donationId)
+      // אם יש סוג צפוי, בדוק התאמה
+      if (expectedType && payment.type?.startsWith(expectedType)) {
+        totals[payment.donationId] = (totals[payment.donationId] || 0) + payment.amount
+      }
+    }
+  }
+
+  return totals
+}
 
 /**
  * מחשב את הסכום האפקטיבי של תרומה לפי סוגה:

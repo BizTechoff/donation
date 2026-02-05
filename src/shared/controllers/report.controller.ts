@@ -7,7 +7,7 @@ import { DonorPlace } from '../entity/donor-place';
 import { Payment } from '../entity/payment';
 import { Report } from '../enum/report';
 import { DocxCreateResponse } from '../type/letter.type';
-import { calculateEffectiveAmount, calculatePeriodsElapsed, isPaymentBased, isStandingOrder } from '../utils/donation-utils';
+import { calculateEffectiveAmount, calculatePaymentTotals, calculatePeriodsElapsed, isPaymentBased, isStandingOrder } from '../utils/donation-utils';
 import { HebrewDateController } from './hebrew-date.controller';
 import { GlobalFilterController } from './global-filter.controller';
 
@@ -288,20 +288,16 @@ export class ReportController {
       console.log(`✅ Final filtered donations: ${filteredDonations.length}`);
 
       // Load payment totals for payment-based donations (commitments + standing orders)
-      const paymentTotalsMap: Record<string, number> = {};
+      let paymentTotalsMap: Record<string, number> = {};
       if (filteredDonations.length > 0) {
-        const paymentBasedIds = filteredDonations
-          .filter(d => isPaymentBased(d))
-          .map(d => d.id!)
-          .filter(Boolean);
+        const paymentBasedDonations = filteredDonations.filter(d => isPaymentBased(d));
+        const paymentBasedIds = paymentBasedDonations.map(d => d.id!).filter(Boolean);
 
         if (paymentBasedIds.length > 0) {
           const allPaymentsForTotals = await remult.repo(Payment).find({
-            where: { donationId: { $in: paymentBasedIds } }
+            where: { donationId: { $in: paymentBasedIds }, isActive: true }
           });
-          for (const payment of allPaymentsForTotals) {
-            paymentTotalsMap[payment.donationId] = (paymentTotalsMap[payment.donationId] || 0) + payment.amount;
-          }
+          paymentTotalsMap = calculatePaymentTotals(paymentBasedDonations, allPaymentsForTotals);
         }
       }
 
@@ -951,13 +947,15 @@ export class ReportController {
         console.log(`  → Global amount filter: ${before} → ${donations.length}`);
       }
 
-      // Load payments for all donations
+      // Load payments for all donations with type filtering
       const donationIds = donations.map(d => d.id!).filter(Boolean);
       const payments = await remult.repo(Payment).find({
         where: {
-          donationId: { $in: donationIds }
+          donationId: { $in: donationIds },
+          isActive: true
         }
       });
+      const paymentTotalsMap = calculatePaymentTotals(donations, payments);
 
       console.log(`📊 Loaded ${payments.length} payments`);
 
@@ -1022,17 +1020,18 @@ export class ReportController {
         }
       }
 
-      // Process payments (actual amounts)
-      for (const payment of payments) {
-        const donation = donations.find(d => d.id === payment.donationId);
+      // Process payments (actual amounts) - using filtered payment totals
+      for (const donation of donations) {
         if (!donation?.donor) continue;
 
         const donorId = donation.donor.id;
         const data = donorMap.get(donorId);
         if (!data) continue;
 
-        // Convert payment to shekel
-        const amountInShekel = payment.amount * (conversionRates[donation.currencyId] || 1);
+        // Get filtered payment total for this donation
+        const paymentTotal = paymentTotalsMap[donation.id!] || 0;
+        // Convert to shekel
+        const amountInShekel = paymentTotal * (conversionRates[donation.currencyId] || 1);
         data.totalActual += amountInShekel;
       }
 
@@ -1305,24 +1304,19 @@ export class ReportController {
 
       // console.log(`   Found ${partnerDonations.length} partner donations`);
 
-      // Load payments for all these donations
-      const allDonationIds = [
-        ...donorDonations.map(d => d.id!),
-        ...partnerDonations.map(d => d.id!)
-      ].filter(Boolean);
+      // Load payments for all these donations with type filtering
+      const allDonations = [...donorDonations, ...partnerDonations];
+      const allDonationIds = allDonations.map(d => d.id!).filter(Boolean);
 
       const payments = allDonationIds.length > 0
         ? await remult.repo(Payment).find({
-          where: { donationId: { $in: allDonationIds } }
+          where: { donationId: { $in: allDonationIds }, isActive: true }
         })
         : [];
 
-      // Create payment map: donationId -> total payment amount
-      const paymentMap = new Map<string, number>();
-      for (const payment of payments) {
-        const current = paymentMap.get(payment.donationId) || 0;
-        paymentMap.set(payment.donationId, current + payment.amount);
-      }
+      // Create payment map with type filtering
+      const paymentTotals = calculatePaymentTotals(allDonations, payments);
+      const paymentMap = new Map<string, number>(Object.entries(paymentTotals));
 
       // Build donations array
       const donationsData: PersonalDonorReportData['donations'] = [];

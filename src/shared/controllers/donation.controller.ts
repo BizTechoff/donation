@@ -13,7 +13,7 @@ import { Organization } from '../entity/organization';
 import { DonorPlace } from '../entity/donor-place';
 import { Payment } from '../entity/payment';
 import { CurrencyType } from '../type/currency.type';
-import { calculateEffectiveAmount, isPaymentBased } from '../utils/donation-utils';
+import { calculateEffectiveAmount, calculatePaymentTotals, isPaymentBased } from '../utils/donation-utils';
 
 export interface DonationFilters {
   searchTerm?: string;
@@ -713,14 +713,21 @@ export class DonationController {
    * Returns null if no results should be returned (e.g., no matching donors)
    */
   /**
-   * Get payment totals for commitment donations
+   * Get payment totals for commitment/standing order donations
    * Returns a map of donationId -> total paid amount
+   * Uses calculatePaymentTotals to filter payments by type
    */
   @BackendMethod({ allowed: Allow.authenticated })
   static async getPaymentTotalsForCommitments(donationIds: string[]): Promise<Record<string, number>> {
     if (!donationIds || donationIds.length === 0) {
       return {};
     }
+
+    // Fetch donations to know their types
+    const donations = await remult.repo(Donation).find({
+      where: { id: { $in: donationIds } },
+      include: { donationMethod: true }
+    });
 
     const payments = await remult.repo(Payment).find({
       where: {
@@ -729,15 +736,7 @@ export class DonationController {
       }
     });
 
-    // Group payments by donationId and sum amounts
-    const totals: Record<string, number> = {};
-    for (const payment of payments) {
-      if (payment.donationId) {
-        totals[payment.donationId] = (totals[payment.donationId] || 0) + payment.amount;
-      }
-    }
-
-    return totals;
+    return calculatePaymentTotals(donations, payments);
   }
 
   private static async buildWhereClause(filters: DonationFilters): Promise<any | null> {

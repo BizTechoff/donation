@@ -15,7 +15,7 @@ import { Organization } from './organization'
 import { Bank } from './bank'
 import { Reminder } from './reminder'
 import { Roles } from '../enum/roles'
-import { calculateEffectiveAmount, isPaymentBased } from '../utils/donation-utils'
+import { calculateEffectiveAmount, calculatePaymentTotals, isPaymentBased } from '../utils/donation-utils'
 
 @Entity<Donation>('donations', {
   allowApiCrud: Allow.authenticated,
@@ -266,16 +266,15 @@ async function updateDonorAverage(donorId: string, remult: any) {
     include: { donationMethod: true }
   })
 
-  // טען סכומי תשלומים בפועל עבור התחייבויות והו"ק
-  const paymentBasedIds = donations.filter((d: Donation) => isPaymentBased(d)).map((d: Donation) => d.id)
+  // טען סכומי תשלומים בפועל עבור התחייבויות והו"ק עם סינון לפי סוג
+  const paymentBasedDonations = donations.filter((d: Donation) => isPaymentBased(d))
+  const paymentBasedIds = paymentBasedDonations.map((d: Donation) => d.id)
   let paymentTotals: Record<string, number> = {}
   if (paymentBasedIds.length > 0) {
     const payments = await remult.repo(Payment).find({
       where: { donationId: { $in: paymentBasedIds }, isActive: true }
     })
-    for (const p of payments) {
-      paymentTotals[p.donationId] = (paymentTotals[p.donationId] || 0) + p.amount
-    }
+    paymentTotals = calculatePaymentTotals(paymentBasedDonations, payments)
   }
 
   const donor = await remult.repo(Donor).findId(donorId)
