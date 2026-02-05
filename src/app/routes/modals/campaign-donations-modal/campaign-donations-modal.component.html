@@ -85,6 +85,10 @@
         <table class="data-table">
           <thead>
             <tr>
+              <th class="sortable" [class.sorted]="isSorted('donor')" (click)="toggleSort('donor', $event)">
+                תורם
+                <span class="sort-icon" *ngIf="getSortIcon('donor')">{{ getSortIcon('donor') }}</span>
+              </th>
               <th class="sortable" [class.sorted]="isSorted('donationDate')" (click)="toggleSort('donationDate', $event)">
                 תאריך
                 <span class="sort-icon" *ngIf="getSortIcon('donationDate')">{{ getSortIcon('donationDate') }}</span>
@@ -99,16 +103,17 @@
                 <span class="sort-icon" *ngIf="getSortIcon('amount')">{{ getSortIcon('amount') }}</span>
               </th>
               <th>מטבע</th>
-              <th class="sortable" [class.sorted]="isSorted('donor')" (click)="toggleSort('donor', $event)">
-                תורם
-                <span class="sort-icon" *ngIf="getSortIcon('donor')">{{ getSortIcon('donor') }}</span>
-              </th>
               <th>סיבת התרומה</th>
               <th class="actions-column">פעולות</th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let donation of donations" class="data-row">
+              <td>
+                <div class="donor-cell">
+                  {{getDonorName(donation)}}
+                </div>
+              </td>
               <td>
                 <div class="date-cell">
                   {{formatHebrewDate(donation.donationDate)}}
@@ -133,11 +138,6 @@
               </td>
               <td>
                 <span class="currency-badge">{{currencyTypes[donation.currencyId]?.symbol}}</span>
-              </td>
-              <td>
-                <div class="donor-cell">
-                  {{getDonorName(donation)}}
-                </div>
               </td>
               <td>
                 <div class="reason-cell">

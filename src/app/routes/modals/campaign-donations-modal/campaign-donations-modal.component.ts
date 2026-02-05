@@ -5,6 +5,7 @@ import { DialogConfig } from 'common-ui-elements';
 import { remult } from 'remult';
 import { Campaign, Donation, DonationMethod, Donor } from '../../../../shared/entity';
 import { DonationController } from '../../../../shared/controllers/donation.controller';
+import { CampaignController } from '../../../../shared/controllers/campaign.controller';
 import { calculateEffectiveAmount, isPaymentBased, isStandingOrder, calculatePeriodsElapsed } from '../../../../shared/utils/donation-utils';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
@@ -190,9 +191,9 @@ export class CampaignDonationsModalComponent implements OnInit {
         ? await DonationController.getPaymentTotalsForCommitments(paymentBasedIds)
         : {};
 
-      // Calculate totals by currency - like donor-donations-modal
+      // Calculate totals by currency from ALL donations (not just current page)
       this.totalDonations = this.totalCount;
-      this.calculateTotalsByCurrency();
+      await this.loadTotalsFromAllDonations(filteredDonorIds);
 
       // Load unique donors for filter dropdown
       const uniqueDonorIds = [...new Set(this.donations.map(d => d.donorId))];
@@ -213,38 +214,33 @@ export class CampaignDonationsModalComponent implements OnInit {
   }
 
   /**
-   * Calculate totals by currency, separating full donations from commitments
+   * Load totals from ALL donations for this campaign (not just current page)
    */
-  private calculateTotalsByCurrency() {
-    const fullByCurrency: Record<string, number> = {};
-    const commitmentByCurrency: Record<string, number> = {};
+  private async loadTotalsFromAllDonations(donorIds?: string[]) {
+    try {
+      const totals = await CampaignController.getCampaignDonationTotals(
+        this.args.campaignId,
+        donorIds && donorIds.length > 0 ? donorIds : undefined
+      );
 
-    this.fullDonationsCount = 0;
-    this.commitmentDonationsCount = 0;
-
-    for (const donation of this.donations) {
-      const currency = donation.currencyId || 'ILS';
-      const effectiveAmount = calculateEffectiveAmount(donation, this.paymentTotals[donation.id]);
-
-      if (donation.donationType === 'commitment') {
-        this.commitmentDonationsCount++;
-        commitmentByCurrency[currency] = (commitmentByCurrency[currency] || 0) + effectiveAmount;
-      } else {
-        this.fullDonationsCount++;
-        fullByCurrency[currency] = (fullByCurrency[currency] || 0) + effectiveAmount;
-      }
+      this.fullDonationsCount = totals.fullDonationsCount;
+      this.commitmentDonationsCount = totals.commitmentDonationsCount;
+      this.fullDonationsByCurrency = totals.fullDonationsByCurrency.map(c => ({
+        symbol: c.symbol,
+        total: c.total
+      }));
+      this.commitmentDonationsByCurrency = totals.commitmentDonationsByCurrency.map(c => ({
+        symbol: c.symbol,
+        total: c.total
+      }));
+    } catch (error) {
+      console.error('Error loading totals:', error);
+      // Fallback to empty
+      this.fullDonationsCount = 0;
+      this.commitmentDonationsCount = 0;
+      this.fullDonationsByCurrency = [];
+      this.commitmentDonationsByCurrency = [];
     }
-
-    // Convert to arrays with symbols
-    this.fullDonationsByCurrency = Object.entries(fullByCurrency).map(([currencyId, total]) => ({
-      symbol: this.currencyTypes[currencyId]?.symbol || '₪',
-      total
-    }));
-
-    this.commitmentDonationsByCurrency = Object.entries(commitmentByCurrency).map(([currencyId, total]) => ({
-      symbol: this.currencyTypes[currencyId]?.symbol || '₪',
-      total
-    }));
   }
 
   applyFilters() {
