@@ -4,7 +4,7 @@ import { Donation } from '../entity/donation';
 import { Donor } from '../entity/donor';
 import { DonorContact } from '../entity/donor-contact';
 import { DonorPlace } from '../entity/donor-place';
-import { calculateEffectiveAmount, calculatePeriodsElapsed, isPaymentBased, isStandingOrder } from '../utils/donation-utils';
+import { calculateEffectiveAmount, calculatePaymentTotals, calculatePeriodsElapsed, isPaymentBased, isStandingOrder } from '../utils/donation-utils';
 
 // ממשק לפילטרים מקומיים של המפה
 export interface MapFilters {
@@ -107,16 +107,20 @@ export class DonorMapController {
 
     let donorIds: string[] | undefined = undefined;
 
-    // searchTerm - חיפוש בשם (תמיכה בחיפוש שם מלא עם מספר מילים)
+    // searchTerm - חיפוש בשם/ת.ז./כתובת (תמיכה בחיפוש שם מלא עם מספר מילים)
+    // לוגיקה זהה ל-DonorController.findFilteredDonors + חיפוש בכתובות
     if (mapFilters.searchTerm?.trim()) {
       const words = mapFilters.searchTerm.trim().split(/\s+/).filter(w => w.length > 0);
+
+      // חיפוש בתורמים (שם/ת.ז.)
       let searchWhere: any = { isActive: true };
       if (words.length === 1) {
         searchWhere.$or = [
           { firstName: { $contains: words[0] } },
           { lastName: { $contains: words[0] } },
           { firstNameEnglish: { $contains: words[0] } },
-          { lastNameEnglish: { $contains: words[0] } }
+          { lastNameEnglish: { $contains: words[0] } },
+          { idNumber: { $contains: words[0] } }
         ];
       } else {
         searchWhere.$and = words.map(word => ({
@@ -124,12 +128,46 @@ export class DonorMapController {
             { firstName: { $contains: word } },
             { lastName: { $contains: word } },
             { firstNameEnglish: { $contains: word } },
-            { lastNameEnglish: { $contains: word } }
+            { lastNameEnglish: { $contains: word } },
+            { idNumber: { $contains: word } }
           ]
         }));
       }
       const donors = await donorRepo.find({ where: searchWhere });
-      donorIds = donors.map(d => d.id);
+      const donorIdsFromName = donors.map(d => d.id);
+
+      // חיפוש בכתובות (עיר/רחוב/שכונה)
+      const { Place } = await import('../entity/place');
+      let placeWhere: any = {};
+      if (words.length === 1) {
+        placeWhere.$or = [
+          { city: { $contains: words[0] } },
+          { street: { $contains: words[0] } },
+          { neighborhood: { $contains: words[0] } }
+        ];
+      } else {
+        placeWhere.$and = words.map(word => ({
+          $or: [
+            { city: { $contains: word } },
+            { street: { $contains: word } },
+            { neighborhood: { $contains: word } }
+          ]
+        }));
+      }
+      const matchingPlaces = await remult.repo(Place).find({ where: placeWhere });
+      const placeIds = matchingPlaces.map(p => p.id);
+
+      // מצא תורמים עם הכתובות התואמות
+      let donorIdsFromAddress: string[] = [];
+      if (placeIds.length > 0) {
+        const donorPlaces = await remult.repo(DonorPlace).find({
+          where: { placeId: { $in: placeIds }, isActive: true }
+        });
+        donorIdsFromAddress = donorPlaces.map(dp => dp.donorId).filter(Boolean) as string[];
+      }
+
+      // איחוד התוצאות (תורמים שנמצאו לפי שם או כתובת)
+      donorIds = [...new Set([...donorIdsFromName, ...donorIdsFromAddress])];
     }
 
     // Donation-based filters (minDonationCount, minTotalDonations, maxTotalDonations)
@@ -144,17 +182,16 @@ export class DonorMapController {
         include: { donationMethod: true }
       });
 
-      // טען סכומי תשלומים בפועל עבור התחייבויות והו"ק
-      const paymentBasedIds = donations.filter(d => isPaymentBased(d)).map(d => d.id).filter(Boolean);
+      // טען סכומי תשלומים בפועל עבור התחייבויות והו"ק עם סינון לפי סוג
+      const paymentBasedDonations = donations.filter(d => isPaymentBased(d));
+      const paymentBasedIds = paymentBasedDonations.map(d => d.id).filter(Boolean);
       let paymentTotals: Record<string, number> = {};
       if (paymentBasedIds.length > 0) {
         const { Payment } = await import('../entity/payment');
         const payments = await remult.repo(Payment).find({
           where: { donationId: { $in: paymentBasedIds }, isActive: true }
         });
-        for (const p of payments) {
-          paymentTotals[p.donationId] = (paymentTotals[p.donationId] || 0) + p.amount;
-        }
+        paymentTotals = calculatePaymentTotals(paymentBasedDonations, payments);
       }
 
       // חשב סטטיסטיקות תרומות
@@ -291,17 +328,16 @@ export class DonorMapController {
     const payerService = new PayerService();
     const currencyTypes = payerService.getCurrencyTypesRecord();
 
-    // טען סכומי תשלומים בפועל עבור התחייבויות והו"ק
-    const paymentBasedIdsForMarkers = donations.filter(d => isPaymentBased(d)).map(d => d.id).filter(Boolean);
+    // טען סכומי תשלומים בפועל עבור התחייבויות והו"ק עם סינון לפי סוג
+    const paymentBasedDonationsForMarkers = donations.filter(d => isPaymentBased(d));
+    const paymentBasedIdsForMarkers = paymentBasedDonationsForMarkers.map(d => d.id).filter(Boolean);
     let paymentTotalsForMarkers: Record<string, number> = {};
     if (paymentBasedIdsForMarkers.length > 0) {
       const { Payment } = await import('../entity/payment');
       const payments = await remult.repo(Payment).find({
         where: { donationId: { $in: paymentBasedIdsForMarkers }, isActive: true }
       });
-      for (const p of payments) {
-        paymentTotalsForMarkers[p.donationId] = (paymentTotalsForMarkers[p.donationId] || 0) + p.amount;
-      }
+      paymentTotalsForMarkers = calculatePaymentTotals(paymentBasedDonationsForMarkers, payments);
     }
 
     // חשב סטטיסטיקות תרומות לכל תורם (המר הכל לשקלים)
@@ -455,17 +491,16 @@ export class DonorMapController {
     const payerService = new PayerService();
     const currencyTypes = await payerService.getCurrencyTypesRecord();
 
-    // טען סכומי תשלומים בפועל עבור התחייבויות והו"ק
-    const paymentBasedIdsForStats = donations.filter(d => isPaymentBased(d)).map(d => d.id).filter(Boolean);
+    // טען סכומי תשלומים בפועל עבור התחייבויות והו"ק עם סינון לפי סוג
+    const paymentBasedDonationsForStats = donations.filter(d => isPaymentBased(d));
+    const paymentBasedIdsForStats = paymentBasedDonationsForStats.map(d => d.id).filter(Boolean);
     let paymentTotalsForStats: Record<string, number> = {};
     if (paymentBasedIdsForStats.length > 0) {
       const { Payment } = await import('../entity/payment');
       const payments = await remult.repo(Payment).find({
         where: { donationId: { $in: paymentBasedIdsForStats }, isActive: true }
       });
-      for (const p of payments) {
-        paymentTotalsForStats[p.donationId] = (paymentTotalsForStats[p.donationId] || 0) + p.amount;
-      }
+      paymentTotalsForStats = calculatePaymentTotals(paymentBasedDonationsForStats, payments);
     }
 
     // חשב סכום כולל בשקלים
@@ -642,18 +677,17 @@ export class DonorMapController {
     console.timeEnd('Load donations');
     console.log(`Loaded ${donationsAsPrimary.length} primary donations, ${donationsAsPartner.length} partner donations, ${commitments.length} commitments`);
 
-    // טען סכומי תשלומים בפועל עבור התחייבויות והו"ק
+    // טען סכומי תשלומים בפועל עבור התחייבויות והו"ק עם סינון לפי סוג
     const allDonations = [...donationsAsPrimary, ...donationsAsPartner, ...commitments];
-    const paymentBasedIdsForMap = allDonations.filter(d => isPaymentBased(d)).map(d => d.id).filter(Boolean);
+    const paymentBasedDonationsForMap = allDonations.filter(d => isPaymentBased(d));
+    const paymentBasedIdsForMap = paymentBasedDonationsForMap.map(d => d.id).filter(Boolean);
     let paymentTotalsForMap: Record<string, number> = {};
     if (paymentBasedIdsForMap.length > 0) {
       const { Payment } = await import('../entity/payment');
       const payments = await remult.repo(Payment).find({
         where: { donationId: { $in: paymentBasedIdsForMap }, isActive: true }
       });
-      for (const p of payments) {
-        paymentTotalsForMap[p.donationId] = (paymentTotalsForMap[p.donationId] || 0) + p.amount;
-      }
+      paymentTotalsForMap = calculatePaymentTotals(paymentBasedDonationsForMap, payments);
     }
 
     console.time('Calculate donation stats');
