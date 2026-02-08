@@ -220,6 +220,7 @@
               *ngIf="fieldValue.isMultiline"
               class="form-control field-textarea"
               [style.textAlign]="fieldValue.isEnglish ? 'left' : 'right'"
+              [style.direction]="fieldValue.isEnglish ? 'ltr' : 'rtl'"
               rows="3"
               [(ngModel)]="fieldValue.value"
               (ngModelChange)="onFieldValueChange(fieldValue, $event)"
@@ -227,6 +228,7 @@
             <input
               *ngIf="!fieldValue.isMultiline"
               [style.textAlign]="fieldValue.isEnglish ? 'left' : 'right'"
+              [style.direction]="fieldValue.isEnglish ? 'ltr' : 'rtl'"
               type="text"
               class="form-control field-input-text"
               [(ngModel)]="fieldValue.value"

@@ -441,13 +441,13 @@ export class LetterPropertiesModalComponent implements OnInit {
         let place;
 
         if (this.donation.payerName === donorFullName) {
-          // Payer is the donor - use donor's home address
-          const address = await remult.repo(DonorPlace).findFirst({ donor: this.donation.donor });
+          // Payer is the donor - use donor's home address// 
+          const address = await remult.repo(DonorPlace).findFirst({ donor: this.donation.donor }, { include: { place: { include: { country: true } } } });
           place = address?.place;
           // } else if (this.donation.organizationId && this.donation.organization?.place) {
           // Payer is an organization
         } else {
-          const company = await remult.repo(Company).findFirst({ name: this.donation.payerName })
+          const company = await remult.repo(Company).findFirst({ name: this.donation.payerName }, { include: { place: { include: { country: true } } } })
           if (company) {
             // Payer is an organization
             place = company.place;
@@ -471,11 +471,11 @@ export class LetterPropertiesModalComponent implements OnInit {
 
         if (this.donation.payerName === donorFullName) {
           // Payer is the donor - use donor's home address
-          const address = await remult.repo(DonorPlace).findFirst({ donor: this.donation.donor });
+          const address = await remult.repo(DonorPlace).findFirst({ donor: this.donation.donor },{include: {place: { include: { country: true }}}});
           place = address?.place;
           // } else if (this.donation.organizationId && this.donation.organization?.place) {
         } else {
-          const company = await remult.repo(Company).findFirst({ name: this.donation.payerName })
+          const company = await remult.repo(Company).findFirst({ name: this.donation.payerName },{include: {place: { include: { country: true }}}})
           if (company) {
             // Payer is an organization
             place = company.place;
@@ -497,15 +497,16 @@ export class LetterPropertiesModalComponent implements OnInit {
         const row1 =
           `${this.donation.donor?.titleEnglish} ${this.donation.donor?.maritalStatus === 'married' && !this.donation.donor?.titleEnglish?.includes('Mrs.') ? '& Mrs.' : ''} ${this.donation.donor?.firstNameEnglish[0]?.toUpperCase()} ${this.toCamelCase(this.donation.donor?.lastNameEnglish || '')}` || ''
 
-        const address = await remult.repo(DonorPlace).findFirst({ donor: this.donation.donor })
+        const address = await remult.repo(DonorPlace).findFirst({ donor: this.donation.donor }, { include: { place: { include: { country: true } } } })
         const row2 = `${address?.place?.apartment} ${address?.place?.building}` || ''
         const isUKAddr = address?.place?.country?.code === 'GB' || address?.place?.country?.code === 'UK';
+        // console.log('isUKAddr',isUKAddr,'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',address?.place?.country?.code)
         const row3 = isUKAddr
           ? `${address?.place?.houseNumber || ''} ${address?.place?.street || ''}`.trim()
           : `${address?.place?.street || ''} ${address?.place?.houseNumber || ''}`.trim();
-        const row4 = `${address?.place?.city} ${address?.place?.country?.code === 'US' ? address?.place?.country?.name : ''} ${address?.place?.postcode}` || ''
-        const row5 = address?.place?.country?.name || ''
-
+        const row4 = `${address?.place?.city} ${address?.place?.country?.code === 'US' ? address?.place?.country?.nameEn : ''} ${address?.place?.postcode}` || ''
+        const row5 = address?.place?.country?.nameEn || ''
+        // TO_HERE
         parts.push(row1?.trim(), row2?.trim(), row3?.trim(), row4?.trim(), row5?.trim())
         console.log('getValue', row1, row2, row3, row4, row5)
         result = parts.filter(p => p.trim()).join('\n')
