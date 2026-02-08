@@ -153,6 +153,7 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
   async clearFilters() {
     await this.filterService.clearFilters();
     // ה-subscription ב-ngOnInit יעדכן אוטומטית את appliedFilters ו-pendingFilters
+    this.menuTrigger?.closeMenu();
   }
 
   async clearFilter(key: keyof GlobalFilters) {
