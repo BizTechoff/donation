@@ -138,6 +138,92 @@
 
     </div>
 
+      <!-- פילטרים לדוח אישי לתורם -->
+      <div class="filter-row personal-donor-filters" *ngIf="activeReport === 'personalDonor' && !isPersonalReportPrintMode">
+        <!-- בחירת תורם -->
+        <div class="filter-group donor-filter-group">
+          <label>תורם</label>
+          <div class="donor-filter-input-wrapper">
+            <input type="text" class="form-control donor-filter-input"
+              [value]="selectedDonorForPersonalReport?.fullName || 'בחר תורם'" readonly
+              (click)="selectDonorForPersonalReport()">
+            <button class="donor-filter-search-btn" (click)="selectDonorForPersonalReport()" matTooltip="בחר תורם"
+              dir="rtl">
+              <mat-icon>search</mat-icon>
+            </button>
+            <button *ngIf="selectedDonorForPersonalReport" class="donor-filter-clear-btn"
+              (click)="selectedDonorForPersonalReport = null; personalDonorReportData = null; $event.stopPropagation()"
+              matTooltip="נקה בחירה" dir="rtl">
+              <mat-icon>clear</mat-icon>
+            </button>
+          </div>
+        </div>
+
+        <!-- מתאריך -->
+        <div class="filter-group date-filter-group">
+          <label>מתאריך</label>
+          <div class="date-input-wrapper">
+            <app-date-fast-input
+              [(ngModel)]="personalReportFromDate"
+              (dateChange)="onPersonalReportFromDateChange()"
+              placeholder="dd/mm/yyyy">
+            </app-date-fast-input>
+            <button type="button" class="date-picker-btn hebrew-date-btn" (click)="openHebrewDatePicker('from')" matTooltip="בחר תאריך עברי" dir="rtl">
+              <span class="hebrew-icon">א</span>
+            </button>
+            <input type="date" #fromDatePicker class="hidden-date-picker"
+              [value]="formatDateForNativePicker(personalReportFromDate)"
+              (change)="onNativeDatePick($event, 'from')">
+            <button type="button" class="date-picker-btn" (click)="fromDatePicker.showPicker()" matTooltip="בחר תאריך לועזי" dir="rtl">
+              <mat-icon>calendar_today</mat-icon>
+            </button>
+          </div>
+          <small class="hebrew-date-hint">{{personalReportFromDateHebrew || '\u00A0'}}</small>
+        </div>
+
+        <!-- עד תאריך -->
+        <div class="filter-group date-filter-group">
+          <label>עד תאריך</label>
+          <div class="date-input-wrapper">
+            <app-date-fast-input
+              [(ngModel)]="personalReportToDate"
+              (dateChange)="onPersonalReportToDateChange()"
+              placeholder="dd/mm/yyyy">
+            </app-date-fast-input>
+            <button type="button" class="date-picker-btn hebrew-date-btn" (click)="openHebrewDatePicker('to')" matTooltip="בחר תאריך עברי" dir="rtl">
+              <span class="hebrew-icon">א</span>
+            </button>
+            <input type="date" #toDatePicker class="hidden-date-picker"
+              [value]="formatDateForNativePicker(personalReportToDate)"
+              (change)="onNativeDatePick($event, 'to')">
+            <button type="button" class="date-picker-btn" (click)="toDatePicker.showPicker()" matTooltip="בחר תאריך לועזי" dir="rtl">
+              <mat-icon>calendar_today</mat-icon>
+            </button>
+          </div>
+          <small class="hebrew-date-hint">{{personalReportToDateHebrew || '\u00A0'}}</small>
+        </div>
+
+        <!-- כפתורים -->
+        <div class="filter-actions-wrapper">
+          <div class="filter-actions">
+            <button class="btn btn-primary" (click)="printAndProduceOnce()"
+              [disabled]="!selectedDonorForPersonalReport || !personalReportFromDate">
+              <mat-icon>description</mat-icon>
+              הפק דוח
+            </button>
+            <button *ngIf="!isPrintAndProduceOnce" class="btn btn-secondary" (click)="printPersonalDonorReport()"
+              [disabled]="!personalDonorReportData">
+              <mat-icon>print</mat-icon>
+              הדפס
+            </button>
+            <button class="btn btn-outline" (click)="clearPersonalDonorReport()">
+              <mat-icon>refresh</mat-icon>
+              נקה
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- אפשרויות תצוגה - שורה נפרדת -->
       <div class="display-options-row" *ngIf="activeReport === 'donations'">
         <label class="checkbox-label" *ngIf="filters.groupBy === 'donor'">
@@ -854,92 +940,6 @@
 
     <!-- דוח אישי לתורם -->
     <div *ngIf="activeReport === 'personalDonor'" class="personal-donor-report">
-      <!-- Filters Section -->
-      <div class="personal-report-filters" *ngIf="!isPersonalReportPrintMode">
-        <div class="filter-row">
-          <!-- בחירת תורם -->
-          <div class="filter-group donor-filter-group">
-            <label>תורם</label>
-            <div class="donor-filter-input-wrapper">
-              <input type="text" class="form-control donor-filter-input"
-                [value]="selectedDonorForPersonalReport?.fullName || 'בחר תורם'" readonly
-                (click)="selectDonorForPersonalReport()">
-              <button class="donor-filter-search-btn" (click)="selectDonorForPersonalReport()" matTooltip="בחר תורם"
-                dir="rtl">
-                <mat-icon>search</mat-icon>
-              </button>
-              <button *ngIf="selectedDonorForPersonalReport" class="donor-filter-clear-btn"
-                (click)="selectedDonorForPersonalReport = null; personalDonorReportData = null; $event.stopPropagation()"
-                matTooltip="נקה בחירה" dir="rtl">
-                <mat-icon>clear</mat-icon>
-              </button>
-            </div>
-          </div>
-
-          <!-- מתאריך -->
-          <div class="filter-group date-filter-group">
-            <label>מתאריך</label>
-            <div class="date-input-wrapper">
-              <app-date-fast-input
-                [(ngModel)]="personalReportFromDate"
-                (dateChange)="onPersonalReportFromDateChange()"
-                placeholder="dd/mm/yyyy">
-              </app-date-fast-input>
-              <input type="date" #fromDatePicker class="hidden-date-picker"
-                (change)="onNativeDatePick($event, 'from')">
-              <button type="button" class="date-picker-btn" (click)="fromDatePicker.showPicker()" matTooltip="בחר תאריך" dir="rtl">
-                <mat-icon>calendar_today</mat-icon>
-              </button>
-            </div>
-            <small class="hebrew-date-hint">{{personalReportFromDateHebrew || '\u00A0'}}</small>
-          </div>
-
-          <!-- עד תאריך -->
-          <div class="filter-group date-filter-group">
-            <label>עד תאריך</label>
-            <div class="date-input-wrapper">
-              <app-date-fast-input
-                [(ngModel)]="personalReportToDate"
-                (dateChange)="onPersonalReportToDateChange()"
-                placeholder="dd/mm/yyyy">
-              </app-date-fast-input>
-              <input type="date" #toDatePicker class="hidden-date-picker"
-                (change)="onNativeDatePick($event, 'to')">
-              <button type="button" class="date-picker-btn" (click)="toDatePicker.showPicker()" matTooltip="בחר תאריך" dir="rtl">
-                <mat-icon>calendar_today</mat-icon>
-              </button>
-            </div>
-            <small class="hebrew-date-hint">{{personalReportToDateHebrew || '\u00A0'}}</small>
-          </div>
-
-          <!-- כפתורים -->
-          <div>
-            <div class="filter-actions">
-              <!-- (click)="loadPersonalDonorReport()" -->
-              <button class="btn btn-primary" (click)="printAndProduceOnce()"
-                [disabled]="!selectedDonorForPersonalReport || !personalReportFromDate">
-                <mat-icon>description</mat-icon>
-                הפק דוח
-              </button>
-              <button *ngIf="!isPrintAndProduceOnce" class="btn btn-secondary" (click)="printPersonalDonorReport()"
-                [disabled]="!personalDonorReportData">
-                <mat-icon>print</mat-icon>
-                הדפס
-              </button>
-              <button class="btn btn-outline" (click)="clearPersonalDonorReport()">
-                <mat-icon>refresh</mat-icon>
-                נקה
-              </button>
-            </div>
-            <!-- <div>
-              <mat-checkbox [(ngModel)]="isPrintAndProduceOnce" (change)="toggleIsPrintAndProduceOnce()">
-                הדפס והפק ביחד
-              </mat-checkbox>
-            </div> -->
-          </div>
-        </div>
-      </div>
-
       <!-- Report Display -->
       <div class="personal-report-display" *ngIf="personalDonorReportData"
         [class.print-mode]="isPersonalReportPrintMode">

@@ -26,8 +26,8 @@ export class DualDatePickerComponent implements OnInit, ControlValueAccessor {
   hebrewYear: number = 5785;
 
   hebrewMonths: { value: number; name: string }[] = [];
-  hebrewDays: number[] = [];
-  hebrewYears: number[] = [];
+  hebrewDays: { value: number; display: string }[] = [];
+  hebrewYears: { value: number; display: string }[] = [];
 
   private onChange: (value: any) => void = () => {};
   private onTouched: () => void = () => {};
@@ -44,7 +44,10 @@ export class DualDatePickerComponent implements OnInit, ControlValueAccessor {
     const currentYear = this.hebrewDateService.getCurrentHebrewYear();
     this.hebrewYears = [];
     for (let i = currentYear - 120; i <= currentYear + 1; i++) {
-      this.hebrewYears.push(i);
+      this.hebrewYears.push({
+        value: i,
+        display: this.hebrewDateService.formatHebrewYear(i)
+      });
     }
     this.hebrewYear = currentYear;
     this.updateHebrewMonths();
@@ -60,7 +63,10 @@ export class DualDatePickerComponent implements OnInit, ControlValueAccessor {
 
   updateHebrewDays() {
     const daysInMonth = this.hebrewDateService.getDaysInMonth(this.hebrewMonth, this.hebrewYear);
-    this.hebrewDays = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+    this.hebrewDays = Array.from({ length: daysInMonth }, (_, i) => ({
+      value: i + 1,
+      display: this.hebrewDateService.getHebrewDayString(i + 1)
+    }));
     if (this.hebrewDay > daysInMonth) {
       this.hebrewDay = daysInMonth;
     }

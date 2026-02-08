@@ -2172,6 +2172,46 @@ export class ReportsComponent implements OnInit, OnDestroy {
     }
   }
 
+  formatDateForNativePicker(date: Date | null): string {
+    if (!date) return '';
+    const d = date instanceof Date ? date : new Date(date);
+    if (isNaN(d.getTime())) return '';
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  async openHebrewDatePicker(target: 'from' | 'to') {
+    const { HebrewDatePickerModalComponent } = await import('../../routes/modals/hebrew-date-picker-modal/hebrew-date-picker-modal.component');
+
+    // קבל תאריך נוכחי או תאריך היום
+    const currentDate = target === 'from'
+      ? (this.personalReportFromDate || new Date())
+      : (this.personalReportToDate || new Date());
+
+    const dateObj = currentDate instanceof Date ? currentDate : new Date(currentDate);
+
+    const selectedDate = await openDialog(
+      HebrewDatePickerModalComponent,
+      (modal) => {
+        modal.title = target === 'from' ? 'בחר תאריך עברי - מתאריך' : 'בחר תאריך עברי - עד תאריך';
+        modal.selectedDate = dateObj;
+      },
+      (modal) => modal.selectedDate
+    );
+
+    if (selectedDate) {
+      if (target === 'from') {
+        this.personalReportFromDate = selectedDate;
+        this.onPersonalReportFromDateChange();
+      } else {
+        this.personalReportToDate = selectedDate;
+        this.onPersonalReportToDateChange();
+      }
+    }
+  }
+
   onPersonalReportFromDateChange() {
     if (!this.personalReportFromDate) {
       this.updatePersonalReportHebrewDates();

@@ -6,28 +6,28 @@
     <div class="date-section hebrew-date">
       <label class="date-label">{{ hebrewLabel }}</label>
       <div class="date-selects">
-        <select 
-          class="form-control date-select day-select" 
-          [(ngModel)]="hebrewDay" 
+        <select
+          class="form-control date-select day-select"
+          [(ngModel)]="hebrewDay"
           (change)="onHebrewDayChange()"
           [disabled]="disabled">
-          <option *ngFor="let day of hebrewDays" [value]="day">{{ day }}</option>
+          <option *ngFor="let day of hebrewDays" [value]="day.value">{{ day.display }}</option>
         </select>
-        
-        <select 
-          class="form-control date-select month-select" 
-          [(ngModel)]="hebrewMonth" 
+
+        <select
+          class="form-control date-select month-select"
+          [(ngModel)]="hebrewMonth"
           (change)="onHebrewMonthChange()"
           [disabled]="disabled">
           <option *ngFor="let month of hebrewMonths" [value]="month.value">{{ month.name }}</option>
         </select>
-        
-        <select 
-          class="form-control date-select year-select" 
-          [(ngModel)]="hebrewYear" 
+
+        <select
+          class="form-control date-select year-select"
+          [(ngModel)]="hebrewYear"
           (change)="onHebrewYearChange()"
           [disabled]="disabled">
-          <option *ngFor="let year of hebrewYears" [value]="year">{{ year }}</option>
+          <option *ngFor="let year of hebrewYears" [value]="year.value">{{ year.display }}</option>
         </select>
       </div>
       <div class="formatted-date hebrew-formatted">{{ getFormattedHebrewDate() }}</div>
