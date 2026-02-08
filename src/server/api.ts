@@ -102,6 +102,15 @@ export const api = remultExpress({
     // Run once on startup
     console.log('[Server] Running initial reminder check...')
     await checkAndSendReminders()
+
+    // const countries = [] as string[]
+    // for await (const c of r.repo(Country).query()) {
+    //   countries.push(c.displayName)
+    //   countries.push(c.code)
+    //   countries.push(c.phonePrefix)
+    //   countries.push(c.currencyId)
+    // }
+    // console.table(countries)
   }
 
 })
