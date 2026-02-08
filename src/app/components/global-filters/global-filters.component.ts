@@ -151,8 +151,8 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
   }
 
   async clearFilters() {
-    this.pendingFilters = { isAnash: TriStateFilter.All, isAlumni: TriStateFilter.All };
-    this.cdr.detectChanges();
+    await this.filterService.clearFilters();
+    // ה-subscription ב-ngOnInit יעדכן אוטומטית את appliedFilters ו-pendingFilters
   }
 
   async clearFilter(key: keyof GlobalFilters) {
