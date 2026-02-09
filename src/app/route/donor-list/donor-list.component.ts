@@ -645,7 +645,7 @@ export class DonorListComponent implements OnInit, OnDestroy {
           subtitle: `${allDonors.length} ${this.i18n.currentTerms.donors || 'תורמים'}`,
           columns: [
             { header: this.i18n.currentTerms.name || 'שם', field: 'fullName' },
-            { header: this.i18n.currentTerms.address || 'כתובת', field: 'address' },
+            { header: this.i18n.currentTerms.address || 'כתובת', field: 'address', align: 'left' },
             { header: this.i18n.currentTerms.phone || 'טלפון', field: 'phone' },
             { header: this.i18n.currentTerms.email || 'דוא"ל', field: 'email' },
             { header: this.i18n.currentTerms.lastDonation || 'תרומה אחרונה', field: 'lastDonation' }
