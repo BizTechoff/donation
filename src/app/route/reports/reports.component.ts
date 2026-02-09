@@ -272,6 +272,8 @@ export class ReportsComponent implements OnInit, OnDestroy {
   // Personal Donor Report
   personalDonorReportData: PersonalDonorReportData | null = null;
   selectedDonorForPersonalReport: Donor | null = null;
+  selectedDonorsForPersonalReport: Donor[] = []; // Multi-select support
+  currentPersonalReportDonorIndex = 0; // Index of currently displayed donor
   personalReportFromDate: Date | null = null;
   personalReportToDate: Date | null = null;
   personalReportFromDateHebrew = '';
@@ -2274,24 +2276,62 @@ export class ReportsComponent implements OnInit, OnDestroy {
 
   async selectDonorForPersonalReport() {
     try {
-      const selectedDonor = await openDialog(
+      const result = await openDialog(
         DonorSelectionModalComponent,
         (modal: DonorSelectionModalComponent) => {
           modal.args = {
-            title: 'בחר תורם לדוח אישי',
-            multiSelect: false,
-            selectedIds: this.selectedDonorForPersonalReport ? [this.selectedDonorForPersonalReport.id] : []
+            title: 'בחר תורמים לדוח אישי',
+            multiSelect: true,
+            selectedIds: this.selectedDonorsForPersonalReport.map(d => d.id)
           };
         }
       );
 
-      if (selectedDonor && !Array.isArray(selectedDonor)) {
-        this.selectedDonorForPersonalReport = selectedDonor as Donor;
+      if (result) {
+        if (Array.isArray(result)) {
+          // Multi-select mode - got array of donors
+          this.selectedDonorsForPersonalReport = result as Donor[];
+          this.currentPersonalReportDonorIndex = 0;
+          // Set the first donor as the current one for backward compatibility
+          this.selectedDonorForPersonalReport = this.selectedDonorsForPersonalReport.length > 0
+            ? this.selectedDonorsForPersonalReport[0]
+            : null;
+        } else {
+          // Single donor (shouldn't happen with multiSelect: true, but just in case)
+          this.selectedDonorForPersonalReport = result as Donor;
+          this.selectedDonorsForPersonalReport = [result as Donor];
+          this.currentPersonalReportDonorIndex = 0;
+        }
         // Reset report data when donor changes
         this.personalDonorReportData = null;
       }
     } catch (error) {
       console.error('Error selecting donor for personal report:', error);
+    }
+  }
+
+  // Select a specific donor from the horizontal bar
+  async selectDonorFromBar(index: number) {
+    if (index >= 0 && index < this.selectedDonorsForPersonalReport.length) {
+      this.currentPersonalReportDonorIndex = index;
+      this.selectedDonorForPersonalReport = this.selectedDonorsForPersonalReport[index];
+      // Auto-load report for this donor if dates are set
+      if (this.personalReportFromDate) {
+        await this.loadPersonalDonorReport();
+      } else {
+        this.personalDonorReportData = null;
+      }
+    }
+  }
+
+  // Get display text for selected donors
+  getSelectedDonorsForPersonalReportText(): string {
+    if (this.selectedDonorsForPersonalReport.length === 0) {
+      return 'בחר תורמים';
+    } else if (this.selectedDonorsForPersonalReport.length === 1) {
+      return this.selectedDonorsForPersonalReport[0].lastAndFirstName || '';
+    } else {
+      return `${this.selectedDonorsForPersonalReport.length} תורמים נבחרו`;
     }
   }
 
@@ -2567,8 +2607,93 @@ export class ReportsComponent implements OnInit, OnDestroy {
     // }, 100);
   }
 
+  // Export Word documents for all selected donors
+  async exportAllDonorsToWord() {
+    if (this.selectedDonorsForPersonalReport.length === 0) {
+      alert('לא נבחרו תורמים');
+      return;
+    }
+
+    if (!this.personalReportFromDate) {
+      alert('יש לבחור תאריך התחלה');
+      return;
+    }
+
+    // Confirmation dialog
+    const confirmed = await this.uiTools.yesNoQuestion(`האם להפיק דוח ל-${this.selectedDonorsForPersonalReport.length} תורמים שנבחרו?`);
+    if (!confirmed) {
+      return;
+    }
+
+    const fromDateStr = this.formatDateToISOString(this.personalReportFromDate);
+    const toDateStr = this.formatDateToISOString(this.personalReportToDate || new Date());
+
+    let successCount = 0;
+    let errorCount = 0;
+
+    await this.busy.doWhileShowingBusy(async () => {
+      for (let i = 0; i < this.selectedDonorsForPersonalReport.length; i++) {
+        const donor = this.selectedDonorsForPersonalReport[i];
+        try {
+          const result = await ReportController.createPersonalDonorReport(
+            donor.id,
+            fromDateStr,
+            toDateStr
+          );
+
+          if (result.success) {
+            // Extract base64 and mimeType from data URL
+            const dataUrlMatch = result.url.match(/^data:([^;]+);base64,(.+)$/);
+            if (dataUrlMatch) {
+              const mimeType = dataUrlMatch[1];
+              const base64 = dataUrlMatch[2];
+
+              const blob = this.base64ToBlob(base64, mimeType);
+              const url = URL.createObjectURL(blob);
+
+              // Create download link
+              const link = document.createElement('a');
+              link.href = url;
+              link.download = `דוח_אישי_${donor.lastAndFirstName || donor.id}.docx`;
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+
+              // Clean up
+              URL.revokeObjectURL(url);
+              successCount++;
+
+              // Small delay between downloads to prevent browser blocking
+              if (i < this.selectedDonorsForPersonalReport.length - 1) {
+                await new Promise(resolve => setTimeout(resolve, 500));
+              }
+            } else {
+              console.error('Invalid data URL format for donor:', donor.id);
+              errorCount++;
+            }
+          } else {
+            console.error('Error creating report for donor:', donor.id, result.error);
+            errorCount++;
+          }
+        } catch (error) {
+          console.error('Error exporting report for donor:', donor.id, error);
+          errorCount++;
+        }
+      }
+    });
+
+    // Show summary
+    if (errorCount === 0) {
+      await this.uiTools.yesNoQuestion(`הופקו בהצלחה ${successCount} קבצים`, false);
+    } else {
+      await this.uiTools.yesNoQuestion(`הופקו ${successCount} קבצים, ${errorCount} נכשלו`, false);
+    }
+  }
+
   clearPersonalDonorReport() {
     this.selectedDonorForPersonalReport = null;
+    this.selectedDonorsForPersonalReport = [];
+    this.currentPersonalReportDonorIndex = 0;
     this.personalReportFromDate = null;
     this.personalReportToDate = null;
     this.personalReportFromDateHebrew = '';

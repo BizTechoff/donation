@@ -24,7 +24,9 @@
       <table class="data-table">
         <thead>
           <tr>
-            <th *ngIf="args.multiSelect" class="checkbox-col">{{ (i18n.terms$ | async)?.selectionColumn }}</th>
+            <th *ngIf="args.multiSelect" class="checkbox-col">
+              <input type="checkbox" [checked]="areAllSelected()" (change)="toggleSelectAll()" title="בחר/בטל הכל">
+            </th>
             <th class="sortable" [class.sorted]="isSorted('fullName')" (click)="toggleSort('fullName', $event)">
               {{ (i18n.terms$ | async)?.donorNameColumn }}
               <span class="sort-icon" *ngIf="getSortIcon('fullName')">{{getSortIcon('fullName')}}</span>
@@ -37,7 +39,7 @@
         <tbody>
           <tr *ngFor="let donor of paginatedDonors" (click)="selectDonor(donor)" [class.selected]="isDonorSelected(donor)">
             <td *ngIf="args.multiSelect" class="checkbox-col">
-              <input type="checkbox" [checked]="isDonorSelected(donor)" (click)="$event.stopPropagation()">
+              <input type="checkbox" [checked]="isDonorSelected(donor)" (click)="toggleDonorSelection(donor); $event.stopPropagation()">
             </td>
             <td class="donor-name-cell">{{ donor.lastAndFirstName }}</td>
             <td>{{ getDonorPhone(donor.id) }}</td>

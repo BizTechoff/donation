@@ -318,6 +318,25 @@ export class DonorSelectionModalComponent implements OnInit {
     return this.selectedDonorIds.has(donor.id);
   }
 
+  // Check if all donors are selected
+  areAllSelected(): boolean {
+    return this.availableDonors.length > 0 &&
+           this.selectedDonorIds.size === this.availableDonors.length;
+  }
+
+  // Toggle select all donors
+  toggleSelectAll() {
+    if (this.areAllSelected()) {
+      // Deselect all
+      this.selectedDonorIds.clear();
+      this.selectedDonors = [];
+    } else {
+      // Select all
+      this.selectedDonorIds = new Set(this.availableDonors.map(d => d.id));
+      this.selectedDonors = [...this.availableDonors];
+    }
+  }
+
   // Finish multi-select and close dialog with selected donors
   finishMultiSelect() {
     this.dialogRef.close(this.selectedDonors);

@@ -140,19 +140,19 @@
 
       <!-- פילטרים לדוח אישי לתורם -->
       <div class="filter-row personal-donor-filters" *ngIf="activeReport === 'personalDonor' && !isPersonalReportPrintMode">
-        <!-- בחירת תורם -->
+        <!-- בחירת תורמים -->
         <div class="filter-group donor-filter-group">
-          <label>תורם</label>
+          <label>תורמים</label>
           <div class="donor-filter-input-wrapper">
             <input type="text" class="form-control donor-filter-input"
-              [value]="selectedDonorForPersonalReport?.fullName || 'בחר תורם'" readonly
+              [value]="getSelectedDonorsForPersonalReportText()" readonly
               (click)="selectDonorForPersonalReport()">
-            <button class="donor-filter-search-btn" (click)="selectDonorForPersonalReport()" matTooltip="בחר תורם"
+            <button class="donor-filter-search-btn" (click)="selectDonorForPersonalReport()" matTooltip="בחר תורמים"
               dir="rtl">
               <mat-icon>search</mat-icon>
             </button>
-            <button *ngIf="selectedDonorForPersonalReport" class="donor-filter-clear-btn"
-              (click)="selectedDonorForPersonalReport = null; personalDonorReportData = null; $event.stopPropagation()"
+            <button *ngIf="selectedDonorsForPersonalReport.length > 0" class="donor-filter-clear-btn"
+              (click)="clearPersonalDonorReport(); $event.stopPropagation()"
               matTooltip="נקה בחירה" dir="rtl">
               <mat-icon>clear</mat-icon>
             </button>
@@ -207,7 +207,7 @@
         <div class="filter-actions-wrapper">
           <div class="filter-actions">
             <button class="btn btn-primary" (click)="printAndProduceOnce()"
-              [disabled]="!selectedDonorForPersonalReport || !personalReportFromDate">
+              [disabled]="selectedDonorsForPersonalReport.length === 0 || !personalReportFromDate">
               <mat-icon>description</mat-icon>
               הפק דוח
             </button>
@@ -215,6 +215,12 @@
               [disabled]="!personalDonorReportData">
               <mat-icon>print</mat-icon>
               הדפס
+            </button>
+            <button *ngIf="selectedDonorsForPersonalReport.length > 1" class="btn btn-secondary"
+              (click)="exportAllDonorsToWord()"
+              [disabled]="!personalReportFromDate">
+              <mat-icon>file_download</mat-icon>
+              הפק דוח לכולם ({{ selectedDonorsForPersonalReport.length }})
             </button>
             <button class="btn btn-outline" (click)="clearPersonalDonorReport()">
               <mat-icon>refresh</mat-icon>
@@ -940,6 +946,21 @@
 
     <!-- דוח אישי לתורם -->
     <div *ngIf="activeReport === 'personalDonor'" class="personal-donor-report">
+      <!-- Horizontal Donor Selection Bar - shown when multiple donors selected -->
+      <div class="donor-selection-bar" *ngIf="selectedDonorsForPersonalReport.length > 1">
+        <div class="donor-chips-container">
+          <button *ngFor="let donor of selectedDonorsForPersonalReport; let i = index"
+            class="donor-chip"
+            [class.active]="i === currentPersonalReportDonorIndex"
+            (click)="selectDonorFromBar(i)">
+            {{ donor.lastAndFirstName }}
+          </button>
+        </div>
+        <div class="donor-bar-info">
+          <span>{{ currentPersonalReportDonorIndex + 1 }} / {{ selectedDonorsForPersonalReport.length }}</span>
+        </div>
+      </div>
+
       <!-- Report Display -->
       <div class="personal-report-display" *ngIf="personalDonorReportData"
         [class.print-mode]="isPersonalReportPrintMode">

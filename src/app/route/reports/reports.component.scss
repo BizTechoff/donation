@@ -1772,6 +1772,74 @@
 // PERSONAL DONOR REPORT STYLES
 // ===============================================
 .personal-donor-report {
+  // Horizontal donor selection bar
+  .donor-selection-bar {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: white;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+
+    .donor-chips-container {
+      display: flex;
+      gap: 0.5rem;
+      overflow-x: auto;
+      flex: 1;
+      padding: 0.25rem 0;
+
+      &::-webkit-scrollbar {
+        height: 6px;
+      }
+      &::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 3px;
+      }
+      &::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 3px;
+        &:hover {
+          background: #a1a1a1;
+        }
+      }
+
+      .donor-chip {
+        flex-shrink: 0;
+        padding: 0.5rem 1rem;
+        border: 2px solid #e0e6ed;
+        border-radius: 20px;
+        background: #f8f9fa;
+        color: #34495e;
+        font-size: 0.9rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+
+        &:hover {
+          border-color: #3498db;
+          background: #e8f4fc;
+        }
+
+        &.active {
+          border-color: #3498db;
+          background: #3498db;
+          color: white;
+        }
+      }
+    }
+
+    .donor-bar-info {
+      flex-shrink: 0;
+      font-size: 0.85rem;
+      color: #7f8c8d;
+      padding: 0 0.5rem;
+      border-right: 1px solid #e0e6ed;
+    }
+  }
+
   .personal-report-filters {
     background: white;
     border-radius: 12px;
