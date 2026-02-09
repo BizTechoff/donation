@@ -11,6 +11,8 @@ import { DonorGiftController, DonorGiftFilters } from '../../../shared/controlle
 import { openDialog } from 'common-ui-elements';
 import { DonorGiftDetailsModalComponent } from '../../routes/modals/donor-gift-details-modal/donor-gift-details-modal.component';
 import { GiftCatalogModalComponent } from '../../routes/modals/gift-catalog-modal/gift-catalog-modal.component';
+import { PrintService } from '../../services/print.service';
+import { ExcelExportService } from '../../services/excel-export.service';
 
 @Component({
   selector: 'app-donor-gifts-list',
@@ -60,7 +62,9 @@ export class DonorGiftsListComponent implements OnInit, OnDestroy {
     private ui: UIToolsService,
     private globalFilterService: GlobalFilterService,
     private busy: BusyService,
-    private hebrewDateService: HebrewDateService
+    private hebrewDateService: HebrewDateService,
+    private printService: PrintService,
+    private excelExportService: ExcelExportService
   ) {}
 
   async ngOnInit() {
@@ -95,7 +99,7 @@ export class DonorGiftsListComponent implements OnInit, OnDestroy {
    * Refresh data based on current filters and sorting
    * Called whenever filters or sorting changes
    */
-  private async refreshData() {
+  async refreshData() {
     this.loading = true;
     await this.busy.doWhileShowingBusy(async () => {
       try {
@@ -545,5 +549,91 @@ export class DonorGiftsListComponent implements OnInit, OnDestroy {
       console.error('Error toggling delivery status:', error);
       this.ui.error('שגיאה בעדכון סטטוס המסירה');
     }
+  }
+
+  async onPrint() {
+    await this.busy.doWhileShowingBusy(async () => {
+      try {
+        // Build filters (same as refreshData)
+        const localFilters: DonorGiftFilters = {
+          searchDonorName: this.searchDonorName?.trim() || undefined,
+          selectedDonorId: this.selectedDonorId?.trim() || undefined,
+          selectedGiftId: this.selectedGiftId?.trim() || undefined,
+          selectedYear: this.selectedYear?.trim() || undefined
+        };
+
+        // Fetch ALL donor gifts (no pagination)
+        const allDonorGifts = await DonorGiftController.findFilteredDonorGifts(
+          localFilters,
+          undefined,
+          undefined,
+          this.sortColumns
+        );
+
+        // Prepare data for print
+        const printData = allDonorGifts.map(donorGift => ({
+          donor: this.getDonorName(donorGift),
+          gift: donorGift.gift?.name || '-',
+          deliveryDate: this.formatHebrewDate(donorGift.deliveryDate),
+          status: donorGift.isDelivered ? this.i18n.currentTerms.delivered : this.i18n.currentTerms.pending,
+          notes: donorGift.notes || '-'
+        }));
+
+        this.printService.print({
+          title: this.i18n.currentTerms.donorGifts || 'מתנות לתורמים',
+          subtitle: `${allDonorGifts.length} ${this.i18n.currentTerms.donorGifts || 'מתנות'}`,
+          columns: [
+            { header: this.i18n.currentTerms.donor || 'תורם', field: 'donor' },
+            { header: this.i18n.currentTerms.gift || 'מתנה', field: 'gift' },
+            { header: this.i18n.currentTerms.deliveryDate || 'תאריך מסירה', field: 'deliveryDate' },
+            { header: this.i18n.currentTerms.status || 'סטטוס', field: 'status' },
+            { header: this.i18n.currentTerms.notes || 'הערות', field: 'notes' }
+          ],
+          data: printData,
+          direction: 'rtl'
+        });
+      } catch (error) {
+        console.error('Error printing donor gifts:', error);
+        this.ui.error('שגיאה בהדפסה');
+      }
+    });
+  }
+
+  async onExport() {
+    await this.busy.doWhileShowingBusy(async () => {
+      try {
+        // Build filters (same as refreshData)
+        const localFilters: DonorGiftFilters = {
+          searchDonorName: this.searchDonorName?.trim() || undefined,
+          selectedDonorId: this.selectedDonorId?.trim() || undefined,
+          selectedGiftId: this.selectedGiftId?.trim() || undefined,
+          selectedYear: this.selectedYear?.trim() || undefined
+        };
+
+        // Fetch ALL donor gifts (no pagination)
+        const allDonorGifts = await DonorGiftController.findFilteredDonorGifts(
+          localFilters,
+          undefined,
+          undefined,
+          this.sortColumns
+        );
+
+        await this.excelExportService.export({
+          data: allDonorGifts,
+          columns: [
+            { header: this.i18n.currentTerms.donor || 'תורם', mapper: (g) => this.getDonorName(g), width: 25 },
+            { header: this.i18n.currentTerms.gift || 'מתנה', mapper: (g) => g.gift?.name || '-', width: 20 },
+            { header: this.i18n.currentTerms.deliveryDate || 'תאריך מסירה', mapper: (g) => this.formatHebrewDate(g.deliveryDate), width: 15 },
+            { header: this.i18n.currentTerms.status || 'סטטוס', mapper: (g) => g.isDelivered ? this.i18n.currentTerms.delivered : this.i18n.currentTerms.pending, width: 12 },
+            { header: this.i18n.currentTerms.notes || 'הערות', mapper: (g) => g.notes || '-', width: 30 }
+          ],
+          sheetName: this.i18n.currentTerms.donorGifts || 'מתנות לתורמים',
+          fileName: this.excelExportService.generateFileName(this.i18n.currentTerms.donorGifts || 'מתנות לתורמים')
+        });
+      } catch (error) {
+        console.error('Error exporting donor gifts:', error);
+        this.ui.error('שגיאה בייצוא');
+      }
+    });
   }
 }
