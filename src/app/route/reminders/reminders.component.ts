@@ -10,6 +10,9 @@ import { DonorService } from '../../services/donor.service';
 import { GlobalFilterService } from '../../services/global-filter.service';
 import { HebrewDateService } from '../../services/hebrew-date.service';
 import { ReminderService } from '../../services/reminder.service';
+import { PrintService } from '../../services/print.service';
+import { ExcelExportService } from '../../services/excel-export.service';
+import { BusyService } from '../../common-ui-elements/src/angular/wait/busy-service';
 
 @DialogConfig({
   hasBackdrop: true
@@ -75,7 +78,10 @@ export class RemindersComponent implements OnInit, OnDestroy {
     private globalFilterService: GlobalFilterService,
     private donorService: DonorService,
     private reminderService: ReminderService,
-    private hebrewDateService: HebrewDateService
+    private hebrewDateService: HebrewDateService,
+    private printService: PrintService,
+    private excelExportService: ExcelExportService,
+    private busy: BusyService
   ) { }
 
   async ngOnInit() {
@@ -722,6 +728,118 @@ getTypeText(type: string): string {
       console.error('Error getting moed name:', error);
       return '';
     }
+  }
+
+  async onPrint() {
+    await this.busy.doWhileShowingBusy(async () => {
+      try {
+        // Build filters (same as refreshData)
+        const filters: any = {};
+
+        if (this.filterDateFrom) {
+          filters.dateFrom = this.filterDateFrom;
+        }
+        if (this.filterDateTo) {
+          filters.dateTo = this.filterDateTo;
+        }
+        if (this.searchTerm && this.searchTerm.trim() !== '') {
+          filters.searchTerm = this.searchTerm;
+        }
+        if (this.filterReminderType && this.filterReminderType.trim() !== '') {
+          filters.reminderType = this.filterReminderType;
+        }
+        if (this.filterDonorSearch && this.filterDonorSearch.trim() !== '') {
+          filters.donorSearch = this.filterDonorSearch;
+        }
+
+        // Fetch ALL reminders (no pagination)
+        const allReminders = await this.reminderService.findFiltered(
+          filters,
+          undefined,
+          undefined,
+          this.sortColumns
+        );
+
+        // Prepare data for print
+        const printData = allReminders.map(reminder => ({
+          date: this.formatHebrewDate(reminder.nextReminderDate),
+          type: this.getTypeText(reminder.type),
+          source: this.getSourceText(reminder),
+          donor: this.getDonorName(reminder),
+          title: reminder.title || '-',
+          priority: this.getPriorityText(reminder.priority)
+        }));
+
+        this.printService.print({
+          title: this.i18n.currentTerms.reminders || 'תזכורות',
+          subtitle: `${allReminders.length} ${this.i18n.currentTerms.reminders || 'תזכורות'}`,
+          columns: [
+            { header: this.i18n.currentTerms.reminderDateHeader || 'תאריך תזכורת', field: 'date' },
+            { header: this.i18n.currentTerms.typeHeader || 'סוג', field: 'type' },
+            { header: 'מקור', field: 'source' },
+            { header: this.i18n.currentTerms.donorHeader || 'תורם', field: 'donor' },
+            { header: this.i18n.currentTerms.subjectHeader || 'נושא', field: 'title' },
+            { header: this.i18n.currentTerms.priorityHeader || 'עדיפות', field: 'priority' }
+          ],
+          data: printData,
+          direction: 'rtl'
+        });
+      } catch (error) {
+        console.error('Error printing reminders:', error);
+        this.ui.error('שגיאה בהדפסה');
+      }
+    });
+  }
+
+  async onExport() {
+    await this.busy.doWhileShowingBusy(async () => {
+      try {
+        // Build filters (same as refreshData)
+        const filters: any = {};
+
+        if (this.filterDateFrom) {
+          filters.dateFrom = this.filterDateFrom;
+        }
+        if (this.filterDateTo) {
+          filters.dateTo = this.filterDateTo;
+        }
+        if (this.searchTerm && this.searchTerm.trim() !== '') {
+          filters.searchTerm = this.searchTerm;
+        }
+        if (this.filterReminderType && this.filterReminderType.trim() !== '') {
+          filters.reminderType = this.filterReminderType;
+        }
+        if (this.filterDonorSearch && this.filterDonorSearch.trim() !== '') {
+          filters.donorSearch = this.filterDonorSearch;
+        }
+
+        // Fetch ALL reminders (no pagination)
+        const allReminders = await this.reminderService.findFiltered(
+          filters,
+          undefined,
+          undefined,
+          this.sortColumns
+        );
+
+        await this.excelExportService.export({
+          data: allReminders,
+          columns: [
+            { header: this.i18n.currentTerms.reminderDateHeader || 'תאריך תזכורת', mapper: (r) => this.formatHebrewDate(r.nextReminderDate), width: 15 },
+            { header: this.i18n.currentTerms.typeHeader || 'סוג', mapper: (r) => this.getTypeText(r.type), width: 15 },
+            { header: 'מקור', mapper: (r) => this.getSourceText(r), width: 12 },
+            { header: this.i18n.currentTerms.donorHeader || 'תורם', mapper: (r) => this.getDonorName(r), width: 25 },
+            { header: this.i18n.currentTerms.subjectHeader || 'נושא', mapper: (r) => r.title || '-', width: 25 },
+            { header: this.i18n.currentTerms.priorityHeader || 'עדיפות', mapper: (r) => this.getPriorityText(r.priority), width: 12 },
+            { header: this.i18n.currentTerms.notes || 'הערות', mapper: (r) => r.description || '-', width: 30 }
+          ],
+          sheetName: this.i18n.currentTerms.reminders || 'תזכורות',
+          fileName: this.excelExportService.generateFileName(this.i18n.currentTerms.reminders || 'תזכורות')
+        });
+      } catch (error) {
+        console.error('Error exporting reminders:', error);
+        this.ui.error('שגיאה בייצוא');
+      }
+    });
   }
 
 }
