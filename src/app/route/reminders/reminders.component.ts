@@ -829,8 +829,7 @@ getTypeText(type: string): string {
             { header: 'מקור', mapper: (r) => this.getSourceText(r), width: 12 },
             { header: this.i18n.currentTerms.donorHeader || 'תורם', mapper: (r) => this.getDonorName(r), width: 25 },
             { header: this.i18n.currentTerms.subjectHeader || 'נושא', mapper: (r) => r.title || '-', width: 25 },
-            { header: this.i18n.currentTerms.priorityHeader || 'עדיפות', mapper: (r) => this.getPriorityText(r.priority), width: 12 },
-            { header: this.i18n.currentTerms.notes || 'הערות', mapper: (r) => r.description || '-', width: 30 }
+            { header: this.i18n.currentTerms.priorityHeader || 'עדיפות', mapper: (r) => this.getPriorityText(r.priority), width: 12 }
           ],
           sheetName: this.i18n.currentTerms.reminders || 'תזכורות',
           fileName: this.excelExportService.generateFileName(this.i18n.currentTerms.reminders || 'תזכורות')
