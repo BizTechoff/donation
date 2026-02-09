@@ -7,8 +7,10 @@ import { BusyService } from '../../common-ui-elements/src/angular/wait/busy-serv
 import { UIToolsService } from '../../common/UIToolsService';
 import { I18nService } from '../../i18n/i18n.service';
 import { DonorService } from '../../services/donor.service';
+import { ExcelExportService } from '../../services/excel-export.service';
 import { GlobalFilterService } from '../../services/global-filter.service';
 import { HebrewDateService } from '../../services/hebrew-date.service';
+import { PrintService } from '../../services/print.service';
 import { ActiveFilter, FilterOption, NavigationRecord } from '../../shared/modal-navigation-header/modal-navigation-header.component';
 
 @Component({
@@ -56,7 +58,9 @@ export class DonorListComponent implements OnInit, OnDestroy {
     private donorService: DonorService,
     private globalFilterService: GlobalFilterService,
     private busy: BusyService,
-    private hebrewDateService: HebrewDateService
+    private hebrewDateService: HebrewDateService,
+    private printService: PrintService,
+    private excelExportService: ExcelExportService
   ) { }
 
   async ngOnInit() {
@@ -76,7 +80,7 @@ export class DonorListComponent implements OnInit, OnDestroy {
    * Called whenever filters or sorting changes
    * On first call, also loads base data (user settings, mobile labels, etc.)
    */
-  private async refreshData() {
+  async refreshData() {
     await this.busy.doWhileShowingBusy(async () => {
       try {
         // Load base data once on first call
@@ -584,5 +588,140 @@ export class DonorListComponent implements OnInit, OnDestroy {
 
   async openDonorGifts(donor: Donor) {
     await this.ui.donorDonationsDialog(donor.id, 'gifts', donor.fullName);
+  }
+
+  // ===================================
+  // Print & Export Methods
+  // ===================================
+
+  async onPrint() {
+    await this.busy.doWhileShowingBusy(async () => {
+      try {
+        // Fetch ALL donors with current filters (no pagination)
+        const searchTerm = this.searchTerm?.trim() || undefined;
+        const allDonors = await this.donorService.findFiltered(
+          searchTerm,
+          undefined,
+          undefined, // no page
+          undefined, // no pageSize = fetch all
+          this.sortColumns
+        );
+
+        // Load related data for all donors
+        const donorDataList = await DonorMapController.loadDonorsMapDataByIds(
+          allDonors.map(d => d.id)
+        );
+        const dataMap = new Map<string, DonorMapData>();
+        donorDataList.forEach(data => dataMap.set(data.donor.id, data));
+
+        // Prepare data for print
+        const printData = allDonors.map(donor => {
+          const data = dataMap.get(donor.id);
+          const lastDonationDate = data?.stats.lastDonationDate;
+          const lastDonationAmount = data?.stats.lastDonationAmount || 0;
+          const lastDonationCurrencySymbol = data?.stats.lastDonationCurrencySymbol || '₪';
+
+          // Format last donation: Hebrew date + amount with currency
+          let lastDonationDisplay = '-';
+          if (lastDonationDate) {
+            const hebrewDate = this.hebrewDateService.convertGregorianToHebrew(new Date(lastDonationDate));
+            lastDonationDisplay = hebrewDate.formatted;
+            if (lastDonationAmount > 0) {
+              lastDonationDisplay += ` (${lastDonationCurrencySymbol}${lastDonationAmount.toLocaleString('he-IL')})`;
+            }
+          }
+
+          return {
+            fullName: donor.lastAndFirstName || donor.fullName || '',
+            address: data?.fullAddress || '-',
+            phone: data?.phone || '-',
+            email: data?.email || '-',
+            lastDonation: lastDonationDisplay
+          };
+        });
+
+        this.printService.print({
+          title: this.i18n.currentTerms.donors || 'תורמים',
+          subtitle: `${allDonors.length} ${this.i18n.currentTerms.donors || 'תורמים'}`,
+          columns: [
+            { header: this.i18n.currentTerms.name || 'שם', field: 'fullName' },
+            { header: this.i18n.currentTerms.address || 'כתובת', field: 'address' },
+            { header: this.i18n.currentTerms.phone || 'טלפון', field: 'phone' },
+            { header: this.i18n.currentTerms.email || 'דוא"ל', field: 'email' },
+            { header: this.i18n.currentTerms.lastDonation || 'תרומה אחרונה', field: 'lastDonation' }
+          ],
+          data: printData,
+          direction: 'rtl'
+        });
+      } catch (error) {
+        console.error('Error printing donors:', error);
+        this.ui.error('שגיאה בהדפסה');
+      }
+    });
+  }
+
+  async onExport() {
+    await this.busy.doWhileShowingBusy(async () => {
+      try {
+        // Fetch ALL donors with current filters (no pagination)
+        const searchTerm = this.searchTerm?.trim() || undefined;
+        const allDonors = await this.donorService.findFiltered(
+          searchTerm,
+          undefined,
+          undefined, // no page
+          undefined, // no pageSize = fetch all
+          this.sortColumns
+        );
+
+        // Load related data for all donors
+        const donorDataList = await DonorMapController.loadDonorsMapDataByIds(
+          allDonors.map(d => d.id)
+        );
+        const dataMap = new Map<string, DonorMapData>();
+        donorDataList.forEach(data => dataMap.set(data.donor.id, data));
+
+        // Prepare data for export
+        const exportData = allDonors.map(donor => {
+          const data = dataMap.get(donor.id);
+          const lastDonationDate = data?.stats.lastDonationDate;
+          const lastDonationAmount = data?.stats.lastDonationAmount || 0;
+          const lastDonationCurrencySymbol = data?.stats.lastDonationCurrencySymbol || '₪';
+
+          // Format last donation: Hebrew date + amount with currency
+          let lastDonationDisplay = '-';
+          if (lastDonationDate) {
+            const hebrewDate = this.hebrewDateService.convertGregorianToHebrew(new Date(lastDonationDate));
+            lastDonationDisplay = hebrewDate.formatted;
+            if (lastDonationAmount > 0) {
+              lastDonationDisplay += ` (${lastDonationCurrencySymbol}${lastDonationAmount.toLocaleString('he-IL')})`;
+            }
+          }
+
+          return {
+            donor,
+            address: data?.fullAddress || '-',
+            phone: data?.phone || '-',
+            email: data?.email || '-',
+            lastDonation: lastDonationDisplay
+          };
+        });
+
+        await this.excelExportService.export({
+          data: exportData,
+          columns: [
+            { header: this.i18n.currentTerms.name || 'שם', mapper: (item) => item.donor.lastAndFirstName || item.donor.fullName || '', width: 25 },
+            { header: this.i18n.currentTerms.address || 'כתובת', mapper: (item) => item.address, width: 30 },
+            { header: this.i18n.currentTerms.phone || 'טלפון', mapper: (item) => item.phone, width: 15 },
+            { header: this.i18n.currentTerms.email || 'דוא"ל', mapper: (item) => item.email, width: 25 },
+            { header: this.i18n.currentTerms.lastDonation || 'תרומה אחרונה', mapper: (item) => item.lastDonation, width: 25 }
+          ],
+          sheetName: this.i18n.currentTerms.donors || 'תורמים',
+          fileName: this.excelExportService.generateFileName(this.i18n.currentTerms.donors || 'תורמים')
+        });
+      } catch (error) {
+        console.error('Error exporting donors:', error);
+        this.ui.error('שגיאה בייצוא');
+      }
+    });
   }
 }
