@@ -640,6 +640,24 @@
 
   .btn-icon {
     font-size: 1rem;
+
+    &.excel-x {
+      color: #217346;
+      font-weight: bold;
+      font-size: 16px;
+      font-family: Arial, sans-serif;
+    }
+  }
+
+  &.btn-excel {
+    &:hover {
+      background: #e0f2e8;
+      border-color: #217346;
+
+      .excel-x {
+        color: #185a34;
+      }
+    }
   }
 }
 

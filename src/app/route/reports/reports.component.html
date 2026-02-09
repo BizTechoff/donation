@@ -32,10 +32,10 @@
         <span class="btn-icon">🔄</span>
         {{ (i18n.terms$ | async)?.refreshData }}
       </button>
-      <!-- <button *ngIf="activeReport === 'donations'" class="btn btn-outline" (click)="exportDonorsToExcel()">
-        <span class="btn-icon">📊</span>
+      <button *ngIf="activeReport !== 'personalDonor'" class="btn btn-outline btn-excel" (click)="exportToExcel()">
+        <span class="btn-icon excel-x">X</span>
         ייצוא Excel
-      </button> -->
+      </button>
       <button *ngIf="this.activeReport !== 'personalDonor'" class="btn btn-outline" (click)="printReport()">
         <span class="btn-icon">🖨️</span>
         {{ (i18n.terms$ | async)?.printButton }}

@@ -1325,6 +1325,25 @@ export class ReportsComponent implements OnInit, OnDestroy {
     this.isExpandedView = !this.isExpandedView;
   }
 
+  async exportToExcel() {
+    switch (this.activeReport) {
+      case 'donations':
+        await this.exportDonationsReportToExcel();
+        break;
+      case 'payments':
+        await this.exportPaymentsToExcel();
+        break;
+      case 'yearly':
+        await this.exportYearlySummaryToExcel();
+        break;
+      case 'blessings':
+        await this.exportBlessingsToExcel();
+        break;
+      default:
+        alert('ייצוא לדוח זה עדיין לא נתמך');
+    }
+  }
+
   async exportSpecificReport(format: 'excel' | 'pdf' | 'csv') {
     if (this.activeReport === 'donations' && format === 'excel') {
       await this.exportDonationsReportToExcel();
@@ -1380,7 +1399,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
         showDonorDetails: this.showAnyDonorDetails,
         showActualPayments: this.filters.showActualPayments,
         showCurrencySummary: this.filters.showCurrencySummary,
-        showDonationDetails: false, // Don't need donation details for Excel export
+        showDonationDetails: this.filters.showDonationDetails, // Include details if user selected
         selectedDonorIds: this.filters.selectedDonorIds.length > 0 ? this.filters.selectedDonorIds : undefined,
         selectedCampaign: this.filters.selectedCampaign || undefined,
         selectedDonorType: this.filters.selectedDonorType || undefined,
@@ -1450,6 +1469,44 @@ export class ReportsComponent implements OnInit, OnDestroy {
         }
 
         reportData.push(dataRow);
+
+        // Add donation details rows if showDonationDetails is enabled
+        if (this.filters.showDonationDetails && row.donations && row.donations.length > 0) {
+          // Calculate number of columns before years
+          let preYearCols = 1; // Name column
+          if (isDonorGroupBy && this.filters.showDonorAddress) preYearCols++;
+          if (isDonorGroupBy && this.filters.showDonorPhone) preYearCols++;
+          if (isDonorGroupBy && this.filters.showDonorEmail) preYearCols++;
+
+          // Group donations by Hebrew year
+          fullReportResponse.hebrewYears.forEach((year, yearIndex) => {
+            const yearDonations = row.donations!.filter((d: any) => d.hebrewYear === year);
+            yearDonations.forEach((donation: any) => {
+              const detailRow: any[] = [];
+              // Empty cells for pre-year columns
+              for (let i = 0; i < preYearCols; i++) {
+                detailRow.push('');
+              }
+              // Empty cells for years before this one
+              for (let i = 0; i < yearIndex; i++) {
+                detailRow.push('');
+              }
+              // Donation detail in the year column
+              const dateStr = donation.hebrewDateFormatted || (donation.date ? new Date(donation.date).toLocaleDateString('he-IL') : '');
+              const amountStr = this.formatCurrencyWithSymbol(donation.amount, donation.currency);
+              const reasonStr = donation.reason ? ` - ${donation.reason}` : '';
+              detailRow.push(`  ${dateStr}: ${amountStr}${reasonStr}`);
+              // Empty cells for remaining years
+              for (let i = yearIndex + 1; i < fullReportResponse.hebrewYears.length; i++) {
+                detailRow.push('');
+              }
+              if (this.filters.showActualPayments) {
+                detailRow.push('');
+              }
+              reportData.push(detailRow);
+            });
+          });
+        }
       });
 
       const ws = XLSX.utils.aoa_to_sheet(reportData);
@@ -1533,6 +1590,86 @@ export class ReportsComponent implements OnInit, OnDestroy {
     return currencySummary.reduce((sum, curr) => {
       return sum + (curr.yearlyTotalsInShekel?.[year] || 0);
     }, 0);
+  }
+
+  async exportPaymentsToExcel() {
+    try {
+      if (this.paymentReportData.length === 0) {
+        alert('אין נתונים לייצוא');
+        return;
+      }
+
+      await this.excelService.export({
+        data: this.paymentReportData,
+        columns: [
+          { header: 'שם תורם', mapper: (row) => row.donorName, width: 25 },
+          { header: 'כתובת', mapper: (row) => row.address || '-', width: 30 },
+          { header: 'עיר', mapper: (row) => row.city || '-', width: 15 },
+          { header: 'תאריך אחרון', mapper: (row) => this.formatHebrewDate(row.lastDonationDate), width: 15 },
+          { header: 'התחייבות', mapper: (row) => this.formatCurrency(row.promisedAmount), width: 15 },
+          { header: 'תשלום בפועל', mapper: (row) => this.formatCurrency(row.actualAmount), width: 15 },
+          { header: 'חוב נותר', mapper: (row) => this.formatCurrency(row.remainingDebt), width: 15 }
+        ],
+        sheetName: 'דוח תשלומים',
+        fileName: this.excelService.generateFileName('דוח_תשלומים')
+      });
+    } catch (error) {
+      console.error('Error exporting payments to Excel:', error);
+      alert('שגיאה בייצוא הדוח');
+    }
+  }
+
+  async exportYearlySummaryToExcel() {
+    try {
+      if (this.yearlySummaryData.length === 0) {
+        alert('אין נתונים לייצוא');
+        return;
+      }
+
+      await this.excelService.export({
+        data: this.yearlySummaryData,
+        columns: [
+          { header: 'שנה עברית', mapper: (row) => row.hebrewYear, width: 15 },
+          { header: 'שנה לועזית', mapper: (row) => row.year.toString(), width: 12 },
+          { header: 'שקל', mapper: (row) => (row.currencies['ILS'] || 0) > 0 ? `₪${Math.round(row.currencies['ILS']).toLocaleString()}` : '-', width: 15 },
+          { header: 'דולר', mapper: (row) => (row.currencies['USD'] || 0) > 0 ? `$${Math.round(row.currencies['USD']).toLocaleString()}` : '-', width: 15 },
+          { header: 'יורו', mapper: (row) => (row.currencies['EUR'] || 0) > 0 ? `€${Math.round(row.currencies['EUR']).toLocaleString()}` : '-', width: 15 }
+        ],
+        sheetName: 'סיכום שנתי',
+        fileName: this.excelService.generateFileName('סיכום_שנתי')
+      });
+    } catch (error) {
+      console.error('Error exporting yearly summary to Excel:', error);
+      alert('שגיאה בייצוא הדוח');
+    }
+  }
+
+  async exportBlessingsToExcel() {
+    try {
+      if (this.blessingReportData.length === 0) {
+        alert('אין נתונים לייצוא');
+        return;
+      }
+
+      await this.excelService.export({
+        data: this.blessingReportData,
+        columns: [
+          { header: 'שם משפחה', mapper: (row) => row.lastName, width: 20 },
+          { header: 'שם פרטי', mapper: (row) => row.firstName, width: 20 },
+          { header: 'סוג ברכה', mapper: (row) => row.blessingBookType || '-', width: 15 },
+          { header: 'הערות', mapper: (row) => row.notes || '-', width: 30 },
+          { header: 'סטטוס', mapper: (row) => row.status || '-', width: 12 },
+          { header: 'טלפון', mapper: (row) => row.phone || '-', width: 15 },
+          { header: 'נייד', mapper: (row) => row.mobile || '-', width: 15 },
+          { header: 'אימייל', mapper: (row) => row.email || '-', width: 25 }
+        ],
+        sheetName: 'דוח ברכות',
+        fileName: this.excelService.generateFileName('דוח_ברכות')
+      });
+    } catch (error) {
+      console.error('Error exporting blessings to Excel:', error);
+      alert('שגיאה בייצוא הדוח');
+    }
   }
 
   getBlessingSummary() {
