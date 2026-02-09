@@ -109,7 +109,22 @@
             {{ (i18n.terms$ | async)?.endDate }}
             <span class="sort-icon" *ngIf="getSortIcon('endDate')">{{ getSortIcon('endDate') }}</span>
           </th>
-          <th>{{ (i18n.terms$ | async)?.actions }}</th>
+          <th class="actions-header">
+            <div class="actions-header-content">
+              <span>{{ (i18n.terms$ | async)?.actions }}</span>
+              <div class="header-buttons">
+                <button class="btn-icon-header" (click)="refreshData()" [title]="'רענון'">
+                  <mat-icon>refresh</mat-icon>
+                </button>
+                <button class="btn-icon-header" (click)="onPrint()" [title]="'הדפסה'">
+                  <mat-icon>print</mat-icon>
+                </button>
+                <button class="btn-icon-header btn-excel" (click)="onExport()" [title]="'ייצוא לאקסל'">
+                  <span class="excel-x">X</span>
+                </button>
+              </div>
+            </div>
+          </th>
         </tr>
       </thead>
       <tbody>

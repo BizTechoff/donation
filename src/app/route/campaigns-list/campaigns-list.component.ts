@@ -11,6 +11,8 @@ import { CampaignController, CampaignFilters, CampaignRaisedByCurrency, Currency
 import { HebrewDateService } from '../../services/hebrew-date.service';
 import { Blessing } from '../../../shared/entity/blessing';
 import { PayerService } from '../../services/payer.service';
+import { PrintService } from '../../services/print.service';
+import { ExcelExportService } from '../../services/excel-export.service';
 
 @Component({
   selector: 'app-campaigns-list',
@@ -69,7 +71,9 @@ export class CampaignsListComponent implements OnInit, OnDestroy {
     private globalFilterService: GlobalFilterService,
     private busy: BusyService,
     private hebrewDateService: HebrewDateService,
-    private payerService: PayerService
+    private payerService: PayerService,
+    private printService: PrintService,
+    private excelExportService: ExcelExportService
   ) {}
 
   async ngOnInit() {
@@ -106,7 +110,7 @@ export class CampaignsListComponent implements OnInit, OnDestroy {
    * Refresh data based on current filters and sorting
    * Called whenever filters or sorting changes
    */
-  private async refreshData() {
+  async refreshData() {
     this.loading = true;
     await this.busy.doWhileShowingBusy(async () => {
       try {
@@ -518,5 +522,143 @@ export class CampaignsListComponent implements OnInit, OnDestroy {
     await this.ui.campaignDonationsDialog(campaign.id, campaign.name);
     // Refresh data after closing donations modal
     await this.refreshData();
+  }
+
+  async onPrint() {
+    await this.busy.doWhileShowingBusy(async () => {
+      try {
+        // Build filters (same as refreshData)
+        const localFilters: CampaignFilters = {
+          searchTerm: this.filterName?.trim() || this.searchTerm?.trim() || undefined,
+          isActive: this.filterActive ? this.filterActive === 'true' : undefined
+        };
+
+        // Fetch ALL campaigns (no pagination)
+        const allCampaigns = await CampaignController.findFilteredCampaigns(
+          localFilters,
+          undefined,
+          undefined,
+          this.sortColumns
+        );
+
+        // Need to load raised amounts for printing
+        const campaignIds = allCampaigns.map(c => c.id);
+        const raisedByCurrency = await CampaignController.getRaisedAmountsByCurrency(campaignIds);
+        const raisedMap = new Map<string, CurrencyTotal[]>();
+        for (const item of raisedByCurrency) {
+          raisedMap.set(item.campaignId, item.totals);
+        }
+
+        // Prepare data for print
+        const printData = allCampaigns.map(campaign => {
+          const totals = raisedMap.get(campaign.id) || [];
+          const raisedStr = totals.length === 0
+            ? '₪0'
+            : totals.map(t => `${t.symbol}${t.total.toLocaleString('he-IL')}`).join(' + ');
+
+          return {
+            name: campaign.name || '-',
+            targetAmount: this.formatCurrency(campaign.targetAmount),
+            raised: raisedStr,
+            progress: `${this.getProgressPercentageForCampaign(campaign, totals)}%`,
+            invitees: campaign.invitedDonorIds?.length || 0,
+            blessings: this.campaignBlessingCountMap.get(campaign.id) || 0,
+            startDate: this.formatHebrewDate(campaign.startDate),
+            endDate: this.formatHebrewDate(campaign.endDate)
+          };
+        });
+
+        this.printService.print({
+          title: this.i18n.currentTerms.campaigns || 'קמפיינים',
+          subtitle: `${allCampaigns.length} ${this.i18n.currentTerms.campaigns || 'קמפיינים'}`,
+          columns: [
+            { header: this.i18n.currentTerms.campaignName || 'שם קמפיין', field: 'name' },
+            { header: this.i18n.currentTerms.financialTarget || 'יעד כספי', field: 'targetAmount' },
+            { header: this.i18n.currentTerms.collected || 'נגבה', field: 'raised' },
+            { header: this.i18n.currentTerms.progressPercentage || 'אחוז התקדמות', field: 'progress' },
+            { header: this.i18n.currentTerms.inviteesHeader || 'מוזמנים', field: 'invitees' },
+            { header: this.i18n.currentTerms.blessingsHeader || 'ברכות', field: 'blessings' },
+            { header: this.i18n.currentTerms.startDate || 'תאריך התחלה', field: 'startDate' },
+            { header: this.i18n.currentTerms.endDate || 'תאריך סיום', field: 'endDate' }
+          ],
+          data: printData,
+          direction: 'rtl'
+        });
+      } catch (error) {
+        console.error('Error printing campaigns:', error);
+        this.ui.error('שגיאה בהדפסה');
+      }
+    });
+  }
+
+  async onExport() {
+    await this.busy.doWhileShowingBusy(async () => {
+      try {
+        // Build filters (same as refreshData)
+        const localFilters: CampaignFilters = {
+          searchTerm: this.filterName?.trim() || this.searchTerm?.trim() || undefined,
+          isActive: this.filterActive ? this.filterActive === 'true' : undefined
+        };
+
+        // Fetch ALL campaigns (no pagination)
+        const allCampaigns = await CampaignController.findFilteredCampaigns(
+          localFilters,
+          undefined,
+          undefined,
+          this.sortColumns
+        );
+
+        // Need to load raised amounts for export
+        const campaignIds = allCampaigns.map(c => c.id);
+        const raisedByCurrency = await CampaignController.getRaisedAmountsByCurrency(campaignIds);
+        const raisedMap = new Map<string, CurrencyTotal[]>();
+        for (const item of raisedByCurrency) {
+          raisedMap.set(item.campaignId, item.totals);
+        }
+
+        await this.excelExportService.export({
+          data: allCampaigns,
+          columns: [
+            { header: this.i18n.currentTerms.campaignName || 'שם קמפיין', mapper: (c) => c.name || '-', width: 25 },
+            { header: this.i18n.currentTerms.financialTarget || 'יעד כספי', mapper: (c) => this.formatCurrency(c.targetAmount), width: 15 },
+            { header: this.i18n.currentTerms.collected || 'נגבה', mapper: (c) => {
+              const totals = raisedMap.get(c.id) || [];
+              return totals.length === 0
+                ? '₪0'
+                : totals.map(t => `${t.symbol}${t.total.toLocaleString('he-IL')}`).join(' + ');
+            }, width: 15 },
+            { header: this.i18n.currentTerms.progressPercentage || 'אחוז התקדמות', mapper: (c) => `${this.getProgressPercentageForCampaign(c, raisedMap.get(c.id) || [])}%`, width: 12 },
+            { header: this.i18n.currentTerms.inviteesHeader || 'מוזמנים', mapper: (c) => c.invitedDonorIds?.length || 0, width: 10 },
+            { header: this.i18n.currentTerms.blessingsHeader || 'ברכות', mapper: (c) => this.campaignBlessingCountMap.get(c.id) || 0, width: 10 },
+            { header: this.i18n.currentTerms.startDate || 'תאריך התחלה', mapper: (c) => this.formatHebrewDate(c.startDate), width: 15 },
+            { header: this.i18n.currentTerms.endDate || 'תאריך סיום', mapper: (c) => this.formatHebrewDate(c.endDate), width: 15 }
+          ],
+          sheetName: this.i18n.currentTerms.campaigns || 'קמפיינים',
+          fileName: this.excelExportService.generateFileName(this.i18n.currentTerms.campaigns || 'קמפיינים')
+        });
+      } catch (error) {
+        console.error('Error exporting campaigns:', error);
+        this.ui.error('שגיאה בייצוא');
+      }
+    });
+  }
+
+  /**
+   * Helper to get progress percentage for print/export (with provided totals)
+   */
+  private getProgressPercentageForCampaign(campaign: Campaign, totals: CurrencyTotal[]): number {
+    if (!campaign.targetAmount || campaign.targetAmount === 0) return 0;
+
+    // Convert all raised amounts to ILS for accurate comparison
+    const raisedInILS = totals.reduce((sum, t) => {
+      const rate = this.currencyTypes[t.currencyId]?.rateInShekel || 1;
+      return sum + (t.total * rate);
+    }, 0);
+
+    // Convert target amount to ILS
+    const targetRate = this.currencyTypes[campaign.currencyId]?.rateInShekel || 1;
+    const targetInILS = campaign.targetAmount * targetRate;
+
+    return Math.min(100, Math.round((raisedInILS / targetInILS) * 100));
   }
 }
