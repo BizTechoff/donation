@@ -103,26 +103,7 @@ export class RemindersComponent implements OnInit, OnDestroy {
    * Refresh data based on current filters and sorting
    * Called whenever filters or sorting changes
    */
-  private async refreshData() {
-    await this.loadReminders();
-  }
-
-  ngOnDestroy() {
-    if (this.filterSubscription) {
-      this.filterSubscription.unsubscribe();
-    }
-    if (this.searchTermTimeout) {
-      clearTimeout(this.searchTermTimeout);
-    }
-  }
-
-  // Summary stats
-  todayCount = 0;
-  pendingCountStat = 0;
-  overdueCountStat = 0;
-  completedThisMonthCountStat = 0;
-
-  async loadReminders() {
+  async refreshData() {
     this.loading = true;
     try {
       // Build filters (local filters only)
@@ -184,6 +165,21 @@ export class RemindersComponent implements OnInit, OnDestroy {
     }
   }
 
+  ngOnDestroy() {
+    if (this.filterSubscription) {
+      this.filterSubscription.unsubscribe();
+    }
+    if (this.searchTermTimeout) {
+      clearTimeout(this.searchTermTimeout);
+    }
+  }
+
+  // Summary stats
+  todayCount = 0;
+  pendingCountStat = 0;
+  overdueCountStat = 0;
+  completedThisMonthCountStat = 0;
+
   applyLocalFilters() {
     let filtered = [...this.reminders];
 
@@ -216,7 +212,7 @@ export class RemindersComponent implements OnInit, OnDestroy {
   onLocalFilterChange() {
     // Reset to page 1 when filter changes
     this.currentPage = 1;
-    this.loadReminders();
+    this.refreshData();
 
     // Debounce save searchTerm
     if (this.searchTermTimeout) {
@@ -232,14 +228,14 @@ export class RemindersComponent implements OnInit, OnDestroy {
       hideDonorField: false // Show donor field when creating from reminders list
     });
     if (reminderCreated) {
-      await this.loadReminders();
+      await this.refreshData();
     }
   }
 
   async editReminder(reminder: Reminder) {
     const reminderEdited = await this.ui.reminderDetailsDialog(reminder.id);
     if (reminderEdited) {
-      await this.loadReminders();
+      await this.refreshData();
     }
   }
 
@@ -249,7 +245,7 @@ export class RemindersComponent implements OnInit, OnDestroy {
       try {
         // No need to clean up source entity link - we use forward reference only
         await remult.repo(Reminder).delete(reminder);
-        await this.loadReminders();
+        await this.refreshData();
       } catch (error) {
         console.error('Error deleting reminder:', error);
       }
@@ -280,7 +276,7 @@ export class RemindersComponent implements OnInit, OnDestroy {
         await fullReminder.complete(undefined, true);
       }
 
-      await this.loadReminders();
+      await this.refreshData();
     } catch (error) {
       console.error('Error completing reminder:', error);
     }
@@ -289,7 +285,7 @@ export class RemindersComponent implements OnInit, OnDestroy {
   async snoozeReminder(reminder: Reminder, days: number) {
     try {
       await reminder.snooze(days);
-      await this.loadReminders();
+      await this.refreshData();
     } catch (error) {
       console.error('Error snoozing reminder:', error);
     }

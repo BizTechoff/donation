@@ -109,30 +109,6 @@ export class CertificatesComponent implements OnInit, OnDestroy {
    * Called whenever filters or sorting changes
    */
   private async refreshData() {
-    await this.loadCertificates();
-  }
-
-  private updateMobileLabels() {
-    const root = document.documentElement;
-    root.style.setProperty('--label-number', `'${this.i18n.currentLanguage === 'he' ? 'מספר' : 'Number'}: '`);
-    root.style.setProperty('--label-date', `'${this.i18n.terms.date}: '`);
-    root.style.setProperty('--label-recipient', `'${this.i18n.currentLanguage === 'he' ? 'נמען' : 'Recipient'}: '`);
-    root.style.setProperty('--label-donor', `'${this.i18n.terms.donor}: '`);
-    root.style.setProperty('--label-type', `'${this.i18n.currentLanguage === 'he' ? 'סוג' : 'Type'}: '`);
-    root.style.setProperty('--label-event-amount', `'${this.i18n.currentLanguage === 'he' ? 'אירוע/סכום' : 'Event/Amount'}: '`);
-    root.style.setProperty('--label-status', `'${this.i18n.terms.status}: '`);
-  }
-
-  ngOnDestroy() {
-    this.donorSearchSubject.complete();
-    this.subscriptions.unsubscribe();
-  }
-
-  // Summary data
-  memorialCertificatesCount = 0;
-  memorialDayCertificatesCount = 0;
-
-  async loadCertificates() {
     this.loading = true;
     try {
       // Build filters object for server-side filtering (local filters only)
@@ -164,7 +140,7 @@ export class CertificatesComponent implements OnInit, OnDestroy {
       // Load related data for certificates
       await this.loadRelatedData();
     } catch (error) {
-      console.error('Error in loadCertificates:', error);
+      console.error('Error in refreshData:', error);
       this.certificates = [];
       this.totalCount = 0;
       this.totalPages = 0;
@@ -174,6 +150,26 @@ export class CertificatesComponent implements OnInit, OnDestroy {
       this.loading = false;
     }
   }
+
+  private updateMobileLabels() {
+    const root = document.documentElement;
+    root.style.setProperty('--label-number', `'${this.i18n.currentLanguage === 'he' ? 'מספר' : 'Number'}: '`);
+    root.style.setProperty('--label-date', `'${this.i18n.terms.date}: '`);
+    root.style.setProperty('--label-recipient', `'${this.i18n.currentLanguage === 'he' ? 'נמען' : 'Recipient'}: '`);
+    root.style.setProperty('--label-donor', `'${this.i18n.terms.donor}: '`);
+    root.style.setProperty('--label-type', `'${this.i18n.currentLanguage === 'he' ? 'סוג' : 'Type'}: '`);
+    root.style.setProperty('--label-event-amount', `'${this.i18n.currentLanguage === 'he' ? 'אירוע/סכום' : 'Event/Amount'}: '`);
+    root.style.setProperty('--label-status', `'${this.i18n.terms.status}: '`);
+  }
+
+  ngOnDestroy() {
+    this.donorSearchSubject.complete();
+    this.subscriptions.unsubscribe();
+  }
+
+  // Summary data
+  memorialCertificatesCount = 0;
+  memorialDayCertificatesCount = 0;
 
   /**
    * Load reminders and blessing counts for all certificates

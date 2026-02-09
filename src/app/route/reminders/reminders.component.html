@@ -43,7 +43,7 @@
       <div class="filter-row">
         <div class="filter-group">
           <label>{{ (i18n.terms$ | async)?.reminderTypeFilter }}</label>
-          <select class="form-control" [(ngModel)]="filterReminderType" (ngModelChange)="loadReminders()">
+          <select class="form-control" [(ngModel)]="filterReminderType" (ngModelChange)="refreshData()">
             <option value="">{{ (i18n.terms$ | async)?.everything }}</option>
             <option value="donation">{{ (i18n.terms$ | async)?.donationReminder }}</option>
             <option value="contact">{{ (i18n.terms$ | async)?.contactReminder }}</option>
@@ -69,20 +69,20 @@
           <label>{{ (i18n.terms$ | async)?.dateFromFilter }}</label>
           <app-modern-dual-date-picker [(ngModel)]="filterDateFrom"
             [label]="(i18n.terms$ | async)?.dateFromReminder || ''" [compact]="true" [showOnlyHebrew]="true"
-            (dateChange)="loadReminders()">
+            (dateChange)="refreshData()">
           </app-modern-dual-date-picker>
         </div>
 
         <div class="filter-group">
           <label>{{ (i18n.terms$ | async)?.dateToFilter }}</label>
           <app-modern-dual-date-picker [(ngModel)]="filterDateTo" [label]="(i18n.terms$ | async)?.dateToReminder || ''"
-            [compact]="true" [showOnlyHebrew]="true" (dateChange)="loadReminders()">
+            [compact]="true" [showOnlyHebrew]="true" (dateChange)="refreshData()">
           </app-modern-dual-date-picker>
         </div>
 
         <div class="filter-group">
           <label>{{ (i18n.terms$ | async)?.donorSearchReminder }}</label>
-          <input type="text" class="form-control" [(ngModel)]="filterDonorSearch" (ngModelChange)="loadReminders()"
+          <input type="text" class="form-control" [(ngModel)]="filterDonorSearch" (ngModelChange)="refreshData()"
             [placeholder]="(i18n.terms$ | async)?.donorNamePlaceholder">
         </div>
 
