@@ -588,24 +588,36 @@ export class CertificatesComponent implements OnInit, OnDestroy {
         );
 
         // Prepare data for print
-        const printData = allCertificates.map(cert => ({
-          recipientName: cert.recipientName || '-',
-          type: cert.type === 'memorial' ? this.i18n.currentTerms.memorialCertificate : this.i18n.currentTerms.memorialDayType,
-          eventDate: this.formatHebrewDate(cert.eventDate),
-          amount: cert.amount ? `₪${cert.amount.toLocaleString('he-IL')}` : '-',
-          reminder: this.getNextReminderDate(cert),
-          blessings: this.getBlessingCount(cert),
-          mainText: cert.mainText || '-'
-        }));
+        const printData = allCertificates.map(cert => {
+          // Build amountEvent display like the table shows
+          const parts: string[] = [];
+          if (cert.amount) {
+            parts.push(`₪${cert.amount.toLocaleString('he-IL')}`);
+          }
+          if (cert.eventName) {
+            parts.push(cert.eventName);
+          }
+          const amountEventDisplay = parts.length > 0 ? parts.join(' - ') : '-';
+
+          return {
+            recipientName: cert.recipientName || '-',
+            type: cert.type === 'memorial' ? this.i18n.currentTerms.memorialCertificate : this.i18n.currentTerms.memorialDayType,
+            eventDate: this.formatHebrewDate(cert.eventDate),
+            amountEvent: amountEventDisplay,
+            reminder: this.getNextReminderDate(cert),
+            blessings: this.getBlessingCount(cert),
+            mainText: cert.mainText || '-'
+          };
+        });
 
         this.printService.print({
           title: this.i18n.currentTerms.certificates || 'תעודות',
           subtitle: `${allCertificates.length} ${this.i18n.currentTerms.certificates || 'תעודות'}`,
           columns: [
-            { header: this.i18n.currentTerms.recipientName || 'נמען', field: 'recipientName' },
+            { header: this.i18n.currentTerms.donorRecipient || 'תורם/נהנה', field: 'recipientName' },
             { header: this.i18n.currentTerms.certificateType || 'סוג', field: 'type' },
             { header: this.i18n.currentTerms.eventDate || 'תאריך אירוע', field: 'eventDate' },
-            { header: this.i18n.currentTerms.amount || 'סכום', field: 'amount' },
+            { header: this.i18n.currentTerms.amountEvent || 'אירוע/סיבה', field: 'amountEvent' },
             { header: this.i18n.currentTerms.nextReminderColumn || 'תזכורת הבאה', field: 'reminder' },
             { header: this.i18n.currentTerms.blessingsColumn || 'ברכות', field: 'blessings' },
             { header: this.i18n.currentTerms.mainText || 'טקסט ראשי', field: 'mainText' }
@@ -644,10 +656,19 @@ export class CertificatesComponent implements OnInit, OnDestroy {
         await this.excelExportService.export({
           data: allCertificates,
           columns: [
-            { header: this.i18n.currentTerms.recipientName || 'נמען', mapper: (c) => c.recipientName || '-', width: 25 },
+            { header: this.i18n.currentTerms.donorRecipient || 'תורם/נהנה', mapper: (c) => c.recipientName || '-', width: 25 },
             { header: this.i18n.currentTerms.certificateType || 'סוג', mapper: (c) => c.type === 'memorial' ? this.i18n.currentTerms.memorialCertificate : this.i18n.currentTerms.memorialDayType, width: 15 },
             { header: this.i18n.currentTerms.eventDate || 'תאריך אירוע', mapper: (c) => this.formatHebrewDate(c.eventDate), width: 15 },
-            { header: this.i18n.currentTerms.amount || 'סכום', mapper: (c) => c.amount ? `₪${c.amount.toLocaleString('he-IL')}` : '-', width: 12 },
+            { header: this.i18n.currentTerms.amountEvent || 'אירוע/סיבה', mapper: (c) => {
+              const parts: string[] = [];
+              if (c.amount) {
+                parts.push(`₪${c.amount.toLocaleString('he-IL')}`);
+              }
+              if (c.eventName) {
+                parts.push(c.eventName);
+              }
+              return parts.length > 0 ? parts.join(' - ') : '-';
+            }, width: 20 },
             { header: this.i18n.currentTerms.nextReminderColumn || 'תזכורת הבאה', mapper: (c) => this.getNextReminderDate(c), width: 15 },
             { header: this.i18n.currentTerms.blessingsColumn || 'ברכות', mapper: (c) => this.getBlessingCount(c), width: 10 },
             { header: this.i18n.currentTerms.mainText || 'טקסט ראשי', mapper: (c) => c.mainText || '-', width: 30 }
