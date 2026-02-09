@@ -7,10 +7,12 @@ import { Campaign, Donation, DonationMethod, Donor, DonorPlace } from '../../../
 import { BusyService } from '../../common-ui-elements/src/angular/wait/busy-service';
 import { UIToolsService } from '../../common/UIToolsService';
 import { I18nService } from '../../i18n/i18n.service';
+import { ExcelExportService } from '../../services/excel-export.service';
 import { GlobalFilterService } from '../../services/global-filter.service';
 import { isPaymentBased, isStandingOrder, calculatePeriodsElapsed } from '../../../shared/utils/donation-utils';
 import { HebrewDateService } from '../../services/hebrew-date.service';
 import { PayerService } from '../../services/payer.service';
+import { PrintService } from '../../services/print.service';
 
 @Component({
   selector: 'app-donations-list',
@@ -87,7 +89,9 @@ export class DonationsListComponent implements OnInit, OnDestroy {
     private globalFilterService: GlobalFilterService,
     private busy: BusyService,
     private payerService: PayerService,
-    private hebrewDateService: HebrewDateService
+    private hebrewDateService: HebrewDateService,
+    private printService: PrintService,
+    private excelExportService: ExcelExportService
   ) { }
 
   async ngOnInit() {
@@ -107,7 +111,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
    * Called whenever filters or sorting changes
    * On first call, also loads base data (currency types, donors, campaigns, methods)
    */
-  private async refreshData() {
+  async refreshData() {
     await this.busy.doWhileShowingBusy(async () => {
       try {
         // Load base data once on first call
@@ -726,5 +730,120 @@ export class DonationsListComponent implements OnInit, OnDestroy {
     const total = this.commitmentPaymentTotals[donation.id] || 0;
     const perPeriod = this.getPerPeriodAmount(donation);
     return perPeriod > 0 ? Math.round(total / perPeriod) : 0;
+  }
+
+  // ===================================
+  // Print & Export Methods
+  // ===================================
+
+  async onPrint() {
+    await this.busy.doWhileShowingBusy(async () => {
+      try {
+        // Build filters (same as refreshData)
+        const filters: DonationFilters = {
+          searchTerm: this.searchTerm?.trim() || undefined,
+          dateFrom: this.dateFrom ? this.formatDateForFilter(this.dateFrom) : undefined,
+          dateTo: this.dateTo ? this.formatDateForFilter(this.dateTo) : undefined,
+          selectedMethodId: this.selectedMethodId?.trim() || undefined,
+          amountFrom: this.amountFrom,
+          selectedCampaignId: this.selectedCampaignId?.trim() || undefined,
+          selectedDonationType: this.selectedDonationType?.trim() || undefined
+        };
+
+        // Fetch ALL donations (no pagination)
+        const allDonations = await DonationController.findFilteredDonations(
+          filters,
+          undefined,
+          undefined,
+          this.sortColumns
+        );
+
+        // Prepare data for print
+        const printData = allDonations.map(donation => {
+          const hebrewDate = donation.donationDate
+            ? this.hebrewDateService.convertGregorianToHebrew(new Date(donation.donationDate)).formatted
+            : '-';
+          const currencySymbol = this.currencyTypes[donation.currencyId]?.symbol || '₪';
+
+          return {
+            donorName: this.getDonorName(donation),
+            address: this.getDonorHomeAddress(donation),
+            date: hebrewDate,
+            donationType: this.getDonationTypeDisplay(donation),
+            method: this.getMethodName(donation),
+            amount: `${currencySymbol}${donation.amount.toLocaleString('he-IL')}`,
+            campaign: this.getCampaignName(donation),
+            fundraiser: donation.donor?.fundraiser?.name || '-',
+            reason: donation.reason || '-'
+          };
+        });
+
+        this.printService.print({
+          title: this.i18n.currentTerms.donations || 'תרומות',
+          subtitle: `${allDonations.length} ${this.i18n.currentTerms.donations || 'תרומות'}`,
+          columns: [
+            { header: this.i18n.currentTerms.donor || 'תורם', field: 'donorName' },
+            { header: this.i18n.currentTerms.address || 'כתובת', field: 'address' },
+            { header: this.i18n.currentTerms.date || 'תאריך', field: 'date' },
+            { header: this.i18n.currentTerms.donationType || 'סוג', field: 'donationType' },
+            { header: this.i18n.currentTerms.donationMethod || 'אמצעי', field: 'method' },
+            { header: this.i18n.currentTerms.amount || 'סכום', field: 'amount' },
+            { header: this.i18n.currentTerms.campaign || 'קמפיין', field: 'campaign' },
+            { header: this.i18n.currentTerms.fundraiserColumn || 'מגייס', field: 'fundraiser' },
+            { header: this.i18n.currentTerms.reason || 'הקדשה', field: 'reason' }
+          ],
+          data: printData,
+          direction: 'rtl'
+        });
+      } catch (error) {
+        console.error('Error printing donations:', error);
+        this.ui.error('שגיאה בהדפסה');
+      }
+    });
+  }
+
+  async onExport() {
+    await this.busy.doWhileShowingBusy(async () => {
+      try {
+        // Build filters (same as refreshData)
+        const filters: DonationFilters = {
+          searchTerm: this.searchTerm?.trim() || undefined,
+          dateFrom: this.dateFrom ? this.formatDateForFilter(this.dateFrom) : undefined,
+          dateTo: this.dateTo ? this.formatDateForFilter(this.dateTo) : undefined,
+          selectedMethodId: this.selectedMethodId?.trim() || undefined,
+          amountFrom: this.amountFrom,
+          selectedCampaignId: this.selectedCampaignId?.trim() || undefined,
+          selectedDonationType: this.selectedDonationType?.trim() || undefined
+        };
+
+        // Fetch ALL donations (no pagination)
+        const allDonations = await DonationController.findFilteredDonations(
+          filters,
+          undefined,
+          undefined,
+          this.sortColumns
+        );
+
+        await this.excelExportService.export({
+          data: allDonations,
+          columns: [
+            { header: this.i18n.currentTerms.donor || 'תורם', mapper: (d) => this.getDonorName(d), width: 25 },
+            { header: this.i18n.currentTerms.address || 'כתובת', mapper: (d) => this.getDonorHomeAddress(d), width: 30 },
+            { header: this.i18n.currentTerms.date || 'תאריך', mapper: (d) => d.donationDate ? this.hebrewDateService.convertGregorianToHebrew(new Date(d.donationDate)).formatted : '-', width: 15 },
+            { header: this.i18n.currentTerms.donationType || 'סוג', mapper: (d) => this.getDonationTypeDisplay(d), width: 12 },
+            { header: this.i18n.currentTerms.donationMethod || 'אמצעי', mapper: (d) => this.getMethodName(d), width: 12 },
+            { header: this.i18n.currentTerms.amount || 'סכום', mapper: (d) => `${this.currencyTypes[d.currencyId]?.symbol || '₪'}${d.amount.toLocaleString('he-IL')}`, width: 12 },
+            { header: this.i18n.currentTerms.campaign || 'קמפיין', mapper: (d) => this.getCampaignName(d), width: 15 },
+            { header: this.i18n.currentTerms.fundraiserColumn || 'מגייס', mapper: (d) => d.donor?.fundraiser?.name || '-', width: 12 },
+            { header: this.i18n.currentTerms.reason || 'הקדשה', mapper: (d) => d.reason || '-', width: 20 }
+          ],
+          sheetName: this.i18n.currentTerms.donations || 'תרומות',
+          fileName: this.excelExportService.generateFileName(this.i18n.currentTerms.donations || 'תרומות')
+        });
+      } catch (error) {
+        console.error('Error exporting donations:', error);
+        this.ui.error('שגיאה בייצוא');
+      }
+    });
   }
 }

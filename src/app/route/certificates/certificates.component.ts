@@ -7,10 +7,13 @@ import { Certificate } from '../../../shared/entity/certificate';
 import { User } from '../../../shared/entity/user';
 import { UIToolsService } from '../../common/UIToolsService';
 import { I18nService } from '../../i18n/i18n.service';
+import { ExcelExportService } from '../../services/excel-export.service';
 import { GlobalFilterService } from '../../services/global-filter.service';
 import { HebrewDateService } from '../../services/hebrew-date.service';
+import { PrintService } from '../../services/print.service';
 import { Reminder } from '../../../shared/entity/reminder';
 import { Blessing } from '../../../shared/entity/blessing';
+import { BusyService } from '../../common-ui-elements/src/angular/wait/busy-service';
 
 @Component({
   selector: 'app-certificates',
@@ -62,7 +65,10 @@ export class CertificatesComponent implements OnInit, OnDestroy {
     public i18n: I18nService,
     private ui: UIToolsService,
     private globalFilterService: GlobalFilterService,
-    private hebrewDateService: HebrewDateService
+    private hebrewDateService: HebrewDateService,
+    private printService: PrintService,
+    private excelExportService: ExcelExportService,
+    private busy: BusyService
   ) { }
 
   async ngOnInit() {
@@ -108,7 +114,7 @@ export class CertificatesComponent implements OnInit, OnDestroy {
    * Refresh data based on current filters and sorting
    * Called whenever filters or sorting changes
    */
-  private async refreshData() {
+  async refreshData() {
     this.loading = true;
     try {
       // Build filters object for server-side filtering (local filters only)
@@ -556,4 +562,103 @@ export class CertificatesComponent implements OnInit, OnDestroy {
     return `${year}-${month}-${day}`;
   }
 
+  // ===================================
+  // Print & Export Methods
+  // ===================================
+
+  async onPrint() {
+    await this.busy.doWhileShowingBusy(async () => {
+      try {
+        // Build filters (same as refreshData)
+        const filters: CertificateFilters = {
+          certificateType: this.filterCertificateType?.trim() || undefined,
+          dateFrom: this.filterDateFrom ? this.formatDateForFilter(this.filterDateFrom) : undefined,
+          dateTo: this.filterDateTo ? this.formatDateForFilter(this.filterDateTo) : undefined,
+          donorSearchText: this.donorSearchText?.trim() || undefined,
+          fromParasha: this.filterFromParasha?.trim() || undefined,
+          toParasha: this.filterToParasha?.trim() || undefined
+        };
+
+        // Fetch ALL certificates (no pagination)
+        const allCertificates = await CertificateController.findFilteredCertificates(
+          filters,
+          undefined,
+          undefined,
+          this.sortColumns
+        );
+
+        // Prepare data for print
+        const printData = allCertificates.map(cert => ({
+          recipientName: cert.recipientName || '-',
+          type: cert.type === 'memorial' ? this.i18n.currentTerms.memorialCertificate : this.i18n.currentTerms.memorialDayType,
+          eventDate: this.formatHebrewDate(cert.eventDate),
+          amount: cert.amount ? `₪${cert.amount.toLocaleString('he-IL')}` : '-',
+          reminder: this.getNextReminderDate(cert),
+          blessings: this.getBlessingCount(cert),
+          mainText: cert.mainText || '-'
+        }));
+
+        this.printService.print({
+          title: this.i18n.currentTerms.certificates || 'תעודות',
+          subtitle: `${allCertificates.length} ${this.i18n.currentTerms.certificates || 'תעודות'}`,
+          columns: [
+            { header: this.i18n.currentTerms.recipientName || 'נמען', field: 'recipientName' },
+            { header: this.i18n.currentTerms.certificateType || 'סוג', field: 'type' },
+            { header: this.i18n.currentTerms.eventDate || 'תאריך אירוע', field: 'eventDate' },
+            { header: this.i18n.currentTerms.amount || 'סכום', field: 'amount' },
+            { header: this.i18n.currentTerms.nextReminderColumn || 'תזכורת הבאה', field: 'reminder' },
+            { header: this.i18n.currentTerms.blessingsColumn || 'ברכות', field: 'blessings' },
+            { header: this.i18n.currentTerms.mainText || 'טקסט ראשי', field: 'mainText' }
+          ],
+          data: printData,
+          direction: 'rtl'
+        });
+      } catch (error) {
+        console.error('Error printing certificates:', error);
+        this.ui.error('שגיאה בהדפסה');
+      }
+    });
+  }
+
+  async onExport() {
+    await this.busy.doWhileShowingBusy(async () => {
+      try {
+        // Build filters (same as refreshData)
+        const filters: CertificateFilters = {
+          certificateType: this.filterCertificateType?.trim() || undefined,
+          dateFrom: this.filterDateFrom ? this.formatDateForFilter(this.filterDateFrom) : undefined,
+          dateTo: this.filterDateTo ? this.formatDateForFilter(this.filterDateTo) : undefined,
+          donorSearchText: this.donorSearchText?.trim() || undefined,
+          fromParasha: this.filterFromParasha?.trim() || undefined,
+          toParasha: this.filterToParasha?.trim() || undefined
+        };
+
+        // Fetch ALL certificates (no pagination)
+        const allCertificates = await CertificateController.findFilteredCertificates(
+          filters,
+          undefined,
+          undefined,
+          this.sortColumns
+        );
+
+        await this.excelExportService.export({
+          data: allCertificates,
+          columns: [
+            { header: this.i18n.currentTerms.recipientName || 'נמען', mapper: (c) => c.recipientName || '-', width: 25 },
+            { header: this.i18n.currentTerms.certificateType || 'סוג', mapper: (c) => c.type === 'memorial' ? this.i18n.currentTerms.memorialCertificate : this.i18n.currentTerms.memorialDayType, width: 15 },
+            { header: this.i18n.currentTerms.eventDate || 'תאריך אירוע', mapper: (c) => this.formatHebrewDate(c.eventDate), width: 15 },
+            { header: this.i18n.currentTerms.amount || 'סכום', mapper: (c) => c.amount ? `₪${c.amount.toLocaleString('he-IL')}` : '-', width: 12 },
+            { header: this.i18n.currentTerms.nextReminderColumn || 'תזכורת הבאה', mapper: (c) => this.getNextReminderDate(c), width: 15 },
+            { header: this.i18n.currentTerms.blessingsColumn || 'ברכות', mapper: (c) => this.getBlessingCount(c), width: 10 },
+            { header: this.i18n.currentTerms.mainText || 'טקסט ראשי', mapper: (c) => c.mainText || '-', width: 30 }
+          ],
+          sheetName: this.i18n.currentTerms.certificates || 'תעודות',
+          fileName: this.excelExportService.generateFileName(this.i18n.currentTerms.certificates || 'תעודות')
+        });
+      } catch (error) {
+        console.error('Error exporting certificates:', error);
+        this.ui.error('שגיאה בייצוא');
+      }
+    });
+  }
 }
