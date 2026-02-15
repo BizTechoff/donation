@@ -29,14 +29,40 @@ export interface DonationDetailData {
   donationType?: 'full' | 'commitment' | 'partner'; // Type of donation
 }
 
+export interface DonorExportDetails {
+  // Address fields
+  address?: string;
+  phones?: string[];
+  emails?: string[];
+  // Expanded address fields
+  country?: string;
+  city?: string;
+  state?: string;
+  neighborhood?: string;
+  street?: string;
+  houseNumber?: string;
+  building?: string;
+  apartment?: string;
+  postcode?: string;
+  placeName?: string;
+  // Expanded donor fields
+  title?: string;
+  firstName?: string;
+  lastName?: string;
+  suffix?: string;
+  titleEnglish?: string;
+  firstNameEnglish?: string;
+  lastNameEnglish?: string;
+  suffixEnglish?: string;
+  maritalStatus?: string;
+  isAnash?: boolean;
+  isAlumni?: boolean;
+}
+
 export interface GroupedDonationReportData {
   donorId?: string;
   donorName: string;
-  donorDetails?: {
-    address?: string;
-    phones?: string[];
-    emails?: string[];
-  };
+  donorDetails?: DonorExportDetails;
   yearlyTotals: {
     [hebrewYear: string]: {
       [currency: string]: number;
@@ -571,14 +597,21 @@ export class ReportController {
 
   /**
    * ✅ NEW: Load donor details for multiple donors in batch (optimized)
-   * Replaces N+1 queries with 2 queries total
+   * Replaces N+1 queries with 3 queries total (donors, places, contacts)
+   * Returns expanded donor and address fields for Excel export
    */
   private static async loadAllDonorDetails(
     donorIds: string[]
-  ): Promise<Map<string, { address?: string; phones?: string[]; emails?: string[] }>> {
-    const detailsMap = new Map<string, { address?: string; phones?: string[]; emails?: string[] }>();
+  ): Promise<Map<string, DonorExportDetails>> {
+    const detailsMap = new Map<string, DonorExportDetails>();
 
     try {
+      // Load all donors in one query
+      const donors = await remult.repo(Donor).find({
+        where: { id: { $in: donorIds } }
+      });
+      const donorMap = new Map(donors.map(d => [d.id, d]));
+
       // Load primary places for all donors (בית first, then any other)
       const primaryPlacesMap = await DonorPlace.getPrimaryForDonors(donorIds);
 
@@ -592,9 +625,13 @@ export class ReportController {
 
       // Group data by donorId
       for (const donorId of donorIds) {
+        const donor = donorMap.get(donorId);
         const primaryPlace = primaryPlacesMap.get(donorId);
-        const address = primaryPlace?.place
-          ? `${primaryPlace.place.street || ''} ${primaryPlace.place.city || ''}`.trim()
+        const place = primaryPlace?.place;
+
+        // Legacy address string
+        const address = place
+          ? `${place.street || ''} ${place.city || ''}`.trim()
           : undefined;
 
         const phoneContacts = allContacts.filter(c =>
@@ -607,7 +644,35 @@ export class ReportController {
         );
         const emails = emailContacts.map(c => c.email || '').filter(e => e);
 
-        detailsMap.set(donorId, { address, phones, emails });
+        detailsMap.set(donorId, {
+          // Legacy fields
+          address,
+          phones,
+          emails,
+          // Expanded address fields
+          country: place?.country?.name || '',
+          city: place?.city || '',
+          state: place?.state || '',
+          neighborhood: place?.neighborhood || '',
+          street: place?.street || '',
+          houseNumber: place?.houseNumber || '',
+          building: place?.building || '',
+          apartment: place?.apartment || '',
+          postcode: place?.postcode || '',
+          placeName: place?.placeName || '',
+          // Expanded donor fields
+          title: donor?.title || '',
+          firstName: donor?.firstName || '',
+          lastName: donor?.lastName || '',
+          suffix: donor?.suffix || '',
+          titleEnglish: donor?.titleEnglish || '',
+          firstNameEnglish: donor?.firstNameEnglish || '',
+          lastNameEnglish: donor?.lastNameEnglish || '',
+          suffixEnglish: donor?.suffixEnglish || '',
+          maritalStatus: donor?.maritalStatus || '',
+          isAnash: donor?.isAnash || false,
+          isAlumni: donor?.isAlumni || false
+        });
       }
 
       return detailsMap;
@@ -970,10 +1035,7 @@ export class ReportController {
         totalActual: number; // Total paid (in shekel)
         donationCount: number;
         lastDonationDate: Date;
-        address?: string;
-        city?: string;
-        phones?: string[];
-        emails?: string[];
+        donorDetails: DonorExportDetails;
       }>();
 
       // Process donations (commitments and standing orders)
@@ -988,14 +1050,7 @@ export class ReportController {
         const amountInShekel = commitmentAmount * rate;
 
         if (!donorMap.has(donorId)) {
-          const donorDetails = donorDetailsMap.get(donorId);
-
-          // Extract city from address
-          let city = '';
-          if (donorDetails?.address) {
-            const addressParts = donorDetails.address.trim().split(' ');
-            city = addressParts[addressParts.length - 1] || '';
-          }
+          const donorDetails = donorDetailsMap.get(donorId) || {};
 
           donorMap.set(donorId, {
             donor: donation.donor,
@@ -1003,10 +1058,7 @@ export class ReportController {
             totalActual: 0,
             donationCount: 0,
             lastDonationDate: donation.donationDate,
-            address: donorDetails?.address || '',
-            city: city,
-            phones: donorDetails?.phones || [],
-            emails: donorDetails?.emails || []
+            donorDetails: donorDetails
           });
         }
 
@@ -1049,18 +1101,42 @@ export class ReportController {
             status = 'notPaid';
           }
 
+          const details = data.donorDetails;
           return {
-            donorName: data.donor.lastAndFirstName, // || `${data.donor.firstName} ${data.donor.lastName}`,
+            donorName: data.donor.lastAndFirstName,
             promisedAmount: data.totalCommitment,
             actualAmount: data.totalActual,
             remainingDebt: remainingDebt,
             status: status,
             currency: 'ILS', // Always in shekel after conversion
-            address: data.address || '',
-            city: data.city || '',
-            phones: data.phones || [],
-            emails: data.emails || [],
-            lastDonationDate: data.lastDonationDate
+            // Legacy fields
+            address: details.address || '',
+            city: details.city || '',
+            phones: details.phones || [],
+            emails: details.emails || [],
+            lastDonationDate: data.lastDonationDate,
+            // Expanded donor fields
+            title: details.title || '',
+            firstName: details.firstName || '',
+            lastName: details.lastName || '',
+            suffix: details.suffix || '',
+            titleEnglish: details.titleEnglish || '',
+            firstNameEnglish: details.firstNameEnglish || '',
+            lastNameEnglish: details.lastNameEnglish || '',
+            suffixEnglish: details.suffixEnglish || '',
+            maritalStatus: details.maritalStatus || '',
+            isAnash: details.isAnash || false,
+            isAlumni: details.isAlumni || false,
+            // Expanded address fields
+            country: details.country || '',
+            state: details.state || '',
+            neighborhood: details.neighborhood || '',
+            street: details.street || '',
+            houseNumber: details.houseNumber || '',
+            building: details.building || '',
+            apartment: details.apartment || '',
+            postcode: details.postcode || '',
+            placeName: details.placeName || ''
           };
         })
         .sort((a, b) => a.donorName.localeCompare(b.donorName, 'he'));
@@ -1550,6 +1626,28 @@ export interface PaymentReportData {
   phones?: string[];
   emails?: string[];
   lastDonationDate?: Date;
+  // Expanded donor fields
+  title?: string;
+  firstName?: string;
+  lastName?: string;
+  suffix?: string;
+  titleEnglish?: string;
+  firstNameEnglish?: string;
+  lastNameEnglish?: string;
+  suffixEnglish?: string;
+  maritalStatus?: string;
+  isAnash?: boolean;
+  isAlumni?: boolean;
+  // Expanded address fields
+  country?: string;
+  state?: string;
+  neighborhood?: string;
+  street?: string;
+  houseNumber?: string;
+  building?: string;
+  apartment?: string;
+  postcode?: string;
+  placeName?: string;
 }
 
 export interface YearlySummaryData {

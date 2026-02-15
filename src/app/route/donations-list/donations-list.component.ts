@@ -802,6 +802,17 @@ export class DonationsListComponent implements OnInit, OnDestroy {
     });
   }
 
+  // Helper method to translate marital status
+  private getMaritalStatusText(status: string): string {
+    const statusMap: Record<string, string> = {
+      'married': this.i18n.currentTerms.married || 'נשוי/ה',
+      'single': this.i18n.currentTerms.single || 'רווק/ה',
+      'widowed': this.i18n.currentTerms.widowed || 'אלמן/ה',
+      'divorced': this.i18n.currentTerms.divorced || 'גרוש/ה'
+    };
+    return statusMap[status] || '';
+  }
+
   async onExport() {
     await this.busy.doWhileShowingBusy(async () => {
       try {
@@ -824,18 +835,52 @@ export class DonationsListComponent implements OnInit, OnDestroy {
           this.sortColumns
         );
 
+        // Load place data for all donors
+        const donorIds = [...new Set(allDonations.map(d => d.donorId).filter(id => id))];
+        const placesMap = await DonorPlace.getPrimaryForDonors(donorIds);
+
+        // Prepare export data with place info
+        const exportData = allDonations.map(d => ({
+          donation: d,
+          place: d.donorId ? placesMap.get(d.donorId)?.place : undefined
+        }));
+
         await this.excelExportService.export({
-          data: allDonations,
+          data: exportData,
           columns: [
-            { header: this.i18n.currentTerms.donor || 'תורם', mapper: (d) => this.getDonorName(d), width: 25 },
-            { header: this.i18n.currentTerms.address || 'כתובת', mapper: (d) => this.getDonorHomeAddress(d), width: 30 },
-            { header: this.i18n.currentTerms.date || 'תאריך', mapper: (d) => d.donationDate ? this.hebrewDateService.convertGregorianToHebrew(new Date(d.donationDate)).formatted : '-', width: 15 },
-            { header: this.i18n.currentTerms.donationType || 'סוג', mapper: (d) => this.getDonationTypeDisplay(d), width: 12 },
-            { header: this.i18n.currentTerms.donationMethodFilter || 'אופן תרומה', mapper: (d) => this.getMethodName(d), width: 12 },
-            { header: this.i18n.currentTerms.amount || 'סכום', mapper: (d) => `${this.currencyTypes[d.currencyId]?.symbol || '₪'}${d.amount.toLocaleString('he-IL')}`, width: 12 },
-            { header: this.i18n.currentTerms.campaign || 'קמפיין', mapper: (d) => this.getCampaignName(d), width: 15 },
-            { header: this.i18n.currentTerms.fundraiserColumn || 'מגייס', mapper: (d) => d.donor?.fundraiser?.name || '-', width: 12 },
-            { header: this.i18n.currentTerms.reason || 'הקדשה', mapper: (d) => d.reason || '-', width: 20 }
+            // Donor fields - Hebrew
+            { header: this.i18n.currentTerms.title || 'תואר', mapper: (item) => item.donation.donor?.title || '', width: 15 },
+            { header: this.i18n.currentTerms.firstName || 'שם פרטי', mapper: (item) => item.donation.donor?.firstName || '', width: 15 },
+            { header: this.i18n.currentTerms.lastName || 'שם משפחה', mapper: (item) => item.donation.donor?.lastName || '', width: 15 },
+            { header: this.i18n.currentTerms.suffix || 'סיומת', mapper: (item) => item.donation.donor?.suffix || '', width: 10 },
+            // Donor fields - English
+            { header: this.i18n.currentTerms.titleEnglish || 'Title', mapper: (item) => item.donation.donor?.titleEnglish || '', width: 12 },
+            { header: this.i18n.currentTerms.firstNameEnglish || 'First Name', mapper: (item) => item.donation.donor?.firstNameEnglish || '', width: 15 },
+            { header: this.i18n.currentTerms.lastNameEnglish || 'Last Name', mapper: (item) => item.donation.donor?.lastNameEnglish || '', width: 15 },
+            { header: this.i18n.currentTerms.suffixEnglish || 'Suffix', mapper: (item) => item.donation.donor?.suffixEnglish || '', width: 10 },
+            // Donor characteristics
+            { header: this.i18n.currentTerms.maritalStatus || 'מצב משפחתי', mapper: (item) => this.getMaritalStatusText(item.donation.donor?.maritalStatus || ''), width: 12 },
+            { header: this.i18n.currentTerms.anash || 'אנ"ש', mapper: (item) => item.donation.donor?.isAnash ? '✓' : '', width: 8 },
+            { header: this.i18n.currentTerms.alumni || 'תלמידנו', mapper: (item) => item.donation.donor?.isAlumni ? '✓' : '', width: 8 },
+            // Address fields
+            { header: this.i18n.currentTerms.country || 'מדינה', mapper: (item) => item.place?.country?.name || '', width: 12 },
+            { header: this.i18n.currentTerms.city || 'עיר', mapper: (item) => item.place?.city || '', width: 15 },
+            { header: this.i18n.currentTerms.state || 'מחוז', mapper: (item) => item.place?.state || '', width: 12 },
+            { header: this.i18n.currentTerms.neighborhood || 'שכונה', mapper: (item) => item.place?.neighborhood || '', width: 15 },
+            { header: this.i18n.currentTerms.street || 'רחוב', mapper: (item) => item.place?.street || '', width: 15 },
+            { header: this.i18n.currentTerms.houseNumber || 'מספר', mapper: (item) => item.place?.houseNumber || '', width: 8 },
+            { header: this.i18n.currentTerms.building || 'בניין', mapper: (item) => item.place?.building || '', width: 8 },
+            { header: this.i18n.currentTerms.apartment || 'דירה', mapper: (item) => item.place?.apartment || '', width: 8 },
+            { header: this.i18n.currentTerms.postcode || 'מיקוד', mapper: (item) => item.place?.postcode || '', width: 10 },
+            { header: this.i18n.currentTerms.placeName || 'שם מקום', mapper: (item) => item.place?.placeName || '', width: 15 },
+            // Donation fields
+            { header: this.i18n.currentTerms.date || 'תאריך', mapper: (item) => item.donation.donationDate ? this.hebrewDateService.convertGregorianToHebrew(new Date(item.donation.donationDate)).formatted : '-', width: 15 },
+            { header: this.i18n.currentTerms.donationType || 'סוג', mapper: (item) => this.getDonationTypeDisplay(item.donation), width: 12 },
+            { header: this.i18n.currentTerms.donationMethodFilter || 'אופן תרומה', mapper: (item) => this.getMethodName(item.donation), width: 12 },
+            { header: this.i18n.currentTerms.amount || 'סכום', mapper: (item) => `${this.currencyTypes[item.donation.currencyId]?.symbol || '₪'}${item.donation.amount.toLocaleString('he-IL')}`, width: 12 },
+            { header: this.i18n.currentTerms.campaign || 'קמפיין', mapper: (item) => this.getCampaignName(item.donation), width: 15 },
+            { header: this.i18n.currentTerms.fundraiserColumn || 'מגייס', mapper: (item) => item.donation.donor?.fundraiser?.name || '-', width: 12 },
+            { header: this.i18n.currentTerms.reason || 'הקדשה', mapper: (item) => item.donation.reason || '-', width: 20 }
           ],
           sheetName: this.i18n.currentTerms.donations || 'תרומות',
           fileName: this.excelExportService.generateFileName(this.i18n.currentTerms.donations || 'תרומות')

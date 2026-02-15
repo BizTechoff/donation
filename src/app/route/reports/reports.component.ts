@@ -61,6 +61,28 @@ interface PaymentReportData {
   phones?: string[];
   emails?: string[];
   lastDonationDate?: Date;
+  // Expanded donor fields
+  title?: string;
+  firstName?: string;
+  lastName?: string;
+  suffix?: string;
+  titleEnglish?: string;
+  firstNameEnglish?: string;
+  lastNameEnglish?: string;
+  suffixEnglish?: string;
+  maritalStatus?: string;
+  isAnash?: boolean;
+  isAlumni?: boolean;
+  // Expanded address fields
+  country?: string;
+  state?: string;
+  neighborhood?: string;
+  street?: string;
+  houseNumber?: string;
+  building?: string;
+  apartment?: string;
+  postcode?: string;
+  placeName?: string;
 }
 
 interface YearlySummaryData {
@@ -80,6 +102,16 @@ interface BlessingReportData {
   mobile: string;
   email: string;
   campaignName: string;
+  // Expanded donor fields
+  title?: string;
+  suffix?: string;
+  titleEnglish?: string;
+  firstNameEnglish?: string;
+  lastNameEnglish?: string;
+  suffixEnglish?: string;
+  maritalStatus?: string;
+  isAnash?: boolean;
+  isAlumni?: boolean;
 }
 
 interface DonationDetail {
@@ -1260,15 +1292,26 @@ export class ReportsComponent implements OnInit, OnDestroy {
       console.log('blessing', JSON.stringify(blessing))
 
       return {
-        lastName: nameParts[0] || '',
-        firstName: nameParts.length > 1 ? nameParts.slice(1).join(' ') : '',
+        // Original fields
+        lastName: donor.lastName || '',
+        firstName: donor.firstName || '',
         blessingBookType: (blessing && blessing.blessingBookType) ? blessing.blessingBookType.type : '-',
         notes: (blessing?.notes && blessing.notes.trim() !== '') ? blessing.notes : '-',
         status: (blessing && blessing.status) ? blessing.status : 'לא הגיב',
         phone: phone || '-',
         mobile: mobile || '-',
         email: email || '-',
-        campaignName: campaign.name
+        campaignName: campaign.name,
+        // Expanded donor fields
+        title: donor.title || '',
+        suffix: donor.suffix || '',
+        titleEnglish: donor.titleEnglish || '',
+        firstNameEnglish: donor.firstNameEnglish || '',
+        lastNameEnglish: donor.lastNameEnglish || '',
+        suffixEnglish: donor.suffixEnglish || '',
+        maritalStatus: donor.maritalStatus || '',
+        isAnash: donor.isAnash || false,
+        isAlumni: donor.isAlumni || false
       };
     });
 
@@ -1375,10 +1418,34 @@ export class ReportsComponent implements OnInit, OnDestroy {
       });
 
       const columns: import('../../services/excel-export.service').ExcelColumn<any>[] = [
-        { header: 'שם', mapper: (row: any) => row.donorName, width: 25 },
-        { header: 'כתובת', mapper: (row: any) => row.donorDetails?.address || '-', width: 30 },
-        { header: 'טלפון', mapper: (row: any) => row.donorDetails?.phones?.join(', ') || '-', width: 20 },
-        { header: 'אימייל', mapper: (row: any) => row.donorDetails?.emails?.join(', ') || '-', width: 30 }
+        // Expanded donor fields (Hebrew)
+        { header: 'תואר', mapper: (row: any) => row.donorDetails?.title || '', width: 10 },
+        { header: 'שם פרטי', mapper: (row: any) => row.donorDetails?.firstName || '', width: 15 },
+        { header: 'שם משפחה', mapper: (row: any) => row.donorDetails?.lastName || '', width: 15 },
+        { header: 'סיומת', mapper: (row: any) => row.donorDetails?.suffix || '', width: 10 },
+        // Expanded donor fields (English)
+        { header: 'Title', mapper: (row: any) => row.donorDetails?.titleEnglish || '', width: 10 },
+        { header: 'First Name', mapper: (row: any) => row.donorDetails?.firstNameEnglish || '', width: 15 },
+        { header: 'Last Name', mapper: (row: any) => row.donorDetails?.lastNameEnglish || '', width: 15 },
+        { header: 'Suffix', mapper: (row: any) => row.donorDetails?.suffixEnglish || '', width: 10 },
+        // Donor type fields
+        { header: 'מצב משפחתי', mapper: (row: any) => this.getMaritalStatusText(row.donorDetails?.maritalStatus || ''), width: 12 },
+        { header: 'אנ"ש', mapper: (row: any) => row.donorDetails?.isAnash ? '✓' : '', width: 8 },
+        { header: 'תלמידנו', mapper: (row: any) => row.donorDetails?.isAlumni ? '✓' : '', width: 8 },
+        // Expanded address fields
+        { header: 'מדינה', mapper: (row: any) => row.donorDetails?.country || '', width: 12 },
+        { header: 'עיר', mapper: (row: any) => row.donorDetails?.city || '', width: 15 },
+        { header: 'מחוז', mapper: (row: any) => row.donorDetails?.state || '', width: 12 },
+        { header: 'שכונה', mapper: (row: any) => row.donorDetails?.neighborhood || '', width: 15 },
+        { header: 'רחוב', mapper: (row: any) => row.donorDetails?.street || '', width: 20 },
+        { header: 'מספר', mapper: (row: any) => row.donorDetails?.houseNumber || '', width: 8 },
+        { header: 'בניין', mapper: (row: any) => row.donorDetails?.building || '', width: 10 },
+        { header: 'דירה', mapper: (row: any) => row.donorDetails?.apartment || '', width: 8 },
+        { header: 'מיקוד', mapper: (row: any) => row.donorDetails?.postcode || '', width: 10 },
+        { header: 'שם מקום', mapper: (row: any) => row.donorDetails?.placeName || '', width: 15 },
+        // Contact fields
+        { header: 'טלפון', mapper: (row: any) => row.donorDetails?.phones?.join(', ') || '', width: 20 },
+        { header: 'אימייל', mapper: (row: any) => row.donorDetails?.emails?.join(', ') || '', width: 30 }
       ];
 
       await this.excelService.export({
@@ -1433,11 +1500,26 @@ export class ReportsComponent implements OnInit, OnDestroy {
       reportData.push([]); // Empty row
 
       // Add headers
-      const headers = ['שם'];
+      const headers: string[] = [];
       const isDonorGroupBy = this.filters.groupBy === 'donor';
-      if (isDonorGroupBy && this.filters.showDonorAddress) headers.push('כתובת');
-      if (isDonorGroupBy && this.filters.showDonorPhone) headers.push('טלפונים');
-      if (isDonorGroupBy && this.filters.showDonorEmail) headers.push('אימיילים');
+
+      if (isDonorGroupBy) {
+        // Expanded donor headers (Hebrew)
+        headers.push('תואר', 'שם פרטי', 'שם משפחה', 'סיומת');
+        // Expanded donor headers (English)
+        headers.push('Title', 'First Name', 'Last Name', 'Suffix');
+        // Donor type fields
+        headers.push('מצב משפחתי', 'אנ"ש', 'תלמידנו');
+        // Expanded address fields (if showDonorAddress)
+        if (this.filters.showDonorAddress) {
+          headers.push('מדינה', 'עיר', 'מחוז', 'שכונה', 'רחוב', 'מספר', 'בניין', 'דירה', 'מיקוד', 'שם מקום');
+        }
+        if (this.filters.showDonorPhone) headers.push('טלפונים');
+        if (this.filters.showDonorEmail) headers.push('אימיילים');
+      } else {
+        headers.push('שם');
+      }
+
       fullReportResponse.hebrewYears.forEach(year => headers.push(year));
       if (this.filters.showActualPayments) {
         headers.push('תשלומים בפועל');
@@ -1446,16 +1528,44 @@ export class ReportsComponent implements OnInit, OnDestroy {
 
       // Add data rows
       fullReportResponse.reportData.forEach(row => {
-        const dataRow: any[] = [row.donorName];
+        const dataRow: any[] = [];
 
-        if (isDonorGroupBy && this.filters.showDonorAddress) {
-          dataRow.push(row.donorDetails?.address || '-');
-        }
-        if (isDonorGroupBy && this.filters.showDonorPhone) {
-          dataRow.push(row.donorDetails?.phones?.join(', ') || '-');
-        }
-        if (isDonorGroupBy && this.filters.showDonorEmail) {
-          dataRow.push(row.donorDetails?.emails?.join(', ') || '-');
+        if (isDonorGroupBy) {
+          // Expanded donor fields (Hebrew)
+          dataRow.push(row.donorDetails?.title || '');
+          dataRow.push(row.donorDetails?.firstName || '');
+          dataRow.push(row.donorDetails?.lastName || '');
+          dataRow.push(row.donorDetails?.suffix || '');
+          // Expanded donor fields (English)
+          dataRow.push(row.donorDetails?.titleEnglish || '');
+          dataRow.push(row.donorDetails?.firstNameEnglish || '');
+          dataRow.push(row.donorDetails?.lastNameEnglish || '');
+          dataRow.push(row.donorDetails?.suffixEnglish || '');
+          // Donor type fields
+          dataRow.push(this.getMaritalStatusText(row.donorDetails?.maritalStatus || ''));
+          dataRow.push(row.donorDetails?.isAnash ? '✓' : '');
+          dataRow.push(row.donorDetails?.isAlumni ? '✓' : '');
+          // Expanded address fields (if showDonorAddress)
+          if (this.filters.showDonorAddress) {
+            dataRow.push(row.donorDetails?.country || '');
+            dataRow.push(row.donorDetails?.city || '');
+            dataRow.push(row.donorDetails?.state || '');
+            dataRow.push(row.donorDetails?.neighborhood || '');
+            dataRow.push(row.donorDetails?.street || '');
+            dataRow.push(row.donorDetails?.houseNumber || '');
+            dataRow.push(row.donorDetails?.building || '');
+            dataRow.push(row.donorDetails?.apartment || '');
+            dataRow.push(row.donorDetails?.postcode || '');
+            dataRow.push(row.donorDetails?.placeName || '');
+          }
+          if (this.filters.showDonorPhone) {
+            dataRow.push(row.donorDetails?.phones?.join(', ') || '');
+          }
+          if (this.filters.showDonorEmail) {
+            dataRow.push(row.donorDetails?.emails?.join(', ') || '');
+          }
+        } else {
+          dataRow.push(row.donorName);
         }
 
         fullReportResponse.hebrewYears.forEach(year => {
@@ -1475,10 +1585,13 @@ export class ReportsComponent implements OnInit, OnDestroy {
         // Add donation details rows if showDonationDetails is enabled
         if (this.filters.showDonationDetails && row.donations && row.donations.length > 0) {
           // Calculate number of columns before years
-          let preYearCols = 1; // Name column
-          if (isDonorGroupBy && this.filters.showDonorAddress) preYearCols++;
-          if (isDonorGroupBy && this.filters.showDonorPhone) preYearCols++;
-          if (isDonorGroupBy && this.filters.showDonorEmail) preYearCols++;
+          let preYearCols = 1; // Name column (for non-donor groupBy)
+          if (isDonorGroupBy) {
+            preYearCols = 11; // 4 Hebrew name + 4 English name + 3 type fields
+            if (this.filters.showDonorAddress) preYearCols += 10; // 10 address fields
+            if (this.filters.showDonorPhone) preYearCols++;
+            if (this.filters.showDonorEmail) preYearCols++;
+          }
 
           // Group donations by Hebrew year
           fullReportResponse.hebrewYears.forEach((year, yearIndex) => {
@@ -1514,10 +1627,24 @@ export class ReportsComponent implements OnInit, OnDestroy {
       const ws = XLSX.utils.aoa_to_sheet(reportData);
 
       // Set column widths
-      const colWidths = [{ wch: 25 }]; // Name column
-      if (isDonorGroupBy && this.filters.showDonorAddress) colWidths.push({ wch: 30 });
-      if (isDonorGroupBy && this.filters.showDonorPhone) colWidths.push({ wch: 20 });
-      if (isDonorGroupBy && this.filters.showDonorEmail) colWidths.push({ wch: 30 });
+      const colWidths: { wch: number }[] = [];
+      if (isDonorGroupBy) {
+        // Expanded donor fields (Hebrew): תואר, שם פרטי, שם משפחה, סיומת
+        colWidths.push({ wch: 10 }, { wch: 15 }, { wch: 15 }, { wch: 10 });
+        // Expanded donor fields (English): Title, First Name, Last Name, Suffix
+        colWidths.push({ wch: 10 }, { wch: 15 }, { wch: 15 }, { wch: 10 });
+        // Donor type fields: מצב משפחתי, אנ"ש, תלמידנו
+        colWidths.push({ wch: 12 }, { wch: 8 }, { wch: 8 });
+        // Expanded address fields
+        if (this.filters.showDonorAddress) {
+          colWidths.push({ wch: 12 }, { wch: 15 }, { wch: 12 }, { wch: 15 }, { wch: 20 });
+          colWidths.push({ wch: 8 }, { wch: 10 }, { wch: 8 }, { wch: 10 }, { wch: 15 });
+        }
+        if (this.filters.showDonorPhone) colWidths.push({ wch: 20 });
+        if (this.filters.showDonorEmail) colWidths.push({ wch: 30 });
+      } else {
+        colWidths.push({ wch: 25 }); // Name column
+      }
       fullReportResponse.hebrewYears.forEach(() => colWidths.push({ wch: 15 })); // Year columns
       if (this.filters.showActualPayments) {
         colWidths.push({ wch: 30 }); // Payments column
@@ -1604,9 +1731,35 @@ export class ReportsComponent implements OnInit, OnDestroy {
       await this.excelService.export({
         data: this.paymentReportData,
         columns: [
-          { header: 'שם תורם', mapper: (row) => row.donorName, width: 25 },
-          { header: 'כתובת', mapper: (row) => row.address || '-', width: 30 },
-          { header: 'עיר', mapper: (row) => row.city || '-', width: 15 },
+          // Expanded donor fields (Hebrew)
+          { header: 'תואר', mapper: (row) => row.title || '', width: 10 },
+          { header: 'שם פרטי', mapper: (row) => row.firstName || '', width: 15 },
+          { header: 'שם משפחה', mapper: (row) => row.lastName || '', width: 15 },
+          { header: 'סיומת', mapper: (row) => row.suffix || '', width: 10 },
+          // Expanded donor fields (English)
+          { header: 'Title', mapper: (row) => row.titleEnglish || '', width: 10 },
+          { header: 'First Name', mapper: (row) => row.firstNameEnglish || '', width: 15 },
+          { header: 'Last Name', mapper: (row) => row.lastNameEnglish || '', width: 15 },
+          { header: 'Suffix', mapper: (row) => row.suffixEnglish || '', width: 10 },
+          // Donor type fields
+          { header: 'מצב משפחתי', mapper: (row) => this.getMaritalStatusText(row.maritalStatus || ''), width: 12 },
+          { header: 'אנ"ש', mapper: (row) => row.isAnash ? '✓' : '', width: 8 },
+          { header: 'תלמידנו', mapper: (row) => row.isAlumni ? '✓' : '', width: 8 },
+          // Expanded address fields
+          { header: 'מדינה', mapper: (row) => row.country || '', width: 12 },
+          { header: 'עיר', mapper: (row) => row.city || '', width: 15 },
+          { header: 'מחוז', mapper: (row) => row.state || '', width: 12 },
+          { header: 'שכונה', mapper: (row) => row.neighborhood || '', width: 15 },
+          { header: 'רחוב', mapper: (row) => row.street || '', width: 20 },
+          { header: 'מספר', mapper: (row) => row.houseNumber || '', width: 8 },
+          { header: 'בניין', mapper: (row) => row.building || '', width: 10 },
+          { header: 'דירה', mapper: (row) => row.apartment || '', width: 8 },
+          { header: 'מיקוד', mapper: (row) => row.postcode || '', width: 10 },
+          { header: 'שם מקום', mapper: (row) => row.placeName || '', width: 15 },
+          // Contact fields
+          { header: 'טלפון', mapper: (row) => row.phones?.join(', ') || '', width: 20 },
+          { header: 'אימייל', mapper: (row) => row.emails?.join(', ') || '', width: 30 },
+          // Report fields
           { header: 'תאריך אחרון', mapper: (row) => this.formatHebrewDate(row.lastDonationDate), width: 15 },
           { header: 'התחייבות', mapper: (row) => this.formatCurrency(row.promisedAmount), width: 15 },
           { header: 'תשלום בפועל', mapper: (row) => this.formatCurrency(row.actualAmount), width: 15 },
@@ -1656,11 +1809,25 @@ export class ReportsComponent implements OnInit, OnDestroy {
       await this.excelService.export({
         data: this.blessingReportData,
         columns: [
-          { header: 'שם משפחה', mapper: (row) => row.lastName, width: 20 },
-          { header: 'שם פרטי', mapper: (row) => row.firstName, width: 20 },
+          // Expanded donor fields (Hebrew)
+          { header: 'תואר', mapper: (row) => row.title || '', width: 10 },
+          { header: 'שם פרטי', mapper: (row) => row.firstName || '', width: 15 },
+          { header: 'שם משפחה', mapper: (row) => row.lastName || '', width: 15 },
+          { header: 'סיומת', mapper: (row) => row.suffix || '', width: 10 },
+          // Expanded donor fields (English)
+          { header: 'Title', mapper: (row) => row.titleEnglish || '', width: 10 },
+          { header: 'First Name', mapper: (row) => row.firstNameEnglish || '', width: 15 },
+          { header: 'Last Name', mapper: (row) => row.lastNameEnglish || '', width: 15 },
+          { header: 'Suffix', mapper: (row) => row.suffixEnglish || '', width: 10 },
+          // Donor type fields
+          { header: 'מצב משפחתי', mapper: (row) => this.getMaritalStatusText(row.maritalStatus || ''), width: 12 },
+          { header: 'אנ"ש', mapper: (row) => row.isAnash ? '✓' : '', width: 8 },
+          { header: 'תלמידנו', mapper: (row) => row.isAlumni ? '✓' : '', width: 8 },
+          // Blessing-specific fields
           { header: 'סוג ברכה', mapper: (row) => row.blessingBookType || '-', width: 15 },
           { header: 'הערות', mapper: (row) => row.notes || '-', width: 30 },
           { header: 'סטטוס', mapper: (row) => row.status || '-', width: 12 },
+          // Contact fields
           { header: 'טלפון', mapper: (row) => row.phone || '-', width: 15 },
           { header: 'נייד', mapper: (row) => row.mobile || '-', width: 15 },
           { header: 'אימייל', mapper: (row) => row.email || '-', width: 25 }
@@ -3149,5 +3316,16 @@ export class ReportsComponent implements OnInit, OnDestroy {
         { label: 'סה"כ', value: summary.total }
       ]
     });
+  }
+
+  // Helper method to translate marital status based on user's current language
+  private getMaritalStatusText(status: string): string {
+    const statusMap: Record<string, string> = {
+      'married': this.i18n.currentTerms.married || 'נשוי/ה',
+      'single': this.i18n.currentTerms.single || 'רווק/ה',
+      'widowed': this.i18n.currentTerms.widowed || 'אלמן/ה',
+      'divorced': this.i18n.currentTerms.divorced || 'גרוש/ה'
+    };
+    return statusMap[status] || '';
   }
 }

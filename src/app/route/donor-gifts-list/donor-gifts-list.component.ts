@@ -599,6 +599,17 @@ export class DonorGiftsListComponent implements OnInit, OnDestroy {
     });
   }
 
+  // Helper method to translate marital status
+  private getMaritalStatusText(status: string): string {
+    const statusMap: Record<string, string> = {
+      'married': this.i18n.currentTerms.married || 'נשוי/ה',
+      'single': this.i18n.currentTerms.single || 'רווק/ה',
+      'widowed': this.i18n.currentTerms.widowed || 'אלמן/ה',
+      'divorced': this.i18n.currentTerms.divorced || 'גרוש/ה'
+    };
+    return statusMap[status] || '';
+  }
+
   async onExport() {
     await this.busy.doWhileShowingBusy(async () => {
       try {
@@ -621,7 +632,21 @@ export class DonorGiftsListComponent implements OnInit, OnDestroy {
         await this.excelExportService.export({
           data: allDonorGifts,
           columns: [
-            { header: this.i18n.currentTerms.donor || 'תורם', mapper: (g) => this.getDonorName(g), width: 25 },
+            // Donor fields - Hebrew
+            { header: this.i18n.currentTerms.title || 'תואר', mapper: (g) => g.donor?.title || '', width: 15 },
+            { header: this.i18n.currentTerms.firstName || 'שם פרטי', mapper: (g) => g.donor?.firstName || '', width: 15 },
+            { header: this.i18n.currentTerms.lastName || 'שם משפחה', mapper: (g) => g.donor?.lastName || '', width: 15 },
+            { header: this.i18n.currentTerms.suffix || 'סיומת', mapper: (g) => g.donor?.suffix || '', width: 10 },
+            // Donor fields - English
+            { header: this.i18n.currentTerms.titleEnglish || 'Title', mapper: (g) => g.donor?.titleEnglish || '', width: 12 },
+            { header: this.i18n.currentTerms.firstNameEnglish || 'First Name', mapper: (g) => g.donor?.firstNameEnglish || '', width: 15 },
+            { header: this.i18n.currentTerms.lastNameEnglish || 'Last Name', mapper: (g) => g.donor?.lastNameEnglish || '', width: 15 },
+            { header: this.i18n.currentTerms.suffixEnglish || 'Suffix', mapper: (g) => g.donor?.suffixEnglish || '', width: 10 },
+            // Donor characteristics
+            { header: this.i18n.currentTerms.maritalStatus || 'מצב משפחתי', mapper: (g) => this.getMaritalStatusText(g.donor?.maritalStatus || ''), width: 12 },
+            { header: this.i18n.currentTerms.anash || 'אנ"ש', mapper: (g) => g.donor?.isAnash ? '✓' : '', width: 8 },
+            { header: this.i18n.currentTerms.alumni || 'תלמידנו', mapper: (g) => g.donor?.isAlumni ? '✓' : '', width: 8 },
+            // Gift fields
             { header: this.i18n.currentTerms.gift || 'מתנה', mapper: (g) => g.gift?.name || '-', width: 20 },
             { header: this.i18n.currentTerms.deliveryDate || 'תאריך מסירה', mapper: (g) => this.formatHebrewDate(g.deliveryDate), width: 15 },
             { header: this.i18n.currentTerms.status || 'סטטוס', mapper: (g) => g.isDelivered ? this.i18n.currentTerms.delivered : this.i18n.currentTerms.pending, width: 12 },

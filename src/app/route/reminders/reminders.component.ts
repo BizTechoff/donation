@@ -791,6 +791,17 @@ getTypeText(type: string): string {
     });
   }
 
+  // Helper method to translate marital status
+  private getMaritalStatusText(status: string): string {
+    const statusMap: Record<string, string> = {
+      'married': this.i18n.currentTerms.married || 'נשוי/ה',
+      'single': this.i18n.currentTerms.single || 'רווק/ה',
+      'widowed': this.i18n.currentTerms.widowed || 'אלמן/ה',
+      'divorced': this.i18n.currentTerms.divorced || 'גרוש/ה'
+    };
+    return statusMap[status] || '';
+  }
+
   async onExport() {
     await this.busy.doWhileShowingBusy(async () => {
       try {
@@ -824,10 +835,24 @@ getTypeText(type: string): string {
         await this.excelExportService.export({
           data: allReminders,
           columns: [
+            // Donor fields - Hebrew
+            { header: this.i18n.currentTerms.title || 'תואר', mapper: (r) => r.donor?.title || '', width: 15 },
+            { header: this.i18n.currentTerms.firstName || 'שם פרטי', mapper: (r) => r.donor?.firstName || '', width: 15 },
+            { header: this.i18n.currentTerms.lastName || 'שם משפחה', mapper: (r) => r.donor?.lastName || '', width: 15 },
+            { header: this.i18n.currentTerms.suffix || 'סיומת', mapper: (r) => r.donor?.suffix || '', width: 10 },
+            // Donor fields - English
+            { header: this.i18n.currentTerms.titleEnglish || 'Title', mapper: (r) => r.donor?.titleEnglish || '', width: 12 },
+            { header: this.i18n.currentTerms.firstNameEnglish || 'First Name', mapper: (r) => r.donor?.firstNameEnglish || '', width: 15 },
+            { header: this.i18n.currentTerms.lastNameEnglish || 'Last Name', mapper: (r) => r.donor?.lastNameEnglish || '', width: 15 },
+            { header: this.i18n.currentTerms.suffixEnglish || 'Suffix', mapper: (r) => r.donor?.suffixEnglish || '', width: 10 },
+            // Donor characteristics
+            { header: this.i18n.currentTerms.maritalStatus || 'מצב משפחתי', mapper: (r) => this.getMaritalStatusText(r.donor?.maritalStatus || ''), width: 12 },
+            { header: this.i18n.currentTerms.anash || 'אנ"ש', mapper: (r) => r.donor?.isAnash ? '✓' : '', width: 8 },
+            { header: this.i18n.currentTerms.alumni || 'תלמידנו', mapper: (r) => r.donor?.isAlumni ? '✓' : '', width: 8 },
+            // Reminder fields
             { header: this.i18n.currentTerms.reminderDateHeader || 'תאריך תזכורת', mapper: (r) => this.formatHebrewDate(r.nextReminderDate), width: 15 },
             { header: this.i18n.currentTerms.typeHeader || 'סוג', mapper: (r) => this.getTypeText(r.type), width: 15 },
             { header: 'מקור', mapper: (r) => this.getSourceText(r), width: 12 },
-            { header: this.i18n.currentTerms.donorHeader || 'תורם', mapper: (r) => this.getDonorName(r), width: 25 },
             { header: this.i18n.currentTerms.subjectHeader || 'נושא', mapper: (r) => r.title || '-', width: 25 },
             { header: this.i18n.currentTerms.priorityHeader || 'עדיפות', mapper: (r) => this.getPriorityText(r.priority), width: 12 }
           ],
