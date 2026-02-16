@@ -678,7 +678,7 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
         <div style="border-bottom: 2px solid #3498db; margin-bottom: 10px;"></div>
 
-        <div style="margin-bottom: 8px;">
+        <div style="margin-bottom: 8px;" dir="ltr">
           <strong>📍 ${this.i18n.terms.addressLabel}:</strong><br>
           ${donorData.fullAddress || this.i18n.terms.notSpecifiedAddress}
         </div>

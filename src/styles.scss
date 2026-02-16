@@ -257,6 +257,23 @@ th {
   z-index: 100 !important;
 }
 
+// ===============================================
+// GLOBAL ADDRESS LTR DIRECTION
+// All address fields should be displayed left-to-right (English format)
+// ===============================================
+.donor-address,
+.donor-address-cell,
+.bank-address,
+.company-address,
+.organization-address,
+.recipient-address,
+.address-text,
+.main-address,
+.address-details {
+  direction: ltr;
+  text-align: left;
+}
+
 // Fix nested modals z-index
 // Angular Material creates elements in this order: backdrop, pane, backdrop, pane
 // We need: backdrop1(999) < pane1(1000) < backdrop2(1001) < pane2(1002)

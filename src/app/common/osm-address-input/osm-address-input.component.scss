@@ -18,6 +18,9 @@
       font-size: 14px;
       transition: all 0.3s ease;
       background: white;
+      direction: ltr;
+      text-align: left;
+      unicode-bidi: plaintext;
 
       &:focus {
         outline: none;
@@ -33,14 +36,16 @@
 
     .address-icon {
       position: absolute;
-      left: 12px;
+      right: 12px;
+      left: auto;
       color: #667eea;
       pointer-events: none;
     }
 
     .loading-spinner {
       position: absolute;
-      left: 12px;
+      right: 12px;
+      left: auto;
 
       ::ng-deep .mat-progress-spinner circle {
         stroke: #667eea;
@@ -49,7 +54,8 @@
 
     .toggle-details-btn {
       position: absolute;
-      left: 8px;
+      right: 8px;
+      left: auto;
       color: #667eea;
 
       &:hover {
@@ -101,6 +107,8 @@
             font-size: 14px;
             background: white;
             transition: all 0.2s ease;
+            direction: ltr;
+            text-align: left;
 
             &:focus {
               outline: none;
@@ -217,21 +225,8 @@
   }
 }
 
-// RTL support
+// RTL support - address input stays LTR but suggestions follow RTL layout
 [dir="rtl"] {
-  .address-search-row {
-    .address-input {
-      padding: 10px 12px 10px 40px;
-    }
-
-    .address-icon,
-    .loading-spinner,
-    .toggle-details-btn {
-      left: auto;
-      right: 8px;
-    }
-  }
-
   .suggestion-content {
     .main-address {
       flex-direction: row-reverse;
