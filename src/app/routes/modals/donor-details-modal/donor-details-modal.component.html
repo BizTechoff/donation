@@ -235,10 +235,17 @@
 
         <div class="addresses-grid">
           <!-- Dynamic Donor Places -->
-          <div class="address-item place-item" *ngFor="let donorPlace of donorPlaces">
+          <div class="address-item place-item" *ngFor="let donorPlace of sortedDonorPlaces" [class.primary-address]="donorPlace.isPrimary">
             <div class="address-header">
+              <button class="pin-address-btn"
+                      [class.pinned]="donorPlace.isPrimary"
+                      (click)="togglePrimaryAddress(donorPlace)"
+                      [title]="donorPlace.isPrimary ? 'כתובת ראשית' : 'הגדר ככתובת ראשית'">
+                <mat-icon>{{ donorPlace.isPrimary ? 'push_pin' : 'push_pin' }}</mat-icon>
+              </button>
               <mat-icon class="address-type-icon">place</mat-icon>
               <h4>{{ donorPlace.addressType?.name || donorPlace.description }}</h4>
+              <span class="primary-badge" *ngIf="donorPlace.isPrimary">ראשית</span>
               <button class="remove-address-btn" (click)="removeDonorPlace(donorPlace)" title="הסר כתובת">
                 <mat-icon>close</mat-icon>
               </button>

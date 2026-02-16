@@ -1156,6 +1156,32 @@ export class DonorDetailsModalComponent implements OnInit {
     }
   }
 
+  // Toggle primary address - set one as primary, unset others
+  togglePrimaryAddress(donorPlace: DonorPlace) {
+    // If already primary, do nothing (must have at least one primary)
+    if (donorPlace.isPrimary && this.donorPlaces.filter(dp => dp.isPrimary).length === 1) {
+      return;
+    }
+
+    // Set all addresses to non-primary
+    this.donorPlaces.forEach(dp => dp.isPrimary = false);
+
+    // Set selected address as primary
+    donorPlace.isPrimary = true;
+
+    this.changed = true;
+    console.log('Set primary address:', donorPlace.addressType?.name || donorPlace.description);
+  }
+
+  // Getter to return addresses sorted with primary first
+  get sortedDonorPlaces(): DonorPlace[] {
+    return [...this.donorPlaces].sort((a, b) => {
+      if (a.isPrimary && !b.isPrimary) return -1;
+      if (!a.isPrimary && b.isPrimary) return 1;
+      return 0;
+    });
+  }
+
   async onDonorPlaceSelected(donorPlace: DonorPlace, place: Place | undefined) {
     donorPlace.placeId = place?.id || '';
     donorPlace.place = place;
