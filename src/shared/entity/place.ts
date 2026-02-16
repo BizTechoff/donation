@@ -156,8 +156,18 @@ export class Place {
   getDisplayAddress(): string {
     const parts = [];
 
-    if (this.street) parts.push(this.street);
-    if (this.houseNumber) parts.push(this.houseNumber);
+    // UK/GB format: houseNumber before street (e.g., "10 Downing Street")
+    // Other countries: street before houseNumber (e.g., "רחוב הרצל 10")
+    const isUK = this.country?.code === 'GB' || this.country?.code === 'UK';
+
+    if (isUK) {
+      if (this.houseNumber) parts.push(this.houseNumber);
+      if (this.street) parts.push(this.street);
+    } else {
+      if (this.street) parts.push(this.street);
+      if (this.houseNumber) parts.push(this.houseNumber);
+    }
+
     if (this.building) parts.push(this.building);
     if (this.apartment) parts.push(this.apartment);
     if (this.neighborhood) parts.push(this.neighborhood);

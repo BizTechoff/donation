@@ -1499,10 +1499,14 @@ export class ReportController {
     if (!donor) {
       throw new Error('Donor not found');
     }
-    const donorPlace = await remult.repo(DonorPlace).findFirst({ donor: donor }, { orderBy: { createdDate: 'desc' } });
+    const donorPlace = await remult.repo(DonorPlace).findFirst({ donor: donor }, { orderBy: { createdDate: 'desc' }, include: { place: { include: { country: true } } } });
 
-    const fullAddress =
-      `${data.donor.address.houseNumber} ${data.donor.address.street}`
+    // UK/GB format: houseNumber before street, otherwise street before houseNumber
+    const isUK = donorPlace?.place?.country?.code === 'GB' || donorPlace?.place?.country?.code === 'UK';
+    const streetLine = isUK
+      ? `${data.donor.address.houseNumber} ${data.donor.address.street}`
+      : `${data.donor.address.street} ${data.donor.address.houseNumber}`;
+    const fullAddress = streetLine.trim()
       + '\n' +
       `${data.donor.address.city} ${data.donor.address.postcode}`
     console.log('fullAddress', fullAddress)
@@ -1594,7 +1598,11 @@ export class ReportController {
 
       case 'FullAddress': {
         const row1 = `${donorPlace?.place?.apartment} ${donorPlace?.place?.building}` || ''
-        const row2 = `${donorPlace?.place?.houseNumber} ${donorPlace?.place?.street}` || ''
+        // UK/GB format: houseNumber before street, otherwise street before houseNumber
+        const isUK = donorPlace?.place?.country?.code === 'GB' || donorPlace?.place?.country?.code === 'UK';
+        const row2 = isUK
+          ? `${donorPlace?.place?.houseNumber || ''} ${donorPlace?.place?.street || ''}`.trim()
+          : `${donorPlace?.place?.street || ''} ${donorPlace?.place?.houseNumber || ''}`.trim();
         const row3 = `${donorPlace?.place?.city} ${donorPlace?.place?.country?.code === 'US' ? donorPlace?.place?.country?.name : ''} ${donorPlace?.place?.postcode}` || ''
         const row4 = donorPlace?.place?.country?.name || ''
 

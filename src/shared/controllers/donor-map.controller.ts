@@ -1010,15 +1010,7 @@ export class DonorMapController {
       let fullAddress = '';
       if (donorPlace?.place) {
         const place = donorPlace.place;
-        fullAddress = place.fullAddress || '';
-        if (!fullAddress) {
-          // If no full address, build from components
-          if (place.street) fullAddress = place.street;
-          if (place.houseNumber) fullAddress += (fullAddress ? ' ' : '') + place.houseNumber;
-          if (place.city) fullAddress += (fullAddress ? ', ' : '') + place.city;
-          if (place.state) fullAddress += (fullAddress ? ', ' : '') + place.state;
-          if (place.country) fullAddress += (fullAddress ? ', ' : '') + place.country.name;
-        }
+        fullAddress = place.fullAddress || place.getDisplayAddress() || '';
       }
 
       return {

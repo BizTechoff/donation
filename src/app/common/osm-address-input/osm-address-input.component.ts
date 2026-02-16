@@ -365,19 +365,8 @@ export class OsmAddressInputComponent implements ControlValueAccessor, OnDestroy
   async onDetailChange(): Promise<void> {
     if (!this.place) return;
 
-    // עדכון הכתובת המלאה בהתאם לשינויים
-    const parts = [];
-
-    if (this.place.street) parts.push(this.place.street);
-    if (this.place.houseNumber) parts.push(this.place.houseNumber);
-    if (this.place.building) parts.push(this.place.building);
-    if (this.place.apartment) parts.push(this.place.apartment);
-    if (this.place.neighborhood) parts.push(this.place.neighborhood);
-    if (this.place.city) parts.push(this.place.city);
-    if (this.place.state) parts.push(this.place.state);
-    if (this.place.country) parts.push(this.place.country.name);
-
-    this.place.fullAddress = parts.filter(p => p).join(', ');
+    // עדכון הכתובת המלאה בהתאם לשינויים - משתמש בפונקציה המרכזית
+    this.place.fullAddress = this.place.getDisplayAddress();
     this.searchValue = this.place.fullAddress;
     this.onChange(this.searchValue);
 
