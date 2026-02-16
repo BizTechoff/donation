@@ -87,19 +87,25 @@ export class DonorPlace extends IdEntity {
 
   /**
    * מחזיר את הכתובת הראשית של תורם מתוך רשימת כתובות
-   * הלוגיקה: קודם מחפש כתובת מסוג "בית", אם אין - מחזיר את הראשונה שנמצאה
+   * הלוגיקה:
+   * 1. קודם מחפש כתובת שמסומנת כראשית (isPrimary)
+   * 2. אם אין - מחפש כתובת מסוג "בית"
+   * 3. אם אין - מחזיר את הכתובת הפעילה הראשונה
    */
   static getPrimaryFromList(donorPlaces: DonorPlace[]): DonorPlace | undefined {
     if (!donorPlaces || donorPlaces.length === 0) return undefined;
 
-    // חפש כתובת מסוג "בית"
+    // 1. חפש כתובת שמסומנת כראשית
+    const primaryPlace = donorPlaces.find(dp => dp.isActive && dp.isPrimary);
+    if (primaryPlace) return primaryPlace;
+
+    // 2. חפש כתובת מסוג "בית"
     const homePlace = donorPlaces.find(dp =>
       dp.isActive && dp.addressType?.name === HOME_ADDRESS_TYPE
     );
-
     if (homePlace) return homePlace;
 
-    // אם אין "בית", החזר את הכתובת הפעילה הראשונה
+    // 3. אם אין - החזר את הכתובת הפעילה הראשונה
     return donorPlaces.find(dp => dp.isActive);
   }
 

@@ -316,24 +316,18 @@ export class DonorController {
     const donorIds = donors.map(d => d.id);
 
     // Load all related data in parallel
-    const [donorContacts, donorPlaces, places] = await Promise.all([
+    const [donorContacts, primaryPlacesMap] = await Promise.all([
       remult.repo(DonorContact).find({
         where: { donorId: { $in: donorIds } }
       }),
-      remult.repo(DonorPlace).find({
-        where: { donorId: { $in: donorIds } }
-      }),
-      remult.repo(Place).find()
+      // Use helper method to get primary addresses (respects isPrimary flag)
+      DonorPlace.getPrimaryForDonors(donorIds)
     ]);
 
     // Build maps for efficient lookup
     const donorEmailMap: Record<string, string> = {};
     const donorPhoneMap: Record<string, string> = {};
     const donorPlaceMap: Record<string, Place> = {};
-
-    // Create place lookup map
-    const placesMap = new Map<string, Place>();
-    places.forEach(place => placesMap.set(place.id, place));
 
     // Populate email and phone maps
     donorContacts.forEach(contact => {
@@ -347,13 +341,10 @@ export class DonorController {
       }
     });
 
-    // Populate place map
-    donorPlaces.forEach(dp => {
-      if (dp.donorId && dp.placeId) {
-        const place = placesMap.get(dp.placeId);
-        if (place && !donorPlaceMap[dp.donorId]) {
-          donorPlaceMap[dp.donorId] = place;
-        }
+    // Populate place map from primary places
+    primaryPlacesMap.forEach((donorPlace, donorId) => {
+      if (donorPlace.place) {
+        donorPlaceMap[donorId] = donorPlace.place;
       }
     });
 
