@@ -168,7 +168,10 @@ export class OsmAddressInputComponent implements ControlValueAccessor, OnDestroy
   }
 
   private loadPlaceData(place: Place): void {
-    this.searchValue = place.fullAddress || '';
+    // בדיקה אם הפונקציה קיימת (place יכול להגיע כ-POJO בלי מתודות)
+    this.searchValue = (typeof place.getDisplayAddress === 'function'
+      ? place.getDisplayAddress()
+      : place.fullAddress) || '';
     this.hasSelectedAddress = true;
     this.selectedPlaceId = place.placeId || null;
 
@@ -365,8 +368,11 @@ export class OsmAddressInputComponent implements ControlValueAccessor, OnDestroy
   async onDetailChange(): Promise<void> {
     if (!this.place) return;
 
-    // עדכון הכתובת המלאה בהתאם לשינויים - משתמש בפונקציה המרכזית
-    this.place.fullAddress = this.place.getDisplayAddress();
+    // עדכון הכתובת המלאה בהתאם לשינויים
+    // בדיקה אם הפונקציה קיימת (place יכול להגיע כ-POJO בלי מתודות)
+    this.place.fullAddress = typeof this.place.getDisplayAddress === 'function'
+      ? this.place.getDisplayAddress()
+      : this.place.fullAddress || '';
     this.searchValue = this.place.fullAddress;
     this.onChange(this.searchValue);
 

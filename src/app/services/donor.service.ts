@@ -232,8 +232,12 @@ export class DonorService {
     allPlaces.forEach(dp => {
       if (dp.donorId && dp.place) {
         donorPlaceMap.set(dp.donorId, dp.place);
-        if (dp.place.getDisplayAddress) {
-          donorFullAddressMap.set(dp.donorId, dp.place.getDisplayAddress());
+        // בדיקה אם הפונקציה קיימת (place יכול להגיע כ-POJO בלי מתודות)
+        const address = typeof dp.place.getDisplayAddress === 'function'
+          ? dp.place.getDisplayAddress()
+          : dp.place.fullAddress;
+        if (address) {
+          donorFullAddressMap.set(dp.donorId, address);
         }
         if (dp.place.countryId) {
           donorCountryIdMap.set(dp.donorId, dp.place.countryId);

@@ -44,7 +44,7 @@
             <td class="donor-name-cell">{{ donor.lastAndFirstName }}</td>
             <td>{{ getDonorPhone(donor.id) }}</td>
             <td>{{ getDonorEmail(donor.id) }}</td>
-            <td class="donor-address-cell">{{ getDonorPlace(donor.id)?.fullAddress }}</td>
+            <td class="donor-address-cell">{{ getDonorPlace(donor.id)?.fullAddress || '-' }}</td>
           </tr>
           <tr *ngIf="paginatedDonors.length === 0">
             <td [attr.colspan]="args.multiSelect ? 5 : 4" class="no-data">{{ (i18n.terms$ | async)?.noDonorsFound }}</td>

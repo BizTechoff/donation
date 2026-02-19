@@ -1627,7 +1627,7 @@ export class DonorDetailsModalComponent implements OnInit {
 
     const place = homeDonorPlace.place;
     const addressComponents = {
-      fullAddress: place.fullAddress || '',
+      fullAddress: (typeof place.getDisplayAddress === 'function' ? place.getDisplayAddress() : place.fullAddress) || '',
       placeId: place.placeId || '',
       placeRecordId: place.id, // החשוב - המזהה שלנו ב-DB
       street: place.street || '',
@@ -1659,7 +1659,7 @@ export class DonorDetailsModalComponent implements OnInit {
 
     const place = vacationDonorPlace.place;
     return {
-      fullAddress: place.fullAddress || '',
+      fullAddress: (typeof place.getDisplayAddress === 'function' ? place.getDisplayAddress() : place.fullAddress) || '',
       placeId: place.placeId || '',
       placeRecordId: place.id, // החשוב - המזהה שלנו ב-DB
       street: place.street || '',

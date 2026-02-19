@@ -139,9 +139,10 @@ export class CompanyDetailsModalComponent implements OnInit {
 
   getAddressComponents(): AddressComponents | undefined {
     if (!this.company?.place) return undefined;
+    const place = this.company.place;
 
     return {
-      fullAddress: this.company.place.getDisplayAddress(),
+      fullAddress: typeof place.getDisplayAddress === 'function' ? place.getDisplayAddress() : place.fullAddress || '',
       street: this.company.place.street || '',
       houseNumber: this.company.place.houseNumber || '',
       city: this.company.place.city || '',

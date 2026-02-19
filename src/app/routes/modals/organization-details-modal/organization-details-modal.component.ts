@@ -142,9 +142,10 @@ export class OrganizationDetailsModalComponent implements OnInit {
 
   getAddressComponents(): AddressComponents | undefined {
     if (!this.organization?.place) return undefined;
+    const place = this.organization.place;
 
     return {
-      fullAddress: this.organization.place.getDisplayAddress(),
+      fullAddress: typeof place.getDisplayAddress === 'function' ? place.getDisplayAddress() : place.fullAddress || '',
       street: this.organization.place.street || '',
       houseNumber: this.organization.place.houseNumber || '',
       city: this.organization.place.city || '',
