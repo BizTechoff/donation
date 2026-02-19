@@ -27,10 +27,17 @@ export class CountryDetailsModalComponent implements OnInit {
   country?: Country;
   countryRepo = remult.repo(Country);
 
-currencyTypes = this.payer.getCurrencyTypesRecord()
+currencyTypes = this.payer.getCurrencyTypesRecord();
+  currencyList = Object.values(this.currencyTypes);
 
   loading = false;
   isNew = false;
+
+  getCurrencySymbol(): string {
+    if (!this.country?.currencyId) return '-';
+    const currency = this.currencyTypes[this.country.currencyId];
+    return currency?.symbol || '-';
+  }
 
   constructor(
     public i18n: I18nService,

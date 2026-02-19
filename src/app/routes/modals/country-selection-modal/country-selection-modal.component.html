@@ -65,9 +65,18 @@
                     {{ country.phonePrefix }}
                   </span>
                   <span *ngIf="currencyTypes[country.currencyId]" class="detail-item">
-                    <mat-icon class="detail-icon">attach_money</mat-icon>
-                    {{ currencyTypes[country.currencyId] }}
+                    <mat-icon class="detail-icon">payments</mat-icon>
+                    {{ currencyTypes[country.currencyId].symbol }} - {{ currencyTypes[country.currencyId].label }}
                   </span>
+                </div>
+                <div class="country-settings">
+                  <mat-checkbox
+                    [(ngModel)]="country.includeCountryInLetter"
+                    (change)="toggleIncludeCountryInLetter(country, $event)"
+                    (click)="$event.stopPropagation()"
+                    matTooltip="הצג מדינה במכתב">
+                    בהפקת מכתב, מדינה זו תוצג שורה אחרונה בכתובת המלאה
+                  </mat-checkbox>
                 </div>
               </div>
             </div>

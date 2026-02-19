@@ -183,4 +183,15 @@ export class CountrySelectionModalComponent implements OnInit {
   getCountryDisplayName(country: Country): string {
     return country.displayName || country.name || 'מדינה';
   }
+
+  // Toggle includeCountryInLetter and save to DB
+  async toggleIncludeCountryInLetter(country: Country, event: any) {
+    try {
+      await this.countryRepo.save(country);
+    } catch (error) {
+      console.error('Error saving country setting:', error);
+      // Revert the change on error
+      country.includeCountryInLetter = !country.includeCountryInLetter;
+    }
+  }
 }
