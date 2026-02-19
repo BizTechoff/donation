@@ -1010,7 +1010,7 @@ export class DonorMapController {
       let fullAddress = '';
       if (donorPlace?.place) {
         const place = donorPlace.place;
-        fullAddress = place.fullAddress || place.getDisplayAddress() || '';
+        fullAddress = place.getDisplayAddress() || place.fullAddress || '';
       }
 
       return {

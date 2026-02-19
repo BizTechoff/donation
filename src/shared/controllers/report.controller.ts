@@ -629,10 +629,8 @@ export class ReportController {
         const primaryPlace = primaryPlacesMap.get(donorId);
         const place = primaryPlace?.place;
 
-        // Legacy address string
-        const address = place
-          ? `${place.street || ''} ${place.city || ''}`.trim()
-          : undefined;
+        // שימוש בפונקציה המרכזית לתצוגת כתובת
+        const address = place?.getDisplayAddress() || undefined;
 
         const phoneContacts = allContacts.filter(c =>
           c.donorId === donorId && c.type === 'phone'
@@ -693,9 +691,8 @@ export class ReportController {
       // Load primary place for donor
       const primaryPlace = await DonorPlace.getPrimaryForDonor(donorId);
 
-      const address = primaryPlace?.place
-        ? `${primaryPlace.place.street || ''} ${primaryPlace.place.city || ''}`.trim()
-        : undefined;
+      // שימוש בפונקציה המרכזית לתצוגת כתובת
+      const address = primaryPlace?.place?.getDisplayAddress() || undefined;
 
       // Load all contacts and filter manually
       const allContacts = await remult.repo(DonorContact).find();
@@ -1499,17 +1496,9 @@ export class ReportController {
     if (!donor) {
       throw new Error('Donor not found');
     }
-    const donorPlace = await remult.repo(DonorPlace).findFirst({ donor: donor }, { orderBy: { createdDate: 'desc' }, include: { place: { include: { country: true } } } });
+    // שימוש בפונקציה המרכזית לקבלת הכתובת הראשית
+    const donorPlace = await DonorPlace.getPrimaryForDonor(donorId);
 
-    // UK/GB format: houseNumber before street, otherwise street before houseNumber
-    const isUK = donorPlace?.place?.country?.code === 'GB' || donorPlace?.place?.country?.code === 'UK';
-    const streetLine = isUK
-      ? `${data.donor.address.houseNumber} ${data.donor.address.street}`
-      : `${data.donor.address.street} ${data.donor.address.houseNumber}`;
-    const fullAddress = streetLine.trim()
-      + '\n' +
-      `${data.donor.address.city} ${data.donor.address.postcode}`
-    console.log('fullAddress', fullAddress)
     // שלב 2: הכנת הנתונים להדפסה
     const dataToRender = {
       'מתאריך': ReportController.formatDateForFilter(data.fromDate),
@@ -1597,19 +1586,11 @@ export class ReportController {
       }
 
       case 'FullAddress': {
-        const row1 = `${donorPlace?.place?.apartment} ${donorPlace?.place?.building}` || ''
-        // UK/GB format: houseNumber before street, otherwise street before houseNumber
-        const isUK = donorPlace?.place?.country?.code === 'GB' || donorPlace?.place?.country?.code === 'UK';
-        const row2 = isUK
-          ? `${donorPlace?.place?.houseNumber || ''} ${donorPlace?.place?.street || ''}`.trim()
-          : `${donorPlace?.place?.street || ''} ${donorPlace?.place?.houseNumber || ''}`.trim();
-        const row3 = `${donorPlace?.place?.city} ${donorPlace?.place?.country?.code === 'US' ? donorPlace?.place?.country?.name : ''} ${donorPlace?.place?.postcode}` || ''
-        const row4 = donorPlace?.place?.country?.name || ''
-
-        const parts = [] as string[]
-        parts.push(row1?.trim(), row2?.trim(), row3?.trim(), row4?.trim())
-        console.log('getValue', row1, row1, row2, row3, row4)
-        result = parts.filter(p => p.trim()).join('\n')
+        // שימוש בפונקציה המרכזית getAddressForLetter
+        if (donorPlace?.place) {
+          const addressLines = donorPlace.place.getAddressForLetter();
+          result = addressLines.join('\n');
+        }
         break
       }
     }
