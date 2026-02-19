@@ -57,6 +57,11 @@ export class Country extends IdEntity {
   })
   isActive = true
 
+  @Fields.boolean({
+    caption: 'הצג מדינה במכתב',
+  })
+  includeCountryInLetter = true
+
   @Fields.date({
     allowApiUpdate: false,
     caption: 'תאריך יצירה',
