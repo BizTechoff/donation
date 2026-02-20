@@ -126,15 +126,21 @@
               <div class="preview-container">
                 <div class="image-preview">
                   <img [src]="fs.previewUrl" [alt]="fs.file.fileName" *ngIf="fs.previewUrl">
-                  <div class="tag-preview" [ngClass]="'tag-' + fs.tagPosition">
+                  <div class="tag-preview" [ngClass]="'tag-' + fs.tagPosition" *ngIf="fs.tagPosition !== 'none'">
                     {{ donor?.fullName || donor?.lastAndFirstName || 'שם התורם' }}
                   </div>
                 </div>
               </div>
 
               <div class="tag-position-selector">
-                <label>מיקום תגית:</label>
-                <div class="position-buttons">
+                <div class="tag-label-row">
+                  <label>מיקום תגית:</label>
+                  <mat-checkbox [checked]="fs.tagPosition === 'none'"
+                               (change)="fs.tagPosition = $event.checked ? 'none' : 'top-right'">
+                    ללא תגית
+                  </mat-checkbox>
+                </div>
+                <div class="position-buttons" *ngIf="fs.tagPosition !== 'none'">
                   <button *ngFor="let pos of tagPositions"
                           class="position-btn"
                           [class.active]="fs.tagPosition === pos.value"

@@ -14,7 +14,7 @@ export interface DonationPrintModalArgs {
   donationId: string;
 }
 
-export type TagPosition = 'top-left' | 'top-center' | 'top-right' | 'bottom-left' | 'bottom-center' | 'bottom-right';
+export type TagPosition = 'none' | 'top-left' | 'top-center' | 'top-right' | 'bottom-left' | 'bottom-center' | 'bottom-right';
 
 export interface FileWithSettings {
   file: DonationFile;
@@ -42,7 +42,7 @@ export class DonationPrintModalComponent implements OnInit {
   filesWithSettings: FileWithSettings[] = [];
 
   // Print options
-  scansPerPage = 5;
+  scansPerPage = 4;
   printDonationDetails = true;
   printScans = true;
   defaultTagPosition: TagPosition = 'top-right';
@@ -174,16 +174,13 @@ export class DonationPrintModalComponent implements OnInit {
     try {
       // Get selected files with URLs
       const selectedFiles = this.filesWithSettings.filter(f => f.selected && f.file.fileType.startsWith('image/'));
-      const fileData: { file: DonationFile; dataUrl: string; tagPosition: TagPosition }[] = [];
+      const fileData: { file: DonationFile; url: string; tagPosition: TagPosition }[] = [];
 
-      // Convert images to base64 data URLs for proper printing
+      // Get URLs for all selected files
       for (const fs of selectedFiles) {
         const url = fs.previewUrl || await this.fileUploadService.getDownloadUrl(fs.file.id);
         if (url) {
-          const dataUrl = await this.convertToDataUrl(url);
-          if (dataUrl) {
-            fileData.push({ file: fs.file, dataUrl, tagPosition: fs.tagPosition });
-          }
+          fileData.push({ file: fs.file, url, tagPosition: fs.tagPosition });
         }
       }
 
@@ -198,30 +195,23 @@ export class DonationPrintModalComponent implements OnInit {
     }
   }
 
-  private async convertToDataUrl(url: string): Promise<string | null> {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(img, 0, 0);
-          resolve(canvas.toDataURL('image/jpeg', 0.95));
-        } else {
-          resolve(null);
-        }
-      };
-      img.onerror = () => resolve(null);
-      img.src = url;
-    });
-  }
-
-  private generatePrintHtml(fileData: { file: DonationFile; dataUrl: string; tagPosition: TagPosition }[]): string {
+  private generatePrintHtml(fileData: { file: DonationFile; url: string; tagPosition: TagPosition }[]): string {
     const donorName = this.donor?.fullName || this.donor?.lastAndFirstName || '';
-    const singleFileOnFirstPage = this.printDonationDetails && this.printScans && fileData.length === 1;
+
+    // First page: 2 slots taken by details, rest for images
+    const slotsOnFirstPage = Math.max(0, this.scansPerPage - 2);
+    let firstPageFiles: typeof fileData = [];
+    let remainingFiles: typeof fileData = [];
+
+    if (this.printDonationDetails && this.printScans && fileData.length > 0) {
+      firstPageFiles = fileData.slice(0, slotsOnFirstPage);
+      remainingFiles = fileData.slice(slotsOnFirstPage);
+    } else if (this.printScans && fileData.length > 0) {
+      remainingFiles = fileData;
+    }
+
+    // Calculate image height based on scansPerPage
+    const imageHeightPercent = Math.floor(100 / this.scansPerPage);
 
     let html = `
 <!DOCTYPE html>
@@ -251,15 +241,28 @@ export class DonationPrintModalComponent implements OnInit {
     }
 
     .donation-details-page {
-      padding: 15px;
-    }
-
-    .donation-details-page.with-scan {
-      /* No page break when combining with single scan */
+      padding: 10px;
+      height: calc(100vh - 20mm);
+      display: flex;
+      flex-direction: column;
     }
 
     .donation-details-page.standalone {
       page-break-after: always;
+      height: auto;
+      display: block;
+    }
+
+    .details-content {
+      flex-shrink: 0;
+    }
+
+    .embedded-scans-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-evenly;
+      margin-top: 10px;
     }
 
     .header {
@@ -319,17 +322,21 @@ export class DonationPrintModalComponent implements OnInit {
       margin: 12px 0;
     }
 
-    /* Embedded single scan on first page */
+    /* Embedded scans on first page - divide remaining space equally */
     .embedded-scan {
       position: relative;
       width: 100%;
-      margin-top: 15px;
-      text-align: center;
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .embedded-scan img {
-      width: 100%;
-      max-height: 45vh;
+      max-width: 100%;
+      max-height: 100%;
       object-fit: contain;
     }
 
@@ -339,11 +346,11 @@ export class DonationPrintModalComponent implements OnInit {
       padding: 4px 12px;
       font-weight: bold;
       font-size: 13px;
-      border: 1px solid #333;
+      border: 2px solid #333;
       z-index: 10;
     }
 
-    /* Scans page styles */
+    /* Scans page styles - full pages */
     .scans-page {
       page-break-after: always;
       padding: 5mm;
@@ -359,22 +366,24 @@ export class DonationPrintModalComponent implements OnInit {
     .scans-container {
       display: flex;
       flex-direction: column;
-      gap: 5mm;
-      flex: 1;
+      justify-content: space-evenly;
+      align-items: stretch;
+      height: 100%;
     }
 
     .scan-item {
-      flex: 1;
       position: relative;
+      width: 100%;
+      height: calc((100% - 20px) / ${this.scansPerPage});
+      overflow: hidden;
       display: flex;
       align-items: center;
       justify-content: center;
-      min-height: 0;
     }
 
     .scan-item img {
-      width: 100%;
-      height: 100%;
+      max-width: 100%;
+      max-height: 100%;
       object-fit: contain;
     }
 
@@ -384,7 +393,7 @@ export class DonationPrintModalComponent implements OnInit {
       padding: 5px 15px;
       font-weight: bold;
       font-size: 14px;
-      border: 1px solid #333;
+      border: 2px solid #333;
       z-index: 10;
     }
 
@@ -400,14 +409,14 @@ export class DonationPrintModalComponent implements OnInit {
 <body>
 `;
 
-    // Add donation details page if enabled
+    // Add donation details page if enabled (with embedded scans)
     if (this.printDonationDetails) {
-      html += this.generateDonationDetailsHtml(singleFileOnFirstPage ? fileData[0] : null, donorName);
+      html += this.generateDonationDetailsHtml(firstPageFiles, donorName);
     }
 
-    // Add scan pages if enabled and files exist (skip if single file already on first page)
-    if (this.printScans && fileData.length > 0 && !singleFileOnFirstPage) {
-      html += this.generateScansHtml(fileData, donorName);
+    // Add remaining scan pages
+    if (this.printScans && remainingFiles.length > 0) {
+      html += this.generateScansHtml(remainingFiles, donorName);
     }
 
     html += `
@@ -419,15 +428,16 @@ export class DonationPrintModalComponent implements OnInit {
   }
 
   private generateDonationDetailsHtml(
-    embeddedFile: { file: DonationFile; dataUrl: string; tagPosition: TagPosition } | null,
+    embeddedFiles: { file: DonationFile; url: string; tagPosition: TagPosition }[],
     donorName: string
   ): string {
     const donation = this.donation!;
     const donor = this.donor;
-    const pageClass = embeddedFile ? 'with-scan' : 'standalone';
+    const pageClass = embeddedFiles.length > 0 ? 'with-scan' : 'standalone';
 
     return `
   <div class="donation-details-page ${pageClass}">
+    <div class="details-content">
     <div class="header">
       <h1>פרטי תרומה</h1>
       <p>${this.getHebrewDate()}</p>
@@ -488,18 +498,23 @@ export class DonationPrintModalComponent implements OnInit {
         ` : ''}
       </div>
     </div>
+    </div>
 
-    ${embeddedFile ? `
-    <div class="embedded-scan">
-      <div class="donor-tag tag-${embeddedFile.tagPosition}">${donorName}</div>
-      <img src="${embeddedFile.dataUrl}" alt="${embeddedFile.file.fileName}" />
+    ${embeddedFiles.length > 0 ? `
+    <div class="embedded-scans-container">
+      ${embeddedFiles.map(f => `
+      <div class="embedded-scan">
+        ${f.tagPosition !== 'none' ? `<div class="donor-tag tag-${f.tagPosition}">${donorName}</div>` : ''}
+        <img src="${f.url}" alt="${f.file.fileName}" />
+      </div>
+      `).join('')}
     </div>
     ` : ''}
   </div>
 `;
   }
 
-  private generateScansHtml(fileData: { file: DonationFile; dataUrl: string; tagPosition: TagPosition }[], donorName: string): string {
+  private generateScansHtml(fileData: { file: DonationFile; url: string; tagPosition: TagPosition }[], donorName: string): string {
     let html = '';
 
     // Group images into pages (up to scansPerPage per page)
@@ -512,8 +527,8 @@ export class DonationPrintModalComponent implements OnInit {
     <div class="scans-container">
       ${pageFiles.map(f => `
       <div class="scan-item">
-        <div class="donor-tag tag-${f.tagPosition}">${donorName}</div>
-        <img src="${f.dataUrl}" alt="${f.file.fileName}" />
+        ${f.tagPosition !== 'none' ? `<div class="donor-tag tag-${f.tagPosition}">${donorName}</div>` : ''}
+        <img src="${f.url}" alt="${f.file.fileName}" />
       </div>
       `).join('')}
     </div>
@@ -540,16 +555,44 @@ export class DonationPrintModalComponent implements OnInit {
       iframeDoc.write(html);
       iframeDoc.close();
 
-      // Wait for images to load before printing
-      iframe.onload = () => {
+      // Wait for all images to load before printing
+      const images = iframeDoc.querySelectorAll('img');
+      let loadedCount = 0;
+      const totalImages = images.length;
+
+      const tryPrint = () => {
+        loadedCount++;
+        if (loadedCount >= totalImages) {
+          setTimeout(() => {
+            iframe.contentWindow?.print();
+            setTimeout(() => {
+              if (document.body.contains(iframe)) {
+                document.body.removeChild(iframe);
+              }
+            }, 500);
+          }, 300);
+        }
+      };
+
+      if (totalImages === 0) {
         setTimeout(() => {
           iframe.contentWindow?.print();
-          // Remove iframe after printing
           setTimeout(() => {
-            document.body.removeChild(iframe);
-          }, 1000);
-        }, 500);
-      };
+            if (document.body.contains(iframe)) {
+              document.body.removeChild(iframe);
+            }
+          }, 500);
+        }, 100);
+      } else {
+        images.forEach((img) => {
+          if (img.complete) {
+            tryPrint();
+          } else {
+            img.onload = tryPrint;
+            img.onerror = tryPrint;
+          }
+        });
+      }
     }
   }
 
