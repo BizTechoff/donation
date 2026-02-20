@@ -891,4 +891,49 @@ export class DonationController {
 
     return whereClause;
   }
+
+  /**
+   * Get the next available receipt number
+   * Returns the maximum receiptNumber + 1, or 1 if no receipts exist
+   */
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async getNextReceiptNumber(): Promise<number> {
+    const donations = await remult.repo(Donation).find({
+      where: { receiptNumber: { $gt: 0 } },
+      orderBy: { receiptNumber: 'desc' },
+      limit: 1
+    });
+
+    if (donations.length === 0 || !donations[0].receiptNumber) {
+      return 1;
+    }
+
+    return donations[0].receiptNumber + 1;
+  }
+
+  /**
+   * Assign a receipt number to a donation if not already assigned
+   * Returns the receipt number (existing or newly assigned)
+   */
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async assignReceiptNumber(donationId: string): Promise<number> {
+    const donation = await remult.repo(Donation).findId(donationId);
+    if (!donation) {
+      throw new Error('תרומה לא נמצאה');
+    }
+
+    // If already has a receipt number, return it
+    if (donation.receiptNumber) {
+      return donation.receiptNumber;
+    }
+
+    // Get next receipt number
+    const nextNumber = await DonationController.getNextReceiptNumber();
+
+    // Assign and save
+    donation.receiptNumber = nextNumber;
+    await donation.save();
+
+    return nextNumber;
+  }
 }

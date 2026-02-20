@@ -186,6 +186,11 @@ export class Donation extends IdEntity {
   })
   referenceNumber = ''
 
+  @Fields.number({
+    caption: 'מספר קבלה',
+  })
+  receiptNumber?: number
+
   @Fields.string({
     caption: 'מספר כרטיס (4 ספרות אחרונות)',
   })

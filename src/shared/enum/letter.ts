@@ -34,6 +34,7 @@ export class Letter {
     'תרומה',
     'סיומת_מכתב',
     'Amount',
+    'Number_receipt',
     'Name_receipt',
     'FullAddress_Work',
     'FullCity_Work'

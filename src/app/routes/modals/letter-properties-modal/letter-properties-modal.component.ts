@@ -4,6 +4,7 @@ import { DialogConfig, openDialog } from 'common-ui-elements';
 import { remult } from 'remult';
 import { Company, Donation, DonorPlace, LetterTitle, LetterTitleDefault } from '../../../../shared/entity';
 import { Letter } from '../../../../shared/enum/letter';
+import { DonationController } from '../../../../shared/controllers/donation.controller';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
 import { LetterService } from '../../../services/letter.service';
@@ -346,7 +347,7 @@ export class LetterPropertiesModalComponent implements OnInit {
   getFieldDisplayName(field: string): string {
     const fieldNames: Record<string, string> = {
       // English fields
-      'FullAddress': 'כתובת מלאה באנגלית',
+      'FullAddress': 'כתובת מלאה',
       'Amount': 'סכום',
       'Number_receipt': 'מספר קבלה',
       'Name_receipt': 'שם בקבלה',
@@ -428,8 +429,15 @@ export class LetterPropertiesModalComponent implements OnInit {
         break;
       }
       case 'Number_receipt': {
-        result = '00000000' + this.donation.referenceNumber
-        result = result.slice(-8)
+        // Use receiptNumber (auto-assigned running number)
+        let receiptNum = this.donation.receiptNumber;
+        if (!receiptNum) {
+          // Assign next receipt number if not already set
+          receiptNum = await DonationController.assignReceiptNumber(this.donation.id);
+          this.donation.receiptNumber = receiptNum;
+        }
+        result = '00000000' + receiptNum;
+        result = result.slice(-8);
         break
       }
       case 'Name_receipt': {
