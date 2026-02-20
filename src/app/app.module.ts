@@ -31,6 +31,8 @@ import { MatProgressBarModule } from '@angular/material/progress-bar'
 import { MatSlideToggleModule } from '@angular/material/slide-toggle'
 import { MatTabsModule } from '@angular/material/tabs'
 import { MatButtonToggleModule } from '@angular/material/button-toggle'
+import { MatRadioModule } from '@angular/material/radio'
+import { MatSliderModule } from '@angular/material/slider'
 import { DragDropModule } from '@angular/cdk/drag-drop'
 import { CommonUIElementsModule } from 'common-ui-elements'
 import { UsersComponent } from './users/users.component'
@@ -80,6 +82,7 @@ import { LetterTitleSelectionModalComponent } from './routes/modals/letter-title
 import { ReminderDetailsModalComponent } from './routes/modals/reminder-details-modal/reminder-details-modal.component'
 import { RemindersListModalComponent } from './routes/modals/reminders-list-modal/reminders-list-modal.component'
 import { DonationDetailsModalComponent } from './routes/modals/donation-details-modal/donation-details-modal.component'
+import { DonationPrintModalComponent } from './routes/modals/donation-print-modal/donation-print-modal.component'
 import { CampaignDetailsModalComponent } from './routes/modals/campaign-details-modal/campaign-details-modal.component'
 import { CampaignInvitedListModalComponent } from './routes/modals/campaign-invited-list-modal/campaign-invited-list-modal.component'
 import { CertificateDetailsModalComponent } from './routes/modals/certificate-details-modal/certificate-details-modal.component'
@@ -162,6 +165,7 @@ import { A11yModule } from "@angular/cdk/a11y";
     ReminderDetailsModalComponent,
     RemindersListModalComponent,
     DonationDetailsModalComponent,
+    DonationPrintModalComponent,
     CampaignDetailsModalComponent,
     CampaignInvitedListModalComponent,
     CertificateDetailsModalComponent,
@@ -238,6 +242,8 @@ import { A11yModule } from "@angular/cdk/a11y";
     MatSlideToggleModule,
     MatTabsModule,
     MatButtonToggleModule,
+    MatRadioModule,
+    MatSliderModule,
     DragDropModule,
     CommonUIElementsModule,
     A11yModule

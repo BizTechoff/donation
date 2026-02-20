@@ -238,7 +238,8 @@
           <td class="actions">
             <button class="btn-icon btn-letter" (click)="printLetter(donation)"
               [title]="(i18n.terms$ | async)?.letterGeneration">✉</button>
-            <!-- <mat-divider vertical></mat-divider> -->
+            <button class="btn-icon btn-print" (click)="printDonation(donation)"
+              title="הדפסת תרומה">🖨</button>
             <button class="btn-icon btn-edit" (click)="editDonation(donation)"
               [title]="(i18n.terms$ | async)?.edit">✏</button>
             <button class="btn-icon btn-delete" (click)="deleteDonation(donation)"

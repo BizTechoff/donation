@@ -260,6 +260,13 @@ export class UIToolsService implements UITools {
     )
   }
 
+  async donationPrintDialog(donationId: string): Promise<boolean> {
+    return await openDialog(
+      (await import('../routes/modals/donation-print-modal/donation-print-modal.component')).DonationPrintModalComponent,
+      (dlg) => dlg.args = { donationId }
+    )
+  }
+
   async mapSelectedDonorsDialog(donors: any[], polygonPoints?: { lat: number; lng: number }[]): Promise<any> {
     return await openDialog(
       (await import('../routes/modals/map-selected-donors-modal/map-selected-donors-modal.component')).MapSelectedDonorsModalComponent,

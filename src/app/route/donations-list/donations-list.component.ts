@@ -324,6 +324,17 @@ export class DonationsListComponent implements OnInit, OnDestroy {
     }
   }
 
+  async printDonation(donation: Donation) {
+    if (!donation?.id) return;
+
+    try {
+      await this.ui.donationPrintDialog(donation.id);
+    } catch (error) {
+      console.error('Error printing donation:', error);
+      this.ui.error('שגיאה בהדפסת תרומה');
+    }
+  }
+
   // async uploadTransactions(donation: Donation) {
   //   // Create file input element
   //   const input = document.createElement('input');

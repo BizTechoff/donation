@@ -1,0 +1,169 @@
+<div class="modal-overlay" (click)="closeModal()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    <!-- Header -->
+    <div class="modal-header">
+      <h2>הדפסת תרומה</h2>
+      <button class="close-btn" (click)="closeModal()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading-container" *ngIf="loading">
+      <mat-spinner diameter="40"></mat-spinner>
+      <p>טוען נתונים...</p>
+    </div>
+
+    <!-- Content -->
+    <div class="modal-content" *ngIf="!loading && donation">
+      <!-- Donation Summary -->
+      <div class="donation-summary">
+        <div class="summary-header">
+          <mat-icon>receipt_long</mat-icon>
+          <span>פרטי התרומה</span>
+        </div>
+        <div class="summary-content">
+          <div class="summary-row">
+            <span class="label">תורם:</span>
+            <span class="value">{{ donor?.fullName || donor?.lastAndFirstName || '-' }}</span>
+          </div>
+          <div class="summary-row">
+            <span class="label">סכום:</span>
+            <span class="value amount">{{ getCurrencySymbol() }}{{ donation.amount | number:'1.0-0' }}</span>
+          </div>
+          <div class="summary-row">
+            <span class="label">תאריך:</span>
+            <span class="value">{{ getHebrewDate() }}</span>
+          </div>
+          <div class="summary-row" *ngIf="donation.campaign">
+            <span class="label">קמפיין:</span>
+            <span class="value">{{ donation.campaign.name }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Print Options -->
+      <div class="print-options">
+        <div class="options-header">
+          <mat-icon>settings</mat-icon>
+          <span>אפשרויות הדפסה</span>
+        </div>
+
+        <div class="options-content">
+          <!-- What to print -->
+          <div class="option-group checkboxes">
+            <mat-checkbox [(ngModel)]="printDonationDetails">
+              הדפס פרטי תרומה ותורם
+            </mat-checkbox>
+            <mat-checkbox [(ngModel)]="printScans" [disabled]="filesWithSettings.length === 0">
+              הדפס סריקות / צ'קים ({{ getSelectedCount() }}/{{ filesWithSettings.length }})
+            </mat-checkbox>
+          </div>
+
+          <!-- Scans per page -->
+          <div class="option-group" *ngIf="printScans && filesWithSettings.length > 0">
+            <label class="option-label">סריקות בכל עמוד:</label>
+            <div class="slider-row">
+              <mat-slider min="1" max="5" step="1" showTickMarks discrete>
+                <input matSliderThumb [(ngModel)]="scansPerPage">
+              </mat-slider>
+              <span class="slider-value">{{ scansPerPage }}</span>
+            </div>
+          </div>
+
+          <!-- Default tag position -->
+          <div class="option-group" *ngIf="printScans && filesWithSettings.length > 0">
+            <div class="default-position-row">
+              <label class="option-label">מיקום תגית ברירת מחדל:</label>
+              <select [(ngModel)]="defaultTagPosition" class="position-select">
+                <option *ngFor="let pos of tagPositions" [value]="pos.value">
+                  {{ pos.icon }} {{ pos.label }}
+                </option>
+              </select>
+              <button mat-stroked-button (click)="applyDefaultToAll()" class="apply-btn">
+                החל על הכל
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Files List with Preview -->
+      <div class="files-section" *ngIf="filesWithSettings.length > 0">
+        <div class="files-header">
+          <div class="header-title">
+            <mat-icon>attach_file</mat-icon>
+            <span>קבצים מצורפים ({{ filesWithSettings.length }})</span>
+          </div>
+          <div class="header-actions">
+            <button mat-button (click)="selectAllFiles()">בחר הכל</button>
+            <button mat-button (click)="deselectAllFiles()">נקה בחירה</button>
+          </div>
+        </div>
+
+        <div class="files-list">
+          <div class="file-card" *ngFor="let fs of filesWithSettings"
+               [class.selected]="fs.selected"
+               [class.is-image]="fs.file.fileType.startsWith('image/')">
+
+            <!-- File header -->
+            <div class="file-header" (click)="toggleFileSelection(fs)">
+              <mat-checkbox [checked]="fs.selected"
+                           (click)="$event.stopPropagation()"
+                           (change)="toggleFileSelection(fs)">
+              </mat-checkbox>
+              <mat-icon class="file-icon">{{ getFileIcon(fs.file.fileType) }}</mat-icon>
+              <div class="file-info">
+                <span class="file-name">{{ fs.file.fileName }}</span>
+                <span class="file-size">{{ formatFileSize(fs.file.fileSize) }}</span>
+              </div>
+              <span class="file-type-badge" *ngIf="fs.file.fileType.startsWith('image/')">תמונה</span>
+              <span class="file-type-badge pdf" *ngIf="fs.file.fileType === 'application/pdf'">PDF</span>
+            </div>
+
+            <!-- Image preview with tag position selector (only for images) -->
+            <div class="file-preview-section" *ngIf="fs.file.fileType.startsWith('image/') && fs.selected">
+              <div class="preview-container">
+                <div class="image-preview">
+                  <img [src]="fs.previewUrl" [alt]="fs.file.fileName" *ngIf="fs.previewUrl">
+                  <div class="tag-preview" [ngClass]="'tag-' + fs.tagPosition">
+                    {{ donor?.fullName || donor?.lastAndFirstName || 'שם התורם' }}
+                  </div>
+                </div>
+              </div>
+
+              <div class="tag-position-selector">
+                <label>מיקום תגית:</label>
+                <div class="position-buttons">
+                  <button *ngFor="let pos of tagPositions"
+                          class="position-btn"
+                          [class.active]="fs.tagPosition === pos.value"
+                          (click)="fs.tagPosition = pos.value"
+                          [title]="pos.label">
+                    {{ pos.icon }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- No files message -->
+      <div class="no-files" *ngIf="filesWithSettings.length === 0">
+        <mat-icon>folder_open</mat-icon>
+        <p>אין קבצים מצורפים לתרומה זו</p>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="modal-footer" *ngIf="!loading && donation">
+      <button mat-button (click)="closeModal()">ביטול</button>
+      <button mat-raised-button color="primary" (click)="print()"
+              [disabled]="!printDonationDetails && !printScans">
+        <mat-icon>print</mat-icon>
+        הדפס
+      </button>
+    </div>
+  </div>
+</div>
