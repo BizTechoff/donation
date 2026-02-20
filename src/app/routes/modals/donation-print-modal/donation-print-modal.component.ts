@@ -261,7 +261,8 @@ export class DonationPrintModalComponent implements OnInit {
       flex: 1;
       display: flex;
       flex-direction: column;
-      justify-content: space-evenly;
+      justify-content: flex-start;
+      gap: 10px;
       margin-top: 10px;
     }
 
@@ -366,8 +367,9 @@ export class DonationPrintModalComponent implements OnInit {
     .scans-container {
       display: flex;
       flex-direction: column;
-      justify-content: space-evenly;
+      justify-content: flex-start;
       align-items: stretch;
+      gap: 10px;
       height: 100%;
     }
 
