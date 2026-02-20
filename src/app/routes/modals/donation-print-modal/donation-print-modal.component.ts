@@ -198,21 +198,6 @@ export class DonationPrintModalComponent implements OnInit {
   private generatePrintHtml(fileData: { file: DonationFile; url: string; tagPosition: TagPosition }[]): string {
     const donorName = this.donor?.fullName || this.donor?.lastAndFirstName || '';
 
-    // First page: 2 slots taken by details, rest for images
-    const slotsOnFirstPage = Math.max(0, this.scansPerPage - 2);
-    let firstPageFiles: typeof fileData = [];
-    let remainingFiles: typeof fileData = [];
-
-    if (this.printDonationDetails && this.printScans && fileData.length > 0) {
-      firstPageFiles = fileData.slice(0, slotsOnFirstPage);
-      remainingFiles = fileData.slice(slotsOnFirstPage);
-    } else if (this.printScans && fileData.length > 0) {
-      remainingFiles = fileData;
-    }
-
-    // Calculate image height based on scansPerPage
-    const imageHeightPercent = Math.floor(100 / this.scansPerPage);
-
     let html = `
 <!DOCTYPE html>
 <html dir="rtl" lang="he">
@@ -238,32 +223,6 @@ export class DonationPrintModalComponent implements OnInit {
       direction: rtl;
       font-size: 14px;
       line-height: 1.5;
-    }
-
-    .donation-details-page {
-      padding: 10px;
-      height: calc(100vh - 20mm);
-      display: flex;
-      flex-direction: column;
-    }
-
-    .donation-details-page.standalone {
-      page-break-after: always;
-      height: auto;
-      display: block;
-    }
-
-    .details-content {
-      flex-shrink: 0;
-    }
-
-    .embedded-scans-container {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-start;
-      gap: 10px;
-      margin-top: 10px;
     }
 
     .header {
@@ -323,70 +282,22 @@ export class DonationPrintModalComponent implements OnInit {
       margin: 12px 0;
     }
 
-    /* Embedded scans on first page - divide remaining space equally */
-    .embedded-scan {
-      position: relative;
-      width: 100%;
-      flex: 1;
-      min-height: 0;
-      overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .embedded-scan img {
-      max-width: 100%;
-      max-height: 100%;
-      object-fit: contain;
-    }
-
-    .embedded-scan .donor-tag {
-      position: absolute;
-      background: rgba(255, 255, 255, 0.95);
-      padding: 4px 12px;
-      font-weight: bold;
-      font-size: 13px;
-      border: 2px solid #333;
-      z-index: 10;
-    }
-
-    /* Scans page styles - full pages */
-    .scans-page {
-      page-break-after: always;
-      padding: 5mm;
-      height: calc(100vh - 10mm);
-      display: flex;
-      flex-direction: column;
-    }
-
-    .scans-page:last-child {
-      page-break-after: auto;
-    }
-
-    .scans-container {
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-start;
-      align-items: stretch;
-      gap: 10px;
-      height: 100%;
-    }
-
+    /* Scan item - flows naturally, page breaks when needed */
     .scan-item {
       position: relative;
       width: 100%;
-      height: calc((100% - 20px) / ${this.scansPerPage});
-      overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      margin-top: 15px;
+      page-break-inside: avoid;
+    }
+
+    .scan-item:first-child {
+      margin-top: 15px;
     }
 
     .scan-item img {
-      max-width: 100%;
-      max-height: 100%;
-      object-fit: contain;
+      width: 100%;
+      height: auto;
+      display: block;
     }
 
     .scan-item .donor-tag {
@@ -411,14 +322,14 @@ export class DonationPrintModalComponent implements OnInit {
 <body>
 `;
 
-    // Add donation details page if enabled (with embedded scans)
+    // Add donation details if enabled
     if (this.printDonationDetails) {
-      html += this.generateDonationDetailsHtml(firstPageFiles, donorName);
+      html += this.generateDonationDetailsHtml(donorName);
     }
 
-    // Add remaining scan pages
-    if (this.printScans && remainingFiles.length > 0) {
-      html += this.generateScansHtml(remainingFiles, donorName);
+    // Add scans - they flow naturally with page breaks
+    if (this.printScans && fileData.length > 0) {
+      html += this.generateScansHtml(fileData, donorName);
     }
 
     html += `
@@ -429,116 +340,83 @@ export class DonationPrintModalComponent implements OnInit {
     return html;
   }
 
-  private generateDonationDetailsHtml(
-    embeddedFiles: { file: DonationFile; url: string; tagPosition: TagPosition }[],
-    donorName: string
-  ): string {
+  private generateDonationDetailsHtml(donorName: string): string {
     const donation = this.donation!;
     const donor = this.donor;
-    const pageClass = embeddedFiles.length > 0 ? 'with-scan' : 'standalone';
 
     return `
-  <div class="donation-details-page ${pageClass}">
-    <div class="details-content">
-    <div class="header">
-      <h1>פרטי תרומה</h1>
-      <p>${this.getHebrewDate()}</p>
-    </div>
+  <div class="header">
+    <h1>פרטי תרומה</h1>
+    <p>${this.getHebrewDate()}</p>
+  </div>
 
-    <div class="amount-highlight">
-      ${this.getCurrencySymbol()}${donation.amount.toLocaleString('he-IL')}
-    </div>
+  <div class="amount-highlight">
+    ${this.getCurrencySymbol()}${donation.amount.toLocaleString('he-IL')}
+  </div>
 
-    <div class="section">
-      <div class="section-title">פרטי התורם</div>
-      <div class="info-grid">
-        <div class="info-item">
-          <span class="info-label">שם מלא:</span>
-          <span class="info-value">${donor?.fullName || donor?.lastAndFirstName || '-'}</span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">שם באנגלית:</span>
-          <span class="info-value">${donor?.fullNameEnglish || '-'}</span>
-        </div>
+  <div class="section">
+    <div class="section-title">פרטי התורם</div>
+    <div class="info-grid">
+      <div class="info-item">
+        <span class="info-label">שם מלא:</span>
+        <span class="info-value">${donor?.fullName || donor?.lastAndFirstName || '-'}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">שם באנגלית:</span>
+        <span class="info-value">${donor?.fullNameEnglish || '-'}</span>
       </div>
     </div>
+  </div>
 
-    <div class="section">
-      <div class="section-title">פרטי התרומה</div>
-      <div class="info-grid">
-        <div class="info-item">
-          <span class="info-label">סוג תרומה:</span>
-          <span class="info-value">${this.getDonationTypeDisplay()}</span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">אמצעי תשלום:</span>
-          <span class="info-value">${donation.donationMethod?.name || '-'}</span>
-        </div>
-        ${donation.campaign ? `
-        <div class="info-item">
-          <span class="info-label">קמפיין:</span>
-          <span class="info-value">${donation.campaign.name}</span>
-        </div>
-        ` : ''}
-        ${donation.checkNumber ? `
-        <div class="info-item">
-          <span class="info-label">מספר צ'ק:</span>
-          <span class="info-value">${donation.checkNumber}</span>
-        </div>
-        ` : ''}
-        ${donation.reason ? `
-        <div class="info-item">
-          <span class="info-label">סיבה:</span>
-          <span class="info-value">${donation.reason}</span>
-        </div>
-        ` : ''}
-        ${donation.notes ? `
-        <div class="info-item">
-          <span class="info-label">הערות:</span>
-          <span class="info-value">${donation.notes}</span>
-        </div>
-        ` : ''}
+  <div class="section">
+    <div class="section-title">פרטי התרומה</div>
+    <div class="info-grid">
+      <div class="info-item">
+        <span class="info-label">סוג תרומה:</span>
+        <span class="info-value">${this.getDonationTypeDisplay()}</span>
       </div>
-    </div>
-    </div>
-
-    ${embeddedFiles.length > 0 ? `
-    <div class="embedded-scans-container">
-      ${embeddedFiles.map(f => `
-      <div class="embedded-scan">
-        ${f.tagPosition !== 'none' ? `<div class="donor-tag tag-${f.tagPosition}">${donorName}</div>` : ''}
-        <img src="${f.url}" alt="${f.file.fileName}" />
+      <div class="info-item">
+        <span class="info-label">אמצעי תשלום:</span>
+        <span class="info-value">${donation.donationMethod?.name || '-'}</span>
       </div>
-      `).join('')}
+      ${donation.campaign ? `
+      <div class="info-item">
+        <span class="info-label">קמפיין:</span>
+        <span class="info-value">${donation.campaign.name}</span>
+      </div>
+      ` : ''}
+      ${donation.checkNumber ? `
+      <div class="info-item">
+        <span class="info-label">מספר צ'ק:</span>
+        <span class="info-value">${donation.checkNumber}</span>
+      </div>
+      ` : ''}
+      ${donation.reason ? `
+      <div class="info-item">
+        <span class="info-label">סיבה:</span>
+        <span class="info-value">${donation.reason}</span>
+      </div>
+      ` : ''}
+      ${donation.notes ? `
+      <div class="info-item">
+        <span class="info-label">הערות:</span>
+        <span class="info-value">${donation.notes}</span>
+      </div>
+      ` : ''}
     </div>
-    ` : ''}
   </div>
 `;
   }
 
   private generateScansHtml(fileData: { file: DonationFile; url: string; tagPosition: TagPosition }[], donorName: string): string {
-    let html = '';
-
-    // Group images into pages (up to scansPerPage per page)
-    for (let i = 0; i < fileData.length; i += this.scansPerPage) {
-      const pageFiles = fileData.slice(i, i + this.scansPerPage);
-
-      // Each image on the page gets its own tag with its own position
-      html += `
-  <div class="scans-page">
-    <div class="scans-container">
-      ${pageFiles.map(f => `
-      <div class="scan-item">
-        ${f.tagPosition !== 'none' ? `<div class="donor-tag tag-${f.tagPosition}">${donorName}</div>` : ''}
-        <img src="${f.url}" alt="${f.file.fileName}" />
-      </div>
-      `).join('')}
-    </div>
+    // Images flow naturally - each image stretches to full width
+    // Page breaks happen automatically when content doesn't fit
+    return fileData.map(f => `
+  <div class="scan-item">
+    ${f.tagPosition !== 'none' ? `<div class="donor-tag tag-${f.tagPosition}">${donorName}</div>` : ''}
+    <img src="${f.url}" alt="${f.file.fileName}" />
   </div>
-`;
-    }
-
-    return html;
+`).join('');
   }
 
   private executePrint(html: string) {
