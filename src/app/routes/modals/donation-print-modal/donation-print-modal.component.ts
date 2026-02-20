@@ -282,10 +282,11 @@ export class DonationPrintModalComponent implements OnInit {
       margin: 12px 0;
     }
 
-    /* Scan item - flows naturally, page breaks when needed */
+    /* Scan item - fixed height for uniform look */
     .scan-item {
       position: relative;
       width: 100%;
+      height: 250px;
       margin-top: 15px;
       page-break-inside: avoid;
     }
@@ -296,7 +297,8 @@ export class DonationPrintModalComponent implements OnInit {
 
     .scan-item img {
       width: 100%;
-      height: auto;
+      height: 100%;
+      object-fit: fill;
       display: block;
     }
 
@@ -405,6 +407,7 @@ export class DonationPrintModalComponent implements OnInit {
       ` : ''}
     </div>
   </div>
+  <div style="height: 100px;"></div>
 `;
   }
 
