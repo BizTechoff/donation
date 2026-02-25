@@ -82,6 +82,7 @@ import { LetterTitleSelectionModalComponent } from './routes/modals/letter-title
 import { ReminderDetailsModalComponent } from './routes/modals/reminder-details-modal/reminder-details-modal.component'
 import { RemindersListModalComponent } from './routes/modals/reminders-list-modal/reminders-list-modal.component'
 import { DonationDetailsModalComponent } from './routes/modals/donation-details-modal/donation-details-modal.component'
+import { ScanWaitingModalComponent } from './routes/modals/scan-waiting-modal/scan-waiting-modal.component'
 import { DonationPrintModalComponent } from './routes/modals/donation-print-modal/donation-print-modal.component'
 import { CampaignDetailsModalComponent } from './routes/modals/campaign-details-modal/campaign-details-modal.component'
 import { CampaignInvitedListModalComponent } from './routes/modals/campaign-invited-list-modal/campaign-invited-list-modal.component'
@@ -165,6 +166,7 @@ import { A11yModule } from "@angular/cdk/a11y";
     ReminderDetailsModalComponent,
     RemindersListModalComponent,
     DonationDetailsModalComponent,
+    ScanWaitingModalComponent,
     DonationPrintModalComponent,
     CampaignDetailsModalComponent,
     CampaignInvitedListModalComponent,

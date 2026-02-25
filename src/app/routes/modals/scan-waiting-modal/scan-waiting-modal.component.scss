@@ -1,0 +1,83 @@
+.scan-waiting-modal {
+  padding: 24px;
+  direction: rtl;
+  min-width: 320px;
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+
+    .header-icon {
+      color: #2196F3;
+      font-size: 28px;
+      width: 28px;
+      height: 28px;
+    }
+
+    h3 {
+      margin: 0;
+      font-size: 18px;
+      color: #333;
+    }
+  }
+
+  .modal-body {
+    mat-progress-bar {
+      margin-bottom: 12px;
+    }
+
+    .hint {
+      color: #888;
+      font-size: 13px;
+      margin: 0;
+    }
+
+    .new-files {
+      .file-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 0;
+        border-bottom: 1px solid #eee;
+
+        .file-icon {
+          color: #4CAF50;
+          font-size: 20px;
+          width: 20px;
+          height: 20px;
+        }
+
+        .file-name {
+          font-size: 14px;
+          color: #333;
+        }
+      }
+
+      mat-progress-bar {
+        margin-top: 16px;
+      }
+
+      .hint {
+        margin-top: 8px;
+      }
+    }
+  }
+
+  .modal-footer {
+    margin-top: 24px;
+    display: flex;
+    justify-content: flex-start;
+
+    button {
+      mat-icon {
+        margin-left: 4px;
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+        vertical-align: middle;
+      }
+    }
+  }
+}

@@ -621,6 +621,13 @@
         {{i18n.terms.addReminderButton}}
       </button>
 
+      <!-- Scan button -->
+      <button *ngIf="!isNewDonation" mat-stroked-button class="action-button scan-btn"
+        (click)="openScanDialog()" title="סרוק מסמך">
+        <mat-icon>scanner</mat-icon>
+        סרוק
+      </button>
+
         <!-- *ngIf="!isNewDonation && selectedPaymentMethod && selectedPaymentMethod.type === 'standing_order' && donation.donationType !== 'commitment' &&
         ((donation.standingOrderType === 'bank' && donationBanks.length) || (donation.standingOrderType === 'organization' && donationOrganizations.length))" -->
 <!-- {{this.selectedPaymentMethod | json}} -->

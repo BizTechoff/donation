@@ -1,4 +1,6 @@
 import { ChangeDetectorRef, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { FileUploadComponent } from '../../../components/file-upload/file-upload.component';
+import { ScanWaitingModalComponent } from '../scan-waiting-modal/scan-waiting-modal.component';
 import { MatDialogRef } from '@angular/material/dialog';
 import { DialogConfig, openDialog } from 'common-ui-elements';
 import { remult } from 'remult';
@@ -34,6 +36,7 @@ export interface DonationDetailsModalArgs {
 })
 export class DonationDetailsModalComponent implements OnInit {
   @ViewChild('amountInput') amountInput!: ElementRef<HTMLInputElement>;
+  @ViewChild('fileUploadComponent') fileUploadComponent?: FileUploadComponent;
 
   args!: DonationDetailsModalArgs;
   changed = false;
@@ -1488,6 +1491,22 @@ export class DonationDetailsModalComponent implements OnInit {
       ? this.donation.amount
       : this.donation.amount / this.donation.numberOfPayments;
     return amountPerPayment.toFixed(2);
+  }
+
+  async openScanDialog() {
+    if (!this.donation?.id) return;
+
+    const result = await openDialog(
+      ScanWaitingModalComponent,
+      (modal) => {
+        modal.args = { donationId: this.donation.id };
+      }
+    );
+
+    // Refresh file list if new files were added
+    if (result) {
+      this.fileUploadComponent?.loadFiles();
+    }
   }
 
   /**

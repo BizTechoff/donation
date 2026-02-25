@@ -747,6 +747,25 @@
   }
 }
 
+.scan-btn {
+  border-color: #2196F3;
+  color: #2196F3;
+
+  &:hover {
+    background: rgba(33, 150, 243, 0.08);
+    border-color: #1976D2;
+  }
+
+  mat-icon {
+    margin-right: 4px;
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    vertical-align: middle;
+  }
+}
+
+
 /* Campaign Actions */
 .campaign-actions {
   display: flex;
