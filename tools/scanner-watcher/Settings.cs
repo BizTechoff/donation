@@ -7,7 +7,7 @@ public class AppSettings
     public string ServerUrl { get; set; } = "https://localhost:3002";
     public string WatchFolder { get; set; } = @"C:\scans";
     public string ArchiveFolder { get; set; } = @"C:\scans\archive";
-    public string[] FileExtensions { get; set; } = [".pdf", ".jpg", ".jpeg", ".png", ".tiff", ".tif"];
+    public string[] FileExtensions { get; set; } = [".pdf", ".jpg", ".jpeg", ".jfif", ".png", ".tiff", ".tif"];
     public int StabilizationSeconds { get; set; } = 2;
 
     // Persisted session cookie (not in settings.json, stored separately)

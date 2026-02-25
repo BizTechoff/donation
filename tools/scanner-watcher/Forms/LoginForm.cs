@@ -34,7 +34,7 @@ public class LoginForm : Form
         {
             Location = new Point(20, 50),
             Size = new Size(320, 25),
-            RightToLeft = RightToLeft.No
+            RightToLeft = RightToLeft.Yes
         };
 
         var lblPass = new Label
@@ -49,7 +49,7 @@ public class LoginForm : Form
             Location = new Point(20, 110),
             Size = new Size(320, 25),
             UseSystemPasswordChar = true,
-            RightToLeft = RightToLeft.No
+            RightToLeft = RightToLeft.Yes
         };
 
         _btnLogin = new Button

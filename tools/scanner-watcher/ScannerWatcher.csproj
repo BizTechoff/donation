@@ -10,6 +10,19 @@
     <RootNamespace>ScannerWatcher</RootNamespace>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+
+    <!-- Self-contained single-file publish -->
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+
+    <!-- No debug symbols in release -->
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <!-- Exclude satellite assemblies (no .NET localized resources needed) -->
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
   </PropertyGroup>
 
   <ItemGroup>

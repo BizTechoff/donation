@@ -1,7 +1,7 @@
 {
-  "serverUrl": "http://localhost:3002",
+  "serverUrl": "https://yyg.up.railway.app",
   "watchFolder": "C:\\scans",
   "archiveFolder": "C:\\scans\\archive",
-  "fileExtensions": [ ".pdf", ".jpg", ".jpeg", ".png", ".tiff", ".tif" ],
+  "fileExtensions": [ ".pdf", ".jpg", ".jpeg", ".jfif", ".png", ".tiff", ".tif" ],
   "stabilizationSeconds": 2
 }
