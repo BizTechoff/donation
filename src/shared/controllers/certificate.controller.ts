@@ -3,6 +3,7 @@ import { Certificate } from '../entity/certificate';
 import { Donor } from '../entity/donor';
 import { GlobalFilters } from '../../app/services/global-filter.service';
 import { GlobalFilterController } from './global-filter.controller';
+import { DonorController } from './donor.controller';
 import { HebrewDateController } from './hebrew-date.controller';
 
 export interface CertificateFilters {
@@ -201,28 +202,14 @@ export class CertificateController {
       }
     }
 
-    // If we have a donor search term, find matching donors first
+    // If we have a donor search term, find matching donors using cross-field search
+    // Each word must match at least one field (name, phone, email, address), AND between words
     if (filters.donorSearchText && filters.donorSearchText.trim() !== '') {
-      const searchLower = filters.donorSearchText.toLowerCase().trim();
-
-      // Build donor search query
-      const donorSearchWhere: any = {
-        $or: [
-          { firstName: { $contains: searchLower } },
-          { lastName: { $contains: searchLower } }
-        ]
-      };
-
-      // If we already have a donorId filter from global filters, combine them
-      if (whereClause.donorId?.$in) {
-        donorSearchWhere.id = { $in: whereClause.donorId.$in };
-      }
-
-      const matchingDonors = await remult.repo(Donor).find({
-        where: donorSearchWhere
-      });
-
-      const donorIds = matchingDonors.map(d => d.id);
+      const globalDonorIds = whereClause.donorId?.$in;
+      const donorIds = await DonorController.searchDonorIdsAcrossAllFields(
+        filters.donorSearchText,
+        globalDonorIds
+      );
 
       if (donorIds.length === 0) {
         return null;

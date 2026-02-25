@@ -207,31 +207,14 @@ export class DonorController {
       whereClause.id = { $in: donorIds };
     }
 
-    // Apply search term filter - split by spaces to support full name search
+    // Apply search term filter - cross-field search (name, phone, email, address)
+    // Each word must match at least one field, AND between words
     if (searchTerm && searchTerm.trim()) {
-      const words = searchTerm.trim().split(/\s+/).filter(w => w.length > 0);
-      if (words.length === 1) {
-        // Single word - search in any field
-        const search = words[0];
-        whereClause.$or = [
-          { firstName: { $contains: search } },
-          { lastName: { $contains: search } },
-          { firstNameEnglish: { $contains: search } },
-          { lastNameEnglish: { $contains: search } },
-          { idNumber: { $contains: search } }
-        ];
-      } else {
-        // Multiple words - each word must match at least one field
-        whereClause.$and = words.map(word => ({
-          $or: [
-            { firstName: { $contains: word } },
-            { lastName: { $contains: word } },
-            { firstNameEnglish: { $contains: word } },
-            { lastNameEnglish: { $contains: word } },
-            { idNumber: { $contains: word } }
-          ]
-        }));
+      const matchingIds = await DonorController.searchDonorIdsAcrossAllFields(searchTerm, donorIds);
+      if (matchingIds.length === 0) {
+        return [];
       }
+      whereClause.id = { $in: matchingIds };
     }
 
     return await remult.repo(Donor).find({
@@ -275,29 +258,14 @@ export class DonorController {
       whereClause.id = { $in: donorIds };
     }
 
-    // Apply search term filter - split by spaces to support full name search
+    // Apply search term filter - cross-field search (name, phone, email, address)
+    // Each word must match at least one field, AND between words
     if (searchTerm && searchTerm.trim()) {
-      const words = searchTerm.trim().split(/\s+/).filter(w => w.length > 0);
-      if (words.length === 1) {
-        const search = words[0];
-        whereClause.$or = [
-          { firstName: { $contains: search } },
-          { lastName: { $contains: search } },
-          { firstNameEnglish: { $contains: search } },
-          { lastNameEnglish: { $contains: search } },
-          { idNumber: { $contains: search } }
-        ];
-      } else {
-        whereClause.$and = words.map(word => ({
-          $or: [
-            { firstName: { $contains: word } },
-            { lastName: { $contains: word } },
-            { firstNameEnglish: { $contains: word } },
-            { lastNameEnglish: { $contains: word } },
-            { idNumber: { $contains: word } }
-          ]
-        }));
+      const matchingIds = await DonorController.searchDonorIdsAcrossAllFields(searchTerm, donorIds);
+      if (matchingIds.length === 0) {
+        return 0;
       }
+      whereClause.id = { $in: matchingIds };
     }
 
     return await remult.repo(Donor).count(whereClause);
@@ -354,5 +322,142 @@ export class DonorController {
       donorPhoneMap,
       donorPlaceMap
     };
+  }
+
+  /**
+   * Cross-field search: each word must match at least one field (name, phone, email, address).
+   * For multiple words - AND between words, OR between fields within each word.
+   * Example: "Lakewood New מוטי" → "Lakewood" in address AND "New" in address AND "מוטי" in name.
+   */
+  static async searchDonorIdsAcrossAllFields(
+    searchTerm: string,
+    restrictToDonorIds?: string[]
+  ): Promise<string[]> {
+    if (!searchTerm || !searchTerm.trim()) return [];
+
+    const words = searchTerm.trim().split(/\s+/).filter(w => w.length > 0);
+    if (words.length === 0) return [];
+    console.log(`[CrossFieldSearch] searchTerm="${searchTerm}", words=[${words.join(', ')}]`);
+
+    const nameFields = (word: string) => [
+      { title: { $contains: word } },
+      { firstName: { $contains: word } },
+      { lastName: { $contains: word } },
+      { suffix: { $contains: word } },
+      { titleEnglish: { $contains: word } },
+      { firstNameEnglish: { $contains: word } },
+      { lastNameEnglish: { $contains: word } },
+      { suffixEnglish: { $contains: word } },
+      { idNumber: { $contains: word } }
+    ];
+
+    // For each word, find all donor IDs matching in ANY field
+    const perWordSets: Set<string>[] = [];
+
+    for (const word of words) {
+      const wordDonorIds = new Set<string>();
+
+      // Search in donor name fields
+      const nameWhere: any = { $or: nameFields(word) };
+      if (restrictToDonorIds) {
+        nameWhere.id = { $in: restrictToDonorIds };
+      }
+      const matchingDonors = await remult.repo(Donor).find({ where: nameWhere, limit: 10000 });
+      matchingDonors.forEach(d => wordDonorIds.add(d.id));
+
+      // Search in contacts (phone/email) and places (address)
+      const cpIds = await DonorController.searchDonorIdsFromContactsAndPlaces([word], restrictToDonorIds);
+      cpIds.forEach(id => wordDonorIds.add(id));
+
+      console.log(`[CrossFieldSearch] word="${word}" → nameMatches=${matchingDonors.length}, contactPlaceMatches=${cpIds.length}, totalUnique=${wordDonorIds.size}`);
+      perWordSets.push(wordDonorIds);
+    }
+
+    if (perWordSets.length === 0) return [];
+
+    // Intersect all per-word sets: each word must match somewhere
+    let result = perWordSets[0];
+    for (let i = 1; i < perWordSets.length; i++) {
+      const before = result.size;
+      result = new Set([...result].filter(id => perWordSets[i].has(id)));
+      console.log(`[CrossFieldSearch] intersect with word="${words[i]}": ${before} → ${result.size}`);
+    }
+
+    console.log(`[CrossFieldSearch] final result: ${result.size} donors`);
+    return [...result];
+  }
+
+  /**
+   * Search for donorIds by matching contacts (phone/email) and places (address)
+   * Uses raw SQL for case-insensitive search on PostgreSQL
+   */
+  static async searchDonorIdsFromContactsAndPlaces(
+    words: string[],
+    restrictToDonorIds?: string[]
+  ): Promise<string[]> {
+    if (!words || words.length === 0) return [];
+
+    const allDonorIds = new Set<string>();
+
+    // Search in DonorContact (phone & email)
+    const contactOrConditions: any[] = [];
+    for (const word of words) {
+      contactOrConditions.push(
+        { phoneNumber: { $contains: word } },
+        { email: { $contains: word } }
+      );
+    }
+
+    const contactWhere: any = {
+      isActive: true,
+      $or: contactOrConditions
+    };
+    if (restrictToDonorIds) {
+      contactWhere.donorId = { $in: restrictToDonorIds };
+    }
+
+    const matchingContacts = await remult.repo(DonorContact).find({
+      where: contactWhere,
+      limit: 10000
+    });
+    matchingContacts.forEach(c => { if (c.donorId) allDonorIds.add(c.donorId); });
+
+    // Search in Place (all address fields) - search both original and lowercase for case-insensitive match
+    const placeOrConditions: any[] = [];
+    const addressFields = ['fullAddress', 'city', 'street', 'houseNumber', 'building', 'apartment', 'neighborhood', 'state', 'postcode'];
+    for (const word of words) {
+      const lowerWord = word.toLowerCase();
+      for (const field of addressFields) {
+        placeOrConditions.push({ [field]: { $contains: word } });
+        // Also search lowercase for case-insensitive match on PostgreSQL
+        if (lowerWord !== word) {
+          placeOrConditions.push({ [field]: { $contains: lowerWord } });
+        }
+      }
+    }
+
+    const matchingPlaces = await remult.repo(Place).find({
+      where: { $or: placeOrConditions },
+      limit: 10000
+    });
+    const placeIds = matchingPlaces.map(p => p.id);
+
+    if (placeIds.length > 0) {
+      const dpWhere: any = {
+        placeId: { $in: placeIds },
+        isActive: true
+      };
+      if (restrictToDonorIds) {
+        dpWhere.donorId = { $in: restrictToDonorIds };
+      }
+
+      const donorPlaces = await remult.repo(DonorPlace).find({
+        where: dpWhere,
+        limit: 10000
+      });
+      donorPlaces.forEach(dp => { if (dp.donorId) allDonorIds.add(dp.donorId); });
+    }
+
+    return [...allDonorIds];
   }
 }

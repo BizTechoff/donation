@@ -162,24 +162,11 @@ export class ReminderController {
       }
     }
 
-    // Donor search filter
+    // Donor search filter - cross-field search (name, phone, email, address)
     if (filters.donorSearch && filters.donorSearch.trim() !== '') {
-      const searchLower = filters.donorSearch.toLowerCase().trim()
-      const Donor = (await import('../entity/donor')).Donor
-
-      const matchingDonors = await remult.repo(Donor).find({
-        where: {
-          $or: [
-            { firstName: { $contains: searchLower } },
-            { lastName: { $contains: searchLower } }
-          ]
-        }
-      })
-
-      const donorIds = matchingDonors.map(d => d.id)
+      const donorIds = await DonorController.searchDonorIdsAcrossAllFields(filters.donorSearch)
 
       if (donorIds.length === 0) {
-        // No matching donors found
         where.donorId = null // This will return no reminders
       } else {
         // Combine with existing donor filter if exists

@@ -1,6 +1,7 @@
 import { Allow, BackendMethod, remult } from 'remult';
 import { GlobalFilters } from '../../app/services/global-filter.service';
 import { GlobalFilterController } from './global-filter.controller';
+import { DonorController } from './donor.controller';
 import { Bank } from '../entity/bank';
 import { Campaign } from '../entity/campaign';
 import { Company } from '../entity/company';
@@ -338,43 +339,12 @@ export class DonationController {
       });
     }
 
-    // If we have a search term, we need to find matching donors first
-    // Use the same search logic as DonorController - split by spaces to support full name search
+    // If we have a search term, find matching donors using cross-field search
+    // Each word must match at least one field (name, phone, email, address), AND between words
     if (filters.searchTerm && filters.searchTerm.trim() !== '') {
-      const words = filters.searchTerm.trim().split(/\s+/).filter(w => w.length > 0);
-
-      let donorWhereClause: any = {};
-      if (words.length === 1) {
-        // Single word - search in any field
-        const search = words[0];
-        donorWhereClause.$or = [
-          { firstName: { $contains: search } },
-          { lastName: { $contains: search } },
-          { firstNameEnglish: { $contains: search } },
-          { lastNameEnglish: { $contains: search } },
-          { idNumber: { $contains: search } }
-        ];
-      } else {
-        // Multiple words - each word must match at least one field
-        donorWhereClause.$and = words.map(word => ({
-          $or: [
-            { firstName: { $contains: word } },
-            { lastName: { $contains: word } },
-            { firstNameEnglish: { $contains: word } },
-            { lastNameEnglish: { $contains: word } },
-            { idNumber: { $contains: word } }
-          ]
-        }));
-      }
-
-      const matchingDonors = await remult.repo(Donor).find({
-        where: donorWhereClause
-      });
-
-      const searchDonorIds = matchingDonors.map(d => d.id);
+      const searchDonorIds = await DonorController.searchDonorIdsAcrossAllFields(filters.searchTerm, globalDonorIds);
 
       if (searchDonorIds.length === 0) {
-        // No matching donors found
         return [];
       }
 
@@ -384,14 +354,12 @@ export class DonationController {
         if (intersected.length === 0) {
           return [];
         }
-        // Add donor filter to where clause
         if (whereClause.donorId) {
           whereClause.donorId = { $in: [whereClause.donorId, ...intersected] };
         } else {
           whereClause.donorId = { $in: intersected };
         }
       } else {
-        // No global filters, just use search results
         if (whereClause.donorId) {
           whereClause.donorId = { $in: [whereClause.donorId, ...searchDonorIds] };
         } else {
@@ -839,19 +807,10 @@ export class DonationController {
       whereClause.donorId = filters.donorId;
     }
 
-    // If we have a search term, find matching donors
+    // If we have a search term, find matching donors using cross-field search
+    // Each word must match at least one field (name, phone, email, address), AND between words
     if (filters.searchTerm && filters.searchTerm.trim() !== '') {
-      const searchLower = filters.searchTerm.toLowerCase().trim();
-      const matchingDonors = await remult.repo(Donor).find({
-        where: {
-          $or: [
-            { firstName: { $contains: searchLower } },
-            { lastName: { $contains: searchLower } }
-          ]
-        }
-      });
-
-      const searchDonorIds = matchingDonors.map(d => d.id);
+      const searchDonorIds = await DonorController.searchDonorIdsAcrossAllFields(filters.searchTerm, globalDonorIds);
 
       if (searchDonorIds.length === 0) {
         return null;

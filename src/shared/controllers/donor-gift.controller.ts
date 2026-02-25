@@ -3,6 +3,7 @@ import { remult } from 'remult';
 import { DonorGift } from '../entity';
 import { GlobalFilters } from '../../app/services/global-filter.service';
 import { GlobalFilterController } from './global-filter.controller';
+import { DonorController } from './donor.controller';
 
 export interface DonorGiftFilters {
   searchDonorName?: string;
@@ -93,8 +94,20 @@ export class DonorGiftController {
       };
     }
 
+    // Apply search filter - cross-field search (name, phone, email, address)
+    if (localFilters.searchDonorName && localFilters.searchDonorName.trim()) {
+      const searchDonorIds = await DonorController.searchDonorIdsAcrossAllFields(
+        localFilters.searchDonorName,
+        globalFilterDonorIds
+      );
+      if (searchDonorIds.length === 0) {
+        return [];
+      }
+      whereClause.donorId = { $in: searchDonorIds };
+    }
+
     // Get all donor gifts
-    let allDonorGifts = await remult.repo(DonorGift).find({
+    const allDonorGifts = await remult.repo(DonorGift).find({
       where: Object.keys(whereClause).length > 0 ? whereClause : undefined,
       orderBy,
       include: {
@@ -102,15 +115,6 @@ export class DonorGiftController {
         gift: true
       }
     });
-
-    // Apply search filter on donor name (client-side filtering)
-    if (localFilters.searchDonorName && localFilters.searchDonorName.trim()) {
-      const searchLower = localFilters.searchDonorName.toLowerCase();
-      allDonorGifts = allDonorGifts.filter(dg => {
-        const donorName = `${dg.donor?.firstName || ''} ${dg.donor?.lastName || ''}`.toLowerCase();
-        return donorName.includes(searchLower);
-      });
-    }
 
     // Apply pagination
     if (page && pageSize) {
@@ -181,22 +185,16 @@ export class DonorGiftController {
       };
     }
 
-    // If we have searchDonorName, we need to get all records and filter client-side
+    // Apply search filter - cross-field search (name, phone, email, address)
     if (localFilters.searchDonorName && localFilters.searchDonorName.trim()) {
-      const allDonorGifts = await remult.repo(DonorGift).find({
-        where: Object.keys(whereClause).length > 0 ? whereClause : undefined,
-        include: {
-          donor: true
-        }
-      });
-
-      const searchLower = localFilters.searchDonorName.toLowerCase();
-      const filtered = allDonorGifts.filter(dg => {
-        const donorName = `${dg.donor?.firstName || ''} ${dg.donor?.lastName || ''}`.toLowerCase();
-        return donorName.includes(searchLower);
-      });
-
-      return filtered.length;
+      const searchDonorIds = await DonorController.searchDonorIdsAcrossAllFields(
+        localFilters.searchDonorName,
+        globalFilterDonorIds
+      );
+      if (searchDonorIds.length === 0) {
+        return 0;
+      }
+      whereClause.donorId = { $in: searchDonorIds };
     }
 
     return await remult.repo(DonorGift).count(Object.keys(whereClause).length > 0 ? whereClause : undefined);
@@ -262,22 +260,22 @@ export class DonorGiftController {
       };
     }
 
-    // Get all donor gifts with filters
-    let allDonorGifts = await remult.repo(DonorGift).find({
-      where: Object.keys(whereClause).length > 0 ? whereClause : undefined,
-      include: {
-        donor: true
-      }
-    });
-
-    // Apply search filter on donor name
+    // Apply search filter - cross-field search (name, phone, email, address)
     if (localFilters.searchDonorName && localFilters.searchDonorName.trim()) {
-      const searchLower = localFilters.searchDonorName.toLowerCase();
-      allDonorGifts = allDonorGifts.filter(dg => {
-        const donorName = `${dg.donor?.firstName || ''} ${dg.donor?.lastName || ''}`.toLowerCase();
-        return donorName.includes(searchLower);
-      });
+      const searchDonorIds = await DonorController.searchDonorIdsAcrossAllFields(
+        localFilters.searchDonorName,
+        globalFilterDonorIds
+      );
+      if (searchDonorIds.length === 0) {
+        return { deliveredCount: 0, pendingCount: 0 };
+      }
+      whereClause.donorId = { $in: searchDonorIds };
     }
+
+    // Get all donor gifts with filters
+    const allDonorGifts = await remult.repo(DonorGift).find({
+      where: Object.keys(whereClause).length > 0 ? whereClause : undefined
+    });
 
     const deliveredCount = allDonorGifts.filter(dg => dg.isDelivered).length;
     const pendingCount = allDonorGifts.filter(dg => !dg.isDelivered).length;
