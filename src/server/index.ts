@@ -9,6 +9,7 @@ import { api } from './api'
 import './docx'
 import { getPlace, getPlaces, reverseGeocode, getGoogleMapsApiKey } from './geo'
 import './s3'
+import { scanRouter } from './scan-api'
 import { checkAndSendReminders } from './scheduler'
 
 async function startup() {
@@ -34,6 +35,7 @@ async function startup() {
   )
 
   app.use(api)
+  app.use('/api/scan', scanRouter)
   app.use('/api/geo/places', getPlaces)
   app.use('/api/geo/place-details', getPlace)
   app.use('/api/geo/reverse-geocode', reverseGeocode)
