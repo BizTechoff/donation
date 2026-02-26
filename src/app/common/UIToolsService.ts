@@ -267,6 +267,13 @@ export class UIToolsService implements UITools {
     )
   }
 
+  async printOptionsDialog(args: { onPrint: (printType: any, donationOptions?: any) => void; scansCount?: number; totalCount?: number }): Promise<void> {
+    return await openDialog(
+      (await import('../routes/modals/print-options-modal/print-options-modal.component')).PrintOptionsModalComponent,
+      (dlg) => dlg.args = args
+    )
+  }
+
   async mapSelectedDonorsDialog(donors: any[], polygonPoints?: { lat: number; lng: number }[]): Promise<any> {
     return await openDialog(
       (await import('../routes/modals/map-selected-donors-modal/map-selected-donors-modal.component')).MapSelectedDonorsModalComponent,

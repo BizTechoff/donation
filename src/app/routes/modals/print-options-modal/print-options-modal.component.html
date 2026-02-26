@@ -1,0 +1,44 @@
+<div class="print-options-modal">
+  <h2 mat-dialog-title>אפשרויות הדפסה</h2>
+
+  <mat-dialog-content>
+    <div class="section">
+      <label class="section-label">מה להדפיס:</label>
+      <mat-radio-group [(ngModel)]="printType" class="radio-group">
+        <mat-radio-button value="table">טבלה נוכחית</mat-radio-button>
+        <mat-radio-button value="donations">תרומות</mat-radio-button>
+        <mat-radio-button value="labels">מדבקות (כתובות)</mat-radio-button>
+        <mat-radio-button value="envelopes">מעטפות</mat-radio-button>
+      </mat-radio-group>
+    </div>
+
+    <div class="section donation-options" *ngIf="printType === 'donations'">
+      <mat-checkbox [(ngModel)]="printDetails">הדפס פרטי תרומה ותורם</mat-checkbox>
+      <mat-checkbox [(ngModel)]="printScans">
+        הדפס סריקות / צ'קים ({{args.scansCount || 0}}/{{args.totalCount || 0}})
+      </mat-checkbox>
+
+      <div class="tag-position-row" *ngIf="printScans">
+        <label>מיקום תגית:</label>
+        <div class="position-buttons">
+          <button *ngFor="let pos of tagPositions"
+                  class="position-btn"
+                  [class.active]="tagPosition === pos.value"
+                  (click)="tagPosition = pos.value"
+                  [title]="pos.label">
+            {{ pos.icon }}
+          </button>
+        </div>
+        <button class="no-tag-btn" [class.active]="tagPosition === 'none'" (click)="tagPosition = 'none'">ללא</button>
+      </div>
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button (click)="close()">ביטול</button>
+    <button mat-raised-button color="primary" (click)="onPrintClick()">
+      <mat-icon>print</mat-icon>
+      הדפס
+    </button>
+  </mat-dialog-actions>
+</div>

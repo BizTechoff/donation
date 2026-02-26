@@ -490,8 +490,7 @@ export class LetterPropertiesModalComponent implements OnInit {
       }
       case 'FullAddress': {
         // שורה 1: שם מלא של התורם
-        const donorName =
-          `${this.donation.donor?.titleEnglish} ${this.donation.donor?.maritalStatus === 'married' && !this.donation.donor?.titleEnglish?.includes('Mrs.') ? '& Mrs.' : ''} ${this.donation.donor?.firstNameEnglish[0]?.toUpperCase()} ${this.toCamelCase(this.donation.donor?.lastNameEnglish || '')}`.trim() || '';
+        const donorName = this.donation.donor?.getNameForLetter() || '';
 
         // קבלת הכתובת הראשית של התורם
         const donorPlace = await DonorPlace.getPrimaryForDonor(this.donation.donorId || '');

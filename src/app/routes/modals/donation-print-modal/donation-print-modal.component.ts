@@ -9,6 +9,7 @@ import { I18nService } from '../../../i18n/i18n.service';
 import { FileUploadService } from '../../../services/file-upload.service';
 import { PayerService } from '../../../services/payer.service';
 import { HebrewDateService } from '../../../services/hebrew-date.service';
+import { PrintService, DonationPrintData } from '../../../services/print.service';
 
 export interface DonationPrintModalArgs {
   donationId: string;
@@ -68,6 +69,7 @@ export class DonationPrintModalComponent implements OnInit {
     private fileUploadService: FileUploadService,
     private payerService: PayerService,
     private hebrewDateService: HebrewDateService,
+    private printService: PrintService,
     public dialogRef: MatDialogRef<DonationPrintModalComponent>
   ) {}
 
@@ -174,308 +176,34 @@ export class DonationPrintModalComponent implements OnInit {
     try {
       // Get selected files with URLs
       const selectedFiles = this.filesWithSettings.filter(f => f.selected && f.file.fileType.startsWith('image/'));
-      const fileData: { file: DonationFile; url: string; tagPosition: TagPosition }[] = [];
-
-      // Get URLs for all selected files
+      const scans: { url: string; tagPosition: string }[] = [];
       for (const fs of selectedFiles) {
         const url = fs.previewUrl || await this.fileUploadService.getDownloadUrl(fs.file.id);
         if (url) {
-          fileData.push({ file: fs.file, url, tagPosition: fs.tagPosition });
+          scans.push({ url, tagPosition: fs.tagPosition });
         }
       }
 
-      // Generate and print HTML
-      const printHtml = this.generatePrintHtml(fileData);
-      this.executePrint(printHtml);
+      // Build data and delegate to shared PrintService logic
+      const item: DonationPrintData = {
+        donorName: this.donor?.fullName || this.donor?.lastAndFirstName || '',
+        donorNameEnglish: this.donor?.fullNameEnglish || '',
+        amount: `${this.getCurrencySymbol()}${this.donation.amount.toLocaleString('he-IL')}`,
+        hebrewDate: this.getHebrewDate(),
+        donationType: this.getDonationTypeDisplay(),
+        method: this.donation.donationMethod?.name || '-',
+        campaign: this.donation.campaign?.name || '',
+        checkNumber: this.donation.checkNumber || '',
+        reason: this.donation.reason || '',
+        notes: this.donation.notes || '',
+        scans
+      };
 
+      this.printService.printDonations([item], this.printDonationDetails, this.printScans);
       this.dialogRef.close(true);
     } catch (error) {
       console.error('Error printing donation:', error);
       this.ui.error('שגיאה בהדפסה');
-    }
-  }
-
-  private generatePrintHtml(fileData: { file: DonationFile; url: string; tagPosition: TagPosition }[]): string {
-    const donorName = this.donor?.fullName || this.donor?.lastAndFirstName || '';
-
-    let html = `
-<!DOCTYPE html>
-<html dir="rtl" lang="he">
-<head>
-  <meta charset="UTF-8">
-  <title>הדפסת תרומה - ${donorName}</title>
-  <style>
-    @media print {
-      @page {
-        size: A4;
-        margin: 10mm;
-      }
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
-      direction: rtl;
-      font-size: 14px;
-      line-height: 1.5;
-    }
-
-    .header {
-      text-align: center;
-      margin-bottom: 20px;
-      border-bottom: 2px solid #333;
-      padding-bottom: 10px;
-    }
-
-    .header h1 {
-      font-size: 22px;
-      margin-bottom: 3px;
-    }
-
-    .section {
-      margin-bottom: 15px;
-    }
-
-    .section-title {
-      font-size: 16px;
-      font-weight: bold;
-      margin-bottom: 10px;
-      color: #2c3e50;
-      border-bottom: 1px solid #ddd;
-      padding-bottom: 3px;
-    }
-
-    .info-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 6px 20px;
-    }
-
-    .info-item {
-      display: flex;
-      gap: 8px;
-    }
-
-    .info-label {
-      font-weight: bold;
-      color: #555;
-      min-width: 100px;
-    }
-
-    .info-value {
-      color: #333;
-    }
-
-    .amount-highlight {
-      font-size: 22px;
-      font-weight: bold;
-      color: #27ae60;
-      text-align: center;
-      padding: 12px;
-      background: #f8f9fa;
-      border-radius: 6px;
-      margin: 12px 0;
-    }
-
-    /* Scan item - fixed height for uniform look */
-    .scan-item {
-      position: relative;
-      width: 100%;
-      height: 250px;
-      margin-top: 15px;
-      page-break-inside: avoid;
-    }
-
-    .scan-item:first-child {
-      margin-top: 15px;
-    }
-
-    .scan-item img {
-      width: 100%;
-      height: 100%;
-      object-fit: fill;
-      display: block;
-    }
-
-    .scan-item .donor-tag {
-      position: absolute;
-      background: rgba(255, 255, 255, 0.95);
-      padding: 5px 15px;
-      font-weight: bold;
-      font-size: 14px;
-      border: 2px solid #333;
-      z-index: 10;
-    }
-
-    /* Tag positions */
-    .donor-tag.tag-top-left { top: 8px; left: 8px; }
-    .donor-tag.tag-top-center { top: 8px; left: 50%; transform: translateX(-50%); }
-    .donor-tag.tag-top-right { top: 8px; right: 8px; }
-    .donor-tag.tag-bottom-left { bottom: 8px; left: 8px; }
-    .donor-tag.tag-bottom-center { bottom: 8px; left: 50%; transform: translateX(-50%); }
-    .donor-tag.tag-bottom-right { bottom: 8px; right: 8px; }
-  </style>
-</head>
-<body>
-`;
-
-    // Add donation details if enabled
-    if (this.printDonationDetails) {
-      html += this.generateDonationDetailsHtml(donorName);
-    }
-
-    // Add scans - they flow naturally with page breaks
-    if (this.printScans && fileData.length > 0) {
-      html += this.generateScansHtml(fileData, donorName);
-    }
-
-    html += `
-</body>
-</html>
-`;
-
-    return html;
-  }
-
-  private generateDonationDetailsHtml(donorName: string): string {
-    const donation = this.donation!;
-    const donor = this.donor;
-
-    return `
-  <div class="header">
-    <h1>פרטי תרומה</h1>
-    <p>${this.getHebrewDate()}</p>
-  </div>
-
-  <div class="amount-highlight">
-    ${this.getCurrencySymbol()}${donation.amount.toLocaleString('he-IL')}
-  </div>
-
-  <div class="section">
-    <div class="section-title">פרטי התורם</div>
-    <div class="info-grid">
-      <div class="info-item">
-        <span class="info-label">שם מלא:</span>
-        <span class="info-value">${donor?.fullName || donor?.lastAndFirstName || '-'}</span>
-      </div>
-      <div class="info-item">
-        <span class="info-label">שם באנגלית:</span>
-        <span class="info-value">${donor?.fullNameEnglish || '-'}</span>
-      </div>
-    </div>
-  </div>
-
-  <div class="section">
-    <div class="section-title">פרטי התרומה</div>
-    <div class="info-grid">
-      <div class="info-item">
-        <span class="info-label">סוג תרומה:</span>
-        <span class="info-value">${this.getDonationTypeDisplay()}</span>
-      </div>
-      <div class="info-item">
-        <span class="info-label">אמצעי תשלום:</span>
-        <span class="info-value">${donation.donationMethod?.name || '-'}</span>
-      </div>
-      ${donation.campaign ? `
-      <div class="info-item">
-        <span class="info-label">קמפיין:</span>
-        <span class="info-value">${donation.campaign.name}</span>
-      </div>
-      ` : ''}
-      ${donation.checkNumber ? `
-      <div class="info-item">
-        <span class="info-label">מספר צ'ק:</span>
-        <span class="info-value">${donation.checkNumber}</span>
-      </div>
-      ` : ''}
-      ${donation.reason ? `
-      <div class="info-item">
-        <span class="info-label">סיבה:</span>
-        <span class="info-value">${donation.reason}</span>
-      </div>
-      ` : ''}
-      ${donation.notes ? `
-      <div class="info-item">
-        <span class="info-label">הערות:</span>
-        <span class="info-value">${donation.notes}</span>
-      </div>
-      ` : ''}
-    </div>
-  </div>
-  <div style="height: 100px;"></div>
-`;
-  }
-
-  private generateScansHtml(fileData: { file: DonationFile; url: string; tagPosition: TagPosition }[], donorName: string): string {
-    // Images flow naturally - each image stretches to full width
-    // Page breaks happen automatically when content doesn't fit
-    return fileData.map(f => `
-  <div class="scan-item">
-    ${f.tagPosition !== 'none' ? `<div class="donor-tag tag-${f.tagPosition}">${donorName}</div>` : ''}
-    <img src="${f.url}" alt="${f.file.fileName}" />
-  </div>
-`).join('');
-  }
-
-  private executePrint(html: string) {
-    // Create hidden iframe for printing
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'absolute';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
-    iframe.style.border = 'none';
-    iframe.style.left = '-9999px';
-    document.body.appendChild(iframe);
-
-    const iframeDoc = iframe.contentWindow?.document;
-    if (iframeDoc) {
-      iframeDoc.open();
-      iframeDoc.write(html);
-      iframeDoc.close();
-
-      // Wait for all images to load before printing
-      const images = iframeDoc.querySelectorAll('img');
-      let loadedCount = 0;
-      const totalImages = images.length;
-
-      const tryPrint = () => {
-        loadedCount++;
-        if (loadedCount >= totalImages) {
-          setTimeout(() => {
-            iframe.contentWindow?.print();
-            setTimeout(() => {
-              if (document.body.contains(iframe)) {
-                document.body.removeChild(iframe);
-              }
-            }, 500);
-          }, 300);
-        }
-      };
-
-      if (totalImages === 0) {
-        setTimeout(() => {
-          iframe.contentWindow?.print();
-          setTimeout(() => {
-            if (document.body.contains(iframe)) {
-              document.body.removeChild(iframe);
-            }
-          }, 500);
-        }, 100);
-      } else {
-        images.forEach((img) => {
-          if (img.complete) {
-            tryPrint();
-          } else {
-            img.onload = tryPrint;
-            img.onerror = tryPrint;
-          }
-        });
-      }
     }
   }
 

@@ -447,6 +447,22 @@ export class Donor extends IdEntity {
   //   return this.fullName || 'לא ידוע'
   // }
 
+  /**
+   * שם תורם באנגלית למכתב/מדבקה - כולל לוגיקת Mr & Mrs
+   * fallback לשם עברי אם אין אנגלית
+   */
+  getNameForLetter(): string {
+    if (this.firstNameEnglish || this.lastNameEnglish) {
+      const title = this.titleEnglish || '';
+      const mrsMrs = this.maritalStatus === 'married' && !title.includes('Mrs.') ? '& Mrs.' : '';
+      const first = this.firstNameEnglish || '';
+      const last = this.lastNameEnglish || '';
+      const suffix = this.suffixEnglish || '';
+      return [title, mrsMrs, first, last, suffix].filter(p => p).join(' ').trim();
+    }
+    return this.fullName || '';
+  }
+
   @BackendMethod({ allowed: [Roles.admin] })
   async deactivate() {
     this.isActive = false

@@ -12,6 +12,7 @@ import { DonationOrganization } from '../entity/donation-organization';
 import { Donor } from '../entity/donor';
 import { Organization } from '../entity/organization';
 import { DonorPlace } from '../entity/donor-place';
+import { DonationFile } from '../entity/file';
 import { Payment } from '../entity/payment';
 import { CurrencyType } from '../type/currency.type';
 import { calculateEffectiveAmount, calculatePaymentTotals, isPaymentBased } from '../utils/donation-utils';
@@ -894,5 +895,59 @@ export class DonationController {
     await donation.save();
 
     return nextNumber;
+  }
+
+  /**
+   * Get donor names and addresses for a list of donation IDs
+   * Used for printing labels and envelopes
+   */
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async getAddressesForDonations(donationIds: string[]): Promise<{ donorName: string; addressLines: string[] }[]> {
+    if (!donationIds || donationIds.length === 0) return [];
+
+    // Load donations with donor relation
+    const donations = await remult.repo(Donation).find({
+      where: { id: { $in: donationIds } },
+      include: { donor: true }
+    });
+
+    // Get unique donor IDs
+    const donorIds = [...new Set(donations.map(d => d.donorId).filter(id => id))];
+
+    // Load primary places for all donors
+    const placesMap = await DonorPlace.getPrimaryForDonors(donorIds);
+
+    // Build result - one per donation (each donation = receipt = envelope/label)
+    const result: { donorName: string; addressLines: string[] }[] = [];
+
+    for (const donation of donations) {
+      if (!donation.donorId) continue;
+
+      const donorPlace = placesMap.get(donation.donorId);
+      const addressLines = donorPlace?.place?.getAddressForLetter() || [];
+      const donorName = donation.donor?.getNameForLetter() || '';
+
+      if (donorName || addressLines.length > 0) {
+        result.push({ donorName, addressLines });
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Count how many of the given donation IDs have attached files (scans/checks)
+   */
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async countDonationsWithFiles(donationIds: string[]): Promise<number> {
+    if (!donationIds || donationIds.length === 0) return 0;
+
+    const files = await remult.repo(DonationFile).find({
+      where: { donationId: { $in: donationIds } }
+    });
+
+    // Count unique donation IDs that have files
+    const donationsWithFiles = new Set(files.map(f => f.donationId));
+    return donationsWithFiles.size;
   }
 }

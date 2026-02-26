@@ -121,6 +121,7 @@ import { ReminderCompleteModalComponent } from './routes/modals/reminder-complet
 import { CampaignDonationsModalComponent } from './routes/modals/campaign-donations-modal/campaign-donations-modal.component'
 import { GlobalSearchComponent } from './components/global-search/global-search.component'
 import { ReasonSelectionModalComponent } from './routes/modals/reason-selection-modal/reason-selection-modal.component'
+import { PrintOptionsModalComponent } from './routes/modals/print-options-modal/print-options-modal.component'
 import { AutoYearDirective } from './shared/directives/auto-year.directive'
 import { DateFastInputComponent } from './components/date-fast-input/date-fast-input.component'
 import { A11yModule } from "@angular/cdk/a11y";
@@ -209,7 +210,8 @@ import { A11yModule } from "@angular/cdk/a11y";
     ReminderCompleteModalComponent,
     CampaignDonationsModalComponent,
     GlobalSearchComponent,
-    ReasonSelectionModalComponent
+    ReasonSelectionModalComponent,
+    PrintOptionsModalComponent
   ],
   imports: [
     BrowserModule,

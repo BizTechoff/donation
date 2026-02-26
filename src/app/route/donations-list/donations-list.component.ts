@@ -12,7 +12,9 @@ import { GlobalFilterService } from '../../services/global-filter.service';
 import { isPaymentBased, isStandingOrder, calculatePeriodsElapsed } from '../../../shared/utils/donation-utils';
 import { HebrewDateService } from '../../services/hebrew-date.service';
 import { PayerService } from '../../services/payer.service';
-import { PrintService } from '../../services/print.service';
+import { PrintService, LabelData, DonationPrintData } from '../../services/print.service';
+import { PrintType, DonationPrintOptions } from '../../routes/modals/print-options-modal/print-options-modal.component';
+import { FileUploadService } from '../../services/file-upload.service';
 
 @Component({
   selector: 'app-donations-list',
@@ -91,7 +93,8 @@ export class DonationsListComponent implements OnInit, OnDestroy {
     private payerService: PayerService,
     private hebrewDateService: HebrewDateService,
     private printService: PrintService,
-    private excelExportService: ExcelExportService
+    private excelExportService: ExcelExportService,
+    private fileUploadService: FileUploadService
   ) { }
 
   async ngOnInit() {
@@ -748,6 +751,21 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   // ===================================
 
   async onPrint() {
+    // Count donations with scans for the dialog
+    const donationIds = this.donations.map(d => d.id);
+    const scansCount = donationIds.length > 0
+      ? await DonationController.countDonationsWithFiles(donationIds)
+      : 0;
+
+    await this.ui.printOptionsDialog({
+      onPrint: (printType: PrintType, donationOptions?: DonationPrintOptions) =>
+        this.executePrint(printType, donationOptions),
+      scansCount,
+      totalCount: this.totalCount
+    });
+  }
+
+  private async executePrint(printType: PrintType, donationOptions?: DonationPrintOptions) {
     await this.busy.doWhileShowingBusy(async () => {
       try {
         // Build filters (same as refreshData)
@@ -769,43 +787,99 @@ export class DonationsListComponent implements OnInit, OnDestroy {
           this.sortColumns
         );
 
-        // Prepare data for print
-        const printData = allDonations.map(donation => {
-          const hebrewDate = donation.donationDate
-            ? this.hebrewDateService.convertGregorianToHebrew(new Date(donation.donationDate)).formatted
-            : '-';
-          const currencySymbol = this.currencyTypes[donation.currencyId]?.symbol || '₪';
+        if (printType === 'donations') {
+          const opts = donationOptions || { printDetails: true, printScans: false, tagPosition: 'top-right' as const };
 
-          return {
-            donorName: this.getDonorName(donation),
-            address: this.getDonorHomeAddress(donation),
-            date: hebrewDate,
-            donationType: this.getDonationTypeDisplay(donation),
-            method: this.getMethodName(donation),
-            amount: `${currencySymbol}${donation.amount.toLocaleString('he-IL')}`,
-            campaign: this.getCampaignName(donation),
-            fundraiser: donation.donor?.fundraiser?.name || '-',
-            reason: donation.reason || '-'
-          };
-        });
+          // Build donation print data
+          const tagPos = opts.tagPosition || 'top-right';
+          const donationPrintData: DonationPrintData[] = allDonations.map(donation => {
+            const hebrewDate = donation.donationDate
+              ? this.hebrewDateService.convertGregorianToHebrew(new Date(donation.donationDate)).formatted
+              : '-';
+            const currencySymbol = this.currencyTypes[donation.currencyId]?.symbol || '₪';
 
-        this.printService.print({
-          title: this.i18n.currentTerms.donations || 'תרומות',
-          subtitle: `${allDonations.length} ${this.i18n.currentTerms.donations || 'תרומות'}`,
-          columns: [
-            { header: this.i18n.currentTerms.donor || 'תורם', field: 'donorName' },
-            { header: this.i18n.currentTerms.address || 'כתובת', field: 'address', align: 'left' },
-            { header: this.i18n.currentTerms.date || 'תאריך', field: 'date' },
-            { header: this.i18n.currentTerms.donationType || 'סוג', field: 'donationType' },
-            { header: this.i18n.currentTerms.donationMethodFilter || 'אופן תרומה', field: 'method' },
-            { header: this.i18n.currentTerms.amount || 'סכום', field: 'amount' },
-            { header: this.i18n.currentTerms.campaign || 'קמפיין', field: 'campaign' },
-            { header: this.i18n.currentTerms.fundraiserColumn || 'מגייס', field: 'fundraiser' },
-            { header: this.i18n.currentTerms.reason || 'הקדשה', field: 'reason' }
-          ],
-          data: printData,
-          direction: 'rtl'
-        });
+            return {
+              donorName: donation.donor?.fullName || '-',
+              donorNameEnglish: donation.donor?.fullNameEnglish || '-',
+              amount: `${currencySymbol}${donation.amount.toLocaleString('he-IL')}`,
+              hebrewDate,
+              donationType: this.getDonationTypeDisplay(donation),
+              method: this.getMethodName(donation),
+              campaign: this.getCampaignName(donation),
+              checkNumber: donation.checkNumber || '',
+              reason: donation.reason || '',
+              notes: donation.notes || '',
+              scans: []
+            };
+          });
+
+          // Load scan URLs if requested
+          if (opts.printScans) {
+            for (let i = 0; i < allDonations.length; i++) {
+              const files = await this.fileUploadService.getFilesByDonation(allDonations[i].id);
+              const imageFiles = files.filter(f => f.fileType.startsWith('image/'));
+              for (const file of imageFiles) {
+                const url = await this.fileUploadService.getDownloadUrl(file.id);
+                if (url) donationPrintData[i].scans.push({ url, tagPosition: tagPos });
+              }
+            }
+          }
+
+          this.printService.printDonations(donationPrintData, opts.printDetails, opts.printScans);
+        } else if (printType === 'labels' || printType === 'envelopes') {
+          // Get addresses from backend
+          const donationIds = allDonations.map(d => d.id);
+          const addresses: LabelData[] = await DonationController.getAddressesForDonations(donationIds);
+
+          if (addresses.length === 0) {
+            this.ui.info('לא נמצאו כתובות להדפסה');
+            return;
+          }
+
+          if (printType === 'labels') {
+            this.printService.printLabels(addresses);
+          } else {
+            this.printService.printEnvelopes(addresses);
+          }
+        } else {
+          // Table print (existing behavior)
+          const printData = allDonations.map(donation => {
+            const hebrewDate = donation.donationDate
+              ? this.hebrewDateService.convertGregorianToHebrew(new Date(donation.donationDate)).formatted
+              : '-';
+            const currencySymbol = this.currencyTypes[donation.currencyId]?.symbol || '₪';
+
+            return {
+              donorName: this.getDonorName(donation),
+              address: this.getDonorHomeAddress(donation),
+              date: hebrewDate,
+              donationType: this.getDonationTypeDisplay(donation),
+              method: this.getMethodName(donation),
+              amount: `${currencySymbol}${donation.amount.toLocaleString('he-IL')}`,
+              campaign: this.getCampaignName(donation),
+              fundraiser: donation.donor?.fundraiser?.name || '-',
+              reason: donation.reason || '-'
+            };
+          });
+
+          this.printService.print({
+            title: this.i18n.currentTerms.donations || 'תרומות',
+            subtitle: `${allDonations.length} ${this.i18n.currentTerms.donations || 'תרומות'}`,
+            columns: [
+              { header: this.i18n.currentTerms.donor || 'תורם', field: 'donorName' },
+              { header: this.i18n.currentTerms.address || 'כתובת', field: 'address', align: 'left' },
+              { header: this.i18n.currentTerms.date || 'תאריך', field: 'date' },
+              { header: this.i18n.currentTerms.donationType || 'סוג', field: 'donationType' },
+              { header: this.i18n.currentTerms.donationMethodFilter || 'אופן תרומה', field: 'method' },
+              { header: this.i18n.currentTerms.amount || 'סכום', field: 'amount' },
+              { header: this.i18n.currentTerms.campaign || 'קמפיין', field: 'campaign' },
+              { header: this.i18n.currentTerms.fundraiserColumn || 'מגייס', field: 'fundraiser' },
+              { header: this.i18n.currentTerms.reason || 'הקדשה', field: 'reason' }
+            ],
+            data: printData,
+            direction: 'rtl'
+          });
+        }
       } catch (error) {
         console.error('Error printing donations:', error);
         this.ui.error('שגיאה בהדפסה');

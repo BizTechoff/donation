@@ -27,6 +27,25 @@ export interface PrintConfig {
   subRows?: SubRowConfig; // Configuration for sub-rows (donation details)
 }
 
+export interface LabelData {
+  donorName: string;
+  addressLines: string[];
+}
+
+export interface DonationPrintData {
+  donorName: string;
+  donorNameEnglish: string;
+  amount: string;
+  hebrewDate: string;
+  donationType: string;
+  method: string;
+  campaign: string;
+  checkNumber: string;
+  reason: string;
+  notes: string;
+  scans: { url: string; tagPosition: string }[];
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -34,8 +53,34 @@ export class PrintService {
   private printFrame: HTMLIFrameElement | null = null;
 
   print(config: PrintConfig) {
-    const html = this.generatePrintHtml(config);
+    this.printHtml(this.generatePrintHtml(config));
+  }
 
+  printLabels(donors: LabelData[]) {
+    if (!donors.length) return;
+    this.printHtml(this.generateLabelsHtml(donors));
+  }
+
+  printDonations(donations: DonationPrintData[], printDetails = true, printScans = false) {
+    if (!donations.length) return;
+    const pages = donations.map(d => this.generateDonationPageHtml(d, printDetails, printScans)).filter(p => p).join('');
+    this.printHtml(`<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+  <meta charset="UTF-8">
+  <title>הדפסת תרומות</title>
+  <style>${this.getDonationPrintCss()}</style>
+</head>
+<body>${pages}</body>
+</html>`);
+  }
+
+  printEnvelopes(donors: LabelData[]) {
+    if (!donors.length) return;
+    this.printHtml(this.generateEnvelopesHtml(donors));
+  }
+
+  private printHtml(html: string) {
     // Remove existing iframe if any
     if (this.printFrame) {
       document.body.removeChild(this.printFrame);
@@ -62,11 +107,27 @@ export class PrintService {
     frameDoc.write(html);
     frameDoc.close();
 
-    // Wait for content to load then print
-    this.printFrame.onload = () => {
-      setTimeout(() => {
-        this.printFrame?.contentWindow?.print();
-      }, 100);
+    const iframe = this.printFrame;
+
+    // Wait for content to load, then wait for images before printing
+    iframe.onload = () => {
+      const iDoc = iframe.contentDocument || iframe.contentWindow?.document;
+      const images = iDoc?.querySelectorAll('img') || [];
+      if (images.length === 0) {
+        setTimeout(() => iframe.contentWindow?.print(), 100);
+        return;
+      }
+      let loaded = 0;
+      const tryPrint = () => {
+        loaded++;
+        if (loaded >= images.length) {
+          setTimeout(() => iframe.contentWindow?.print(), 300);
+        }
+      };
+      images.forEach(img => {
+        if (img.complete) tryPrint();
+        else { img.onload = tryPrint; img.onerror = tryPrint; }
+      });
     };
   }
 
@@ -476,5 +537,323 @@ export class PrintService {
         </span>
       `).join('')}
     </div>`;
+  }
+
+  /**
+   * Shared CSS for donation detail + scan printing.
+   * Used by both single donation modal and batch donation printing.
+   */
+  getDonationPrintCss(): string {
+    return `
+    @media print {
+      @page { size: A4; margin: 10mm; }
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+      direction: rtl;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .donation-page {
+      page-break-after: always;
+    }
+
+    .donation-page:last-child {
+      page-break-after: auto;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #333;
+      padding-bottom: 10px;
+    }
+
+    .header h1 { font-size: 22px; margin-bottom: 3px; }
+
+    .section { margin-bottom: 15px; }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #2c3e50;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 3px;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px 20px;
+    }
+
+    .info-item { display: flex; gap: 8px; }
+    .info-label { font-weight: bold; color: #555; min-width: 100px; }
+    .info-value { color: #333; }
+
+    .amount-highlight {
+      font-size: 22px;
+      font-weight: bold;
+      color: #27ae60;
+      text-align: center;
+      padding: 12px;
+      background: #f8f9fa;
+      border-radius: 6px;
+      margin: 12px 0;
+    }
+
+    .scan-item {
+      position: relative;
+      width: 100%;
+      height: 250px;
+      margin-top: 15px;
+      page-break-inside: avoid;
+    }
+
+    .scan-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: fill;
+      display: block;
+    }
+
+    .scan-item .donor-tag {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 5px 15px;
+      font-weight: bold;
+      font-size: 14px;
+      border: 2px solid #333;
+      z-index: 10;
+    }
+
+    .donor-tag.tag-top-left { top: 8px; left: 8px; }
+    .donor-tag.tag-top-center { top: 8px; left: 50%; transform: translateX(-50%); }
+    .donor-tag.tag-top-right { top: 8px; right: 8px; }
+    .donor-tag.tag-bottom-left { bottom: 8px; left: 8px; }
+    .donor-tag.tag-bottom-center { bottom: 8px; left: 50%; transform: translateX(-50%); }
+    .donor-tag.tag-bottom-right { bottom: 8px; right: 8px; }`;
+  }
+
+  /**
+   * Generate HTML for a single donation page (details + scans).
+   * Shared by both single donation modal and batch printing.
+   */
+  generateDonationPageHtml(item: DonationPrintData, printDetails: boolean, printScans: boolean): string {
+    let detailsHtml = '';
+    if (printDetails) {
+      const optionalFields = [
+        item.campaign ? `<div class="info-item"><span class="info-label">קמפיין:</span><span class="info-value">${this.escapeHtml(item.campaign)}</span></div>` : '',
+        item.checkNumber ? `<div class="info-item"><span class="info-label">מספר צ'ק:</span><span class="info-value">${this.escapeHtml(item.checkNumber)}</span></div>` : '',
+        item.reason ? `<div class="info-item"><span class="info-label">סיבה:</span><span class="info-value">${this.escapeHtml(item.reason)}</span></div>` : '',
+        item.notes ? `<div class="info-item"><span class="info-label">הערות:</span><span class="info-value">${this.escapeHtml(item.notes)}</span></div>` : ''
+      ].filter(f => f).join('\n');
+
+      detailsHtml = `
+      <div class="header">
+        <h1>פרטי תרומה</h1>
+        <p>${this.escapeHtml(item.hebrewDate)}</p>
+      </div>
+      <div class="amount-highlight">${this.escapeHtml(item.amount)}</div>
+      <div class="section">
+        <div class="section-title">פרטי התורם</div>
+        <div class="info-grid">
+          <div class="info-item"><span class="info-label">שם מלא:</span><span class="info-value">${this.escapeHtml(item.donorName)}</span></div>
+          <div class="info-item"><span class="info-label">שם באנגלית:</span><span class="info-value">${this.escapeHtml(item.donorNameEnglish) || '-'}</span></div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">פרטי התרומה</div>
+        <div class="info-grid">
+          <div class="info-item"><span class="info-label">סוג תרומה:</span><span class="info-value">${this.escapeHtml(item.donationType)}</span></div>
+          <div class="info-item"><span class="info-label">אמצעי תשלום:</span><span class="info-value">${this.escapeHtml(item.method)}</span></div>
+          ${optionalFields}
+        </div>
+      </div>
+      <div style="height: 100px;"></div>`;
+    }
+
+    let scansHtml = '';
+    if (printScans && item.scans.length > 0) {
+      scansHtml = item.scans.map(s => {
+        const tagHtml = s.tagPosition !== 'none'
+          ? `<div class="donor-tag tag-${s.tagPosition}">${this.escapeHtml(item.donorName)}</div>`
+          : '';
+        return `<div class="scan-item">${tagHtml}<img src="${s.url}" /></div>`;
+      }).join('');
+    }
+
+    if (!detailsHtml && !scansHtml) return '';
+    return `<div class="donation-page">${detailsHtml}${scansHtml}</div>`;
+  }
+
+  /**
+   * Generate HTML for Avery 5160 label sheets (3 columns x 8 rows = 24 labels/page)
+   * Label size: 63.5mm x 33.9mm, gap: 2.54mm
+   * Page margins: top 13mm, right/left 7.2mm
+   */
+  private generateLabelsHtml(donors: LabelData[]): string {
+    const labelsPerPage = 24;
+    const pages: string[] = [];
+
+    for (let i = 0; i < donors.length; i += labelsPerPage) {
+      const pageLabels = donors.slice(i, i + labelsPerPage);
+      const labelCells = pageLabels.map(d => `
+        <div class="label">
+          <div class="label-name">${this.escapeHtml(d.donorName)}</div>
+          <div class="label-address">${d.addressLines.map(l => this.escapeHtml(l)).join('<br>')}</div>
+        </div>`).join('');
+
+      // Fill remaining cells with empty labels
+      const emptyCount = labelsPerPage - pageLabels.length;
+      const emptyCells = Array(emptyCount).fill('<div class="label"></div>').join('');
+
+      pages.push(`<div class="page">${labelCells}${emptyCells}</div>`);
+    }
+
+    return `<!DOCTYPE html>
+<html dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <title>מדבקות</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    @page {
+      size: A4;
+      margin: 13mm 7.2mm 0 7.2mm;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+      direction: ltr;
+    }
+
+    .page {
+      display: grid;
+      grid-template-columns: repeat(3, 63.5mm);
+      grid-template-rows: repeat(8, 33.9mm);
+      column-gap: 2.54mm;
+      row-gap: 0mm;
+      page-break-after: always;
+    }
+
+    .page:last-child {
+      page-break-after: auto;
+    }
+
+    .label {
+      width: 63.5mm;
+      height: 33.9mm;
+      padding: 2mm 3mm;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      text-align: left;
+    }
+
+    .label-name {
+      font-size: 10pt;
+      font-weight: bold;
+      margin-bottom: 1mm;
+      line-height: 1.2;
+    }
+
+    .label-address {
+      font-size: 9pt;
+      line-height: 1.3;
+    }
+
+    @media print {
+      body { margin: 0; padding: 0; }
+    }
+  </style>
+</head>
+<body>${pages.join('')}</body>
+</html>`;
+  }
+
+  /**
+   * Generate HTML for DL envelope printing (110mm x 220mm)
+   * Recipient address positioned at bottom-right (RTL)
+   */
+  private generateEnvelopesHtml(donors: LabelData[]): string {
+    const envelopes = donors.map(d => `
+      <div class="envelope">
+        <div class="recipient">
+          <div class="recipient-name">${this.escapeHtml(d.donorName)}</div>
+          <div class="recipient-address">${d.addressLines.map(l => this.escapeHtml(l)).join('<br>')}</div>
+        </div>
+      </div>`).join('');
+
+    return `<!DOCTYPE html>
+<html dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <title>מעטפות</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    @page {
+      size: 220mm 110mm;
+      margin: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+      direction: ltr;
+    }
+
+    .envelope {
+      width: 220mm;
+      height: 110mm;
+      position: relative;
+      page-break-after: always;
+    }
+
+    .envelope:last-child {
+      page-break-after: auto;
+    }
+
+    .recipient {
+      position: absolute;
+      top: 45%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: left;
+    }
+
+    .recipient-name {
+      font-size: 14pt;
+      font-weight: bold;
+      margin-bottom: 2mm;
+    }
+
+    .recipient-address {
+      font-size: 12pt;
+      line-height: 1.4;
+    }
+
+    @media print {
+      body { margin: 0; padding: 0; }
+    }
+  </style>
+</head>
+<body>${envelopes}</body>
+</html>`;
+  }
+
+  private escapeHtml(text: string): string {
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
   }
 }
