@@ -1,0 +1,246 @@
+.route-planner {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 96px); // Subtract toolbar + bottom nav
+  overflow: hidden;
+}
+
+// Audience selector
+.audience-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: white;
+  border-bottom: 1px solid #e5e5e5;
+
+  .audience-field {
+    flex: 1;
+    font-size: 14px;
+
+    ::ng-deep .mat-mdc-form-field-subscript-wrapper {
+      display: none;
+    }
+
+    ::ng-deep .mdc-notched-outline {
+      border-radius: 10px;
+    }
+  }
+
+  .route-btn {
+    height: 44px;
+    min-width: 0;
+    padding: 0 14px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-weight: 600;
+    font-size: 13px;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+    }
+
+    .btn-spinner {
+      ::ng-deep circle {
+        stroke: white;
+      }
+    }
+  }
+}
+
+// Route summary
+.route-summary {
+  padding: 8px 12px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+
+  .summary-stats {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+
+    .stat {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 14px;
+      font-weight: 500;
+
+      mat-icon {
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+        opacity: 0.9;
+      }
+    }
+  }
+}
+
+// Loading
+.loading-overlay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  background: #fff8e1;
+  font-size: 14px;
+  color: #666;
+}
+
+// Map
+.map-wrapper {
+  flex: 1;
+  position: relative;
+  min-height: 200px;
+
+  .map-container {
+    width: 100%;
+    height: 100%;
+  }
+
+  .map-placeholder {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #f5f5f5;
+    color: #999;
+
+    mat-icon {
+      font-size: 48px;
+      width: 48px;
+      height: 48px;
+      margin-bottom: 12px;
+      opacity: 0.5;
+    }
+
+    p {
+      font-size: 14px;
+      text-align: center;
+      margin: 0;
+      padding: 0 24px;
+    }
+  }
+}
+
+// Route stops list
+.stops-list {
+  max-height: 40vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  background: white;
+  border-top: 2px solid #667eea;
+
+  .stops-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 12px;
+    font-weight: 600;
+    font-size: 14px;
+    color: #333;
+    background: #f9f9f9;
+    border-bottom: 1px solid #eee;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      color: #667eea;
+    }
+  }
+}
+
+.stop-card {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background 0.2s;
+
+  &.visited {
+    background: #f0fdf4;
+
+    .stop-order {
+      background: #10b981;
+    }
+  }
+
+  .stop-order {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #667eea;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 13px;
+    flex-shrink: 0;
+    margin-left: 10px;
+  }
+
+  .stop-info {
+    flex: 1;
+    min-width: 0;
+
+    .stop-name {
+      font-weight: 600;
+      font-size: 14px;
+      color: #333;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .stop-meta {
+      font-size: 12px;
+      color: #888;
+      margin-top: 2px;
+    }
+  }
+
+  .stop-actions {
+    display: flex;
+    gap: 2px;
+    flex-shrink: 0;
+
+    button {
+      width: 36px;
+      height: 36px;
+
+      mat-icon {
+        font-size: 20px;
+      }
+    }
+
+    .action-waze {
+      color: #33ccff;
+    }
+
+    .action-donate {
+      color: #667eea;
+    }
+
+    .action-info {
+      color: #888;
+    }
+  }
+}

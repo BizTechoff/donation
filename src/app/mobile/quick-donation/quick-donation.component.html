@@ -1,0 +1,73 @@
+<div class="quick-donation">
+
+  <!-- Donor Details Side-View (outside wizard steps) -->
+  @if (showingDonorDetails && selectedDonor) {
+    <app-donor-details-step
+      [donor]="selectedDonor"
+      (back)="onBackFromDetails()"
+      (newDonation)="onNewDonationFromDetails($event)">
+    </app-donor-details-step>
+  } @else {
+
+    <!-- Step Indicator -->
+    <div class="step-indicator">
+      <div class="step-track">
+        @for (step of [1, 2, 3, 4]; track step) {
+          <div class="step-item" [class.active]="currentStep === step" [class.completed]="currentStep > step">
+            <div class="step-circle">
+              @if (currentStep > step) {
+                <mat-icon>check</mat-icon>
+              } @else {
+                {{ step }}
+              }
+            </div>
+            <span class="step-label">{{ stepLabels[step - 1] }}</span>
+          </div>
+          @if (step < 4) {
+            <div class="step-line" [class.active]="currentStep > step"></div>
+          }
+        }
+      </div>
+    </div>
+
+    <!-- Step Content -->
+    <div class="step-content">
+      @switch (currentStep) {
+        @case (1) {
+          <app-donor-select-step
+            (donorSelected)="onDonorSelected($event)"
+            (viewDonorDetails)="onViewDonorDetails($event)">
+          </app-donor-select-step>
+        }
+        @case (2) {
+          <app-donation-form-step
+            [donor]="selectedDonor!"
+            [donationMethods]="donationMethods"
+            [campaigns]="campaigns"
+            [currencies]="currencies"
+            (donationSaved)="onDonationSaved($event)"
+            (back)="goBack()">
+          </app-donation-form-step>
+        }
+        @case (3) {
+          <app-photo-capture-step
+            [donation]="savedDonation!"
+            (photoComplete)="onPhotoComplete()"
+            (photoSkipped)="onPhotoSkipped()"
+            (back)="goBack()">
+          </app-photo-capture-step>
+        }
+        @case (4) {
+          <app-done-step
+            [donor]="selectedDonor!"
+            [donation]="savedDonation!"
+            [donationMethods]="donationMethods"
+            [currencies]="currencies"
+            (nextDonor)="resetWizard()"
+            (finish)="finish()">
+          </app-done-step>
+        }
+      }
+    </div>
+  }
+</div>

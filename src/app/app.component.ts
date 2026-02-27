@@ -49,6 +49,10 @@ export class AppComponent implements OnInit {
   remult = remult
   terms=terms
 
+  get isMobileRoute(): boolean {
+    return this.router.url.startsWith('/m')
+  }
+
   async signIn() {
     const signIn = new SignInController()
     openDialog(
@@ -68,6 +72,12 @@ export class AppComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    // Auto-redirect to mobile view on small screens
+    if (remult.user && this.isMobileDevice() && !this.router.url.startsWith('/m')) {
+      this.router.navigate(['/m'])
+      return
+    }
+
     // Initialize document direction based on current language
     this.updateDocumentDirection()
 
@@ -270,7 +280,7 @@ export class AppComponent implements OnInit {
   //@ts-ignore ignoring this to match angular 7 and 8
   @ViewChild('sidenav') sidenav: MatSidenav
   routeClicked() {
-    if (this.uiService.isScreenSmall()) this.sidenav.close()
+    if (this.uiService.isScreenSmall()) this.sidenav?.close()
   }
 
   getUserInitials(): string {
@@ -325,22 +335,26 @@ export class AppComponent implements OnInit {
     await this.setSidebarMode(newMode);
 
     if (newMode === 'open') {
-      this.sidenav.open();
+      this.sidenav?.open();
     } else {
-      this.sidenav.close();
+      this.sidenav?.close();
     }
   }
 
   closeSidebar() {
-    this.sidenav.close();
+    this.sidenav?.close();
   }
 
   openSidebar() {
-    this.sidenav.open();
+    this.sidenav?.open();
   }
 
   isSidebarOpen(): boolean {
     return this.sidenav?.opened || false;
+  }
+
+  private isMobileDevice(): boolean {
+    return window.innerWidth <= 768 || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
   }
 
 }

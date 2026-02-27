@@ -1,0 +1,125 @@
+<div class="donation-form-step">
+  <!-- Donor Card -->
+  <div class="donor-card">
+    <mat-icon class="donor-icon">person</mat-icon>
+    <div class="donor-info">
+      <div class="donor-name">{{ getDonorFullName() }}</div>
+    </div>
+  </div>
+
+  <!-- Amount -->
+  <div class="form-group">
+    <label class="form-label">סכום *</label>
+    <div class="amount-row">
+      <input
+        type="text"
+        inputmode="decimal"
+        class="amount-input"
+        placeholder="0"
+        [(ngModel)]="amount"
+        autofocus>
+      <!-- Currency Toggle -->
+      <div class="currency-toggle">
+        @for (cur of currencyList; track cur.id) {
+          <button
+            class="currency-btn"
+            [class.active]="currencyId === cur.id"
+            (click)="currencyId = cur.id">
+            {{ cur.symbol }}
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Payment Method -->
+  <div class="form-group">
+    <label class="form-label">אמצעי תשלום *</label>
+    <div class="method-chips">
+      @for (method of donationMethods; track method.id) {
+        <button
+          class="method-chip"
+          [class.active]="selectedMethodId === method.id"
+          (click)="selectedMethodId = method.id">
+          <mat-icon>{{ getMethodIcon(method) }}</mat-icon>
+          <span>{{ method.name }}</span>
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Check Number (conditional) -->
+  @if (isCheck) {
+    <div class="form-group">
+      <label class="form-label">מספר צ'ק</label>
+      <input
+        type="text"
+        inputmode="numeric"
+        class="form-input"
+        placeholder="מספר צ'ק"
+        [(ngModel)]="checkNumber">
+    </div>
+  }
+
+  <!-- Campaign -->
+  <div class="form-group">
+    <label class="form-label">קמפיין</label>
+    <select class="form-select" [(ngModel)]="campaignId">
+      <option value="">ללא קמפיין</option>
+      @for (campaign of campaigns; track campaign.id) {
+        <option [value]="campaign.id">{{ campaign.name }}</option>
+      }
+    </select>
+  </div>
+
+  <!-- More Details (collapsed) -->
+  <button class="toggle-more" (click)="showMore = !showMore">
+    <mat-icon>{{ showMore ? 'expand_less' : 'expand_more' }}</mat-icon>
+    <span>פרטים נוספים</span>
+  </button>
+
+  @if (showMore) {
+    <div class="more-fields">
+      <div class="form-group">
+        <label class="form-label">סוג תרומה</label>
+        <div class="method-chips">
+          <button class="method-chip" [class.active]="donationType === 'full'" (click)="donationType = 'full'">
+            <span>רגילה</span>
+          </button>
+          <button class="method-chip" [class.active]="donationType === 'commitment'" (click)="donationType = 'commitment'">
+            <span>התחייבות</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">סיבה</label>
+        <input type="text" class="form-input" placeholder="סיבת התרומה" [(ngModel)]="reason">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">הערות</label>
+        <textarea class="form-textarea" placeholder="הערות נוספות" [(ngModel)]="notes" rows="2"></textarea>
+      </div>
+    </div>
+  }
+
+  @if (errorMessage) {
+    <div class="error-message">{{ errorMessage }}</div>
+  }
+
+  <!-- Bottom Bar -->
+  <div class="bottom-bar">
+    <button class="btn-secondary" (click)="back.emit()">
+      <mat-icon>arrow_forward</mat-icon>
+      חזור
+    </button>
+    <button class="btn-primary" [disabled]="!canSave || saving" (click)="save()">
+      @if (saving) {
+        <mat-spinner diameter="20"></mat-spinner>
+      } @else {
+        שמור
+      }
+    </button>
+  </div>
+</div>

@@ -1,0 +1,108 @@
+<div class="route-planner" dir="rtl">
+
+  <!-- Audience Selector -->
+  <div class="audience-selector">
+    <mat-form-field appearance="outline" class="audience-field">
+      <mat-label>בחר קהל יעד</mat-label>
+      <mat-select [(value)]="selectedAudienceId" (selectionChange)="onAudienceChange()">
+        <mat-option value="">-- ללא --</mat-option>
+        @for (audience of targetAudiences; track audience.id) {
+          <mat-option [value]="audience.id">
+            {{ audience.name }} ({{ audience.donorCount }})
+          </mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    @if (donors.length > 0 && !routeCalculated) {
+      <button mat-flat-button class="route-btn" (click)="calculateRoute()" [disabled]="calculatingRoute || donors.length < 2">
+        @if (calculatingRoute) {
+          <mat-spinner diameter="20" class="btn-spinner"></mat-spinner>
+        } @else {
+          <mat-icon>route</mat-icon>
+        }
+        חשב מסלול
+      </button>
+    }
+  </div>
+
+  <!-- Route Summary -->
+  @if (routeCalculated) {
+    <div class="route-summary">
+      <div class="summary-stats">
+        <div class="stat">
+          <mat-icon>straighten</mat-icon>
+          <span>{{ routeTotalDistance }}</span>
+        </div>
+        <div class="stat">
+          <mat-icon>schedule</mat-icon>
+          <span>{{ routeTotalDuration }}</span>
+        </div>
+        <div class="stat">
+          <mat-icon>people</mat-icon>
+          <span>{{ visitedCount }}/{{ routeStops.length }}</span>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (loading) {
+    <div class="loading-overlay">
+      <mat-spinner diameter="32"></mat-spinner>
+      <span>טוען...</span>
+    </div>
+  }
+
+  <!-- Map -->
+  <div class="map-wrapper">
+    <div #mapContainer class="map-container"></div>
+
+    @if (!selectedAudienceId && !loading) {
+      <div class="map-placeholder">
+        <mat-icon>map</mat-icon>
+        <p>בחר קהל יעד כדי להציג תורמים על המפה</p>
+      </div>
+    }
+
+    @if (selectedAudienceId && donors.length === 0 && !loading) {
+      <div class="map-placeholder">
+        <mat-icon>location_off</mat-icon>
+        <p>לא נמצאו תורמים עם כתובת בקהל יעד זה</p>
+      </div>
+    }
+  </div>
+
+  <!-- Route Stops List -->
+  @if (routeCalculated && routeStops.length > 0) {
+    <div class="stops-list">
+      <div class="stops-header">
+        <mat-icon>format_list_numbered</mat-icon>
+        <span>סדר עצירות</span>
+      </div>
+      @for (stop of routeStops; track stop.order) {
+        <div class="stop-card" [class.visited]="stop.visited">
+          <div class="stop-order">{{ stop.order }}</div>
+          <div class="stop-info">
+            <div class="stop-name">{{ stop.marker.donorName }}</div>
+            @if (routeLegs[stop.order - 1]) {
+              <div class="stop-meta">
+                {{ routeLegs[stop.order - 1].distance }} &middot; {{ routeLegs[stop.order - 1].duration }}
+              </div>
+            }
+          </div>
+          <div class="stop-actions">
+            <button mat-icon-button class="action-waze" (click)="openWazeForStop(stop)" title="נווט בוייז">
+              <mat-icon>navigation</mat-icon>
+            </button>
+            <button mat-icon-button class="action-donate" (click)="navigateToDonation(stop.marker.donorId)" title="תרומה חדשה">
+              <mat-icon>volunteer_activism</mat-icon>
+            </button>
+            <button mat-icon-button class="action-info" (click)="navigateToDetails(stop.marker.donorId)" title="פרטים">
+              <mat-icon>info_outline</mat-icon>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

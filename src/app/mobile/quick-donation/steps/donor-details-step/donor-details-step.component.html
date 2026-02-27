@@ -1,0 +1,307 @@
+<div class="donor-details-step">
+  <!-- Header -->
+  <div class="details-header">
+    <div class="header-info">
+      <div class="donor-avatar">{{ donor.firstName?.charAt(0) }}{{ donor.lastName?.charAt(0) }}</div>
+      <div>
+        <div class="donor-name">{{ getDonorFullName() }}</div>
+        @if (donor.donorType) {
+          <span class="donor-type-badge">{{ donor.donorType }}</span>
+        }
+      </div>
+    </div>
+    <button mat-flat-button class="new-donation-btn" (click)="newDonation.emit(donor)">
+      <mat-icon>volunteer_activism</mat-icon>
+      תרומה חדשה
+    </button>
+  </div>
+
+  @if (loading) {
+    <div class="loading-container">
+      <mat-spinner diameter="32"></mat-spinner>
+    </div>
+  } @else {
+    <!-- Section Tabs -->
+    <div class="section-tabs">
+      @for (section of sections; track section.id) {
+        <button
+          class="tab-btn"
+          [class.active]="activeSection === section.id"
+          (click)="activeSection = section.id">
+          <mat-icon>{{ section.icon }}</mat-icon>
+          <span>{{ section.label }}</span>
+        </button>
+      }
+    </div>
+
+    <!-- Section Content -->
+    <div class="section-content">
+
+      <!-- Personal Info -->
+      @if (activeSection === 'personal') {
+        <div class="info-card">
+          @if (donor.title) {
+            <div class="info-row">
+              <span class="info-label">תואר</span>
+              <span class="info-value">{{ donor.title }}</span>
+            </div>
+          }
+          <div class="info-row">
+            <span class="info-label">שם פרטי</span>
+            <span class="info-value">{{ donor.firstName }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">שם משפחה</span>
+            <span class="info-value">{{ donor.lastName }}</span>
+          </div>
+          @if (donor.nickname) {
+            <div class="info-row">
+              <span class="info-label">כינוי</span>
+              <span class="info-value">{{ donor.nickname }}</span>
+            </div>
+          }
+          @if (donor.idNumber) {
+            <div class="info-row">
+              <span class="info-label">ת.ז.</span>
+              <span class="info-value dir-ltr">{{ donor.idNumber }}</span>
+            </div>
+          }
+
+          <!-- Phones -->
+          @if (getPhones().length > 0) {
+            <div class="info-divider"></div>
+            @for (phone of getPhones(); track phone.id) {
+              <div class="info-row clickable" (click)="$event.stopPropagation()">
+                <span class="info-label">
+                  <mat-icon class="inline-icon">phone</mat-icon>
+                  {{ phone.description || 'טלפון' }}
+                  @if (phone.isPrimary) { <span class="primary-badge">ראשי</span> }
+                </span>
+                <a class="info-value dir-ltr phone-link" [href]="'tel:' + phone.phoneNumber">{{ phone.phoneNumber }}</a>
+              </div>
+            }
+          }
+
+          <!-- Emails -->
+          @if (getEmails().length > 0) {
+            @for (email of getEmails(); track email.id) {
+              <div class="info-row">
+                <span class="info-label">
+                  <mat-icon class="inline-icon">email</mat-icon>
+                  אימייל
+                </span>
+                <a class="info-value dir-ltr phone-link" [href]="'mailto:' + email.email">{{ email.email }}</a>
+              </div>
+            }
+          }
+        </div>
+      }
+
+      <!-- Address -->
+      @if (activeSection === 'address') {
+        @if (getActivePlaces().length > 0) {
+          @for (dp of getActivePlaces(); track dp.id) {
+            <div class="info-card">
+              <div class="card-title">
+                {{ dp.addressType?.name || dp.description || 'כתובת' }}
+                @if (dp.isPrimary) { <span class="primary-badge">ראשית</span> }
+              </div>
+              @if (dp.place) {
+                @if (dp.place.street) {
+                  <div class="info-row">
+                    <span class="info-label">רחוב</span>
+                    <span class="info-value">{{ dp.place.street }} {{ dp.place.houseNumber }}</span>
+                  </div>
+                }
+                @if (dp.place.apartment) {
+                  <div class="info-row">
+                    <span class="info-label">דירה</span>
+                    <span class="info-value">{{ dp.place.apartment }}</span>
+                  </div>
+                }
+                @if (dp.place.neighborhood) {
+                  <div class="info-row">
+                    <span class="info-label">שכונה</span>
+                    <span class="info-value">{{ dp.place.neighborhood }}</span>
+                  </div>
+                }
+                @if (dp.place.city) {
+                  <div class="info-row">
+                    <span class="info-label">עיר</span>
+                    <span class="info-value">{{ dp.place.city }}</span>
+                  </div>
+                }
+                @if (dp.place.state) {
+                  <div class="info-row">
+                    <span class="info-label">מדינה</span>
+                    <span class="info-value">{{ dp.place.state }}</span>
+                  </div>
+                }
+                @if (dp.place.postcode) {
+                  <div class="info-row">
+                    <span class="info-label">מיקוד</span>
+                    <span class="info-value dir-ltr">{{ dp.place.postcode }}</span>
+                  </div>
+                }
+                @if (dp.place.country?.name) {
+                  <div class="info-row">
+                    <span class="info-label">מדינה</span>
+                    <span class="info-value">{{ dp.place.country?.name }}</span>
+                  </div>
+                }
+              }
+            </div>
+          }
+        } @else {
+          <div class="empty-state">אין כתובות רשומות</div>
+        }
+      }
+
+      <!-- Preferences -->
+      @if (activeSection === 'preferences') {
+        <div class="info-card">
+          @if (donor.preferredLanguage) {
+            <div class="info-row">
+              <span class="info-label">שפה מועדפת</span>
+              <span class="info-value">{{ donor.preferredLanguage === 'he' ? 'עברית' : donor.preferredLanguage === 'en' ? 'English' : donor.preferredLanguage === 'yi' ? 'יידיש' : donor.preferredLanguage }}</span>
+            </div>
+          }
+          <div class="info-row">
+            <span class="info-label">מעוניין בעדכונים</span>
+            <span class="info-value">{{ donor.wantsUpdates ? 'כן' : 'לא' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">מעוניין בקבלות מס</span>
+            <span class="info-value">{{ donor.wantsTaxReceipts ? 'כן' : 'לא' }}</span>
+          </div>
+
+          @if (getPreferredContactMethods().length > 0) {
+            <div class="info-divider"></div>
+            <div class="info-row">
+              <span class="info-label">דרכי תקשורת</span>
+              <span class="info-value">{{ getPreferredContactMethods().join(', ') }}</span>
+            </div>
+          }
+
+          @if (getAvailableDays().length > 0) {
+            <div class="info-row">
+              <span class="info-label">ימים זמינים</span>
+              <span class="info-value">{{ getAvailableDays().join(', ') }}</span>
+            </div>
+          }
+
+          @if (donor.preferSpecialTimes) {
+            <div class="info-row">
+              <span class="info-label">זמנים מיוחדים</span>
+              <span class="info-value">פסח / סוכות</span>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Family -->
+      @if (activeSection === 'family') {
+        <div class="info-card">
+          @if (getMaritalStatusLabel()) {
+            <div class="info-row">
+              <span class="info-label">מצב משפחתי</span>
+              <span class="info-value">{{ getMaritalStatusLabel() }}</span>
+            </div>
+          }
+          @if (donor.wifeName) {
+            <div class="info-row">
+              <span class="info-label">שם בן/בת זוג</span>
+              <span class="info-value">{{ donor.wifeTitle }} {{ donor.wifeName }}</span>
+            </div>
+          }
+
+          @if (relations.length > 0) {
+            <div class="info-divider"></div>
+            <div class="subsection-title">קשרים משפחתיים</div>
+            @for (rel of relations; track rel.id) {
+              <div class="info-row">
+                <span class="info-label">{{ getRelationType(rel) }}</span>
+                <span class="info-value">{{ getRelationName(rel) }}</span>
+              </div>
+            }
+          }
+        </div>
+
+        @if (!getMaritalStatusLabel() && !donor.wifeName && relations.length === 0) {
+          <div class="empty-state">אין מידע משפחתי</div>
+        }
+      }
+
+      <!-- Events -->
+      @if (activeSection === 'events') {
+        @if (getActiveEvents().length > 0) {
+          @for (de of getActiveEvents(); track de.id) {
+            <div class="info-card compact">
+              <div class="event-row">
+                <mat-icon class="event-icon">event</mat-icon>
+                <div class="event-info">
+                  <div class="event-name">{{ de.event?.description || 'אירוע' }}</div>
+                  @if (de.date) {
+                    <div class="event-date">{{ formatEventDate(de.date) }}</div>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+        } @else {
+          <div class="empty-state">אין אירועים רשומים</div>
+        }
+      }
+
+      <!-- Circles -->
+      @if (activeSection === 'circles') {
+        @if (circles.length > 0) {
+          <div class="chips-container">
+            @for (circle of circles; track circle.id) {
+              <div class="circle-chip" [style.background]="circle.color || '#667eea'" [style.color]="'white'">
+                @if (circle.icon) {
+                  <mat-icon>{{ circle.icon }}</mat-icon>
+                }
+                {{ circle.name }}
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="empty-state">אין חוגים</div>
+        }
+      }
+
+      <!-- Notes -->
+      @if (activeSection === 'notes') {
+        @if (getActiveNotes().length > 0) {
+          @for (note of getActiveNotes(); track note.id) {
+            <div class="info-card compact">
+              @if (note.noteType || note.noteTypeEntity?.name) {
+                <div class="note-type">{{ note.noteTypeEntity?.name || note.noteType }}</div>
+              }
+              <div class="note-content">{{ note.content }}</div>
+              <div class="note-date">{{ formatEventDate(note.createdDate) }}</div>
+            </div>
+          }
+        } @else {
+          <div class="empty-state">אין הערות</div>
+        }
+
+        @if (donor.notes) {
+          <div class="info-card compact">
+            <div class="note-type">הערות כלליות</div>
+            <div class="note-content">{{ donor.notes }}</div>
+          </div>
+        }
+      }
+    </div>
+  }
+
+  <!-- Bottom Bar -->
+  <div class="bottom-bar">
+    <button class="btn-back" (click)="back.emit()">
+      <mat-icon>arrow_forward</mat-icon>
+      חזרה לרשימה
+    </button>
+  </div>
+</div>

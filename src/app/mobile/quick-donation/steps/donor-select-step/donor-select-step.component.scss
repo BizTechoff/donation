@@ -1,0 +1,150 @@
+.donor-select-step {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  background: white;
+  border-radius: 12px;
+  padding: 0 12px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  min-height: 52px;
+
+  .search-icon {
+    color: #999;
+    margin-left: 8px;
+  }
+
+  .search-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 16px;
+    background: transparent;
+    padding: 14px 0;
+    font-family: inherit;
+    direction: rtl;
+  }
+
+  .clear-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    color: #999;
+    display: flex;
+    align-items: center;
+
+    mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+  }
+}
+
+.section-title {
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+  padding: 4px 4px 0;
+}
+
+.donor-card {
+  display: flex;
+  align-items: center;
+  background: white;
+  border-radius: 12px;
+  padding: 12px 16px;
+  min-height: 60px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+
+  .donor-info {
+    flex: 1;
+    min-width: 0;
+
+    .donor-name {
+      font-size: 16px;
+      font-weight: 600;
+      color: #333;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .donor-details {
+      display: flex;
+      gap: 12px;
+      margin-top: 2px;
+      font-size: 13px;
+      color: #888;
+
+      .donor-phone {
+        direction: ltr;
+        unicode-bidi: embed;
+      }
+    }
+  }
+
+  .donor-actions {
+    display: flex;
+    gap: 6px;
+    margin-right: 8px;
+    flex-shrink: 0;
+  }
+}
+
+.action-btn {
+  min-width: 0 !important;
+  padding: 4px 10px !important;
+  font-size: 12px !important;
+  line-height: 1.4 !important;
+  border-radius: 8px !important;
+  display: flex !important;
+  align-items: center;
+  gap: 3px;
+  font-family: inherit;
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+
+  &.donation-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+
+    &:hover {
+      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.5);
+      transform: scale(1.03);
+    }
+  }
+
+  &.details-btn {
+    background: #f0f0f0 !important;
+    color: #555 !important;
+
+    &:hover {
+      background: #e0e0e0 !important;
+      color: #333 !important;
+      transform: scale(1.03);
+    }
+  }
+}
+
+.no-results {
+  text-align: center;
+  padding: 24px;
+  color: #999;
+  font-size: 15px;
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  padding: 32px;
+}

@@ -1,0 +1,39 @@
+<div class="done-step">
+  <!-- Success Icon -->
+  <div class="success-icon">
+    <mat-icon>check_circle</mat-icon>
+  </div>
+
+  <h2 class="success-title">התרומה נשמרה בהצלחה</h2>
+
+  <!-- Summary Card -->
+  <div class="summary-card">
+    <div class="summary-row">
+      <span class="summary-label">תורם</span>
+      <span class="summary-value">{{ getDonorFullName() }}</span>
+    </div>
+    <div class="summary-row">
+      <span class="summary-label">סכום</span>
+      <span class="summary-value amount">{{ getFormattedAmount() }}</span>
+    </div>
+    <div class="summary-row">
+      <span class="summary-label">אמצעי תשלום</span>
+      <span class="summary-value">{{ getMethodName() }}</span>
+    </div>
+    <div class="summary-row">
+      <span class="summary-label">תאריך</span>
+      <span class="summary-value">{{ getFormattedDate() }}</span>
+    </div>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="actions">
+    <button class="btn-primary" (click)="nextDonor.emit()">
+      <mat-icon>person_add</mat-icon>
+      תורם הבא
+    </button>
+    <button class="btn-secondary" (click)="finish.emit()">
+      סיום
+    </button>
+  </div>
+</div>

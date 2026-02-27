@@ -1,0 +1,88 @@
+<div class="donor-select-step">
+  <!-- Search Input -->
+  <div class="search-box">
+    <mat-icon class="search-icon">search</mat-icon>
+    <input
+      type="text"
+      class="search-input"
+      placeholder="חפש תורם לפי שם או טלפון"
+      [(ngModel)]="searchTerm"
+      (ngModelChange)="onSearchChange()"
+      autocomplete="off">
+    @if (searchTerm) {
+      <button class="clear-btn" (click)="searchTerm = ''; filteredDonors = []">
+        <mat-icon>close</mat-icon>
+      </button>
+    }
+  </div>
+
+  @if (loading) {
+    <div class="loading-container">
+      <mat-spinner diameter="36"></mat-spinner>
+    </div>
+  } @else {
+    <!-- Search Results -->
+    @if (searchTerm && filteredDonors.length > 0) {
+      <div class="section-title">תוצאות חיפוש</div>
+      @for (donor of filteredDonors; track donor.id) {
+        <div class="donor-card">
+          <div class="donor-info">
+            <div class="donor-name">{{ getDonorFullName(donor) }}</div>
+            <div class="donor-details">
+              @if (getDonorPhone(donor)) {
+                <span class="donor-phone">{{ getDonorPhone(donor) }}</span>
+              }
+              @if (getDonorCity(donor)) {
+                <span class="donor-city">{{ getDonorCity(donor) }}</span>
+              }
+            </div>
+          </div>
+          <div class="donor-actions">
+            <button mat-flat-button class="action-btn donation-btn" (click)="donorSelected.emit(donor)">
+              <mat-icon>volunteer_activism</mat-icon>
+              תרומה
+            </button>
+            <button mat-flat-button class="action-btn details-btn" (click)="viewDonorDetails.emit(donor)">
+              <mat-icon>info_outline</mat-icon>
+              פרטים
+            </button>
+          </div>
+        </div>
+      }
+    }
+
+    @if (searchTerm && filteredDonors.length === 0 && !searching) {
+      <div class="no-results">לא נמצאו תוצאות</div>
+    }
+
+    <!-- Recent Donors (when not searching) -->
+    @if (!searchTerm && recentDonors.length > 0) {
+      <div class="section-title">תורמים אחרונים</div>
+      @for (donor of recentDonors; track donor.id) {
+        <div class="donor-card">
+          <div class="donor-info">
+            <div class="donor-name">{{ getDonorFullName(donor) }}</div>
+            <div class="donor-details">
+              @if (getDonorPhone(donor)) {
+                <span class="donor-phone">{{ getDonorPhone(donor) }}</span>
+              }
+              @if (getDonorCity(donor)) {
+                <span class="donor-city">{{ getDonorCity(donor) }}</span>
+              }
+            </div>
+          </div>
+          <div class="donor-actions">
+            <button mat-flat-button class="action-btn donation-btn" (click)="donorSelected.emit(donor)">
+              <mat-icon>volunteer_activism</mat-icon>
+              תרומה
+            </button>
+            <button mat-flat-button class="action-btn details-btn" (click)="viewDonorDetails.emit(donor)">
+              <mat-icon>info_outline</mat-icon>
+              פרטים
+            </button>
+          </div>
+        </div>
+      }
+    }
+  }
+</div>

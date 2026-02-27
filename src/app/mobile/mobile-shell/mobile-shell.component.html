@@ -1,0 +1,26 @@
+<div class="mobile-shell" dir="rtl">
+  <mat-toolbar class="mobile-toolbar">
+    <span class="toolbar-title">{{ currentTab === 'route' ? 'מתכנן מסלול' : 'תרומה מהירה' }}</span>
+    <span class="spacer"></span>
+    <span class="user-name">{{ userName }}</span>
+    <button mat-icon-button (click)="signOut()" aria-label="יציאה">
+      <mat-icon>logout</mat-icon>
+    </button>
+  </mat-toolbar>
+
+  <main class="mobile-content">
+    <router-outlet></router-outlet>
+  </main>
+
+  <!-- Bottom Navigation -->
+  <nav class="bottom-nav">
+    <a class="nav-tab" [class.active]="currentTab === 'donation'" routerLink="quick-donation">
+      <mat-icon>volunteer_activism</mat-icon>
+      <span>תרומה</span>
+    </a>
+    <a class="nav-tab" [class.active]="currentTab === 'route'" routerLink="route-planner">
+      <mat-icon>map</mat-icon>
+      <span>מסלול</span>
+    </a>
+  </nav>
+</div>

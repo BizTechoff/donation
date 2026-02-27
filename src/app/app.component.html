@@ -1,3 +1,10 @@
+<!-- Mobile layout: bare router-outlet, no sidebar/toolbar -->
+<ng-container *ngIf="isMobileRoute; else desktopLayout">
+  <router-outlet></router-outlet>
+</ng-container>
+
+<!-- Desktop layout: full toolbar + sidebar -->
+<ng-template #desktopLayout>
 <div style="height: 100%; display: flex; flex-direction: column">
 
   <mat-toolbar color="primary" style="flex-shrink: 0">
@@ -45,7 +52,7 @@
         </mat-menu>
       </ng-container>
     </div>
-    
+
       <span style="display: flex; position: absolute; top: -8px; right: 1px; font-size: x-small;">{{ currentHebrewDate }}</span>
   </mat-toolbar>
 
@@ -94,3 +101,4 @@
   <!-- Global Search Component - Always available -->
   <app-global-search *ngIf="remult.authenticated()"></app-global-search>
 </div>
+</ng-template>
