@@ -65,6 +65,11 @@ export const doSendEmail = async (req: EmailRequest) => {
                 if (!req.emails) {
                     req.emails = [] as string[]
                 }
+                if(!req.emails.length){
+                    result.errorText = 'No emails founds.'
+                    console.error(result.errorText)
+                    return result
+                }
                 if (!req.html) {
                     req.html = ''
                 }
@@ -100,7 +105,7 @@ export const doSendEmail = async (req: EmailRequest) => {
 
                     const mailOptions = {
                         from: process.env['EMAIL_SENDER'],
-                        to: isProduction ? 'yyg856@gmail.com' : 'biztechoff.app@gmail.com',
+                        to: isProduction ? req.emails : 'biztechoff.app@gmail.com',
                         // to: isProduction ? req.emails.join(';') : 'biztechoff.app@gmail.com',
                         // to: isProduction ? 'legaltaxi.app@gmail.com' : 'biztechoff.app@gmail.com',
                         subject: `${req.subject}` + (isProduction ? `` : ` (${req.emails.join(';')})`),
