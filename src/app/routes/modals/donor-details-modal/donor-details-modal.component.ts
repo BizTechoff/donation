@@ -203,6 +203,10 @@ export class DonorDetailsModalComponent implements OnInit {
 
         // Build selectedFamilyRelationships from donorRelations
         this.buildSelectedFamilyRelationships();
+
+        // Populate selected companies and circles from donor's IDs
+        await this.loadSelectedCompanies();
+        await this.loadSelectedCircles();
       }
 
       // Store original data for change detection
@@ -455,7 +459,9 @@ export class DonorDetailsModalComponent implements OnInit {
           await this.loadDonorPlaces();
           await this.loadAllDonorsForFamily();
           await this.loadSelectedFamilyRelationships();
+          await this.loadCompanies();
           await this.loadSelectedCompanies();
+          await this.loadCircles();
           await this.loadSelectedCircles();
 
           // Force change detection after loading places
@@ -675,6 +681,10 @@ export class DonorDetailsModalComponent implements OnInit {
         this.ui.error(validationResult.error || 'שגיאה בשעות הקבלה');
         return;
       }
+
+      // Force new array references for JSON fields so Remult detects mutations
+      this.donor.companyIds = [...(this.donor.companyIds || [])];
+      this.donor.circleIds = [...(this.donor.circleIds || [])];
 
       const wasNew = this.isNewDonor;
       await remult.repo(Donor).save(this.donor);

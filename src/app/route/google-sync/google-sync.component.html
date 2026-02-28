@@ -26,7 +26,7 @@
     <mat-card-content>
       <p>חבר את חשבון Google שלך כדי לסנכרן את התורמים באופן אוטומטי עם Google Contacts.</p>
       <ul>
-        <li>כל התורמים יתווספו לקבוצה ייעודית "Donation Platform"</li>
+        <li>כל התורמים יתווספו לקבוצה ייעודית "YYG Platform"</li>
         <li>שינויים בפלטפורמה יעודכנו ב-Google ולהיפך</li>
         <li>סנכרון אוטומטי כל 6 שעות</li>
       </ul>
@@ -75,6 +75,16 @@
             <mat-option value="manual">ידני (סימון קונפליקט)</mat-option>
           </mat-select>
         </mat-form-field>
+
+        <!-- Live Progress -->
+        <div *ngIf="syncing && syncProgress" class="progress-section">
+          <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+          <div class="progress-stats">
+            <span>נשלחו: {{ syncProgress.donorsPushed }}</span>
+            <span>נמשכו: {{ syncProgress.contactsPulled }}</span>
+            <span *ngIf="syncProgress.errors">שגיאות: {{ syncProgress.errors }}</span>
+          </div>
+        </div>
       </mat-card-content>
       <mat-card-actions>
         <button mat-raised-button color="primary" (click)="triggerSync()" [disabled]="syncing">
@@ -82,41 +92,45 @@
           <mat-spinner *ngIf="syncing" diameter="20"></mat-spinner>
           {{ syncing ? 'מסנכרן...' : 'סנכרן עכשיו' }}
         </button>
+        <button *ngIf="syncing" mat-raised-button color="warn" (click)="cancelSync()" style="margin-right: 8px;">
+          <mat-icon>stop</mat-icon>
+          עצור סנכרון
+        </button>
       </mat-card-actions>
     </mat-card>
 
-    <!-- Sync Result -->
-    <mat-card *ngIf="lastSyncResult" class="result-card" [class.success]="lastSyncResult.success" [class.error]="!lastSyncResult.success">
+    <!-- Sync Result (after completion) -->
+    <mat-card *ngIf="!syncing && syncProgress" class="result-card" [class.success]="syncProgress.status === 'completed'" [class.error]="syncProgress.status === 'failed'">
       <mat-card-header>
         <mat-card-title>תוצאות סנכרון</mat-card-title>
       </mat-card-header>
       <mat-card-content>
         <div class="result-stats">
           <div class="stat">
-            <span class="stat-value">{{ lastSyncResult.donorsPushed }}</span>
+            <span class="stat-value">{{ syncProgress.donorsPushed }}</span>
             <span class="stat-label">נשלחו ל-Google</span>
           </div>
           <div class="stat">
-            <span class="stat-value">{{ lastSyncResult.contactsPulled }}</span>
+            <span class="stat-value">{{ syncProgress.contactsPulled }}</span>
             <span class="stat-label">נמשכו מ-Google</span>
           </div>
           <div class="stat">
-            <span class="stat-value">{{ lastSyncResult.conflicts }}</span>
+            <span class="stat-value">{{ syncProgress.conflicts }}</span>
             <span class="stat-label">קונפליקטים</span>
           </div>
           <div class="stat">
-            <span class="stat-value">{{ lastSyncResult.errors }}</span>
+            <span class="stat-value">{{ syncProgress.errors }}</span>
             <span class="stat-label">שגיאות</span>
           </div>
           <div class="stat">
-            <span class="stat-value">{{ (lastSyncResult.duration / 1000).toFixed(1) }}s</span>
+            <span class="stat-value">{{ (syncProgress.duration / 1000).toFixed(1) }}s</span>
             <span class="stat-label">משך</span>
           </div>
         </div>
-        <div *ngIf="lastSyncResult.errorDetails.length" class="error-details">
+        <div *ngIf="syncProgress.errorDetails?.length" class="error-details">
           <h4>פרטי שגיאות:</h4>
           <ul>
-            <li *ngFor="let err of lastSyncResult.errorDetails">{{ err }}</li>
+            <li *ngFor="let err of syncProgress.errorDetails">{{ err }}</li>
           </ul>
         </div>
       </mat-card-content>

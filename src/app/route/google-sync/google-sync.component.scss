@@ -118,6 +118,18 @@
   color: #fbbc04;
 }
 
+.progress-section {
+  margin-top: 16px;
+
+  .progress-stats {
+    display: flex;
+    gap: 16px;
+    margin-top: 8px;
+    font-size: 14px;
+    color: #555;
+  }
+}
+
 mat-form-field {
   width: 100%;
 }

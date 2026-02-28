@@ -36,3 +36,20 @@ export interface GoogleAuthStatus {
   googleEmail?: string
   lastSyncedAt?: Date
 }
+
+export interface SyncStartResult {
+  logId: string
+  started: boolean
+  message: string
+}
+
+export interface SyncProgress {
+  logId: string
+  status: SyncLogStatus
+  donorsPushed: number
+  contactsPulled: number
+  conflicts: number
+  errors: number
+  duration: number
+  errorDetails?: string[]
+}

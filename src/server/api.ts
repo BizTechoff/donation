@@ -44,6 +44,9 @@ import { SqlDatabase } from 'remult'
 import { scheduleGoogleContactsSync } from './google-contacts-cron'
 
 // SqlDatabase.LogToConsole = true
+// Root dataProvider for background tasks (not request-scoped)
+export let rootDataProvider: any = null
+
 export const entities = [
   User, Donor, Donation, Campaign, DonationMethod, Reminder,
   Certificate, Event, DonorEvent, Blessing, Country, Place, DonationPartner,
@@ -91,6 +94,7 @@ export const api = remultExpress({
                 }
         */
 
+        rootDataProvider = provider
         return provider
   },
   initApi: async r => {
