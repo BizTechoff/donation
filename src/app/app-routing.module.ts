@@ -16,6 +16,7 @@ import { terms } from './terms'
 import { AdminGuard } from './users/AuthGuard'
 import { UsersComponent } from './users/users.component'
 import { SilentRedirectComponent } from './users/silent-redirect.component'
+import { GoogleSyncComponent } from './route/google-sync/google-sync.component'
 import { SeedDataComponent } from './components/seed-data/seed-data.component'
 
 const defaultRoute = terms.home
@@ -33,6 +34,7 @@ const routes: Routes = [
   { path: terms.reports, component: ReportsComponent, canActivate: [AuthenticatedGuard], data: { name: 'reports' } },
   // ---------------
   { path: terms.userAccounts, component: UsersComponent, canActivate: [AdminGuard], data: { name: 'userAccounts' } },
+  { path: terms.googleSync, component: GoogleSyncComponent, canActivate: [AdminGuard], data: { name: 'googleSync' } },
   // { path: 'seed-data', component: SeedDataComponent, canActivate: [AdminGuard], data: { name: 'seedData' } },
   { path: 'm', loadChildren: () => import('./mobile/mobile.module').then(m => m.MobileModule), canActivate: [AuthenticatedGuard], data: { hide: true } },
   { path: '', component: SilentRedirectComponent, pathMatch: 'full' },

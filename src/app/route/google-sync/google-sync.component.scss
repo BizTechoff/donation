@@ -1,0 +1,127 @@
+.user-details-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 24px;
+  direction: rtl;
+
+  h2 {
+    margin-bottom: 24px;
+    color: #333;
+  }
+}
+
+.loading-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 24px;
+}
+
+.error-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #fdecea;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  color: #d32f2f;
+}
+
+.connect-card,
+.status-card,
+.sync-card,
+.result-card,
+.logs-card {
+  margin-bottom: 16px;
+}
+
+.google-icon {
+  color: #4285f4;
+  font-size: 40px;
+  width: 40px;
+  height: 40px;
+}
+
+.connected-icon {
+  color: #34a853;
+  font-size: 40px;
+  width: 40px;
+  height: 40px;
+}
+
+.result-card {
+  &.success {
+    border-right: 4px solid #34a853;
+  }
+  &.error {
+    border-right: 4px solid #d32f2f;
+  }
+}
+
+.result-stats {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin: 16px 0;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 80px;
+
+  .stat-value {
+    font-size: 24px;
+    font-weight: 600;
+    color: #333;
+  }
+
+  .stat-label {
+    font-size: 12px;
+    color: #666;
+    margin-top: 4px;
+  }
+}
+
+.error-details {
+  margin-top: 16px;
+  padding: 12px;
+  background: #fdecea;
+  border-radius: 4px;
+
+  h4 {
+    margin: 0 0 8px 0;
+    color: #d32f2f;
+  }
+
+  ul {
+    margin: 0;
+    padding-right: 20px;
+  }
+}
+
+.logs-table {
+  width: 100%;
+}
+
+.completed {
+  color: #34a853;
+}
+
+.failed {
+  color: #d32f2f;
+}
+
+.started {
+  color: #fbbc04;
+}
+
+mat-form-field {
+  width: 100%;
+}
+
+mat-card-actions {
+  padding: 8px 16px;
+}

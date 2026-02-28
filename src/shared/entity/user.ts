@@ -153,6 +153,10 @@ export class User extends IdEntity {
       height?: number;
       minimized?: boolean;
     };
+    googleSync?: {
+      conflictResolution?: 'platform_wins' | 'google_wins' | 'newest_wins' | 'manual';
+      autoSync?: boolean;
+    };
   };
 
   @Fields.number({

@@ -40,6 +40,7 @@ export const termsEn = {
   campaigns: 'Campaigns',
   gifts: 'Gifts',
   reports: 'Reports',
+  googleSync: 'Google Sync',
 
   // Donors Map
   mapTitle: 'Donors Map',

@@ -9,7 +9,9 @@ import { api } from './api'
 import './docx'
 import { getPlace, getPlaces, reverseGeocode, getGoogleMapsApiKey } from './geo'
 import './s3'
+import './google-contacts'
 import { scanRouter } from './scan-api'
+import { googleContactsRouter } from './google-contacts-routes'
 import { checkAndSendReminders } from './scheduler'
 
 async function startup() {
@@ -40,6 +42,7 @@ async function startup() {
   app.use('/api/geo/place-details', getPlace)
   app.use('/api/geo/reverse-geocode', reverseGeocode)
   app.use('/api/geo/maps-api-key', getGoogleMapsApiKey)
+  app.use('/api/google-contacts', googleContactsRouter)
 
 
   console.log(`HI FROM YYG SERVER. CURRENT TIME: ${new Date()}. __dirname: ${__dirname}. process.cwd(): ${process.cwd()}`)

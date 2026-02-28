@@ -41,6 +41,7 @@ export const termsHe = {
   campaigns: 'קמפיינים',
   gifts: 'מתנות',
   reports: 'דוחות',
+  googleSync: 'סנכרון Google',
 
   // Donors Map
   mapTitle: 'מפת תורמים',

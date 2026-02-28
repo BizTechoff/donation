@@ -20,7 +20,7 @@ import { PlaceController } from '../shared/controllers/place.controller'
 import { ReminderController } from '../shared/controllers/reminder.controller'
 import { ReportController } from '../shared/controllers/report.controller'
 import { TargetAudienceController } from '../shared/controllers/target-audience.controller'
-import { Bank, Circle, Company, DonationBank, DonationOrganization, DonorAddressType, DonorContact, DonorGift, DonorNote, DonorPlace, DonorReceptionHour, DonorRelation, Gift, LetterTitle, LetterTitleDefault, NoteType, Organization, Payment, TargetAudience } from '../shared/entity'
+import { Bank, Circle, Company, DonationBank, DonationOrganization, DonorAddressType, DonorContact, DonorGift, DonorNote, DonorPlace, DonorReceptionHour, DonorRelation, Gift, LetterTitle, LetterTitleDefault, NoteType, Organization, Payment, TargetAudience, GoogleAuth, GoogleContactMapping, GoogleSyncLog } from '../shared/entity'
 import { Blessing } from '../shared/entity/blessing'
 import { BlessingBookType } from '../shared/entity/blessing-book-type'
 import { Campaign } from '../shared/entity/campaign'
@@ -38,8 +38,10 @@ import { Reminder } from '../shared/entity/reminder'
 import { User } from '../shared/entity/user'
 import { checkAndSendReminders } from './scheduler'
 import { GlobalFilterController } from '../shared/controllers/global-filter.controller'
+import { GoogleContactsController } from '../shared/controllers/google-contacts.controller'
 import { geocodeMissingPlaces } from './geocode-places'
 import { SqlDatabase } from 'remult'
+import { scheduleGoogleContactsSync } from './google-contacts-cron'
 
 // SqlDatabase.LogToConsole = true
 export const entities = [
@@ -47,14 +49,16 @@ export const entities = [
   Certificate, Event, DonorEvent, Blessing, Country, Place, DonationPartner,
   DonationFile, Bank, Organization, Company, Circle, DonorRelation, DonorContact,
   DonorPlace, DonorNote, DonorReceptionHour, NoteType, DonationBank, DonationOrganization,
-  Payment, DonorAddressType, BlessingBookType, LetterTitle, LetterTitleDefault, Gift, DonorGift, TargetAudience]
+  Payment, DonorAddressType, BlessingBookType, LetterTitle, LetterTitleDefault, Gift, DonorGift, TargetAudience,
+  GoogleAuth, GoogleContactMapping, GoogleSyncLog]
 export const api = remultExpress({
   admin: true,
   controllers: [SignInController, UpdatePasswordController, DonorController,
     DonationController, LetterController, FileController, PaymentController,
     DonorMapController, ReminderController, HebrewDateController, TargetAudienceController,
     CertificateController, EmailController, ReportController, CountryController, PlaceController,
-    CampaignController, DonorGiftController, PayerController, GlobalFilterController],
+    CampaignController, DonorGiftController, PayerController, GlobalFilterController,
+    GoogleContactsController],
   entities,
   getUser,
   dataProvider: async () => {
@@ -102,6 +106,9 @@ export const api = remultExpress({
     // Run once on startup
     console.log('[Server] Running initial reminder check...')
     await checkAndSendReminders()
+
+    // Setup Google Contacts sync cron (every 6 hours)
+    scheduleGoogleContactsSync()
 
     // const countries = [] as string[]
     // for await (const c of r.repo(Country).query()) {

@@ -98,7 +98,7 @@ import { BlessingTypeSelectionModalComponent } from './routes/modals/blessing-ty
 import { BlessingTextEditModalComponent } from './routes/modals/blessing-text-edit-modal/blessing-text-edit-modal.component'
 import { SendEmailModalComponent } from './routes/modals/send-email-modal/send-email-modal.component'
 import { ToggleSwitchComponent } from './shared/toggle-switch/toggle-switch.component'
-import { UserDetailsComponent } from './route/user-details/user-details.component'
+import { GoogleSyncComponent } from './route/google-sync/google-sync.component'
 import { FileUploadComponent } from './components/file-upload/file-upload.component'
 import { PaymentListModalComponent } from './routes/modals/payment-list-modal/payment-list-modal.component'
 import { PaymentDetailsModalComponent } from './routes/modals/payment-details-modal/payment-details-modal.component'
@@ -187,7 +187,7 @@ import { A11yModule } from "@angular/cdk/a11y";
     QuickActionsComponent,
     SeedDataComponent,
     ToggleSwitchComponent,
-    UserDetailsComponent,
+    GoogleSyncComponent,
     OsmAddressInputComponent,
     FileUploadComponent,
     PaymentListModalComponent,
