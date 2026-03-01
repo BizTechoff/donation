@@ -13,6 +13,7 @@ import { Donor } from './donor'
 import { User } from './user'
 import { Donation } from './donation'
 import { Roles } from '../enum/roles'
+import { EmailController } from '../controllers/email.controller'
 import { ReminderController } from '../controllers/reminder.controller'
 
 @Entity<Reminder>('reminders', {
@@ -503,7 +504,6 @@ export class Reminder extends IdEntity {
       `
 
       try {
-        const { EmailController } = await import('../controllers/email.controller')
         const response = await EmailController.sendCustomEmail({ emails, subject, html })
 
         if (response?.success) {
