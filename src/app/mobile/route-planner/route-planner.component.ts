@@ -220,7 +220,7 @@ export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
         position: { lat: donor.lat, lng: donor.lng },
         map: this.map,
         title: donor.donorName,
-        icon: this.getMarkerIcon(donor.status, index + 1),
+        icon: this.getMarkerIcon(donor.statuses, index + 1),
         zIndex: 100
       })
 
@@ -229,14 +229,13 @@ export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
     })
   }
 
-  private getMarkerIcon(status: string, number: number): any {
-    const colors: Record<string, string> = {
-      'high-donor': '#f59e0b',
-      'recent-donor': '#10b981',
-      'active': '#667eea',
-      'inactive': '#9ca3af'
-    }
-    const color = colors[status] || '#667eea'
+  private getMarkerIcon(statuses: string[], number: number): any {
+    // עדיפות צבע: תורם גדול > תרם לאחרונה > פעיל > לא פעיל
+    let color = '#667eea'
+    if (statuses.includes('high-donor')) color = '#f59e0b'
+    else if (statuses.includes('recent-donor')) color = '#10b981'
+    else if (statuses.includes('active')) color = '#667eea'
+    else if (statuses.includes('inactive')) color = '#9ca3af'
 
     return {
       url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`

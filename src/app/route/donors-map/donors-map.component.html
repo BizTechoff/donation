@@ -135,14 +135,40 @@
 
       <!-- Color legend - always visible on map -->
       <div class="map-legend">
-        <h4>{{ i18n.terms.legend }}</h4>
+        <div class="legend-header">
+          <h4>{{ i18n.terms.legend }}</h4>
+          <button *ngIf="isAdmin"
+                  class="btn-settings"
+                  (click)="toggleSettingsPanel()"
+                  [matTooltip]="'הגדרות ספים'">
+            <mat-icon>settings</mat-icon>
+          </button>
+        </div>
         <div class="legend-items">
           <div *ngFor="let option of statusOptions"
                class="legend-item"
                [class.selected]="mapFilters.statusFilter.includes(option.value)"
                (click)="toggleStatusFilter(option.value)">
             <div class="legend-color" [style.background-color]="option.color"></div>
-            <span>{{ option.label }}</span>
+            <span *ngIf="option.value === 'high-donor'">תורם גדול (מעל {{ highDonorAmount | number:'1.0-0' }})</span>
+            <span *ngIf="option.value === 'recent-donor'">תרם לאחרונה ({{ recentDonorMonths }} חודשים)</span>
+            <span *ngIf="option.value !== 'high-donor' && option.value !== 'recent-donor'">{{ option.label }}</span>
+          </div>
+        </div>
+
+        <!-- Settings Panel (admin only) -->
+        <div *ngIf="showSettingsPanel" class="settings-panel">
+          <div class="settings-field">
+            <label>סכום תורם גדול</label>
+            <input type="number" min="0" [(ngModel)]="highDonorAmount">
+          </div>
+          <div class="settings-field">
+            <label>חודשים - תרם לאחרונה</label>
+            <input type="number" min="1" max="120" [(ngModel)]="recentDonorMonths">
+          </div>
+          <div class="settings-actions">
+            <button class="btn-save" (click)="saveAppSettings()">שמור</button>
+            <button class="btn-cancel" (click)="showSettingsPanel = false">ביטול</button>
           </div>
         </div>
       </div>

@@ -119,26 +119,23 @@ export class MapSelectedDonorsModalComponent implements OnInit {
     this.dialogRef.close();
   }
 
-  // Get marker color based on status
-  getMarkerColor(status: string): string {
-    switch (status) {
-      case 'active': return '#27ae60';
-      case 'inactive': return '#95a5a6';
-      case 'high-donor': return '#f39c12';
-      case 'recent-donor': return '#e74c3c';
-      default: return '#27ae60';
-    }
+  // Get marker color based on statuses (priority: high-donor > recent-donor > active > inactive)
+  getMarkerColor(statuses: string[]): string {
+    if (statuses.includes('high-donor')) return '#f39c12';
+    if (statuses.includes('recent-donor')) return '#e74c3c';
+    if (statuses.includes('active')) return '#27ae60';
+    return '#95a5a6';
   }
 
   // Get status label
-  getStatusLabel(status: string): string {
-    switch (status) {
-      case 'active': return 'פעיל';
-      case 'inactive': return 'לא פעיל';
-      case 'high-donor': return 'תורם גדול';
-      case 'recent-donor': return 'תרם לאחרונה';
-      default: return status;
-    }
+  getStatusLabel(statuses: string[]): string {
+    const labels: Record<string, string> = {
+      'active': 'פעיל',
+      'inactive': 'לא פעיל',
+      'high-donor': 'תורם גדול',
+      'recent-donor': 'תרם לאחרונה'
+    };
+    return statuses.map(s => labels[s] || s).join(', ');
   }
 
   // Export to Excel (future feature)

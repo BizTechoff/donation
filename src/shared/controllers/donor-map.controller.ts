@@ -23,7 +23,7 @@ export interface MarkerData {
   lat: number;
   lng: number;
   donorName: string;
-  status: 'active' | 'inactive' | 'high-donor' | 'recent-donor';
+  statuses: ('active' | 'inactive' | 'high-donor' | 'recent-donor')[];
 }
 
 /**
@@ -79,7 +79,7 @@ export interface DonorMapStats {
   lastDonationIsUnlimitedStandingOrder: boolean;
   lastDonationReason: string;
 
-  status: 'active' | 'inactive' | 'high-donor' | 'recent-donor';
+  statuses: ('active' | 'inactive' | 'high-donor' | 'recent-donor')[];
 }
 
 export interface DonorMapData {
@@ -93,8 +93,27 @@ export interface DonorMapData {
 
 export class DonorMapController {
 
-  static HIGH_DONOR_AMOUNT = 1500
-  static RECENT_DONOR_MONTHS = 3
+  static DEFAULT_HIGH_DONOR_AMOUNT = 1500
+  static DEFAULT_RECENT_DONOR_MONTHS = 11
+
+  /**
+   * קורא ספים מ-AppSettings, אם אין - משתמש בברירת מחדל
+   */
+  private static async getThresholds(): Promise<{ highDonorAmount: number; recentDonorMonths: number }> {
+    try {
+      const { AppSettings } = await import('../entity/app-settings');
+      const settings = await remult.repo(AppSettings).findId('singleton', { createIfNotFound: true });
+      return {
+        highDonorAmount: settings?.highDonorAmount || DonorMapController.DEFAULT_HIGH_DONOR_AMOUNT,
+        recentDonorMonths: settings?.recentDonorMonths || DonorMapController.DEFAULT_RECENT_DONOR_MONTHS
+      };
+    } catch {
+      return {
+        highDonorAmount: DonorMapController.DEFAULT_HIGH_DONOR_AMOUNT,
+        recentDonorMonths: DonorMapController.DEFAULT_RECENT_DONOR_MONTHS
+      };
+    }
+  }
 
   /**
    * מתודה פנימית - מחזירה IDs של תורמים לפי פילטרים מקומיים של המפה
@@ -323,11 +342,6 @@ export class DonorMapController {
       include: { donationMethod: true }
     });
 
-    // טען שערי המרה של מטבעות
-    const { PayerService } = await import('../../app/services/payer.service');
-    const payerService = new PayerService();
-    const currencyTypes = payerService.getCurrencyTypesRecord();
-
     // טען סכומי תשלומים בפועל עבור התחייבויות והו"ק עם סינון לפי סוג
     const paymentBasedDonationsForMarkers = donations.filter(d => isPaymentBased(d));
     const paymentBasedIdsForMarkers = paymentBasedDonationsForMarkers.map(d => d.id).filter(Boolean);
@@ -340,26 +354,27 @@ export class DonorMapController {
       paymentTotalsForMarkers = calculatePaymentTotals(paymentBasedDonationsForMarkers, payments);
     }
 
-    // חשב סטטיסטיקות תרומות לכל תורם (המר הכל לשקלים)
+    // חשב סטטיסטיקות תרומות לכל תורם (סכום יבש ללא המרת מטבע - לצורך השוואה לסף)
     const donationStatsByDonor = new Map<string, { total: number; lastDate: Date | null }>();
     donations.forEach(donation => {
-      // המר סכום לשקלים
-      const rate = currencyTypes[donation.currencyId]?.rateInShekel || 1;
-      const amountInShekel = calculateEffectiveAmount(donation, paymentTotalsForMarkers[donation.id]) * rate;
+      const rawAmount = calculateEffectiveAmount(donation, paymentTotalsForMarkers[donation.id]);
 
       const existing = donationStatsByDonor.get(donation.donorId);
       if (!existing) {
         donationStatsByDonor.set(donation.donorId, {
-          total: amountInShekel,
+          total: rawAmount,
           lastDate: donation.donationDate
         });
       } else {
-        existing.total += amountInShekel;
+        existing.total += rawAmount;
         if (!existing.lastDate || (donation.donationDate && new Date(donation.donationDate) > new Date(existing.lastDate))) {
           existing.lastDate = donation.donationDate;
         }
       }
     });
+
+    // קרא ספים מ-AppSettings
+    const thresholds = await DonorMapController.getThresholds();
 
     // בנה מערך מרקרים עם סטטוס
     const markers: MarkerData[] = donors
@@ -369,22 +384,22 @@ export class DonorMapController {
         const totalDonations = stats?.total || 0;
         const lastDonationDate = stats?.lastDate || null;
 
-        // קבע סטטוס (אותה לוגיקה כמו ב-loadDonorsMapData)
-        let status: 'active' | 'inactive' | 'high-donor' | 'recent-donor' = 'recent-donor';
+        // קבע סטטוסים (תורם יכול לקבל כמה סטטוסים במקביל)
+        const statuses: ('active' | 'inactive' | 'high-donor' | 'recent-donor')[] = [];
         if (d.isActive) {
-          if (totalDonations > DonorMapController.HIGH_DONOR_AMOUNT) {
-            status = 'high-donor';
-          } else if (lastDonationDate) {
-            const threeMonthsAgo = new Date();
-            threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - DonorMapController.RECENT_DONOR_MONTHS);
-            if (new Date(lastDonationDate) > threeMonthsAgo) {
-              status = 'recent-donor';
-            } else {
-              status = 'active';
-            }
-          } else {
-            status = 'active';
+          statuses.push('active');
+          if (totalDonations > thresholds.highDonorAmount) {
+            statuses.push('high-donor');
           }
+          if (lastDonationDate) {
+            const recentCutoff = new Date();
+            recentCutoff.setMonth(recentCutoff.getMonth() - thresholds.recentDonorMonths);
+            if (new Date(lastDonationDate) > recentCutoff) {
+              statuses.push('recent-donor');
+            }
+          }
+        } else {
+          statuses.push('inactive');
         }
 
         return {
@@ -392,16 +407,18 @@ export class DonorMapController {
           lat: locationMap.get(d.id)!.lat,
           lng: locationMap.get(d.id)!.lng,
           donorName: d.lastAndFirstName,
-          status
+          statuses
         };
       });
 
     // Apply client-side filters (filters that work on already calculated data)
     let filteredMarkers = markers;
 
-    // Status filter
+    // Status filter (AND - תורם חייב לעמוד בכל הסטטוסים שנבחרו)
     if (mapFilters.statusFilter && mapFilters.statusFilter.length > 0) {
-      filteredMarkers = filteredMarkers.filter(m => mapFilters.statusFilter!.includes(m.status));
+      filteredMarkers = filteredMarkers.filter(m =>
+        mapFilters.statusFilter!.every(s => m.statuses.includes(s))
+      );
     }
 
     // Has coordinates - all markers already have coordinates, so this filter doesn't apply here
@@ -410,9 +427,9 @@ export class DonorMapController {
     // Has recent donation filter
     if (mapFilters.hasRecentDonation !== null && mapFilters.hasRecentDonation !== undefined) {
       if (mapFilters.hasRecentDonation) {
-        filteredMarkers = filteredMarkers.filter(m => m.status === 'recent-donor');
+        filteredMarkers = filteredMarkers.filter(m => m.statuses.includes('recent-donor'));
       } else {
-        filteredMarkers = filteredMarkers.filter(m => m.status !== 'recent-donor');
+        filteredMarkers = filteredMarkers.filter(m => !m.statuses.includes('recent-donor'));
       }
     }
 
@@ -588,6 +605,9 @@ export class DonorMapController {
     const donationRepo = remult.repo(Donation);
     const donorPlaceRepo = remult.repo(DonorPlace);
     const donorContactRepo = remult.repo(DonorContact);
+
+    // קרא ספים מ-AppSettings
+    const settingsThresholds = await DonorMapController.getThresholds();
 
     console.time('DonorMapController.loadDonorsMapData');
 
@@ -982,28 +1002,27 @@ export class DonorMapController {
       // מטבע תרומה אחרונה - תמיד המטבע המקורי
       const lastCurrency = stats?.lastDonation.currencyId || 'ILS';
 
-      // קבע סטטוס - לצורך סטטוס צריך להמיר לשקלים לצורך השוואה
-      let totalInShekelForStatus = 0;
-      stats?.totalAmountByCurrency.forEach((amount, currencyId) => {
-        const rate = currencyTypes[currencyId]?.rateInShekel || 1;
-        totalInShekelForStatus += amount * rate;
+      // קבע סטטוס - סכום יבש ללא המרת מטבע (הסף הוא ללא מטבע)
+      let totalRawForStatus = 0;
+      stats?.totalAmountByCurrency.forEach((amount) => {
+        totalRawForStatus += amount;
       });
 
-      let status: 'active' | 'inactive' | 'high-donor' | 'recent-donor' = 'inactive';
+      const statuses: ('active' | 'inactive' | 'high-donor' | 'recent-donor')[] = [];
       if (donor.isActive) {
-        if (totalInShekelForStatus > DonorMapController.HIGH_DONOR_AMOUNT) {
-          status = 'high-donor';
-        } else if (lastDonationDate) {
-          const threeMonthsAgo = new Date();
-          threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-          if (new Date(lastDonationDate) > threeMonthsAgo) {
-            status = 'recent-donor';
-          } else {
-            status = 'active';
-          }
-        } else {
-          status = 'active';
+        statuses.push('active');
+        if (totalRawForStatus > settingsThresholds.highDonorAmount) {
+          statuses.push('high-donor');
         }
+        if (lastDonationDate) {
+          const recentCutoff = new Date();
+          recentCutoff.setMonth(recentCutoff.getMonth() - settingsThresholds.recentDonorMonths);
+          if (new Date(lastDonationDate) > recentCutoff) {
+            statuses.push('recent-donor');
+          }
+        }
+      } else {
+        statuses.push('inactive');
       }
 
       // בנה כתובת מלאה
@@ -1049,8 +1068,8 @@ export class DonorMapController {
           lastDonationIsStandingOrder: stats?.lastDonation.isStandingOrder || false,
           lastDonationIsUnlimitedStandingOrder: stats?.lastDonation.isUnlimitedStandingOrder || false,
           lastDonationReason: stats?.lastDonation.reason || '',
-          // סטטוס
-          status
+          // סטטוסים
+          statuses
         }
       };
     });

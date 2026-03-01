@@ -14,7 +14,9 @@ import { GeocodingService } from '../../services/geocoding.service';
 import { GlobalFilterService, GlobalFilters } from '../../services/global-filter.service';
 import { SidebarService } from '../../services/sidebar.service';
 import { DonorMapController, DonorMapData, MarkerData, MapFilters as BackendMapFilters, MapStatistics } from '../../../shared/controllers/donor-map.controller';
+import { AppSettingsController } from '../../../shared/controllers/app-settings.controller';
 import { User } from '../../../shared/entity/user';
+import { Roles } from '../../../shared/enum/roles';
 import { HebrewDateService } from '../../services/hebrew-date.service';
 import { BusyService } from '../../common-ui-elements/src/angular/wait/busy-service';
 
@@ -84,6 +86,12 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   placeRepo = remult.repo(Place);
   countryRepo = remult.repo(Country);
+
+  // App settings (thresholds)
+  isAdmin = remult.isAllowed(Roles.admin);
+  showSettingsPanel = false;
+  highDonorAmount = 1500;
+  recentDonorMonths = 11;
 
   // Calculated statistics (to avoid ExpressionChangedAfterItHasBeenCheckedError)
   totalDonors = 0;
@@ -164,6 +172,7 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
         // Load map settings once on first call
         if (!this.mapSettingsLoaded) {
           await this.loadMapSettings();
+          await this.loadAppSettings();
           this.mapSettingsLoaded = true;
         }
 
@@ -280,6 +289,39 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     } catch (error) {
       console.error('Error saving map settings:', error);
+    }
+  }
+
+  // Load app settings (thresholds)
+  async loadAppSettings() {
+    try {
+      // @ts-ignore - remult metadata not updated yet
+      const settings = await AppSettingsController.getSettings();
+      this.highDonorAmount = settings.highDonorAmount;
+      this.recentDonorMonths = settings.recentDonorMonths;
+    } catch (error) {
+      console.error('Error loading app settings:', error);
+    }
+  }
+
+  toggleSettingsPanel() {
+    this.showSettingsPanel = !this.showSettingsPanel;
+  }
+
+  async saveAppSettings() {
+    try {
+      // @ts-ignore - remult metadata not updated yet
+      const saved = await AppSettingsController.saveSettings(this.highDonorAmount, this.recentDonorMonths);
+      this.highDonorAmount = saved.highDonorAmount;
+      this.recentDonorMonths = saved.recentDonorMonths;
+      this.showSettingsPanel = false;
+      this.ui.info('ההגדרות נשמרו בהצלחה');
+      // רענון מפה עם הספים החדשים
+      this.preserveMapView = true;
+      await this.loadData();
+    } catch (error) {
+      console.error('Error saving app settings:', error);
+      this.ui.error('שגיאה בשמירת ההגדרות');
     }
   }
 
@@ -516,7 +558,7 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
    * Create a Google Maps marker for a donor
    */
   createGoogleMarker(markerData: MarkerData): google.maps.Marker {
-    const color = this.getMarkerColor(markerData.status);
+    const color = this.getMarkerColor(markerData.statuses);
 
     // Create SVG icon for the marker
     const svgIcon = {
@@ -587,14 +629,12 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  getMarkerColor(status: string): string {
-    switch (status) {
-      case 'active': return '#27ae60';
-      case 'inactive': return '#95a5a6';
-      case 'high-donor': return '#f39c12';
-      case 'recent-donor': return '#e74c3c';
-      default: return '#27ae60';
-    }
+  getMarkerColor(statuses: string[]): string {
+    // עדיפות צבע: תורם גדול > תרם לאחרונה > פעיל > לא פעיל
+    if (statuses.includes('high-donor')) return '#f39c12';
+    if (statuses.includes('recent-donor')) return '#e74c3c';
+    if (statuses.includes('active')) return '#27ae60';
+    return '#95a5a6';
   }
 
   /**
