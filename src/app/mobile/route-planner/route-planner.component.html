@@ -4,7 +4,7 @@
   <div class="audience-selector">
     <mat-form-field appearance="outline" class="audience-field">
       <mat-label>בחר קהל יעד</mat-label>
-      <mat-select [(value)]="selectedAudienceId" (selectionChange)="onAudienceChange()">
+      <mat-select [(value)]="selectedAudienceId" (selectionChange)="onAudienceChange(true)">
         <mat-option value="">-- ללא --</mat-option>
         @for (audience of targetAudiences; track audience.id) {
           <mat-option [value]="audience.id">
@@ -15,7 +15,7 @@
     </mat-form-field>
 
     @if (donors.length > 0 && !routeCalculated) {
-      <button mat-flat-button class="route-btn" (click)="calculateRoute()" [disabled]="calculatingRoute || donors.length < 2">
+      <button mat-flat-button class="route-btn" (click)="chooseStartPoint()" [disabled]="calculatingRoute || donors.length < 2">
         @if (calculatingRoute) {
           <mat-spinner diameter="20" class="btn-spinner"></mat-spinner>
         } @else {
@@ -42,6 +42,16 @@
           <mat-icon>people</mat-icon>
           <span>{{ visitedCount }}/{{ routeStops.length }}</span>
         </div>
+      </div>
+      <div class="summary-actions">
+        <button class="summary-btn" (click)="chooseStartPoint()" title="חשב מחדש">
+          <mat-icon>refresh</mat-icon>
+          <span>חשב מחדש</span>
+        </button>
+        <button class="summary-btn" (click)="clearRoute()" title="נקה מסלול">
+          <mat-icon>close</mat-icon>
+          <span>נקה</span>
+        </button>
       </div>
     </div>
   }

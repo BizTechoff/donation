@@ -3,6 +3,8 @@ import { Router, ActivatedRoute } from '@angular/router'
 import { remult } from 'remult'
 import { Donor, Donation, Campaign, DonationMethod } from '../../../shared/entity'
 import { PayerService } from '../../services/payer.service'
+import { UIToolsService } from '../../common/UIToolsService'
+import { terms } from '../../terms'
 import { CurrencyType } from '../../../shared/type/currency.type'
 
 @Component({
@@ -31,7 +33,8 @@ export class QuickDonationComponent implements OnInit {
   constructor(
     private router: Router,
     private route: ActivatedRoute,
-    private payerService: PayerService
+    private payerService: PayerService,
+    private ui: UIToolsService
   ) { }
 
   async ngOnInit() {
@@ -113,6 +116,7 @@ export class QuickDonationComponent implements OnInit {
   }
 
   finish() {
-    this.router.navigate(['/'])
+    this.ui.info(terms.donationSavedSuccess)
+    this.resetWizard()
   }
 }

@@ -4,8 +4,23 @@ import { remult } from 'remult'
 import { TargetAudience } from '../../../shared/entity/target-audience'
 import { DonorMapController, MarkerData, DonorMapData } from '../../../shared/controllers/donor-map.controller'
 import { GeoService } from '../../services/geo.service'
+import { UIToolsService } from '../../common/UIToolsService'
+import { User } from '../../../shared/entity/user'
 
 declare const google: any
+
+// Module-level cache - persists across component instances within the session
+let _mapSettingsCache: {
+  selectedAudienceId?: string
+  zoom?: number
+  centerLat?: number
+  centerLng?: number
+  routeState?: {
+    startPoint: { lat: number; lng: number }
+    startDonorId?: string
+    visitedDonorIds: string[]
+  }
+} | null = null
 
 interface RouteStop {
   marker: MarkerData
@@ -36,7 +51,7 @@ export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
   // Map
   private map: any
   private googleMarkers: any[] = []
-  private directionsRenderer: any
+  private routePolylines: any[] = []
   private infoWindow: any
   private userLocationMarker: any
 
@@ -56,11 +71,18 @@ export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
 
   constructor(
     private router: Router,
-    private geoService: GeoService
+    private geoService: GeoService,
+    private ui: UIToolsService
   ) {}
+
+  private hasSavedPosition = false
+  private pendingRouteRestore = false
 
   async ngOnInit() {
     this.registerGlobalCallbacks()
+    // Load settings synchronously FIRST — before any async ops
+    // so _mapSettingsCache is available when initMap() runs
+    this.loadRoutePlannerSettings()
     this.loading = true
     try {
       // Load target audiences
@@ -68,6 +90,17 @@ export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
         where: { isActive: true },
         orderBy: { name: 'asc' }
       })
+
+      // If we have a saved audience, auto-load its donors
+      if (this.selectedAudienceId) {
+        await this.onAudienceChange()
+      }
+
+      // If we have a saved route, schedule restore (needs map + donors)
+      if (_mapSettingsCache?.routeState && this.donors.length >= 2) {
+        this.pendingRouteRestore = true
+        this.tryRestoreRoute()
+      }
     } finally {
       this.loading = false
     }
@@ -78,8 +111,114 @@ export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    clearTimeout(this.saveDebounceTimer)
+    // Preserve routeState before overwriting cache
+    const savedRouteState = _mapSettingsCache?.routeState
+    // Always capture current map state into module-level cache
+    if (this.map) {
+      const center = this.map.getCenter()
+      _mapSettingsCache = {
+        selectedAudienceId: this.selectedAudienceId || undefined,
+        zoom: this.map.getZoom(),
+        centerLat: center?.lat(),
+        centerLng: center?.lng()
+      }
+    } else if (_mapSettingsCache) {
+      _mapSettingsCache.selectedAudienceId = this.selectedAudienceId || undefined
+    }
+    // Restore route state (with updated visited status)
+    if (this.routeCalculated && savedRouteState) {
+      savedRouteState.visitedDonorIds = this.routeStops.filter(s => s.visited).map(s => s.marker.donorId)
+      if (_mapSettingsCache) _mapSettingsCache.routeState = savedRouteState
+    }
+    // Fire-and-forget DB save from cache values
+    this.doSaveSettings(
+      _mapSettingsCache?.zoom,
+      _mapSettingsCache?.centerLat,
+      _mapSettingsCache?.centerLng
+    )
     this.cleanupGlobalCallbacks()
     this.clearMap()
+  }
+
+  private loadRoutePlannerSettings() {
+    // Read from module-level cache first (always fresh within session)
+    if (_mapSettingsCache) {
+      if (_mapSettingsCache.selectedAudienceId) {
+        this.selectedAudienceId = _mapSettingsCache.selectedAudienceId
+      }
+      if (_mapSettingsCache.centerLat != null && _mapSettingsCache.centerLng != null) {
+        this.hasSavedPosition = true
+      }
+      return
+    }
+    // Fallback: read from remult.user.settings (first load / page refresh)
+    const userSettings = (remult.user as any)?.settings?.routePlanner
+    if (!userSettings) return
+    if (userSettings.selectedAudienceId) {
+      this.selectedAudienceId = userSettings.selectedAudienceId
+    }
+    if (userSettings.centerLat && userSettings.centerLng) {
+      // Populate module-level cache from DB (so initMap can read it)
+      _mapSettingsCache = {
+        selectedAudienceId: userSettings.selectedAudienceId,
+        zoom: userSettings.zoom,
+        centerLat: userSettings.centerLat,
+        centerLng: userSettings.centerLng
+      }
+      this.hasSavedPosition = true
+    }
+  }
+
+  private saveDebounceTimer: any
+  private updateCacheFromMap() {
+    if (!this.map) return
+    const center = this.map.getCenter()
+    if (!center) return
+    _mapSettingsCache = {
+      ...(_mapSettingsCache || {}),
+      selectedAudienceId: this.selectedAudienceId || undefined,
+      zoom: this.map.getZoom(),
+      centerLat: center.lat(),
+      centerLng: center.lng()
+    }
+  }
+
+  private saveRoutePlannerSettings() {
+    this.updateCacheFromMap()
+    clearTimeout(this.saveDebounceTimer)
+    this.saveDebounceTimer = setTimeout(() => this.doSaveSettings(), 2000)
+  }
+
+  private async doSaveSettings(capturedZoom?: number, capturedLat?: number, capturedLng?: number) {
+    if (!remult.user?.id) return
+    try {
+      const userRepo = remult.repo(User)
+      const user = await userRepo.findId(remult.user.id)
+      if (!user) return
+
+      if (!user.settings) {
+        user.settings = {} as any
+      }
+      // Use captured values (from ngOnDestroy) or read from map
+      const zoom = capturedZoom ?? this.map?.getZoom()
+      const center = (capturedLat != null && capturedLng != null)
+        ? { lat: capturedLat, lng: capturedLng }
+        : { lat: this.map?.getCenter()?.lat(), lng: this.map?.getCenter()?.lng() }
+
+      user.settings!.routePlanner = {
+        selectedAudienceId: this.selectedAudienceId || undefined,
+        zoom: zoom || undefined,
+        centerLat: center.lat || undefined,
+        centerLng: center.lng || undefined
+      }
+      await userRepo.save(user)
+      if (remult.user) {
+        (remult.user as any).settings = user.settings
+      }
+    } catch (err) {
+      console.error('Error saving route planner settings:', err)
+    }
   }
 
   private async initMap() {
@@ -87,12 +226,15 @@ export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
       await this.geoService.loadGoogleMapsApi()
       const maps = this.geoService.getGoogleMaps()
 
-      // Default center: Israel
-      const defaultCenter = { lat: 31.77, lng: 35.21 }
+      // Read center/zoom from module-level cache (populated by loadRoutePlannerSettings)
+      const center = (_mapSettingsCache?.centerLat != null && _mapSettingsCache?.centerLng != null)
+        ? { lat: _mapSettingsCache.centerLat, lng: _mapSettingsCache.centerLng }
+        : { lat: 31.77, lng: 35.21 }
+      const zoom = _mapSettingsCache?.zoom || 8
 
       this.map = new maps.Map(this.mapContainer.nativeElement, {
-        center: defaultCenter,
-        zoom: 8,
+        center,
+        zoom,
         mapTypeControl: false,
         streetViewControl: false,
         fullscreenControl: false,
@@ -103,18 +245,23 @@ export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
         ]
       })
 
-      this.directionsRenderer = new maps.DirectionsRenderer({
-        map: this.map,
-        suppressMarkers: true,
-        polylineOptions: {
-          strokeColor: '#667eea',
-          strokeWeight: 4,
-          strokeOpacity: 0.8
-        }
+      // After first idle (tiles loaded), add persistent listener for user interactions
+      maps.event.addListenerOnce(this.map, 'idle', () => {
+        this.map.addListener('idle', () => this.saveRoutePlannerSettings())
       })
 
       this.infoWindow = new maps.InfoWindow()
       this.mapReady = true
+
+      // If donors were loaded before map was ready, show them now
+      if (this.donors.length > 0) {
+        this.showMarkers()
+      }
+
+      // If route restore is pending, try now that map is ready
+      if (this.pendingRouteRestore) {
+        this.tryRestoreRoute()
+      }
 
       // Try to get user location
       this.getUserLocation()
@@ -159,15 +306,44 @@ export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
     })
   }
 
-  async onAudienceChange() {
+  private async tryRestoreRoute() {
+    if (!this.mapReady || this.donors.length < 2 || !this.pendingRouteRestore) return
+    const saved = _mapSettingsCache?.routeState
+    if (!saved) return
+    this.pendingRouteRestore = false
+
+    // Re-calculate route with saved start point (this rebuilds polylines + markers)
+    await this.calculateRoute(saved.startPoint, saved.startDonorId)
+
+    // Restore visited state
+    if (saved.visitedDonorIds?.length) {
+      this.routeStops.forEach((stop, index) => {
+        if (saved.visitedDonorIds.includes(stop.marker.donorId)) {
+          stop.visited = true
+          if (index < this.googleMarkers.length) {
+            this.googleMarkers[index].setIcon(this.getRouteMarkerIcon(stop.order, true))
+          }
+        }
+      })
+    }
+  }
+
+  async onAudienceChange(userInitiated = false) {
+    // Clear cached route on user-initiated audience change
+    if (userInitiated && _mapSettingsCache?.routeState) {
+      delete _mapSettingsCache.routeState
+    }
+
     this.routeCalculated = false
     this.routeStops = []
     this.routeLegs = []
     this.routeTotalDistance = ''
     this.routeTotalDuration = ''
-    if (this.directionsRenderer) {
-      this.directionsRenderer.setDirections({ routes: [] })
-    }
+    this.routePolylines.forEach(p => p.setMap(null))
+    this.routePolylines = []
+
+    // Save selected audience
+    this.saveRoutePlannerSettings()
 
     if (!this.selectedAudienceId) {
       this.clearMarkers()
@@ -202,9 +378,8 @@ export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private clearMap() {
     this.clearMarkers()
-    if (this.directionsRenderer) {
-      this.directionsRenderer.setMap(null)
-    }
+    this.routePolylines.forEach(p => p.setMap(null))
+    this.routePolylines = []
     if (this.userLocationMarker) {
       this.userLocationMarker.setMap(null)
     }
@@ -265,6 +440,11 @@ export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private fitMapToDonors() {
     if (!this.map || this.donors.length === 0) return
+    // Skip fitBounds on initial load if we have a saved position
+    if (this.hasSavedPosition) {
+      this.hasSavedPosition = false
+      return
+    }
     const maps = this.geoService.getGoogleMaps()
     const bounds = new maps.LatLngBounds()
 
@@ -341,56 +521,107 @@ export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
     delete (window as any).__routePlanner_navigate
   }
 
-  async calculateRoute() {
+  async chooseStartPoint() {
+    if (this.donors.length < 2 || !this.map) return
+
+    const options: { caption: string; id: string; lat?: number; lng?: number }[] = [
+      { caption: '📍 המיקום שלי', id: '__my_location__' }
+    ]
+    this.donors.forEach(m => {
+      options.push({ caption: `👤 ${m.donorName}`, id: m.donorId, lat: m.lat, lng: m.lng })
+    })
+
+    let selectedOption: { id: string; lat?: number; lng?: number } | null = null
+
+    await this.ui.selectValuesDialog({
+      values: options,
+      title: 'בחר נקודת התחלה',
+      onSelect: (selected) => {
+        selectedOption = selected
+      }
+    })
+
+    if (!selectedOption) return
+
+    if ((selectedOption as any).id === '__my_location__') {
+      if (this.userLat !== null && this.userLng !== null) {
+        await this.calculateRoute({ lat: this.userLat, lng: this.userLng })
+      } else {
+        try {
+          const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 })
+          })
+          this.userLat = pos.coords.latitude
+          this.userLng = pos.coords.longitude
+          this.showUserLocation()
+          await this.calculateRoute({ lat: this.userLat, lng: this.userLng })
+        } catch {
+          this.ui.error('לא ניתן לקבל מיקום. בחר תורם כנקודת התחלה.')
+        }
+      }
+    } else {
+      const donor = this.donors.find(m => m.donorId === (selectedOption as any).id)
+      if (donor) {
+        await this.calculateRoute({ lat: donor.lat, lng: donor.lng }, (selectedOption as any).id)
+      }
+    }
+  }
+
+  async calculateRoute(startPoint: { lat: number; lng: number }, startDonorId?: string) {
     if (this.donors.length < 2 || !this.map) return
     this.calculatingRoute = true
 
     try {
       const maps = this.geoService.getGoogleMaps()
-      const directionsService = new maps.DirectionsService()
+      const { Route } = await maps.importLibrary('routes') as any
 
-      // Use user location as origin if available, otherwise first donor
-      let origin: any
-      if (this.userLat !== null && this.userLng !== null) {
-        origin = { lat: this.userLat, lng: this.userLng }
-      } else {
-        origin = { lat: this.donors[0].lat, lng: this.donors[0].lng }
-      }
+      const originLatLng = new maps.LatLng(startPoint.lat, startPoint.lng)
+      const destination = originLatLng // Round trip
 
-      // Last donor is destination (or back to origin for round trip)
-      const destination = origin
+      // Filter out the start donor from intermediates to avoid duplicates
+      const intermediateDonors = startDonorId
+        ? this.donors.filter(d => d.donorId !== startDonorId)
+        : this.donors
 
-      // All donors are waypoints (max 23 for Google Directions)
-      const maxWaypoints = Math.min(this.donors.length, 23)
-      const waypoints = this.donors.slice(0, maxWaypoints).map(d => ({
-        location: { lat: d.lat, lng: d.lng },
-        stopover: true
+      const maxWaypoints = Math.min(intermediateDonors.length, 25)
+      const intermediates = intermediateDonors.slice(0, maxWaypoints).map(d => ({
+        location: new maps.LatLng(d.lat, d.lng)
       }))
 
       const request = {
-        origin,
+        origin: originLatLng,
         destination,
-        waypoints,
-        optimizeWaypoints: true,
-        travelMode: maps.TravelMode.DRIVING
+        intermediates,
+        travelMode: 'DRIVING',
+        optimizeWaypointOrder: true,
+        fields: ['path', 'legs', 'optimizedIntermediateWaypointIndices', 'distanceMeters', 'durationMillis']
       }
 
-      const result = await new Promise<any>((resolve, reject) => {
-        directionsService.route(request, (result: any, status: string) => {
-          if (status === 'OK') resolve(result)
-          else reject(new Error(`Directions failed: ${status}`))
-        })
+      const { routes } = await Route.computeRoutes(request)
+
+      if (!routes || routes.length === 0) {
+        throw new Error('No route found')
+      }
+
+      const route = routes[0]
+
+      // Draw polylines
+      this.routePolylines.forEach(p => p.setMap(null))
+      this.routePolylines = route.createPolylines({
+        polylineOptions: {
+          map: this.map,
+          strokeColor: '#667eea',
+          strokeWeight: 4,
+          strokeOpacity: 0.8,
+          zIndex: 1
+        }
       })
 
-      this.directionsRenderer.setDirections(result)
+      const waypointOrder: number[] = route.optimizedIntermediateWaypointIndices || []
 
-      // Parse route info
-      const route = result.routes[0]
-      const waypointOrder = route.waypoint_order || []
-
-      // Build route stops in optimized order
+      // Build route stops using intermediateDonors (excludes start donor)
       this.routeStops = waypointOrder.map((originalIndex: number, orderIndex: number) => ({
-        marker: this.donors[originalIndex],
+        marker: intermediateDonors[originalIndex],
         visited: false,
         order: orderIndex + 1
       }))
@@ -409,19 +640,24 @@ export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
         this.googleMarkers.push(marker)
       })
 
-      // Calculate total distance and duration
+      // Calculate total distance and duration from legs
       let totalDistance = 0
       let totalDuration = 0
       this.routeLegs = []
 
-      route.legs.forEach((leg: any, i: number) => {
-        totalDistance += leg.distance.value
-        totalDuration += leg.duration.value
+      const legs = route.legs || []
+      legs.forEach((leg: any, i: number) => {
+        const distMeters = leg.distanceMeters || 0
+        const durMillis = leg.durationMillis || 0
+        totalDistance += distMeters
+        totalDuration += durMillis
 
         if (i < this.routeStops.length) {
           this.routeLegs.push({
-            distance: leg.distance.text,
-            duration: leg.duration.text,
+            distance: distMeters >= 1000
+              ? `${(distMeters / 1000).toFixed(1)} ק"מ`
+              : `${distMeters} מ'`,
+            duration: this.formatDuration(Math.round(durMillis / 1000)),
             donorName: this.routeStops[i].marker.donorName
           })
         }
@@ -430,10 +666,19 @@ export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
       this.routeTotalDistance = totalDistance >= 1000
         ? `${(totalDistance / 1000).toFixed(1)} ק"מ`
         : `${totalDistance} מ'`
-      this.routeTotalDuration = this.formatDuration(totalDuration)
+      this.routeTotalDuration = this.formatDuration(Math.round(totalDuration / 1000))
       this.routeCalculated = true
-    } catch (err) {
+
+      // Save route state to cache for tab-switch persistence
+      if (!_mapSettingsCache) _mapSettingsCache = {}
+      _mapSettingsCache.routeState = {
+        startPoint,
+        startDonorId,
+        visitedDonorIds: []
+      }
+    } catch (err: any) {
       console.error('Route calculation failed:', err)
+      this.ui.error('שגיאה בחישוב מסלול: ' + (err?.message || err))
     } finally {
       this.calculatingRoute = false
     }
@@ -448,6 +693,22 @@ export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
     return `${minutes} דק'`
   }
 
+  clearRoute() {
+    this.routeCalculated = false
+    this.routeStops = []
+    this.routeLegs = []
+    this.routeTotalDistance = ''
+    this.routeTotalDuration = ''
+    this.routePolylines.forEach(p => p.setMap(null))
+    this.routePolylines = []
+    // Clear cached route state
+    if (_mapSettingsCache?.routeState) {
+      delete _mapSettingsCache.routeState
+    }
+    // Restore regular donor markers
+    this.showMarkers()
+  }
+
   openWaze(lat: number, lng: number) {
     window.open(`https://waze.com/ul?ll=${lat},${lng}&navigate=yes`, '_blank')
   }
@@ -460,6 +721,12 @@ export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
     const stopIndex = this.routeStops.indexOf(stop)
     if (stopIndex >= 0 && stopIndex < this.googleMarkers.length) {
       this.googleMarkers[stopIndex].setIcon(this.getRouteMarkerIcon(stop.order, true))
+    }
+
+    // Update visited state in cache
+    if (_mapSettingsCache?.routeState) {
+      _mapSettingsCache.routeState.visitedDonorIds =
+        this.routeStops.filter(s => s.visited).map(s => s.marker.donorId)
     }
   }
 

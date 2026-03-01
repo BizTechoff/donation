@@ -1762,5 +1762,21 @@ export const termsEn = {
   // Donations Report - Currency Summary Table
   currencySummaryTitle: 'Summary by Currency',
   currencyColumnSummary: 'Currency',
-  totalColumnSummary: 'Total'
+  totalColumnSummary: 'Total',
+
+  // Route Optimization (Donors Map)
+  findRoute: 'Route',
+  routeTooManyPoints: 'Cannot calculate route for more than 20 points. Filter donors to reduce the count.',
+  chooseStartPoint: 'Choose start point',
+  myLocation: 'My Location',
+  chooseDonor: 'Choose donor',
+  clearRoute: 'Clear route',
+  calculatingRoute: 'Calculating route...',
+  routeCalculationFailed: 'Route calculation failed',
+  noMarkersForRoute: 'Not enough markers for route (minimum 2)',
+  routeStops: 'Stops',
+  routeDistance: 'Distance',
+  routeDuration: 'Duration',
+  navigateWaze: 'Navigate with Waze',
+  donationSavedSuccess: 'Donation saved successfully'
 }

@@ -12,12 +12,12 @@
     <label class="form-label">סכום *</label>
     <div class="amount-row">
       <input
+        #amountInput
         type="text"
         inputmode="decimal"
         class="amount-input"
         placeholder="0"
-        [(ngModel)]="amount"
-        autofocus>
+        [(ngModel)]="amount">
       <!-- Currency Toggle -->
       <div class="currency-toggle">
         @for (cur of currencyList; track cur.id) {

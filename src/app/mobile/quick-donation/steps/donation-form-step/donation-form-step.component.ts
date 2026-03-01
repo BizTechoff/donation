@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core'
+import { AfterViewInit, Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core'
 import { remult } from 'remult'
 import { Donor, Donation, Campaign, DonationMethod } from '../../../../../shared/entity'
 import { CurrencyType } from '../../../../../shared/type/currency.type'
@@ -8,7 +8,8 @@ import { CurrencyType } from '../../../../../shared/type/currency.type'
   templateUrl: './donation-form-step.component.html',
   styleUrls: ['./donation-form-step.component.scss']
 })
-export class DonationFormStepComponent implements OnInit {
+export class DonationFormStepComponent implements OnInit, AfterViewInit {
+  @ViewChild('amountInput') amountInput!: ElementRef<HTMLInputElement>
   @Input() donor!: Donor
   @Input() donationMethods: DonationMethod[] = []
   @Input() campaigns: Campaign[] = []
@@ -33,6 +34,16 @@ export class DonationFormStepComponent implements OnInit {
 
   currencyList: CurrencyType[] = []
   private defaultCashMethodId = ''
+
+  ngAfterViewInit() {
+    setTimeout(() => {
+      const el = this.amountInput?.nativeElement
+      if (el) {
+        el.focus()
+        el.select()
+      }
+    })
+  }
 
   ngOnInit() {
     this.currencyList = Object.values(this.currencies)

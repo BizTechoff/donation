@@ -60,13 +60,6 @@
               <span class="info-value">{{ donor.nickname }}</span>
             </div>
           }
-          @if (donor.idNumber) {
-            <div class="info-row">
-              <span class="info-label">ת.ז.</span>
-              <span class="info-value dir-ltr">{{ donor.idNumber }}</span>
-            </div>
-          }
-
           <!-- Phones -->
           @if (getPhones().length > 0) {
             <div class="info-divider"></div>
@@ -166,17 +159,7 @@
               <span class="info-value">{{ donor.preferredLanguage === 'he' ? 'עברית' : donor.preferredLanguage === 'en' ? 'English' : donor.preferredLanguage === 'yi' ? 'יידיש' : donor.preferredLanguage }}</span>
             </div>
           }
-          <div class="info-row">
-            <span class="info-label">מעוניין בעדכונים</span>
-            <span class="info-value">{{ donor.wantsUpdates ? 'כן' : 'לא' }}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">מעוניין בקבלות מס</span>
-            <span class="info-value">{{ donor.wantsTaxReceipts ? 'כן' : 'לא' }}</span>
-          </div>
-
           @if (getPreferredContactMethods().length > 0) {
-            <div class="info-divider"></div>
             <div class="info-row">
               <span class="info-label">דרכי תקשורת</span>
               <span class="info-value">{{ getPreferredContactMethods().join(', ') }}</span>
@@ -185,8 +168,15 @@
 
           @if (getAvailableDays().length > 0) {
             <div class="info-row">
-              <span class="info-label">ימים זמינים</span>
+              <span class="info-label">ימים מועדפים</span>
               <span class="info-value">{{ getAvailableDays().join(', ') }}</span>
+            </div>
+          }
+
+          @if (donor.requirePhoneCoordination) {
+            <div class="info-row">
+              <span class="info-label">בתיאום טלפוני</span>
+              <span class="info-value">כן</span>
             </div>
           }
 
@@ -194,6 +184,39 @@
             <div class="info-row">
               <span class="info-label">זמנים מיוחדים</span>
               <span class="info-value">פסח / סוכות</span>
+            </div>
+          }
+
+          @if (donor.preferPublicReception) {
+            <div class="info-row">
+              <span class="info-label">קבלת קהל</span>
+              <span class="info-value">כן</span>
+            </div>
+          }
+
+          @if (receptionHours.length > 0) {
+            <div class="info-divider"></div>
+            <div class="subsection-title">שעות קבלה</div>
+            @for (rh of receptionHours; track rh.id) {
+              <div class="info-row">
+                <span class="info-label">{{ rh.description || 'קבלה' }}</span>
+                <span class="info-value dir-ltr">{{ rh.startTime }} - {{ rh.endTime }}</span>
+              </div>
+            }
+          }
+
+          @if (donor.emailOnlyCorrespondence) {
+            <div class="info-divider"></div>
+            <div class="info-row">
+              <span class="info-label">מכתבים באימייל בלבד</span>
+              <span class="info-value">כן</span>
+            </div>
+          }
+
+          @if (donor.autoAddToLocationEvents) {
+            <div class="info-row">
+              <span class="info-label">הוספה אוטומטית לאירועים</span>
+              <span class="info-value">כן</span>
             </div>
           }
         </div>

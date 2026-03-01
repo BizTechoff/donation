@@ -1,21 +1,29 @@
 .mobile-shell {
   max-width: 480px;
   margin: 0 auto;
-  min-height: 100vh;
+  height: 100vh;
   background: #f5f5f5;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .mobile-toolbar {
   height: 48px;
+  flex-shrink: 0;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   font-size: 16px;
   padding: 0 12px;
-  position: sticky;
-  top: 0;
   z-index: 100;
+
+  .toolbar-logo {
+    height: 30px;
+    width: 30px;
+    object-fit: contain;
+    border-radius: 50%;
+    margin-left: 8px;
+  }
 
   .toolbar-title {
     font-weight: 500;
@@ -34,26 +42,29 @@
 
 .mobile-content {
   flex: 1;
+  overflow-x: hidden;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
-// Bottom Navigation
-.bottom-nav {
+// Bottom Tabs
+.bottom-tabs {
   display: flex;
   background: white;
   border-top: 1px solid #e5e5e5;
-  position: sticky;
-  bottom: 0;
+  flex-shrink: 0;
   z-index: 100;
 
-  .nav-tab {
+  .tab {
     flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 8px 0;
+    padding: 6px 0 4px;
     text-decoration: none;
     color: #999;
     font-size: 11px;
@@ -70,5 +81,22 @@
       color: #667eea;
       font-weight: 600;
     }
+  }
+}
+
+// BizTechoff Status Bar
+.biztechoff-bar {
+  flex-shrink: 0;
+  text-align: center;
+  padding: 3px 0;
+  background: #f0f0f0;
+  border-top: 1px solid #e0e0e0;
+  font-size: 10px;
+  color: #999;
+  cursor: pointer;
+
+  i {
+    font-style: italic;
+    font-weight: 600;
   }
 }

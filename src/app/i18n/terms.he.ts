@@ -1760,5 +1760,21 @@ export const termsHe = {
   // Donations Report - Currency Summary Table
   currencySummaryTitle: 'סיכום לפי מטבעות',
   currencyColumnSummary: 'מטבע',
-  totalColumnSummary: 'סה"כ'
+  totalColumnSummary: 'סה"כ',
+
+  // Route Optimization (Donors Map)
+  findRoute: 'מסלול',
+  routeTooManyPoints: 'לא ניתן לחשב מסלול ליותר מ-20 נקודות. סנן תורמים כדי להפחית את הכמות.',
+  chooseStartPoint: 'בחר נקודת התחלה',
+  myLocation: 'המיקום שלי',
+  chooseDonor: 'בחר תורם',
+  clearRoute: 'נקה מסלול',
+  calculatingRoute: 'מחשב מסלול...',
+  routeCalculationFailed: 'שגיאה בחישוב מסלול',
+  noMarkersForRoute: 'אין מספיק מרקרים לחישוב מסלול (מינימום 2)',
+  routeStops: 'עצירות',
+  routeDistance: 'מרחק',
+  routeDuration: 'זמן',
+  navigateWaze: 'נווט בוויז',
+  donationSavedSuccess: 'תרומה נקלטה בהצלחה'
 }

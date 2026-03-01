@@ -59,6 +59,21 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
   isFullscreen = false;
   isPolygonMode = false;
 
+  // Route optimization state
+  isRouteActive = false;
+  calculatingRoute = false;
+  routeStops: { marker: MarkerData; visited: boolean; order: number }[] = [];
+  routeTotalDistance = '';
+  routeTotalDuration = '';
+  routeLegs: { distance: string; duration: string; donorName: string }[] = [];
+  private routePolylines: google.maps.Polyline[] = [];
+  private routeMarkers: google.maps.Marker[] = [];
+
+  // User location
+  userLat: number | null = null;
+  userLng: number | null = null;
+  private userLocationMarker?: google.maps.Marker;
+
   // Flag to track if map settings were loaded (one-time operation)
   private mapSettingsLoaded = false;
 
@@ -506,8 +521,69 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
       });
 
       console.log('Google Map initialized successfully');
+
+      // Try to get user location in background
+      this.getUserLocation();
     } catch (error) {
       console.error('Error initializing map:', error);
+    }
+  }
+
+  private getUserLocation() {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        this.userLat = pos.coords.latitude;
+        this.userLng = pos.coords.longitude;
+        this.showUserLocationMarker();
+      },
+      () => { /* User denied location - that's ok */ }
+    );
+  }
+
+  showUserLocationMarker() {
+    if (!this.map || this.userLat === null || this.userLng === null) return;
+
+    if (this.userLocationMarker) {
+      this.userLocationMarker.setMap(null);
+    }
+
+    this.userLocationMarker = new google.maps.Marker({
+      position: { lat: this.userLat, lng: this.userLng },
+      map: this.map,
+      icon: {
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 8,
+        fillColor: '#4285F4',
+        fillOpacity: 1,
+        strokeColor: 'white',
+        strokeWeight: 3
+      },
+      title: this.i18n.terms.myLocation,
+      zIndex: 999
+    });
+  }
+
+  goToMyLocation() {
+    if (this.userLat !== null && this.userLng !== null) {
+      this.map.panTo({ lat: this.userLat, lng: this.userLng });
+      this.map.setZoom(15);
+    } else {
+      // Try getting location again
+      if (!navigator.geolocation) return;
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          this.userLat = pos.coords.latitude;
+          this.userLng = pos.coords.longitude;
+          this.showUserLocationMarker();
+          this.map.panTo({ lat: this.userLat!, lng: this.userLng! });
+          this.map.setZoom(15);
+        },
+        () => {
+          this.ui.error('לא ניתן לקבל מיקום');
+        },
+        { timeout: 10000 }
+      );
     }
   }
 
@@ -515,6 +591,11 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!this.map) {
       console.log('Map not ready');
       return;
+    }
+
+    // Clear active route if present
+    if (this.isRouteActive) {
+      this.clearRoute();
     }
 
     // Clear existing markers
@@ -1210,10 +1291,271 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  // ==================== Route Optimization ====================
+
+  async startRouteOptimization() {
+    if (this.isRouteActive) {
+      this.clearRoute();
+      return;
+    }
+
+    if (this.markers.length < 2) {
+      this.ui.error(this.i18n.terms.noMarkersForRoute);
+      return;
+    }
+
+    // Block if > 20 markers
+    if (this.markers.length > 20) {
+      this.ui.error(this.i18n.terms.routeTooManyPoints);
+      return;
+    }
+
+    await this.chooseStartPoint();
+  }
+
+  async chooseStartPoint() {
+    const options: { caption: string; id: string; lat?: number; lng?: number }[] = [
+      { caption: `📍 ${this.i18n.terms.myLocation}`, id: '__my_location__' }
+    ];
+
+    // Add all donors on the map as start point options
+    this.markersData.forEach(m => {
+      options.push({ caption: `👤 ${m.donorName}`, id: m.donorId, lat: m.lat, lng: m.lng });
+    });
+
+    // Capture selection synchronously, then handle async work after dialog closes
+    let selectedOption: { id: string; lat?: number; lng?: number } | null = null;
+
+    await this.ui.selectValuesDialog({
+      values: options,
+      title: this.i18n.terms.chooseStartPoint,
+      onSelect: (selected) => {
+        selectedOption = selected;
+      }
+    });
+
+    if (!selectedOption) return;
+
+    if ((selectedOption as any).id === '__my_location__') {
+      // Get user location
+      if (this.userLat !== null && this.userLng !== null) {
+        await this.calculateOptimizedRoute({ lat: this.userLat, lng: this.userLng });
+      } else {
+        try {
+          const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 });
+          });
+          this.userLat = pos.coords.latitude;
+          this.userLng = pos.coords.longitude;
+          this.showUserLocationMarker();
+          await this.calculateOptimizedRoute({ lat: this.userLat, lng: this.userLng });
+        } catch {
+          this.ui.error('לא ניתן לקבל מיקום. בחר תורם כנקודת התחלה.');
+        }
+      }
+    } else {
+      const donor = this.markersData.find(m => m.donorId === (selectedOption as any).id);
+      if (donor) {
+        await this.calculateOptimizedRoute({ lat: donor.lat, lng: donor.lng });
+      }
+    }
+  }
+
+  async calculateOptimizedRoute(startPoint: { lat: number; lng: number }) {
+    this.calculatingRoute = true;
+    this.cdr.detectChanges();
+
+    try {
+      // Use new Routes API: google.maps.routes.Route.computeRoutes
+      const { Route } = await google.maps.importLibrary('routes') as any;
+
+      const origin = new google.maps.LatLng(startPoint.lat, startPoint.lng);
+      const destination = origin; // Round trip
+
+      // All markers as intermediates
+      const intermediates = this.markersData.map(m => ({
+        location: new google.maps.LatLng(m.lat, m.lng)
+      }));
+
+      const request = {
+        origin,
+        destination,
+        intermediates,
+        travelMode: 'DRIVING' as any,
+        optimizeWaypointOrder: true,
+        fields: ['path', 'legs', 'optimizedIntermediateWaypointIndices', 'distanceMeters', 'durationMillis']
+      };
+
+      const { routes } = await Route.computeRoutes(request);
+
+      if (!routes || routes.length === 0) {
+        throw new Error('No route found');
+      }
+
+      this.renderRoute(routes[0]);
+    } catch (err) {
+      console.error('Route calculation failed:', err);
+      this.ui.error(this.i18n.terms.routeCalculationFailed);
+    } finally {
+      this.calculatingRoute = false;
+      this.cdr.detectChanges();
+    }
+  }
+
+  renderRoute(route: any) {
+    // Clear previous polylines
+    this.routePolylines.forEach(p => p.setMap(null));
+    this.routePolylines = [];
+
+    // Draw polylines using createPolylines()
+    const polylines = route.createPolylines({
+      polylineOptions: {
+        map: this.map,
+        strokeColor: '#667eea',
+        strokeWeight: 4,
+        strokeOpacity: 0.8,
+        zIndex: 1
+      }
+    });
+    this.routePolylines = polylines;
+
+    // Get optimized waypoint order
+    const waypointOrder: number[] = route.optimizedIntermediateWaypointIndices || [];
+
+    // Build route stops in optimized order
+    this.routeStops = waypointOrder.map((originalIndex: number, orderIndex: number) => ({
+      marker: this.markersData[originalIndex],
+      visited: false,
+      order: orderIndex + 1
+    }));
+
+    // Hide original markers
+    this.markers.forEach(marker => marker.setVisible(false));
+
+    // Create numbered route markers
+    this.routeMarkers.forEach(m => m.setMap(null));
+    this.routeMarkers = [];
+
+    this.routeStops.forEach(stop => {
+      const marker = new google.maps.Marker({
+        position: { lat: stop.marker.lat, lng: stop.marker.lng },
+        map: this.map,
+        title: `${stop.order}. ${stop.marker.donorName}`,
+        icon: this.createNumberedMarkerIcon(stop.order, false),
+        zIndex: 200 - stop.order
+      });
+      marker.addListener('click', async () => {
+        await this.onMarkerClick(stop.marker.donorId, marker);
+      });
+      this.routeMarkers.push(marker);
+    });
+
+    // Calculate totals from legs
+    let totalDistance = 0;
+    let totalDuration = 0;
+    this.routeLegs = [];
+
+    const legs = route.legs || [];
+    legs.forEach((leg: any, i: number) => {
+      const distMeters = leg.distanceMeters || 0;
+      const durMillis = leg.durationMillis || 0;
+      totalDistance += distMeters;
+      totalDuration += durMillis;
+
+      if (i < this.routeStops.length) {
+        this.routeLegs.push({
+          distance: distMeters >= 1000
+            ? `${(distMeters / 1000).toFixed(1)} ק"מ`
+            : `${distMeters} מ'`,
+          duration: this.formatDuration(Math.round(durMillis / 1000)),
+          donorName: this.routeStops[i].marker.donorName
+        });
+      }
+    });
+
+    this.routeTotalDistance = totalDistance >= 1000
+      ? `${(totalDistance / 1000).toFixed(1)} ק"מ`
+      : `${totalDistance} מ'`;
+    this.routeTotalDuration = this.formatDuration(Math.round(totalDuration / 1000));
+
+    this.isRouteActive = true;
+    this.cdr.detectChanges();
+  }
+
+  clearRoute() {
+    // Remove polylines
+    this.routePolylines.forEach(p => p.setMap(null));
+    this.routePolylines = [];
+
+    // Remove route markers
+    this.routeMarkers.forEach(m => m.setMap(null));
+    this.routeMarkers = [];
+
+    // Show original markers again
+    this.markers.forEach(marker => marker.setVisible(true));
+
+    // Reset state
+    this.isRouteActive = false;
+    this.routeStops = [];
+    this.routeLegs = [];
+    this.routeTotalDistance = '';
+    this.routeTotalDuration = '';
+    this.cdr.detectChanges();
+  }
+
+  openWazeForStop(stop: { marker: MarkerData; visited: boolean; order: number }) {
+    window.open(`https://waze.com/ul?ll=${stop.marker.lat},${stop.marker.lng}&navigate=yes`, '_blank');
+    stop.visited = true;
+
+    // Update marker icon
+    const stopIndex = this.routeStops.indexOf(stop);
+    if (stopIndex >= 0 && stopIndex < this.routeMarkers.length) {
+      this.routeMarkers[stopIndex].setIcon(this.createNumberedMarkerIcon(stop.order, true));
+    }
+    this.cdr.detectChanges();
+  }
+
+  createNumberedMarkerIcon(num: number, visited: boolean): any {
+    const color = visited ? '#10b981' : '#667eea';
+    return {
+      url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
+        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="44" viewBox="0 0 36 44">
+          <path d="M18 0C8.1 0 0 8.1 0 18c0 13.5 18 26 18 26s18-12.5 18-26C36 8.1 27.9 0 18 0z" fill="${color}" stroke="white" stroke-width="2"/>
+          <circle cx="18" cy="16" r="12" fill="white" opacity="0.25"/>
+          <text x="18" y="20" text-anchor="middle" fill="white" font-size="14" font-weight="bold" font-family="Arial">${num}</text>
+        </svg>
+      `)}`,
+      scaledSize: new google.maps.Size(36, 44)
+    };
+  }
+
+  private formatDuration(seconds: number): string {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    if (hours > 0) {
+      return `${hours} שע' ${minutes} דק'`;
+    }
+    return `${minutes} דק'`;
+  }
+
+  get visitedStopsCount(): number {
+    return this.routeStops.filter(s => s.visited).length;
+  }
+
+  // ==================== End Route Optimization ====================
+
   ngOnDestroy() {
     // Remove keyboard event listeners
     document.removeEventListener('keydown', this.onKeyDown);
     document.removeEventListener('keyup', this.onKeyUp);
+
+    // Clear route
+    this.clearRoute();
+
+    // Clear user location marker
+    if (this.userLocationMarker) {
+      this.userLocationMarker.setMap(null);
+    }
 
     // Clear markers
     this.markers.forEach(marker => marker.setMap(null));

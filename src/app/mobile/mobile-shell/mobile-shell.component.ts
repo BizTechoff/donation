@@ -10,6 +10,7 @@ import { SignInController } from '../../users/SignInController'
 })
 export class MobileShellComponent {
   remult = remult
+  version = '2026.03.01'
 
   constructor(public router: Router) { }
 
@@ -26,5 +27,9 @@ export class MobileShellComponent {
     SignInController.signOut()
     remult.user = undefined
     this.router.navigate(['/'])
+  }
+
+  openBizTechoff() {
+    window?.open('https://biztechoff.co.il/', '_blank')
   }
 }

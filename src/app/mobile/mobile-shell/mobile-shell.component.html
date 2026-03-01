@@ -1,5 +1,6 @@
 <div class="mobile-shell" dir="rtl">
   <mat-toolbar class="mobile-toolbar">
+    <img src="./assets/yyg.logo.png" alt="Logo" class="toolbar-logo">
     <span class="toolbar-title">{{ currentTab === 'route' ? 'מתכנן מסלול' : 'תרומה מהירה' }}</span>
     <span class="spacer"></span>
     <span class="user-name">{{ userName }}</span>
@@ -12,15 +13,20 @@
     <router-outlet></router-outlet>
   </main>
 
-  <!-- Bottom Navigation -->
-  <nav class="bottom-nav">
-    <a class="nav-tab" [class.active]="currentTab === 'donation'" routerLink="quick-donation">
+  <!-- Bottom Tabs -->
+  <nav class="bottom-tabs" *ngIf="remult.authenticated()">
+    <a class="tab" [class.active]="currentTab === 'donation'" routerLink="quick-donation">
       <mat-icon>volunteer_activism</mat-icon>
       <span>תרומה</span>
     </a>
-    <a class="nav-tab" [class.active]="currentTab === 'route'" routerLink="route-planner">
+    <a class="tab" [class.active]="currentTab === 'route'" routerLink="route-planner">
       <mat-icon>map</mat-icon>
       <span>מסלול</span>
     </a>
   </nav>
+
+  <!-- Status Bar -->
+  <div class="biztechoff-bar">
+    <span (click)="openBizTechoff()"><i>Biz</i>Techoff™v{{ version }}</span>
+  </div>
 </div>

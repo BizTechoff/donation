@@ -1,6 +1,7 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core'
 import { remult } from 'remult'
 import { Donor, DonorContact, DonorPlace, DonorEvent, DonorNote, Circle, DonorRelation } from '../../../../../shared/entity'
+import { DonorReceptionHour } from '../../../../../shared/entity/donor-reception-hour'
 import { DonorController } from '../../../../../shared/controllers/donor.controller'
 
 @Component({
@@ -22,6 +23,7 @@ export class DonorDetailsStepComponent implements OnInit {
   notes: DonorNote[] = []
   circles: Circle[] = []
   relations: DonorRelation[] = []
+  receptionHours: DonorReceptionHour[] = []
 
   sections = [
     { id: 'personal', label: 'פרטים אישיים', icon: 'person' },
@@ -52,6 +54,7 @@ export class DonorDetailsStepComponent implements OnInit {
       this.events = data.donorEvents || []
       this.notes = data.donorNotes || []
       this.relations = data.donorRelations || []
+      this.receptionHours = data.donorReceptionHours || []
 
       // Resolve circles from donor.circleIds
       const allCircles = data.circles || []
@@ -75,7 +78,7 @@ export class DonorDetailsStepComponent implements OnInit {
   }
 
   getActivePlaces(): DonorPlace[] {
-    return this.places.filter(p => p.isActive)
+    return this.places.filter(p => p.isActive).sort((a, b) => (b.isPrimary ? 1 : 0) - (a.isPrimary ? 1 : 0))
   }
 
   getActiveEvents(): DonorEvent[] {

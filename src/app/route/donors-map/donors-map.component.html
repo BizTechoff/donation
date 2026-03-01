@@ -9,11 +9,17 @@
         <button class="btn btn-polygon"
                 (click)="togglePolygonMode()"
                 [class.active]="isPolygonMode"
-                [matTooltip]="isPolygonMode ? 'צא ממצב ציור פוליגון' : 'צייר פוליגון על המפה'"
-                *ngIf="isFullscreen">
+                [matTooltip]="isPolygonMode ? 'צא ממצב ציור פוליגון' : 'צייר פוליגון על המפה'">
           <mat-icon>pentagon</mat-icon>
         </button>
         <!-- <button class="btn btn-info" (click)="geocodeMissingAddresses()" [disabled]="loading">{{ i18n.terms.convertAddresses }}</button> -->
+        <button class="btn btn-route"
+                (click)="startRouteOptimization()"
+                [class.active]="isRouteActive"
+                [disabled]="markersData.length < 2 && !isRouteActive"
+                [matTooltip]="isRouteActive ? i18n.terms.clearRoute : i18n.terms.findRoute">
+          <mat-icon>{{ isRouteActive ? 'close' : 'route' }}</mat-icon>
+        </button>
         <button class="btn btn-fullscreen" (click)="toggleFullscreen()" [matTooltip]="isFullscreen ? 'יציאה ממסך מלא' : 'מסך מלא'">
           <mat-icon>{{ isFullscreen ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
         </button>
@@ -133,6 +139,11 @@
         {{ i18n.terms.donors || 'תורמים' }}
       </div>
 
+      <!-- My Location Button -->
+      <button class="btn-my-location" (click)="goToMyLocation()" [matTooltip]="i18n.terms.myLocation">
+        <mat-icon>my_location</mat-icon>
+      </button>
+
       <!-- Color legend - always visible on map -->
       <div class="map-legend">
         <div class="legend-header">
@@ -176,6 +187,51 @@
       <!-- Loading Overlay -->
       <div *ngIf="loading" class="loading-overlay">
         <div class="loading-spinner">{{ i18n.terms.loadingMap }}</div>
+      </div>
+
+      <!-- Calculating Route Overlay -->
+      <div *ngIf="calculatingRoute" class="loading-overlay">
+        <div class="loading-spinner">{{ i18n.terms.calculatingRoute }}</div>
+      </div>
+
+      <!-- Route Summary Panel -->
+      <div *ngIf="isRouteActive" class="route-summary-overlay">
+        <div class="route-header">
+          <h4>{{ i18n.terms.findRoute }}</h4>
+          <button class="btn-close-route" (click)="clearRoute()">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+        <div class="route-stats">
+          <div class="route-stat">
+            <mat-icon>straighten</mat-icon>
+            <span>{{ routeTotalDistance }}</span>
+          </div>
+          <div class="route-stat">
+            <mat-icon>schedule</mat-icon>
+            <span>{{ routeTotalDuration }}</span>
+          </div>
+          <div class="route-stat">
+            <mat-icon>pin_drop</mat-icon>
+            <span>{{ visitedStopsCount }}/{{ routeStops.length }} {{ i18n.terms.routeStops }}</span>
+          </div>
+        </div>
+        <div class="route-stops-list">
+          <div *ngFor="let stop of routeStops"
+               class="route-stop-item"
+               [class.visited]="stop.visited">
+            <div class="stop-number">{{ stop.order }}</div>
+            <div class="stop-info">
+              <span class="stop-name">{{ stop.marker.donorName }}</span>
+              <span *ngIf="routeLegs[stop.order - 1]" class="stop-distance">
+                {{ routeLegs[stop.order - 1].distance }} · {{ routeLegs[stop.order - 1].duration }}
+              </span>
+            </div>
+            <button class="btn-waze" (click)="openWazeForStop(stop)" [matTooltip]="i18n.terms.navigateWaze">
+              <mat-icon>navigation</mat-icon>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>

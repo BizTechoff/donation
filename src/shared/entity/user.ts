@@ -157,6 +157,12 @@ export class User extends IdEntity {
       conflictResolution?: 'platform_wins' | 'google_wins' | 'newest_wins' | 'manual';
       autoSync?: boolean;
     };
+    routePlanner?: {
+      selectedAudienceId?: string;
+      zoom?: number;
+      centerLat?: number;
+      centerLng?: number;
+    };
   };
 
   @Fields.number({
