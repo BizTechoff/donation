@@ -37,6 +37,7 @@ interface RouteStop {
 })
 export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('mapContainer') mapContainer!: ElementRef
+  @ViewChild('mapListContainer') mapListContainer!: ElementRef
 
   // State
   loading = false
@@ -44,6 +45,13 @@ export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
   routeCalculated = false
   calculatingRoute = false
   showDonorPopup = false
+
+  // Splitter state - default shows more map (75%) less list (25%)
+  mapFlex = '1 1 75%'
+  listFlex = '0 0 25%'
+  private isDragging = false
+  private startY = 0
+  private startMapPercent = 75
 
   // Target audiences
   targetAudiences: TargetAudience[] = []
@@ -103,15 +111,9 @@ export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
         orderBy: { name: 'asc' }
       })
 
-      // If we have a saved audience, auto-load its donors
+      // If we have a saved audience, auto-load its donors (route will be restored from there)
       if (this.selectedAudienceId) {
         await this.onAudienceChange()
-      }
-
-      // If we have a saved route, schedule restore (needs map + donors)
-      if (_mapSettingsCache?.routeState && this.donors.length >= 2) {
-        this.pendingRouteRestore = true
-        this.tryRestoreRoute()
       }
     } finally {
       this.loading = false
@@ -341,7 +343,10 @@ export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
   private async tryRestoreRoute() {
     if (!this.mapReady || this.donors.length < 2 || !this.pendingRouteRestore) return
     const saved = _mapSettingsCache?.routeState
-    if (!saved) return
+    if (!saved?.startPoint?.lat || !saved?.startPoint?.lng) {
+      this.pendingRouteRestore = false
+      return
+    }
     this.pendingRouteRestore = false
 
     // Re-calculate route with saved start point (this rebuilds polylines + markers)
@@ -385,8 +390,20 @@ export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.loading = true
     try {
-      const audience = this.targetAudiences.find(a => a.id === this.selectedAudienceId)
-      if (!audience || !audience.donorIds?.length) {
+      // Load full audience record (includes routeData)
+      // Use find() instead of findId() to bypass potential caching issues
+      const audiences = await remult.repo(TargetAudience).find({
+        where: { id: this.selectedAudienceId },
+        limit: 1
+      })
+      const audience = audiences?.[0]
+      if (!audience) {
+        console.log('[RoutePlanner] Audience not found')
+        this.clearMarkers()
+        this.donors = []
+        return
+      }
+      if (!audience.donorIds?.length) {
         this.clearMarkers()
         this.donors = []
         return
@@ -401,6 +418,21 @@ export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
 
       // Try to open pending popup if returning from donation/details
       this.tryOpenPendingPopup()
+
+      // Try to load saved route from database (not cache)
+      console.log('[RoutePlanner] Full audience record:', JSON.stringify({
+        id: audience.id,
+        name: audience.name,
+        donorIds: audience.donorIds?.length,
+        routeData: audience.routeData
+      }))
+      if (audience.routeData?.waypointOrder?.length) {
+        console.log('[RoutePlanner] Loading saved route with', audience.routeData.waypointOrder.length, 'stops')
+        const loaded = await this.loadSavedRoute(audience)
+        console.log('[RoutePlanner] Route loaded:', loaded)
+      } else {
+        console.log('[RoutePlanner] No routeData or empty waypointOrder')
+      }
     } finally {
       this.loading = false
     }
@@ -490,6 +522,25 @@ export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     this.map.fitBounds(bounds, { padding: 40 })
+  }
+
+  // Fit map to show the entire route (start point + stops, NOT user location unless it's the start)
+  private fitMapToRoute(startPoint: { lat: number; lng: number }, stops: RouteStop[]) {
+    if (!this.map || stops.length === 0) return
+    const maps = this.geoService.getGoogleMaps()
+    const bounds = new maps.LatLngBounds()
+
+    // Include start point
+    bounds.extend({ lat: startPoint.lat, lng: startPoint.lng })
+
+    // Include all stops
+    stops.forEach(stop => {
+      if (stop.marker?.lat && stop.marker?.lng) {
+        bounds.extend({ lat: stop.marker.lat, lng: stop.marker.lng })
+      }
+    })
+
+    this.map.fitBounds(bounds, { padding: 50 })
   }
 
   async onMarkerClick(donor: MarkerData) {
@@ -604,6 +655,13 @@ export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
 
   async calculateRoute(startPoint: { lat: number; lng: number }, startDonorId?: string) {
     if (this.donors.length < 2 || !this.map) return
+
+    // Validate startPoint
+    if (!startPoint?.lat || !startPoint?.lng) {
+      console.error('[RoutePlanner] calculateRoute called with invalid startPoint:', startPoint)
+      return
+    }
+
     this.calculatingRoute = true
 
     try {
@@ -652,6 +710,15 @@ export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
         }
       })
 
+      // Extract polyline path for saving to DB
+      let polylinePath: { lat: number; lng: number }[] = []
+      if (this.routePolylines.length > 0) {
+        const path = this.routePolylines[0].getPath()
+        path.forEach((point: any) => {
+          polylinePath.push({ lat: point.lat(), lng: point.lng() })
+        })
+      }
+
       const waypointOrder: number[] = route.optimizedIntermediateWaypointIndices || []
 
       // Build route stops using intermediateDonors (excludes start donor)
@@ -678,6 +745,7 @@ export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
       // Calculate total distance and duration from legs
       let totalDistance = 0
       let totalDuration = 0
+      const legsData: { distanceMeters: number; durationSeconds: number }[] = []
       this.routeLegs = []
 
       const legs = route.legs || []
@@ -686,6 +754,12 @@ export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
         const durMillis = leg.durationMillis || 0
         totalDistance += distMeters
         totalDuration += durMillis
+
+        // Save leg data for DB
+        legsData.push({
+          distanceMeters: distMeters,
+          durationSeconds: Math.round(durMillis / 1000)
+        })
 
         if (i < this.routeStops.length) {
           this.routeLegs.push({
@@ -704,6 +778,9 @@ export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
       this.routeTotalDuration = this.formatDuration(Math.round(totalDuration / 1000))
       this.routeCalculated = true
 
+      // Zoom to fit the entire route
+      this.fitMapToRoute(startPoint, this.routeStops)
+
       // Save route state to cache for tab-switch persistence
       if (!_mapSettingsCache) _mapSettingsCache = {}
       _mapSettingsCache.routeState = {
@@ -711,6 +788,14 @@ export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
         startDonorId,
         visitedDonorIds: []
       }
+
+      // Save route to TargetAudience record in database (including polyline path!)
+      await this.saveRouteToAudience(startPoint, startDonorId, waypointOrder, intermediateDonors, {
+        polylinePath,
+        totalDistanceMeters: totalDistance,
+        totalDurationSeconds: Math.round(totalDuration / 1000),
+        legs: legsData
+      })
     } catch (err: any) {
       console.error('Route calculation failed:', err)
       this.ui.error('שגיאה בחישוב מסלול: ' + (err?.message || err))
@@ -728,7 +813,190 @@ export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
     return `${minutes} דק'`
   }
 
-  clearRoute() {
+  // Save route data to TargetAudience record (including full polyline path from Google)
+  private async saveRouteToAudience(
+    startPoint: { lat: number; lng: number },
+    startDonorId: string | undefined,
+    waypointOrder: number[],
+    intermediateDonors: MarkerData[],
+    routeDetails?: {
+      polylinePath: { lat: number; lng: number }[]
+      totalDistanceMeters: number
+      totalDurationSeconds: number
+      legs: { distanceMeters: number; durationSeconds: number }[]
+    }
+  ) {
+    if (!this.selectedAudienceId) return
+
+    try {
+      const audience = await remult.repo(TargetAudience).findId(this.selectedAudienceId)
+      if (!audience) return
+
+      // Build ordered donor IDs list
+      const orderedDonorIds = waypointOrder.map(idx => intermediateDonors[idx].donorId)
+
+      const routeDataToSave = {
+        startPoint,
+        startDonorId,
+        waypointOrder: orderedDonorIds,
+        calculatedAt: new Date().toISOString(),
+        // Save full route data from Google - no need to call API again!
+        polylinePath: routeDetails?.polylinePath,
+        totalDistanceMeters: routeDetails?.totalDistanceMeters,
+        totalDurationSeconds: routeDetails?.totalDurationSeconds,
+        legs: routeDetails?.legs
+      }
+
+      console.log('[RoutePlanner] Saving routeData with', routeDataToSave.polylinePath?.length || 0, 'path points')
+      audience.routeData = routeDataToSave
+
+      const saved = await remult.repo(TargetAudience).save(audience)
+      console.log('[RoutePlanner] Route saved successfully')
+
+      // Verify by re-fetching from DB
+      const verify = await remult.repo(TargetAudience).findId(this.selectedAudienceId)
+      console.log('[RoutePlanner] Verification fetch routeData:', JSON.stringify(verify?.routeData))
+    } catch (err) {
+      console.error('Failed to save route to audience:', err)
+    }
+  }
+
+  // Load saved route from TargetAudience without recalculating
+  private async loadSavedRoute(audience: TargetAudience) {
+    if (!audience.routeData || !audience.routeData.waypointOrder?.length) return false
+    if (!this.mapReady || this.donors.length < 2) return false
+
+    const { startPoint, startDonorId, waypointOrder } = audience.routeData
+
+    // Validate startPoint has required lat/lng
+    if (!startPoint?.lat || !startPoint?.lng) {
+      console.warn('[RoutePlanner] Invalid startPoint in saved route:', startPoint)
+      return false
+    }
+
+    // Build route stops from saved order
+    const orderedStops: RouteStop[] = []
+    waypointOrder.forEach((donorId, index) => {
+      const donor = this.donors.find(d => d.donorId === donorId)
+      if (donor) {
+        orderedStops.push({
+          marker: donor,
+          visited: false,
+          order: index + 1
+        })
+      }
+    })
+
+    if (orderedStops.length < 2) return false
+
+    this.routeStops = orderedStops
+
+    // Draw saved route from DB (no API call - uses saved polyline path!)
+    await this.drawSavedRoute(startPoint, orderedStops, audience)
+
+    return true
+  }
+
+  // Draw saved route from database - NO API CALL, uses saved polyline path!
+  private async drawSavedRoute(startPoint: { lat: number; lng: number }, stops: RouteStop[], audience: TargetAudience) {
+    const maps = this.geoService.getGoogleMaps()
+
+    // Validate all stops have valid markers with lat/lng
+    const validStops = stops.filter(stop => stop.marker?.lat && stop.marker?.lng)
+    if (validStops.length < 2) {
+      console.warn('[RoutePlanner] Not enough valid stops for route:', validStops.length)
+      return false
+    }
+
+    // Clear existing markers and polylines
+    this.routePolylines.forEach(p => p.setMap(null))
+    this.routePolylines = []
+    this.clearMarkers()
+
+    // Use saved polyline path from DB (actual road path from Google, saved when route was calculated)
+    const savedPath = audience.routeData?.polylinePath
+    if (savedPath && savedPath.length > 0) {
+      console.log('[RoutePlanner] Drawing saved polyline with', savedPath.length, 'points')
+      const polyline = new maps.Polyline({
+        path: savedPath,
+        map: this.map,
+        strokeColor: '#667eea',
+        strokeWeight: 4,
+        strokeOpacity: 0.8,
+        zIndex: 1
+      })
+      this.routePolylines.push(polyline)
+    } else {
+      // Fallback: straight lines if no saved path (old data)
+      console.log('[RoutePlanner] No saved polyline, using straight lines')
+      const pathPoints = [
+        { lat: startPoint.lat, lng: startPoint.lng },
+        ...validStops.map(stop => ({ lat: stop.marker.lat, lng: stop.marker.lng })),
+        { lat: startPoint.lat, lng: startPoint.lng }
+      ]
+      const polyline = new maps.Polyline({
+        path: pathPoints,
+        map: this.map,
+        strokeColor: '#667eea',
+        strokeWeight: 4,
+        strokeOpacity: 0.8,
+        geodesic: true,
+        zIndex: 1
+      })
+      this.routePolylines.push(polyline)
+    }
+
+    // Show route markers
+    validStops.forEach(stop => {
+      const marker = new maps.Marker({
+        position: { lat: stop.marker.lat, lng: stop.marker.lng },
+        map: this.map,
+        title: `${stop.order}. ${stop.marker.donorName}`,
+        icon: this.getRouteMarkerIcon(stop.order, stop.visited),
+        zIndex: 200 - stop.order
+      })
+      marker.addListener('click', () => this.onMarkerClick(stop.marker))
+      this.googleMarkers.push(marker)
+    })
+
+    this.routeCalculated = true
+
+    // Zoom to fit the entire route (excluding user location if not start point)
+    this.fitMapToRoute(startPoint, validStops)
+
+    // Use saved distance/duration data
+    const savedLegs = audience.routeData?.legs || []
+    this.routeLegs = validStops.map((stop, i) => ({
+      distance: savedLegs[i]?.distanceMeters
+        ? (savedLegs[i].distanceMeters >= 1000
+          ? `${(savedLegs[i].distanceMeters / 1000).toFixed(1)} ק"מ`
+          : `${savedLegs[i].distanceMeters} מ'`)
+        : '',
+      duration: savedLegs[i]?.durationSeconds
+        ? this.formatDuration(savedLegs[i].durationSeconds)
+        : '',
+      donorName: stop.marker.donorName
+    }))
+
+    const totalDist = audience.routeData?.totalDistanceMeters || 0
+    const totalDur = audience.routeData?.totalDurationSeconds || 0
+    this.routeTotalDistance = totalDist >= 1000
+      ? `${(totalDist / 1000).toFixed(1)} ק"מ`
+      : totalDist > 0 ? `${totalDist} מ'` : ''
+    this.routeTotalDuration = totalDur > 0 ? this.formatDuration(totalDur) : ''
+
+    // Update cache
+    if (!_mapSettingsCache) _mapSettingsCache = {}
+    _mapSettingsCache.routeState = {
+      startPoint,
+      startDonorId: undefined,
+      visitedDonorIds: []
+    }
+
+    return true
+  }
+
+  async clearRoute() {
     this.routeCalculated = false
     this.routeStops = []
     this.routeLegs = []
@@ -739,6 +1007,18 @@ export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
     // Clear cached route state
     if (_mapSettingsCache?.routeState) {
       delete _mapSettingsCache.routeState
+    }
+    // Clear route from database
+    if (this.selectedAudienceId) {
+      try {
+        const audience = await remult.repo(TargetAudience).findId(this.selectedAudienceId)
+        if (audience && audience.routeData) {
+          audience.routeData = undefined
+          await remult.repo(TargetAudience).save(audience)
+        }
+      } catch (err) {
+        console.error('Failed to clear route from database:', err)
+      }
     }
     // Restore regular donor markers
     this.showMarkers()
@@ -775,5 +1055,71 @@ export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
 
   get visitedCount(): number {
     return this.routeStops.filter(s => s.visited).length
+  }
+
+  // ==================== Splitter Handling ====================
+
+  onSplitterTouchStart(event: TouchEvent) {
+    event.preventDefault()
+    this.startDrag(event.touches[0].clientY)
+
+    const onTouchMove = (e: TouchEvent) => this.onDrag(e.touches[0].clientY)
+    const onTouchEnd = () => {
+      this.endDrag()
+      document.removeEventListener('touchmove', onTouchMove)
+      document.removeEventListener('touchend', onTouchEnd)
+    }
+
+    document.addEventListener('touchmove', onTouchMove, { passive: false })
+    document.addEventListener('touchend', onTouchEnd)
+  }
+
+  onSplitterMouseDown(event: MouseEvent) {
+    event.preventDefault()
+    this.startDrag(event.clientY)
+
+    const onMouseMove = (e: MouseEvent) => this.onDrag(e.clientY)
+    const onMouseUp = () => {
+      this.endDrag()
+      document.removeEventListener('mousemove', onMouseMove)
+      document.removeEventListener('mouseup', onMouseUp)
+    }
+
+    document.addEventListener('mousemove', onMouseMove)
+    document.addEventListener('mouseup', onMouseUp)
+  }
+
+  private startDrag(clientY: number) {
+    this.isDragging = true
+    this.startY = clientY
+    // Parse current map percentage from flex value
+    const match = this.mapFlex.match(/(\d+)%/)
+    this.startMapPercent = match ? parseInt(match[1], 10) : 75
+  }
+
+  private onDrag(clientY: number) {
+    if (!this.isDragging || !this.mapListContainer) return
+
+    const container = this.mapListContainer.nativeElement
+    const containerHeight = container.offsetHeight
+    const deltaY = clientY - this.startY
+    const deltaPercent = (deltaY / containerHeight) * 100
+
+    let newMapPercent = this.startMapPercent + deltaPercent
+    // Clamp between 20% and 80%
+    newMapPercent = Math.max(20, Math.min(80, newMapPercent))
+
+    const listPercent = 100 - newMapPercent
+    this.mapFlex = `1 1 ${newMapPercent}%`
+    this.listFlex = `0 0 ${listPercent}%`
+
+    // Trigger map resize to adjust to new size
+    if (this.map) {
+      google.maps.event.trigger(this.map, 'resize')
+    }
+  }
+
+  private endDrag() {
+    this.isDragging = false
   }
 }

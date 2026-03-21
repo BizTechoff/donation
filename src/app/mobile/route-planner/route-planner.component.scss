@@ -129,11 +129,19 @@
   color: #666;
 }
 
+// Map and List Container (with splitter)
+.map-list-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
 // Map
 .map-wrapper {
-  flex: 1;
   position: relative;
-  min-height: 200px;
+  min-height: 120px;
 
   .map-container {
     width: 100%;
@@ -170,9 +178,46 @@
   }
 }
 
+// Splitter Handle
+.splitter-handle {
+  height: 20px;
+  background: linear-gradient(to bottom, #e0e0e0 0%, #f5f5f5 50%, #e0e0e0 100%);
+  cursor: row-resize;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  touch-action: none;
+  user-select: none;
+  border-top: 1px solid #d0d0d0;
+  border-bottom: 1px solid #d0d0d0;
+
+  .splitter-grip {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 4px 24px;
+
+    span {
+      width: 32px;
+      height: 2px;
+      background: #999;
+      border-radius: 1px;
+    }
+  }
+
+  &:active {
+    background: linear-gradient(to bottom, #d0d0d0 0%, #e5e5e5 50%, #d0d0d0 100%);
+
+    .splitter-grip span {
+      background: #667eea;
+    }
+  }
+}
+
 // Route stops list
 .stops-list {
-  max-height: 40vh;
+  min-height: 100px;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   background: white;

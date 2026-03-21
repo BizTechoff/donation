@@ -67,8 +67,14 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
   routeTotalDuration = '';
   routeLegs: { distance: string; duration: string; donorName: string }[] = [];
   savedTargetAudienceName = ''; // שם קהל היעד שנשמר מהמסלול
+  private routeStartPoint?: { lat: number; lng: number }; // נקודת התחלת המסלול
   private routePolylines: google.maps.Polyline[] = [];
   private routeMarkers: google.maps.Marker[] = [];
+  // Full route data for saving to DB (polyline path, distances, durations)
+  private savedRoutePolylinePath: { lat: number; lng: number }[] = [];
+  private savedRouteLegsData: { distanceMeters: number; durationSeconds: number }[] = [];
+  private savedRouteTotalDistanceMeters = 0;
+  private savedRouteTotalDurationSeconds = 0;
 
   // User location
   userLat: number | null = null;
@@ -1426,6 +1432,8 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     console.log('[Route] calculateOptimizedRoute called with startPoint:', startPoint);
     console.log('[Route] markersData count:', this.markersData.length);
 
+    // שמור את נקודת ההתחלה לשימוש בשמירת קהל יעד
+    this.routeStartPoint = startPoint;
     this.calculatingRoute = true;
     this.cdr.detectChanges();
 
@@ -1497,6 +1505,15 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
       });
       this.routePolylines = polylines || [];
       console.log('[Route] Created polylines count:', this.routePolylines.length);
+
+      // Extract polyline path for saving to DB
+      this.savedRoutePolylinePath = [];
+      if (this.routePolylines.length > 0) {
+        const path = this.routePolylines[0].getPath();
+        path.forEach((point: google.maps.LatLng) => {
+          this.savedRoutePolylinePath.push({ lat: point.lat(), lng: point.lng() });
+        });
+      }
     } catch (err) {
       console.error('[Route] Error creating polylines:', err);
     }
@@ -1540,6 +1557,7 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     let totalDistance = 0;
     let totalDuration = 0;
     this.routeLegs = [];
+    this.savedRouteLegsData = []; // For saving to DB
 
     const legs = route.legs || [];
     legs.forEach((leg: any, i: number) => {
@@ -1547,6 +1565,12 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
       const durMillis = leg.durationMillis || 0;
       totalDistance += distMeters;
       totalDuration += durMillis;
+
+      // Save leg data for DB
+      this.savedRouteLegsData.push({
+        distanceMeters: distMeters,
+        durationSeconds: Math.round(durMillis / 1000)
+      });
 
       if (i < this.routeStops.length) {
         this.routeLegs.push({
@@ -1563,6 +1587,10 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
       ? `${(totalDistance / 1000).toFixed(1)} ק"מ`
       : `${totalDistance} מ'`;
     this.routeTotalDuration = this.formatDuration(Math.round(totalDuration / 1000));
+
+    // Save totals for DB
+    this.savedRouteTotalDistanceMeters = totalDistance;
+    this.savedRouteTotalDurationSeconds = Math.round(totalDuration / 1000);
 
     this.isRouteActive = true;
     this.cdr.detectChanges();
@@ -1617,10 +1645,23 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
       routeDuration: this.routeTotalDuration
     };
 
+    // Build route data to save with target audience (includes full polyline path!)
+    const routeData = this.routeStartPoint ? {
+      startPoint: this.routeStartPoint,
+      waypointOrder: donorIds, // Already in optimized order from routeStops
+      calculatedAt: new Date().toISOString(),
+      // Save full route data from Google - no need to call API again when loading!
+      polylinePath: this.savedRoutePolylinePath,
+      totalDistanceMeters: this.savedRouteTotalDistanceMeters,
+      totalDurationSeconds: this.savedRouteTotalDurationSeconds,
+      legs: this.savedRouteLegsData
+    } : undefined;
+
     // Open TargetAudienceDetailsModal
     const result = await this.ui.targetAudienceDetailsDialog('new', {
       initialDonors: donorsData,
-      metadata
+      metadata,
+      routeData
     });
 
     if (result) {

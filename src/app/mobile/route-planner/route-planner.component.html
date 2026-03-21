@@ -63,28 +63,43 @@
     </div>
   }
 
-  <!-- Map -->
-  <div class="map-wrapper">
-    <div #mapContainer class="map-container"></div>
+  <!-- Map and List Container with Splitter -->
+  <div class="map-list-container" #mapListContainer>
+    <!-- Map -->
+    <div class="map-wrapper" [style.flex]="mapFlex">
+      <div #mapContainer class="map-container"></div>
 
-    @if (!selectedAudienceId && !loading) {
-      <div class="map-placeholder">
-        <mat-icon>map</mat-icon>
-        <p>בחר קהל יעד כדי להציג תורמים על המפה</p>
+      @if (!selectedAudienceId && !loading) {
+        <div class="map-placeholder">
+          <mat-icon>map</mat-icon>
+          <p>בחר קהל יעד כדי להציג תורמים על המפה</p>
+        </div>
+      }
+
+      @if (selectedAudienceId && donors.length === 0 && !loading) {
+        <div class="map-placeholder">
+          <mat-icon>location_off</mat-icon>
+          <p>לא נמצאו תורמים עם כתובת בקהל יעד זה</p>
+        </div>
+      }
+    </div>
+
+    <!-- Splitter Handle -->
+    @if (routeCalculated && routeStops.length > 0) {
+      <div class="splitter-handle"
+           (touchstart)="onSplitterTouchStart($event)"
+           (mousedown)="onSplitterMouseDown($event)">
+        <div class="splitter-grip">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
       </div>
     }
 
-    @if (selectedAudienceId && donors.length === 0 && !loading) {
-      <div class="map-placeholder">
-        <mat-icon>location_off</mat-icon>
-        <p>לא נמצאו תורמים עם כתובת בקהל יעד זה</p>
-      </div>
-    }
-  </div>
-
-  <!-- Route Stops List -->
-  @if (routeCalculated && routeStops.length > 0) {
-    <div class="stops-list">
+    <!-- Route Stops List -->
+    @if (routeCalculated && routeStops.length > 0) {
+      <div class="stops-list" [style.flex]="listFlex">
       <div class="stops-header">
         <mat-icon>format_list_numbered</mat-icon>
         <span>סדר עצירות</span>
@@ -115,4 +130,5 @@
       }
     </div>
   }
+  </div>
 </div>

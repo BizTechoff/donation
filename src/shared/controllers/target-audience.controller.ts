@@ -11,7 +11,17 @@ export class TargetAudienceController {
     description: string,
     donorIds: string[],
     polygonPoints?: { lat: number; lng: number }[],
-    metadata?: any
+    metadata?: any,
+    routeData?: {
+      startPoint: { lat: number; lng: number };
+      waypointOrder: string[];
+      calculatedAt: string;
+      // Full route data from Google - saved to avoid recalculating
+      polylinePath?: { lat: number; lng: number }[];
+      totalDistanceMeters?: number;
+      totalDurationSeconds?: number;
+      legs?: { distanceMeters: number; durationSeconds: number }[];
+    }
   ): Promise<TargetAudience> {
     const targetAudienceRepo = remult.repo(TargetAudience)
 
@@ -22,6 +32,7 @@ export class TargetAudienceController {
       donorIds,
       polygonPoints,
       metadata,
+      routeData,
       createdByUserId: remult.user?.id,
       createdDate: new Date(),
       updatedDate: new Date(),

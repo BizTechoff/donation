@@ -296,6 +296,16 @@ export class UIToolsService implements UITools {
     initialDonors?: any[];
     polygonPoints?: { lat: number; lng: number }[];
     metadata?: any;
+    routeData?: {
+      startPoint: { lat: number; lng: number };
+      waypointOrder: string[];
+      calculatedAt: string;
+      // Full route data from Google - saved to avoid recalculating
+      polylinePath?: { lat: number; lng: number }[];
+      totalDistanceMeters?: number;
+      totalDurationSeconds?: number;
+      legs?: { distanceMeters: number; durationSeconds: number }[];
+    };
   }): Promise<any> {
     return await openDialog(
       (await import('../routes/modals/target-audience-details-modal/target-audience-details-modal.component')).TargetAudienceDetailsModalComponent,
@@ -303,7 +313,8 @@ export class UIToolsService implements UITools {
         targetAudienceId,
         initialDonors: options?.initialDonors,
         polygonPoints: options?.polygonPoints,
-        metadata: options?.metadata
+        metadata: options?.metadata,
+        routeData: options?.routeData
       }
     )
   }

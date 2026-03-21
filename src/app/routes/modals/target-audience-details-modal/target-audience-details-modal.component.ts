@@ -15,6 +15,16 @@ export interface TargetAudienceDetailsModalArgs {
   initialDonors?: DonorMapData[]; // For creating new audience
   polygonPoints?: { lat: number; lng: number }[];
   metadata?: any;
+  routeData?: {
+    startPoint: { lat: number; lng: number };
+    waypointOrder: string[];
+    calculatedAt: string;
+    // Full route data from Google - saved to avoid recalculating
+    polylinePath?: { lat: number; lng: number }[];
+    totalDistanceMeters?: number;
+    totalDurationSeconds?: number;
+    legs?: { distanceMeters: number; durationSeconds: number }[];
+  };
 }
 
 @DialogConfig({
@@ -214,7 +224,8 @@ export class TargetAudienceDetailsModalComponent implements OnInit {
           this.description.trim(),
           donorIds,
           this.args.polygonPoints,
-          metadata
+          metadata,
+          this.args.routeData
         );
 
         this.ui.info('קהל היעד נוצר בהצלחה');

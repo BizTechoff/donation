@@ -105,4 +105,22 @@ export class TargetAudience extends IdEntity {
     averageDonation?: number // Average donation amount
     createdFrom?: string // Additional context
   }
+
+  // Route data - saved calculated route for mobile route planner
+  @Fields.json({
+    caption: 'נתוני מסלול',
+    allowNull: true,
+    includeInApi: true
+  })
+  routeData?: {
+    startPoint: { lat: number; lng: number }
+    startDonorId?: string
+    waypointOrder: string[] // Donor IDs in optimized order
+    calculatedAt: string // ISO date string
+    // Saved from Google Routes API response - no need to call again!
+    polylinePath?: { lat: number; lng: number }[] // The actual route path
+    totalDistanceMeters?: number
+    totalDurationSeconds?: number
+    legs?: { distanceMeters: number; durationSeconds: number }[]
+  }
 }
