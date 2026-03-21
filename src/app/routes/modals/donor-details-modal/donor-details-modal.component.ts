@@ -4,12 +4,14 @@ import { BusyService, DialogConfig, openDialog } from 'common-ui-elements';
 import { remult } from 'remult';
 import { DonorController } from '../../../../shared/controllers/donor.controller';
 import { Circle, Company, Country, Donation, Donor, DonorAddressType, DonorContact, DonorEvent, DonorNote, DonorPlace, DonorReceptionHour, DonorRelation, Event, NoteType, Place, Reminder, User } from '../../../../shared/entity';
+import { ContactPerson } from '../../../../shared/entity/contact-person';
 import { AddressComponents } from '../../../common/osm-address-input/osm-address-input.component';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
 import { ActiveFilter, FilterOption, NavigationRecord } from '../../../shared/modal-navigation-header/modal-navigation-header.component';
 import { CircleDetailsModalComponent } from '../circle-details-modal/circle-details-modal.component';
 import { CircleSelectionModalComponent } from '../circle-selection-modal/circle-selection-modal.component';
+import { ContactPersonSelectionModalComponent } from '../contact-person-selection-modal/contact-person-selection-modal.component';
 import { CompanyDetailsModalComponent } from '../company-details-modal/company-details-modal.component';
 import { CompanySelectionModalComponent } from '../company-selection-modal/company-selection-modal.component';
 import { DonorAddressTypeSelectionModalComponent } from '../donor-address-type-selection-modal/donor-address-type-selection-modal.component';
@@ -68,6 +70,9 @@ export class DonorDetailsModalComponent implements OnInit {
 
   // Fundraisers (users with donator=true)
   fundraisers: User[] = [];
+
+  // Contact persons
+  contactPersons: ContactPerson[] = [];
 
   // Family relationships
   allDonorsForFamily: Donor[] = [];
@@ -128,6 +133,7 @@ export class DonorDetailsModalComponent implements OnInit {
       this.availableEvents = data.events;
       this.countries = data.countries;
       this.fundraisers = data.fundraisers;
+      this.contactPersons = data.contactPersons;
       this.allDonorsForFamily = data.allDonorsForFamily;
       this.companies = data.companies;
       this.circles = data.circles;
@@ -307,6 +313,42 @@ export class DonorDetailsModalComponent implements OnInit {
       });
     } catch (error) {
       console.error('Error loading fundraisers:', error);
+    }
+  }
+
+  // Contact Person methods
+  getContactPersonName(): string {
+    if (!this.donor?.contactPersonId) return '';
+    const contactPerson = this.contactPersons.find(cp => cp.id === this.donor?.contactPersonId);
+    return contactPerson?.name || '';
+  }
+
+  async openContactPersonSelection() {
+    const result = await openDialog(
+      ContactPersonSelectionModalComponent,
+      (modal: ContactPersonSelectionModalComponent) => {
+        modal.args = {
+          availableContactPersons: this.contactPersons
+        };
+      }
+    ) as ContactPerson | { newContactPerson: ContactPerson } | null;
+
+    if (result) {
+      if (result && typeof result === 'object' && 'newContactPerson' in result) {
+        // A new contact person was created
+        const newContactPerson = result.newContactPerson;
+        this.contactPersons.push(newContactPerson);
+        if (this.donor) {
+          this.donor.contactPersonId = newContactPerson.id;
+          this.onFieldChange();
+        }
+      } else if (result && 'id' in result) {
+        // An existing contact person was selected
+        if (this.donor) {
+          this.donor.contactPersonId = result.id;
+          this.onFieldChange();
+        }
+      }
     }
   }
 

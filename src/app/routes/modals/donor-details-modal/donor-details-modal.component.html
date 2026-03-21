@@ -220,6 +220,19 @@
             </select>
           </div>
 
+          <!-- Contact Person (איש קשר) -->
+          <div class="form-group">
+            <div class="field-title">
+              <mat-icon class="field-icon">contact_phone</mat-icon>
+              <label>{{ (i18n.terms$ | async)?.contactPerson }}</label>
+            </div>
+            <div class="selectable-field" (click)="openContactPersonSelection()">
+              <span *ngIf="getContactPersonName()">{{ getContactPersonName() }}</span>
+              <span *ngIf="!getContactPersonName()" class="placeholder">{{ (i18n.terms$ | async)?.selectContactPerson }}</span>
+              <mat-icon class="chevron-icon">chevron_left</mat-icon>
+            </div>
+          </div>
+
         </div>
       </div>
 

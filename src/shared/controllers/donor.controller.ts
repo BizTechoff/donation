@@ -14,6 +14,7 @@ import { Event } from '../entity/event';
 import { NoteType } from '../entity/note-type';
 import { Place } from '../entity/place';
 import { User } from '../entity/user';
+import { ContactPerson } from '../entity/contact-person';
 
 export interface DonorDetailsData {
   donor: Donor | null | undefined;
@@ -31,6 +32,7 @@ export interface DonorDetailsData {
   donorContacts: DonorContact[];
   donorRelations: DonorRelation[];
   allDonors: Donor[];
+  contactPersons: ContactPerson[];
 }
 
 export interface DonorSelectionData {
@@ -57,7 +59,8 @@ export class DonorController {
       companies,
       circles,
       noteTypes,
-      allDonors
+      allDonors,
+      contactPersons
     ] = await Promise.all([
       remult.repo(Event).find({ where: { isActive: true }, orderBy: { sortOrder: 'asc', description: 'asc' } }),
       remult.repo(Country).find({ orderBy: { name: 'asc' } }),
@@ -76,6 +79,9 @@ export class DonorController {
       remult.repo(NoteType).find({ where: { isActive: true }, orderBy: { sortOrder: 'asc', name: 'asc' } }),
       remult.repo(Donor).find({
         orderBy: { lastName: 'asc', firstName: 'asc' }
+      }),
+      remult.repo(ContactPerson).find({
+        orderBy: { name: 'asc' }
       })
     ]);
 
@@ -135,7 +141,8 @@ export class DonorController {
       donorReceptionHours,
       donorContacts,
       donorRelations,
-      allDonors
+      allDonors,
+      contactPersons
     };
   }
 
