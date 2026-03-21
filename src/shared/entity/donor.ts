@@ -12,6 +12,7 @@ import {
 import { Roles } from '../enum/roles'
 import { Donation } from './donation'
 import { User } from './user'
+import { ContactPerson } from './contact-person'
 
 @Entity<Donor>('donors', {
   allowApiCrud: Allow.authenticated,
@@ -356,6 +357,17 @@ export class Donor extends IdEntity {
     caption: 'מתרים ID',
   })
   fundraiserId = ''
+
+  @Relations.toOne<Donor, ContactPerson>(() => ContactPerson, {
+    caption: 'איש קשר',
+    field: 'contactPersonId'
+  })
+  contactPerson?: ContactPerson
+
+  @Fields.string({
+    caption: 'איש קשר ID',
+  })
+  contactPersonId = ''
 
   @Fields.date({
     allowApiUpdate: false,

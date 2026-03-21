@@ -36,6 +36,7 @@ import { DonationFile } from '../shared/entity/file'
 import { Place } from '../shared/entity/place'
 import { Reminder } from '../shared/entity/reminder'
 import { User } from '../shared/entity/user'
+import { ContactPerson } from '../shared/entity/contact-person'
 import { checkAndSendReminders } from './scheduler'
 import { AppSettingsController } from '../shared/controllers/app-settings.controller'
 import { GlobalFilterController } from '../shared/controllers/global-filter.controller'
@@ -54,7 +55,7 @@ export const entities = [
   DonationFile, Bank, Organization, Company, Circle, DonorRelation, DonorContact,
   DonorPlace, DonorNote, DonorReceptionHour, NoteType, DonationBank, DonationOrganization,
   Payment, DonorAddressType, BlessingBookType, LetterTitle, LetterTitleDefault, Gift, DonorGift, TargetAudience,
-  GoogleAuth, GoogleContactMapping, GoogleSyncLog, AppSettings]
+  GoogleAuth, GoogleContactMapping, GoogleSyncLog, AppSettings, ContactPerson]
 export const api = remultExpress({
   admin: true,
   controllers: [SignInController, UpdatePasswordController, DonorController,

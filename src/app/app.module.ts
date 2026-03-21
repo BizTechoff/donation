@@ -69,6 +69,7 @@ import { SeedDataComponent } from './components/seed-data/seed-data.component'
 import { EventSelectionModalComponent } from './routes/modals/event-selection-modal/event-selection-modal.component'
 import { NotesSelectionModalComponent } from './routes/modals/notes-selection-modal/notes-selection-modal.component'
 import { CircleSelectionModalComponent } from './routes/modals/circle-selection-modal/circle-selection-modal.component'
+import { ContactPersonSelectionModalComponent } from './routes/modals/contact-person-selection-modal/contact-person-selection-modal.component'
 import { CompanySelectionModalComponent } from './routes/modals/company-selection-modal/company-selection-modal.component'
 import { BankSelectionModalComponent } from './routes/modals/bank-selection-modal/bank-selection-modal.component'
 import { OrganizationSelectionModalComponent } from './routes/modals/organization-selection-modal/organization-selection-modal.component'
@@ -152,6 +153,7 @@ import { A11yModule } from "@angular/cdk/a11y";
     EventSelectionModalComponent,
     NotesSelectionModalComponent,
     CircleSelectionModalComponent,
+    ContactPersonSelectionModalComponent,
     CompanySelectionModalComponent,
     BankSelectionModalComponent,
     OrganizationSelectionModalComponent,

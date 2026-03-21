@@ -1,0 +1,92 @@
+<div class="modal-backdrop" (click)="closeDialog()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ args.title || (i18n.terms$ | async)?.selectContactPerson }}</h2>
+      <button class="close-btn" (click)="closeDialog()" title="סגור">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <!-- Search Section -->
+      <div class="search-section">
+        <div class="search-input-group">
+          <input
+            type="text"
+            class="form-control search-input"
+            [(ngModel)]="searchTerm"
+            placeholder="חפש איש קשר...">
+          <button *ngIf="searchTerm" class="clear-search-btn" (click)="clearSearch()">
+            <mat-icon>clear</mat-icon>
+          </button>
+        </div>
+        <button class="btn btn-create-new" (click)="toggleNewForm()">
+          <mat-icon>{{ showNewForm ? 'close' : 'add' }}</mat-icon>
+          {{ showNewForm ? 'ביטול' : (i18n.terms$ | async)?.addNewContactPerson }}
+        </button>
+      </div>
+
+      <!-- New Contact Person Form -->
+      <div class="new-form" *ngIf="showNewForm">
+        <h3>{{ (i18n.terms$ | async)?.addNewContactPerson }}</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ (i18n.terms$ | async)?.contactPersonName }} *</label>
+            <input type="text" class="form-control" [(ngModel)]="newName" placeholder="שם איש קשר">
+          </div>
+          <div class="form-group">
+            <label>{{ (i18n.terms$ | async)?.contactPersonEmail }}</label>
+            <input type="email" class="form-control" [(ngModel)]="newEmail" placeholder="אימייל">
+          </div>
+          <div class="form-group">
+            <label>{{ (i18n.terms$ | async)?.contactPersonMobile }}</label>
+            <input type="tel" class="form-control" [(ngModel)]="newMobile" placeholder="נייד">
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" (click)="saveNewContactPerson()" [disabled]="!newName.trim() || saving">
+            <mat-icon>save</mat-icon>
+            {{ saving ? 'שומר...' : 'שמור והוסף' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Contact Persons List -->
+      <div class="contact-persons-section">
+        <div class="contact-persons-list" *ngIf="getFilteredContactPersons().length > 0">
+          <div class="contact-person-card"
+               *ngFor="let cp of getFilteredContactPersons()"
+               (click)="selectContactPerson(cp)"
+               [class.selected]="selectedContactPerson?.id === cp.id">
+            <div class="contact-person-content">
+              <div class="contact-person-icon">
+                <mat-icon>person</mat-icon>
+              </div>
+              <div class="contact-person-info">
+                <div class="contact-person-name">{{ cp.name }}</div>
+                <div class="contact-person-details" *ngIf="cp.email || cp.mobile">
+                  <span *ngIf="cp.email"><mat-icon>email</mat-icon> {{ cp.email }}</span>
+                  <span *ngIf="cp.mobile"><mat-icon>phone</mat-icon> {{ cp.mobile }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="select-indicator">
+              <mat-icon>check_circle</mat-icon>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty state -->
+        <div class="no-results" *ngIf="getFilteredContactPersons().length === 0">
+          <mat-icon class="empty-icon">person_off</mat-icon>
+          <p *ngIf="searchTerm">לא נמצאו אנשי קשר התואמים לחיפוש "{{ searchTerm }}"</p>
+          <p *ngIf="!searchTerm">אין אנשי קשר זמינים</p>
+          <button class="btn btn-primary" (click)="toggleNewForm()" *ngIf="!showNewForm">
+            <mat-icon>add</mat-icon>
+            {{ (i18n.terms$ | async)?.addNewContactPerson }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
