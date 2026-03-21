@@ -122,6 +122,14 @@ export class QuickDonationComponent implements OnInit {
   }
 
   goBack() {
+    // If showing donor details and came from map, go back to map
+    if (this.showingDonorDetails && this.sourceIsMap && this.sourceDonorId) {
+      this.router.navigate(['/m/route-planner'], {
+        queryParams: { openPopup: this.sourceDonorId }
+      })
+      return
+    }
+
     if (this.currentStep > 1) {
       // If at step 2 (donation form) and came from map, go back to map
       if (this.currentStep === 2 && this.sourceIsMap && this.sourceDonorId) {
