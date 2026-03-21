@@ -104,9 +104,32 @@
         <mat-icon>format_list_numbered</mat-icon>
         <span>סדר עצירות</span>
       </div>
+
+      <!-- Start Point (if it's a donor) - shown as #1 -->
+      @if (startDonor) {
+        <div class="stop-card">
+          <div class="stop-order">1</div>
+          <div class="stop-info">
+            <div class="stop-name">{{ startDonor.donorName }}</div>
+          </div>
+          <div class="stop-actions">
+            <button mat-icon-button class="action-waze" (click)="openWaze(startDonor.lat, startDonor.lng)" title="נווט בוייז">
+              <mat-icon>navigation</mat-icon>
+            </button>
+            <button mat-icon-button class="action-donate" (click)="navigateToDonation(startDonor.donorId)" title="תרומה חדשה">
+              <mat-icon>volunteer_activism</mat-icon>
+            </button>
+            <button mat-icon-button class="action-info" (click)="navigateToDetails(startDonor.donorId)" title="פרטים">
+              <mat-icon>info_outline</mat-icon>
+            </button>
+          </div>
+        </div>
+      }
+
+      <!-- Route stops - numbered 2, 3, 4... if there's a start donor, otherwise 1, 2, 3... -->
       @for (stop of routeStops; track stop.order) {
         <div class="stop-card" [class.visited]="stop.visited">
-          <div class="stop-order">{{ stop.order }}</div>
+          <div class="stop-order">{{ startDonor ? stop.order + 1 : stop.order }}</div>
           <div class="stop-info">
             <div class="stop-name">{{ stop.marker.donorName }}</div>
             @if (routeLegs[stop.order - 1]) {

@@ -68,6 +68,7 @@ export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
   donors: MarkerData[] = []
   routeStops: RouteStop[] = []
   selectedDonorDetails: DonorMapData | null = null
+  startDonor: MarkerData | null = null // Start point donor (if not user location)
 
   // Route info
   routeTotalDistance = ''
@@ -505,6 +506,11 @@ export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  // Start point marker - same style as other stops, number 1
+  private getStartPointMarkerIcon(): any {
+    return this.getRouteMarkerIcon(1, false)
+  }
+
   private fitMapToDonors() {
     if (!this.map || this.donors.length === 0) return
     // Skip fitBounds on initial load if we have a saved position
@@ -730,12 +736,34 @@ export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
 
       // Update marker icons with route order
       this.clearMarkers()
+
+      // Add start point marker if it's a donor (not user location)
+      this.startDonor = null
+      if (startDonorId) {
+        const foundStartDonor = this.donors.find(d => d.donorId === startDonorId)
+        if (foundStartDonor) {
+          this.startDonor = foundStartDonor
+          const startMarker = new maps.Marker({
+            position: { lat: foundStartDonor.lat, lng: foundStartDonor.lng },
+            map: this.map,
+            title: `נקודת התחלה: ${foundStartDonor.donorName}`,
+            icon: this.getStartPointMarkerIcon(),
+            zIndex: 300 // Above all other markers
+          })
+          startMarker.addListener('click', () => this.onMarkerClick(foundStartDonor))
+          this.googleMarkers.push(startMarker)
+        }
+      }
+
+      // If there's a start donor, offset stop numbers by 1 (start = 1, stops = 2, 3, 4...)
+      const orderOffset = this.startDonor ? 1 : 0
       this.routeStops.forEach(stop => {
+        const displayOrder = stop.order + orderOffset
         const marker = new maps.Marker({
           position: { lat: stop.marker.lat, lng: stop.marker.lng },
           map: this.map,
-          title: `${stop.order}. ${stop.marker.donorName}`,
-          icon: this.getRouteMarkerIcon(stop.order, false),
+          title: `${displayOrder}. ${stop.marker.donorName}`,
+          icon: this.getRouteMarkerIcon(displayOrder, false),
           zIndex: 200 - stop.order
         })
         marker.addListener('click', () => this.onMarkerClick(stop.marker))
@@ -946,13 +974,35 @@ export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
       this.routePolylines.push(polyline)
     }
 
+    // Add start point marker if it's a donor (not user location)
+    this.startDonor = null
+    const startDonorId = audience.routeData?.startDonorId
+    if (startDonorId) {
+      const foundStartDonor = this.donors.find(d => d.donorId === startDonorId)
+      if (foundStartDonor) {
+        this.startDonor = foundStartDonor
+        const startMarker = new maps.Marker({
+          position: { lat: foundStartDonor.lat, lng: foundStartDonor.lng },
+          map: this.map,
+          title: `נקודת התחלה: ${foundStartDonor.donorName}`,
+          icon: this.getStartPointMarkerIcon(),
+          zIndex: 300 // Above all other markers
+        })
+        startMarker.addListener('click', () => this.onMarkerClick(foundStartDonor))
+        this.googleMarkers.push(startMarker)
+      }
+    }
+
     // Show route markers
+    // If there's a start donor, offset stop numbers by 1 (start = 1, stops = 2, 3, 4...)
+    const orderOffset = this.startDonor ? 1 : 0
     validStops.forEach(stop => {
+      const displayOrder = stop.order + orderOffset
       const marker = new maps.Marker({
         position: { lat: stop.marker.lat, lng: stop.marker.lng },
         map: this.map,
-        title: `${stop.order}. ${stop.marker.donorName}`,
-        icon: this.getRouteMarkerIcon(stop.order, stop.visited),
+        title: `${displayOrder}. ${stop.marker.donorName}`,
+        icon: this.getRouteMarkerIcon(displayOrder, stop.visited),
         zIndex: 200 - stop.order
       })
       marker.addListener('click', () => this.onMarkerClick(stop.marker))
@@ -989,7 +1039,7 @@ export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!_mapSettingsCache) _mapSettingsCache = {}
     _mapSettingsCache.routeState = {
       startPoint,
-      startDonorId: undefined,
+      startDonorId: audience.routeData?.startDonorId,
       visitedDonorIds: []
     }
 
@@ -1002,6 +1052,7 @@ export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
     this.routeLegs = []
     this.routeTotalDistance = ''
     this.routeTotalDuration = ''
+    this.startDonor = null
     this.routePolylines.forEach(p => p.setMap(null))
     this.routePolylines = []
     // Clear cached route state
