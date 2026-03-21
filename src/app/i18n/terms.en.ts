@@ -41,6 +41,7 @@ export const termsEn = {
   gifts: 'Gifts',
   reports: 'Reports',
   googleSync: 'Google Sync',
+  mobileView: 'Mobile View',
 
   // Donors Map
   mapTitle: 'Donors Map',
@@ -406,6 +407,11 @@ export const termsEn = {
   // Grid Headers
   method: 'Method',
   fundraiser: 'Fundraiser',
+  selectContactPerson: 'Select Contact Person',
+  addNewContactPerson: 'Add New Contact Person',
+  contactPersonName: 'Name',
+  contactPersonEmail: 'Email',
+  contactPersonMobile: 'Mobile',
   thankYouLetter: 'Thank You Letter',
   proof: 'Proof',
 

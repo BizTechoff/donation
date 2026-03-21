@@ -42,6 +42,7 @@ export const termsHe = {
   gifts: 'מתנות',
   reports: 'דוחות',
   googleSync: 'סנכרון Google',
+  mobileView: 'תצוגת מובייל',
 
   // Donors Map
   mapTitle: 'מפת תורמים',
@@ -406,6 +407,11 @@ export const termsHe = {
   // Grid Headers
   method: 'אופן תרומה',
   fundraiser: 'מתרים',
+  selectContactPerson: 'בחר איש קשר',
+  addNewContactPerson: 'הוסף איש קשר חדש',
+  contactPersonName: 'שם איש קשר',
+  contactPersonEmail: 'אימייל',
+  contactPersonMobile: 'נייד',
   thankYouLetter: 'מכתב תודה',
   proof: 'הוכחה',
 
