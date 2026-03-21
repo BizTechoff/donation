@@ -161,6 +161,19 @@ export class MapSelectedDonorsModalComponent implements OnInit {
     }
   }
 
+  // Check if route can be shown (2-20 donors with coordinates)
+  get canShowRoute(): boolean {
+    const donorsWithCoords = this.selectedDonors.filter(d => d.donorPlace?.place?.latitude && d.donorPlace?.place?.longitude);
+    return donorsWithCoords.length >= 2 && donorsWithCoords.length <= 20;
+  }
+
+  // Show route for selected donors
+  showRoute() {
+    // Filter only donors with coordinates
+    const donorsWithCoords = this.selectedDonors.filter(d => d.donorPlace?.place?.latitude && d.donorPlace?.place?.longitude);
+    this.dialogRef.close({ action: 'showRoute', donors: donorsWithCoords });
+  }
+
   // Save as target audience
   async saveAsTargetAudience() {
     // Calculate metadata

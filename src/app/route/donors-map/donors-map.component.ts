@@ -1153,7 +1153,55 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   async showDonorsInPolygonModal(donors: DonorMapData[], polygonPoints: { lat: number; lng: number }[]) {
     // Show the modal with selected donors and polygon points
-    await this.ui.mapSelectedDonorsDialog(donors, polygonPoints);
+    const result = await this.ui.mapSelectedDonorsDialog(donors, polygonPoints);
+
+    // Handle route request from modal
+    if (result?.action === 'showRoute' && result.donors?.length >= 2) {
+      await this.calculateRouteForSelectedDonors(result.donors);
+    }
+  }
+
+  // Calculate route for specific donors (from polygon selection modal)
+  async calculateRouteForSelectedDonors(donors: DonorMapData[]) {
+    console.log('[Route] calculateRouteForSelectedDonors called with', donors.length, 'donors');
+
+    // Convert DonorMapData to MarkerData format
+    const routeMarkers: MarkerData[] = donors
+      .filter(d => d.donorPlace?.place?.latitude && d.donorPlace?.place?.longitude)
+      .map(d => ({
+        donorId: d.donor.id,
+        lat: d.donorPlace!.place!.latitude!,
+        lng: d.donorPlace!.place!.longitude!,
+        donorName: d.donor.fullName || `${d.donor.firstName || ''} ${d.donor.lastName || ''}`.trim(),
+        statuses: d.stats.statuses
+      }));
+
+    console.log('[Route] Created routeMarkers:', routeMarkers.map(m => ({ name: m.donorName, lat: m.lat, lng: m.lng })));
+
+    if (routeMarkers.length < 2) {
+      this.ui.error('יש צורך לפחות ב-2 תורמים עם קואורדינטות לחישוב מסלול');
+      return;
+    }
+
+    // Set markersData to selected donors for route calculation
+    this.markersData = routeMarkers;
+
+    // Clear existing markers and create new ones for route donors
+    this.markers.forEach(m => m.setMap(null));
+    this.markers = [];
+
+    routeMarkers.forEach(m => {
+      const marker = this.createGoogleMarker(m);
+      this.markers.push(marker);
+    });
+
+    // Fit map to show all route markers
+    const bounds = new google.maps.LatLngBounds();
+    routeMarkers.forEach(m => bounds.extend({ lat: m.lat, lng: m.lng }));
+    this.map.fitBounds(bounds);
+
+    // Start route calculation
+    await this.chooseStartPoint();
   }
 
   private onKeyDown = (e: KeyboardEvent) => {
@@ -1362,6 +1410,9 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   async calculateOptimizedRoute(startPoint: { lat: number; lng: number }) {
+    console.log('[Route] calculateOptimizedRoute called with startPoint:', startPoint);
+    console.log('[Route] markersData count:', this.markersData.length);
+
     this.calculatingRoute = true;
     this.cdr.detectChanges();
 
@@ -1377,6 +1428,8 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
         location: new google.maps.LatLng(m.lat, m.lng)
       }));
 
+      console.log('[Route] Intermediates count:', intermediates.length);
+
       const request = {
         origin,
         destination,
@@ -1386,7 +1439,12 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
         fields: ['path', 'legs', 'optimizedIntermediateWaypointIndices', 'distanceMeters', 'durationMillis']
       };
 
+      console.log('[Route] Request:', JSON.stringify(request, null, 2));
+
       const { routes } = await Route.computeRoutes(request);
+
+      console.log('[Route] Response routes count:', routes?.length);
+      console.log('[Route] First route:', routes?.[0]);
 
       if (!routes || routes.length === 0) {
         throw new Error('No route found');
@@ -1394,7 +1452,7 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
       this.renderRoute(routes[0]);
     } catch (err) {
-      console.error('Route calculation failed:', err);
+      console.error('[Route] Route calculation failed:', err);
       this.ui.error(this.i18n.terms.routeCalculationFailed);
     } finally {
       this.calculatingRoute = false;
@@ -1403,24 +1461,37 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   renderRoute(route: any) {
+    console.log('[Route] renderRoute called');
+    console.log('[Route] route object:', route);
+    console.log('[Route] route.legs:', route.legs);
+    console.log('[Route] route.optimizedIntermediateWaypointIndices:', route.optimizedIntermediateWaypointIndices);
+    console.log('[Route] route.createPolylines exists:', typeof route.createPolylines === 'function');
+
     // Clear previous polylines
     this.routePolylines.forEach(p => p.setMap(null));
     this.routePolylines = [];
 
     // Draw polylines using createPolylines()
-    const polylines = route.createPolylines({
-      polylineOptions: {
-        map: this.map,
-        strokeColor: '#667eea',
-        strokeWeight: 4,
-        strokeOpacity: 0.8,
-        zIndex: 1
-      }
-    });
-    this.routePolylines = polylines;
+    try {
+      const polylines = route.createPolylines({
+        polylineOptions: {
+          map: this.map,
+          strokeColor: '#667eea',
+          strokeWeight: 4,
+          strokeOpacity: 0.8,
+          zIndex: 1
+        }
+      });
+      this.routePolylines = polylines || [];
+      console.log('[Route] Created polylines count:', this.routePolylines.length);
+    } catch (err) {
+      console.error('[Route] Error creating polylines:', err);
+    }
 
     // Get optimized waypoint order
     const waypointOrder: number[] = route.optimizedIntermediateWaypointIndices || [];
+    console.log('[Route] waypointOrder:', waypointOrder);
+    console.log('[Route] markersData length:', this.markersData.length);
 
     // Build route stops in optimized order
     this.routeStops = waypointOrder.map((originalIndex: number, orderIndex: number) => ({
@@ -1428,6 +1499,8 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
       visited: false,
       order: orderIndex + 1
     }));
+
+    console.log('[Route] routeStops:', this.routeStops.map(s => ({ order: s.order, name: s.marker?.donorName, lat: s.marker?.lat, lng: s.marker?.lng })));
 
     // Hide original markers
     this.markers.forEach(marker => marker.setVisible(false));

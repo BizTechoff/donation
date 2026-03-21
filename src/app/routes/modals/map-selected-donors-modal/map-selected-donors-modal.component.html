@@ -33,6 +33,13 @@
           <mat-icon>bookmark</mat-icon>
           שמור כקהל יעד
         </button>
+        <button class="btn btn-show-route"
+                *ngIf="canShowRoute"
+                (click)="showRoute()"
+                [title]="'הצג מסלול עבור ' + selectedDonors.length + ' תורמים'">
+          <mat-icon>route</mat-icon>
+          הצג מסלול
+        </button>
       </div>
 
       <!-- Donors List -->
