@@ -12,6 +12,7 @@ import { Donor } from '../../../shared/entity/donor';
 import { DonorContact } from '../../../shared/entity/donor-contact';
 import { DonorPlace } from '../../../shared/entity/donor-place';
 import { User } from '../../../shared/entity/user';
+import { ContactPerson } from '../../../shared/entity/contact-person';
 import { I18nService } from '../../i18n/i18n.service';
 import { CampaignSelectionModalComponent } from '../../routes/modals/campaign-selection-modal/campaign-selection-modal.component';
 import { DonorSelectionModalComponent } from '../../routes/modals/donor-selection-modal/donor-selection-modal.component';
@@ -73,6 +74,9 @@ interface PaymentReportData {
   maritalStatus?: string;
   isAnash?: boolean;
   isAlumni?: boolean;
+  // Fundraiser & Contact Person
+  fundraiserName?: string;
+  contactPersonName?: string;
   // Expanded address fields
   country?: string;
   state?: string;
@@ -112,6 +116,9 @@ interface BlessingReportData {
   maritalStatus?: string;
   isAnash?: boolean;
   isAlumni?: boolean;
+  // Fundraiser & Contact Person
+  fundraiserName?: string;
+  contactPersonName?: string;
 }
 
 interface DonationDetail {
@@ -1258,6 +1265,14 @@ export class ReportsComponent implements OnInit, OnDestroy {
       }
     });
 
+    // Load fundraisers and contact persons for name lookup
+    const [fundraisers, contactPersons] = await Promise.all([
+      remult.repo(User).find({ where: { donator: true } }),
+      remult.repo(ContactPerson).find()
+    ]);
+    const fundraiserMap = new Map(fundraisers.map(f => [f.id, f.name]));
+    const contactPersonMap = new Map(contactPersons.map(cp => [cp.id, cp.name]));
+
     // Create a map of blessings by donor ID
     const blessingMap = new Map<string, Blessing>();
     blessings.forEach(blessing => {
@@ -1311,7 +1326,10 @@ export class ReportsComponent implements OnInit, OnDestroy {
         suffixEnglish: donor.suffixEnglish || '',
         maritalStatus: donor.maritalStatus || '',
         isAnash: donor.isAnash || false,
-        isAlumni: donor.isAlumni || false
+        isAlumni: donor.isAlumni || false,
+        // Fundraiser & Contact Person
+        fundraiserName: donor.fundraiserId ? fundraiserMap.get(donor.fundraiserId) || '' : '',
+        contactPersonName: donor.contactPersonId ? contactPersonMap.get(donor.contactPersonId) || '' : ''
       };
     });
 
@@ -1432,6 +1450,9 @@ export class ReportsComponent implements OnInit, OnDestroy {
         { header: 'מצב משפחתי', mapper: (row: any) => this.getMaritalStatusText(row.donorDetails?.maritalStatus || ''), width: 12 },
         { header: 'אנ"ש', mapper: (row: any) => row.donorDetails?.isAnash ? '✓' : '', width: 8 },
         { header: 'תלמידנו', mapper: (row: any) => row.donorDetails?.isAlumni ? '✓' : '', width: 8 },
+        // Fundraiser & Contact Person
+        { header: 'מתרים', mapper: (row: any) => row.donorDetails?.fundraiserName || '', width: 15 },
+        { header: 'איש קשר', mapper: (row: any) => row.donorDetails?.contactPersonName || '', width: 15 },
         // Expanded address fields
         { header: 'מדינה', mapper: (row: any) => row.donorDetails?.country || '', width: 12 },
         { header: 'עיר', mapper: (row: any) => row.donorDetails?.city || '', width: 15 },
@@ -1510,6 +1531,8 @@ export class ReportsComponent implements OnInit, OnDestroy {
         headers.push('Title', 'First Name', 'Last Name', 'Suffix');
         // Donor type fields
         headers.push('מצב משפחתי', 'אנ"ש', 'תלמידנו');
+        // Fundraiser & Contact Person
+        headers.push('מתרים', 'איש קשר');
         // Expanded address fields (if showDonorAddress)
         if (this.filters.showDonorAddress) {
           headers.push('מדינה', 'עיר', 'מחוז', 'שכונה', 'רחוב', 'מספר', 'בניין', 'דירה', 'מיקוד', 'שם מקום');
@@ -1545,6 +1568,9 @@ export class ReportsComponent implements OnInit, OnDestroy {
           dataRow.push(this.getMaritalStatusText(row.donorDetails?.maritalStatus || ''));
           dataRow.push(row.donorDetails?.isAnash ? '✓' : '');
           dataRow.push(row.donorDetails?.isAlumni ? '✓' : '');
+          // Fundraiser & Contact Person
+          dataRow.push(row.donorDetails?.fundraiserName || '');
+          dataRow.push(row.donorDetails?.contactPersonName || '');
           // Expanded address fields (if showDonorAddress)
           if (this.filters.showDonorAddress) {
             dataRow.push(row.donorDetails?.country || '');
@@ -1745,6 +1771,9 @@ export class ReportsComponent implements OnInit, OnDestroy {
           { header: 'מצב משפחתי', mapper: (row) => this.getMaritalStatusText(row.maritalStatus || ''), width: 12 },
           { header: 'אנ"ש', mapper: (row) => row.isAnash ? '✓' : '', width: 8 },
           { header: 'תלמידנו', mapper: (row) => row.isAlumni ? '✓' : '', width: 8 },
+          // Fundraiser & Contact Person
+          { header: 'מתרים', mapper: (row) => row.fundraiserName || '', width: 15 },
+          { header: 'איש קשר', mapper: (row) => row.contactPersonName || '', width: 15 },
           // Expanded address fields
           { header: 'מדינה', mapper: (row) => row.country || '', width: 12 },
           { header: 'עיר', mapper: (row) => row.city || '', width: 15 },
@@ -1823,6 +1852,9 @@ export class ReportsComponent implements OnInit, OnDestroy {
           { header: 'מצב משפחתי', mapper: (row) => this.getMaritalStatusText(row.maritalStatus || ''), width: 12 },
           { header: 'אנ"ש', mapper: (row) => row.isAnash ? '✓' : '', width: 8 },
           { header: 'תלמידנו', mapper: (row) => row.isAlumni ? '✓' : '', width: 8 },
+          // Fundraiser & Contact Person
+          { header: 'מתרים', mapper: (row) => row.fundraiserName || '', width: 15 },
+          { header: 'איש קשר', mapper: (row) => row.contactPersonName || '', width: 15 },
           // Blessing-specific fields
           { header: 'סוג ברכה', mapper: (row) => row.blessingBookType || '-', width: 15 },
           { header: 'הערות', mapper: (row) => row.notes || '-', width: 30 },

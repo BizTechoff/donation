@@ -3,6 +3,7 @@ import { remult } from 'remult';
 import { Subscription } from 'rxjs';
 import { DonorMapController, DonorMapData } from '../../../shared/controllers/donor-map.controller';
 import { Donor, DonorPlace, User } from '../../../shared/entity';
+import { ContactPerson } from '../../../shared/entity/contact-person';
 import { BusyService } from '../../common-ui-elements/src/angular/wait/busy-service';
 import { UIToolsService } from '../../common/UIToolsService';
 import { I18nService } from '../../i18n/i18n.service';
@@ -691,6 +692,14 @@ export class DonorListComponent implements OnInit, OnDestroy {
         const dataMap = new Map<string, DonorMapData>();
         donorDataList.forEach(data => dataMap.set(data.donor.id, data));
 
+        // Load fundraisers and contact persons for lookup
+        const [fundraisers, contactPersons] = await Promise.all([
+          remult.repo(User).find({ where: { donator: true } }),
+          remult.repo(ContactPerson).find()
+        ]);
+        const fundraiserMap = new Map(fundraisers.map(f => [f.id, f.name]));
+        const contactPersonMap = new Map(contactPersons.map(cp => [cp.id, cp.name]));
+
         // Prepare data for export
         const exportData = allDonors.map(donor => {
           const data = dataMap.get(donor.id);
@@ -731,6 +740,9 @@ export class DonorListComponent implements OnInit, OnDestroy {
             { header: this.i18n.currentTerms.firstNameEnglish || 'First Name', mapper: (item) => item.donor.firstNameEnglish || '', width: 15 },
             { header: this.i18n.currentTerms.lastNameEnglish || 'Last Name', mapper: (item) => item.donor.lastNameEnglish || '', width: 15 },
             { header: this.i18n.currentTerms.suffixEnglish || 'Suffix', mapper: (item) => item.donor.suffixEnglish || '', width: 10 },
+            // Fundraiser & Contact Person
+            { header: this.i18n.currentTerms.fundraiser || 'מתרים', mapper: (item) => fundraiserMap.get(item.donor.fundraiserId) || '', width: 15 },
+            { header: this.i18n.currentTerms.contactPerson || 'איש קשר', mapper: (item) => contactPersonMap.get(item.donor.contactPersonId) || '', width: 15 },
             // Donor characteristics
             { header: this.i18n.currentTerms.maritalStatus || 'מצב משפחתי', mapper: (item) => this.getMaritalStatusText(item.donor.maritalStatus), width: 12 },
             { header: this.i18n.currentTerms.anash || 'אנ"ש', mapper: (item) => item.donor.isAnash ? '✓' : '', width: 8 },

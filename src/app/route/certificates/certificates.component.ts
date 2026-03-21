@@ -5,6 +5,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { CertificateController, CertificateFilters } from '../../../shared/controllers/certificate.controller';
 import { Certificate } from '../../../shared/entity/certificate';
 import { User } from '../../../shared/entity/user';
+import { ContactPerson } from '../../../shared/entity/contact-person';
 import { UIToolsService } from '../../common/UIToolsService';
 import { I18nService } from '../../i18n/i18n.service';
 import { ExcelExportService } from '../../services/excel-export.service';
@@ -664,6 +665,14 @@ export class CertificatesComponent implements OnInit, OnDestroy {
           this.sortColumns
         );
 
+        // Load fundraisers and contact persons for lookup
+        const [fundraisers, contactPersons] = await Promise.all([
+          remult.repo(User).find({ where: { donator: true } }),
+          remult.repo(ContactPerson).find()
+        ]);
+        const fundraiserMap = new Map(fundraisers.map(f => [f.id, f.name]));
+        const contactPersonMap = new Map(contactPersons.map(cp => [cp.id, cp.name]));
+
         await this.excelExportService.export({
           data: allCertificates,
           columns: [
@@ -677,6 +686,9 @@ export class CertificatesComponent implements OnInit, OnDestroy {
             { header: this.i18n.currentTerms.firstNameEnglish || 'First Name', mapper: (c) => c.donor?.firstNameEnglish || '', width: 15 },
             { header: this.i18n.currentTerms.lastNameEnglish || 'Last Name', mapper: (c) => c.donor?.lastNameEnglish || '', width: 15 },
             { header: this.i18n.currentTerms.suffixEnglish || 'Suffix', mapper: (c) => c.donor?.suffixEnglish || '', width: 10 },
+            // Fundraiser & Contact Person
+            { header: this.i18n.currentTerms.fundraiser || 'מתרים', mapper: (c) => c.donor?.fundraiserId ? fundraiserMap.get(c.donor.fundraiserId) || '' : '', width: 15 },
+            { header: this.i18n.currentTerms.contactPerson || 'איש קשר', mapper: (c) => c.donor?.contactPersonId ? contactPersonMap.get(c.donor.contactPersonId) || '' : '', width: 15 },
             // Donor characteristics
             { header: this.i18n.currentTerms.maritalStatus || 'מצב משפחתי', mapper: (c) => this.getMaritalStatusText(c.donor?.maritalStatus || ''), width: 12 },
             { header: this.i18n.currentTerms.anash || 'אנ"ש', mapper: (c) => c.donor?.isAnash ? '✓' : '', width: 8 },

@@ -5,6 +5,8 @@ import { Donor } from '../entity/donor';
 import { DonorContact } from '../entity/donor-contact';
 import { DonorPlace } from '../entity/donor-place';
 import { Payment } from '../entity/payment';
+import { User } from '../entity/user';
+import { ContactPerson } from '../entity/contact-person';
 import { Report } from '../enum/report';
 import { DocxCreateResponse } from '../type/letter.type';
 import { calculateEffectiveAmount, calculatePaymentTotals, calculatePeriodsElapsed, isPaymentBased, isStandingOrder } from '../utils/donation-utils';
@@ -57,6 +59,9 @@ export interface DonorExportDetails {
   maritalStatus?: string;
   isAnash?: boolean;
   isAlumni?: boolean;
+  // Fundraiser & Contact Person
+  fundraiserName?: string;
+  contactPersonName?: string;
 }
 
 export interface GroupedDonationReportData {
@@ -615,6 +620,14 @@ export class ReportController {
       // Load primary places for all donors (בית first, then any other)
       const primaryPlacesMap = await DonorPlace.getPrimaryForDonors(donorIds);
 
+      // Load fundraisers and contact persons for name lookup
+      const [fundraisers, contactPersons] = await Promise.all([
+        remult.repo(User).find({ where: { donator: true } }),
+        remult.repo(ContactPerson).find()
+      ]);
+      const fundraiserMap = new Map(fundraisers.map(f => [f.id, f.name]));
+      const contactPersonMap = new Map(contactPersons.map(cp => [cp.id, cp.name]));
+
       // Load all contacts for the given donors in one query
       const allContacts = await remult.repo(DonorContact).find({
         where: {
@@ -669,7 +682,10 @@ export class ReportController {
           suffixEnglish: donor?.suffixEnglish || '',
           maritalStatus: donor?.maritalStatus || '',
           isAnash: donor?.isAnash || false,
-          isAlumni: donor?.isAlumni || false
+          isAlumni: donor?.isAlumni || false,
+          // Fundraiser & Contact Person
+          fundraiserName: donor?.fundraiserId ? fundraiserMap.get(donor.fundraiserId) || '' : '',
+          contactPersonName: donor?.contactPersonId ? contactPersonMap.get(donor.contactPersonId) || '' : ''
         });
       }
 
@@ -1124,6 +1140,9 @@ export class ReportController {
             maritalStatus: details.maritalStatus || '',
             isAnash: details.isAnash || false,
             isAlumni: details.isAlumni || false,
+            // Fundraiser & Contact Person
+            fundraiserName: details.fundraiserName || '',
+            contactPersonName: details.contactPersonName || '',
             // Expanded address fields
             country: details.country || '',
             state: details.state || '',
@@ -1627,6 +1646,9 @@ export interface PaymentReportData {
   maritalStatus?: string;
   isAnash?: boolean;
   isAlumni?: boolean;
+  // Fundraiser & Contact Person
+  fundraiserName?: string;
+  contactPersonName?: string;
   // Expanded address fields
   country?: string;
   state?: string;

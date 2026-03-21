@@ -3,7 +3,8 @@ import { ActivatedRoute } from '@angular/router';
 import { remult } from 'remult';
 import { Subscription } from 'rxjs';
 import { DonationController, DonationFilters } from '../../../shared/controllers/donation.controller';
-import { Campaign, Donation, DonationMethod, Donor, DonorPlace } from '../../../shared/entity';
+import { Campaign, Donation, DonationMethod, Donor, DonorPlace, User } from '../../../shared/entity';
+import { ContactPerson } from '../../../shared/entity/contact-person';
 import { BusyService } from '../../common-ui-elements/src/angular/wait/busy-service';
 import { UIToolsService } from '../../common/UIToolsService';
 import { I18nService } from '../../i18n/i18n.service';
@@ -924,6 +925,14 @@ export class DonationsListComponent implements OnInit, OnDestroy {
         const donorIds = [...new Set(allDonations.map(d => d.donorId).filter(id => id))];
         const placesMap = await DonorPlace.getPrimaryForDonors(donorIds);
 
+        // Load fundraisers and contact persons for lookup
+        const [fundraisers, contactPersons] = await Promise.all([
+          remult.repo(User).find({ where: { donator: true } }),
+          remult.repo(ContactPerson).find()
+        ]);
+        const fundraiserMap = new Map(fundraisers.map(f => [f.id, f.name]));
+        const contactPersonMap = new Map(contactPersons.map(cp => [cp.id, cp.name]));
+
         // Prepare export data with place info
         const exportData = allDonations.map(d => ({
           donation: d,
@@ -943,6 +952,9 @@ export class DonationsListComponent implements OnInit, OnDestroy {
             { header: this.i18n.currentTerms.firstNameEnglish || 'First Name', mapper: (item) => item.donation.donor?.firstNameEnglish || '', width: 15 },
             { header: this.i18n.currentTerms.lastNameEnglish || 'Last Name', mapper: (item) => item.donation.donor?.lastNameEnglish || '', width: 15 },
             { header: this.i18n.currentTerms.suffixEnglish || 'Suffix', mapper: (item) => item.donation.donor?.suffixEnglish || '', width: 10 },
+            // Fundraiser & Contact Person
+            { header: this.i18n.currentTerms.fundraiser || 'מתרים', mapper: (item) => item.donation.donor?.fundraiserId ? fundraiserMap.get(item.donation.donor.fundraiserId) || '' : '', width: 15 },
+            { header: this.i18n.currentTerms.contactPerson || 'איש קשר', mapper: (item) => item.donation.donor?.contactPersonId ? contactPersonMap.get(item.donation.donor.contactPersonId) || '' : '', width: 15 },
             // Donor characteristics
             { header: this.i18n.currentTerms.maritalStatus || 'מצב משפחתי', mapper: (item) => this.getMaritalStatusText(item.donation.donor?.maritalStatus || ''), width: 12 },
             { header: this.i18n.currentTerms.anash || 'אנ"ש', mapper: (item) => item.donation.donor?.isAnash ? '✓' : '', width: 8 },

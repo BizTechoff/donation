@@ -2,6 +2,7 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { remult } from 'remult';
 import { Subscription } from 'rxjs';
 import { Donor, Reminder, User } from '../../../shared/entity';
+import { ContactPerson } from '../../../shared/entity/contact-person';
 import { DialogConfig } from '../../common-ui-elements';
 import { UIToolsService } from '../../common/UIToolsService';
 import { I18nService } from '../../i18n/i18n.service';
@@ -832,6 +833,14 @@ getTypeText(type: string): string {
           this.sortColumns
         );
 
+        // Load fundraisers and contact persons for lookup
+        const [fundraisers, contactPersons] = await Promise.all([
+          remult.repo(User).find({ where: { donator: true } }),
+          remult.repo(ContactPerson).find()
+        ]);
+        const fundraiserMap = new Map(fundraisers.map(f => [f.id, f.name]));
+        const contactPersonMap = new Map(contactPersons.map(cp => [cp.id, cp.name]));
+
         await this.excelExportService.export({
           data: allReminders,
           columns: [
@@ -845,6 +854,9 @@ getTypeText(type: string): string {
             { header: this.i18n.currentTerms.firstNameEnglish || 'First Name', mapper: (r) => r.donor?.firstNameEnglish || '', width: 15 },
             { header: this.i18n.currentTerms.lastNameEnglish || 'Last Name', mapper: (r) => r.donor?.lastNameEnglish || '', width: 15 },
             { header: this.i18n.currentTerms.suffixEnglish || 'Suffix', mapper: (r) => r.donor?.suffixEnglish || '', width: 10 },
+            // Fundraiser & Contact Person
+            { header: this.i18n.currentTerms.fundraiser || 'מתרים', mapper: (r) => r.donor?.fundraiserId ? fundraiserMap.get(r.donor.fundraiserId) || '' : '', width: 15 },
+            { header: this.i18n.currentTerms.contactPerson || 'איש קשר', mapper: (r) => r.donor?.contactPersonId ? contactPersonMap.get(r.donor.contactPersonId) || '' : '', width: 15 },
             // Donor characteristics
             { header: this.i18n.currentTerms.maritalStatus || 'מצב משפחתי', mapper: (r) => this.getMaritalStatusText(r.donor?.maritalStatus || ''), width: 12 },
             { header: this.i18n.currentTerms.anash || 'אנ"ש', mapper: (r) => r.donor?.isAnash ? '✓' : '', width: 8 },

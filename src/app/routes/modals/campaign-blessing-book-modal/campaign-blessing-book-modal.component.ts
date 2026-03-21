@@ -4,6 +4,8 @@ import { MatDialogRef } from '@angular/material/dialog';
 import { DialogConfig, openDialog } from 'common-ui-elements';
 import { Donation, Donor, Campaign, Blessing, DonorContact } from '../../../../shared/entity';
 import { BlessingBookType } from '../../../../shared/entity/blessing-book-type';
+import { User } from '../../../../shared/entity/user';
+import { ContactPerson } from '../../../../shared/entity/contact-person';
 import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
 import { UIToolsService } from '../../../common/UIToolsService';
@@ -614,11 +616,21 @@ export class CampaignBlessingBookModalComponent implements OnInit {
       return;
     }
 
+    // Load fundraisers and contact persons for lookup
+    const [fundraisers, contactPersons] = await Promise.all([
+      remult.repo(User).find({ where: { donator: true } }),
+      remult.repo(ContactPerson).find()
+    ]);
+    const fundraiserMap = new Map(fundraisers.map(f => [f.id, f.name]));
+    const contactPersonMap = new Map(contactPersons.map(cp => [cp.id, cp.name]));
+
     // הגדרת עמודות
     const columns: ExcelColumn<DonorBlessing>[] = [
       { header: 'שם תורם', mapper: (db) => db.donor.fullName || '-', width: 20 },
       { header: 'טלפון', mapper: (db) => this.getDonorPhone(db.donor.id) || '-', width: 15 },
       { header: 'אימייל', mapper: (db) => this.getDonorEmail(db.donor.id) || '-', width: 25 },
+      { header: 'מתרים', mapper: (db) => db.donor.fundraiserId ? fundraiserMap.get(db.donor.fundraiserId) || '' : '', width: 15 },
+      { header: 'איש קשר', mapper: (db) => db.donor.contactPersonId ? contactPersonMap.get(db.donor.contactPersonId) || '' : '', width: 15 },
       { header: 'סוג ברכה', mapper: (db) => db.blessing?.blessingBookType?.type || '-', width: 15 },
       { header: 'מחיר סוג ברכה', mapper: (db) => db.blessing?.blessingBookType?.price || '-', width: 15 },
       { header: 'סה"כ תרם', mapper: (db) => db.totalDonated, width: 12 },

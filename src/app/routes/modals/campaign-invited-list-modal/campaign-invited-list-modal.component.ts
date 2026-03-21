@@ -2,6 +2,8 @@ import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Campaign, Donor, Circle, Place } from '../../../../shared/entity';
+import { User } from '../../../../shared/entity/user';
+import { ContactPerson } from '../../../../shared/entity/contact-person';
 import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
 import { UIToolsService } from '../../../common/UIToolsService';
@@ -416,6 +418,14 @@ export class CampaignInvitedListModalComponent implements OnInit {
       }
     }
 
+    // Load fundraisers and contact persons for lookup
+    const [fundraisers, contactPersons] = await Promise.all([
+      remult.repo(User).find({ where: { donator: true } }),
+      remult.repo(ContactPerson).find()
+    ]);
+    const fundraiserMap = new Map(fundraisers.map(f => [f.id, f.name]));
+    const contactPersonMap = new Map(contactPersons.map(cp => [cp.id, cp.name]));
+
     // הגדרת עמודות
     const columns: ExcelColumn<Donor>[] = [
       { header: 'שם מלא', mapper: (d) => this.getDonorDisplayName(d), width: 20 },
@@ -427,6 +437,8 @@ export class CampaignInvitedListModalComponent implements OnInit {
       { header: 'מדינה', mapper: (d) => this.getDonorCountryName(d), width: 15 },
       { header: 'אנ"ש', mapper: (d) => this.excelService.booleanToHebrew(d.isAnash), width: 8 },
       { header: 'תלמידנו', mapper: (d) => this.excelService.booleanToHebrew(d.isAlumni), width: 8 },
+      { header: 'מתרים', mapper: (d) => d.fundraiserId ? fundraiserMap.get(d.fundraiserId) || '' : '', width: 15 },
+      { header: 'איש קשר', mapper: (d) => d.contactPersonId ? contactPersonMap.get(d.contactPersonId) || '' : '', width: 15 },
       { header: 'מסומן', mapper: (d) => this.isSelected(d.id) ? '✓' : '', width: 8 }
     ];
 
