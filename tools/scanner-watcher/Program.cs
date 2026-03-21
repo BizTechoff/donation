@@ -275,6 +275,7 @@ static class Program
             }
 
             string? selectedDonationId = null;
+            string? selectedDonorName = null;
 
             if (activeDonation != null)
             {
@@ -285,7 +286,10 @@ static class Program
                     using var form = new AssignScanForm(filePath, activeDonation);
                     result = form.ShowDialog();
                     if (result == DialogResult.OK)
+                    {
                         selectedDonationId = form.SelectedDonationId;
+                        selectedDonorName = activeDonation.DonorName;
+                    }
                 });
 
                 if (result == DialogResult.Retry)
@@ -295,7 +299,10 @@ static class Program
                     {
                         using var searchForm = new DonationSearchForm(_api, filePath);
                         if (searchForm.ShowDialog() == DialogResult.OK)
+                        {
                             selectedDonationId = searchForm.SelectedDonationId;
+                            selectedDonorName = searchForm.SelectedDonorName;
+                        }
                     });
                 }
             }
@@ -306,16 +313,55 @@ static class Program
                 {
                     using var searchForm = new DonationSearchForm(_api, filePath);
                     if (searchForm.ShowDialog() == DialogResult.OK)
+                    {
                         selectedDonationId = searchForm.SelectedDonationId;
+                        selectedDonorName = searchForm.SelectedDonorName;
+                    }
                 });
             }
 
-            if (string.IsNullOrEmpty(selectedDonationId))
+            if (string.IsNullOrEmpty(selectedDonationId) || string.IsNullOrEmpty(selectedDonorName))
             {
                 Logger.Info("Scan not assigned (cancelled)");
                 _trayIcon.ShowBalloonTip(2000, "Scanner Watcher",
                     "הסריקה לא שויכה", ToolTipIcon.Warning);
                 return;
+            }
+
+            // Show preview form with draggable tag
+            float tagX = -1, tagY = -1;
+            bool noTag = false;
+            var previewResult = DialogResult.None;
+
+            RunOnUI(() =>
+            {
+                using var previewForm = new ScanPreviewForm(filePath, selectedDonorName);
+                previewResult = previewForm.ShowDialog();
+                if (previewResult == DialogResult.OK)
+                {
+                    tagX = previewForm.TagXPercent;
+                    tagY = previewForm.TagYPercent;
+                    noTag = previewForm.NoTag;
+                }
+            });
+
+            if (previewResult != DialogResult.OK)
+            {
+                Logger.Info("Scan cancelled at preview stage");
+                _trayIcon.ShowBalloonTip(2000, "Scanner Watcher",
+                    "הסריקה לא שויכה", ToolTipIcon.Warning);
+                return;
+            }
+
+            // Burn tag onto image (if not "no tag")
+            if (!noTag && tagX >= 0 && tagY >= 0)
+            {
+                Logger.Info($"Burning tag at ({tagX:F1}%, {tagY:F1}%)");
+                ImageTagger.BurnTag(filePath, selectedDonorName, tagX, tagY);
+            }
+            else
+            {
+                Logger.Info("No tag requested");
             }
 
             // Upload file

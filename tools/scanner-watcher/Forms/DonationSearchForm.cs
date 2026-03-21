@@ -10,6 +10,7 @@ public class DonationSearchForm : Form
     private readonly string _fileName;
 
     public string? SelectedDonationId { get; private set; }
+    public string? SelectedDonorName { get; private set; }
 
     public DonationSearchForm(ApiClient api, string fileName)
     {
@@ -187,7 +188,9 @@ public class DonationSearchForm : Form
             return;
         }
 
-        SelectedDonationId = _listView.SelectedItems[0].Tag as string;
+        var selectedItem = _listView.SelectedItems[0];
+        SelectedDonationId = selectedItem.Tag as string;
+        SelectedDonorName = selectedItem.Text; // First column is donor name
         DialogResult = DialogResult.OK;
         Close();
     }
