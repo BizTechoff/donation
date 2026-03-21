@@ -46,19 +46,8 @@ export class DonationPrintModalComponent implements OnInit {
   scansPerPage = 4;
   printDonationDetails = true;
   printScans = true;
-  defaultTagPosition: TagPosition = 'top-right';
 
   loading = false;
-
-  // Tag position options for display
-  tagPositions: { value: TagPosition; label: string; icon: string }[] = [
-    { value: 'top-right', label: 'למעלה ימין', icon: '↗' },
-    { value: 'top-center', label: 'למעלה אמצע', icon: '↑' },
-    { value: 'top-left', label: 'למעלה שמאל', icon: '↖' },
-    { value: 'bottom-right', label: 'למטה ימין', icon: '↘' },
-    { value: 'bottom-center', label: 'למטה אמצע', icon: '↓' },
-    { value: 'bottom-left', label: 'למטה שמאל', icon: '↙' }
-  ];
 
   // Currency types from service
   currencyTypes = this.payerService.getCurrencyTypesRecord();
@@ -98,6 +87,7 @@ export class DonationPrintModalComponent implements OnInit {
         const files = await this.fileUploadService.getFilesByDonation(this.args.donationId);
 
         // Create file settings with preview URLs
+        // Tag is now burned at scanner level, so tagPosition is always 'none'
         this.filesWithSettings = await Promise.all(files.map(async (file) => {
           let previewUrl: string | undefined;
           if (file.fileType.startsWith('image/')) {
@@ -106,7 +96,7 @@ export class DonationPrintModalComponent implements OnInit {
           return {
             file,
             selected: true,
-            tagPosition: this.defaultTagPosition,
+            tagPosition: 'none' as TagPosition,
             previewUrl
           };
         }));
@@ -135,10 +125,6 @@ export class DonationPrintModalComponent implements OnInit {
     this.filesWithSettings.forEach(f => f.selected = false);
   }
 
-  applyDefaultToAll() {
-    this.filesWithSettings.forEach(f => f.tagPosition = this.defaultTagPosition);
-  }
-
   getFileIcon(fileType: string): string {
     return this.fileUploadService.getFileIcon(fileType);
   }
@@ -164,10 +150,6 @@ export class DonationPrintModalComponent implements OnInit {
   getHebrewDate(): string {
     if (!this.donation?.donationDate) return '';
     return this.hebrewDateService.convertGregorianToHebrew(new Date(this.donation.donationDate))?.formatted || '';
-  }
-
-  getTagPositionClass(position: TagPosition): string {
-    return `tag-${position}`;
   }
 
   async print() {

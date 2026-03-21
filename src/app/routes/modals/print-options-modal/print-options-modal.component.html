@@ -17,20 +17,7 @@
       <mat-checkbox [(ngModel)]="printScans">
         הדפס סריקות / צ'קים ({{args.scansCount || 0}}/{{args.totalCount || 0}})
       </mat-checkbox>
-
-      <div class="tag-position-row" *ngIf="printScans">
-        <label>מיקום תגית:</label>
-        <div class="position-buttons">
-          <button *ngFor="let pos of tagPositions"
-                  class="position-btn"
-                  [class.active]="tagPosition === pos.value"
-                  (click)="tagPosition = pos.value"
-                  [title]="pos.label">
-            {{ pos.icon }}
-          </button>
-        </div>
-        <button class="no-tag-btn" [class.active]="tagPosition === 'none'" (click)="tagPosition = 'none'">ללא</button>
-      </div>
+      <!-- Tag position removed - now handled at scanner level -->
     </div>
   </mat-dialog-content>
 

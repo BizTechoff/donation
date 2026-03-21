@@ -31,16 +31,8 @@ export class PrintOptionsModalComponent {
   printType: PrintType = 'table';
   printDetails = true;
   printScans = true;
-  tagPosition: TagPosition = 'top-right';
-
-  tagPositions: { value: TagPosition; label: string; icon: string }[] = [
-    { value: 'top-right', label: 'למעלה ימין', icon: '↗' },
-    { value: 'top-center', label: 'למעלה אמצע', icon: '↑' },
-    { value: 'top-left', label: 'למעלה שמאל', icon: '↖' },
-    { value: 'bottom-right', label: 'למטה ימין', icon: '↘' },
-    { value: 'bottom-center', label: 'למטה אמצע', icon: '↓' },
-    { value: 'bottom-left', label: 'למטה שמאל', icon: '↙' },
-  ];
+  // Tag position now handled at scanner level - always 'none'
+  tagPosition: TagPosition = 'none';
 
   constructor(private dialogRef: MatDialogRef<any>) {}
 

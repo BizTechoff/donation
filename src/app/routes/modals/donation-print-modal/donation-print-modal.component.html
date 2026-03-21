@@ -71,20 +71,7 @@
             </div>
           </div>
 
-          <!-- Default tag position -->
-          <div class="option-group" *ngIf="printScans && filesWithSettings.length > 0">
-            <div class="default-position-row">
-              <label class="option-label">מיקום תגית ברירת מחדל:</label>
-              <select [(ngModel)]="defaultTagPosition" class="position-select">
-                <option *ngFor="let pos of tagPositions" [value]="pos.value">
-                  {{ pos.icon }} {{ pos.label }}
-                </option>
-              </select>
-              <button mat-stroked-button (click)="applyDefaultToAll()" class="apply-btn">
-                החל על הכל
-              </button>
-            </div>
-          </div>
+          <!-- Tag position moved to scanner level - no longer needed here -->
         </div>
       </div>
 
@@ -121,33 +108,11 @@
               <span class="file-type-badge pdf" *ngIf="fs.file.fileType === 'application/pdf'">PDF</span>
             </div>
 
-            <!-- Image preview with tag position selector (only for images) -->
+            <!-- Image preview (tag is already burned at scanner level) -->
             <div class="file-preview-section" *ngIf="fs.file.fileType.startsWith('image/') && fs.selected">
               <div class="preview-container">
                 <div class="image-preview">
                   <img [src]="fs.previewUrl" [alt]="fs.file.fileName" *ngIf="fs.previewUrl">
-                  <div class="tag-preview" [ngClass]="'tag-' + fs.tagPosition" *ngIf="fs.tagPosition !== 'none'">
-                    {{ donor?.fullName || donor?.lastAndFirstName || 'שם התורם' }}
-                  </div>
-                </div>
-              </div>
-
-              <div class="tag-position-selector">
-                <div class="tag-label-row">
-                  <label>מיקום תגית:</label>
-                  <mat-checkbox [checked]="fs.tagPosition === 'none'"
-                               (change)="fs.tagPosition = $event.checked ? 'none' : 'top-right'">
-                    ללא תגית
-                  </mat-checkbox>
-                </div>
-                <div class="position-buttons" *ngIf="fs.tagPosition !== 'none'">
-                  <button *ngFor="let pos of tagPositions"
-                          class="position-btn"
-                          [class.active]="fs.tagPosition === pos.value"
-                          (click)="fs.tagPosition = pos.value"
-                          [title]="pos.label">
-                    {{ pos.icon }}
-                  </button>
                 </div>
               </div>
             </div>
