@@ -35,6 +35,7 @@ const routes: Routes = [
   // ---------------
   { path: terms.userAccounts, component: UsersComponent, canActivate: [AdminGuard], data: { name: 'userAccounts' } },
   { path: terms.googleSync, component: GoogleSyncComponent, canActivate: [AdminGuard], data: { name: 'googleSync' } },
+  { path: terms.mobileView, loadChildren: () => import('./mobile/mobile.module').then(m => m.MobileModule), canActivate: [AdminGuard], data: { name: 'mobileView' } },
   // { path: 'seed-data', component: SeedDataComponent, canActivate: [AdminGuard], data: { name: 'seedData' } },
   { path: 'm', loadChildren: () => import('./mobile/mobile.module').then(m => m.MobileModule), canActivate: [AuthenticatedGuard], data: { hide: true } },
   { path: '', component: SilentRedirectComponent, pathMatch: 'full' },
