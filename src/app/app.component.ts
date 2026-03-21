@@ -275,6 +275,9 @@ export class AppComponent implements OnInit {
       )
     )
       return false
+    // Hide adminOnly routes from non-admin users
+    if (route.data?.['adminOnly'] && !remult.user?.roles?.includes('admin'))
+      return false
     return this.routeHelper.canNavigateToRoute(route)
   }
   //@ts-ignore ignoring this to match angular 7 and 8
