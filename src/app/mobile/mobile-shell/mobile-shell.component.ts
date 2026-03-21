@@ -10,7 +10,7 @@ import { SignInController } from '../../users/SignInController'
 })
 export class MobileShellComponent {
   remult = remult
-  version = '2026.03.01'
+  version = '2026.03.22'
 
   constructor(public router: Router) { }
 
