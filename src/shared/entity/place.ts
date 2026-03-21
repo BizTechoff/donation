@@ -181,7 +181,7 @@ export class Place {
 
   // Include state in address: AU, CA, US
   private includeState(): boolean {
-    return this.isAUAddress() || this.isCAAddress() || this.isUSAddress();
+    return this.isAUAddress() || this.isCAAddress();// || this.isUSAddress();
   }
 
   /**
