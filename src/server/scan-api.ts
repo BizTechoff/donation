@@ -57,12 +57,16 @@ scanRouter.use(express.json())
 scanRouter.get('/active-donation', async (req: Request, res: Response) => {
   try {
     const user = getSessionUser(req)
+    console.log('[scan-api] GET active-donation - user:', user?.id, user?.name, '- active map keys:', [...activeDonations.keys()])
+
     if (!user) {
       res.status(401).json({ error: 'Not authenticated' })
       return
     }
 
     const active = activeDonations.get(user.id)
+    console.log('[scan-api] Found active for user:', user.id, '->', active ? `${active.donorName} (${active.donationId})` : 'null')
+
     if (!active) {
       res.json(null)
       return
@@ -95,6 +99,8 @@ scanRouter.get('/active-donation', async (req: Request, res: Response) => {
 scanRouter.post('/register-active', api.withRemult, async (req: Request, res: Response) => {
   try {
     const user = getSessionUser(req)
+    console.log('[scan-api] POST register-active - user:', user?.id, user?.name, '- donationId:', req.body?.donationId)
+
     if (!user) {
       res.status(401).json({ error: 'Not authenticated' })
       return
@@ -105,7 +111,7 @@ scanRouter.post('/register-active', api.withRemult, async (req: Request, res: Re
     if (!donationId) {
       // Unregister
       activeDonations.delete(user.id)
-      console.log(`[scan-api] User ${user.name} unregistered active donation`)
+      console.log(`[scan-api] User ${user.name} (${user.id}) unregistered active donation`)
       res.json({ success: true })
       return
     }
@@ -134,7 +140,7 @@ scanRouter.post('/register-active', api.withRemult, async (req: Request, res: Re
       timestamp: Date.now()
     })
 
-    console.log(`[scan-api] User ${user.name} registered active donation ${donationId} (${donorName} - ${donation.amount})`)
+    console.log(`[scan-api] User ${user.name} (${user.id}) registered active donation ${donationId} (${donorName} - ${donation.amount})`)
     res.json({ success: true })
   } catch (err: any) {
     console.error('[scan-api] register-active error:', err)

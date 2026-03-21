@@ -64,6 +64,7 @@ export class ScanWaitingModalComponent implements OnInit, OnDestroy {
     fetch('/api/scan/register-active', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ donationId })
     }).catch(err => console.error('Failed to register active donation:', err));
   }
