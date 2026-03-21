@@ -161,17 +161,16 @@ export class MapSelectedDonorsModalComponent implements OnInit {
     }
   }
 
-  // Check if route can be shown (2-20 donors with coordinates)
+  // Check if route can be shown (2-20 donors)
+  // Note: All donors from polygon selection have coordinates (they came from map markers)
   get canShowRoute(): boolean {
-    const donorsWithCoords = this.selectedDonors.filter(d => d.donorPlace?.place?.latitude && d.donorPlace?.place?.longitude);
-    return donorsWithCoords.length >= 2 && donorsWithCoords.length <= 20;
+    return this.selectedDonors.length >= 2 && this.selectedDonors.length <= 20;
   }
 
   // Show route for selected donors
   showRoute() {
-    // Filter only donors with coordinates
-    const donorsWithCoords = this.selectedDonors.filter(d => d.donorPlace?.place?.latitude && d.donorPlace?.place?.longitude);
-    this.dialogRef.close({ action: 'showRoute', donors: donorsWithCoords });
+    // All selected donors have coordinates (came from map markers)
+    this.dialogRef.close({ action: 'showRoute', donors: this.selectedDonors });
   }
 
   // Save as target audience

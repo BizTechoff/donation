@@ -28,6 +28,10 @@ export class QuickDonationComponent implements OnInit {
   // Donor details side-view (not part of wizard steps)
   showingDonorDetails = false
 
+  // Navigation source tracking
+  private sourceIsMap = false
+  private sourceDonorId: string | null = null
+
   stepLabels = ['בחר תורם', 'הזן תרומה', 'צלם צ\'ק', 'סיום']
 
   constructor(
@@ -47,9 +51,17 @@ export class QuickDonationComponent implements OnInit {
     this.donationMethods = methods
     this.campaigns = campaigns
 
-    // Handle donorId query param (from route planner)
+    // Handle query params (from route planner or other sources)
     const donorId = this.route.snapshot.queryParamMap.get('donorId')
     const mode = this.route.snapshot.queryParamMap.get('mode')
+    const source = this.route.snapshot.queryParamMap.get('source')
+
+    // Track navigation source for smart back navigation
+    if (source === 'map' && donorId) {
+      this.sourceIsMap = true
+      this.sourceDonorId = donorId
+    }
+
     if (donorId) {
       try {
         const donor = await remult.repo(Donor).findId(donorId)
@@ -79,6 +91,13 @@ export class QuickDonationComponent implements OnInit {
   }
 
   onBackFromDetails() {
+    // If came from map, navigate back to map with popup
+    if (this.sourceIsMap && this.sourceDonorId) {
+      this.router.navigate(['/m/route-planner'], {
+        queryParams: { openPopup: this.sourceDonorId }
+      })
+      return
+    }
     this.showingDonorDetails = false
     this.selectedDonor = null
   }
@@ -104,6 +123,13 @@ export class QuickDonationComponent implements OnInit {
 
   goBack() {
     if (this.currentStep > 1) {
+      // If at step 2 (donation form) and came from map, go back to map
+      if (this.currentStep === 2 && this.sourceIsMap && this.sourceDonorId) {
+        this.router.navigate(['/m/route-planner'], {
+          queryParams: { openPopup: this.sourceDonorId }
+        })
+        return
+      }
       this.currentStep--
     }
   }

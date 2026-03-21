@@ -66,6 +66,7 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
   routeTotalDistance = '';
   routeTotalDuration = '';
   routeLegs: { distance: string; duration: string; donorName: string }[] = [];
+  savedTargetAudienceName = ''; // שם קהל היעד שנשמר מהמסלול
   private routePolylines: google.maps.Polyline[] = [];
   private routeMarkers: google.maps.Marker[] = [];
 
@@ -1165,18 +1166,30 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
   async calculateRouteForSelectedDonors(donors: DonorMapData[]) {
     console.log('[Route] calculateRouteForSelectedDonors called with', donors.length, 'donors');
 
-    // Convert DonorMapData to MarkerData format
-    const routeMarkers: MarkerData[] = donors
-      .filter(d => d.donorPlace?.place?.latitude && d.donorPlace?.place?.longitude)
-      .map(d => ({
-        donorId: d.donor.id,
-        lat: d.donorPlace!.place!.latitude!,
-        lng: d.donorPlace!.place!.longitude!,
-        donorName: d.donor.fullName || `${d.donor.firstName || ''} ${d.donor.lastName || ''}`.trim(),
-        statuses: d.stats.statuses
-      }));
+    // Create a map of donor IDs for quick lookup
+    const selectedDonorIds = new Set(donors.map(d => d.donor.id));
+    console.log('[Route] Selected donor IDs:', Array.from(selectedDonorIds));
+    console.log('[Route] Current markersData count:', this.markersData.length);
+    console.log('[Route] First 3 markersData:', this.markersData.slice(0, 3).map(m => ({ id: m.donorId, lat: m.lat, lng: m.lng })));
 
-    console.log('[Route] Created routeMarkers:', routeMarkers.map(m => ({ name: m.donorName, lat: m.lat, lng: m.lng })));
+    // Get coordinates from the ORIGINAL markersData (which has correct lat/lng from the map)
+    // Don't use donorPlace.place coordinates as they may have relation issues
+    const routeMarkers: MarkerData[] = this.markersData
+      .filter(m => selectedDonorIds.has(m.donorId))
+      .map(m => {
+        // Find the donor data to get the name and statuses
+        const donorData = donors.find(d => d.donor.id === m.donorId);
+        return {
+          donorId: m.donorId,
+          lat: m.lat,
+          lng: m.lng,
+          donorName: donorData?.donor.lastAndFirstName || m.donorName,
+          statuses: donorData?.stats.statuses || m.statuses
+        };
+      });
+
+    console.log('[Route] Filtered routeMarkers count:', routeMarkers.length);
+    console.log('[Route] Created routeMarkers (JSON):', JSON.stringify(routeMarkers.map(m => ({ name: m.donorName, lat: m.lat, lng: m.lng }))));
 
     if (routeMarkers.length < 2) {
       this.ui.error('יש צורך לפחות ב-2 תורמים עם קואורדינטות לחישוב מסלול');
@@ -1573,7 +1586,48 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.routeLegs = [];
     this.routeTotalDistance = '';
     this.routeTotalDuration = '';
+    this.savedTargetAudienceName = '';
     this.cdr.detectChanges();
+  }
+
+  // Save route donors as target audience
+  async saveRouteAsTargetAudience() {
+    if (!this.routeStops || this.routeStops.length === 0) {
+      this.ui.error('אין עצירות במסלול לשמירה');
+      return;
+    }
+
+    // Get donor IDs from route stops
+    const donorIds = this.routeStops.map(stop => stop.marker.donorId);
+
+    // Load full donor data for saving
+    // @ts-ignore
+    const donorsData = await DonorMapController.loadDonorsMapDataByIds(donorIds);
+
+    // Calculate metadata
+    const totalDonations = donorsData.reduce((sum: number, d: any) => sum + (d.stats?.totalDonations || 0), 0);
+    const donorCount = donorsData.length;
+
+    const metadata = {
+      source: 'map_route',
+      totalDonations,
+      averageDonation: donorCount > 0 ? totalDonations / donorCount : 0,
+      createdFrom: 'Route Selection',
+      routeDistance: this.routeTotalDistance,
+      routeDuration: this.routeTotalDuration
+    };
+
+    // Open TargetAudienceDetailsModal
+    const result = await this.ui.targetAudienceDetailsDialog('new', {
+      initialDonors: donorsData,
+      metadata
+    });
+
+    if (result) {
+      // שמור את שם קהל היעד להצגה במקום הכפתור
+      this.savedTargetAudienceName = result.name || 'קהל יעד';
+      this.ui.info('קהל היעד נשמר בהצלחה');
+    }
   }
 
   openWazeForStop(stop: { marker: MarkerData; visited: boolean; order: number }) {

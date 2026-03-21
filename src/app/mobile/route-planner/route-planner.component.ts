@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit } from '@angular/core'
-import { Router } from '@angular/router'
+import { Router, ActivatedRoute } from '@angular/router'
 import { remult } from 'remult'
 import { TargetAudience } from '../../../shared/entity/target-audience'
 import { DonorMapController, MarkerData, DonorMapData } from '../../../shared/controllers/donor-map.controller'
@@ -20,6 +20,7 @@ let _mapSettingsCache: {
     startDonorId?: string
     visitedDonorIds: string[]
   }
+  pendingOpenPopupDonorId?: string // פתח פופאפ לתורם זה כשהמפה נטענת
 } | null = null
 
 interface RouteStop {
@@ -71,6 +72,7 @@ export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
 
   constructor(
     private router: Router,
+    private route: ActivatedRoute,
     private geoService: GeoService,
     private ui: UIToolsService
   ) {}
@@ -83,6 +85,16 @@ export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
     // Load settings synchronously FIRST — before any async ops
     // so _mapSettingsCache is available when initMap() runs
     this.loadRoutePlannerSettings()
+
+    // Check for openPopup query param (returning from donation/details)
+    const openPopupDonorId = this.route.snapshot.queryParamMap.get('openPopup')
+    if (openPopupDonorId) {
+      if (!_mapSettingsCache) _mapSettingsCache = {}
+      _mapSettingsCache.pendingOpenPopupDonorId = openPopupDonorId
+      // Clear the query param from URL without navigation
+      this.router.navigate([], { queryParams: {}, replaceUrl: true })
+    }
+
     this.loading = true
     try {
       // Load target audiences
@@ -256,6 +268,8 @@ export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
       // If donors were loaded before map was ready, show them now
       if (this.donors.length > 0) {
         this.showMarkers()
+        // Try to open pending popup after markers are shown
+        this.tryOpenPendingPopup()
       }
 
       // If route restore is pending, try now that map is ready
@@ -267,6 +281,24 @@ export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
       this.getUserLocation()
     } catch (err) {
       console.error('Failed to init map:', err)
+    }
+  }
+
+  // פתח פופאפ אם יש תורם ממתין (חזרה ממסך תרומה/פרטים)
+  private tryOpenPendingPopup() {
+    const donorId = _mapSettingsCache?.pendingOpenPopupDonorId
+    if (!donorId || !this.mapReady || this.donors.length === 0) return
+
+    const donor = this.donors.find(d => d.donorId === donorId)
+    if (donor) {
+      // מרכז את המפה על התורם ופתח את הפופאפ
+      this.map?.setCenter({ lat: donor.lat, lng: donor.lng })
+      this.onMarkerClick(donor)
+    }
+
+    // נקה את הפופאפ הממתין
+    if (_mapSettingsCache) {
+      delete _mapSettingsCache.pendingOpenPopupDonorId
     }
   }
 
@@ -366,6 +398,9 @@ export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
 
       this.showMarkers()
       this.fitMapToDonors()
+
+      // Try to open pending popup if returning from donation/details
+      this.tryOpenPendingPopup()
     } finally {
       this.loading = false
     }
@@ -502,12 +537,12 @@ export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
   private registerGlobalCallbacks() {
     (window as any).__routePlanner_donate = (donorId: string) => {
       this.infoWindow?.close()
-      this.router.navigate(['/m/quick-donation'], { queryParams: { donorId } })
+      this.router.navigate(['/m/quick-donation'], { queryParams: { donorId, source: 'map' } })
     };
 
     (window as any).__routePlanner_details = (donorId: string) => {
       this.infoWindow?.close()
-      this.router.navigate(['/m/quick-donation'], { queryParams: { donorId, mode: 'details' } })
+      this.router.navigate(['/m/quick-donation'], { queryParams: { donorId, mode: 'details', source: 'map' } })
     };
 
     (window as any).__routePlanner_navigate = (lat: number, lng: number) => {
@@ -731,11 +766,11 @@ export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   navigateToDonation(donorId: string) {
-    this.router.navigate(['/m/quick-donation'], { queryParams: { donorId } })
+    this.router.navigate(['/m/quick-donation'], { queryParams: { donorId, source: 'map' } })
   }
 
   navigateToDetails(donorId: string) {
-    this.router.navigate(['/m/quick-donation'], { queryParams: { donorId, mode: 'details' } })
+    this.router.navigate(['/m/quick-donation'], { queryParams: { donorId, mode: 'details', source: 'map' } })
   }
 
   get visitedCount(): number {

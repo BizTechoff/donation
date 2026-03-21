@@ -232,6 +232,16 @@
             </button>
           </div>
         </div>
+        <div class="route-actions">
+          <button *ngIf="!savedTargetAudienceName" class="btn-save-audience" (click)="saveRouteAsTargetAudience()">
+            <mat-icon>bookmark</mat-icon>
+            שמור כקהל יעד
+          </button>
+          <div *ngIf="savedTargetAudienceName" class="saved-audience-info">
+            <mat-icon>bookmark</mat-icon>
+            <span>נשמר כ: <strong>{{ savedTargetAudienceName }}</strong></span>
+          </div>
+        </div>
       </div>
     </div>
   </div>

@@ -126,67 +126,63 @@ export class DonorMapController {
 
     let donorIds: string[] | undefined = undefined;
 
-    // searchTerm - חיפוש בשם/ת.ז./כתובת (תמיכה בחיפוש שם מלא עם מספר מילים)
-    // לוגיקה זהה ל-DonorController.findFilteredDonors + חיפוש בכתובות
+    // searchTerm - חיפוש משופר בשם/ת.ז./כתובת
+    // כל מילה צריכה להופיע או בשם או בכתובת (לא חייבים באותו שדה)
+    // כך ש"יוסי ירושלים" ימצא תורם ששמו יוסי וגר בירושלים
     if (mapFilters.searchTerm?.trim()) {
-      const words = mapFilters.searchTerm.trim().split(/\s+/).filter(w => w.length > 0);
+      const words = mapFilters.searchTerm.trim().toLowerCase().split(/\s+/).filter(w => w.length > 0);
 
-      // חיפוש בתורמים (שם/ת.ז.)
-      let searchWhere: any = { isActive: true };
-      if (words.length === 1) {
-        searchWhere.$or = [
-          { firstName: { $contains: words[0] } },
-          { lastName: { $contains: words[0] } },
-          { firstNameEnglish: { $contains: words[0] } },
-          { lastNameEnglish: { $contains: words[0] } },
-          { idNumber: { $contains: words[0] } }
-        ];
-      } else {
-        searchWhere.$and = words.map(word => ({
-          $or: [
-            { firstName: { $contains: word } },
-            { lastName: { $contains: word } },
-            { firstNameEnglish: { $contains: word } },
-            { lastNameEnglish: { $contains: word } },
-            { idNumber: { $contains: word } }
-          ]
-        }));
-      }
-      const donors = await donorRepo.find({ where: searchWhere });
-      const donorIdsFromName = donors.map(d => d.id);
+      // טען את כל התורמים הפעילים
+      const allDonors = await donorRepo.find({ where: { isActive: true } });
 
-      // חיפוש בכתובות (עיר/רחוב/שכונה)
+      // טען את כל הכתובות של התורמים
       const { Place } = await import('../entity/place');
-      let placeWhere: any = {};
-      if (words.length === 1) {
-        placeWhere.$or = [
-          { city: { $contains: words[0] } },
-          { street: { $contains: words[0] } },
-          { neighborhood: { $contains: words[0] } }
-        ];
-      } else {
-        placeWhere.$and = words.map(word => ({
-          $or: [
-            { city: { $contains: word } },
-            { street: { $contains: word } },
-            { neighborhood: { $contains: word } }
-          ]
-        }));
-      }
-      const matchingPlaces = await remult.repo(Place).find({ where: placeWhere });
-      const placeIds = matchingPlaces.map(p => p.id);
+      const allDonorPlaces = await remult.repo(DonorPlace).find({ where: { isActive: true } });
+      const placeIds = [...new Set(allDonorPlaces.map(dp => dp.placeId).filter(Boolean))];
+      const allPlaces = placeIds.length > 0
+        ? await remult.repo(Place).find({ where: { id: { $in: placeIds } } })
+        : [];
+      const placeMap = new Map(allPlaces.map(p => [p.id, p]));
 
-      // מצא תורמים עם הכתובות התואמות
-      let donorIdsFromAddress: string[] = [];
-      if (placeIds.length > 0) {
-        const donorPlaces = await remult.repo(DonorPlace).find({
-          where: { placeId: { $in: placeIds }, isActive: true }
-        });
-        donorIdsFromAddress = donorPlaces.map(dp => dp.donorId).filter(Boolean) as string[];
+      // בנה מפה של תורם -> כתובות שלו
+      const donorAddressMap = new Map<string, string[]>();
+      for (const dp of allDonorPlaces) {
+        if (!dp.donorId || !dp.placeId) continue;
+        const place = placeMap.get(dp.placeId);
+        if (place) {
+          const addresses = donorAddressMap.get(dp.donorId) || [];
+          const addressText = [place.city, place.street, place.neighborhood, place.houseNumber]
+            .filter(Boolean).join(' ').toLowerCase();
+          addresses.push(addressText);
+          donorAddressMap.set(dp.donorId, addresses);
+        }
       }
 
-      // איחוד התוצאות (תורמים שנמצאו לפי שם או כתובת)
-      donorIds = [...new Set([...donorIdsFromName, ...donorIdsFromAddress])];
+      // סנן תורמים - כל המילים צריכות להופיע בשם או בכתובת
+      const matchingDonorIds = allDonors
+        .filter(donor => {
+          // בנה טקסט חיפוש משם התורם
+          const nameText = [
+            donor.firstName,
+            donor.lastName,
+            donor.firstNameEnglish,
+            donor.lastNameEnglish,
+            donor.idNumber
+          ].filter(Boolean).join(' ').toLowerCase();
+
+          // קבל את כל הכתובות של התורם
+          const addresses = donorAddressMap.get(donor.id) || [];
+          const addressText = addresses.join(' ');
+
+          // טקסט משולב לחיפוש
+          const combinedText = `${nameText} ${addressText}`;
+
+          // בדוק שכל מילה מופיעה בטקסט המשולב
+          return words.every(word => combinedText.includes(word));
+        })
+        .map(d => d.id);
+
+      donorIds = matchingDonorIds;
     }
 
     // Donation-based filters (minDonationCount, minTotalDonations, maxTotalDonations)
