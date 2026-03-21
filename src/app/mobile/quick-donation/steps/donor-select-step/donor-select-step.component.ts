@@ -78,16 +78,19 @@ export class DonorSelectStepComponent implements OnInit {
 
     this.searching = true
     try {
-      const words = term.split(/\s+/)
+      const words = term.split(/\s+/).filter(w => w.length > 0)
       this.filteredDonors = this.allDonors.filter(donor => {
-        const fullName = `${donor.firstName} ${donor.lastName}`.toLowerCase()
+        const fullName = `${donor.firstName || ''} ${donor.lastName || ''}`.toLowerCase()
         const phone = (this.donorPhoneMap[donor.id] || '').toLowerCase()
         const place = this.donorPlaceMap[donor.id]
-        const city = (place?.city || '').toLowerCase()
+        // Use fullAddress which contains the complete address
+        const fullAddress = (place?.fullAddress || '').toLowerCase()
 
-        return words.every(w =>
-          fullName.includes(w) || phone.includes(w) || city.includes(w)
-        )
+        // Combine all searchable text
+        const combinedText = `${fullName} ${phone} ${fullAddress}`
+
+        // All words must appear somewhere in the combined text
+        return words.every(w => combinedText.includes(w))
       }).slice(0, 20)
     } finally {
       this.searching = false
