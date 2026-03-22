@@ -1436,6 +1436,8 @@ export const termsHe = {
   addressNotFoundForLocation: 'לא נמצאה כתובת למיקום זה',
   errorGettingAddress: 'שגיאה בקבלת כתובת',
   errorCreatingDonor: 'שגיאה ביצירת תורם',
+  donorCreatedAddDonationQuestion: 'התורם נוצר בהצלחה. להזין תרומה?',
+  errorSavingDonor: 'שגיאה בשמירת התורם',
 
   // Modern Dual Date Picker
   selectHebrewDate: 'בחר תאריך עברי',

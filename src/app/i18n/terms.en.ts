@@ -1438,6 +1438,8 @@ export const termsEn = {
   addressNotFoundForLocation: 'No address found for this location',
   errorGettingAddress: 'Error getting address',
   errorCreatingDonor: 'Error creating donor',
+  donorCreatedAddDonationQuestion: 'Donor created successfully. Would you like to add a donation?',
+  errorSavingDonor: 'Error saving donor',
 
   // Modern Dual Date Picker
   selectHebrewDate: 'Select Hebrew Date',

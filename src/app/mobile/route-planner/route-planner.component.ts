@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit } from '@angular/core'
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit, NgZone } from '@angular/core'
 import { Router, ActivatedRoute } from '@angular/router'
 import { remult } from 'remult'
 import { TargetAudience } from '../../../shared/entity/target-audience'
@@ -6,6 +6,8 @@ import { DonorMapController, MarkerData, DonorMapData } from '../../../shared/co
 import { GeoService } from '../../services/geo.service'
 import { UIToolsService } from '../../common/UIToolsService'
 import { User } from '../../../shared/entity/user'
+import { Donor, Place, Country } from '../../../shared/entity'
+import { I18nService } from '../../i18n/i18n.service'
 
 declare const google: any
 
@@ -83,7 +85,9 @@ export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
     private router: Router,
     private route: ActivatedRoute,
     private geoService: GeoService,
-    private ui: UIToolsService
+    private ui: UIToolsService,
+    private i18n: I18nService,
+    private zone: NgZone
   ) {}
 
   private hasSavedPosition = false
@@ -268,6 +272,9 @@ export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
       this.infoWindow = new maps.InfoWindow()
       this.mapReady = true
 
+      // Add long-press listener for creating new donor
+      this.setupLongPressListener(maps)
+
       // If donors were loaded before map was ready, show them now
       if (this.donors.length > 0) {
         this.showMarkers()
@@ -284,6 +291,228 @@ export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
       this.getUserLocation()
     } catch (err) {
       console.error('Failed to init map:', err)
+    }
+  }
+
+  // Long-press handling for creating new donor
+  private longPressTimer: any = null
+  private longPressLatLng: { lat: number; lng: number } | null = null
+  private isLongPressing = false
+  private touchStartPos: { x: number; y: number } | null = null
+
+  private setupLongPressListener(maps: any) {
+    const mapDiv = this.mapContainer.nativeElement
+
+    // Store the last click position from Google Maps click event
+    let lastClickLatLng: { lat: number; lng: number } | null = null
+
+    // Listen to Google Maps click event to get accurate lat/lng
+    this.map.addListener('click', (e: any) => {
+      if (e.latLng) {
+        lastClickLatLng = { lat: e.latLng.lat(), lng: e.latLng.lng() }
+      }
+    })
+
+    // Touch events for mobile long-press detection
+    mapDiv.addEventListener('touchstart', (e: TouchEvent) => {
+      if (e.touches.length !== 1) return // Only single touch
+
+      this.isLongPressing = true
+      const touch = e.touches[0]
+      this.touchStartPos = { x: touch.clientX, y: touch.clientY }
+
+      this.longPressTimer = setTimeout(() => {
+        if (!this.isLongPressing || !this.map) return
+
+        // Get lat/lng from touch position using overlay projection
+        const rect = mapDiv.getBoundingClientRect()
+        const x = touch.clientX - rect.left
+        const y = touch.clientY - rect.top
+
+        // Use OverlayView to convert pixel to lat/lng accurately
+        const overlay = new maps.OverlayView()
+        overlay.onAdd = () => {}
+        overlay.draw = () => {}
+        overlay.onRemove = () => {}
+        overlay.setMap(this.map)
+
+        // Wait for overlay to be added
+        setTimeout(() => {
+          const projection = overlay.getProjection()
+          if (projection) {
+            const latLng = projection.fromContainerPixelToLatLng(new maps.Point(x, y))
+            if (latLng) {
+              this.longPressLatLng = { lat: latLng.lat(), lng: latLng.lng() }
+
+              // Trigger vibration feedback
+              if (navigator.vibrate) {
+                navigator.vibrate(50)
+              }
+
+              // Handle long-press inside Angular zone
+              this.zone.run(() => {
+                this.handleLongPress()
+              })
+            }
+          }
+          overlay.setMap(null)
+        }, 10)
+      }, 600) // 600ms hold for long-press
+    }, { passive: true })
+
+    mapDiv.addEventListener('touchmove', (e: TouchEvent) => {
+      // Cancel long-press if finger moves more than 10 pixels
+      if (this.touchStartPos && e.touches.length === 1) {
+        const touch = e.touches[0]
+        const dx = Math.abs(touch.clientX - this.touchStartPos.x)
+        const dy = Math.abs(touch.clientY - this.touchStartPos.y)
+        if (dx > 10 || dy > 10) {
+          this.cancelLongPress()
+        }
+      }
+    }, { passive: true })
+
+    mapDiv.addEventListener('touchend', () => {
+      this.cancelLongPress()
+    }, { passive: true })
+
+    mapDiv.addEventListener('touchcancel', () => {
+      this.cancelLongPress()
+    }, { passive: true })
+  }
+
+  private cancelLongPress() {
+    this.isLongPressing = false
+    this.touchStartPos = null
+    if (this.longPressTimer) {
+      clearTimeout(this.longPressTimer)
+      this.longPressTimer = null
+    }
+  }
+
+  private async handleLongPress() {
+    if (!this.longPressLatLng) return
+
+    const { lat, lng } = this.longPressLatLng
+    this.longPressLatLng = null
+
+    try {
+      this.loading = true
+
+      // Reverse geocode the location
+      const result = await this.geoService.reverseGeocode(lat, lng)
+
+      this.loading = false
+
+      if (result && result.success) {
+        // Ask user to confirm creating donor at this location
+        const message = this.i18n.terms.createNewDonorAtLocationQuestion
+          .replace('{address}', result.formattedAddress)
+
+        const shouldCreate = await this.ui.yesNoQuestion(message, true)
+
+        if (shouldCreate) {
+          await this.createNewDonorWithAddress(result, lat, lng)
+        }
+      } else {
+        this.ui.error(this.i18n.terms.addressNotFoundForLocation)
+      }
+    } catch (error) {
+      console.error('Error in long-press handler:', error)
+      this.loading = false
+      this.ui.error(this.i18n.terms.errorGettingAddress)
+    }
+  }
+
+  private async createNewDonorWithAddress(geocodeResult: any, lat: number, lng: number) {
+    try {
+      const placeDto = geocodeResult.placeDto
+
+      if (!placeDto || !placeDto.valid) {
+        this.ui.error(this.i18n.terms.errorGettingAddress)
+        return
+      }
+
+      // Get country code
+      const countryCode = placeDto.countryCode || 'IL'
+
+      // Load Country entity from database
+      let countryEntity: Country | undefined
+      try {
+        countryEntity = await remult.repo(Country).findFirst({
+          code: countryCode
+        })
+
+        if (!countryEntity) {
+          console.warn(`Country with code ${countryCode} not found, creating new...`)
+          const countryName = placeDto.countryName || placeDto.country || countryCode
+          countryEntity = await remult.repo(Country).insert({
+            name: countryName,
+            nameEn: countryName,
+            code: countryCode.toUpperCase(),
+            phonePrefix: '',
+            currencyId: 'USD',
+            isActive: true
+          })
+        }
+      } catch (error) {
+        console.error('Error loading/creating country:', error)
+      }
+
+      // Create Place entity
+      const placeData: Partial<Place> = {
+        placeId: geocodeResult.placeId,
+        fullAddress: geocodeResult.formattedAddress || '',
+        placeName: placeDto.name || '',
+        street: placeDto.streetname || '',
+        houseNumber: placeDto.homenumber ? String(placeDto.homenumber) : '',
+        neighborhood: placeDto.neighborhood || '',
+        city: placeDto.cityname || '',
+        state: placeDto.state || '',
+        postcode: placeDto.postcode || '',
+        countryId: countryEntity?.id,
+        latitude: placeDto.y,
+        longitude: placeDto.x
+      }
+
+      // Save Place to database
+      const savedPlace = await Place.findOrCreate(placeData, remult.repo(Place))
+      console.log('Place saved successfully with ID:', savedPlace.id)
+
+      // Open donor details dialog with the saved Place
+      const changed = await this.ui.donorDetailsDialog('new', { initialPlace: savedPlace })
+
+      if (changed) {
+        // Reload map data after donor was created
+        setTimeout(async () => {
+          if (this.selectedAudienceId) {
+            await this.onAudienceChange()
+          }
+
+          // Ask if user wants to add donation immediately
+          const addDonation = await this.ui.yesNoQuestion(
+            this.i18n.terms.donorCreatedAddDonationQuestion || 'התורם נוצר בהצלחה. להזין תרומה?',
+            true
+          )
+
+          if (addDonation) {
+            // Navigate to quick donation with the new donor
+            // We need to get the donor ID from the last created donor
+            const latestDonor = await remult.repo(Donor).findFirst(
+              {},
+              { orderBy: { createdDate: 'desc' } }
+            )
+            if (latestDonor) {
+              this.router.navigate(['/m/quick-donation'], {
+                queryParams: { donorId: latestDonor.id, source: 'map' }
+              })
+            }
+          }
+        })
+      }
+    } catch (error) {
+      console.error('Error creating donor:', error)
+      this.ui.error(this.i18n.terms.errorSavingDonor || 'שגיאה בשמירת התורם')
     }
   }
 
