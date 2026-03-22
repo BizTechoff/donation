@@ -16,6 +16,7 @@ import { SidebarService } from '../../services/sidebar.service';
 import { DonorMapController, DonorMapData, MarkerData, MapFilters as BackendMapFilters, MapStatistics } from '../../../shared/controllers/donor-map.controller';
 import { AppSettingsController } from '../../../shared/controllers/app-settings.controller';
 import { User } from '../../../shared/entity/user';
+import { TargetAudience } from '../../../shared/entity/target-audience';
 import { Roles } from '../../../shared/enum/roles';
 import { HebrewDateService } from '../../services/hebrew-date.service';
 import { BusyService } from '../../common-ui-elements/src/angular/wait/busy-service';
@@ -75,6 +76,12 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
   private savedRouteLegsData: { distanceMeters: number; durationSeconds: number }[] = [];
   private savedRouteTotalDistanceMeters = 0;
   private savedRouteTotalDurationSeconds = 0;
+
+  // Target audience routes (from global filter)
+  private targetAudiencePolylines: google.maps.Polyline[] = [];
+  private activeTargetAudienceIds: string[] = [];
+  // Colors for different target audience routes
+  private readonly routeColors = ['#667eea', '#e74c3c', '#27ae60', '#f39c12', '#9b59b6', '#1abc9c'];
 
   // User location
   userLat: number | null = null;
@@ -238,6 +245,12 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
         if (this.map) {
           this.addMarkersToMap();
         }
+
+        // Check for target audience routes from global filter
+        const globalFilters = this.globalFilterService.currentFilters;
+        const targetAudienceIds = globalFilters.targetAudienceIds || [];
+        await this.loadTargetAudienceRoutes(targetAudienceIds);
+
       } catch (error) {
         console.error('Error loading data:', error);
         if (error && typeof error === 'object') {
@@ -323,6 +336,98 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
       this.recentDonorMonths = settings.recentDonorMonths;
     } catch (error) {
       console.error('Error loading app settings:', error);
+    }
+  }
+
+  // Load and display routes from selected target audiences (global filter)
+  async loadTargetAudienceRoutes(targetAudienceIds: string[]) {
+    // Clear existing target audience routes
+    this.clearTargetAudienceRoutes();
+
+    // Skip if no target audiences selected or if manual route is active
+    if (!targetAudienceIds || targetAudienceIds.length === 0 || this.isRouteActive) {
+      this.activeTargetAudienceIds = [];
+      return;
+    }
+
+    // Skip if same audiences as before
+    if (JSON.stringify(targetAudienceIds) === JSON.stringify(this.activeTargetAudienceIds)) {
+      return;
+    }
+
+    this.activeTargetAudienceIds = [...targetAudienceIds];
+
+    try {
+      // Load target audiences with their route data
+      const targetAudiences = await remult.repo(TargetAudience).find({
+        where: { id: { $in: targetAudienceIds } }
+      });
+
+      console.log(`[DonorsMap] Loaded ${targetAudiences.length} target audiences for IDs:`, targetAudienceIds);
+
+      const maps = this.geoService.getGoogleMaps();
+      if (!maps || !this.map) return;
+
+      // Draw route for each target audience that has saved route data
+      let routesDrawn = 0;
+      targetAudiences.forEach((audience, index) => {
+        const hasRoute = audience.routeData?.polylinePath && audience.routeData.polylinePath.length > 0;
+        console.log(`[DonorsMap] Target audience "${audience.name}": hasRoute=${hasRoute}, polylinePath length=${audience.routeData?.polylinePath?.length || 0}`);
+
+        if (hasRoute) {
+          const color = this.routeColors[index % this.routeColors.length];
+
+          const polyline = new maps.Polyline({
+            path: audience.routeData!.polylinePath!,
+            map: this.map,
+            strokeColor: color,
+            strokeWeight: 4,
+            strokeOpacity: 0.8,
+            zIndex: 1
+          });
+
+          this.targetAudiencePolylines.push(polyline);
+          routesDrawn++;
+          console.log(`[DonorsMap] Drew route for "${audience.name}" with color ${color}`);
+        }
+      });
+
+      console.log(`[DonorsMap] Total routes drawn: ${routesDrawn}`);
+
+      // Fit map to show all routes if any were drawn
+      if (this.targetAudiencePolylines.length > 0) {
+        this.fitMapToTargetAudienceRoutes(targetAudiences);
+      }
+    } catch (error) {
+      console.error('Error loading target audience routes:', error);
+    }
+  }
+
+  // Clear target audience routes from map
+  private clearTargetAudienceRoutes() {
+    this.targetAudiencePolylines.forEach(p => p.setMap(null));
+    this.targetAudiencePolylines = [];
+  }
+
+  // Fit map to show all target audience routes
+  private fitMapToTargetAudienceRoutes(audiences: TargetAudience[]) {
+    const maps = this.geoService.getGoogleMaps();
+    if (!maps || !this.map) return;
+
+    const bounds = new maps.LatLngBounds();
+    let hasPoints = false;
+
+    audiences.forEach(audience => {
+      if (audience.routeData?.polylinePath) {
+        audience.routeData.polylinePath.forEach(point => {
+          bounds.extend({ lat: point.lat, lng: point.lng });
+          hasPoints = true;
+        });
+      }
+    });
+
+    if (hasPoints) {
+      this.map.fitBounds(bounds, 50);
     }
   }
 
@@ -1719,6 +1824,9 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
     // Clear route
     this.clearRoute();
+
+    // Clear target audience routes
+    this.clearTargetAudienceRoutes();
 
     // Clear user location marker
     if (this.userLocationMarker) {
