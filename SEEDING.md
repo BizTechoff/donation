@@ -105,6 +105,22 @@ DATABASE_URL='postgres://postgres:password@localhost/donation'
 DEV_MODE='DEV'
 ```
 
+> ⚠️ **חשוב - DEV_MODE מיועד לפיתוח מקומי בלבד**
+>
+> השורה `DEV_MODE='DEV'` מכבה SSL בחיבור ל-Postgres, לכן היא מתאימה **רק** ל-DB מקומי על `localhost`.
+>
+> **אל תגדיר** `DEV_MODE=DEV` ב-Heroku / Railway / כל פרודקשן אחר — שרתי ענן (כמו Heroku Postgres) אוכפים SSL והחיבור ידחה עם השגיאה:
+> ```
+> no pg_hba.conf entry for host "...", user "...", database "...", no encryption
+> ```
+>
+> בפרודקשן: או להשאיר את `DEV_MODE` לא מוגדר, או להגדיר אותו לכל ערך שאינו `'DEV'` (למשל `DEV_MODE=PROD`).
+>
+> לניקוי ב-Heroku:
+> ```bash
+> heroku config:unset DEV_MODE
+> ```
+
 ### שגיאת "Admin user not found"
 הרץ קודם:
 ```bash
