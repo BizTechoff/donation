@@ -22,7 +22,7 @@ config()
 // ============ Environment ============
 const CLIENT_ID = process.env['GOOGLE_CONTACTS_CLIENT_ID'] || process.env['GOOGLE_CLIENT_ID'] || ''
 const CLIENT_SECRET = process.env['GOOGLE_CONTACTS_CLIENT_SECRET'] || process.env['GOOGLE_CLIENT_SECRET'] || ''
-const REDIRECT_URI = process.env['GOOGLE_CONTACTS_REDIRECT_URI'] || 'http://localhost:3002/api/google-contacts/oauth2callback'
+const REDIRECT_URI = process.env['GOOGLE_CONTACTS_REDIRECT_URI'] || 'https://yyg.up.railway.app/api/google-contacts/oauth2callback'
 const ENCRYPTION_KEY = process.env['GOOGLE_TOKEN_ENCRYPTION_KEY'] || ''
 
 const SCOPES = [
