@@ -276,6 +276,8 @@ static class Program
 
             string? selectedDonationId = null;
             string? selectedDonorName = null;
+            string? selectedTagLine1 = null;
+            string? selectedTagLine2 = null;
 
             if (activeDonation != null)
             {
@@ -289,6 +291,8 @@ static class Program
                     {
                         selectedDonationId = form.SelectedDonationId;
                         selectedDonorName = activeDonation.DonorName;
+                        selectedTagLine1 = activeDonation.TagLine1;
+                        selectedTagLine2 = activeDonation.TagLine2;
                     }
                 });
 
@@ -302,6 +306,8 @@ static class Program
                         {
                             selectedDonationId = searchForm.SelectedDonationId;
                             selectedDonorName = searchForm.SelectedDonorName;
+                            selectedTagLine1 = searchForm.SelectedTagLine1;
+                            selectedTagLine2 = searchForm.SelectedTagLine2;
                         }
                     });
                 }
@@ -316,6 +322,8 @@ static class Program
                     {
                         selectedDonationId = searchForm.SelectedDonationId;
                         selectedDonorName = searchForm.SelectedDonorName;
+                        selectedTagLine1 = searchForm.SelectedTagLine1;
+                        selectedTagLine2 = searchForm.SelectedTagLine2;
                     }
                 });
             }
@@ -328,6 +336,10 @@ static class Program
                 return;
             }
 
+            // fallback - אם השרת לא החזיר TagLine1 (API ישן), ניפול חזרה לשם העברי
+            var tagLine1 = !string.IsNullOrWhiteSpace(selectedTagLine1) ? selectedTagLine1 : selectedDonorName;
+            var tagLine2 = selectedTagLine2 ?? "";
+
             // Show preview form with draggable tag
             float tagX = -1, tagY = -1;
             bool noTag = false;
@@ -335,7 +347,7 @@ static class Program
 
             RunOnUI(() =>
             {
-                using var previewForm = new ScanPreviewForm(filePath, selectedDonorName);
+                using var previewForm = new ScanPreviewForm(filePath, tagLine1, tagLine2);
                 previewResult = previewForm.ShowDialog();
                 if (previewResult == DialogResult.OK)
                 {
@@ -356,8 +368,8 @@ static class Program
             // Burn tag onto image (if not "no tag")
             if (!noTag && tagX >= 0 && tagY >= 0)
             {
-                Logger.Info($"Burning tag at ({tagX:F1}%, {tagY:F1}%)");
-                ImageTagger.BurnTag(filePath, selectedDonorName, tagX, tagY);
+                Logger.Info($"Burning tag at ({tagX:F1}%, {tagY:F1}%): L1=\"{tagLine1}\" L2=\"{tagLine2}\"");
+                ImageTagger.BurnTag(filePath, tagLine1, tagLine2, tagX, tagY);
             }
             else
             {

@@ -9,6 +9,10 @@ public class ActiveDonationInfo
 {
     public string DonationId { get; set; } = "";
     public string DonorName { get; set; } = "";
+    /// <summary>שורה 1 בתגית - שם באנגלית + תואר (fallback לעברית)</summary>
+    public string TagLine1 { get; set; } = "";
+    /// <summary>שורה 2 בתגית - כתובת ראשית (ריק אם אין)</summary>
+    public string TagLine2 { get; set; } = "";
     public decimal Amount { get; set; }
     public string CurrencyId { get; set; } = "ILS";
 }
@@ -17,6 +21,10 @@ public class DonationSearchResult
 {
     public string DonationId { get; set; } = "";
     public string DonorName { get; set; } = "";
+    /// <summary>שורה 1 בתגית - שם באנגלית + תואר (fallback לעברית)</summary>
+    public string TagLine1 { get; set; } = "";
+    /// <summary>שורה 2 בתגית - כתובת ראשית (ריק אם אין)</summary>
+    public string TagLine2 { get; set; } = "";
     public decimal Amount { get; set; }
     public string CurrencyId { get; set; } = "ILS";
     public DateTime? DonationDate { get; set; }

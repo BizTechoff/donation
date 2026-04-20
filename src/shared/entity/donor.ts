@@ -475,6 +475,22 @@ export class Donor extends IdEntity {
     return this.fullName || '';
   }
 
+  /**
+   * שם תורם באנגלית לתגית סריקה - זהה ל-getNameForLetter אך ללא suffix
+   * משמש ב-scan-api.ts כשורה העליונה בתגית שנצרבת על קובץ הסריקה.
+   * fallback לשם עברי אם אין אנגלית.
+   */
+  getNameForTag(): string {
+    if (this.firstNameEnglish || this.lastNameEnglish) {
+      const title = this.titleEnglish || '';
+      const mrsMrs = this.maritalStatus === 'married' && !title.includes('Mrs.') ? '& Mrs.' : '';
+      const first = this.firstNameEnglish || '';
+      const last = this.lastNameEnglish || '';
+      return [title, mrsMrs, first, last].filter(p => p).join(' ').trim();
+    }
+    return this.fullName || '';
+  }
+
   @BackendMethod({ allowed: [Roles.admin] })
   async deactivate() {
     this.isActive = false

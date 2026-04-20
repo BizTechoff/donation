@@ -4,6 +4,7 @@ import { remult } from 'remult'
 import { DonationFile } from '../shared/entity/file'
 import { Donation } from '../shared/entity/donation'
 import { Donor } from '../shared/entity/donor'
+import { DonorPlace } from '../shared/entity/donor-place'
 import { doGenerateSignedURL } from './s3'
 import { api } from './api'
 
@@ -11,12 +12,34 @@ import { api } from './api'
 interface ActiveDonation {
   donationId: string
   donorName: string
+  tagLine1: string
+  tagLine2: string
   amount: number
   currencyId: string
   timestamp: number
 }
 
 const activeDonations = new Map<string, ActiveDonation>()
+
+/**
+ * בונה את שתי שורות התגית עבור תורם נתון.
+ * line1 = שם באנגלית (getNameForTag) - עם fallback לעברית
+ * line2 = כתובת ראשית בשורה אחת (getDisplayAddress) - ריק אם אין כתובת
+ */
+async function buildTagLines(donor: Donor | undefined | null): Promise<{ tagLine1: string; tagLine2: string }> {
+  if (!donor) return { tagLine1: '', tagLine2: '' }
+  const tagLine1 = donor.getNameForTag()
+  let tagLine2 = ''
+  try {
+    const primaryPlace = await DonorPlace.getPrimaryForDonor(donor.id)
+    if (primaryPlace?.place) {
+      tagLine2 = primaryPlace.place.getDisplayAddress() || ''
+    }
+  } catch (err) {
+    console.warn('[scan-api] buildTagLines - failed to load address for donor', donor.id, err)
+  }
+  return { tagLine1, tagLine2 }
+}
 
 // ── Multer config (memory storage for S3 relay) ──────────────────
 const upload = multer({
@@ -82,6 +105,8 @@ scanRouter.get('/active-donation', async (req: Request, res: Response) => {
     res.json({
       donationId: active.donationId,
       donorName: active.donorName,
+      tagLine1: active.tagLine1,
+      tagLine2: active.tagLine2,
       amount: active.amount,
       currencyId: active.currencyId
     })
@@ -125,16 +150,23 @@ scanRouter.post('/register-active', api.withRemult, async (req: Request, res: Re
     }
 
     let donorName = ''
+    let tagLine1 = ''
+    let tagLine2 = ''
     if (donation.donorId) {
       const donor = await remult.repo(Donor).findId(donation.donorId)
       if (donor) {
         donorName = `${donor.firstName || ''} ${donor.lastName || ''}`.trim()
+        const lines = await buildTagLines(donor)
+        tagLine1 = lines.tagLine1
+        tagLine2 = lines.tagLine2
       }
     }
 
     activeDonations.set(user.id, {
       donationId,
       donorName,
+      tagLine1,
+      tagLine2,
       amount: donation.amount,
       currencyId: donation.currencyId || 'ILS',
       timestamp: Date.now()
@@ -266,6 +298,28 @@ scanRouter.get('/search-donations', api.withRemult, async (req: Request, res: Re
       }
     })
 
+    // helper - ממפה רשימת תרומות לתוצאות עם tagLine1/tagLine2
+    const mapDonationsToResults = async (donations: Donation[]) => {
+      const uniqueDonorIds = Array.from(new Set(donations.map(d => d.donorId).filter(Boolean) as string[]))
+      const primaryPlaces = uniqueDonorIds.length
+        ? await DonorPlace.getPrimaryForDonors(uniqueDonorIds)
+        : new Map()
+
+      return donations.map(d => {
+        const donor = d.donor
+        const primary = donor ? primaryPlaces.get(donor.id) : undefined
+        return {
+          donationId: d.id,
+          donorName: donor ? `${donor.firstName || ''} ${donor.lastName || ''}`.trim() : '',
+          tagLine1: donor ? donor.getNameForTag() : '',
+          tagLine2: primary?.place ? (primary.place.getDisplayAddress() || '') : '',
+          amount: d.amount,
+          currencyId: d.currencyId || 'ILS',
+          donationDate: d.donationDate
+        }
+      })
+    }
+
     if (donors.length === 0) {
       // Try searching by amount
       const amount = parseFloat(query)
@@ -277,15 +331,7 @@ scanRouter.get('/search-donations', api.withRemult, async (req: Request, res: Re
           include: { donor: true }
         })
 
-        const results = donations.map(d => ({
-          donationId: d.id,
-          donorName: d.donor ? `${d.donor.firstName || ''} ${d.donor.lastName || ''}`.trim() : '',
-          amount: d.amount,
-          currencyId: d.currencyId || 'ILS',
-          donationDate: d.donationDate
-        }))
-
-        res.json(results)
+        res.json(await mapDonationsToResults(donations))
         return
       }
 
@@ -302,15 +348,7 @@ scanRouter.get('/search-donations', api.withRemult, async (req: Request, res: Re
       include: { donor: true }
     })
 
-    const results = donations.map(d => ({
-      donationId: d.id,
-      donorName: d.donor ? `${d.donor.firstName || ''} ${d.donor.lastName || ''}`.trim() : '',
-      amount: d.amount,
-      currencyId: d.currencyId || 'ILS',
-      donationDate: d.donationDate
-    }))
-
-    res.json(results)
+    res.json(await mapDonationsToResults(donations))
   } catch (err: any) {
     console.error('[scan-api] search-donations error:', err)
     res.status(500).json({ error: err.message })

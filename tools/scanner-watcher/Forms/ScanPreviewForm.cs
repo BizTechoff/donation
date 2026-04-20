@@ -10,7 +10,8 @@ namespace ScannerWatcher.Forms;
 public class ScanPreviewForm : Form
 {
     private readonly string _filePath;
-    private readonly string _donorName;
+    private readonly string _line1;
+    private readonly string _line2;
     private readonly PictureBox _pictureBox;
     private readonly Panel _imagePanel;
     private readonly Button _btnConfirm;
@@ -30,10 +31,11 @@ public class ScanPreviewForm : Form
     public float TagYPercent => _chkNoTag.Checked ? -1 : _tagYPercent;
     public bool NoTag => _chkNoTag.Checked;
 
-    public ScanPreviewForm(string filePath, string donorName)
+    public ScanPreviewForm(string filePath, string line1, string line2)
     {
         _filePath = filePath;
-        _donorName = donorName;
+        _line1 = line1 ?? "";
+        _line2 = line2 ?? "";
 
         Text = "תצוגה מקדימה - גרור את התגית למיקום הרצוי";
         Size = new Size(900, 700);
@@ -190,11 +192,23 @@ public class ScanPreviewForm : Form
         _btnCancel.Location = new Point(ClientSize.Width - 280, 10);
     }
 
+    /// <summary>
+    /// מחזיר את השורות הלא-ריקות של התגית. כיום 2 לכל היותר (שם + כתובת),
+    /// אבל מבני לאפשר הרחבה עתידית בקלות.
+    /// </summary>
+    private string[] GetActiveLines()
+    {
+        return new[] { _line1, _line2 }
+            .Where(l => !string.IsNullOrWhiteSpace(l))
+            .Select(l => l.Trim())
+            .ToArray();
+    }
+
     private void UpdateTagRect()
     {
         if (_originalImage == null) return;
 
-        var tagSize = ImageTagger.MeasureTag(_donorName, _originalImage.Width, _originalImage.Height);
+        var tagSize = ImageTagger.MeasureTag(_line1, _line2, _originalImage.Width, _originalImage.Height);
         var scaledTagWidth = tagSize.Width * _displayScale;
         var scaledTagHeight = tagSize.Height * _displayScale;
 
@@ -212,6 +226,9 @@ public class ScanPreviewForm : Form
     {
         if (_originalImage == null || _chkNoTag.Checked) return;
 
+        var lines = GetActiveLines();
+        if (lines.Length == 0) return;
+
         var g = e.Graphics;
         g.SmoothingMode = SmoothingMode.HighQuality;
 
@@ -225,15 +242,22 @@ public class ScanPreviewForm : Form
         using var borderPen = new Pen(borderColor, borderWidth);
         g.DrawRectangle(borderPen, _tagRect.X, _tagRect.Y, _tagRect.Width, _tagRect.Height);
 
-        // Draw text
+        // Prepare font + brush
         var fontSize = 10f * _displayScale;
         fontSize = Math.Max(8f, fontSize);
         using var font = new Font("Segoe UI", fontSize, FontStyle.Bold);
         using var textBrush = new SolidBrush(Color.FromArgb(40, 40, 40));
 
-        var textX = _tagRect.X + 6 * _displayScale;
-        var textY = _tagRect.Y + 6 * _displayScale;
-        g.DrawString(_donorName, font, textBrush, textX, textY);
+        // Draw each line, stacked vertically
+        const float lineSpacing = 2f;
+        float textX = _tagRect.X + 6 * _displayScale;
+        float textY = _tagRect.Y + 6 * _displayScale;
+        foreach (var line in lines)
+        {
+            g.DrawString(line, font, textBrush, textX, textY);
+            var sz = g.MeasureString(line, font);
+            textY += sz.Height + lineSpacing * _displayScale;
+        }
 
         // Draw drag hint if not dragging
         if (!_isDragging)

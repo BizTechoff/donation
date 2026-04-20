@@ -6,7 +6,9 @@ using System.Drawing.Text;
 namespace ScannerWatcher;
 
 /// <summary>
-/// Burns a donor name tag onto scanned images at a specified position.
+/// Burns a multi-line donor tag onto scanned images at a specified position.
+/// כיום התגית מכילה 2 שורות (שם באנגלית + כתובת ראשית) אך המימוש מודולרי -
+/// כל פונקציה פנימית עובדת עם string[] ומאפשרת הרחבה עתידית למספר שורות דינמי.
 /// </summary>
 public static class ImageTagger
 {
@@ -14,19 +16,34 @@ public static class ImageTagger
     private const float FontSize = 10f; // Smaller font as requested
     private const int Padding = 6;
     private const int BorderWidth = 1;
+    private const float LineSpacing = 2f; // Extra pixels between lines
+
+    /// <summary>
+    /// מסנן שורות ריקות - מרכיב את הטקסט בפועל שיוצג על התגית.
+    /// בכך מטופל אוטומטית מצב שאין כתובת ראשית (line2 ריק) => תוצג רק שורה 1.
+    /// </summary>
+    private static string[] BuildLines(string line1, string line2)
+    {
+        return new[] { line1, line2 }
+            .Where(l => !string.IsNullOrWhiteSpace(l))
+            .Select(l => l.Trim())
+            .ToArray();
+    }
 
     /// <summary>
     /// Burns a tag onto an image file at the specified position.
     /// Position is in percentages (0-100) from top-left corner.
     /// </summary>
     /// <param name="imagePath">Path to source image (JPG, PNG, TIFF)</param>
-    /// <param name="donorName">Text to display on tag</param>
+    /// <param name="line1">שורה 1 בתגית (שם + תואר באנגלית)</param>
+    /// <param name="line2">שורה 2 בתגית (כתובת ראשית) - יכולה להיות ריקה</param>
     /// <param name="xPercent">X position as percentage (0=left, 100=right)</param>
     /// <param name="yPercent">Y position as percentage (0=top, 100=bottom)</param>
     /// <returns>Path to the tagged image (same as input, overwritten)</returns>
-    public static string BurnTag(string imagePath, string donorName, float xPercent, float yPercent)
+    public static string BurnTag(string imagePath, string line1, string line2, float xPercent, float yPercent)
     {
-        if (string.IsNullOrWhiteSpace(donorName))
+        var lines = BuildLines(line1, line2);
+        if (lines.Length == 0)
             return imagePath;
 
         var ext = Path.GetExtension(imagePath).ToLowerInvariant();
@@ -53,7 +70,7 @@ public static class ImageTagger
             g.DrawImage(original, 0, 0, original.Width, original.Height);
 
             // Draw tag
-            DrawTag(g, donorName, original.Width, original.Height, xPercent, yPercent);
+            DrawTag(g, lines, original.Width, original.Height, xPercent, yPercent);
         }
 
         // Dispose original before saving (releases file lock)
@@ -83,7 +100,7 @@ public static class ImageTagger
     /// Creates a preview bitmap with the tag overlay (non-destructive).
     /// Used for the preview form.
     /// </summary>
-    public static Bitmap CreatePreview(Image original, string donorName, float xPercent, float yPercent)
+    public static Bitmap CreatePreview(Image original, string line1, string line2, float xPercent, float yPercent)
     {
         var bitmap = new Bitmap(original.Width, original.Height, PixelFormat.Format32bppArgb);
 
@@ -94,40 +111,60 @@ public static class ImageTagger
 
         g.DrawImage(original, 0, 0, original.Width, original.Height);
 
-        if (!string.IsNullOrWhiteSpace(donorName))
+        var lines = BuildLines(line1, line2);
+        if (lines.Length > 0)
         {
-            DrawTag(g, donorName, original.Width, original.Height, xPercent, yPercent);
+            DrawTag(g, lines, original.Width, original.Height, xPercent, yPercent);
         }
 
         return bitmap;
     }
 
     /// <summary>
-    /// Measures the tag size for a given donor name.
+    /// Measures the tag size for a given set of lines.
     /// Returns size in pixels for the given image dimensions.
+    /// Width = max line width + padding. Height = sum of line heights + padding + spacings.
     /// </summary>
-    public static SizeF MeasureTag(string donorName, int imageWidth, int imageHeight)
+    public static SizeF MeasureTag(string line1, string line2, int imageWidth, int imageHeight)
     {
+        var lines = BuildLines(line1, line2);
+        if (lines.Length == 0)
+            return SizeF.Empty;
+
         using var measureBitmap = new Bitmap(1, 1);
         using var g = Graphics.FromImage(measureBitmap);
 
         var fontSize = CalculateFontSize(imageWidth, imageHeight);
         using var font = new Font("Segoe UI", fontSize, FontStyle.Bold);
 
-        var textSize = g.MeasureString(donorName, font);
-        return new SizeF(textSize.Width + Padding * 2, textSize.Height + Padding * 2);
+        float maxWidth = 0;
+        float totalHeight = 0;
+        for (int i = 0; i < lines.Length; i++)
+        {
+            var sz = g.MeasureString(lines[i], font);
+            if (sz.Width > maxWidth) maxWidth = sz.Width;
+            totalHeight += sz.Height;
+            if (i < lines.Length - 1) totalHeight += LineSpacing;
+        }
+
+        return new SizeF(maxWidth + Padding * 2, totalHeight + Padding * 2);
     }
 
-    private static void DrawTag(Graphics g, string donorName, int imageWidth, int imageHeight, float xPercent, float yPercent)
+    private static void DrawTag(Graphics g, string[] lines, int imageWidth, int imageHeight, float xPercent, float yPercent)
     {
+        if (lines.Length == 0) return;
+
         // Calculate font size based on image dimensions
         var fontSize = CalculateFontSize(imageWidth, imageHeight);
         using var font = new Font("Segoe UI", fontSize, FontStyle.Bold);
 
-        // Measure text
-        var textSize = g.MeasureString(donorName, font);
-        var tagWidth = textSize.Width + Padding * 2;
-        var tagHeight = textSize.Height + Padding * 2;
+        // Measure each line
+        var lineSizes = lines.Select(l => g.MeasureString(l, font)).ToArray();
+        var maxLineWidth = lineSizes.Max(s => s.Width);
+        var totalLinesHeight = lineSizes.Sum(s => s.Height) + LineSpacing * (lines.Length - 1);
+
+        var tagWidth = maxLineWidth + Padding * 2;
+        var tagHeight = totalLinesHeight + Padding * 2;
 
         // Calculate position (percentage to pixels)
         var x = (xPercent / 100f) * imageWidth;
@@ -147,9 +184,14 @@ public static class ImageTagger
         using var borderPen = new Pen(Color.FromArgb(60, 60, 60), BorderWidth);
         g.DrawRectangle(borderPen, x, y, tagWidth, tagHeight);
 
-        // Draw text
+        // Draw each line
         using var textBrush = new SolidBrush(Color.FromArgb(40, 40, 40));
-        g.DrawString(donorName, font, textBrush, x + Padding, y + Padding);
+        float textY = y + Padding;
+        for (int i = 0; i < lines.Length; i++)
+        {
+            g.DrawString(lines[i], font, textBrush, x + Padding, textY);
+            textY += lineSizes[i].Height + LineSpacing;
+        }
     }
 
     /// <summary>

@@ -11,6 +11,8 @@ public class DonationSearchForm : Form
 
     public string? SelectedDonationId { get; private set; }
     public string? SelectedDonorName { get; private set; }
+    public string? SelectedTagLine1 { get; private set; }
+    public string? SelectedTagLine2 { get; private set; }
 
     public DonationSearchForm(ApiClient api, string fileName)
     {
@@ -147,7 +149,8 @@ public class DonationSearchForm : Form
                 item.SubItems.Add(r.Amount.ToString("N2"));
                 item.SubItems.Add(r.CurrencyId);
                 item.SubItems.Add(r.DonationDate?.ToString("dd/MM/yyyy") ?? "");
-                item.Tag = r.DonationId;
+                // שומר את האובייקט המלא ב-Tag כדי שנוכל לחלץ את TagLine1/2 בבחירה
+                item.Tag = r;
                 _listView.Items.Add(item);
             }
 
@@ -189,8 +192,21 @@ public class DonationSearchForm : Form
         }
 
         var selectedItem = _listView.SelectedItems[0];
-        SelectedDonationId = selectedItem.Tag as string;
-        SelectedDonorName = selectedItem.Text; // First column is donor name
+        if (selectedItem.Tag is DonationSearchResult result)
+        {
+            SelectedDonationId = result.DonationId;
+            SelectedDonorName  = result.DonorName;
+            SelectedTagLine1   = result.TagLine1;
+            SelectedTagLine2   = result.TagLine2;
+        }
+        else
+        {
+            // fallback לתאימות אחורה
+            SelectedDonationId = selectedItem.Tag as string;
+            SelectedDonorName  = selectedItem.Text;
+            SelectedTagLine1   = "";
+            SelectedTagLine2   = "";
+        }
         DialogResult = DialogResult.OK;
         Close();
     }
