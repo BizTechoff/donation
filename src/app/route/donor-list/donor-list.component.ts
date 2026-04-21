@@ -2,6 +2,7 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { remult } from 'remult';
 import { Subscription } from 'rxjs';
 import { DonorMapController, DonorMapData } from '../../../shared/controllers/donor-map.controller';
+import { PlaceController } from '../../../shared/controllers/place.controller';
 import { Donor, DonorPlace, User } from '../../../shared/entity';
 import { ContactPerson } from '../../../shared/entity/contact-person';
 import { BusyService } from '../../common-ui-elements/src/angular/wait/busy-service';
@@ -36,7 +37,8 @@ export class DonorListComponent implements OnInit, OnDestroy {
 
 
   // Navigation header properties
-  allDonors: NavigationRecord[] = [];
+  // ── הוסר: allDonors (קוד מת - שימש רק ל-populateDynamicFilterOptions, עבר ל-loadBaseForDonors)
+  // allDonors: NavigationRecord[] = [];
   filterOptions: FilterOption[] = [];
   currentDonorRecord?: NavigationRecord;
 
@@ -142,9 +144,10 @@ export class DonorListComponent implements OnInit, OnDestroy {
       this.updateMobileLabels();
     });
 
-    // Load all donors for navigation header
-    await this.loadAllDonors();
-    this.setupFilterOptions();
+    // ── הוסר: loadAllDonors() (טען 1000 תורמים + DonorPlace + Place = ~10MB לטובת פיצ'ר navigation שלא קיים).
+    //    במקום זה - setupFilterOptions משתמש ב-PlaceController.loadBaseForDonors (SQL DISTINCT מהיר).
+    // await this.loadAllDonors();
+    await this.setupFilterOptions();
   }
 
   private updateMobileLabels() {
@@ -280,40 +283,38 @@ export class DonorListComponent implements OnInit, OnDestroy {
     return this.donorDataMap.get(donorId)?.stats.lastDonationReason || '-';
   }
 
-  private async loadAllDonors() {
-    try {
-      const donorRepo = remult.repo(Donor);
-      const donors = await donorRepo.find({
-        limit: 1000,
-        orderBy: { firstName: 'asc', lastName: 'asc' }
-      });
+  // ── הוסר: loadAllDonors() (הקוד המקורי שמור בהערה להשוואה)
+  //    למה: טעינת 1000 תורמים + DonorPlace + Place = ~10MB לכל refresh,
+  //    רק כדי לחלץ ערים/מדינות לדרופדאון פילטר. עכשיו עובר דרך PlaceController.loadBaseForDonors (SQL DISTINCT).
+  // private async loadAllDonors() {
+  //   try {
+  //     const donorRepo = remult.repo(Donor);
+  //     const donors = await donorRepo.find({
+  //       limit: 1000,
+  //       orderBy: { firstName: 'asc', lastName: 'asc' }
+  //     });
+  //     const donorPlacesMap = await DonorPlace.getPrimaryForDonors(donors.map(d => d.id));
+  //     const placesMap = new Map();
+  //     for (const [donorId, dp] of donorPlacesMap) {
+  //       placesMap.set(donorId, dp.place);
+  //     }
+  //     this.allDonors = donors.map(donor => {
+  //       const place = placesMap.get(donor.id);
+  //       return {
+  //         id: donor.id,
+  //         fullName: donor.fullName || donor.fullNameEnglish || '',
+  //         name: donor.fullName || donor.fullNameEnglish || '',
+  //         city: place?.city || '',
+  //         country: place?.country || '',
+  //         isActive: donor.isActive
+  //       };
+  //     });
+  //   } catch (error) {
+  //     console.error('Error loading all donors:', error);
+  //   }
+  // }
 
-      // Load primary DonorPlaces for all donors (בית first, then any other)
-      const donorPlacesMap = await DonorPlace.getPrimaryForDonors(donors.map(d => d.id));
-
-      // Create a map of donorId -> primary place
-      const placesMap = new Map();
-      for (const [donorId, dp] of donorPlacesMap) {
-        placesMap.set(donorId, dp.place);
-      }
-
-      this.allDonors = donors.map(donor => {
-        const place = placesMap.get(donor.id);
-        return {
-          id: donor.id,
-          fullName: donor.fullName || donor.fullNameEnglish || '',
-          name: donor.fullName || donor.fullNameEnglish || '',
-          city: place?.city || '',
-          country: place?.country || '',
-          isActive: donor.isActive
-        };
-      });
-    } catch (error) {
-      console.error('Error loading all donors:', error);
-    }
-  }
-
-  private setupFilterOptions() {
+  private async setupFilterOptions() {
     this.filterOptions = [
       {
         key: 'isActive',
@@ -339,35 +340,39 @@ export class DonorListComponent implements OnInit, OnDestroy {
     ];
 
     // Populate dynamic options
-    this.populateDynamicFilterOptions();
+    await this.populateDynamicFilterOptions();
   }
 
-  private populateDynamicFilterOptions() {
-    // Get unique cities
-    const cities = new Set<string>();
-    const countries = new Set<string>();
+  // ── גרסה מקורית שמורה: חילצה ערים/מדינות מ-this.allDonors (1000 תורמים ב-memory).
+  // private populateDynamicFilterOptions() {
+  //   const cities = new Set<string>();
+  //   const countries = new Set<string>();
+  //   this.allDonors.forEach(donor => {
+  //     if (donor['city']) cities.add(donor['city']);
+  //     if (donor['country']) countries.add(donor['country']);
+  //   });
+  //   const cityFilter = this.filterOptions.find(f => f.key === 'city');
+  //   if (cityFilter) cityFilter.options = Array.from(cities).sort().map(city => ({ value: city, label: city }));
+  //   const countryFilter = this.filterOptions.find(f => f.key === 'country');
+  //   if (countryFilter) countryFilter.options = Array.from(countries).sort().map(country => ({ value: country, label: country }));
+  // }
 
-    this.allDonors.forEach(donor => {
-      if (donor['city']) cities.add(donor['city']);
-      if (donor['country']) countries.add(donor['country']);
-    });
+  // ── אופטימיזציה פעילה: PlaceController.loadBaseForDonors עם SELECT DISTINCT מהיר.
+  private async populateDynamicFilterOptions() {
+    try {
+      const baseData = await PlaceController.loadBaseForDonors();
 
-    // Update city filter options
-    const cityFilter = this.filterOptions.find(f => f.key === 'city');
-    if (cityFilter) {
-      cityFilter.options = Array.from(cities).sort().map(city => ({
-        value: city,
-        label: city
-      }));
-    }
+      const cityFilter = this.filterOptions.find(f => f.key === 'city');
+      if (cityFilter) {
+        cityFilter.options = baseData.cities.map(city => ({ value: city, label: city }));
+      }
 
-    // Update country filter options
-    const countryFilter = this.filterOptions.find(f => f.key === 'country');
-    if (countryFilter) {
-      countryFilter.options = Array.from(countries).sort().map(country => ({
-        value: country,
-        label: country
-      }));
+      const countryFilter = this.filterOptions.find(f => f.key === 'country');
+      if (countryFilter) {
+        countryFilter.options = baseData.countryNames.map(name => ({ value: name, label: name }));
+      }
+    } catch (error) {
+      console.error('Error loading filter options:', error);
     }
   }
 

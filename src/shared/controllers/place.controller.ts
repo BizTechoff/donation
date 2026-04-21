@@ -1,4 +1,4 @@
-import { BackendMethod, remult, Allow } from 'remult'
+import { BackendMethod, remult, Allow, SqlDatabase } from 'remult'
 import { Place } from '../entity/place'
 import { DonorPlace } from '../entity/donor-place'
 
@@ -26,41 +26,48 @@ export class PlaceController {
     cities: string[];
     neighborhoods: string[];
     countryIds: string[];
+    countryNames: string[];  // נוסף עבור dropdown של פילטר מדינות (תצוגה ידידותית למשתמש)
   }> {
-    const donorPlaceRepo = remult.repo(DonorPlace)
-    const placeRepo = remult.repo(Place)
+    // ── גרסה מקורית (שמורה): טעינת כל donor_places + places מלאים ל-memory. ~25MB.
+    // const donorPlaceRepo = remult.repo(DonorPlace)
+    // const placeRepo = remult.repo(Place)
+    // const donorPlaces = await donorPlaceRepo.find({ where: { isActive: true } })
+    // const placeIds = [...new Set(donorPlaces.map(dp => dp.placeId).filter(Boolean))] as string[]
+    // if (placeIds.length === 0) return { cities: [], neighborhoods: [], countryIds: [] }
+    // const places = await placeRepo.find({ where: { id: placeIds } })
+    // const citiesSet = new Set<string>(); const neighborhoodsSet = new Set<string>(); const countryIdsSet = new Set<string>();
+    // places.forEach(p => { if (p.city) citiesSet.add(p.city); if (p.neighborhood) neighborhoodsSet.add(p.neighborhood); if (p.countryId) countryIdsSet.add(p.countryId); })
+    // return { cities: [...citiesSet].sort(), neighborhoods: [...neighborhoodsSet].sort(), countryIds: [...countryIdsSet] }
 
-    // Get all active donor-place links
-    const donorPlaces = await donorPlaceRepo.find({
-      where: { isActive: true }
-    })
-
-    // Get unique placeIds
-    const placeIds = [...new Set(donorPlaces.map(dp => dp.placeId).filter(Boolean))] as string[]
-
-    if (placeIds.length === 0) {
-      return { cities: [], neighborhoods: [], countryIds: [] }
-    }
-
-    // Load only places that have donors
-    const places = await placeRepo.find({
-      where: { id: placeIds }
-    })
-
-    const citiesSet = new Set<string>()
-    const neighborhoodsSet = new Set<string>()
-    const countryIdsSet = new Set<string>()
-
-    places.forEach(place => {
-      if (place.city) citiesSet.add(place.city)
-      if (place.neighborhood) neighborhoodsSet.add(place.neighborhood)
-      if (place.countryId) countryIdsSet.add(place.countryId)
-    })
-
+    // ── אופטימיזציה: SQL DISTINCT ב-3 שאילתות קצרות (אחת לכל שדה) - מחזירות רק ערכים ייחודיים.
+    //    שאילתת המדינות כוללת JOIN ל-countries כדי להחזיר גם id וגם name.
+    const sqlDb = remult.dataProvider as SqlDatabase
+    const [citiesResult, neighborhoodsResult, countriesResult] = await Promise.all([
+      sqlDb.execute(
+        `SELECT DISTINCT p."city" FROM "places" p
+         JOIN "donor_places" dp ON dp."placeId" = p."id"
+         WHERE dp."isActive" = true AND p."city" IS NOT NULL AND p."city" != ''
+         ORDER BY p."city"`
+      ),
+      sqlDb.execute(
+        `SELECT DISTINCT p."neighborhood" FROM "places" p
+         JOIN "donor_places" dp ON dp."placeId" = p."id"
+         WHERE dp."isActive" = true AND p."neighborhood" IS NOT NULL AND p."neighborhood" != ''
+         ORDER BY p."neighborhood"`
+      ),
+      sqlDb.execute(
+        `SELECT DISTINCT c."id", c."name" FROM "places" p
+         JOIN "donor_places" dp ON dp."placeId" = p."id"
+         JOIN "countries" c ON c."id" = p."countryId"
+         WHERE dp."isActive" = true
+         ORDER BY c."name"`
+      )
+    ])
     return {
-      cities: Array.from(citiesSet).sort(),
-      neighborhoods: Array.from(neighborhoodsSet).sort(),
-      countryIds: Array.from(countryIdsSet)
+      cities: (citiesResult.rows as any[]).map(r => r.city),
+      neighborhoods: (neighborhoodsResult.rows as any[]).map(r => r.neighborhood),
+      countryIds: (countriesResult.rows as any[]).map(r => r.id),
+      countryNames: (countriesResult.rows as any[]).map(r => r.name)
     }
   }
 
@@ -69,33 +76,22 @@ export class PlaceController {
     cities: string[];
     neighborhoods: string[];
   }> {
-    const placeRepo = remult.repo(Place)
+    // ── גרסה מקורית (שמורה): טעינת כל places ב-memory. ~10MB.
+    // const placeRepo = remult.repo(Place)
+    // const places = await placeRepo.find({ orderBy: { city: 'asc' } })
+    // const citiesSet = new Set<string>(); const neighborhoodsSet = new Set<string>();
+    // places.forEach(p => { if (p.city) citiesSet.add(p.city); if (p.neighborhood) neighborhoodsSet.add(p.neighborhood); })
+    // return { cities: [...citiesSet].sort(), neighborhoods: [...neighborhoodsSet].sort() }
 
-    // Get all active places
-    const places = await placeRepo.find({
-      orderBy: { city: 'asc' }
-    })
-
-    // Extract unique cities
-    const citiesSet = new Set<string>()
-    const neighborhoodsSet = new Set<string>()
-
-    places.forEach(place => {
-      if (place.city) {
-        citiesSet.add(place.city)
-      }
-      if (place.neighborhood) {
-        neighborhoodsSet.add(place.neighborhood)
-      }
-    })
-
-    // Convert Sets to sorted arrays
-    const cities = Array.from(citiesSet).sort()
-    const neighborhoods = Array.from(neighborhoodsSet).sort()
-
+    // ── אופטימיזציה: SQL DISTINCT.
+    const sqlDb = remult.dataProvider as SqlDatabase
+    const [citiesResult, neighborhoodsResult] = await Promise.all([
+      sqlDb.execute(`SELECT DISTINCT "city" FROM "places" WHERE "city" IS NOT NULL AND "city" != '' ORDER BY "city"`),
+      sqlDb.execute(`SELECT DISTINCT "neighborhood" FROM "places" WHERE "neighborhood" IS NOT NULL AND "neighborhood" != '' ORDER BY "neighborhood"`)
+    ])
     return {
-      cities,
-      neighborhoods
+      cities: (citiesResult.rows as any[]).map(r => r.city),
+      neighborhoods: (neighborhoodsResult.rows as any[]).map(r => r.neighborhood)
     }
   }
 
