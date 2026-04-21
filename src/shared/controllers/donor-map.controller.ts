@@ -307,43 +307,63 @@ export class DonorMapController {
       return [];
     }
 
-    // טען DonorPlaces עם Place מלא (כולל קואורדינטות)
-    const donorPlaceRepo = remult.repo(DonorPlace);
-    const donorRepo = remult.repo(Donor);
-    const donorPlaces = await donorPlaceRepo.find({
-      where: { donorId: { $in: intersectedIds }, isActive: true },
-      include: { place: true }
-    });
-    console.log(`[DEBUG] donorPlaces loaded: ${donorPlaces.length}`);
-    if (donorPlaces.length > 0) {
-      const sample = donorPlaces[0];
-      console.log(`[DEBUG] Sample donorPlace:`, {
-        donorId: sample.donorId,
-        placeId: sample.placeId,
-        hasPlace: !!sample.place,
-        lat: sample.place?.latitude,
-        lng: sample.place?.longitude
-      });
+    // ── גרסה מקורית (שמורה): Remult find+include. hydration של place לא עבד בפרודקשן → 0 markers.
+    // const donorPlaceRepo = remult.repo(DonorPlace);
+    // const donorRepo = remult.repo(Donor);
+    // const donorPlaces = await donorPlaceRepo.find({
+    //   where: { donorId: { $in: intersectedIds }, isActive: true },
+    //   include: { place: true }
+    // });
+    // const locationMap = new Map<string, { lat: number; lng: number }>();
+    // donorPlaces.forEach(dp => { ... });
+    // const donors = await donorRepo.find({ where: { id: { $in: donorIdsWithLocation } } });
+
+    // ── אופטימיזציה: SQL JOIN ישיר (כמו getMapStatistics - עובד שם!) + המרה ל-number.
+    const sqlDb = remult.dataProvider as SqlDatabase;
+    const idsLit = intersectedIds.map(id => `'${String(id).replace(/'/g, "''")}'`).join(',');
+
+    const { rows: placeRows } = await sqlDb.execute(
+      `SELECT DISTINCT ON (dp."donorId") dp."donorId", p."latitude", p."longitude"
+       FROM "donor_places" dp
+       JOIN "places" p ON p."id" = dp."placeId"
+       WHERE dp."donorId" IN (${idsLit})
+         AND dp."isActive" = true
+         AND p."latitude" IS NOT NULL
+         AND p."longitude" IS NOT NULL`
+    );
+    console.log(`[DEBUG] placeRows from SQL: ${placeRows.length}`);
+    if (placeRows.length > 0) {
+      console.log(`[DEBUG] Sample row:`, placeRows[0]);
     }
+
     const locationMap = new Map<string, { lat: number; lng: number }>();
-    donorPlaces.forEach(dp => {
-      if (dp.donorId && dp.place?.latitude && dp.place?.longitude && !locationMap.has(dp.donorId)) {
-        // Postgres מחזיר DECIMAL כמחרוזות; מבטיחים number ל-Google Maps.
-        const lat = typeof dp.place.latitude === 'number' ? dp.place.latitude : parseFloat(dp.place.latitude as any);
-        const lng = typeof dp.place.longitude === 'number' ? dp.place.longitude : parseFloat(dp.place.longitude as any);
-        if (!isNaN(lat) && !isNaN(lng)) {
-          locationMap.set(dp.donorId, { lat, lng });
-        }
+    for (const r of placeRows as any[]) {
+      const lat = typeof r.latitude === 'number' ? r.latitude : parseFloat(r.latitude);
+      const lng = typeof r.longitude === 'number' ? r.longitude : parseFloat(r.longitude);
+      if (!isNaN(lat) && !isNaN(lng)) {
+        locationMap.set(r.donorId, { lat, lng });
       }
-    });
+    }
     console.log(`[DEBUG] locationMap size: ${locationMap.size}`);
+
     const donorIdsWithLocation = Array.from(locationMap.keys());
     if (donorIdsWithLocation.length === 0) {
       console.timeEnd('Load marker data');
       console.timeEnd('DonorMapController.getMapMarkers - Total');
       return [];
     }
-    const donors = await donorRepo.find({ where: { id: { $in: donorIdsWithLocation } } });
+
+    // תורמים - SELECT מינימלי ב-SQL
+    const locIdsLit = donorIdsWithLocation.map(id => `'${String(id).replace(/'/g, "''")}'`).join(',');
+    const { rows: donorRows } = await sqlDb.execute(
+      `SELECT "id", "isActive", "lastName", "firstName"
+       FROM "donors" WHERE "id" IN (${locIdsLit})`
+    );
+    const donors = (donorRows as any[]).map(r => ({
+      id: r.id,
+      isActive: r.isActive,
+      lastAndFirstName: `${r.lastName || ''} ${r.firstName || ''}`.trim()
+    }));
 
     // טען סטטיסטיקות תרומות לחישוב סטטוס
     const donationRepo = remult.repo(Donation);
