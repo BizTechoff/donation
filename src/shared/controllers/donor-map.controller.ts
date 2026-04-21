@@ -307,60 +307,31 @@ export class DonorMapController {
       return [];
     }
 
-    // ── גרסה מקורית (שמורה להשוואה/חזרה) - טוענת DonorPlace מלא עם Place+Country,
-    //    ו-Donor מלא (40+ שדות). ~30MB של memory על 3K+ תורמים.
-    // const donorPlaceRepo = remult.repo(DonorPlace);
-    // const donorRepo = remult.repo(Donor);
-    // const donorPlaces = await donorPlaceRepo.find({
-    //   where: { donorId: { $in: intersectedIds }, isActive: true },
-    //   include: { place: true }
-    // });
-    // const locationMap = new Map<string, { lat: number; lng: number }>();
-    // donorPlaces.forEach(dp => {
-    //   if (dp.donorId && dp.place?.latitude && dp.place?.longitude && !locationMap.has(dp.donorId)) {
-    //     locationMap.set(dp.donorId, { lat: dp.place.latitude, lng: dp.place.longitude });
-    //   }
-    // });
-    // const donorIdsWithLocation = Array.from(locationMap.keys());
-    // const donors = await donorRepo.find({ where: { id: { $in: donorIdsWithLocation } } });
-
-    // ── אופטימיזציה: SQL JOIN עם SELECT רק של השדות הנחוצים (lat/lng + שם)
-    const sqlDb = remult.dataProvider as SqlDatabase;
-    const idsLit = intersectedIds.map(id => `'${String(id).replace(/'/g, "''")}'`).join(',');
-
-    // מקומות - רק lat/lng + donorId, מוצא את הראשון לכל תורם
-    const { rows: placeRows } = await sqlDb.execute(
-      `SELECT DISTINCT ON (dp."donorId") dp."donorId", p."latitude", p."longitude"
-       FROM "donor_places" dp
-       JOIN "places" p ON p."id" = dp."placeId"
-       WHERE dp."donorId" IN (${idsLit})
-         AND dp."isActive" = true
-         AND p."latitude" IS NOT NULL
-         AND p."longitude" IS NOT NULL`
-    );
+    // טען DonorPlaces עם Place מלא (כולל קואורדינטות)
+    const donorPlaceRepo = remult.repo(DonorPlace);
+    const donorRepo = remult.repo(Donor);
+    const donorPlaces = await donorPlaceRepo.find({
+      where: { donorId: { $in: intersectedIds }, isActive: true },
+      include: { place: true }
+    });
     const locationMap = new Map<string, { lat: number; lng: number }>();
-    for (const r of placeRows as any[]) {
-      locationMap.set(r.donorId, { lat: r.latitude, lng: r.longitude });
-    }
-
+    donorPlaces.forEach(dp => {
+      if (dp.donorId && dp.place?.latitude && dp.place?.longitude && !locationMap.has(dp.donorId)) {
+        // Postgres מחזיר DECIMAL כמחרוזות; מבטיחים number ל-Google Maps.
+        const lat = typeof dp.place.latitude === 'number' ? dp.place.latitude : parseFloat(dp.place.latitude as any);
+        const lng = typeof dp.place.longitude === 'number' ? dp.place.longitude : parseFloat(dp.place.longitude as any);
+        if (!isNaN(lat) && !isNaN(lng)) {
+          locationMap.set(dp.donorId, { lat, lng });
+        }
+      }
+    });
     const donorIdsWithLocation = Array.from(locationMap.keys());
     if (donorIdsWithLocation.length === 0) {
       console.timeEnd('Load marker data');
       console.timeEnd('DonorMapController.getMapMarkers - Total');
       return [];
     }
-
-    // תורמים - רק id, isActive, lastName, firstName (במקום 40+ שדות)
-    const locIdsLit = donorIdsWithLocation.map(id => `'${String(id).replace(/'/g, "''")}'`).join(',');
-    const { rows: donorRows } = await sqlDb.execute(
-      `SELECT "id", "isActive", "lastName", "firstName"
-       FROM "donors" WHERE "id" IN (${locIdsLit})`
-    );
-    const donors = (donorRows as any[]).map(r => ({
-      id: r.id,
-      isActive: r.isActive,
-      lastAndFirstName: `${r.lastName || ''} ${r.firstName || ''}`.trim()
-    }));
+    const donors = await donorRepo.find({ where: { id: { $in: donorIdsWithLocation } } });
 
     // טען סטטיסטיקות תרומות לחישוב סטטוס
     const donationRepo = remult.repo(Donation);
@@ -448,7 +419,7 @@ export class DonorMapController {
           donorId: d.id,
           lat: locationMap.get(d.id)!.lat,
           lng: locationMap.get(d.id)!.lng,
-          donorName: d.lastAndFirstName,
+          donorName: `${d.lastName || ''} ${d.firstName || ''}`.trim(),
           statuses
         };
       });

@@ -763,8 +763,11 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
       scale: 10
     };
 
+    // המרה בטוחה של lat/lng ל-numbers (PG יכול להחזיר DECIMAL כמחרוזת)
+    const lat = typeof markerData.lat === 'number' ? markerData.lat : parseFloat(markerData.lat as any);
+    const lng = typeof markerData.lng === 'number' ? markerData.lng : parseFloat(markerData.lng as any);
     const marker = new google.maps.Marker({
-      position: { lat: markerData.lat, lng: markerData.lng },
+      position: { lat, lng },
       map: this.map,
       icon: svgIcon,
       title: markerData.donorName

@@ -70,7 +70,7 @@ export const api = remultExpress({
         const STARTING_DONATION_NUM = 1001;
         const provider = await createPostgresConnection({ 
           configuration: "heroku", 
-          sslInDev: true// !(process.env['DEV_MODE'] === 'DEV')
+          sslInDev:  !(process.env['DEV_MODE'] === 'DEV')
          })
 
         /*
