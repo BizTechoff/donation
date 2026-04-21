@@ -526,14 +526,21 @@ export class DonationController {
     // Sum only full donations (exclude commitments)
     whereClause.donationType = { $ne: 'commitment' };
 
-    const donations = await remult.repo(Donation).find({
+    // ── אופטימיזציה: groupBy מחזיר ~5 שורות (מטבעות) במקום לטעון 10K+ תרומות ל-memory.
+    // הלוגיקה הקודמת העבירה את calculateEffectiveAmount ללא paymentsTotal,
+    // ו-donation.donationMethod לא נטען (אין defaultIncluded) - לכן התוצאה בפועל
+    // הייתה תמיד donation.amount עבור לא-commitment. גם SUM(amount) מחזיר בדיוק זה.
+    const sumsByCurrency = await remult.repo(Donation).groupBy({
+      group: ['currencyId'],
+      sum: ['amount'],
       where: Object.keys(whereClause).length > 0 ? whereClause : undefined
     });
 
-    // Sum all effective amounts converted to shekels
-    return donations.reduce((sum, donation) => {
-      const rate = currencies[donation.currencyId]?.rateInShekel || 1;
-      return sum + (calculateEffectiveAmount(donation) * rate);
+    // Apply currency rates on the small result set (one row per currency).
+    return sumsByCurrency.reduce((total, row) => {
+      const rate = currencies[row.currencyId]?.rateInShekel || 1;
+      const amountSum = row.amount?.sum || 0;
+      return total + (amountSum * rate);
     }, 0);
   }
 
@@ -558,23 +565,42 @@ export class DonationController {
       whereClause.donationType = { $ne: 'commitment' };
     }
 
-    const donations = await remult.repo(Donation).find({
-      where: Object.keys(whereClause).length > 0 ? whereClause : undefined,
-      include: { donationMethod: true }
+    // ── אופטימיזציה: במקום לטעון 10K+ תרומות ל-memory:
+    // (1) groupBy ב-SQL - מחזיר ~5 שורות (סכום amount לכל מטבע).
+    // (2) לטעון רק את ההו"קים (תת-קבוצה קטנה) ולעדכן את הסכום שלהם לסכום
+    //     התשלומים בפועל (לא amount).
+    const sumsByCurrency = await remult.repo(Donation).groupBy({
+      group: ['currencyId'],
+      sum: ['amount'],
+      where: Object.keys(whereClause).length > 0 ? whereClause : undefined
     });
 
-    // Load payment totals for payment-based donations (standing orders)
-    const paymentBasedIds = donations.filter(d => isPaymentBased(d)).map(d => d.id).filter(Boolean);
-    let paymentTotals: Record<string, number> = {};
-    if (paymentBasedIds.length > 0) {
-      paymentTotals = await DonationController.getPaymentTotalsForCommitments(paymentBasedIds);
-    }
+    // מזהי מתודות תשלום מסוג 'standing_order' (טבלה קטנה)
+    const allMethods = await remult.repo(DonationMethod).find();
+    const standingOrderMethodIds = allMethods.filter(m => m.type === 'standing_order').map(m => m.id);
 
-    // Group by currency and sum effective amounts (what was actually paid)
+    // רק הו"קים - תת-קבוצה קטנה, לא 10K
+    const standingOrderDonations = standingOrderMethodIds.length > 0
+      ? await remult.repo(Donation).find({
+          where: { ...whereClause, donationMethodId: { $in: standingOrderMethodIds } }
+        })
+      : [];
+
+    // סכומי התשלומים האמיתיים להו"קים
+    const standingOrderIds = standingOrderDonations.map(d => d.id).filter(Boolean);
+    const paymentTotals = standingOrderIds.length > 0
+      ? await DonationController.getPaymentTotalsForCommitments(standingOrderIds)
+      : {};
+
+    // מתחילים מסכום amount מה-groupBy, ומתקנים עבור הו"קים
+    // (מורידים amount, מוסיפים paymentTotal) - זה מה ש-calculateEffectiveAmount עושה להו"ק.
     const byCurrency: Record<string, number> = {};
-    for (const donation of donations) {
-      const currency = donation.currencyId || 'ILS';
-      byCurrency[currency] = (byCurrency[currency] || 0) + calculateEffectiveAmount(donation, paymentTotals[donation.id]);
+    for (const row of sumsByCurrency) {
+      byCurrency[row.currencyId || 'ILS'] = row.amount?.sum || 0;
+    }
+    for (const d of standingOrderDonations) {
+      const currency = d.currencyId || 'ILS';
+      byCurrency[currency] = (byCurrency[currency] || 0) - d.amount + (paymentTotals[d.id] || 0);
     }
 
     return byCurrency;
@@ -614,20 +640,21 @@ export class DonationController {
     // Override donationType to only sum commitments
     whereClause.donationType = 'commitment';
 
-    const donations = await remult.repo(Donation).find({
+    // התחייבויות הן תת-קבוצה של תרומות. הסכום האפקטיבי שלהן הוא סכום התשלומים בפועל.
+    // בהיעדר מנגנון JOIN ב-groupBy של Remult, טוענים התחייבויות (סאבסט קטן) + מחשבים.
+    const commitments = await remult.repo(Donation).find({
       where: Object.keys(whereClause).length > 0 ? whereClause : undefined
     });
 
-    // Load payment totals for commitments
-    const donationIds = donations.map(d => d.id);
-    const paymentTotals = donationIds.length > 0
-      ? await DonationController.getPaymentTotalsForCommitments(donationIds)
-      : {};
+    if (commitments.length === 0) return 0;
 
-    // Sum effective amounts (actual payments) converted to shekels
-    return donations.reduce((sum, donation) => {
-      const rate = currencies[donation.currencyId]?.rateInShekel || 1;
-      return sum + (calculateEffectiveAmount(donation, paymentTotals[donation.id]) * rate);
+    const donationIds = commitments.map(d => d.id).filter(Boolean);
+    const paymentTotals = await DonationController.getPaymentTotalsForCommitments(donationIds);
+
+    // חישוב מקומי על סט קטן (התחייבויות, לא 10K תרומות רגילות)
+    return commitments.reduce((sum, d) => {
+      const rate = currencies[d.currencyId]?.rateInShekel || 1;
+      return sum + ((paymentTotals[d.id] || 0) * rate);
     }, 0);
   }
 
@@ -652,26 +679,35 @@ export class DonationController {
       whereClause.donationType = 'commitment';
     }
 
-    const donations = await remult.repo(Donation).find({
+    // אופטימיזציה: total מקבלים מ-groupBy SQL. paid דורש סכום תשלומים להתחייבות -
+    // טוענים את רשימת ההתחייבויות (סאבסט קטן) + שאילתה אחת לתשלומים שלהן.
+    const totalsByCurrency = await remult.repo(Donation).groupBy({
+      group: ['currencyId'],
+      sum: ['amount'],
       where: Object.keys(whereClause).length > 0 ? whereClause : undefined
     });
 
-    // Get payment totals for these commitments
-    const donationIds = donations.map(d => d.id);
-    let paymentTotals: Record<string, number> = {};
-    if (donationIds.length > 0) {
-      paymentTotals = await DonationController.getPaymentTotalsForCommitments(donationIds);
-    }
+    const commitments = await remult.repo(Donation).find({
+      where: Object.keys(whereClause).length > 0 ? whereClause : undefined
+    });
 
-    // Group by currency and sum
+    const donationIds = commitments.map(d => d.id).filter(Boolean);
+    const paymentTotals = donationIds.length > 0
+      ? await DonationController.getPaymentTotalsForCommitments(donationIds)
+      : {};
+
+    // בונים את התוצאה: total ממחובר מ-groupBy, paid ממוצע על ההתחייבויות
     const byCurrency: Record<string, { total: number; paid: number }> = {};
-    for (const donation of donations) {
-      const currency = donation.currencyId || 'ILS';
+    for (const row of totalsByCurrency) {
+      const currency = row.currencyId || 'ILS';
+      byCurrency[currency] = { total: row.amount?.sum || 0, paid: 0 };
+    }
+    for (const d of commitments) {
+      const currency = d.currencyId || 'ILS';
       if (!byCurrency[currency]) {
         byCurrency[currency] = { total: 0, paid: 0 };
       }
-      byCurrency[currency].total += donation.amount;
-      byCurrency[currency].paid += calculateEffectiveAmount(donation, paymentTotals[donation.id]);
+      byCurrency[currency].paid += (paymentTotals[d.id] || 0);
     }
 
     return byCurrency;
