@@ -121,68 +121,67 @@ export class DonorMapController {
    * @returns מערך של donorIds
    */
   private static async getDonorIds(mapFilters: MapFilters): Promise<string[]> {
-    const donorRepo = remult.repo(Donor);
     const donationRepo = remult.repo(Donation);
 
     let donorIds: string[] | undefined = undefined;
 
     // searchTerm - חיפוש משופר בשם/ת.ז./כתובת
     // כל מילה צריכה להופיע או בשם או בכתובת (לא חייבים באותו שדה)
-    // כך ש"יוסי ירושלים" ימצא תורם ששמו יוסי וגר בירושלים
+    // ── גרסה מקורית (שמורה להשוואה/חזרה) - טוענת את *כל* הטבלאות (donors+donor_places+places)
+    //    ובונה maps ב-JS. ~35MB memory + O(n*m) עבור התאמה. OOM.
+    // if (mapFilters.searchTerm?.trim()) {
+    //   const words = mapFilters.searchTerm.trim().toLowerCase().split(/\s+/).filter(w => w.length > 0);
+    //   const donorRepo = remult.repo(Donor);
+    //   const allDonors = await donorRepo.find({ where: { isActive: true } });
+    //   const { Place } = await import('../entity/place');
+    //   const allDonorPlaces = await remult.repo(DonorPlace).find({ where: { isActive: true } });
+    //   const placeIds = [...new Set(allDonorPlaces.map(dp => dp.placeId).filter(Boolean))];
+    //   const allPlaces = placeIds.length > 0
+    //     ? await remult.repo(Place).find({ where: { id: { $in: placeIds } } }) : [];
+    //   const placeMap = new Map(allPlaces.map(p => [p.id, p]));
+    //   const donorAddressMap = new Map<string, string[]>();
+    //   for (const dp of allDonorPlaces) {
+    //     if (!dp.donorId || !dp.placeId) continue;
+    //     const place = placeMap.get(dp.placeId);
+    //     if (place) {
+    //       const addresses = donorAddressMap.get(dp.donorId) || [];
+    //       const addressText = [place.city, place.street, place.neighborhood, place.houseNumber]
+    //         .filter(Boolean).join(' ').toLowerCase();
+    //       addresses.push(addressText);
+    //       donorAddressMap.set(dp.donorId, addresses);
+    //     }
+    //   }
+    //   const matchingDonorIds = allDonors.filter(donor => {
+    //     const nameText = [donor.firstName, donor.lastName, donor.firstNameEnglish, donor.lastNameEnglish, donor.idNumber]
+    //       .filter(Boolean).join(' ').toLowerCase();
+    //     const addresses = donorAddressMap.get(donor.id) || [];
+    //     const combinedText = `${nameText} ${addresses.join(' ')}`;
+    //     return words.every(word => combinedText.includes(word));
+    //   }).map(d => d.id);
+    //   donorIds = matchingDonorIds;
+    // }
+
+    // ── אופטימיזציה: SQL JOIN + LOWER(concat_ws(...)) LIKE בעבור כל מילה.
+    //    שאילתה אחת, מחזירה רק donorId. ~0MB memory overhead.
     if (mapFilters.searchTerm?.trim()) {
       const words = mapFilters.searchTerm.trim().toLowerCase().split(/\s+/).filter(w => w.length > 0);
-
-      // טען את כל התורמים הפעילים
-      const allDonors = await donorRepo.find({ where: { isActive: true } });
-
-      // טען את כל הכתובות של התורמים
-      const { Place } = await import('../entity/place');
-      const allDonorPlaces = await remult.repo(DonorPlace).find({ where: { isActive: true } });
-      const placeIds = [...new Set(allDonorPlaces.map(dp => dp.placeId).filter(Boolean))];
-      const allPlaces = placeIds.length > 0
-        ? await remult.repo(Place).find({ where: { id: { $in: placeIds } } })
-        : [];
-      const placeMap = new Map(allPlaces.map(p => [p.id, p]));
-
-      // בנה מפה של תורם -> כתובות שלו
-      const donorAddressMap = new Map<string, string[]>();
-      for (const dp of allDonorPlaces) {
-        if (!dp.donorId || !dp.placeId) continue;
-        const place = placeMap.get(dp.placeId);
-        if (place) {
-          const addresses = donorAddressMap.get(dp.donorId) || [];
-          const addressText = [place.city, place.street, place.neighborhood, place.houseNumber]
-            .filter(Boolean).join(' ').toLowerCase();
-          addresses.push(addressText);
-          donorAddressMap.set(dp.donorId, addresses);
-        }
+      if (words.length > 0) {
+        const sqlDb = remult.dataProvider as SqlDatabase;
+        const escapeWord = (s: string) => s.replace(/'/g, "''").replace(/%/g, '\\%').replace(/_/g, '\\_');
+        const likeClauses = words.map(w =>
+          `LOWER(CONCAT_WS(' ', d."firstName", d."lastName", d."firstNameEnglish", d."lastNameEnglish", d."idNumber", p."city", p."street", p."neighborhood", p."houseNumber")) LIKE '%${escapeWord(w)}%'`
+        ).join(' AND ');
+        const { rows } = await sqlDb.execute(
+          `SELECT DISTINCT d."id"
+           FROM "donors" d
+           LEFT JOIN "donor_places" dp ON dp."donorId" = d."id" AND dp."isActive" = true
+           LEFT JOIN "places" p ON p."id" = dp."placeId"
+           WHERE d."isActive" = true AND (${likeClauses})`
+        );
+        donorIds = (rows as any[]).map(r => r.id);
+      } else {
+        donorIds = [];
       }
-
-      // סנן תורמים - כל המילים צריכות להופיע בשם או בכתובת
-      const matchingDonorIds = allDonors
-        .filter(donor => {
-          // בנה טקסט חיפוש משם התורם
-          const nameText = [
-            donor.firstName,
-            donor.lastName,
-            donor.firstNameEnglish,
-            donor.lastNameEnglish,
-            donor.idNumber
-          ].filter(Boolean).join(' ').toLowerCase();
-
-          // קבל את כל הכתובות של התורם
-          const addresses = donorAddressMap.get(donor.id) || [];
-          const addressText = addresses.join(' ');
-
-          // טקסט משולב לחיפוש
-          const combinedText = `${nameText} ${addressText}`;
-
-          // בדוק שכל מילה מופיעה בטקסט המשולב
-          return words.every(word => combinedText.includes(word));
-        })
-        .map(d => d.id);
-
-      donorIds = matchingDonorIds;
     }
 
     // Donation-based filters (minDonationCount, minTotalDonations, maxTotalDonations)
@@ -248,9 +247,16 @@ export class DonorMapController {
     }
 
     // אם אין פילטרים מקומיים - החזר את כולם
+    // ── גרסה מקורית (שמורה): טעינה של 3K+ donor entities מלאות רק לקחת id. ~15MB.
+    // if (!donorIds) {
+    //   const donors = await donorRepo.find({ where: { isActive: true } });
+    //   donorIds = donors.map(d => d.id);
+    // }
+    // ── אופטימיזציה: SELECT id בלבד.
     if (!donorIds) {
-      const donors = await donorRepo.find({ where: { isActive: true } });
-      donorIds = donors.map(d => d.id);
+      const sqlDb = remult.dataProvider as SqlDatabase;
+      const { rows } = await sqlDb.execute(`SELECT "id" FROM "donors" WHERE "isActive" = true`);
+      donorIds = (rows as any[]).map(r => r.id);
     }
 
     return donorIds;
@@ -294,8 +300,6 @@ export class DonorMapController {
 
     // שלב 4: שלוף רק lat, lng, name עבור התורמים הממוסננים
     console.time('Load marker data');
-    const donorPlaceRepo = remult.repo(DonorPlace);
-    const donorRepo = remult.repo(Donor);
 
     if (intersectedIds.length === 0) {
       console.timeEnd('Load marker data');
@@ -303,33 +307,60 @@ export class DonorMapController {
       return [];
     }
 
-    // טען DonorPlaces עם Place מלא (כולל קואורדינטות)
-    const donorPlaces = await donorPlaceRepo.find({
-      where: {
-        donorId: { $in: intersectedIds },
-        isActive: true
-      },
-      include: {
-        place: true
-      }
-    });
+    // ── גרסה מקורית (שמורה להשוואה/חזרה) - טוענת DonorPlace מלא עם Place+Country,
+    //    ו-Donor מלא (40+ שדות). ~30MB של memory על 3K+ תורמים.
+    // const donorPlaceRepo = remult.repo(DonorPlace);
+    // const donorRepo = remult.repo(Donor);
+    // const donorPlaces = await donorPlaceRepo.find({
+    //   where: { donorId: { $in: intersectedIds }, isActive: true },
+    //   include: { place: true }
+    // });
+    // const locationMap = new Map<string, { lat: number; lng: number }>();
+    // donorPlaces.forEach(dp => {
+    //   if (dp.donorId && dp.place?.latitude && dp.place?.longitude && !locationMap.has(dp.donorId)) {
+    //     locationMap.set(dp.donorId, { lat: dp.place.latitude, lng: dp.place.longitude });
+    //   }
+    // });
+    // const donorIdsWithLocation = Array.from(locationMap.keys());
+    // const donors = await donorRepo.find({ where: { id: { $in: donorIdsWithLocation } } });
 
-    // צור מפה של donorId -> מיקום (רק אלו עם קואורדינטות תקינות)
+    // ── אופטימיזציה: SQL JOIN עם SELECT רק של השדות הנחוצים (lat/lng + שם)
+    const sqlDb = remult.dataProvider as SqlDatabase;
+    const idsLit = intersectedIds.map(id => `'${String(id).replace(/'/g, "''")}'`).join(',');
+
+    // מקומות - רק lat/lng + donorId, מוצא את הראשון לכל תורם
+    const { rows: placeRows } = await sqlDb.execute(
+      `SELECT DISTINCT ON (dp."donorId") dp."donorId", p."latitude", p."longitude"
+       FROM "donor_places" dp
+       JOIN "places" p ON p."id" = dp."placeId"
+       WHERE dp."donorId" IN (${idsLit})
+         AND dp."isActive" = true
+         AND p."latitude" IS NOT NULL
+         AND p."longitude" IS NOT NULL`
+    );
     const locationMap = new Map<string, { lat: number; lng: number }>();
-    donorPlaces.forEach(dp => {
-      if (dp.donorId && dp.place?.latitude && dp.place?.longitude && !locationMap.has(dp.donorId)) {
-        locationMap.set(dp.donorId, {
-          lat: dp.place.latitude,
-          lng: dp.place.longitude
-        });
-      }
-    });
+    for (const r of placeRows as any[]) {
+      locationMap.set(r.donorId, { lat: r.latitude, lng: r.longitude });
+    }
 
-    // טען שמות של התורמים
     const donorIdsWithLocation = Array.from(locationMap.keys());
-    const donors = await donorRepo.find({
-      where: { id: { $in: donorIdsWithLocation } }
-    });
+    if (donorIdsWithLocation.length === 0) {
+      console.timeEnd('Load marker data');
+      console.timeEnd('DonorMapController.getMapMarkers - Total');
+      return [];
+    }
+
+    // תורמים - רק id, isActive, lastName, firstName (במקום 40+ שדות)
+    const locIdsLit = donorIdsWithLocation.map(id => `'${String(id).replace(/'/g, "''")}'`).join(',');
+    const { rows: donorRows } = await sqlDb.execute(
+      `SELECT "id", "isActive", "lastName", "firstName"
+       FROM "donors" WHERE "id" IN (${locIdsLit})`
+    );
+    const donors = (donorRows as any[]).map(r => ({
+      id: r.id,
+      isActive: r.isActive,
+      lastAndFirstName: `${r.lastName || ''} ${r.firstName || ''}`.trim()
+    }));
 
     // טען סטטיסטיקות תרומות לחישוב סטטוס
     const donationRepo = remult.repo(Donation);
@@ -476,35 +507,52 @@ export class DonorMapController {
       intersectedIds = localDonorIds.filter(id => globalSet.has(id));
     }
 
-    const donorRepo = remult.repo(Donor);
-    const donorPlaceRepo = remult.repo(DonorPlace);
     const donationRepo = remult.repo(Donation);
 
-    // ספירת תורמים כללית
-    const donors = await donorRepo.find({
-      where: { id: { $in: intersectedIds } }
-    });
+    // ── גרסה מקורית (שמורה להשוואה/חזרה) - טעינת Donor+DonorPlace+Place מלאים = ~25MB.
+    // const donorRepo = remult.repo(Donor);
+    // const donorPlaceRepo = remult.repo(DonorPlace);
+    // const donors = await donorRepo.find({ where: { id: { $in: intersectedIds } } });
+    // const totalDonors = donors.length;
+    // const activeDonors = donors.filter(d => d.isActive).length;
+    // const donorPlaces = await donorPlaceRepo.find({
+    //   where: { donorId: { $in: intersectedIds }, isActive: true },
+    //   include: { place: true }
+    // });
+    // const donorsWithCoordinates = new Set<string>();
+    // donorPlaces.forEach(dp => {
+    //   if (dp.donorId && dp.place?.latitude && dp.place?.longitude) {
+    //     donorsWithCoordinates.add(dp.donorId);
+    //   }
+    // });
 
-    const totalDonors = donors.length;
-    const activeDonors = donors.filter(d => d.isActive).length;
+    // ── אופטימיזציה: SELECT מינימלי + COUNT ב-SQL.
+    if (intersectedIds.length === 0) {
+      console.timeEnd('DonorMapController.getMapStatistics');
+      return { totalDonors: 0, activeDonors: 0, donorsOnMap: 0, averageDonation: 0 };
+    }
+    const sqlDb = remult.dataProvider as SqlDatabase;
+    const idsLit = intersectedIds.map(id => `'${String(id).replace(/'/g, "''")}'`).join(',');
 
-    // ספירת תורמים עם קואורדינטות
-    const donorPlaces = await donorPlaceRepo.find({
-      where: {
-        donorId: { $in: intersectedIds },
-        isActive: true
-      },
-      include: {
-        place: true
-      }
-    });
+    // total + active donors (שתי ספירות בשאילתה אחת)
+    const { rows: countRows } = await sqlDb.execute(
+      `SELECT COUNT(*)::int AS total, COUNT(*) FILTER (WHERE "isActive") ::int AS active
+       FROM "donors" WHERE "id" IN (${idsLit})`
+    );
+    const totalDonors = (countRows[0] as any)?.total || 0;
+    const activeDonors = (countRows[0] as any)?.active || 0;
 
-    const donorsWithCoordinates = new Set<string>();
-    donorPlaces.forEach(dp => {
-      if (dp.donorId && dp.place?.latitude && dp.place?.longitude) {
-        donorsWithCoordinates.add(dp.donorId);
-      }
-    });
+    // donors with coordinates (DISTINCT donorId)
+    const { rows: coordRows } = await sqlDb.execute(
+      `SELECT DISTINCT dp."donorId"
+       FROM "donor_places" dp
+       JOIN "places" p ON p."id" = dp."placeId"
+       WHERE dp."donorId" IN (${idsLit})
+         AND dp."isActive" = true
+         AND p."latitude" IS NOT NULL
+         AND p."longitude" IS NOT NULL`
+    );
+    const donorsWithCoordinates = new Set<string>((coordRows as any[]).map(r => r.donorId));
 
     const donorsOnMap = donorsWithCoordinates.size;
 

@@ -59,52 +59,39 @@ export class GlobalFilterController {
       donorIds = placeFiltered;
     }
 
+    // ── אופטימיזציה: חיתוך דרך Set = O(n+m) במקום O(n*m) של .includes() על מערכים.
+    const intersectWithSet = (current: string[] | undefined, next: string[]): string[] => {
+      if (current === undefined) return next;
+      const nextSet = new Set(next);
+      return current.filter(id => nextSet.has(id));
+    };
+
     // סינון לפי קהל יעד
     const audienceFiltered = await GlobalFilterController.getDonorIdsFromTargetAudience(filters);
     if (audienceFiltered !== undefined) {
-      if (donorIds) {
-        // חיתוך - רק תורמים שבשני הקטגוריות
-        donorIds = donorIds.filter(id => audienceFiltered.includes(id));
-      } else {
-        donorIds = audienceFiltered;
-      }
-      if (donorIds.length === 0) return []; // אין התאמות
+      donorIds = intersectWithSet(donorIds, audienceFiltered);
+      if (donorIds.length === 0) return [];
     }
 
     // סינון לפי קמפיינים
     const campaignFiltered = await GlobalFilterController.getDonorIdsFromCampaigns(filters);
     if (campaignFiltered !== undefined) {
-      if (donorIds) {
-        // חיתוך - רק תורמים שבשני הקטגוריות
-        donorIds = donorIds.filter(id => campaignFiltered.includes(id));
-      } else {
-        donorIds = campaignFiltered;
-      }
-      if (donorIds.length === 0) return []; // אין התאמות
+      donorIds = intersectWithSet(donorIds, campaignFiltered);
+      if (donorIds.length === 0) return [];
     }
 
     // סינון לפי טווח סכום תרומה
     const amountFiltered = await GlobalFilterController.getDonorIdsFromAmountRange(filters);
     if (amountFiltered !== undefined) {
-      if (donorIds) {
-        // חיתוך - רק תורמים שבשני הקטגוריות
-        donorIds = donorIds.filter(id => amountFiltered.includes(id));
-      } else {
-        donorIds = amountFiltered;
-      }
-      if (donorIds.length === 0) return []; // אין התאמות
+      donorIds = intersectWithSet(donorIds, amountFiltered);
+      if (donorIds.length === 0) return [];
     }
 
     // סינון לפי אנ"ש / תלמידנו
     const anashAlumniFiltered = await GlobalFilterController.getDonorIdsFromAnashAlumni(filters);
     if (anashAlumniFiltered !== undefined) {
-      if (donorIds) {
-        // חיתוך - רק תורמים שבשני הקטגוריות
-        donorIds = donorIds.filter(id => anashAlumniFiltered.includes(id));
-      } else {
-        donorIds = anashAlumniFiltered;
-      }
-      if (donorIds.length === 0) return []; // אין התאמות
+      donorIds = intersectWithSet(donorIds, anashAlumniFiltered);
+      if (donorIds.length === 0) return [];
     }
 
     return donorIds;
@@ -216,33 +203,21 @@ export class GlobalFilterController {
     // console.log('getDonorIdsFromAnashAlumni anash', filters.isAnash, filters.isAnash === TriStateFilter.Yes, filters.isAnash === TriStateFilter.No)
     // console.log('getDonorIdsFromAnashAlumni alumni', filters.isAlumni, filters.isAlumni === TriStateFilter.Yes, filters.isAlumni === TriStateFilter.No)
 
-    const allDonors = await remult.repo(Donor).find();
-    // console.log('getDonorIdsFromAnashAlumni allDonors', allDonors.length)
+    // ── גרסה מקורית (שמורה): טעינה של 3K+ תורמים מלאים ל-memory, פילטור ב-JS. ~15MB.
+    // const allDonors = await remult.repo(Donor).find();
+    // const donorIds = allDonors
+    //   .filter(donor => { var result = true; if (filters.isAnash === TriStateFilter.Yes) result &&= (donor.isAnash === true); ... })
+    //   .map(donor => donor.id);
 
-    const donorIds = allDonors
-      .filter(donor => {
-        var result = true
-        if (donor.fullName.includes('אבראמטשיק')) {
-          // console.log('getDonorIdsFromAnashAlumni', '####', '@@@@@', donor.isAnash, donor.isAlumni)
-        }
-        if (filters.isAnash === TriStateFilter.Yes) {
-          result &&= (donor.isAnash === true)
-        }
-        if (filters.isAnash === TriStateFilter.No) {
-          result &&= (donor.isAnash === false)
-        }
-        if (filters.isAlumni === TriStateFilter.Yes) {
-          result &&= (donor.isAlumni === true)
-        }
-        if (filters.isAlumni === TriStateFilter.No) {
-          result &&= (donor.isAlumni === false)
-        }
-        return result
-      })
-      .map(donor => donor.id);
+    // ── אופטימיזציה: פילטרי WHERE ב-SQL, מחזיר רק IDs.
+    const where: any = {};
+    if (filters.isAnash === TriStateFilter.Yes) where.isAnash = true;
+    else if (filters.isAnash === TriStateFilter.No) where.isAnash = false;
+    if (filters.isAlumni === TriStateFilter.Yes) where.isAlumni = true;
+    else if (filters.isAlumni === TriStateFilter.No) where.isAlumni = false;
 
-    // console.log('getDonorIdsFromAnashAlumni donorIds', donorIds.length)
-
+    const matchedDonors = await remult.repo(Donor).find({ where });
+    const donorIds = matchedDonors.map(d => d.id);
     return donorIds;
   }
 

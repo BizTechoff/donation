@@ -193,87 +193,76 @@ export class ReportController {
       }
 
       // Load all donations for the selected years
-      const allDonations: Donation[] = [];
-      for (const hebrewYear of yearsToLoad) {
-        const dateRange = await HebrewDateController.getHebrewYearDateRange(hebrewYear);
-        // console.log(`🔍 Loading donations for Hebrew year ${hebrewYear}:`, {
-        //   startDate: dateRange.startDate,
-        //   endDate: dateRange.endDate
-        // });
+      // ── גרסה מקורית (שמורה): לולאה על כל שנה עברית בנפרד + nested include של
+      //    fundraiser, campaign, donationMethod, createdBy = ~500MB memory על 4 שנים.
+      // const allDonations: Donation[] = [];
+      // for (const hebrewYear of yearsToLoad) {
+      //   const dateRange = await HebrewDateController.getHebrewYearDateRange(hebrewYear);
+      //   const yearDonations = await remult.repo(Donation).find({
+      //     where: { donationDate: { $gte: dateRange.startDate, $lte: dateRange.endDate } },
+      //     include: { donor: { include: { fundraiser: true } }, campaign: true, donationMethod: true, createdBy: true }
+      //   });
+      //   allDonations.push(...yearDonations);
+      // }
 
-        const yearDonations = await remult.repo(Donation).find({
-          where: {
-            donationDate: {
-              $gte: dateRange.startDate,
-              $lte: dateRange.endDate
-            }
-          },
-          include: {
-            donor: {
-              include: {
-                fundraiser: true
-              }
-            },
-            campaign: true,
-            donationMethod: true,
-            createdBy: true
-          }
-        });
-        // console.log(`✅ Found ${yearDonations.length} donations for year ${hebrewYear}`);
-        allDonations.push(...yearDonations);
-      }
-      // console.log(`📊 Total donations loaded: ${allDonations.length}`);
+      // ── אופטימיזציה: שאילתה אחת עם טווח תאריכים מאוחד + פילטרי WHERE מוקדמים,
+      //    הורדת include.createdBy שלא בשימוש + הורדת fundraiser (נטען נפרד ב-fundraiserMap).
+      //    לכל הפילטרים שמסננים ב-JS - מעבירים ל-WHERE.
+      const yearRanges = await Promise.all(yearsToLoad.map(y => HebrewDateController.getHebrewYearDateRange(y)));
+      const minDate = yearRanges.reduce((min, r) => r.startDate < min ? r.startDate : min, yearRanges[0]?.startDate);
+      const maxDate = yearRanges.reduce((max, r) => r.endDate > max ? r.endDate : max, yearRanges[0]?.endDate);
 
-      // Apply additional filters
-      let filteredDonations = allDonations;
-      // console.log('🔍 Applying filters:', {
-      //   selectedDonor: filters.selectedDonor,
-      //   selectedDonorIds: filters.selectedDonorIds,
-      //   selectedCampaign: filters.selectedCampaign,
-      //   selectedDonorType: filters.selectedDonorType,
-      //   selectedYear: filters.selectedYear
-      // });
-
-      // Single donor filter (legacy)
+      // הרכב WHERE מוקדם הכולל את כל הפילטרים (במקום filter-chain ב-JS)
+      const donationWhere: any = {
+        donationDate: { $gte: minDate, $lte: maxDate }
+      };
       if (filters.selectedDonor) {
-        const before = filteredDonations.length;
-        filteredDonations = filteredDonations.filter(d => d.donorId === filters.selectedDonor);
-        console.log(`  → Donor filter: ${before} → ${filteredDonations.length}`);
+        donationWhere.donorId = filters.selectedDonor;
+      } else if (filters.selectedDonorIds && filters.selectedDonorIds.length > 0) {
+        donationWhere.donorId = { $in: filters.selectedDonorIds };
       }
-
-      // Multi-donor filter (new)
-      if (filters.selectedDonorIds && filters.selectedDonorIds.length > 0) {
-        const before = filteredDonations.length;
-        filteredDonations = filteredDonations.filter(d =>
-          d.donorId && filters.selectedDonorIds!.includes(d.donorId)
-        );
-        console.log(`  → Multi-donor filter: ${before} → ${filteredDonations.length} (${filters.selectedDonorIds.length} donors selected)`);
-      }
-
-      // 🎯 Apply global donor filter (from user.settings)
-      // undefined = אין פילטר, [] = יש פילטר אבל אף תורם לא עונה לו
       if (globalFilterDonorIds !== undefined) {
         if (globalFilterDonorIds.length === 0) {
-          // מערך ריק = אף תורם לא עונה לפילטר - להחזיר תוצאות ריקות
-          filteredDonations = [];
-          console.log(`  → Global donor filter: empty array - no donors match filter`);
+          // filter מוגדר אבל אף תורם לא עונה - לא נטען כלום
+          donationWhere.donorId = { $in: [] };
         } else {
-          const before = filteredDonations.length;
-          filteredDonations = filteredDonations.filter(d =>
-            d.donorId && globalFilterDonorIds!.includes(d.donorId)
-          );
-          console.log(`  → Global donor filter: ${before} → ${filteredDonations.length} (${globalFilterDonorIds.length} donors in global filter)`);
+          // חיתוך עם פילטר קודם אם קיים
+          const prev = donationWhere.donorId?.$in;
+          donationWhere.donorId = { $in: prev ? prev.filter((x: string) => new Set(globalFilterDonorIds).has(x)) : globalFilterDonorIds };
         }
       }
-
       if (filters.selectedCampaign) {
-        const before = filteredDonations.length;
-        filteredDonations = filteredDonations.filter(d => d.campaignId === filters.selectedCampaign);
-        console.log(`  → Campaign filter: ${before} → ${filteredDonations.length}`);
+        donationWhere.campaignId = filters.selectedCampaign;
+      } else if (globalFilterCampaignIds && globalFilterCampaignIds.length > 0) {
+        donationWhere.campaignId = { $in: globalFilterCampaignIds };
+      }
+      if (globalFilterDateFrom || globalFilterDateTo) {
+        const dateFilter: any = {};
+        if (globalFilterDateFrom) dateFilter.$gte = globalFilterDateFrom > minDate ? globalFilterDateFrom : minDate;
+        if (globalFilterDateTo) dateFilter.$lte = globalFilterDateTo < maxDate ? globalFilterDateTo : maxDate;
+        donationWhere.donationDate = { ...donationWhere.donationDate, ...dateFilter };
+      }
+      if (globalFilterAmountMin !== undefined || globalFilterAmountMax !== undefined) {
+        const amountFilter: any = {};
+        if (globalFilterAmountMin !== undefined) amountFilter.$gte = globalFilterAmountMin;
+        if (globalFilterAmountMax !== undefined) amountFilter.$lte = globalFilterAmountMax;
+        donationWhere.amount = amountFilter;
       }
 
+      const allDonations = await remult.repo(Donation).find({
+        where: donationWhere,
+        include: {
+          donor: { include: { fundraiser: true } },  // fundraiser נצרך בקיבוץ לפי fundraiser
+          campaign: true,
+          donationMethod: true
+          // הוסר: createdBy (לא בשימוש בדו"ח)
+        }
+      });
+
+      let filteredDonations = allDonations;
+
+      // פילטר נותר שצריך JS (donorType דרך donor.isAnash וכו') - כבר עם donor טעון
       if (filters.selectedDonorType) {
-        const before = filteredDonations.length;
         filteredDonations = filteredDonations.filter(d => {
           if (!d.donor) return false;
           switch (filters.selectedDonorType) {
@@ -283,38 +272,10 @@ export class ReportController {
             default: return true;
           }
         });
-        console.log(`  → Donor type filter: ${before} → ${filteredDonations.length}`);
       }
-
-      // Apply global filters (from user.settings)
-      if (globalFilterCampaignIds && globalFilterCampaignIds.length > 0) {
-        const before = filteredDonations.length;
-        filteredDonations = filteredDonations.filter(d =>
-          d.campaignId && globalFilterCampaignIds!.includes(d.campaignId)
-        );
-        console.log(`  → Global campaign filter: ${before} → ${filteredDonations.length}`);
-      }
-
-      if (globalFilterDateFrom || globalFilterDateTo) {
-        const before = filteredDonations.length;
-        filteredDonations = filteredDonations.filter(d => {
-          const donationDate = new Date(d.donationDate);
-          if (globalFilterDateFrom && donationDate < globalFilterDateFrom) return false;
-          if (globalFilterDateTo && donationDate > globalFilterDateTo) return false;
-          return true;
-        });
-        console.log(`  → Global date filter: ${before} → ${filteredDonations.length}`);
-      }
-
-      if (globalFilterAmountMin !== undefined || globalFilterAmountMax !== undefined) {
-        const before = filteredDonations.length;
-        filteredDonations = filteredDonations.filter(d => {
-          if (globalFilterAmountMin !== undefined && d.amount < globalFilterAmountMin) return false;
-          if (globalFilterAmountMax !== undefined && d.amount > globalFilterAmountMax) return false;
-          return true;
-        });
-        console.log(`  → Global amount filter: ${before} → ${filteredDonations.length}`);
-      }
+      // ── הפילטרים (selectedDonor, selectedDonorIds, globalFilterDonorIds,
+      //    selectedCampaign, globalFilterCampaignIds, globalFilterDate*, globalFilterAmount*)
+      //    הועברו כולם ל-donationWhere לעיל. פילטר donorType נותר ב-JS כי תלוי ב-donor.isAnash.
 
       console.log(`✅ Final filtered donations: ${filteredDonations.length}`);
 
@@ -333,16 +294,23 @@ export class ReportController {
       }
 
       // Load payments if requested (for actualPayments column)
+      // ── אופטימיזציה: טוענים payments רק לתרומות payment-based (הו"ק/התחייבות),
+      //    לא לכל 10K התרומות - זה חוסך ~5MB זיכרון.
       const allPayments: Payment[] = [];
       if (filters.showActualPayments && filteredDonations.length > 0) {
-        const donationIds = filteredDonations.map(d => d.id!);
-        const payments = await remult.repo(Payment).find({
-          where: {
-            donationId: { $in: donationIds }//,
-            // status: 'completed'
-          }
-        });
-        allPayments.push(...payments);
+        const paymentBasedIds = filteredDonations
+          .filter(d => isPaymentBased(d))
+          .map(d => d.id!)
+          .filter(Boolean);
+        if (paymentBasedIds.length > 0) {
+          const payments = await remult.repo(Payment).find({
+            where: {
+              donationId: { $in: paymentBasedIds },
+              isActive: true
+            }
+          });
+          allPayments.push(...payments);
+        }
       }
 
       // Group the donations
@@ -560,8 +528,10 @@ export class ReportController {
 
     // Calculate actual payments if requested
     if (filters.showActualPayments) {
+      // ── אופטימיזציה: Map לחיפוש O(1) במקום find() O(n) בתוך לולאה (היה O(n²)).
+      const donationMap = new Map(donations.filter(d => d.id).map(d => [d.id as string, d]));
       for (const payment of payments) {
-        const donation = donations.find(d => d.id === payment.donationId);
+        const donation = donationMap.get(payment.donationId);
         if (!donation) continue;
 
         let groupKey = '';
@@ -636,6 +606,23 @@ export class ReportController {
         }
       });
 
+      // ── אופטימיזציה: pre-group contacts ב-Map לפי donorId (O(n) פעם אחת)
+      //    במקום filter על כל הרשימה פר-תורם (היה O(n²)).
+      const phonesByDonor = new Map<string, string[]>();
+      const emailsByDonor = new Map<string, string[]>();
+      for (const c of allContacts) {
+        if (!c.donorId) continue;
+        if (c.type === 'phone' && c.phoneNumber) {
+          const arr = phonesByDonor.get(c.donorId) || [];
+          arr.push(c.phoneNumber);
+          phonesByDonor.set(c.donorId, arr);
+        } else if (c.type === 'email' && c.email) {
+          const arr = emailsByDonor.get(c.donorId) || [];
+          arr.push(c.email);
+          emailsByDonor.set(c.donorId, arr);
+        }
+      }
+
       // Group data by donorId
       for (const donorId of donorIds) {
         const donor = donorMap.get(donorId);
@@ -645,15 +632,8 @@ export class ReportController {
         // שימוש בפונקציה המרכזית לתצוגת כתובת
         const address = place?.getDisplayAddress() || undefined;
 
-        const phoneContacts = allContacts.filter(c =>
-          c.donorId === donorId && c.type === 'phone'
-        );
-        const phones = phoneContacts.map(c => c.phoneNumber || '').filter(p => p);
-
-        const emailContacts = allContacts.filter(c =>
-          c.donorId === donorId && c.type === 'email'
-        );
-        const emails = emailContacts.map(c => c.email || '').filter(e => e);
+        const phones = phonesByDonor.get(donorId) || [];
+        const emails = emailsByDonor.get(donorId) || [];
 
         detailsMap.set(donorId, {
           // Legacy fields

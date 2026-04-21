@@ -134,20 +134,29 @@ export class CertificateController {
       };
     }
 
-    let certificates = await remult.repo(Certificate).find({
-      where: Object.keys(whereClause).length > 0 ? whereClause : undefined
-    });
-
-    // Apply parasha filter if specified
     const hasParashaFilter = filters.fromParasha && filters.fromParasha.trim() !== '';
+    const repo = remult.repo(Certificate);
+    const baseWhere = Object.keys(whereClause).length > 0 ? whereClause : undefined;
+
+    // ── אופטימיזציה: COUNT ב-SQL במקום find() של כל הרשומות + filter.
+    //    parasha filter דורש חישוב ב-JS (לפי eventDate), לכן רק במקרה זה טוענים רשומות.
     if (hasParashaFilter) {
-      certificates = CertificateController.filterByParasha(certificates, filters.fromParasha!);
+      const certificates = CertificateController.filterByParasha(
+        await repo.find({ where: baseWhere }),
+        filters.fromParasha!
+      );
+      return {
+        memorialCertificates: certificates.filter(c => c.type === 'memorial').length,
+        memorialDayCertificates: certificates.filter(c => c.type === 'memorialDay').length
+      };
     }
 
-    return {
-      memorialCertificates: certificates.filter(c => c.type === 'memorial').length,
-      memorialDayCertificates: certificates.filter(c => c.type === 'memorialDay').length
-    };
+    // ללא פילטר parasha - 2 ספירות SQL מקבילות, ללא טעינת רשומות.
+    const [memorialCertificates, memorialDayCertificates] = await Promise.all([
+      repo.count({ ...whereClause, type: 'memorial' }),
+      repo.count({ ...whereClause, type: 'memorialDay' })
+    ]);
+    return { memorialCertificates, memorialDayCertificates };
   }
 
   /**
