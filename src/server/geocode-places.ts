@@ -16,18 +16,50 @@ export async function geocodeMissingPlaces() {
     const placeRepo = remult.repo(Place);
     const countryRepo = remult.repo(Country);
 
-    // Find all places where latitude is 0 or undefined
-    const allPlaces = await placeRepo.find();
-    const placesNeedingGeocode = allPlaces.filter(place =>
-      !place.latitude || place.latitude === 0
-    );
+    // ── גרסה מקורית (שמורה): טעינת כל ה-Places ל-memory + פילטור ב-JS.
+    //    בעיה: רץ בכל startup, טוען 3K+ records רק כדי למצוא 0 חסרים.
+    // const allPlaces = await placeRepo.find();
+    // const placesNeedingGeocode = allPlaces.filter(place =>
+    //   !place.latitude || place.latitude === 0
+    // );
 
+    // ── אופטימיזציה: בדיקת count מהירה קודם. רק אם יש places חסרים - לטעון אותם בלבד.
+    const missingCount = await placeRepo.count({ latitude: 0 });
+    if (missingCount === 0) {
+      console.log('[Geocode Places] No places need geocoding. All done!');
+      return { success: true, processed: 0, updated: 0, failed: 0 };
+    }
+
+    const placesNeedingGeocode = await placeRepo.find({ where: { latitude: 0 } });
     console.log(`[Geocode Places] Found ${placesNeedingGeocode.length} places without coordinates`);
 
     if (placesNeedingGeocode.length === 0) {
       console.log('[Geocode Places] No places need geocoding. All done!');
       return { success: true, processed: 0, updated: 0, failed: 0 };
     }
+
+    // טען את כל המדינות פעם אחת כדי להחליף שם עברי בשם אנגלי בעת geocoding.
+    const allCountries = await countryRepo.find();
+    const countryMap = new Map(allCountries.map(c => [c.id, c]));
+
+    // בונה כתובת לgeocoding עם שם מדינה באנגלית (ולא "אנגליה"/"ארצות הברית" וכו').
+    const buildEnglishAddress = (place: Place): string => {
+      const parts: string[] = [];
+      if (place.street) parts.push(place.street);
+      if (place.houseNumber) parts.push(String(place.houseNumber));
+      if (place.apartment) parts.push(place.apartment);
+      if (place.neighborhood) parts.push(place.neighborhood);
+      if (place.city) parts.push(place.city);
+      if (place.state) parts.push(place.state);
+      if (place.postcode) parts.push(place.postcode);
+      // שם המדינה באנגלית במקום בעברית (Google Geocoding עובד הרבה יותר טוב)
+      if (place.countryId) {
+        const country = countryMap.get(place.countryId);
+        const countryLabel = country?.nameEn || country?.code || country?.name;
+        if (countryLabel) parts.push(countryLabel);
+      }
+      return parts.filter(p => p && p.trim()).join(', ');
+    };
 
     let updatedCount = 0;
     let failedCount = 0;
@@ -39,17 +71,18 @@ export async function geocodeMissingPlaces() {
       ++counter
       // if(counter >= 10) break
       try {
-        console.log(`\n[Geocode Places] Processing: ${place.fullAddress}`);
+        // בונים כתובת באנגלית (שם מדינה מתורגם) במקום fullAddress שעלול להכיל "אנגליה" וכד'
+        const englishAddress = buildEnglishAddress(place) || place.fullAddress;
+        console.log(`\n[Geocode Places] Processing: ${englishAddress}`);
 
         // Call Google Geocoding API
-        // If we have placeId, use doGetPlace, otherwise use geocodeAddress with fullAddress
         let geocodeResult;
         // if (place.placeId && place.placeId.trim().length > 0) {
         //   console.log(`  -> Using placeId: ${place.placeId}`);
         //   geocodeResult = await doGetPlace(place.placeId);
         // } else {
-        console.log(`  -> Using fullAddress for geocoding`);
-        geocodeResult = await geocodeAddress(place.fullAddress);
+        console.log(`  -> Using English address for geocoding`);
+        geocodeResult = await geocodeAddress(englishAddress);
 
         // Update placeId if we got one from geocoding
         if (geocodeResult?.valid && geocodeResult.placeId) {
