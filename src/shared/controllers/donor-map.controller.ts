@@ -377,9 +377,10 @@ export class DonorMapController {
       where: { donorId: { $in: donorIdsWithLocation } }
     });
     for (const row of statsRows) {
+      const maxDate = row.donationDate?.max;
       donationStatsByDonor.set(row.donorId, {
         total: row.amount?.sum || 0,
-        lastDate: row.donationDate?.max || null
+        lastDate: maxDate ? new Date(maxDate) : null
       });
     }
 
