@@ -2,6 +2,23 @@ import * as XLSX from 'xlsx'
 import * as fs from 'fs'
 import * as path from 'path'
 
+// ── הגדרת קבצי המקור ─────────────────────────────────────────────
+// קבצי ה-Excel מפוצלים לקבוצות - "רגיל" (מקור IL/העיקרי) ו-USA.
+// סיבה: ה-IdName בקבצי ה-USA מתחיל מרצף נפרד שמתנגש עם ה-IdName בקבצים
+// הרגילים (למשל IdName=3317 ב-TbName = מייקל בלאק, ב-TbNameUSA = יעקב עקשטיין
+// - אנשים שונים). כדי למנוע התנגשות בזמן המיפוי donorMap.set(id, donor):
+//   → ל-IdName בקבצי USA מוסיפים USA_ID_OFFSET
+//   → פרט ל-IDs ב-SHARED_DONOR_IDS שהם אותו אדם בשני הקבצים (למשל 1908)
+//     - אלה לא מקבלים offset; רשומת USA שלהם נזרקת (מי שמוזן הוא הרגיל).
+const EXCELS_DIR              = path.join(__dirname, '../assets/excels')
+const REGULAR_DONOR_FILES     = ['TbName.xlsx']
+const USA_DONOR_FILES         = ['TbNameUSA.xlsx']
+const REGULAR_DONATION_FILES  = ['TbTromot.xlsx']
+const USA_DONATION_FILES      = ['TbTromotUSA.xlsx']
+const USA_ID_OFFSET           = 100000
+// IDs שמייצגים אותו אדם בשני הקבצים - לא עושים offset, ולא מזינים פעמיים.
+const SHARED_DONOR_IDS        = new Set<number>([1908])
+
 /**
  * Convert Excel files to seed-data.ts
  *
@@ -60,6 +77,84 @@ function readExcelFile(filePath: string): any[] {
     console.error(`Error reading ${filePath}:`, error)
     return []
   }
+}
+
+/**
+ * קורא מספר קבצי Excel מתיקיית EXCELS_DIR ומחזיר את כל השורות המאוחדות.
+ * מודפס לוג של מספר שורות לכל קובץ לצורך שקיפות.
+ */
+function readExcelFiles(fileNames: string[]): any[] {
+  return fileNames.flatMap(fileName => {
+    const fullPath = path.join(EXCELS_DIR, fileName)
+    if (!fs.existsSync(fullPath)) {
+      console.warn(`  ⚠ File not found, skipping: ${fileName}`)
+      return []
+    }
+    const rows = readExcelFile(fullPath)
+    console.log(`  ✓ Read ${rows.length} rows from ${fileName}`)
+    return rows
+  })
+}
+
+/**
+ * מנרמל שדות עם שמות אלטרנטיביים (רווח vs underscore וכו').
+ * Voucher_Co (TbTromotUSA) vs Voucher co (TbTromot) - שניהם מצביעים על אותו שדה.
+ * מבצעים את הנירמול פעם אחת בקריאה ואז כל קוד העיבוד שנמצא למטה רואה שם אחד בלבד.
+ */
+function normalizeDonationRow(row: any): any {
+  if (row['Voucher_Co'] == null && row['Voucher co'] != null) {
+    row['Voucher_Co'] = row['Voucher co']
+  }
+  if (row['Sort_Code'] == null && row['Sort Code'] != null) {
+    row['Sort_Code'] = row['Sort Code']
+  }
+  return row
+}
+
+/**
+ * מזהיר על כפילויות לפי keyField (ברירת מחדל IdName).
+ * לתורמים: IdName (המזהה הראשי). לתרומות: Id (מזהה ייחודי של התרומה, לא של התורם).
+ */
+function warnDuplicates(rows: any[], label: string, keyField: string = 'IdName'): void {
+  const seen = new Map<any, number>()
+  for (const r of rows) {
+    const id = r?.[keyField]
+    if (id == null || id === '') continue
+    seen.set(id, (seen.get(id) ?? 0) + 1)
+  }
+  const dups = [...seen.entries()].filter(([_, count]) => count > 1)
+  if (dups.length > 0) {
+    const preview = dups.slice(0, 5).map(([id, count]) => `${id}(x${count})`).join(', ')
+    console.warn(`  ⚠ ${label}: נמצאו ${dups.length} כפילויות ${keyField} (5 ראשונות: ${preview})`)
+  } else {
+    console.log(`  ✓ ${label}: ללא כפילויות ${keyField}`)
+  }
+}
+
+/**
+ * מעביר שורת תורם מקובץ USA:
+ *   - אם ה-IdName ב-SHARED_DONOR_IDS: מחזיר null (הרשומה נזרקת - יש רשומה זהה בקובץ הרגיל).
+ *   - אחרת: מוסיף USA_ID_OFFSET ל-IdName ומחזיר את השורה המעודכנת.
+ */
+function offsetUsaDonorRow(row: any): any | null {
+  const rawId = Number(row['IdName'])
+  if (Number.isFinite(rawId) && SHARED_DONOR_IDS.has(rawId)) {
+    return null
+  }
+  if (!Number.isFinite(rawId)) return row
+  return { ...row, IdName: rawId + USA_ID_OFFSET }
+}
+
+/**
+ * מעביר שורת תרומה מקובץ USA:
+ *   - אם IdName ב-SHARED_DONOR_IDS: לא מזיזים (התרומה תתחבר לתורם הרגיל).
+ *   - אחרת: מוסיפים USA_ID_OFFSET (כדי שתתחבר לתורם ה-USA שקיבל offset).
+ */
+function offsetUsaDonationRow(row: any): any {
+  const rawId = Number(row['IdName'])
+  if (!Number.isFinite(rawId)) return row
+  if (SHARED_DONOR_IDS.has(rawId)) return row
+  return { ...row, IdName: rawId + USA_ID_OFFSET }
 }
 
 /**
@@ -296,20 +391,33 @@ function processDonations(rows: DonationRow[]): any[] {
 
 async function convertExcelToSeed() {
   console.log('Converting Excel files to seed-data.ts...\n')
+  console.log(`Source dir: ${EXCELS_DIR}`)
 
-  const donorsFile = path.join(__dirname, '../assets/excels/טבלת שמות ופרטים.xlsx')
-  const donationsFile = path.join(__dirname, '../assets/excels/טבלת תרומות.xlsx')
+  // ─── Donors (רגיל + USA עם offset) ──────────────────────────────
+  console.log(`\nReading donor files (${REGULAR_DONOR_FILES.length + USA_DONOR_FILES.length}):`)
+  const regularDonorRows = readExcelFiles(REGULAR_DONOR_FILES)
+  const usaDonorRowsRaw  = readExcelFiles(USA_DONOR_FILES)
+  const usaDonorRows     = usaDonorRowsRaw.map(offsetUsaDonorRow).filter((r): r is any => r !== null)
+  const usaDonorsSkipped = usaDonorRowsRaw.length - usaDonorRows.length
+  if (usaDonorsSkipped > 0) {
+    console.log(`  ℹ USA donors skipped (shared with regular): ${usaDonorsSkipped}`)
+  }
+  console.log(`  ℹ USA donors offset by +${USA_ID_OFFSET}: ${usaDonorRows.length}`)
+  const donorRows = [...regularDonorRows, ...usaDonorRows]
+  console.log(`Total donor rows: ${donorRows.length}`)
+  warnDuplicates(donorRows, 'Donors', 'IdName')
 
-  // Read Excel files
-  console.log('Reading donors file...')
-  const donorRows = readExcelFile(donorsFile)
-  console.log(`Found ${donorRows.length} donor rows`)
+  // ─── Donations (רגיל + USA עם offset תואם) ──────────────────────
+  console.log(`\nReading donation files (${REGULAR_DONATION_FILES.length + USA_DONATION_FILES.length}):`)
+  const regularDonationRows = readExcelFiles(REGULAR_DONATION_FILES)
+  const usaDonationRows     = readExcelFiles(USA_DONATION_FILES).map(offsetUsaDonationRow)
+  console.log(`  ℹ USA donations offset by +${USA_ID_OFFSET}: ${usaDonationRows.length}`)
+  const donationRows = [...regularDonationRows, ...usaDonationRows].map(normalizeDonationRow)
+  console.log(`Total donation rows: ${donationRows.length}`)
+  // בתרומות - המזהה הייחודי הוא Id (לא IdName, שהוא ה-donorId FK)
+  warnDuplicates(donationRows, 'Donations', 'Id')
 
-  console.log('\nReading donations file...')
-  const donationRows = readExcelFile(donationsFile)
-  console.log(`Found ${donationRows.length} donation rows`)
-
-  // Process data
+  // ─── Process data ────────────────────────────────────────────
   console.log('\nProcessing donors...')
   const donors = processDonors(donorRows)
   console.log(`Processed ${donors.length} donors`)
@@ -412,13 +520,16 @@ export async function seedLegacyData() {
     }
     console.log(\`  ✓ Deleted \${existingPlaces.length} existing donor places\`)
 
-    console.log('\\nDeleting existing places...')
+    console.log('\\nDeleting existing legacy places (donor addresses only)...')
     const placeRepo = remult.repo(Place)
-    const existingPlaceRecords = await placeRepo.find()
-    for (const place of existingPlaceRecords) {
+    // מוחקים רק Places שנוצרו ב-seed הזה (placeId מתחיל ב-'LEGACY-').
+    // לא נוגעים ב-Places של ארגונים/בנקים שנוצרו ע"י seed-infrastructure.
+    const allPlaces = await placeRepo.find()
+    const legacyPlaces = allPlaces.filter(p => (p.placeId || '').startsWith('LEGACY-'))
+    for (const place of legacyPlaces) {
       await placeRepo.delete(place)
     }
-    console.log(\`  ✓ Deleted \${existingPlaceRecords.length} existing places\`)
+    console.log(\`  ✓ Deleted \${legacyPlaces.length} legacy donor places (kept \${allPlaces.length - legacyPlaces.length} infrastructure places)\`)
 
     console.log('\\nDeleting existing donors...')
     const donorRepo = remult.repo(Donor)
@@ -781,7 +892,7 @@ export async function seedLegacyData() {
 // Run if called directly
 if (typeof module !== 'undefined' && require.main === module) {
   const dataProvider = createPostgresConnection({
-    // configuration: 'heroku',
+    configuration: 'heroku',
     sslInDev: !(process.env['DEV_MODE'] === 'DEV')
   })
 
