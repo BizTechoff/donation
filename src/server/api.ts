@@ -100,7 +100,13 @@ export const api = remultExpress({
         return provider
   },
   initApi: async r => {
-    // await geocodeMissingPlaces()
+    // ── הפעלת geocoding ברקע (לא awaited) כדי לא לעכב את עליית השרת.
+    //    רץ פעם ראשונה - ממלא קואורדינטות מ-Google. פעמים הבאות - no-op מהיר
+    //    (הפונקציה מסננת רק places עם latitude=0/undefined).
+    geocodeMissingPlaces()
+      .then(result => console.log('[Geocode] Completed:', result))
+      .catch(err => console.error('[Geocode] Error:', err));
+    // await geocodeMissingPlaces()  // גרסה awaited (לא מומלץ - חוסם boot עד 15 דק')
     // Setup cron job to check reminders every 5 minutes
     console.log('[Server] Setting up reminder scheduler (every 5 minutes)...')
     cron.schedule('*/5 * * * *', async () => {
