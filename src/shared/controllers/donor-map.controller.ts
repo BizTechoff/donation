@@ -451,7 +451,7 @@ export class DonorMapController {
           donorId: d.id,
           lat: locationMap.get(d.id)!.lat,
           lng: locationMap.get(d.id)!.lng,
-          donorName: `${d.lastName || ''} ${d.firstName || ''}`.trim(),
+          donorName: d.lastAndFirstName,
           statuses
         };
       });
