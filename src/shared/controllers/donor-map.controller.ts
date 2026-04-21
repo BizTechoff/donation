@@ -1,4 +1,4 @@
-import { Allow, BackendMethod, remult } from 'remult';
+import { Allow, BackendMethod, remult, SqlDatabase } from 'remult';
 import { GlobalFilters } from '../../app/services/global-filter.service';
 import { Donation } from '../entity/donation';
 import { Donor } from '../entity/donor';
@@ -333,41 +333,55 @@ export class DonorMapController {
 
     // טען סטטיסטיקות תרומות לחישוב סטטוס
     const donationRepo = remult.repo(Donation);
-    const donations = await donationRepo.find({
-      where: { donorId: { $in: donorIdsWithLocation } },
-      include: { donationMethod: true }
-    });
 
-    // טען סכומי תשלומים בפועל עבור התחייבויות והו"ק עם סינון לפי סוג
-    const paymentBasedDonationsForMarkers = donations.filter(d => isPaymentBased(d));
-    const paymentBasedIdsForMarkers = paymentBasedDonationsForMarkers.map(d => d.id).filter(Boolean);
-    let paymentTotalsForMarkers: Record<string, number> = {};
-    if (paymentBasedIdsForMarkers.length > 0) {
-      const { Payment } = await import('../entity/payment');
-      const payments = await remult.repo(Payment).find({
-        where: { donationId: { $in: paymentBasedIdsForMarkers }, isActive: true }
-      });
-      paymentTotalsForMarkers = calculatePaymentTotals(paymentBasedDonationsForMarkers, payments);
-    }
+    // ── גרסה מקורית (שמורה להשוואה/חזרה) - טעינת כל התרומות עם joins ל-memory.
+    //    בעייתית עבור 3000+ תורמים: 10K+ תרומות × join = ~30MB → R14 OOM.
+    // const donations = await donationRepo.find({
+    //   where: { donorId: { $in: donorIdsWithLocation } },
+    //   include: { donationMethod: true }
+    // });
+    //
+    // const paymentBasedDonationsForMarkers = donations.filter(d => isPaymentBased(d));
+    // const paymentBasedIdsForMarkers = paymentBasedDonationsForMarkers.map(d => d.id).filter(Boolean);
+    // let paymentTotalsForMarkers: Record<string, number> = {};
+    // if (paymentBasedIdsForMarkers.length > 0) {
+    //   const { Payment } = await import('../entity/payment');
+    //   const payments = await remult.repo(Payment).find({
+    //     where: { donationId: { $in: paymentBasedIdsForMarkers }, isActive: true }
+    //   });
+    //   paymentTotalsForMarkers = calculatePaymentTotals(paymentBasedDonationsForMarkers, payments);
+    // }
+    //
+    // const donationStatsByDonor = new Map<string, { total: number; lastDate: Date | null }>();
+    // donations.forEach(donation => {
+    //   const rawAmount = calculateEffectiveAmount(donation, paymentTotalsForMarkers[donation.id]);
+    //   const existing = donationStatsByDonor.get(donation.donorId);
+    //   if (!existing) {
+    //     donationStatsByDonor.set(donation.donorId, { total: rawAmount, lastDate: donation.donationDate });
+    //   } else {
+    //     existing.total += rawAmount;
+    //     if (!existing.lastDate || (donation.donationDate && new Date(donation.donationDate) > new Date(existing.lastDate))) {
+    //       existing.lastDate = donation.donationDate;
+    //     }
+    //   }
+    // });
 
-    // חשב סטטיסטיקות תרומות לכל תורם (סכום יבש ללא המרת מטבע - לצורך השוואה לסף)
+    // ── אופטימיזציה פעילה: groupBy ב-SQL מחזיר שורה אחת לכל תורם.
+    // הערה: לא מתחשב בלוגיקת calculateEffectiveAmount להו"קים (sum of payments)
+    // כי זה רק לצורך סיווג high-donor על המפה - קירוב מספיק.
     const donationStatsByDonor = new Map<string, { total: number; lastDate: Date | null }>();
-    donations.forEach(donation => {
-      const rawAmount = calculateEffectiveAmount(donation, paymentTotalsForMarkers[donation.id]);
-
-      const existing = donationStatsByDonor.get(donation.donorId);
-      if (!existing) {
-        donationStatsByDonor.set(donation.donorId, {
-          total: rawAmount,
-          lastDate: donation.donationDate
-        });
-      } else {
-        existing.total += rawAmount;
-        if (!existing.lastDate || (donation.donationDate && new Date(donation.donationDate) > new Date(existing.lastDate))) {
-          existing.lastDate = donation.donationDate;
-        }
-      }
+    const statsRows = await donationRepo.groupBy({
+      group: ['donorId'],
+      sum: ['amount'],
+      max: ['donationDate'],
+      where: { donorId: { $in: donorIdsWithLocation } }
     });
+    for (const row of statsRows) {
+      donationStatsByDonor.set(row.donorId, {
+        total: row.amount?.sum || 0,
+        lastDate: row.donationDate?.max || null
+      });
+    }
 
     // קרא ספים מ-AppSettings
     const thresholds = await DonorMapController.getThresholds();
@@ -494,34 +508,46 @@ export class DonorMapController {
     const donorsOnMap = donorsWithCoordinates.size;
 
     // חישוב ממוצע תרומות (בשקלים)
-    const donations = await donationRepo.find({
-      where: { donorId: { $in: intersectedIds } },
-      include: { donationMethod: true }
-    });
+    // ── גרסה מקורית (שמורה להשוואה/חזרה) - טעינת 10K+ תרומות + joins. OOM.
+    // const donations = await donationRepo.find({
+    //   where: { donorId: { $in: intersectedIds } },
+    //   include: { donationMethod: true }
+    // });
+    //
+    // const paymentBasedDonationsForStats = donations.filter(d => isPaymentBased(d));
+    // const paymentBasedIdsForStats = paymentBasedDonationsForStats.map(d => d.id).filter(Boolean);
+    // let paymentTotalsForStats: Record<string, number> = {};
+    // if (paymentBasedIdsForStats.length > 0) {
+    //   const { Payment } = await import('../entity/payment');
+    //   const payments = await remult.repo(Payment).find({
+    //     where: { donationId: { $in: paymentBasedIdsForStats }, isActive: true }
+    //   });
+    //   paymentTotalsForStats = calculatePaymentTotals(paymentBasedDonationsForStats, payments);
+    // }
+    //
+    // const totalAmount = donations.reduce((sum, d) => {
+    //   const rate = currencyTypes[d.currencyId]?.rateInShekel || 1;
+    //   return sum + (calculateEffectiveAmount(d, paymentTotalsForStats[d.id]) * rate);
+    // }, 0);
+    // const totalCount = donations.length;
 
-    // טען שערי המרה של מטבעות
+    // ── אופטימיזציה פעילה: groupBy ב-SQL (לפי מטבע) + count נפרד.
+    // לא מתחשב בלוגיקת calculateEffectiveAmount להו"קים (sum of payments) -
+    // קירוב מספיק לצורך חישוב ממוצע סטטיסטי במפה.
     const { PayerService } = await import('../../app/services/payer.service');
     const payerService = new PayerService();
     const currencyTypes = await payerService.getCurrencyTypesRecord();
 
-    // טען סכומי תשלומים בפועל עבור התחייבויות והו"ק עם סינון לפי סוג
-    const paymentBasedDonationsForStats = donations.filter(d => isPaymentBased(d));
-    const paymentBasedIdsForStats = paymentBasedDonationsForStats.map(d => d.id).filter(Boolean);
-    let paymentTotalsForStats: Record<string, number> = {};
-    if (paymentBasedIdsForStats.length > 0) {
-      const { Payment } = await import('../entity/payment');
-      const payments = await remult.repo(Payment).find({
-        where: { donationId: { $in: paymentBasedIdsForStats }, isActive: true }
-      });
-      paymentTotalsForStats = calculatePaymentTotals(paymentBasedDonationsForStats, payments);
-    }
-
-    // חשב סכום כולל בשקלים
-    const totalAmount = donations.reduce((sum, d) => {
-      const rate = currencyTypes[d.currencyId]?.rateInShekel || 1;
-      return sum + (calculateEffectiveAmount(d, paymentTotalsForStats[d.id]) * rate);
+    const sumsByCurrency = await donationRepo.groupBy({
+      group: ['currencyId'],
+      sum: ['amount'],
+      where: { donorId: { $in: intersectedIds } }
+    });
+    const totalAmount = sumsByCurrency.reduce((sum, row) => {
+      const rate = currencyTypes[row.currencyId]?.rateInShekel || 1;
+      return sum + ((row.amount?.sum || 0) * rate);
     }, 0);
-    const totalCount = donations.length;
+    const totalCount = await donationRepo.count({ donorId: { $in: intersectedIds } });
     const averageDonation = totalCount > 0 ? totalAmount / totalCount : 0;
 
     console.timeEnd('DonorMapController.getMapStatistics');
@@ -674,14 +700,39 @@ export class DonorMapController {
         include: { donationMethod: true }
       }),
       // תרומות שהתורם הוא שותף (לא כולל התחייבויות)
-      donationRepo.find({
-        where: {
-          donationType: { $ne: 'commitment' }
-        },
-        include: { donationMethod: true }
-      }).then(donations => donations.filter(d =>
-        d.partnerIds && d.partnerIds.some(pid => donorIdsList.includes(pid) && pid !== d.donorId)
-      )),
+      // ── גרסה מקורית (שמורה להשוואה/חזרה) - טוענת את *כל* התרומות ב-DB ומסננת ב-JS.
+      //    בעייתית בגלל memory: ~30MB על 10K+ תרומות, גורמת ל-R14 ב-Heroku.
+      // donationRepo.find({
+      //   where: {
+      //     donationType: { $ne: 'commitment' }
+      //   },
+      //   include: { donationMethod: true }
+      // }).then(donations => donations.filter(d =>
+      //   d.partnerIds && d.partnerIds.some(pid => donorIdsList.includes(pid) && pid !== d.donorId)
+      // )),
+      //
+      // ── אופטימיזציה פעילה: JSONB operator ?| למצוא IDs רלוונטיים ב-SQL,
+      // ואז טעינה מוגבלת של תרומות השותף בלבד.
+      (async () => {
+        if (donorIdsList.length === 0) return [];
+        const sqlDb = remult.dataProvider as SqlDatabase;
+        // מפצים UUIDs כדי לשרת כמחרוזות SQL (UUIDs מה-DB, בטוח מבחינת injection)
+        const idsLiteral = donorIdsList.map(id => `'${String(id).replace(/'/g, "''")}'`).join(',');
+        const { rows } = await sqlDb.execute(
+          `SELECT "id", "donorId" FROM donations
+           WHERE "donationType" != 'commitment'
+             AND "partnerIds"::jsonb ?| ARRAY[${idsLiteral}]::text[]`
+        );
+        // מסננים החוצה את אלה שבהן donorId הוא אחד מה-donors שלנו (תורם ראשי, לא שותף)
+        const partnerIds = rows
+          .filter((r: any) => !donorIdsList.includes(r.donorId))
+          .map((r: any) => r.id);
+        if (partnerIds.length === 0) return [];
+        return donationRepo.find({
+          where: { id: { $in: partnerIds } },
+          include: { donationMethod: true }
+        });
+      })(),
       // התחייבויות
       donationRepo.find({
         where: {
