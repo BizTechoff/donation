@@ -314,6 +314,17 @@ export class DonorMapController {
       where: { donorId: { $in: intersectedIds }, isActive: true },
       include: { place: true }
     });
+    console.log(`[DEBUG] donorPlaces loaded: ${donorPlaces.length}`);
+    if (donorPlaces.length > 0) {
+      const sample = donorPlaces[0];
+      console.log(`[DEBUG] Sample donorPlace:`, {
+        donorId: sample.donorId,
+        placeId: sample.placeId,
+        hasPlace: !!sample.place,
+        lat: sample.place?.latitude,
+        lng: sample.place?.longitude
+      });
+    }
     const locationMap = new Map<string, { lat: number; lng: number }>();
     donorPlaces.forEach(dp => {
       if (dp.donorId && dp.place?.latitude && dp.place?.longitude && !locationMap.has(dp.donorId)) {
@@ -325,6 +336,7 @@ export class DonorMapController {
         }
       }
     });
+    console.log(`[DEBUG] locationMap size: ${locationMap.size}`);
     const donorIdsWithLocation = Array.from(locationMap.keys());
     if (donorIdsWithLocation.length === 0) {
       console.timeEnd('Load marker data');
