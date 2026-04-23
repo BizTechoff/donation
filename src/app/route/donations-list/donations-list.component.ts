@@ -3,7 +3,8 @@ import { ActivatedRoute } from '@angular/router';
 import { remult } from 'remult';
 import { Subscription } from 'rxjs';
 import { DonationController, DonationFilters } from '../../../shared/controllers/donation.controller';
-import { Campaign, Donation, DonationMethod, Donor, DonorPlace, User } from '../../../shared/entity';
+import { CampaignController } from '../../../shared/controllers/campaign.controller';
+import { Campaign, Donation, DonationMethod, DonorPlace, User } from '../../../shared/entity';
 import { ContactPerson } from '../../../shared/entity/contact-person';
 import { BusyService } from '../../common-ui-elements/src/angular/wait/busy-service';
 import { UIToolsService } from '../../common/UIToolsService';
@@ -25,13 +26,11 @@ import { FileUploadService } from '../../services/file-upload.service';
 export class DonationsListComponent implements OnInit, OnDestroy {
 
   donations: Donation[] = [];
-  donors: Donor[] = [];
   campaigns: Campaign[] = [];
   donationMethods: DonationMethod[] = [];
   donorPlacesMap = new Map<string, DonorPlace>();
 
   donationRepo = remult.repo(Donation);
-  donorRepo = remult.repo(Donor);
   campaignRepo = remult.repo(Campaign);
   donationMethodRepo = remult.repo(DonationMethod);
   donorPlaceRepo = remult.repo(DonorPlace);
@@ -187,9 +186,8 @@ export class DonationsListComponent implements OnInit, OnDestroy {
       })
     );
 
-    // Load reference data (donors, campaigns, methods)
+    // Load reference data (campaigns, methods)
     await Promise.all([
-      this.loadDonors(),
       this.loadCampaigns(),
       this.loadDonationMethods()
     ]);
@@ -236,18 +234,10 @@ export class DonationsListComponent implements OnInit, OnDestroy {
     }, 300); // 300ms debounce
   }
 
-  async loadDonors() {
-    this.donors = await this.donorRepo.find({
-      where: { isActive: true },
-      orderBy: { lastName: 'asc' }
-    });
-  }
-
   async loadCampaigns() {
     // Load all campaigns (not just active) so users can filter by past campaigns too
-    this.campaigns = await this.campaignRepo.find({
-      orderBy: { name: 'asc' }
-    });
+    const data = await CampaignController.getCampaignsForSelection();
+    this.campaigns = data.campaigns;
   }
 
   async loadDonationMethods() {
@@ -446,12 +436,6 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   }
 
   // Helper functions for preview
-  getSelectedDonorName(): string {
-    if (!this.editingDonation?.donorId) return '';
-    const donor = this.donors.find(d => d.id === this.editingDonation!.donorId);
-    return donor?.fullName || '';
-  }
-
   getSelectedMethodName(): string {
     if (!this.editingDonation?.donationMethodId) return '-';
     const method = this.donationMethods.find(m => m.id === this.editingDonation!.donationMethodId);
@@ -593,14 +577,6 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   get donationsWithCampaign(): Donation[] {
     return this.donations.filter(donation => donation.campaignId);
   }
-
-  // רשימת תורמים מסוננת לפי פילטר גלובלי
-  // Note: Global filtering is now handled in the backend via user.settings
-  get filteredDonors(): Donor[] {
-    return this.donors;
-  }
-
-  // מטפל בשינוי בשדה חיפוש תורם
 
   // Pagination methods
   async goToPage(page: number) {
