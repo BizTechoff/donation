@@ -8,6 +8,7 @@
     "ng": "ng",
     "start": "tsx src/server/",
     "seed-infrastructure": "tsx -r dotenv/config src/server/seed-infrastructure.ts",
+    "seed-multiplier": "tsx -r dotenv/config src/server/seed-multiplier.ts",
     "seed-data": "tsx -r dotenv/config src/server/seed-data.ts",
     "seed-fine-tuning": "tsx -r dotenv/config src/server/seed-fine-tuning.ts",
     "convert-excel": "tsx src/server/convert-excel-to-seed.ts",
