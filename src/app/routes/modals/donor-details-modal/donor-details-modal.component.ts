@@ -2,13 +2,12 @@ import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
 import { BusyService, DialogConfig, openDialog } from 'common-ui-elements';
 import { remult } from 'remult';
-import { DonorController } from '../../../../shared/controllers/donor.controller';
+import { DonorController, DonorDetailsData } from '../../../../shared/controllers/donor.controller';
 import { Circle, Company, Country, Donation, Donor, DonorAddressType, DonorContact, DonorEvent, DonorNote, DonorPlace, DonorReceptionHour, DonorRelation, Event, NoteType, Place, Reminder, User } from '../../../../shared/entity';
 import { ContactPerson } from '../../../../shared/entity/contact-person';
 import { AddressComponents } from '../../../common/osm-address-input/osm-address-input.component';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
-import { ActiveFilter, FilterOption, NavigationRecord } from '../../../shared/modal-navigation-header/modal-navigation-header.component';
 import { CircleDetailsModalComponent } from '../circle-details-modal/circle-details-modal.component';
 import { CircleSelectionModalComponent } from '../circle-selection-modal/circle-selection-modal.component';
 import { ContactPersonSelectionModalComponent } from '../contact-person-selection-modal/contact-person-selection-modal.component';
@@ -18,8 +17,7 @@ import { DonorAddressTypeSelectionModalComponent } from '../donor-address-type-s
 import { DonorDonationsModalArgs, DonorDonationsModalComponent } from '../donor-donations-modal/donor-donations-modal.component';
 import { FamilyRelationDetailsModalComponent } from '../family-relation-details-modal/family-relation-details-modal.component';
 import { NotesSelectionModalArgs, NotesSelectionModalComponent } from '../notes-selection-modal/notes-selection-modal.component';
-import { DonationController } from '../../../../shared/controllers/donation.controller';
-import { calculateEffectiveAmount, isPaymentBased } from '../../../../shared/utils/donation-utils';
+import { calculateEffectiveAmount } from '../../../../shared/utils/donation-utils';
 
 export interface DonorDetailsModalArgs {
   donorId: string; // Can be 'new' for new donor or donor ID
@@ -110,9 +108,6 @@ export class DonorDetailsModalComponent implements OnInit {
   customPersonalDates: { name: string; date: Date | null }[] = [];
 
   // Navigation header properties
-  allDonors: NavigationRecord[] = [];
-  filterOptions: FilterOption[] = [];
-  currentDonorRecord?: NavigationRecord;
 
   constructor(
     public i18n: I18nService,
@@ -138,13 +133,6 @@ export class DonorDetailsModalComponent implements OnInit {
       this.companies = data.companies;
       this.circles = data.circles;
       this.noteTypes = data.noteTypes;
-
-      // Convert allDonors to NavigationRecords
-      this.allDonors = data.allDonors.map(d => ({
-        id: d.id,
-        fullName: d.fullName || '',
-        isActive: d.isActive
-      }));
 
       // Build phone prefix options from countries
       this.phonePrefixOptions = this.countries.map(c => ({
@@ -198,28 +186,11 @@ export class DonorDetailsModalComponent implements OnInit {
         // Create default places
         // this.createDefaultPlaces();
       } else {
-        // Existing donor
-        this.donor = data.donor || undefined;
-        this.donorEvents = data.donorEvents;
-        this.donorNotes = data.donorNotes;
-        this.donorPlaces = data.donorPlaces;
-        this.donorReceptionHours = data.donorReceptionHours;
-        this.donorContacts = data.donorContacts;
-        this.donorRelations = data.donorRelations;
-
-        // Build selectedFamilyRelationships from donorRelations
-        this.buildSelectedFamilyRelationships();
-
-        // Populate selected companies and circles from donor's IDs
-        await this.loadSelectedCompanies();
-        await this.loadSelectedCircles();
+        await this.applyDonorDetailsData(data);
       }
 
       // Store original data for change detection
       this.originalDonorData = JSON.stringify(this.donor);
-
-      // Setup filters
-      this.setupFilterOptions();
     });
 
     // Prevent accidental close for new donor
@@ -228,92 +199,37 @@ export class DonorDetailsModalComponent implements OnInit {
     }
   }
 
-  private async loadAvailableEvents() {
-    try {
-      this.availableEvents = await this.eventRepo.find({
-        where: { isActive: true },
-        orderBy: { sortOrder: 'asc', description: 'asc' }
-      });
-    } catch (error) {
-      console.error('Error loading events:', error);
-    }
-  }
+  private async applyDonorDetailsData(data: DonorDetailsData) {
+    this.availableEvents = data.events;
+    this.countries = data.countries;
+    this.fundraisers = data.fundraisers;
+    this.contactPersons = data.contactPersons;
+    this.allDonorsForFamily = data.allDonorsForFamily;
+    this.companies = data.companies;
+    this.circles = data.circles;
+    this.noteTypes = data.noteTypes;
+    this.phonePrefixOptions = this.countries.map(c => ({
+      value: c.phonePrefix,
+      label: `${c.phonePrefix}`
+    }));
 
-  private async loadNoteTypes() {
-    try {
-      this.noteTypes = await this.noteTypeRepo.find({
-        where: { isActive: true },
-        orderBy: { sortOrder: 'asc', name: 'asc' }
-      });
-      console.log(`Loaded ${this.noteTypes.length} note types from database`);
-    } catch (error) {
-      console.error('Error loading note types:', error);
-    }
-  }
+    this.isNewDonor = false;
+    this.donor = data.donor || undefined;
+    this.donorEvents = data.donorEvents;
+    this.donorNotes = data.donorNotes;
+    this.donorPlaces = data.donorPlaces;
+    this.donorReceptionHours = data.donorReceptionHours;
+    this.donorContacts = data.donorContacts;
+    this.donorRelations = data.donorRelations;
+    this.selectedCompanies = [];
+    this.selectedCircles = [];
 
-  private async loadCountries() {
-    try {
-      this.countries = await this.countryRepo.find({
-        where: { isActive: true },
-        orderBy: { name: 'asc' }
-      });
-      console.log(`Loaded ${this.countries.length} countries from database`);
+    this.buildSelectedFamilyRelationships();
+    await this.loadSelectedCompanies();
+    await this.loadSelectedCircles();
 
-      // Build phone prefix options after loading countries
-      this.buildPhonePrefixOptions();
-    } catch (error) {
-      console.error('Error loading countries:', error);
-    }
-  }
-
-  private buildPhonePrefixOptions() {
-    if (this.countries.length === 0) {
-      this.phonePrefixOptions = [];
-      return;
-    }
-
-    // Create a unique list of phone prefixes from countries
-    const prefixMap = new Map<string, { name: string; nameEn: string }>();
-
-    this.countries.forEach(country => {
-      if (country.phonePrefix && country.phonePrefix.trim() !== '') {
-        if (!prefixMap.has(country.phonePrefix)) {
-          prefixMap.set(country.phonePrefix, {
-            name: country.name,
-            nameEn: country.nameEn || ''
-          });
-        }
-      }
-    });
-
-    // Convert to array and sort by phone prefix
-    this.phonePrefixOptions = Array.from(prefixMap.entries())
-      .sort((a, b) => {
-        // Sort by numeric value if possible
-        const aNum = parseInt(a[0].replace(/[^0-9]/g, ''));
-        const bNum = parseInt(b[0].replace(/[^0-9]/g, ''));
-        if (!isNaN(aNum) && !isNaN(bNum)) {
-          return aNum - bNum;
-        }
-        return a[0].localeCompare(b[0]);
-      })
-      .map(([prefix, country]) => ({
-        value: prefix,
-        label: `${prefix} (${country.name}${country.nameEn ? ' / ' + country.nameEn : ''})`
-      }));
-
-    console.log(`Built ${this.phonePrefixOptions.length} phone prefix options`);
-  }
-
-  private async loadFundraisers() {
-    try {
-      this.fundraisers = await this.userRepo.find({
-        where: { disabled: false, donator: true },
-        orderBy: { name: 'asc' }
-      });
-    } catch (error) {
-      console.error('Error loading fundraisers:', error);
-    }
+    this.originalDonorData = JSON.stringify(this.donor);
+    this.changed = false;
   }
 
   // Contact Person methods
@@ -352,12 +268,6 @@ export class DonorDetailsModalComponent implements OnInit {
     }
   }
 
-  private async setDefaultCountry() {
-    if (!this.donor) return;
-
-    // Country is now managed through DonorPlace, not directly on Donor
-    console.log('Country will be set when adding a DonorPlace');
-  }
 
   private async createDefaultBirthDateEvent() {
     // Find the "יום הולדת" event
@@ -431,227 +341,6 @@ export class DonorDetailsModalComponent implements OnInit {
     }
 
     console.log('Created default place for new donor');
-  }
-
-  private async initializeDonor() {
-    if (!this.args?.donorId) return;
-
-    try {
-      if (this.args.donorId === 'new') {
-        console.log('Loading NEW donor');
-        this.isNewDonor = true;
-        this.donor = this.donorRepo.create();
-        this.donor.isActive = true;
-        this.donor.wantsUpdates = true;
-        this.donor.companyIds = [];
-        this.donor.circleIds = [];
-        this.donor.wantsTaxReceipts = true;
-        this.donor.preferredLanguage = 'he';
-        // Country will be set via homePlace
-
-        // Set default Israel country if available
-        await this.setDefaultCountry();
-
-        // If initial place is provided, create DonorPlace with the saved Place
-        if (this.args.initialPlace) {
-          const homeDonorPlace = new DonorPlace();
-          homeDonorPlace.donorId = '';
-          homeDonorPlace.placeId = this.args.initialPlace.id;
-          homeDonorPlace.place = this.args.initialPlace; // Set both ID and relation
-          homeDonorPlace.addressTypeId = undefined;
-          homeDonorPlace.isPrimary = true;
-          homeDonorPlace.isActive = true;
-          homeDonorPlace.description = 'בית';
-          this.donorPlaces.push(homeDonorPlace);
-          console.log('Set initial place for new donor:', this.args.initialPlace.fullAddress);
-        }
-
-        // Create default birth date event for new donor
-        // await this.createDefaultBirthDateEvent();
-
-        // Create default empty phone and email contacts for new donor
-        // this.createDefaultContacts();
-
-        // Create default places for new donor
-        // this.createDefaultPlaces();
-
-        this.originalDonorData = JSON.stringify(this.donor);
-      } else {
-        this.isNewDonor = false;
-        console.log('Loading existing donor with ID:', this.args.donorId);
-        this.donor = await this.donorRepo.findId(this.args.donorId, {
-          useCache: false
-        }) || undefined;
-
-        if (this.donor) {
-          console.log('Donor loaded:', {
-            id: this.donor.id,
-            name: this.donor.fullName
-          });
-
-          this.originalDonorData = JSON.stringify(this.donor);
-
-          console.log('Starting to load related data...');
-          await this.loadDonations();
-          await this.loadDonorEvents();
-          await this.loadDonorContacts();
-          await this.loadDynamicDonorPlaces();
-          await this.loadDonorNotes();
-          await this.loadDonorReceptionHours();
-          await this.loadDonorPlaces();
-          await this.loadAllDonorsForFamily();
-          await this.loadSelectedFamilyRelationships();
-          await this.loadCompanies();
-          await this.loadSelectedCompanies();
-          await this.loadCircles();
-          await this.loadSelectedCircles();
-
-          // Force change detection after loading places
-          console.log('Forcing change detection...');
-          this.changeDetector.detectChanges();
-          console.log('All loading completed');
-        } else {
-          console.error('Failed to load donor with ID:', this.args.donorId);
-        }
-      }
-
-    } catch (error) {
-      console.error('Error initializing donor:', error);
-    }
-  }
-
-  private async loadDonorEvents() {
-    if (!this.donor?.id) return;
-
-    try {
-      this.donorEvents = await this.donorEventRepo.find({
-        where: { donorId: this.donor.id, isActive: true }
-      });
-
-      // Manually load the event details for each donor event
-      for (const donorEvent of this.donorEvents) {
-        if (donorEvent.eventId) {
-          const foundEvent = await this.eventRepo.findId(donorEvent.eventId);
-          donorEvent.event = foundEvent || undefined;
-        }
-      }
-    } catch (error) {
-      console.error('Error loading donor events:', error);
-    }
-  }
-
-  private async loadDonorContacts() {
-    if (!this.donor?.id) return;
-
-    try {
-      this.donorContacts = await this.donorContactRepo.find({
-        where: { donorId: this.donor.id, isActive: true }
-      });
-    } catch (error) {
-      console.error('Error loading donor contacts:', error);
-    }
-  }
-
-  private async loadDynamicDonorPlaces() {
-    if (!this.donor?.id) return;
-
-    try {
-      this.donorPlaces = await this.donorPlaceRepo.find({
-        where: { donorId: this.donor.id, isActive: true },
-        include: {
-          place: { include: { country: true } },
-          addressType: true
-        }
-      });
-      console.log(`Loaded ${this.donorPlaces.length} donor places`);
-    } catch (error) {
-      console.error('Error loading donor places:', error);
-    }
-  }
-
-  private async loadDonorNotes() {
-    if (!this.donor?.id) return;
-
-    try {
-      this.donorNotes = await this.donorNoteRepo.find({
-        where: { donorId: this.donor.id, isActive: true }
-      });
-      console.log(`Loaded ${this.donorNotes.length} donor notes`);
-    } catch (error) {
-      console.error('Error loading donor notes:', error);
-    }
-  }
-
-  private async loadDonorReceptionHours() {
-    if (!this.donor?.id) return;
-
-    try {
-      this.donorReceptionHours = await this.donorReceptionHourRepo.find({
-        where: { donorId: this.donor.id, isActive: true },
-        orderBy: { sortOrder: 'asc' }
-      });
-      console.log(`Loaded ${this.donorReceptionHours.length} donor reception hours`);
-    } catch (error) {
-      console.error('Error loading donor reception hours:', error);
-    }
-  }
-
-  private async loadDonorPlaces() {
-    if (!this.donor) return;
-
-    console.log('loadDonorPlaces - Loading DonorPlace entities for donor:', this.donor.id);
-
-    try {
-      // Load all DonorPlace records for this donor
-      // Don't include relations to avoid save issues with null relations
-      const loadedPlaces = await this.donorPlaceRepo.find({
-        where: {
-          donorId: this.donor.id,
-          isActive: true
-        },
-        include: {
-          place: { include: { country: true } },
-          addressType: true
-        },
-        orderBy: { isPrimary: 'desc' }
-      });
-
-      // Clear relation objects that might be null before storing
-      // Keep only IDs to prevent Remult save errors
-      this.donorPlaces = loadedPlaces.map(dp => {
-        const cleanPlace = Object.assign(new DonorPlace(), dp);
-        // Clear relation objects but keep IDs
-        if (cleanPlace.addressType === null) {
-          cleanPlace.addressTypeId = undefined;
-        }
-        // Don't clear place/donor relations as we need them for display
-        return cleanPlace;
-      });
-
-      console.log(`Loaded ${this.donorPlaces.length} donor places`);
-    } catch (error) {
-      console.error('Error loading donor places:', error);
-    }
-  }
-
-  async loadDonations() {
-    if (!this.donor || !this.donor.id) return;
-
-    try {
-      this.donations = await this.donationRepo.find({
-        where: { donorId: this.donor.id },
-        orderBy: { donationDate: 'desc' },
-        include: { donationMethod: true }
-      });
-
-      // Load payment totals for commitment and standing order donations
-      const paymentBasedIds = this.donations.filter(d => isPaymentBased(d)).map(d => d.id).filter(Boolean);
-      this.paymentTotals = paymentBasedIds.length > 0
-        ? await DonationController.getPaymentTotalsForCommitments(paymentBasedIds)
-        : {};
-    } catch (error) {
-      console.error('Error loading donations:', error);
-    }
   }
 
   private hasChanges(): boolean {
@@ -1513,154 +1202,6 @@ export class DonorDetailsModalComponent implements OnInit {
     }
   }
 
-  // Navigation Header Methods
-  private async loadAllDonors() {
-    try {
-      const donors = await this.donorRepo.find({
-        where: { isActive: true },
-        orderBy: { lastName: 'asc', firstName: 'asc' }
-      });
-
-      this.allDonors = donors.map(donor => ({
-        ...donor,
-        id: donor.id,
-        fullName: donor.fullName || `${donor.firstName} ${donor.lastName}`
-      }));
-
-      // Set current donor record
-      if (this.donor && this.donor.id) {
-        this.currentDonorRecord = this.allDonors.find(d => d.id === this.donor!.id);
-      }
-    } catch (error) {
-      console.error('Error loading all donors:', error);
-    }
-  }
-
-  private setupFilterOptions() {
-    this.filterOptions = [
-      {
-        key: 'isAnash',
-        label: 'אנ"ש',
-        type: 'boolean'
-      },
-      {
-        key: 'isAlumni',
-        label: 'תלמידנו',
-        type: 'boolean'
-      },
-      {
-        key: 'isOtherConnection',
-        label: 'קשר אחר',
-        type: 'boolean'
-      },
-      {
-        key: 'level',
-        label: 'רמת תורם',
-        type: 'select',
-        options: [
-          { value: 'platinum', label: 'פלטינום' },
-          { value: 'gold', label: 'זהב' },
-          { value: 'silver', label: 'כסף' },
-          { value: 'regular', label: 'רגיל' }
-        ]
-      },
-      {
-        key: 'preferredLanguage',
-        label: 'שפה מועדפת',
-        type: 'select',
-        options: [
-          { value: 'he', label: 'עברית' },
-          { value: 'en', label: 'English' },
-          { value: 'yi', label: 'יידיש' }
-        ]
-      },
-      {
-        key: 'age',
-        label: 'גיל',
-        type: 'range',
-        min: 0,
-        max: 120
-      },
-      {
-        key: 'totalDonationAmount',
-        label: 'סכום תרומות',
-        type: 'amount'
-      },
-      {
-        key: 'city',
-        label: 'עיר',
-        type: 'select',
-        options: [] // Will be populated dynamically
-      },
-      {
-        key: 'country',
-        label: 'מדינה',
-        type: 'select',
-        options: [] // Will be populated dynamically
-      }
-    ];
-
-    // Populate dynamic options
-    this.populateDynamicFilterOptions();
-  }
-
-  private populateDynamicFilterOptions() {
-    // Get unique cities
-    const cities = new Set<string>();
-    const countries = new Set<string>();
-
-    this.allDonors.forEach(donor => {
-      if (donor['city']) cities.add(donor['city']);
-      if (donor['country']) countries.add(donor['country']);
-    });
-
-    // Update city filter options
-    const cityFilter = this.filterOptions.find(f => f.key === 'city');
-    if (cityFilter) {
-      cityFilter.options = Array.from(cities).sort().map(city => ({
-        value: city,
-        label: city
-      }));
-    }
-
-    // Update country filter options
-    const countryFilter = this.filterOptions.find(f => f.key === 'country');
-    if (countryFilter) {
-      countryFilter.options = Array.from(countries).sort().map(country => ({
-        value: country,
-        label: country
-      }));
-    }
-  }
-
-  onRecordSelected(record: NavigationRecord) {
-    if (record.id !== this.donor?.id) {
-      this.args.donorId = record.id;
-      this.initializeDonor();
-    }
-  }
-
-  onSearchChanged(searchTerm: string) {
-    // Search is handled by the navigation header component
-    console.log('Search term changed:', searchTerm);
-  }
-
-
-  onFiltersChanged(filters: ActiveFilter[]) {
-    // Filters are applied by the navigation header component
-    console.log('Filters changed:', filters);
-  }
-
-  onNavigateNext() {
-    // Navigation is handled by the navigation header component
-    console.log('Navigate to next donor');
-  }
-
-  onNavigatePrevious() {
-    // Navigation is handled by the navigation header component
-    console.log('Navigate to previous donor');
-  }
-
   // Convert Place to AddressComponents for the address input component
   getHomeAddressComponents(): AddressComponents | undefined {
     console.log('getHomeAddressComponents called - looking in donorPlaces');
@@ -2252,77 +1793,6 @@ export class DonorDetailsModalComponent implements OnInit {
   }
 
   // Family Relationships Functions
-  private async loadAllDonorsForFamily() {
-    try {
-      this.allDonorsForFamily = await this.donorRepo.find({
-        where: { isActive: true },
-        orderBy: { firstName: 'asc' }
-      });
-      console.log(`Loaded ${this.allDonorsForFamily.length} donors for family relationships`);
-    } catch (error) {
-      console.error('Error loading donors for family:', error);
-    }
-  }
-
-  async loadSelectedFamilyRelationships() {
-    if (!this.donor?.id) {
-      this.selectedFamilyRelationships = [];
-      return;
-    }
-
-    try {
-      this.selectedFamilyRelationships = [];
-
-      // טען את כל הקשרים שבהם התורם הנוכחי מופיע או כ-donor1 או כ-donor2
-      const relations = await this.donorRelationRepo.find({
-        where: {
-          $or: [
-            { donor1Id: this.donor.id },
-            { donor2Id: this.donor.id }
-          ]
-        },
-        include: {
-          donor1: true,
-          donor2: true
-        }
-      });
-
-      for (const relation of relations) {
-        let donor: Donor | undefined;
-        let relationshipType: string = '';
-        let isReverse = false;
-
-        // אם התורם הנוכחי הוא donor1, אזי נשתמש ב-relationshipType1
-        if (relation.donor1Id === this.donor.id) {
-          donor = relation.donor2;
-          relationshipType = relation.relationshipType1;
-          isReverse = false;
-        }
-        // אם התורם הנוכחי הוא donor2, אזי נחשב דינמית את הקשר ההופכי
-        else if (relation.donor2Id === this.donor.id) {
-          donor = relation.donor1;
-          // חישוב דינמי של הקשר ההופכי לפי מגדר donor1
-          relationshipType = this.getReverseRelationshipType(relation.relationshipType1, relation.donor1?.gender || '');
-          isReverse = true;
-        }
-
-        if (donor && relationshipType) {
-          this.selectedFamilyRelationships.push({
-            donor: donor,
-            relationshipType: relationshipType,
-            donorId: donor.id,
-            relationId: relation.id,
-            isReverse: isReverse
-          });
-        }
-      }
-
-      console.log('Loaded selected family relationships:', this.selectedFamilyRelationships);
-    } catch (error) {
-      console.error('Error loading selected family relationships:', error);
-    }
-  }
-
   private buildSelectedFamilyRelationships() {
     if (!this.donor?.id) {
       this.selectedFamilyRelationships = [];

@@ -15,6 +15,7 @@ import { NoteType } from '../entity/note-type';
 import { Place } from '../entity/place';
 import { User } from '../entity/user';
 import { ContactPerson } from '../entity/contact-person';
+import { ExportLookups, LookupItem } from '../type/lookup.type';
 
 export interface DonorDetailsData {
   donor: Donor | null | undefined;
@@ -31,7 +32,6 @@ export interface DonorDetailsData {
   donorReceptionHours: DonorReceptionHour[];
   donorContacts: DonorContact[];
   donorRelations: DonorRelation[];
-  allDonors: Donor[];
   contactPersons: ContactPerson[];
 }
 
@@ -40,6 +40,59 @@ export interface DonorSelectionData {
   donorEmailMap: Record<string, string>;
   donorPhoneMap: Record<string, string>;
   donorPlaceMap: Record<string, Place>;
+}
+
+export interface DonorSelectionPageData extends DonorSelectionData {
+  totalCount: number;
+}
+
+export interface DonorSelectionFilters {
+  isAnash?: boolean;
+  excludeAnash?: boolean;
+  isAlumni?: boolean;
+  excludeAlumni?: boolean;
+  country?: string;
+  city?: string;
+  neighborhood?: string;
+  circleId?: string;
+  minAge?: number;
+  maxAge?: number;
+}
+
+export interface InvitedDonorRow {
+  id: string;
+  firstName: string;
+  lastName: string;
+  isAnash: boolean;
+  isAlumni: boolean;
+  level: string;
+  circleIds: string[];
+  fundraiserId?: string;
+  contactPersonId?: string;
+  phone: string;
+  email: string;
+  city: string;
+  neighborhood: string;
+  country: string;
+}
+
+export interface InvitedDonorsPageParams {
+  page: number;
+  pageSize: number;
+  showOnlyIds?: string[];
+  freeSearch?: string;
+  sortField?: string;
+  sortDirection?: 'asc' | 'desc';
+}
+
+export interface InvitedDonorsPageResult {
+  rows: InvitedDonorRow[];
+  totalCount: number;
+  filterOptions: {
+    countries: string[];
+    cities: string[];
+    neighborhoods: string[];
+  };
 }
 
 @Controller('donor')
@@ -59,7 +112,6 @@ export class DonorController {
       companies,
       circles,
       noteTypes,
-      allDonors,
       contactPersons
     ] = await Promise.all([
       remult.repo(Event).find({ where: { isActive: true }, orderBy: { sortOrder: 'asc', description: 'asc' } }),
@@ -77,9 +129,6 @@ export class DonorController {
       }),
       remult.repo(Circle).find({ orderBy: { name: 'asc' } }),
       remult.repo(NoteType).find({ where: { isActive: true }, orderBy: { sortOrder: 'asc', name: 'asc' } }),
-      remult.repo(Donor).find({
-        orderBy: { lastName: 'asc', firstName: 'asc' }
-      }),
       remult.repo(ContactPerson).find({
         orderBy: { name: 'asc' }
       })
@@ -141,9 +190,65 @@ export class DonorController {
       donorReceptionHours,
       donorContacts,
       donorRelations,
-      allDonors,
       contactPersons
     };
+  }
+
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async getExportLookups(): Promise<ExportLookups> {
+    const [fundraiserUsers, secretaryUsers, contactPersons] = await Promise.all([
+      remult.repo(User).find({ where: { donator: true, disabled: false }, orderBy: { name: 'asc' } }),
+      remult.repo(User).find({ where: { secretary: true, disabled: false }, orderBy: { name: 'asc' } }),
+      remult.repo(ContactPerson).find({ orderBy: { name: 'asc' } })
+    ]);
+    const toItem = (u: { id: string; name: string }): LookupItem => ({ id: u.id, name: u.name });
+    return {
+      fundraisers: fundraiserUsers.map(toItem),
+      secretaries: secretaryUsers.map(toItem),
+      contactPersons: contactPersons.map(toItem)
+    };
+  }
+
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async getDonorsForSelectionPage(params: {
+    search?: string;
+    page: number;
+    pageSize: number;
+    excludeIds?: string[];
+    sortColumns?: Array<{ field: string; direction: 'asc' | 'desc' }>;
+  }): Promise<DonorSelectionPageData> {
+    const { search, page, pageSize, excludeIds, sortColumns } = params;
+
+    const donors = await DonorController.findFilteredDonors(search, undefined, page, pageSize, sortColumns);
+    const totalCount = await DonorController.countFilteredDonors(search);
+
+    const filteredDonors = excludeIds?.length
+      ? donors.filter(d => !excludeIds.includes(d.id))
+      : donors;
+
+    const donorIds = filteredDonors.map(d => d.id);
+
+    const [donorContacts, primaryPlacesMap] = await Promise.all([
+      remult.repo(DonorContact).find({ where: { donorId: { $in: donorIds } } }),
+      DonorPlace.getPrimaryForDonors(donorIds)
+    ]);
+
+    const donorEmailMap: Record<string, string> = {};
+    const donorPhoneMap: Record<string, string> = {};
+    const donorPlaceMap: Record<string, Place> = {};
+
+    donorContacts.forEach(contact => {
+      if (contact.donorId) {
+        if (contact.email && !donorEmailMap[contact.donorId]) donorEmailMap[contact.donorId] = contact.email;
+        if (contact.phoneNumber && !donorPhoneMap[contact.donorId]) donorPhoneMap[contact.donorId] = contact.phoneNumber;
+      }
+    });
+
+    primaryPlacesMap.forEach((donorPlace, donorId) => {
+      if (donorPlace.place) donorPlaceMap[donorId] = donorPlace.place;
+    });
+
+    return { donors: filteredDonors, totalCount, donorEmailMap, donorPhoneMap, donorPlaceMap };
   }
 
   @BackendMethod({ allowed: Allow.authenticated })
@@ -162,11 +267,21 @@ export class DonorController {
   }
 
   /**
-   * Get only donor IDs without loading full donor objects - much faster for maps
+   * Get only donor IDs without loading full donor objects - much faster for maps.
+   * Returns filtered IDs directly from GlobalFilter — no Donor objects loaded when filter is active.
+   * When no global filter is set, queries only active donor IDs.
    */
   @BackendMethod({ allowed: Allow.authenticated })
   static async findFilteredIds(additionalFilters?: Partial<GlobalFilters>): Promise<string[]> {
-    const donors = await DonorController.findFilteredDonors(undefined, additionalFilters);
+    const { GlobalFilterController } = await import('./global-filter.controller');
+    const donorIds = await GlobalFilterController.getDonorIdsFromUserSettings();
+
+    if (donorIds !== undefined) {
+      return donorIds; // Already filtered — zero Donor objects loaded
+    }
+
+    // No global filter — return all active donor IDs
+    const donors = await remult.repo(Donor).find({ where: { isActive: true }, limit: 100000 });
     return donors.map(d => d.id);
   }
 
@@ -392,6 +507,187 @@ export class DonorController {
 
     console.log(`[CrossFieldSearch] final result: ${result.size} donors`);
     return [...result];
+  }
+
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async getInvitedDonorsPage(params: InvitedDonorsPageParams): Promise<InvitedDonorsPageResult> {
+    const { page, pageSize, showOnlyIds, freeSearch, sortField = 'firstName', sortDirection = 'asc' } = params;
+
+    let candidateIds = await DonorController.resolveGlobalCandidateIds();
+    if (candidateIds !== null && candidateIds.length === 0) {
+      return { rows: [], totalCount: 0, filterOptions: { countries: [], cities: [], neighborhoods: [] } };
+    }
+
+    if (showOnlyIds && showOnlyIds.length > 0) {
+      const showSet = new Set(showOnlyIds);
+      candidateIds = candidateIds ? candidateIds.filter(id => showSet.has(id)) : [...showSet];
+    }
+
+    if (freeSearch && freeSearch.trim()) {
+      const searchIds = await DonorController.searchDonorIdsAcrossAllFields(freeSearch, candidateIds ?? undefined);
+      candidateIds = searchIds;
+    }
+
+    const isFirstLoad = page === 1 && !showOnlyIds?.length && !freeSearch;
+
+    const orderBy: any = sortField === 'lastName'
+      ? { lastName: sortDirection, firstName: sortDirection }
+      : { firstName: sortDirection, lastName: sortDirection };
+
+    const pageWhere: any = { isActive: true };
+    if (candidateIds) pageWhere.id = { $in: candidateIds };
+
+    const [donors, totalCount] = await Promise.all([
+      remult.repo(Donor).find({ where: pageWhere, orderBy, page, limit: pageSize }),
+      candidateIds ? Promise.resolve(candidateIds.length) : remult.repo(Donor).count({ isActive: true })
+    ]);
+
+    const donorIds = donors.map(d => d.id);
+    const [donorContacts, primaryPlacesMap] = await Promise.all([
+      donorIds.length > 0
+        ? remult.repo(DonorContact).find({ where: { donorId: { $in: donorIds }, isActive: true } })
+        : Promise.resolve([]),
+      donorIds.length > 0
+        ? DonorPlace.getPrimaryForDonors(donorIds)
+        : Promise.resolve(new Map<string, DonorPlace>())
+    ]);
+
+    const rows = DonorController.buildInvitedRows(donors, donorContacts, primaryPlacesMap);
+    const filterOptions = isFirstLoad
+      ? await DonorController.loadInvitedFilterOptions()
+      : { countries: [], cities: [], neighborhoods: [] };
+
+    return { rows, totalCount, filterOptions };
+  }
+
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async getMatchingDonorIds(filters: DonorSelectionFilters): Promise<{ inclusiveIds: string[]; exclusiveIds: string[] }> {
+    let candidateIds = await DonorController.resolveGlobalCandidateIds();
+    if (candidateIds !== null && candidateIds.length === 0) {
+      return { inclusiveIds: [], exclusiveIds: [] };
+    }
+
+    const [inclusiveIds, exclusiveIds] = await Promise.all([
+      DonorController.resolveInclusiveIds(candidateIds, filters),
+      DonorController.resolveExclusiveIds(candidateIds, filters)
+    ]);
+
+    return { inclusiveIds, exclusiveIds };
+  }
+
+  private static async resolveGlobalCandidateIds(): Promise<string[] | null> {
+    const { GlobalFilterController } = await import('./global-filter.controller');
+    return (await GlobalFilterController.getDonorIdsFromUserSettings()) ?? null;
+  }
+
+  private static async resolveInclusiveIds(candidateIds: string[] | null, filters: DonorSelectionFilters): Promise<string[]> {
+    const hasInclusive = filters.isAnash || filters.isAlumni || filters.country || filters.city || filters.neighborhood || filters.circleId;
+    if (!hasInclusive) return [];
+
+    const where: any = { isActive: true };
+    if (candidateIds) where.id = { $in: candidateIds };
+    if (filters.isAnash) where.isAnash = true;
+    if (filters.isAlumni) where.isAlumni = true;
+
+    let donors = await remult.repo(Donor).find({ where, limit: 100000 });
+
+    if (filters.circleId) {
+      donors = donors.filter(d => d.circleIds?.includes(filters.circleId!));
+    }
+
+    let matchingIds = donors.map(d => d.id);
+
+    if (filters.country || filters.city || filters.neighborhood) {
+      matchingIds = await DonorController.filterDonorsByPlace(matchingIds, filters);
+    }
+
+    return matchingIds;
+  }
+
+  private static async resolveExclusiveIds(candidateIds: string[] | null, filters: DonorSelectionFilters): Promise<string[]> {
+    if (!filters.excludeAnash && !filters.excludeAlumni) return [];
+
+    const where: any = { isActive: true };
+    if (candidateIds) where.id = { $in: candidateIds };
+
+    if (filters.excludeAnash && filters.excludeAlumni) {
+      where.$or = [{ isAnash: true }, { isAlumni: true }];
+    } else if (filters.excludeAnash) {
+      where.isAnash = true;
+    } else {
+      where.isAlumni = true;
+    }
+
+    const donors = await remult.repo(Donor).find({ where, limit: 100000 });
+    return donors.map(d => d.id);
+  }
+
+  private static async filterDonorsByPlace(donorIds: string[], filters: DonorSelectionFilters): Promise<string[]> {
+    const placeWhere: any = {};
+    if (filters.city) placeWhere.city = filters.city;
+    if (filters.neighborhood) placeWhere.neighborhood = filters.neighborhood;
+
+    const places = await remult.repo(Place).find({ where: placeWhere, limit: 10000 });
+    const filteredPlaces = filters.country
+      ? places.filter(p => p.country?.name === filters.country)
+      : places;
+
+    const placeIds = filteredPlaces.map(p => p.id);
+    if (placeIds.length === 0) return [];
+
+    const donorIdSet = new Set(donorIds);
+    const donorPlaces = await remult.repo(DonorPlace).find({
+      where: { placeId: { $in: placeIds }, isActive: true },
+      include: { place: true, addressType: true },
+      limit: 100000
+    });
+
+    return [...new Set(
+      donorPlaces.map(dp => dp.donorId).filter((id): id is string => !!id && donorIdSet.has(id))
+    )];
+  }
+
+  private static async loadInvitedFilterOptions(): Promise<{ countries: string[]; cities: string[]; neighborhoods: string[] }> {
+    const places = await remult.repo(Place).find({ limit: 10000 });
+    const countries = [...new Set(places.map(p => p.country?.name).filter((n): n is string => !!n && n.trim() !== ''))].sort();
+    const cities = [...new Set(places.map(p => p.city).filter((c): c is string => !!c && c.trim() !== ''))].sort();
+    const neighborhoods = [...new Set(places.map(p => p.neighborhood).filter((n): n is string => !!n && n.trim() !== ''))].sort();
+    return { countries, cities, neighborhoods };
+  }
+
+  private static buildInvitedRows(
+    donors: Donor[],
+    contacts: DonorContact[],
+    primaryPlacesMap: Map<string, DonorPlace>
+  ): InvitedDonorRow[] {
+    const phoneMap = new Map<string, string>();
+    const emailMap = new Map<string, string>();
+    for (const c of contacts) {
+      if (c.donorId) {
+        if (c.phoneNumber && !phoneMap.has(c.donorId)) phoneMap.set(c.donorId, c.phoneNumber);
+        if (c.email && !emailMap.has(c.donorId)) emailMap.set(c.donorId, c.email);
+      }
+    }
+    return donors.map(d => {
+      const dp = primaryPlacesMap.get(d.id);
+      const place = dp?.place;
+      return {
+        id: d.id,
+        firstName: d.firstName || '',
+        lastName: d.lastName || '',
+        isAnash: d.isAnash || false,
+        isAlumni: d.isAlumni || false,
+        level: d.level || '',
+        circleIds: d.circleIds || [],
+        fundraiserId: d.fundraiserId || undefined,
+        contactPersonId: d.contactPersonId || undefined,
+        phone: phoneMap.get(d.id) || '',
+        email: emailMap.get(d.id) || '',
+        city: place?.city || '',
+        neighborhood: place?.neighborhood || '',
+        country: place?.country?.name || ''
+      };
+    });
   }
 
   /**
