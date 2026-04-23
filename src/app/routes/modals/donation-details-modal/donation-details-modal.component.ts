@@ -45,7 +45,6 @@ export class DonationDetailsModalComponent implements OnInit {
   originalDonationData?: string; // To track changes
   campaigns: Campaign[] = [];
   donationMethods: DonationMethod[] = [];
-  availablePartners: Donor[] = [];
   selectedPartners: Donor[] = [];
   organizations: Organization[] = [];
   banks: Bank[] = [];
@@ -178,7 +177,6 @@ export class DonationDetailsModalComponent implements OnInit {
         // Set all data from controller
         this.campaigns = data.campaigns;
         this.donationMethods = data.donationMethods;
-        this.availablePartners = data.availablePartners;
         this.organizations = data.organizations;
         this.banks = data.banks;
         this.payerCompanies = data.payerCompanies;
@@ -201,8 +199,18 @@ export class DonationDetailsModalComponent implements OnInit {
           this.donationMethods.push(transferMethod);
         }
 
-        // Load selected donor if donation has donorId
-        await this.loadSelectedDonor();
+        // Set selected donor — use already-included relation, fetch only for new donations with pre-selected donor
+        if (this.donation?.donorId) {
+          if (!this.selectedDonor && this.donation.donor) {
+            this.selectedDonor = this.donation.donor;
+          } else if (!this.selectedDonor) {
+            this.selectedDonor = await this.donorRepo.findId(this.donation.donorId) || undefined;
+          }
+          this.donorName = this.selectedDonor?.lastAndFirstName || '';
+          if (this.isNewDonation && this.selectedDonor) {
+            await this.updateCurrencyBasedOnCountry(this.selectedDonor);
+          }
+        }
 
         // Load selected campaign and payment method
         this.updateSelectedOptions();
@@ -212,16 +220,17 @@ export class DonationDetailsModalComponent implements OnInit {
           this.onCampaignChange();
         }
 
-        // Load selected partners if donation has partnerIds
-        await this.loadSelectedPartners();
+        // Partners pre-resolved on server — no HTTP needed
+        this.selectedPartners = data.partnerDonors || [];
 
         // Trigger change detection after loading banks and organizations
         if (!this.isNewDonation && this.donation?.id) {
           this.cdr.detectChanges();
         }
 
-        // Load selected organization and bank
-        await this.loadSelectedOrganizationAndBank();
+        // Org/bank pre-resolved on server — no HTTP needed
+        this.selectedOrganization = data.selectedOrganization ?? undefined;
+        this.selectedBank = data.selectedBank ?? undefined;
 
         // Update payer options
         this.updatePayerOptions();
@@ -422,25 +431,6 @@ export class DonationDetailsModalComponent implements OnInit {
 
 
 
-  async loadSelectedPartners() {
-    if (!this.donation?.partnerIds || this.donation.partnerIds.length === 0) {
-      this.selectedPartners = [];
-      return;
-    }
-
-    try {
-      this.selectedPartners = [];
-      for (const partnerId of this.donation.partnerIds) {
-        const partner = await this.donorRepo.findId(partnerId);
-        if (partner) {
-          this.selectedPartners.push(partner);
-        }
-      }
-    } catch (error) {
-      console.error('Error loading selected partners:', error);
-    }
-  }
-
   addPartner(partner: Donor) {
     if (!this.donation.partnerIds.includes(partner.id)) {
       this.donation.partnerIds.push(partner.id);
@@ -468,31 +458,8 @@ export class DonationDetailsModalComponent implements OnInit {
     return this.donation.partnerIds.includes(partner.id);
   }
 
-  getAvailablePartnersForSelection(): Donor[] {
-    if (!this.donation || !this.donation.partnerIds) {
-      return this.availablePartners;
-    }
-    return this.availablePartners.filter(partner =>
-      !this.donation.partnerIds.includes(partner.id)
-    );
-  }
-
   getPartnerDisplayName(partner: Donor): string {
     return partner.fullName || '';
-  }
-
-  onPartnerSelect(event: Event) {
-    const select = event.target as HTMLSelectElement;
-    const partnerId = select.value;
-
-    if (partnerId) {
-      const partner = this.availablePartners.find(p => p.id === partnerId);
-      if (partner) {
-        this.addPartner(partner);
-        // Reset the select to empty value
-        select.value = '';
-      }
-    }
   }
 
   async addNewPartner() {
