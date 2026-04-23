@@ -20,14 +20,14 @@ import { ContactPerson } from './contact-person'
   allowApiUpdate: Allow.authenticated,
   allowApiDelete: [Roles.admin],
   allowApiInsert: Allow.authenticated,
-  saving: async (donor) => {
-    if (isBackend()) {
-      if (donor._.isNew()) {
-        donor.createdDate = new Date()
-      }
-      donor.updatedDate = new Date()
-    }
-  },
+  // saving: async (donor) => {
+  //   if (isBackend()) {
+  //     if (donor._.isNew()) {
+  //       donor.createdDate = new Date()
+  //     }
+  //     donor.updatedDate = new Date()
+  //   }
+  // },
   deleting: async (donor, cycle) => {
     if (isBackend()) {
       const donationsCount = await remult.repo(Donation).count({ donor: donor })

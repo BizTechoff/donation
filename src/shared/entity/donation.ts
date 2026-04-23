@@ -24,26 +24,26 @@ import { calculateEffectiveAmount, calculatePaymentTotals, isPaymentBased } from
   allowApiDelete: [Roles.admin],
   allowApiInsert: Allow.authenticated,
   defaultOrderBy: { donationDate: 'desc', createdDate: 'desc' },
-  saving: async (donation) => {
-    if (isBackend()) {
-      if (donation._.isNew()) {
-        donation.createdDate = new Date()
-      }
-      donation.updatedDate = new Date()
-    }
-  },
-  saved: async (donation, event) => {
-    if (isBackend()) {
-      const { remult } = await import('remult')
+  // saving: async (donation) => {
+  //   if (isBackend()) {
+  //     if (donation._.isNew()) {
+  //       donation.createdDate = new Date()
+  //     }
+  //     donation.updatedDate = new Date()
+  //   }
+  // },
+  // saved: async (donation, event) => {
+  //   if (isBackend()) {
+  //     const { remult } = await import('remult')
 
-      // עדכון ממוצע תרומות של התורם
-      if (donation.donorId) {
-        await updateDonorAverage(donation.donorId, remult)
-      }
+  //     // עדכון ממוצע תרומות של התורם
+  //     if (donation.donorId) {
+  //       await updateDonorAverage(donation.donorId, remult)
+  //     }
 
-      // Note: Campaign raised amount is now calculated on demand, no need to update cached value
-    }
-  },
+  //     // Note: Campaign raised amount is now calculated on demand, no need to update cached value
+  //   }
+  // },
   deleted: async (donation) => {
     if (isBackend()) {
       const { remult } = await import('remult')
