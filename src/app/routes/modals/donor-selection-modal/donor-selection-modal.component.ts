@@ -1,4 +1,6 @@
-import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewChild, ElementRef } from '@angular/core';
+import { Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { MatDialogRef } from '@angular/material/dialog';
 import { BusyService, DialogConfig, openDialog } from 'common-ui-elements';
 import { Donor, Place } from '../../../../shared/entity';
@@ -24,7 +26,7 @@ export interface DonorSelectionModalArgs {
   templateUrl: './donor-selection-modal.component.html',
   styleUrls: ['./donor-selection-modal.component.scss']
 })
-export class DonorSelectionModalComponent implements OnInit {
+export class DonorSelectionModalComponent implements OnInit, OnDestroy {
   @ViewChild('searchInput') searchInput!: ElementRef<HTMLInputElement>;
 
   args!: DonorSelectionModalArgs;
@@ -32,12 +34,10 @@ export class DonorSelectionModalComponent implements OnInit {
   selectedDonors: Donor[] = []; // For multi-select mode
   selectedDonorIds: Set<string> = new Set(); // Track selected donor IDs
 
-  // Donors system
-  availableDonors: Donor[] = [];
-  filteredDonors: Donor[] = [];
+  filteredDonors: Donor[] = []; // Current page from server
   donorRepo = remult.repo(Donor);
 
-  // Maps for donor-related data
+  // Maps for donor-related data (populated per page)
   donorEmailMap = new Map<string, string>();
   donorPhoneMap = new Map<string, string>();
   donorPlaceMap = new Map<string, Place>();
@@ -55,6 +55,8 @@ export class DonorSelectionModalComponent implements OnInit {
   // Sorting
   sortColumns: Array<{ field: string; direction: 'asc' | 'desc' }> = [];
 
+  private searchSubject = new Subject<string>();
+
   constructor(
     public i18n: I18nService,
     public dialogRef: MatDialogRef<any>,
@@ -62,8 +64,26 @@ export class DonorSelectionModalComponent implements OnInit {
   ) {}
 
   async ngOnInit() {
-    await this.loadDonors();
+    this.searchSubject.pipe(debounceTime(300), distinctUntilChanged()).subscribe(() => {
+      this.currentPage = 1;
+      this.loadPage();
+    });
+
+    // Pre-resolve selected donors for multi-select mode
+    if (this.args?.multiSelect && this.args?.selectedIds?.length) {
+      this.selectedDonorIds = new Set(this.args.selectedIds);
+      const resolved = await Promise.all(
+        this.args.selectedIds.map(id => this.donorRepo.findId(id))
+      );
+      this.selectedDonors = resolved.filter((d): d is Donor => d !== null && d !== undefined);
+    }
+
+    await this.loadPage();
     this.setFocusOnSearch();
+  }
+
+  ngOnDestroy() {
+    this.searchSubject.complete();
   }
 
   private setFocusOnSearch() {
@@ -72,105 +92,44 @@ export class DonorSelectionModalComponent implements OnInit {
     }, 100);
   }
 
-  async loadDonors() {
+  async loadPage() {
     await this.busy.doWhileShowingBusy(async () => {
       try {
-        // Get global filters
-        // Call server-side method to get all data in one request
-        // Global filters are fetched from user.settings in the backend
-        const data = await DonorController.getDonorsForSelection(this.args?.excludeIds);
+        const data = await DonorController.getDonorsForSelectionPage({
+          search: this.filterText.trim() || undefined,
+          page: this.currentPage,
+          pageSize: this.pageSize,
+          excludeIds: this.args?.excludeIds,
+          sortColumns: this.sortColumns
+        });
 
-        // Set donors
-        this.availableDonors = data.donors;
+        this.filteredDonors = data.donors;
+        this.totalCount = data.totalCount;
+        this.totalPages = Math.ceil(this.totalCount / this.pageSize);
 
-        // Convert Record to Map for easier lookup
         this.donorEmailMap = new Map(Object.entries(data.donorEmailMap));
         this.donorPhoneMap = new Map(Object.entries(data.donorPhoneMap));
         this.donorPlaceMap = new Map(Object.entries(data.donorPlaceMap));
-
-        // Pre-select donors if selectedIds provided (in multi-select mode)
-        if (this.args?.multiSelect && this.args?.selectedIds && this.args.selectedIds.length > 0) {
-          this.selectedDonorIds = new Set(this.args.selectedIds);
-          this.selectedDonors = this.availableDonors.filter(donor =>
-            this.selectedDonorIds.has(donor.id)
-          );
-        }
-
-        // Apply filters and sorting
-        this.applyFilters();
-
       } catch (error) {
         console.error('Error loading donors:', error);
       }
     });
   }
 
-  // Apply filters to donors
+  // Keep loadDonors as alias for backward compatibility (called in createNewDonor flow)
+  async loadDonors() {
+    this.currentPage = 1;
+    await this.loadPage();
+  }
+
+  // Trigger debounced server search
   applyFilters() {
-    let filtered = [...this.availableDonors];
-
-    // Apply text filter
-    if (this.filterText.trim()) {
-      const term = this.filterText.toLowerCase();
-      filtered = filtered.filter(donor =>
-        donor.lastAndFirstName?.toLowerCase().includes(term) ||
-        this.getDonorPhone(donor.id)?.toLowerCase().includes(term) ||
-        this.getDonorEmail(donor.id)?.toLowerCase().includes(term)
-      );
-    }
-
-    this.filteredDonors = filtered;
-    this.totalCount = this.filteredDonors.length;
-    this.totalPages = Math.ceil(this.totalCount / this.pageSize);
-
-    // Reset to first page when filters change
-    if (this.currentPage > this.totalPages && this.totalPages > 0) {
-      this.currentPage = 1;
-    }
-
-    // Apply sorting
-    this.applySorting();
+    this.searchSubject.next(this.filterText);
   }
 
-  // Apply sorting to filtered donors
-  applySorting() {
-    if (this.sortColumns.length === 0) {
-      return;
-    }
-
-    this.filteredDonors.sort((a, b) => {
-      for (const sort of this.sortColumns) {
-        let aValue: any;
-        let bValue: any;
-
-        switch (sort.field) {
-          case 'fullName':
-            aValue = a.fullName?.toLowerCase() || '';
-            bValue = b.fullName?.toLowerCase() || '';
-            break;
-          case 'phone':
-            aValue = this.getDonorPhone(a.id)?.toLowerCase() || '';
-            bValue = this.getDonorPhone(b.id)?.toLowerCase() || '';
-            break;
-          case 'email':
-            aValue = this.getDonorEmail(a.id)?.toLowerCase() || '';
-            bValue = this.getDonorEmail(b.id)?.toLowerCase() || '';
-            break;
-          default:
-            continue;
-        }
-
-        if (aValue < bValue) return sort.direction === 'asc' ? -1 : 1;
-        if (aValue > bValue) return sort.direction === 'asc' ? 1 : -1;
-      }
-      return 0;
-    });
-  }
-
-  // Toggle sort on column
+  // Toggle sort — triggers server reload
   toggleSort(field: string, event: MouseEvent) {
     if (event.ctrlKey || event.metaKey) {
-      // CTRL/CMD pressed - multi-column sort
       const existingIndex = this.sortColumns.findIndex(s => s.field === field);
       if (existingIndex >= 0) {
         const current = this.sortColumns[existingIndex];
@@ -183,7 +142,6 @@ export class DonorSelectionModalComponent implements OnInit {
         this.sortColumns.push({ field, direction: 'asc' });
       }
     } else {
-      // Single column sort
       const existing = this.sortColumns.find(s => s.field === field);
       if (existing && this.sortColumns.length === 1) {
         existing.direction = existing.direction === 'asc' ? 'desc' : 'asc';
@@ -192,7 +150,8 @@ export class DonorSelectionModalComponent implements OnInit {
       }
     }
 
-    this.applySorting();
+    this.currentPage = 1;
+    this.loadPage();
   }
 
   isSorted(field: string): boolean {
@@ -212,38 +171,41 @@ export class DonorSelectionModalComponent implements OnInit {
     return arrow;
   }
 
-  // Get paginated donors
+  // Server already paginates — return current page directly
   get paginatedDonors(): Donor[] {
-    const startIndex = (this.currentPage - 1) * this.pageSize;
-    const endIndex = startIndex + this.pageSize;
-    return this.filteredDonors.slice(startIndex, endIndex);
+    return this.filteredDonors;
   }
 
-  // Pagination methods
+  // Pagination methods — each triggers a server call
   goToPage(page: number) {
     if (page >= 1 && page <= this.totalPages) {
       this.currentPage = page;
+      this.loadPage();
     }
   }
 
   nextPage() {
     if (this.currentPage < this.totalPages) {
       this.currentPage++;
+      this.loadPage();
     }
   }
 
   previousPage() {
     if (this.currentPage > 1) {
       this.currentPage--;
+      this.loadPage();
     }
   }
 
   firstPage() {
     this.currentPage = 1;
+    this.loadPage();
   }
 
   lastPage() {
     this.currentPage = this.totalPages;
+    this.loadPage();
   }
 
   getPageNumbers(): number[] {
@@ -288,10 +250,8 @@ export class DonorSelectionModalComponent implements OnInit {
   // Or toggle donor selection in multi-select mode
   selectDonor(donor: Donor) {
     if (this.args.multiSelect) {
-      // Toggle selection in multi-select mode
       this.toggleDonorSelection(donor);
     } else {
-      // Single select mode - close immediately
       this.selectedDonor = donor;
       setTimeout(() => {
         this.dialogRef.close(donor);
@@ -318,22 +278,25 @@ export class DonorSelectionModalComponent implements OnInit {
     return this.selectedDonorIds.has(donor.id);
   }
 
-  // Check if all donors are selected
+  // Check if all donors are selected (compares against server totalCount)
   areAllSelected(): boolean {
-    return this.availableDonors.length > 0 &&
-           this.selectedDonorIds.size === this.availableDonors.length;
+    return this.totalCount > 0 && this.selectedDonorIds.size === this.totalCount;
   }
 
-  // Toggle select all donors
-  toggleSelectAll() {
+  // Toggle select all — loads all matching donors (capped at 500) for select-all case
+  async toggleSelectAll() {
     if (this.areAllSelected()) {
-      // Deselect all
       this.selectedDonorIds.clear();
       this.selectedDonors = [];
     } else {
-      // Select all
-      this.selectedDonorIds = new Set(this.availableDonors.map(d => d.id));
-      this.selectedDonors = [...this.availableDonors];
+      const allData = await DonorController.getDonorsForSelectionPage({
+        search: this.filterText.trim() || undefined,
+        page: 1,
+        pageSize: Math.min(this.totalCount, 500),
+        excludeIds: this.args?.excludeIds
+      });
+      this.selectedDonorIds = new Set(allData.donors.map(d => d.id));
+      this.selectedDonors = allData.donors;
     }
   }
 
@@ -353,15 +316,15 @@ export class DonorSelectionModalComponent implements OnInit {
       );
 
       if (dialogResult) {
-        // Reload donors list
-        await this.loadDonors();
-
-        // If a new donor was created, select it
-        if (this.availableDonors.length > 0) {
-          const newestDonor = this.availableDonors.reduce((prev, current) =>
-            (current.createdDate > prev.createdDate) ? current : prev
-          );
-          this.selectDonor(newestDonor);
+        // Load newest donor (by createdDate desc) to auto-select after creation
+        const newestData = await DonorController.getDonorsForSelectionPage({
+          page: 1,
+          pageSize: 1,
+          sortColumns: [{ field: 'createdDate', direction: 'desc' }]
+        });
+        await this.loadPage();
+        if (newestData.donors.length > 0) {
+          this.selectDonor(newestData.donors[0]);
         }
       }
     } catch (error) {
@@ -372,7 +335,8 @@ export class DonorSelectionModalComponent implements OnInit {
   // Clear search
   clearSearch() {
     this.filterText = '';
-    this.applyFilters();
+    this.currentPage = 1;
+    this.loadPage();
   }
 
   // Close dialog without selection
@@ -382,6 +346,6 @@ export class DonorSelectionModalComponent implements OnInit {
 
   // Get donor display name
   getDonorDisplayName(donor: Donor): string {
-    return donor.lastAndFirstName
+    return donor.lastAndFirstName;
   }
 }

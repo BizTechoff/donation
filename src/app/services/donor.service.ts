@@ -84,10 +84,11 @@ export class DonorService {
   }
 
   /**
-   * Load all related data for a list of donors
-   * Returns maps for efficient lookup
+   * Load all related data for a list of donors.
+   * Donations are NOT loaded by default (expensive, and no current caller uses them).
+   * Pass { loadDonations: true } only when donation-derived maps are explicitly needed.
    */
-  async loadDonorRelatedData(donorIds: string[]) {
+  async loadDonorRelatedData(donorIds: string[], options?: { loadDonations?: boolean }) {
     if (!donorIds || donorIds.length === 0) {
       return this.createEmptyMaps();
     }
@@ -122,13 +123,14 @@ export class DonorService {
       });
     }
 
-    // Load all donations at once
-    const allDonations = await this.donationRepo.find({
-      where: {
-        donorId: { $in: donorIds }
-      },
-      include: { donor: true }
-    });
+    // Load donations only when explicitly requested
+    let allDonations: Donation[] = [];
+    if (options?.loadDonations) {
+      allDonations = await this.donationRepo.find({
+        where: { donorId: { $in: donorIds } },
+        include: { donor: true }
+      });
+    }
 
     // Build maps
     return this.buildMaps(allPlaces, allContacts, allBirthEvents, allDonations);
