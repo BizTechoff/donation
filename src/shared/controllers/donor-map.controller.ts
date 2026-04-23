@@ -38,6 +38,11 @@ export interface MapStatistics {
   averageDonation: number;
 }
 
+export interface MapData {
+  markers: MarkerData[];
+  statistics: MapStatistics;
+}
+
 /**
  * סטטיסטיקות תרומות של תורם עבור המפה
  * לא כולל התחייבויות, כולל שותפויות
@@ -190,59 +195,25 @@ export class DonorMapController {
       (mapFilters.maxTotalDonations && mapFilters.maxTotalDonations < 999999999);
 
     if (needsDonationData) {
-      // טען תרומות
-      const donations = await donationRepo.find({
-        where: donorIds ? { donorId: { $in: donorIds } } : {},
-        include: { donationMethod: true }
+      // groupBy: שורה אחת לכל תורם, ללא טעינת אובייקטים מלאים
+      const statsRows = await donationRepo.groupBy({
+        group: ['donorId'],
+        sum: ['amount'],
+        where: donorIds ? { donorId: { $in: donorIds } } : {}
       });
 
-      // טען סכומי תשלומים בפועל עבור התחייבויות והו"ק עם סינון לפי סוג
-      const paymentBasedDonations = donations.filter(d => isPaymentBased(d));
-      const paymentBasedIds = paymentBasedDonations.map(d => d.id).filter(Boolean);
-      let paymentTotals: Record<string, number> = {};
-      if (paymentBasedIds.length > 0) {
-        const { Payment } = await import('../entity/payment');
-        const payments = await remult.repo(Payment).find({
-          where: { donationId: { $in: paymentBasedIds }, isActive: true }
-        });
-        paymentTotals = calculatePaymentTotals(paymentBasedDonations, payments);
-      }
-
-      // חשב סטטיסטיקות תרומות
-      const donationStats = new Map<string, { count: number; total: number }>();
-      donations.forEach(d => {
-        const stats = donationStats.get(d.donorId) || { count: 0, total: 0 };
-        stats.count++;
-        stats.total += calculateEffectiveAmount(d, paymentTotals[d.id]);
-        donationStats.set(d.donorId, stats);
-      });
-
-      // סנן לפי הקריטריונים
-      let filteredIds = Array.from(donationStats.keys());
-
-      if (mapFilters.minDonationCount && mapFilters.minDonationCount > 0) {
-        filteredIds = filteredIds.filter(id => {
-          const stats = donationStats.get(id);
-          return stats && stats.count >= mapFilters.minDonationCount!;
-        });
-      }
-
-      if (mapFilters.minTotalDonations && mapFilters.minTotalDonations > 0) {
-        filteredIds = filteredIds.filter(id => {
-          const stats = donationStats.get(id);
-          return stats && stats.total >= mapFilters.minTotalDonations!;
-        });
-      }
-
-      if (mapFilters.maxTotalDonations && mapFilters.maxTotalDonations < 999999999) {
-        filteredIds = filteredIds.filter(id => {
-          const stats = donationStats.get(id);
-          return stats && stats.total <= mapFilters.maxTotalDonations!;
-        });
-      }
+      const filteredIds = statsRows
+        .filter(row => {
+          if (mapFilters.minDonationCount && mapFilters.minDonationCount > 0 && row.$count < mapFilters.minDonationCount) return false;
+          const total = row.amount?.sum || 0;
+          if (mapFilters.minTotalDonations && mapFilters.minTotalDonations > 0 && total < mapFilters.minTotalDonations) return false;
+          if (mapFilters.maxTotalDonations && mapFilters.maxTotalDonations < 999999999 && total > mapFilters.maxTotalDonations) return false;
+          return true;
+        })
+        .map(row => row.donorId);
 
       donorIds = donorIds
-        ? donorIds.filter(id => filteredIds.includes(id))  // חיתוך עם searchTerm
+        ? donorIds.filter(id => filteredIds.includes(id))
         : filteredIds;
     }
 
@@ -262,63 +233,18 @@ export class DonorMapController {
     return donorIds;
   }
 
-  /**
-   * מחזיר מרקרים קלים למפה (רק lat, lng, name)
-   * מבצע פילטור דו-שלבי: גלובלי + מקומי
-   * @param mapFilters פילטרים מקומיים של המפה
-   * @returns מערך של MarkerData
-   */
-  @BackendMethod({ allowed: Allow.authenticated })
-  static async getMapMarkers(mapFilters: MapFilters): Promise<MarkerData[]> {
-    console.time('DonorMapController.getMapMarkers - Total');
-
-    // שלב 1: קבל IDs מהפילטרים הגלובליים (מ-user.settings)
-    console.time('Get global donor IDs');
+  private static async getIntersectedIds(mapFilters: MapFilters): Promise<string[]> {
     const { GlobalFilterController } = await import('./global-filter.controller');
     const globalDonorIds = await GlobalFilterController.getDonorIdsFromUserSettings();
-    console.timeEnd('Get global donor IDs');
-    console.log(`Global filters: ${globalDonorIds?.length ?? 'all'} donors`);
-
-    // שלב 2: קבל IDs מהפילטרים המקומיים של המפה
-    console.time('Get local map donor IDs');
     const localDonorIds = await DonorMapController.getDonorIds(mapFilters);
-    console.timeEnd('Get local map donor IDs');
-    console.log(`Map filters: ${localDonorIds.length} donors`);
+    if (globalDonorIds === undefined) return localDonorIds;
+    const globalSet = new Set(globalDonorIds);
+    return localDonorIds.filter(id => globalSet.has(id));
+  }
 
-    // שלב 3: חיתוך - רק IDs שנמצאים בשני הקבוצות
-    console.time('Intersection');
-    let intersectedIds: string[];
-    if (globalDonorIds === undefined) {
-      // אין פילטרים גלובליים - קח רק את המקומיים
-      intersectedIds = localDonorIds;
-    } else {
-      const globalSet = new Set(globalDonorIds);
-      intersectedIds = localDonorIds.filter(id => globalSet.has(id));
-    }
-    console.timeEnd('Intersection');
-    console.log(`After intersection: ${intersectedIds.length} donors`);
+  private static async buildMarkersFromIds(intersectedIds: string[], mapFilters: MapFilters): Promise<MarkerData[]> {
+    if (intersectedIds.length === 0) return [];
 
-    // שלב 4: שלוף רק lat, lng, name עבור התורמים הממוסננים
-    console.time('Load marker data');
-
-    if (intersectedIds.length === 0) {
-      console.timeEnd('Load marker data');
-      console.timeEnd('DonorMapController.getMapMarkers - Total');
-      return [];
-    }
-
-    // ── גרסה מקורית (שמורה): Remult find+include. hydration של place לא עבד בפרודקשן → 0 markers.
-    // const donorPlaceRepo = remult.repo(DonorPlace);
-    // const donorRepo = remult.repo(Donor);
-    // const donorPlaces = await donorPlaceRepo.find({
-    //   where: { donorId: { $in: intersectedIds }, isActive: true },
-    //   include: { place: true }
-    // });
-    // const locationMap = new Map<string, { lat: number; lng: number }>();
-    // donorPlaces.forEach(dp => { ... });
-    // const donors = await donorRepo.find({ where: { id: { $in: donorIdsWithLocation } } });
-
-    // ── אופטימיזציה: SQL JOIN ישיר (כמו getMapStatistics - עובד שם!) + המרה ל-number.
     const sqlDb = remult.dataProvider as SqlDatabase;
     const idsLit = intersectedIds.map(id => `'${String(id).replace(/'/g, "''")}'`).join(',');
 
@@ -331,10 +257,6 @@ export class DonorMapController {
          AND p."latitude" IS NOT NULL
          AND p."longitude" IS NOT NULL`
     );
-    console.log(`[DEBUG] placeRows from SQL: ${placeRows.length}`);
-    if (placeRows.length > 0) {
-      console.log(`[DEBUG] Sample row:`, placeRows[0]);
-    }
 
     const locationMap = new Map<string, { lat: number; lng: number }>();
     for (const r of placeRows as any[]) {
@@ -344,16 +266,10 @@ export class DonorMapController {
         locationMap.set(r.donorId, { lat, lng });
       }
     }
-    console.log(`[DEBUG] locationMap size: ${locationMap.size}`);
 
     const donorIdsWithLocation = Array.from(locationMap.keys());
-    if (donorIdsWithLocation.length === 0) {
-      console.timeEnd('Load marker data');
-      console.timeEnd('DonorMapController.getMapMarkers - Total');
-      return [];
-    }
+    if (donorIdsWithLocation.length === 0) return [];
 
-    // תורמים - SELECT מינימלי ב-SQL
     const locIdsLit = donorIdsWithLocation.map(id => `'${String(id).replace(/'/g, "''")}'`).join(',');
     const { rows: donorRows } = await sqlDb.execute(
       `SELECT "id", "isActive", "lastName", "firstName"
@@ -365,44 +281,7 @@ export class DonorMapController {
       lastAndFirstName: `${r.lastName || ''} ${r.firstName || ''}`.trim()
     }));
 
-    // טען סטטיסטיקות תרומות לחישוב סטטוס
     const donationRepo = remult.repo(Donation);
-
-    // ── גרסה מקורית (שמורה להשוואה/חזרה) - טעינת כל התרומות עם joins ל-memory.
-    //    בעייתית עבור 3000+ תורמים: 10K+ תרומות × join = ~30MB → R14 OOM.
-    // const donations = await donationRepo.find({
-    //   where: { donorId: { $in: donorIdsWithLocation } },
-    //   include: { donationMethod: true }
-    // });
-    //
-    // const paymentBasedDonationsForMarkers = donations.filter(d => isPaymentBased(d));
-    // const paymentBasedIdsForMarkers = paymentBasedDonationsForMarkers.map(d => d.id).filter(Boolean);
-    // let paymentTotalsForMarkers: Record<string, number> = {};
-    // if (paymentBasedIdsForMarkers.length > 0) {
-    //   const { Payment } = await import('../entity/payment');
-    //   const payments = await remult.repo(Payment).find({
-    //     where: { donationId: { $in: paymentBasedIdsForMarkers }, isActive: true }
-    //   });
-    //   paymentTotalsForMarkers = calculatePaymentTotals(paymentBasedDonationsForMarkers, payments);
-    // }
-    //
-    // const donationStatsByDonor = new Map<string, { total: number; lastDate: Date | null }>();
-    // donations.forEach(donation => {
-    //   const rawAmount = calculateEffectiveAmount(donation, paymentTotalsForMarkers[donation.id]);
-    //   const existing = donationStatsByDonor.get(donation.donorId);
-    //   if (!existing) {
-    //     donationStatsByDonor.set(donation.donorId, { total: rawAmount, lastDate: donation.donationDate });
-    //   } else {
-    //     existing.total += rawAmount;
-    //     if (!existing.lastDate || (donation.donationDate && new Date(donation.donationDate) > new Date(existing.lastDate))) {
-    //       existing.lastDate = donation.donationDate;
-    //     }
-    //   }
-    // });
-
-    // ── אופטימיזציה פעילה: groupBy ב-SQL מחזיר שורה אחת לכל תורם.
-    // הערה: לא מתחשב בלוגיקת calculateEffectiveAmount להו"קים (sum of payments)
-    // כי זה רק לצורך סיווג high-donor על המפה - קירוב מספיק.
     const donationStatsByDonor = new Map<string, { total: number; lastDate: Date | null }>();
     const statsRows = await donationRepo.groupBy({
       group: ['donorId'],
@@ -418,10 +297,8 @@ export class DonorMapController {
       });
     }
 
-    // קרא ספים מ-AppSettings
     const thresholds = await DonorMapController.getThresholds();
 
-    // בנה מערך מרקרים עם סטטוס
     const markers: MarkerData[] = donors
       .filter(d => locationMap.has(d.id))
       .map(d => {
@@ -429,19 +306,14 @@ export class DonorMapController {
         const totalDonations = stats?.total || 0;
         const lastDonationDate = stats?.lastDate || null;
 
-        // קבע סטטוסים (תורם יכול לקבל כמה סטטוסים במקביל)
         const statuses: ('active' | 'inactive' | 'high-donor' | 'recent-donor')[] = [];
         if (d.isActive) {
           statuses.push('active');
-          if (totalDonations > thresholds.highDonorAmount) {
-            statuses.push('high-donor');
-          }
+          if (totalDonations > thresholds.highDonorAmount) statuses.push('high-donor');
           if (lastDonationDate) {
             const recentCutoff = new Date();
             recentCutoff.setMonth(recentCutoff.getMonth() - thresholds.recentDonorMonths);
-            if (new Date(lastDonationDate) > recentCutoff) {
-              statuses.push('recent-donor');
-            }
+            if (new Date(lastDonationDate) > recentCutoff) statuses.push('recent-donor');
           }
         } else {
           statuses.push('inactive');
@@ -456,88 +328,29 @@ export class DonorMapController {
         };
       });
 
-    // Apply client-side filters (filters that work on already calculated data)
     let filteredMarkers = markers;
-
-    // Status filter (AND - תורם חייב לעמוד בכל הסטטוסים שנבחרו)
     if (mapFilters.statusFilter && mapFilters.statusFilter.length > 0) {
       filteredMarkers = filteredMarkers.filter(m =>
         mapFilters.statusFilter!.every(s => m.statuses.includes(s))
       );
     }
-
-    // Has coordinates - all markers already have coordinates, so this filter doesn't apply here
-    // (markers without coordinates were already filtered out)
-
-    // Has recent donation filter
     if (mapFilters.hasRecentDonation !== null && mapFilters.hasRecentDonation !== undefined) {
-      if (mapFilters.hasRecentDonation) {
-        filteredMarkers = filteredMarkers.filter(m => m.statuses.includes('recent-donor'));
-      } else {
-        filteredMarkers = filteredMarkers.filter(m => !m.statuses.includes('recent-donor'));
-      }
+      filteredMarkers = mapFilters.hasRecentDonation
+        ? filteredMarkers.filter(m => m.statuses.includes('recent-donor'))
+        : filteredMarkers.filter(m => !m.statuses.includes('recent-donor'));
     }
-
-    console.timeEnd('Load marker data');
-    console.timeEnd('DonorMapController.getMapMarkers - Total');
 
     return filteredMarkers;
   }
 
-  /**
-   * מחזיר סטטיסטיקות כלליות למפה (בלי לטעון את כל הנתונים)
-   * @param mapFilters פילטרים מקומיים של המפה
-   * @returns סטטיסטיקות כלליות
-   */
-  @BackendMethod({ allowed: Allow.authenticated })
-  static async getMapStatistics(mapFilters: MapFilters): Promise<MapStatistics> {
-    console.time('DonorMapController.getMapStatistics');
-
-    const { GlobalFilterController } = await import('./global-filter.controller');
-
-    // שלב 1: קבל IDs מהפילטרים הגלובליים
-    const globalDonorIds = await GlobalFilterController.getDonorIdsFromUserSettings();
-
-    // שלב 2: קבל IDs מהפילטרים המקומיים
-    const localDonorIds = await DonorMapController.getDonorIds(mapFilters);
-
-    // שלב 3: חיתוך
-    let intersectedIds: string[];
-    if (globalDonorIds === undefined) {
-      intersectedIds = localDonorIds;
-    } else {
-      const globalSet = new Set(globalDonorIds);
-      intersectedIds = localDonorIds.filter(id => globalSet.has(id));
-    }
-
-    const donationRepo = remult.repo(Donation);
-
-    // ── גרסה מקורית (שמורה להשוואה/חזרה) - טעינת Donor+DonorPlace+Place מלאים = ~25MB.
-    // const donorRepo = remult.repo(Donor);
-    // const donorPlaceRepo = remult.repo(DonorPlace);
-    // const donors = await donorRepo.find({ where: { id: { $in: intersectedIds } } });
-    // const totalDonors = donors.length;
-    // const activeDonors = donors.filter(d => d.isActive).length;
-    // const donorPlaces = await donorPlaceRepo.find({
-    //   where: { donorId: { $in: intersectedIds }, isActive: true },
-    //   include: { place: true }
-    // });
-    // const donorsWithCoordinates = new Set<string>();
-    // donorPlaces.forEach(dp => {
-    //   if (dp.donorId && dp.place?.latitude && dp.place?.longitude) {
-    //     donorsWithCoordinates.add(dp.donorId);
-    //   }
-    // });
-
-    // ── אופטימיזציה: SELECT מינימלי + COUNT ב-SQL.
+  private static async buildStatisticsFromIds(intersectedIds: string[]): Promise<MapStatistics> {
     if (intersectedIds.length === 0) {
-      console.timeEnd('DonorMapController.getMapStatistics');
       return { totalDonors: 0, activeDonors: 0, donorsOnMap: 0, averageDonation: 0 };
     }
+
     const sqlDb = remult.dataProvider as SqlDatabase;
     const idsLit = intersectedIds.map(id => `'${String(id).replace(/'/g, "''")}'`).join(',');
 
-    // total + active donors (שתי ספירות בשאילתה אחת)
     const { rows: countRows } = await sqlDb.execute(
       `SELECT COUNT(*)::int AS total, COUNT(*) FILTER (WHERE "isActive") ::int AS active
        FROM "donors" WHERE "id" IN (${idsLit})`
@@ -545,7 +358,6 @@ export class DonorMapController {
     const totalDonors = (countRows[0] as any)?.total || 0;
     const activeDonors = (countRows[0] as any)?.active || 0;
 
-    // donors with coordinates (DISTINCT donorId)
     const { rows: coordRows } = await sqlDb.execute(
       `SELECT DISTINCT dp."donorId"
        FROM "donor_places" dp
@@ -555,37 +367,9 @@ export class DonorMapController {
          AND p."latitude" IS NOT NULL
          AND p."longitude" IS NOT NULL`
     );
-    const donorsWithCoordinates = new Set<string>((coordRows as any[]).map(r => r.donorId));
+    const donorsOnMap = (coordRows as any[]).length;
 
-    const donorsOnMap = donorsWithCoordinates.size;
-
-    // חישוב ממוצע תרומות (בשקלים)
-    // ── גרסה מקורית (שמורה להשוואה/חזרה) - טעינת 10K+ תרומות + joins. OOM.
-    // const donations = await donationRepo.find({
-    //   where: { donorId: { $in: intersectedIds } },
-    //   include: { donationMethod: true }
-    // });
-    //
-    // const paymentBasedDonationsForStats = donations.filter(d => isPaymentBased(d));
-    // const paymentBasedIdsForStats = paymentBasedDonationsForStats.map(d => d.id).filter(Boolean);
-    // let paymentTotalsForStats: Record<string, number> = {};
-    // if (paymentBasedIdsForStats.length > 0) {
-    //   const { Payment } = await import('../entity/payment');
-    //   const payments = await remult.repo(Payment).find({
-    //     where: { donationId: { $in: paymentBasedIdsForStats }, isActive: true }
-    //   });
-    //   paymentTotalsForStats = calculatePaymentTotals(paymentBasedDonationsForStats, payments);
-    // }
-    //
-    // const totalAmount = donations.reduce((sum, d) => {
-    //   const rate = currencyTypes[d.currencyId]?.rateInShekel || 1;
-    //   return sum + (calculateEffectiveAmount(d, paymentTotalsForStats[d.id]) * rate);
-    // }, 0);
-    // const totalCount = donations.length;
-
-    // ── אופטימיזציה פעילה: groupBy ב-SQL (לפי מטבע) + count נפרד.
-    // לא מתחשב בלוגיקת calculateEffectiveAmount להו"קים (sum of payments) -
-    // קירוב מספיק לצורך חישוב ממוצע סטטיסטי במפה.
+    const donationRepo = remult.repo(Donation);
     const { PayerService } = await import('../../app/services/payer.service');
     const payerService = new PayerService();
     const currencyTypes = await payerService.getCurrencyTypesRecord();
@@ -602,14 +386,43 @@ export class DonorMapController {
     const totalCount = await donationRepo.count({ donorId: { $in: intersectedIds } });
     const averageDonation = totalCount > 0 ? totalAmount / totalCount : 0;
 
-    console.timeEnd('DonorMapController.getMapStatistics');
+    return { totalDonors, activeDonors, donorsOnMap, averageDonation };
+  }
 
-    return {
-      totalDonors,
-      activeDonors,
-      donorsOnMap,
-      averageDonation
-    };
+  /**
+   * מחזיר מרקרים + סטטיסטיקות בקריאה אחת (חיתוך גלובלי+מקומי נעשה פעם אחת בלבד)
+   */
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async getMapData(mapFilters: MapFilters): Promise<MapData> {
+    console.time('DonorMapController.getMapData - Total');
+    const intersectedIds = await DonorMapController.getIntersectedIds(mapFilters);
+    console.log(`getMapData: ${intersectedIds.length} donors after intersection`);
+    const [markers, statistics] = await Promise.all([
+      DonorMapController.buildMarkersFromIds(intersectedIds, mapFilters),
+      DonorMapController.buildStatisticsFromIds(intersectedIds)
+    ]);
+    console.timeEnd('DonorMapController.getMapData - Total');
+    return { markers, statistics };
+  }
+
+  /**
+   * מחזיר מרקרים קלים למפה (רק lat, lng, name)
+   * @deprecated השתמש ב-getMapData ב-donors-map. נשמר לתאימות אחורה עם route-planner.
+   */
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async getMapMarkers(mapFilters: MapFilters): Promise<MarkerData[]> {
+    const intersectedIds = await DonorMapController.getIntersectedIds(mapFilters);
+    return DonorMapController.buildMarkersFromIds(intersectedIds, mapFilters);
+  }
+
+  /**
+   * מחזיר סטטיסטיקות כלליות למפה
+   * @deprecated השתמש ב-getMapData ב-donors-map. נשמר לתאימות אחורה.
+   */
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async getMapStatistics(mapFilters: MapFilters): Promise<MapStatistics> {
+    const intersectedIds = await DonorMapController.getIntersectedIds(mapFilters);
+    return DonorMapController.buildStatisticsFromIds(intersectedIds);
   }
 
   /**

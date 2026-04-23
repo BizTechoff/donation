@@ -1,7 +1,8 @@
 import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { remult } from 'remult';
-import { Subscription } from 'rxjs';
+import { Subject, Subscription } from 'rxjs';
+import { debounceTime } from 'rxjs/operators';
 import { Country } from '../../../shared/entity/country';
 import { Donation } from '../../../shared/entity/donation';
 import { Donor } from '../../../shared/entity/donor';
@@ -13,7 +14,7 @@ import { GeoService } from '../../services/geo.service';
 import { GeocodingService } from '../../services/geocoding.service';
 import { GlobalFilterService, GlobalFilters } from '../../services/global-filter.service';
 import { SidebarService } from '../../services/sidebar.service';
-import { DonorMapController, DonorMapData, MarkerData, MapFilters as BackendMapFilters, MapStatistics } from '../../../shared/controllers/donor-map.controller';
+import { DonorMapController, DonorMapData, MarkerData, MapFilters as BackendMapFilters, MapStatistics, MapData } from '../../../shared/controllers/donor-map.controller';
 import { AppSettingsController } from '../../../shared/controllers/app-settings.controller';
 import { User } from '../../../shared/entity/user';
 import { TargetAudience } from '../../../shared/entity/target-audience';
@@ -50,6 +51,7 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
   private tempPolyline?: google.maps.Polyline;
   private drawnPolygon?: google.maps.Polygon;
   private subscription = new Subscription();
+  private filterSubject = new Subject<void>();
   private isCtrlPressed = false;
 
   // Lightweight markers loaded from server (new approach)
@@ -174,6 +176,14 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
       })
     );
 
+    // Debounce local filter changes to avoid rapid server calls
+    this.subscription.add(
+      this.filterSubject.pipe(debounceTime(300)).subscribe(() => {
+        this.loadData();
+        this.saveMapSettings();
+      })
+    );
+
     await this.loadData();
     this.initialLoadDone = true;
   }
@@ -220,24 +230,20 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
         console.log('DonorsMap: Sending backend filters:', backendFilters);
 
-        // Load markers and statistics in parallel
+        // Load markers and statistics in one round-trip
         // @ts-ignore - remult metadata not updated yet
-        const [markersData, statistics] = await Promise.all([
-          DonorMapController.getMapMarkers(backendFilters),
-          // @ts-ignore - remult metadata not updated yet
-          DonorMapController.getMapStatistics(backendFilters)
-        ]);
+        const mapData: MapData = await DonorMapController.getMapData(backendFilters);
 
-        this.markersData = markersData;
+        this.markersData = mapData.markers;
 
         // Update statistics
-        this.totalDonors = statistics.totalDonors;
-        this.activeDonors = statistics.activeDonors;
-        this.donorsOnMap = markersData.length; // מספר המרקרים שבאמת על המפה
-        this.averageDonation = statistics.averageDonation;
+        this.totalDonors = mapData.statistics.totalDonors;
+        this.activeDonors = mapData.statistics.activeDonors;
+        this.donorsOnMap = mapData.markers.length;
+        this.averageDonation = mapData.statistics.averageDonation;
 
         console.log('DonorsMap: Loaded markers:', this.markersData.length);
-        console.log('DonorsMap: Statistics:', statistics);
+        console.log('DonorsMap: Statistics:', mapData.statistics);
 
         console.timeEnd('Total map load time');
 
@@ -496,11 +502,9 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.saveMapSettings();
   }
 
-  // Update filter and refresh
+  // Update filter and refresh (debounced via filterSubject)
   onFilterChange() {
-    // Reload data from server with updated filters (searchTerm, minTotalDonations)
-    this.loadData();
-    this.saveMapSettings();
+    this.filterSubject.next();
   }
 
   // Search-specific handler: search + highlight/zoom to found donor(s)
@@ -1844,6 +1848,7 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.clearPolygonDrawing();
 
     // Clean up subscriptions
+    this.filterSubject.complete();
     this.subscription.unsubscribe();
 
     // Clean up global functions
