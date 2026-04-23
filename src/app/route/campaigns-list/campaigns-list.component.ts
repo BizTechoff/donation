@@ -13,6 +13,7 @@ import { Blessing } from '../../../shared/entity/blessing';
 import { PayerService } from '../../services/payer.service';
 import { PrintService } from '../../services/print.service';
 import { ExcelExportService } from '../../services/excel-export.service';
+import { DonorController } from '../../../shared/controllers/donor.controller';
 
 @Component({
   selector: 'app-campaigns-list',
@@ -218,10 +219,8 @@ export class CampaignsListComponent implements OnInit, OnDestroy {
   }
 
   async loadUsers() {
-    this.users = await this.userRepo.find({
-      where: { secretary: true },
-      orderBy: { name: 'asc' }
-    });
+    const { secretaries } = await DonorController.getExportLookups();
+    this.users = secretaries as unknown as User[];
   }
 
   applyFilters() {

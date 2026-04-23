@@ -15,6 +15,7 @@ import { DonorGiftDetailsModalComponent } from '../../routes/modals/donor-gift-d
 import { GiftCatalogModalComponent } from '../../routes/modals/gift-catalog-modal/gift-catalog-modal.component';
 import { PrintService } from '../../services/print.service';
 import { ExcelExportService } from '../../services/excel-export.service';
+import { DonorController } from '../../../shared/controllers/donor.controller';
 
 @Component({
   selector: 'app-donor-gifts-list',
@@ -632,10 +633,7 @@ export class DonorGiftsListComponent implements OnInit, OnDestroy {
         );
 
         // Load fundraisers and contact persons for lookup
-        const [fundraisers, contactPersons] = await Promise.all([
-          remult.repo(User).find({ where: { donator: true } }),
-          remult.repo(ContactPerson).find()
-        ]);
+        const { fundraisers, contactPersons } = await DonorController.getExportLookups();
         const fundraiserMap = new Map(fundraisers.map(f => [f.id, f.name]));
         const contactPersonMap = new Map(contactPersons.map(cp => [cp.id, cp.name]));
 
