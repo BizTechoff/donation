@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Reminder } from '../../shared/entity';
-import { ReminderController } from '../../shared/controllers/reminder.controller';
+import { ReminderController, RemindersPageData } from '../../shared/controllers/reminder.controller';
 import { HebrewDateController } from '../../shared/controllers/hebrew-date.controller';
 import { GlobalFilters } from './global-filter.service';
 
@@ -101,6 +101,21 @@ export class ReminderService {
    */
   async calculateNextPurim(currentDate: Date): Promise<Date> {
     return await ReminderController.calculateNextPurim(currentDate);
+  }
+
+  async getRemindersData(
+    filters: {
+      dateFrom?: Date
+      dateTo?: Date
+      searchTerm?: string
+      reminderType?: string
+      donorSearch?: string
+    } = {},
+    page: number = 1,
+    pageSize: number = 50,
+    sortColumns: Array<{ field: string; direction: 'asc' | 'desc' }> = []
+  ): Promise<RemindersPageData> {
+    return await ReminderController.getRemindersData(filters, page, pageSize, sortColumns);
   }
 
   /**

@@ -1,13 +1,26 @@
-import { BackendMethod, Allow, remult } from 'remult'
+import { BackendMethod, Allow, remult, Controller } from 'remult'
 import { Reminder } from '../entity/reminder'
 import { HebrewDateController } from './hebrew-date.controller'
 import { GlobalFilters } from '../../app/services/global-filter.service'
 import { DonorController } from './donor.controller'
+import { GlobalFilterController } from './global-filter.controller'
+
+export interface RemindersPageData {
+  count: number;
+  summary: {
+    todayCount: number;
+    pendingCount: number;
+    overdueCount: number;
+    completedThisMonthCount: number;
+  };
+  reminders: Reminder[];
+}
 
 /**
  * Controller for handling Hebrew reminder calculations
  * Uses HebrewDateController for all Hebrew date operations
  */
+@Controller('reminder')
 export class ReminderController {
   /**
    * Find reminders with filters, pagination, and sorting
@@ -109,6 +122,56 @@ export class ReminderController {
     return { todayCount, pendingCount, overdueCount, completedThisMonthCount }
   }
 
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async getRemindersData(
+    filters: {
+      dateFrom?: Date
+      dateTo?: Date
+      searchTerm?: string
+      reminderType?: string
+      donorSearch?: string
+    } = {},
+    page: number = 1,
+    pageSize: number = 50,
+    sortColumns: Array<{ field: string; direction: 'asc' | 'desc' }> = []
+  ): Promise<RemindersPageData> {
+    const where = await ReminderController.buildWhereClause(filters)
+
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const tomorrow = new Date(today)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+
+    const orderBy: any = {}
+    if (sortColumns.length > 0) {
+      for (const sort of sortColumns) {
+        orderBy[sort.field] = sort.direction
+      }
+    } else {
+      orderBy.dueDate = 'asc'
+      orderBy.dueTime = 'asc'
+    }
+
+    const skip = (page - 1) * pageSize
+    const repo = remult.repo(Reminder)
+
+    const [count, todayCount, pendingCount, overdueCount, completedThisMonthCount, reminders] = await Promise.all([
+      repo.count(where),
+      repo.count({ ...where, nextReminderDate: { $gte: today, $lt: tomorrow }, isCompleted: false }),
+      repo.count({ ...where, isCompleted: false }),
+      repo.count({ ...where, nextReminderDate: { $lt: today }, isCompleted: false }),
+      repo.count({ ...where, isCompleted: true, completedDate: { $gte: startOfMonth, $lte: today } }),
+      repo.find({ where, orderBy, limit: pageSize, page: skip, include: { donor: true } })
+    ])
+
+    return {
+      count,
+      summary: { todayCount, pendingCount, overdueCount, completedThisMonthCount },
+      reminders
+    }
+  }
+
   /**
    * Build where clause for filtering reminders
    */
@@ -123,25 +186,14 @@ export class ReminderController {
   ): Promise<any> {
     const where: any = { isActive: true }
 
-    // 🎯 Fetch global filters from user.settings
-    const currentUserId = remult.user?.id;
-    let globalFilters: GlobalFilters | undefined = undefined;
-    if (currentUserId) {
-      const { User } = await import('../entity/user');
-      const user = await remult.repo(User).findId(currentUserId);
-      globalFilters = user?.settings?.globalFilters;
-    }
-
     // Apply reminder type filter
     if (filters.reminderType && filters.reminderType.trim() !== '') {
       where.type = filters.reminderType
     }
 
-    // Apply global filters - get filtered donor IDs
-    if (globalFilters) {
-      const donors = await DonorController.findFilteredDonors()
-      const filteredDonorIds = donors.map(d => d.id)
-
+    // Apply global filters - IDs only, no full Donor objects loaded
+    const filteredDonorIds = await GlobalFilterController.getDonorIdsFromUserSettings()
+    if (filteredDonorIds !== undefined) {
       if (filteredDonorIds.length === 0) {
         // No matching donors, but still show reminders without donor
         where.donorId = null

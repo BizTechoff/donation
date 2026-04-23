@@ -1,6 +1,7 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { remult } from 'remult';
-import { Subscription } from 'rxjs';
+import { Subject, Subscription } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { Donor, Reminder, User } from '../../../shared/entity';
 import { ContactPerson } from '../../../shared/entity/contact-person';
 import { DialogConfig } from '../../common-ui-elements';
@@ -14,6 +15,7 @@ import { ReminderService } from '../../services/reminder.service';
 import { PrintService } from '../../services/print.service';
 import { ExcelExportService } from '../../services/excel-export.service';
 import { BusyService } from '../../common-ui-elements/src/angular/wait/busy-service';
+import { DonorController } from '../../../shared/controllers/donor.controller';
 
 @DialogConfig({
   hasBackdrop: true
@@ -72,6 +74,7 @@ export class RemindersComponent implements OnInit, OnDestroy {
 
   private filterSubscription?: Subscription;
   private searchTermTimeout: any;
+  private donorSearchSubject = new Subject<string>();
 
   constructor(
     public i18n: I18nService,
@@ -104,6 +107,15 @@ export class RemindersComponent implements OnInit, OnDestroy {
     this.filterSubscription = this.globalFilterService.filters$.subscribe(() => {
       this.refreshData();
     });
+
+    // Debounce donor search to avoid firing on every keystroke
+    this.donorSearchSubject.pipe(
+      debounceTime(300),
+      distinctUntilChanged()
+    ).subscribe(() => {
+      this.currentPage = 1;
+      this.refreshData();
+    });
   }
 
   /**
@@ -133,12 +145,10 @@ export class RemindersComponent implements OnInit, OnDestroy {
         filters.donorSearch = this.filterDonorSearch;
       }
 
-      // Get total count, summary stats, and reminders from server
-      const [count, summary, reminders] = await Promise.all([
-        this.reminderService.countFiltered(filters),
-        this.reminderService.getSummary(filters),
-        this.reminderService.findFiltered(filters, this.currentPage, this.pageSize, this.sortColumns)
-      ]);
+      // Get count, summary stats, and reminders in a single server round-trip
+      const { count, summary, reminders } = await this.reminderService.getRemindersData(
+        filters, this.currentPage, this.pageSize, this.sortColumns
+      );
 
       this.totalCount = count;
       this.todayCount = summary.todayCount;
@@ -179,6 +189,7 @@ export class RemindersComponent implements OnInit, OnDestroy {
     if (this.searchTermTimeout) {
       clearTimeout(this.searchTermTimeout);
     }
+    this.donorSearchSubject.complete();
   }
 
   // Summary stats
@@ -228,6 +239,10 @@ export class RemindersComponent implements OnInit, OnDestroy {
     this.searchTermTimeout = setTimeout(() => {
       this.saveSearchTerm();
     }, 500);
+  }
+
+  onDonorSearchChange(text: string) {
+    this.donorSearchSubject.next(text);
   }
 
   async createReminder() {
@@ -834,10 +849,7 @@ getTypeText(type: string): string {
         );
 
         // Load fundraisers and contact persons for lookup
-        const [fundraisers, contactPersons] = await Promise.all([
-          remult.repo(User).find({ where: { donator: true } }),
-          remult.repo(ContactPerson).find()
-        ]);
+        const { fundraisers, contactPersons } = await DonorController.getExportLookups();
         const fundraiserMap = new Map(fundraisers.map(f => [f.id, f.name]));
         const contactPersonMap = new Map(contactPersons.map(cp => [cp.id, cp.name]));
 
