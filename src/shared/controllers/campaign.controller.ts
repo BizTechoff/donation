@@ -37,6 +37,57 @@ export interface CampaignDonationTotals {
   commitmentDonationsByCurrency: CurrencyTotal[];
 }
 
+export interface BlessingBookTypeDto {
+  id: string;
+  type: string;
+  price: number;
+}
+
+export interface BlessingBookBlessingDto {
+  id: string;
+  donorId: string;
+  campaignId: string;
+  name: string;
+  blessingBookTypeId: string;
+  blessingBookType?: BlessingBookTypeDto;
+  blessingContent: string;
+  status: string;
+  amount: number;
+  isEmailSent: boolean;
+}
+
+export interface BlessingBookDonationDto {
+  id: string;
+  donorId: string;
+  campaignId: string;
+  amount: number;
+  currencyId: string;
+  donationDate?: Date;
+}
+
+export interface BlessingBookEntryDto {
+  donor: {
+    id: string;
+    fullName: string;
+    lastAndFirstName: string;
+    level: string;
+    fundraiserId: string;
+    contactPersonId: string;
+  };
+  phone: string;
+  email: string;
+  blessing?: BlessingBookBlessingDto;
+  donation?: BlessingBookDonationDto;
+  totalDonated: number;
+  matchingDonationsCount: number;
+  blessingStatus: 'pending' | 'sent' | 'received' | 'none';
+}
+
+export interface BlessingBookDataDto {
+  blessingTypes: BlessingBookTypeDto[];
+  entries: BlessingBookEntryDto[];
+}
+
 @Controller('campaign')
 export class CampaignController {
   @BackendMethod({ allowed: Allow.authenticated })
@@ -294,11 +345,21 @@ export class CampaignController {
     const { Payment } = await import('../entity/payment');
     const { PayerService } = await import('../../app/services/payer.service');
     const { calculateEffectiveAmount, calculatePaymentTotals } = await import('../utils/donation-utils');
+    const { GlobalFilterController } = await import('./global-filter.controller');
+
+    // Apply global donor filter when no donorIds provided — avoids passing 14k IDs over the wire
+    let effectiveDonorIds = donorIds;
+    if (effectiveDonorIds === undefined) {
+      effectiveDonorIds = await GlobalFilterController.getDonorIdsFromUserSettings();
+    }
+    if (effectiveDonorIds !== undefined && effectiveDonorIds.length === 0) {
+      return { fullDonationsCount: 0, commitmentDonationsCount: 0, fullDonationsByCurrency: [], commitmentDonationsByCurrency: [] };
+    }
 
     // Build where clause
     const where: any = { campaignId };
-    if (donorIds && donorIds.length > 0) {
-      where.donorId = { $in: donorIds };
+    if (effectiveDonorIds && effectiveDonorIds.length > 0) {
+      where.donorId = { $in: effectiveDonorIds };
     }
 
     // Get all donations for this campaign
@@ -365,6 +426,139 @@ export class CampaignController {
       fullDonationsByCurrency,
       commitmentDonationsByCurrency
     };
+  }
+
+  /**
+   * Single-call blessing book loader — resolves donors, blessings, contacts, and donations
+   * server-side without include (avoids concurrent sub-query problem).
+   */
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async getBlessingBookData(campaignId: string): Promise<BlessingBookDataDto> {
+    const { Campaign } = await import('../entity/campaign');
+    const { Donor } = await import('../entity/donor');
+    const { Blessing } = await import('../entity/blessing');
+    const { BlessingBookType } = await import('../entity/blessing-book-type');
+    const { DonorContact } = await import('../entity/donor-contact');
+    const { Donation } = await import('../entity/donation');
+
+    const [campaign, blessingTypes] = await Promise.all([
+      remult.repo(Campaign).findId(campaignId),
+      remult.repo(BlessingBookType).find({ where: { isActive: true }, orderBy: { price: 'asc' } })
+    ]);
+    if (!campaign) return { blessingTypes: [], entries: [] };
+
+    const blessingTypesDtos: BlessingBookTypeDto[] = blessingTypes.map(bt => ({ id: bt.id, type: bt.type, price: bt.price }));
+    const blessingTypeMap = new Map(blessingTypesDtos.map(bt => [bt.id, bt]));
+
+    const donorIds = await CampaignController.resolveBlessingBookDonorIds(campaign);
+    if (donorIds.length === 0) return { blessingTypes: blessingTypesDtos, entries: [] };
+
+    const [donors, blessings, contacts, campaignDonations] = await Promise.all([
+      remult.repo(Donor).find({ where: { id: { $in: donorIds }, isActive: true } }),
+      remult.repo(Blessing).find({ where: { campaignId, donorId: { $in: donorIds } } }),
+      remult.repo(DonorContact).find({ where: { donorId: { $in: donorIds }, isPrimary: true, isActive: true } }),
+      remult.repo(Donation).find({ where: { campaignId, donorId: { $in: donorIds } }, orderBy: { donationDate: 'desc' } })
+    ]);
+
+    // Build blessing map (one per donor, blessingBookType attached from already-loaded types)
+    const blessingByDonor = new Map<string, BlessingBookBlessingDto>();
+    for (const b of blessings) {
+      blessingByDonor.set(b.donorId, {
+        id: b.id, donorId: b.donorId, campaignId: b.campaignId,
+        name: b.name, blessingBookTypeId: b.blessingBookTypeId,
+        blessingBookType: blessingTypeMap.get(b.blessingBookTypeId),
+        blessingContent: b.blessingContent, status: b.status,
+        amount: b.amount, isEmailSent: b.isEmailSent
+      });
+    }
+
+    // Build contact maps (primary only)
+    const phoneMap = new Map<string, string>();
+    const emailMap = new Map<string, string>();
+    for (const c of contacts) {
+      if (c.donorId && c.type === 'phone' && c.phoneNumber && !phoneMap.has(c.donorId)) {
+        phoneMap.set(c.donorId, c.phoneNumber);
+      } else if (c.donorId && c.type === 'email' && c.email && !emailMap.has(c.donorId)) {
+        emailMap.set(c.donorId, c.email);
+      }
+    }
+
+    // Group donations by donor
+    const donationsByDonor = new Map<string, typeof campaignDonations>();
+    for (const d of campaignDonations) {
+      if (!d.donorId) continue;
+      const list = donationsByDonor.get(d.donorId) ?? [];
+      if (!donationsByDonor.has(d.donorId)) donationsByDonor.set(d.donorId, list);
+      list.push(d);
+    }
+
+    const toDonationDto = (d: typeof campaignDonations[0]): BlessingBookDonationDto => ({
+      id: d.id, donorId: d.donorId, campaignId: d.campaignId || '',
+      amount: d.amount || 0, currencyId: d.currencyId || 'ILS', donationDate: d.donationDate
+    });
+
+    const entries: BlessingBookEntryDto[] = donors.map(donor => {
+      const blessing = blessingByDonor.get(donor.id);
+      const donorDonations = donationsByDonor.get(donor.id) || [];
+      const totalDonated = donorDonations.reduce((sum, d) => sum + (d.amount || 0), 0);
+
+      let matchingDonationsCount = 0;
+      let matchingDonation: BlessingBookDonationDto | undefined;
+      if (blessing?.blessingBookType) {
+        for (const d of donorDonations) {
+          if (d.amount === blessing.blessingBookType.price) {
+            matchingDonationsCount++;
+            if (!matchingDonation) matchingDonation = toDonationDto(d);
+          }
+        }
+      }
+      const firstDonation = matchingDonation ?? (donorDonations[0] ? toDonationDto(donorDonations[0]) : undefined);
+
+      return {
+        donor: {
+          id: donor.id, fullName: donor.fullName || '', lastAndFirstName: donor.lastAndFirstName || '',
+          level: donor.level || '', fundraiserId: donor.fundraiserId || '', contactPersonId: donor.contactPersonId || ''
+        },
+        phone: phoneMap.get(donor.id) || '',
+        email: emailMap.get(donor.id) || '',
+        blessing, donation: firstDonation,
+        totalDonated, matchingDonationsCount,
+        blessingStatus: CampaignController.computeBlessingStatus(blessing)
+      };
+    });
+
+    return { blessingTypes: blessingTypesDtos, entries };
+  }
+
+  private static async resolveBlessingBookDonorIds(campaign: Campaign): Promise<string[]> {
+    const { GlobalFilterController } = await import('./global-filter.controller');
+    const globalDonorIds = await GlobalFilterController.getDonorIdsFromUserSettings();
+    const invitedIds: string[] = campaign.invitedDonorIds ?? [];
+
+    if (invitedIds.length > 0) {
+      if (globalDonorIds === undefined) return invitedIds;
+      if (globalDonorIds.length === 0) return [];
+      const globalSet = new Set(globalDonorIds);
+      return invitedIds.filter(id => globalSet.has(id));
+    }
+
+    // No invited list — use donors who donated to this campaign
+    const { Donation } = await import('../entity/donation');
+    const where: any = { campaignId: campaign.id };
+    if (globalDonorIds !== undefined) {
+      if (globalDonorIds.length === 0) return [];
+      where.donorId = { $in: globalDonorIds };
+    }
+    const donations = await remult.repo(Donation).find({ where, limit: 100000 });
+    return [...new Set(donations.map(d => d.donorId).filter(Boolean))];
+  }
+
+  private static computeBlessingStatus(blessing?: BlessingBookBlessingDto): 'pending' | 'sent' | 'received' | 'none' {
+    if (!blessing) return 'none';
+    if (!blessing.blessingContent || blessing.blessingContent.trim() === '') return 'pending';
+    if (blessing.status === 'מאושר') return 'received';
+    if (blessing.status === 'בטיפול') return 'sent';
+    return 'pending';
   }
 
   /**

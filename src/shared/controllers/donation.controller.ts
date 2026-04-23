@@ -31,21 +31,60 @@ export interface DonationFilters {
 
 export interface DonationDetailsData {
   donation: Donation | null | undefined;
-  donors: Donor[];
   campaigns: Campaign[];
   donationMethods: DonationMethod[];
-  availablePartners: Donor[];
   organizations: Organization[];
   banks: Bank[];
   payerCompanies: Company[];
   donationBanks: DonationBank[];
   donationOrganizations: DonationOrganization[];
+  partnerDonors: Donor[];
+  selectedOrganization: Organization | null;
+  selectedBank: Bank | null;
 }
 
 export interface DonationSelectionData {
   donations: Donation[];
   donorMap: Record<string, Donor>;
   campaignMap: Record<string, Campaign>;
+}
+
+export interface CampaignDonationRow {
+  id: string;
+  donationDate: Date | undefined;
+  donorId: string;
+  donorName: string;
+  amount: number;
+  currencyId: string;
+  donationType: string;
+  standingOrderType: string;
+  unlimitedPayments: boolean;
+  frequency: string;
+  donationMethodId: string;
+  donationMethodName: string;
+  donationMethodType: string;
+  partnerIds: string[];
+  reason: string;
+  isExceptional: boolean;
+  periodsElapsed: number;
+}
+
+export interface CampaignDonationsPageParams {
+  campaignId: string;
+  page: number;
+  pageSize: number;
+  filterDonorId?: string;
+  filterMethodId?: string;
+  filterType?: string;
+  sortField?: string;
+  sortDirection?: 'asc' | 'desc';
+}
+
+export interface CampaignDonationsPageResult {
+  rows: CampaignDonationRow[];
+  total: number;
+  paymentTotals: Record<string, number>;
+  dropdownDonors: { id: string; firstName: string; lastName: string; fullName: string }[];
 }
 
 export class DonationController {
@@ -113,26 +152,16 @@ export class DonationController {
 
     // Load all reference data in parallel
     const [
-      donors,
       campaigns,
       donationMethods,
-      availablePartners,
       organizations,
       banks
     ] = await Promise.all([
-      remult.repo(Donor).find({
-        where: { isActive: true },
-        orderBy: { firstName: 'asc' }
-      }),
       remult.repo(Campaign).find({
         orderBy: { name: 'asc' }
       }),
       remult.repo(DonationMethod).find({
         orderBy: { name: 'asc' }
-      }),
-      remult.repo(Donor).find({
-        where: { isActive: true },
-        orderBy: { firstName: 'asc' }
       }),
       remult.repo(Organization).find({
         where: { isActive: true },
@@ -144,10 +173,10 @@ export class DonationController {
       })
     ]);
 
-    // Load payer companies if we have a donorId
+    // Load payer companies — use already-included donor relation, fall back to findId for new donations
     let payerCompanies: Company[] = [];
     if (effectiveDonorId) {
-      const donor = await remult.repo(Donor).findId(effectiveDonorId);
+      const donor = donation?.donor ?? await remult.repo(Donor).findId(effectiveDonorId);
       if (donor?.companyIds?.length) {
         payerCompanies = await remult.repo(Company).find({
           where: { id: { $in: donor.companyIds } },
@@ -159,9 +188,19 @@ export class DonationController {
     // Load donation-specific data if exists
     let donationBanks: DonationBank[] = [];
     let donationOrganizations: DonationOrganization[] = [];
+    let partnerDonors: Donor[] = [];
+    let selectedOrganization: Organization | null = null;
+    let selectedBank: Bank | null = null;
 
     if (donation?.id) {
-      [donationBanks, donationOrganizations] = await Promise.all([
+      const partnerIds = donation.partnerIds || [];
+      const [
+        donationBanksResult,
+        donationOrganizationsResult,
+        partnerDonorsResult,
+        selectedOrganizationResult,
+        selectedBankResult
+      ] = await Promise.all([
         remult.repo(DonationBank).find({
           where: { donationId: donation.id, isActive: true },
           include: { bank: true },
@@ -171,21 +210,32 @@ export class DonationController {
           where: { donationId: donation.id, isActive: true },
           include: { organization: true },
           orderBy: { createdDate: 'asc' }
-        })
+        }),
+        partnerIds.length > 0
+          ? Promise.all(partnerIds.map(id => remult.repo(Donor).findId(id))).then(donors => donors.filter((d): d is Donor => d !== null && d !== undefined))
+          : Promise.resolve([] as Donor[]),
+        donation.organizationId ? remult.repo(Organization).findId(donation.organizationId) : Promise.resolve(null),
+        donation.bankId ? remult.repo(Bank).findId(donation.bankId) : Promise.resolve(null)
       ]);
+      donationBanks = donationBanksResult;
+      donationOrganizations = donationOrganizationsResult;
+      partnerDonors = partnerDonorsResult;
+      selectedOrganization = selectedOrganizationResult ?? null;
+      selectedBank = selectedBankResult ?? null;
     }
 
     return {
       donation,
-      donors,
       campaigns,
       donationMethods,
-      availablePartners,
       organizations,
       banks,
       payerCompanies,
       donationBanks,
-      donationOrganizations
+      donationOrganizations,
+      partnerDonors,
+      selectedOrganization,
+      selectedBank
     };
   }
 
@@ -985,5 +1035,137 @@ export class DonationController {
     // Count unique donation IDs that have files
     const donationsWithFiles = new Set(files.map(f => f.donationId));
     return donationsWithFiles.size;
+  }
+
+  /**
+   * Paginated campaign donations — global donor filter applied server-side (no big ID array over wire)
+   */
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async getCampaignDonationsPage(params: CampaignDonationsPageParams): Promise<CampaignDonationsPageResult> {
+    const {
+      campaignId, page, pageSize,
+      filterDonorId, filterMethodId, filterType,
+      sortField = 'donationDate', sortDirection = 'desc'
+    } = params;
+
+    // Resolve global donor filter server-side
+    const globalDonorIds = await GlobalFilterController.getDonorIdsFromUserSettings();
+    if (globalDonorIds !== undefined && globalDonorIds.length === 0) {
+      return { rows: [], total: 0, paymentTotals: {}, dropdownDonors: [] };
+    }
+
+    // Build WHERE clause
+    const where: any = { campaignId };
+    if (globalDonorIds !== undefined) {
+      where.donorId = { $in: globalDonorIds };
+    }
+    if (filterDonorId) {
+      if (globalDonorIds === undefined || globalDonorIds.includes(filterDonorId)) {
+        where.donorId = filterDonorId;
+      } else {
+        return { rows: [], total: 0, paymentTotals: {}, dropdownDonors: [] };
+      }
+    }
+    if (filterMethodId) where.donationMethodId = filterMethodId;
+    if (filterType) where.donationType = filterType;
+
+    const dbSortFields = ['donationDate', 'amount', 'currencyId', 'donationType'];
+    const orderBy: any = dbSortFields.includes(sortField ?? '')
+      ? { [sortField!]: sortDirection }
+      : { donationDate: 'desc' };
+
+    const [total, pageDonations] = await Promise.all([
+      remult.repo(Donation).count(where),
+      remult.repo(Donation).find({ where, orderBy, page, limit: pageSize })
+    ]);
+
+    // Load donors + methods via Maps — avoids include and concurrent sub-queries
+    const donorIds = [...new Set(pageDonations.map(d => d.donorId).filter(Boolean))];
+    const methodIds = [...new Set(pageDonations.map(d => d.donationMethodId).filter(Boolean))];
+    const [donors, methods] = await Promise.all([
+      donorIds.length > 0 ? remult.repo(Donor).find({ where: { id: { $in: donorIds } } }) : Promise.resolve([]),
+      methodIds.length > 0 ? remult.repo(DonationMethod).find({ where: { id: { $in: methodIds } } }) : Promise.resolve([])
+    ]);
+    const donorMap = new Map(donors.map(d => [d.id, d]));
+    const methodMap = new Map(methods.map(m => [m.id, m]));
+
+    const rows: CampaignDonationRow[] = pageDonations.map(d => {
+      const donor = donorMap.get(d.donorId);
+      const method = methodMap.get(d.donationMethodId);
+      return {
+        id: d.id,
+        donationDate: d.donationDate,
+        donorId: d.donorId || '',
+        donorName: donor?.fullName || 'לא ידוע',
+        amount: d.amount || 0,
+        currencyId: d.currencyId || 'ILS',
+        donationType: d.donationType || '',
+        standingOrderType: d.standingOrderType || 'bank',
+        unlimitedPayments: d.unlimitedPayments || false,
+        frequency: d.frequency || '',
+        donationMethodId: d.donationMethodId || '',
+        donationMethodName: method?.name || '-',
+        donationMethodType: method?.type || '',
+        partnerIds: d.partnerIds || [],
+        reason: d.reason || '',
+        isExceptional: d.isExceptional || false,
+        periodsElapsed: DonationController.computePeriodsElapsed(d)
+      };
+    });
+
+    // Load payment totals inline — avoids double Donation load from getPaymentTotalsForCommitments
+    const paymentTotals: Record<string, number> = {};
+    const paymentBasedIds = rows
+      .filter(r => r.donationType === 'commitment' || r.donationMethodType === 'standing_order')
+      .map(r => r.id);
+    if (paymentBasedIds.length > 0) {
+      const payments = await remult.repo(Payment).find({
+        where: { donationId: { $in: paymentBasedIds }, isActive: true }
+      });
+      for (const payment of payments) {
+        if (!payment.donationId) continue;
+        const row = rows.find(r => r.id === payment.donationId);
+        if (!row) continue;
+        const expectedType = row.donationType === 'commitment' ? 'התחייבות' : 'הו"ק';
+        if (payment.type?.startsWith(expectedType)) {
+          paymentTotals[payment.donationId] = (paymentTotals[payment.donationId] || 0) + payment.amount;
+        }
+      }
+    }
+
+    const dropdownDonors = donors
+      .map(d => ({ id: d.id, firstName: d.firstName || '', lastName: d.lastName || '', fullName: d.fullName || '' }))
+      .sort((a, b) => a.lastName.localeCompare(b.lastName, 'he') || a.firstName.localeCompare(b.firstName, 'he'));
+
+    return { rows, total, paymentTotals, dropdownDonors };
+  }
+
+  private static computePeriodsElapsed(donation: Donation): number {
+    if (!donation.donationDate || !donation.frequency) return 0;
+    const startDate = new Date(donation.donationDate);
+    const endDate = new Date();
+    if (endDate < startDate) return 0;
+    switch (donation.frequency) {
+      case 'monthly': {
+        const yearDiff = endDate.getFullYear() - startDate.getFullYear();
+        const monthDiff = endDate.getMonth() - startDate.getMonth();
+        const totalMonths = yearDiff * 12 + monthDiff;
+        return endDate.getDate() >= startDate.getDate() ? totalMonths + 1 : totalMonths;
+      }
+      case 'weekly':
+        return Math.floor((endDate.getTime() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1;
+      case 'quarterly': {
+        const yearDiff = endDate.getFullYear() - startDate.getFullYear();
+        const monthDiff = endDate.getMonth() - startDate.getMonth();
+        return Math.floor((yearDiff * 12 + monthDiff) / 3) + 1;
+      }
+      case 'yearly': {
+        const yearDiff = endDate.getFullYear() - startDate.getFullYear();
+        return (endDate.getMonth() > startDate.getMonth() ||
+          (endDate.getMonth() === startDate.getMonth() && endDate.getDate() >= startDate.getDate()))
+          ? yearDiff + 1 : yearDiff;
+      }
+      default: return 0;
+    }
   }
 }

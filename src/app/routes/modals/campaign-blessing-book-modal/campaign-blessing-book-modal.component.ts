@@ -1,19 +1,17 @@
-import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialogRef } from '@angular/material/dialog';
 import { DialogConfig, openDialog } from 'common-ui-elements';
-import { Donation, Donor, Campaign, Blessing, DonorContact } from '../../../../shared/entity';
+import { Blessing } from '../../../../shared/entity';
 import { BlessingBookType } from '../../../../shared/entity/blessing-book-type';
-import { User } from '../../../../shared/entity/user';
-import { ContactPerson } from '../../../../shared/entity/contact-person';
 import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { BlessingTypeSelectionModalComponent } from '../blessing-type-selection-modal/blessing-type-selection-modal.component';
 import { BlessingTextEditModalComponent } from '../blessing-text-edit-modal/blessing-text-edit-modal.component';
 import { ExcelExportService, ExcelColumn } from '../../../services/excel-export.service';
-import { DonorService } from '../../../services/donor.service';
 import { DonorController } from '../../../../shared/controllers/donor.controller';
+import { BlessingBookDataDto, BlessingBookTypeDto, CampaignController } from '../../../../shared/controllers/campaign.controller';
 
 export interface CampaignBlessingBookModalArgs {
   campaignId: string;
@@ -21,14 +19,21 @@ export interface CampaignBlessingBookModalArgs {
 }
 
 export interface DonorBlessing {
-  donor: Donor;
-  donation?: Donation; // Donation matching the blessing type amount
-  blessing?: Blessing;
+  donor: {
+    id: string;
+    fullName: string;
+    lastAndFirstName: string;
+    level: string;
+    fundraiserId: string;
+    contactPersonId: string;
+  };
+  donation?: { id: string; donorId: string; campaignId: string; amount: number; currencyId: string; donationDate?: Date };
+  blessing?: any; // BlessingBookBlessingDto or Blessing entity — compatible with blessingRepo.save
   blessingStatus: 'pending' | 'sent' | 'received' | 'none';
   totalDonated: number;
-  matchingDonationsCount: number; // Number of donations matching blessing type amount and campaign
-  email?: string; // Email from DonorContact for UI display
-  phone?: string; // Phone from DonorContact for UI display
+  matchingDonationsCount: number;
+  email?: string;
+  phone?: string;
 }
 
 @DialogConfig({
@@ -42,21 +47,14 @@ export interface DonorBlessing {
 export class CampaignBlessingBookModalComponent implements OnInit {
   args!: CampaignBlessingBookModalArgs;
 
-  campaign?: Campaign;
+  campaignId?: string;
+  campaignName?: string;
   donorBlessings: DonorBlessing[] = [];
-  blessingTypes: BlessingBookType[] = [];
+  blessingTypes: BlessingBookTypeDto[] = [];
 
-  donationRepo = remult.repo(Donation);
-  donorRepo = remult.repo(Donor);
-  campaignRepo = remult.repo(Campaign);
   blessingRepo = remult.repo(Blessing);
-  blessingTypeRepo = remult.repo(BlessingBookType);
 
   loading = false;
-
-  // Maps for donor-related data
-  donorEmailMap = new Map<string, string>();
-  donorPhoneMap = new Map<string, string>();
 
   // Filters
   filterText = '';
@@ -79,8 +77,7 @@ export class CampaignBlessingBookModalComponent implements OnInit {
     private snackBar: MatSnackBar,
     private cdr: ChangeDetectorRef,
     public dialogRef: MatDialogRef<CampaignBlessingBookModalComponent>,
-    private excelService: ExcelExportService,
-    private donorService: DonorService
+    private excelService: ExcelExportService
   ) {}
 
   async ngOnInit() {
@@ -89,223 +86,26 @@ export class CampaignBlessingBookModalComponent implements OnInit {
 
   get modalTitle(): string {
     const blessingBook = this.i18n.currentTerms?.blessingBookTitle || 'ספר ברכות';
-    return `${blessingBook} - ${this.campaign?.name || this.args.campaignName || ''}`;
+    return `${blessingBook} - ${this.campaignName || this.args.campaignName || ''}`;
   }
 
   async loadData() {
     this.loading = true;
     try {
-      // Load campaign
-      this.campaign = await this.campaignRepo.findId(this.args.campaignId) || undefined;
-
-      // Load blessing types
-      this.blessingTypes = await this.blessingTypeRepo.find({
-        where: { isActive: true },
-        orderBy: { price: 'asc' }
-      });
-
-      // If campaign has invited donors, show only those (filtered by global filters)
-      if (this.campaign?.invitedDonorIds && this.campaign.invitedDonorIds.length > 0) {
-        // Get filtered donor IDs from global filters
-        const filteredDonorIds = await this.donorService.findFilteredIds();
-        console.log('CampaignBlessingBook: Filtered donor IDs from global filters:', filteredDonorIds.length);
-        console.log('CampaignBlessingBook: Invited donor IDs from campaign:', this.campaign.invitedDonorIds.length);
-
-        // Intersect invited donors with filtered donors
-        const invitedAndFilteredIds = this.campaign.invitedDonorIds.filter(id =>
-          filteredDonorIds.includes(id)
-        );
-        console.log('CampaignBlessingBook: Donors that are both invited AND match global filters:', invitedAndFilteredIds.length);
-
-        // Load only donors that are both invited AND match global filters
-        const invitedDonors = await this.donorRepo.find({
-          where: {
-            id: { $in: invitedAndFilteredIds }
-          }
-        });
-
-        // Load contact info using DonorService
-        const relatedData = await this.donorService.loadDonorRelatedData(
-          invitedDonors.map(d => d.id)
-        );
-        this.donorEmailMap = relatedData.donorEmailMap;
-        this.donorPhoneMap = relatedData.donorPhoneMap;
-
-        // Load campaign donations for invited donors, ordered by date descending
-        const donations = await this.donationRepo.find({
-          where: {
-            campaignId: this.args.campaignId,
-            donorId: { $in: this.campaign.invitedDonorIds }
-          },
-          include: {
-            donor: true
-          },
-          orderBy: {
-            donationDate: 'desc'
-          }
-        });
-
-        // Load existing blessings for invited donors
-        const blessings = await this.blessingRepo.find({
-          where: {
-            campaignId: this.args.campaignId,
-            donorId: { $in: this.campaign.invitedDonorIds }
-          },
-          include: {
-            blessingBookType: true
-          }
-        });
-
-        // Group by donor and create DonorBlessing objects
-        const donorMap = new Map<string, DonorBlessing>();
-
-        // First, create entries for all invited donors (even without donations)
-        for (const donor of invitedDonors) {
-          donorMap.set(donor.id, {
-            donor: donor,
-            donation: undefined,
-            blessing: undefined,
-            blessingStatus: 'none',
-            totalDonated: 0,
-            matchingDonationsCount: 0,
-            email: this.donorEmailMap.get(donor.id),
-            phone: this.donorPhoneMap.get(donor.id)
-          });
-        }
-
-        // Add blessing information first (so we know the expected amount)
-        for (const blessing of blessings) {
-          const donorBlessing = donorMap.get(blessing.donorId);
-          if (donorBlessing) {
-            donorBlessing.blessing = blessing;
-            donorBlessing.blessingStatus = this.getBlessingStatus(blessing);
-          }
-        }
-
-        // Add donation information - find donation matching blessing type amount
-        for (const donation of donations) {
-          if (!donation.donor) continue;
-
-          const donorId = donation.donorId;
-          const donorBlessing = donorMap.get(donorId);
-
-          if (donorBlessing) {
-            // Calculate total donated
-            donorBlessing.totalDonated += donation.amount;
-
-            // If we have a blessing with a type, count and match donations
-            if (donorBlessing.blessing?.blessingBookType) {
-              const expectedAmount = donorBlessing.blessing.blessingBookType.price;
-              if (donation.amount === expectedAmount) {
-                donorBlessing.matchingDonationsCount++;
-                if (!donorBlessing.donation) {
-                  donorBlessing.donation = donation;
-                }
-              }
-            } else if (!donorBlessing.donation) {
-              // If no blessing type yet, just keep the latest donation
-              donorBlessing.donation = donation;
-            }
-          }
-        }
-
-        this.donorBlessings = Array.from(donorMap.values());
-      } else {
-        // Original behavior: show donors with donations, filtered by global filters
-        // Global filters are fetched from user.settings in the backend
-
-        // Get filtered donor IDs from global filters (backend fetches from user.settings)
-        const filteredDonors = await DonorController.findFilteredDonors();
-        const filteredDonorIds = filteredDonors.map(d => d.id);
-
-        // Load donations for this campaign, filtered by global filters
-        const donations = await this.donationRepo.find({
-          where: {
-            campaignId: this.args.campaignId,
-            ...(filteredDonorIds.length > 0 ? { donorId: { $in: filteredDonorIds } } : {})
-          },
-          include: {
-            donor: true
-          }
-        });
-
-        // Get unique donor IDs
-        const donorIds = [...new Set(donations.map(d => d.donorId).filter(id => id))];
-
-        // Load contact info using DonorService
-        const relatedData = await this.donorService.loadDonorRelatedData(donorIds);
-        this.donorEmailMap = relatedData.donorEmailMap;
-        this.donorPhoneMap = relatedData.donorPhoneMap;
-
-        // Load existing blessings for this campaign
-        const blessings = await this.blessingRepo.find({
-          where: { campaignId: this.args.campaignId },
-          include: {
-            blessingBookType: true
-          }
-        });
-
-        // Group by donor and create DonorBlessing objects
-        const donorMap = new Map<string, DonorBlessing>();
-
-        // First create entries from donations
-        for (const donation of donations) {
-          if (!donation.donor) continue;
-
-          const donorId = donation.donorId;
-          if (!donorMap.has(donorId)) {
-            donorMap.set(donorId, {
-              donor: donation.donor,
-              donation: undefined,
-              blessing: undefined,
-              blessingStatus: 'none',
-              totalDonated: 0,
-              matchingDonationsCount: 0
-            });
-          }
-
-          const donorBlessing = donorMap.get(donorId)!;
-          donorBlessing.totalDonated += donation.amount;
-        }
-
-        // Add blessing information
-        for (const blessing of blessings) {
-          const donorBlessing = donorMap.get(blessing.donorId);
-          if (donorBlessing) {
-            donorBlessing.blessing = blessing;
-            donorBlessing.blessingStatus = this.getBlessingStatus(blessing);
-          }
-        }
-
-        // Now match donations to blessing types
-        for (const donation of donations) {
-          if (!donation.donor) continue;
-
-          const donorId = donation.donorId;
-          const donorBlessing = donorMap.get(donorId);
-
-          if (donorBlessing) {
-            // If we have a blessing with a type, count and match donations
-            if (donorBlessing.blessing?.blessingBookType) {
-              const expectedAmount = donorBlessing.blessing.blessingBookType.price;
-              if (donation.amount === expectedAmount) {
-                donorBlessing.matchingDonationsCount++;
-                if (!donorBlessing.donation) {
-                  donorBlessing.donation = donation;
-                }
-              }
-            } else if (!donorBlessing.donation) {
-              // If no blessing type yet, just keep the first donation
-              donorBlessing.donation = donation;
-            }
-          }
-        }
-
-        this.donorBlessings = Array.from(donorMap.values());
-      }
-
+      const dto = await CampaignController.getBlessingBookData(this.args.campaignId);
+      this.campaignName = this.args.campaignName;
+      this.blessingTypes = dto.blessingTypes;
+      this.donorBlessings = dto.entries.map(e => ({
+        donor: e.donor,
+        donation: e.donation,
+        blessing: e.blessing,
+        blessingStatus: e.blessingStatus,
+        totalDonated: e.totalDonated,
+        matchingDonationsCount: e.matchingDonationsCount,
+        email: e.email || undefined,
+        phone: e.phone || undefined
+      }));
       this.calculateStatistics();
-
     } catch (error) {
       console.error('Error loading campaign blessing book:', error);
       this.ui.error('שגיאה בטעינת ספר הברכות');
@@ -314,16 +114,10 @@ export class CampaignBlessingBookModalComponent implements OnInit {
     }
   }
 
-  getBlessingStatus(blessing: Blessing): 'pending' | 'sent' | 'received' | 'none' {
-    if (!blessing.blessingContent || blessing.blessingContent.trim() === '') {
-      return 'pending';
-    }
-    if (blessing.status === 'מאושר') {
-      return 'received';
-    }
-    if (blessing.status === 'בטיפול') {
-      return 'sent';
-    }
+  getBlessingStatus(blessing: any): 'pending' | 'sent' | 'received' | 'none' {
+    if (!blessing?.blessingContent || blessing.blessingContent.trim() === '') return 'pending';
+    if (blessing.status === 'מאושר') return 'received';
+    if (blessing.status === 'בטיפול') return 'sent';
     return 'pending';
   }
 
@@ -334,34 +128,17 @@ export class CampaignBlessingBookModalComponent implements OnInit {
     this.receivedBlessings = this.donorBlessings.filter(db => db.blessingStatus === 'received').length;
   }
 
-  getDonorPhone(donorId: string): string {
-    return this.donorPhoneMap.get(donorId) || '';
-  }
-
-  getDonorEmail(donorId: string): string {
-    return this.donorEmailMap.get(donorId) || '';
-  }
-
   get filteredDonorBlessings(): DonorBlessing[] {
-    return this.donorBlessings.filter(donorBlessing => {
-      const donor = donorBlessing.donor;
-      const phone = this.getDonorPhone(donor.id);
-      const email = this.getDonorEmail(donor.id);
-
+    return this.donorBlessings.filter(db => {
       const matchesText = !this.filterText ||
-        donor.fullName?.toLowerCase().includes(this.filterText.toLowerCase()) ||
-        phone.includes(this.filterText) ||
-        email.toLowerCase().includes(this.filterText.toLowerCase()) ||
-        donorBlessing.blessing?.blessingContent?.toLowerCase().includes(this.filterText.toLowerCase());
+        db.donor.fullName?.toLowerCase().includes(this.filterText.toLowerCase()) ||
+        (db.phone || '').includes(this.filterText) ||
+        (db.email || '').toLowerCase().includes(this.filterText.toLowerCase()) ||
+        db.blessing?.blessingContent?.toLowerCase().includes(this.filterText.toLowerCase());
 
-      const matchesStatus = !this.filterStatus ||
-        donorBlessing.blessingStatus === this.filterStatus;
-
-      const matchesLevel = !this.filterLevel ||
-        donorBlessing.donor.level === this.filterLevel;
-
-      const matchesBlessingType = !this.filterBlessingType ||
-        donorBlessing.blessing?.blessingBookTypeId === this.filterBlessingType;
+      const matchesStatus = !this.filterStatus || db.blessingStatus === this.filterStatus;
+      const matchesLevel = !this.filterLevel || db.donor.level === this.filterLevel;
+      const matchesBlessingType = !this.filterBlessingType || db.blessing?.blessingBookTypeId === this.filterBlessingType;
 
       return matchesText && matchesStatus && matchesLevel && matchesBlessingType;
     });
@@ -404,15 +181,13 @@ export class CampaignBlessingBookModalComponent implements OnInit {
     const selectedType = await openDialog(BlessingTypeSelectionModalComponent, (dlg) => {}) as BlessingBookType | undefined;
 
     if (selectedType && selectedType.id) {
-      // Create or update blessing with selected type
-      let blessing = donorBlessing.blessing;
+      let blessing: any = donorBlessing.blessing;
       if (!blessing) {
         blessing = this.blessingRepo.create();
         blessing.donorId = donorBlessing.donor.id;
         blessing.campaignId = this.args.campaignId;
         blessing.name = donorBlessing.donor.fullName || '';
       }
-
       blessing.blessingBookTypeId = selectedType.id;
       blessing.blessingBookType = selectedType;
       blessing.amount = selectedType.price;
@@ -429,8 +204,7 @@ export class CampaignBlessingBookModalComponent implements OnInit {
   }
 
   async editBlessing(donorBlessing: DonorBlessing) {
-    // Create or find blessing
-    let blessing = donorBlessing.blessing;
+    let blessing: any = donorBlessing.blessing;
     if (!blessing) {
       blessing = this.blessingRepo.create();
       blessing.donorId = donorBlessing.donor.id;
@@ -438,7 +212,6 @@ export class CampaignBlessingBookModalComponent implements OnInit {
       blessing.name = donorBlessing.donor.fullName || '';
     }
 
-    // Open blessing text edit dialog
     const text = await openDialog(BlessingTextEditModalComponent, (dlg) => {
       dlg.args = {
         initialText: blessing!.blessingContent || '',
@@ -483,7 +256,7 @@ export class CampaignBlessingBookModalComponent implements OnInit {
     }
   }
 
-  async openDonorDetails(donor: Donor) {
+  async openDonorDetails(donor: { id: string }) {
     await this.ui.donorDetailsDialog(donor.id);
   }
 
@@ -518,14 +291,10 @@ export class CampaignBlessingBookModalComponent implements OnInit {
     }
   }
 
-  async openDonationDetails(donation: Donation | undefined) {
+  async openDonationDetails(donation: { id: string } | undefined) {
     if (!donation) return;
-
     const result = await this.ui.donationDetailsDialog(donation.id);
-    if (result) {
-      // Reload data to reflect any changes
-      await this.loadData();
-    }
+    if (result) await this.loadData();
   }
 
   getTruncatedBlessingText(text: string | undefined, maxLength: number = 30): string {
@@ -535,7 +304,7 @@ export class CampaignBlessingBookModalComponent implements OnInit {
   }
 
   async exportSummaryToExcel() {
-    if (!this.campaign) return;
+    if (!this.campaignName) return;
 
     const dataToExport = this.filteredDonorBlessings;
 
@@ -594,10 +363,10 @@ export class CampaignBlessingBookModalComponent implements OnInit {
       data: summaryData,
       columns: columns,
       sheetName: 'סיכום ספר ברכות',
-      fileName: this.excelService.generateFileName(`סיכום_ספר_ברכות_${this.campaign.name}`),
+      fileName: this.excelService.generateFileName(`סיכום_ספר_ברכות_${this.campaignName}`),
       includeStats: true,
       stats: [
-        { label: 'שם קמפיין', value: this.campaign.name },
+        { label: 'שם קמפיין', value: this.campaignName || '' },
         { label: 'סה"כ ברכות', value: totalBlessings },
         { label: 'סה"כ סכום', value: `${totalAmount.toLocaleString('he-IL')} ₪` },
         { label: 'מס\' סוגי ברכות', value: summaryData.length },
@@ -607,7 +376,7 @@ export class CampaignBlessingBookModalComponent implements OnInit {
   }
 
   async exportToExcel() {
-    if (!this.campaign) return;
+    if (!this.campaignName) return;
 
     const dataToExport = this.filteredDonorBlessings;
 
@@ -617,18 +386,15 @@ export class CampaignBlessingBookModalComponent implements OnInit {
     }
 
     // Load fundraisers and contact persons for lookup
-    const [fundraisers, contactPersons] = await Promise.all([
-      remult.repo(User).find({ where: { donator: true } }),
-      remult.repo(ContactPerson).find()
-    ]);
+    const { fundraisers, contactPersons } = await DonorController.getExportLookups();
     const fundraiserMap = new Map(fundraisers.map(f => [f.id, f.name]));
     const contactPersonMap = new Map(contactPersons.map(cp => [cp.id, cp.name]));
 
     // הגדרת עמודות
     const columns: ExcelColumn<DonorBlessing>[] = [
       { header: 'שם תורם', mapper: (db) => db.donor.fullName || '-', width: 20 },
-      { header: 'טלפון', mapper: (db) => this.getDonorPhone(db.donor.id) || '-', width: 15 },
-      { header: 'אימייל', mapper: (db) => this.getDonorEmail(db.donor.id) || '-', width: 25 },
+      { header: 'טלפון', mapper: (db) => db.phone || '-', width: 15 },
+      { header: 'אימייל', mapper: (db) => db.email || '-', width: 25 },
       { header: 'מתרים', mapper: (db) => db.donor.fundraiserId ? fundraiserMap.get(db.donor.fundraiserId) || '' : '', width: 15 },
       { header: 'איש קשר', mapper: (db) => db.donor.contactPersonId ? contactPersonMap.get(db.donor.contactPersonId) || '' : '', width: 15 },
       { header: 'סוג ברכה', mapper: (db) => db.blessing?.blessingBookType?.type || '-', width: 15 },
@@ -644,10 +410,10 @@ export class CampaignBlessingBookModalComponent implements OnInit {
       data: dataToExport,
       columns: columns,
       sheetName: 'ספר ברכות',
-      fileName: this.excelService.generateFileName(`ספר_ברכות_${this.campaign.name}`),
+      fileName: this.excelService.generateFileName(`ספר_ברכות_${this.campaignName}`),
       includeStats: true,
       stats: [
-        { label: 'שם קמפיין', value: this.campaign.name },
+        { label: 'שם קמפיין', value: this.campaignName || '' },
         { label: 'סה"כ תורמים', value: this.totalDonors },
         { label: 'ברכות ממתינות', value: this.pendingBlessings },
         { label: 'ברכות שנשלחו', value: this.sentBlessings },
@@ -687,20 +453,14 @@ export class CampaignBlessingBookModalComponent implements OnInit {
       return;
     }
 
-    if (!this.campaign) {
-      this.snackBar.open('שגיאה: לא נמצא קמפיין', 'סגור', { duration: 3000 });
-      return;
-    }
-
-    // Generate email content
-    const subject = `בקשה לברכה לספר ברכות - ${this.campaign.name}`;
+    const subject = `בקשה לברכה לספר ברכות - ${this.campaignName || ''}`;
 
     const htmlBody = `
       <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; direction: rtl;">
         <h2 style="color: #2c3e50; text-align: center;">שלום ${donorBlessing.donor.fullName},</h2>
 
         <p style="font-size: 16px; line-height: 1.6; color: #34495e;">
-          אנו שמחים לפנות אליך במסגרת <strong>${this.campaign.name}</strong>.
+          אנו שמחים לפנות אליך במסגרת <strong>${this.campaignName || ''}</strong>.
         </p>
 
         <p style="font-size: 16px; line-height: 1.6; color: #34495e;">

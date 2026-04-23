@@ -11,7 +11,7 @@
         <div class="header-text">
           <h2>{{ (i18n.terms$ | async)?.inviteesSection }}</h2>
           <p class="header-subtitle" *ngIf="campaign">
-            {{campaign.name}} - {{invitedDonors.length}} {{ (i18n.terms$ | async)?.invitees }}
+            {{campaign.name}} - {{serverTotalCount}} {{ (i18n.terms$ | async)?.invitees }}
           </p>
         </div>
       </div>
@@ -24,11 +24,11 @@
     <div class="filters-section" *ngIf="campaign">
       <div class="display-options-section">
         <label class="display-option-checkbox">
-          <input type="checkbox" [(ngModel)]="showOnlySelected">
+          <input type="checkbox" [(ngModel)]="showOnlySelected" (ngModelChange)="onShowOnlySelectedChange()">
           <span class="checkbox-label">הצג רק מסומנים</span>
         </label>
         <label class="display-option-checkbox">
-          <input type="checkbox" [(ngModel)]="showSelectedFirst">
+          <input type="checkbox" [(ngModel)]="showSelectedFirst" (ngModelChange)="onShowSelectedFirstChange()">
           <span class="checkbox-label">הצג מסומנים ראשונים ברשימה</span>
         </label>
         <div class="free-search-container">
@@ -159,7 +159,7 @@
     <div class="modal-footer">
       <!-- Selection Actions -->
       <div class="selection-actions">
-        <button mat-stroked-button (click)="selectAll()" [disabled]="loading || invitedDonors.length === 0">
+        <button mat-stroked-button (click)="selectAll()" [disabled]="loading || serverTotalCount === 0">
           <mat-icon>check_box</mat-icon>
           {{ (i18n.terms$ | async)?.selectAll }}
         </button>
@@ -172,7 +172,7 @@
       <div class="footer-stats">
         <span class="stat-item">
           <mat-icon>people</mat-icon>
-          {{ (i18n.terms$ | async)?.totalInvitees }}: {{invitedDonors.length}}
+          {{ (i18n.terms$ | async)?.totalInvitees }}: {{serverTotalCount}}
         </span>
         <span class="stat-item" *ngIf="true || selectedCount > 0">
           <mat-icon>check_circle</mat-icon>
@@ -187,7 +187,7 @@
         <button mat-raised-button
                 color="accent"
                 (click)="exportToExcel()"
-                [disabled]="loading || invitedDonors.length === 0">
+                [disabled]="loading || serverTotalCount === 0">
           <mat-icon>file_download</mat-icon>
           {{ (i18n.terms$ | async)?.exportToExcel }}
         </button>

@@ -1,7 +1,7 @@
-import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { Campaign, Donor, Circle, Place } from '../../../../shared/entity';
+import { Campaign, Circle } from '../../../../shared/entity';
 import { User } from '../../../../shared/entity/user';
 import { ContactPerson } from '../../../../shared/entity/contact-person';
 import { remult } from 'remult';
@@ -9,7 +9,11 @@ import { I18nService } from '../../../i18n/i18n.service';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { openDialog, DialogConfig, BusyService } from 'common-ui-elements';
 import { ExcelExportService, ExcelColumn } from '../../../services/excel-export.service';
-import { DonorService } from '../../../services/donor.service';
+import {
+  DonorController,
+  DonorSelectionFilters,
+  InvitedDonorRow,
+} from '../../../../shared/controllers/donor.controller';
 
 export interface CampaignInvitedListModalArgs {
   campaignId: string;
@@ -27,18 +31,11 @@ export class CampaignInvitedListModalComponent implements OnInit {
   args!: CampaignInvitedListModalArgs;
 
   campaign!: Campaign;
-  invitedDonors: Donor[] = [];
-  allDonors: Donor[] = []; // All donors in system for filter lists
+  invitedDonors: InvitedDonorRow[] = [];
   campaignRepo = remult.repo(Campaign);
-  donorRepo = remult.repo(Donor);
   circleRepo = remult.repo(Circle);
   loading = false;
-
-  // Maps for related data from dedicated entities
-  donorPlaceMap = new Map<string, Place>();
-  donorEmailMap = new Map<string, string>();
-  donorPhoneMap = new Map<string, string>();
-  donorBirthDateMap = new Map<string, Date>();
+  serverTotalCount = 0;
 
   // Selection management
   selectedDonors: Set<string> = new Set();
@@ -54,16 +51,15 @@ export class CampaignInvitedListModalComponent implements OnInit {
   selectedCity = '';
   selectedNeighborhood = '';
   selectedCircleId = '';
-  selectedAlumniStatus = '';
 
-  // Alumni filters (like Anash)
+  // Alumni filters
   includeAlumni = false;
   excludeAlumni = false;
 
   // Display options
   showOnlySelected = false;
   showSelectedFirst = false;
-  freeSearchText = ''; // חיפוש חופשי
+  freeSearchText = '';
 
   // Pagination
   currentPage = 1;
@@ -92,7 +88,6 @@ export class CampaignInvitedListModalComponent implements OnInit {
     private cdr: ChangeDetectorRef,
     public dialogRef: MatDialogRef<CampaignInvitedListModalComponent>,
     private excelService: ExcelExportService,
-    private donorService: DonorService,
     private busy: BusyService
   ) {}
 
@@ -100,58 +95,34 @@ export class CampaignInvitedListModalComponent implements OnInit {
     await this.refreshData();
   }
 
-  /**
-   * ✅ Main data loading method - wrapped with BusyService
-   * Calls loadBaseData if not loaded yet, then loads other data
-   */
   async refreshData() {
     await this.busy.doWhileShowingBusy(async () => {
-      // Step 1: Load campaign (always first)
       await this.loadCampaign();
       if (!this.campaign) return;
 
-      // Step 2: Load base data if not loaded yet
       if (!this.baseDataLoaded) {
         await this.loadBaseData();
         this.baseDataLoaded = true;
       }
 
-      // Step 3: Load dynamic data
       await this.loadDynamicData();
 
-      // Step 4: Apply saved selections
       if (this.campaign?.invitedDonorIds && this.campaign.invitedDonorIds.length > 0) {
         this.selectedDonors = new Set(this.campaign.invitedDonorIds);
       }
     });
   }
 
-  /**
-   * Load base data - called once (circles, donors with related data)
-   */
   private async loadBaseData() {
-    // Load in parallel
     await Promise.all([
       this.loadCircles(),
-      this.loadInvitedDonors()
+      this.loadPage()
     ]);
-
-    // Set allDonors from invitedDonors
-    this.allDonors = this.invitedDonors;
-
-    // Extract filter data from loaded donors
-    this.extractFilterData();
   }
 
-  /**
-   * Load dynamic data - can be called multiple times
-   */
   private async loadDynamicData() {
-    // Load previously saved filters
     this.loadFiltersFromCampaign();
-
-    // Apply filters as selection
-    this.applyFiltersAsSelection();
+    await this.applyFiltersAsSelection();
   }
 
   async loadCircles() {
@@ -165,30 +136,71 @@ export class CampaignInvitedListModalComponent implements OnInit {
     }
   }
 
-  // ✅ REMOVED: loadAllDonorsForFilters - מיותר, allDonors מגיע מ-invitedDonors
+  async loadPage() {
+    this.loading = true;
+    try {
+      const showOnlyIds = this.showOnlySelected ? Array.from(this.selectedDonors) : undefined;
+      const serverSortField = ['firstName', 'lastName'].includes(this.sortField) ? this.sortField : 'firstName';
+      const serverSortDir = ['firstName', 'lastName'].includes(this.sortField) ? this.sortDirection : 'asc';
 
-  extractFilterData() {
-    // Extract unique values from ALL donors (not just filtered ones)
-    const countriesSet = new Set<string>();
-    const citiesSet = new Set<string>();
-    const neighborhoodsSet = new Set<string>();
+      const result = await DonorController.getInvitedDonorsPage({
+        page: this.currentPage,
+        pageSize: this.pageSize,
+        showOnlyIds,
+        freeSearch: this.freeSearchText || undefined,
+        sortField: serverSortField,
+        sortDirection: serverSortDir
+      });
 
-    this.allDonors.forEach(donor => {
-      const place = this.donorPlaceMap.get(donor.id);
-      if (place?.country?.name) {
-        countriesSet.add(place.country.name);
+      this.serverTotalCount = result.totalCount;
+      this.totalDonors = result.totalCount;
+      this.totalPages = Math.ceil(result.totalCount / this.pageSize);
+
+      if (result.filterOptions.countries.length > 0 || result.filterOptions.cities.length > 0 || result.filterOptions.neighborhoods.length > 0) {
+        this.countries = result.filterOptions.countries;
+        this.cities = result.filterOptions.cities;
+        this.neighborhoods = result.filterOptions.neighborhoods;
       }
-      if (place?.city) {
-        citiesSet.add(place.city);
+
+      let rows = result.rows;
+
+      if (['phone', 'email', 'city'].includes(this.sortField)) {
+        rows = this.sortRowsByField(rows, this.sortField, this.sortDirection);
       }
-      if (place?.neighborhood) {
-        neighborhoodsSet.add(place.neighborhood);
+
+      if (this.showSelectedFirst) {
+        rows = this.sortRowsBySelection(rows);
       }
+
+      this.invitedDonors = rows;
+    } catch (error: any) {
+      console.error('Error loading page:', error);
+      this.ui.error('שגיאה בטעינת הרשימה: ' + (error.message || error));
+    } finally {
+      this.loading = false;
+    }
+  }
+
+  private sortRowsByField(rows: InvitedDonorRow[], field: string, direction: 'asc' | 'desc'): InvitedDonorRow[] {
+    return [...rows].sort((a, b) => {
+      let aVal: string, bVal: string;
+      switch (field) {
+        case 'phone': aVal = a.phone; bVal = b.phone; break;
+        case 'email': aVal = a.email; bVal = b.email; break;
+        case 'city': aVal = a.city; bVal = b.city; break;
+        default: aVal = a.firstName; bVal = b.firstName;
+      }
+      const cmp = aVal.localeCompare(bVal, 'he');
+      return direction === 'asc' ? cmp : -cmp;
     });
+  }
 
-    this.countries = Array.from(countriesSet).sort();
-    this.cities = Array.from(citiesSet).sort();
-    this.neighborhoods = Array.from(neighborhoodsSet).sort();
+  private sortRowsBySelection(rows: InvitedDonorRow[]): InvitedDonorRow[] {
+    return [...rows].sort((a, b) => {
+      const aS = this.selectedDonors.has(a.id) ? 0 : 1;
+      const bS = this.selectedDonors.has(b.id) ? 0 : 1;
+      return aS - bS;
+    });
   }
 
   async loadCampaign() {
@@ -216,73 +228,33 @@ export class CampaignInvitedListModalComponent implements OnInit {
     }
   }
 
-  async loadInvitedDonors() {
+  private async applyFiltersAsSelection() {
     if (!this.campaign) return;
-
-    try {
-      // Use global filters to get filtered donors
-      const filteredDonors = await this.donorService.findFiltered();
-      console.log('CampaignInvitedList: Loaded donors from global filters:', filteredDonors.length);
-
-      // Load related data for filtered donors
-      const relatedData = await this.donorService.loadDonorRelatedData(
-        filteredDonors.map(d => d.id)
-      );
-
-      // Populate maps from service
-      this.donorPlaceMap = relatedData.donorPlaceMap;
-      this.donorEmailMap = relatedData.donorEmailMap;
-      this.donorPhoneMap = relatedData.donorPhoneMap;
-      this.donorBirthDateMap = relatedData.donorBirthDateMap;
-
-      this.invitedDonors = filteredDonors;
-      this.totalDonors = this.invitedDonors.length;
-
-      // Apply current filters as selection
-      this.applyFiltersAsSelection();
-
-    } catch (error: any) {
-      console.error('Error loading invited donors:', error);
-      this.ui.error('שגיאה בטעינת רשימת המוזמנים: ' + (error.message || error));
-    }
-  }
-
-  // Apply current filters by selecting/deselecting matching donors
-  // Two-stage process: 1) Inclusive filters select, 2) Exclusive filters deselect
-  private applyFiltersAsSelection() {
-
-    console.log('applyFiltersAsSelection')
-
-    if (!this.campaign) return;
-
-    // Only apply if there are active filters
     if (!this.hasActiveFilters) return;
 
-    // שלב א': טיפול בפילטרי "כולל" - נקה ובחר מחדש
+    const filters: DonorSelectionFilters = {
+      isAnash: this.campaign.invitedDonorFilters?.isAnash || undefined,
+      excludeAnash: this.campaign.invitedDonorFilters?.excludeAnash || undefined,
+      isAlumni: this.includeAlumni || undefined,
+      excludeAlumni: this.excludeAlumni || undefined,
+      country: this.selectedCountry || undefined,
+      city: this.selectedCity || undefined,
+      neighborhood: this.selectedNeighborhood || undefined,
+      circleId: this.selectedCircleId || undefined,
+      minAge: this.campaign.invitedDonorFilters?.minAge,
+      maxAge: this.campaign.invitedDonorFilters?.maxAge,
+    };
+
+    const { inclusiveIds, exclusiveIds } = await DonorController.getMatchingDonorIds(filters);
+
     if (this.hasInclusiveFilters) {
-    console.log('applyFiltersAsSelection 1')
-
-      this.selectedDonors.clear();
-      this.invitedDonors.forEach(donor => {
-        if (this.matchesInclusiveFilters(donor)) {
-          this.selectedDonors.add(donor.id);
-    console.log(' this.selectedDonors.size', this.selectedDonors.size)
-        }
-      });
+      this.selectedDonors = new Set(inclusiveIds);
     }
-
-    // שלב ב': טיפול בפילטרי "לא כולל" - הסר סימון בלבד
     if (this.hasExclusiveFilters) {
-    console.log('applyFiltersAsSelection 2')
-      this.invitedDonors.forEach(donor => {
-        if (this.shouldBeExcluded(donor)) {
-          this.selectedDonors.delete(donor.id);
-        }
-      });
+      exclusiveIds.forEach(id => this.selectedDonors.delete(id));
     }
   }
 
-  // Check if there are any inclusive filters active
   private get hasInclusiveFilters(): boolean {
     if (!this.campaign) return false;
     return !!(
@@ -297,7 +269,6 @@ export class CampaignInvitedListModalComponent implements OnInit {
     );
   }
 
-  // Check if there are any exclusive filters active
   private get hasExclusiveFilters(): boolean {
     if (!this.campaign) return false;
     return !!(
@@ -306,128 +277,36 @@ export class CampaignInvitedListModalComponent implements OnInit {
     );
   }
 
-  // Check if donor matches inclusive filter criteria
-  private matchesInclusiveFilters(donor: Donor): boolean {
-    // Get related data from maps
-    const place = this.donorPlaceMap.get(donor.id);
-    const birthDate = this.donorBirthDateMap.get(donor.id);
-
-    // Apply country filter
-    if (this.selectedCountry) {
-    console.log('selectedCountry')
-      if (place?.country?.name !== this.selectedCountry) {
-        return false;
-      }
-    }
-
-    // Apply city filter
-    if (this.selectedCity) {
-    console.log('selecselectedCitytedCountry')
-      if (place?.city !== this.selectedCity) {
-        return false;
-      }
-    }
-
-    // Apply neighborhood filter
-    if (this.selectedNeighborhood) {
-    console.log('selectedNeighborhood')
-      if (place?.neighborhood !== this.selectedNeighborhood) {
-        return false;
-      }
-    }
-
-    // Apply circle filter
-    if (this.selectedCircleId) {
-      console.log('this.selectedCircleId',this.selectedCircleId)
-      if (!donor.circleIds?.includes(this.selectedCircleId)) {
-        return false;
-      }
-    }
-
-    // Apply alumni inclusive filter
-    if (this.includeAlumni) {
-    console.log('includeAlumni')
-      if (!donor.isAlumni) return false;
-    }
-
-    // Apply אנ"ש inclusive filter
-    if (this.campaign.invitedDonorFilters?.isAnash) {
-    console.log('isAnash',donor.isAnash,donor.firstName)
-      if (!donor.isAnash) return false;
-    console.log('isAnash 2',donor.isAnash,donor.firstName)
-    }
-
-    // Apply age filters
-    if (this.campaign.invitedDonorFilters?.minAge || this.campaign.invitedDonorFilters?.maxAge) {
-    console.log('minAge')
-      if (birthDate) {
-        const age = this.calculateAge(birthDate);
-        if (this.campaign.invitedDonorFilters.minAge && age < this.campaign.invitedDonorFilters.minAge) return false;
-        if (this.campaign.invitedDonorFilters.maxAge && age > this.campaign.invitedDonorFilters.maxAge) return false;
-      }
-    }
-
-    return true;
-  }
-
-  // Check if donor should be excluded (exclusive filters)
-  private shouldBeExcluded(donor: Donor): boolean {
-    // Exclude alumni
-    if (this.excludeAlumni && donor.isAlumni) {
-      return true;
-    }
-
-    // Exclude אנ"ש
-    if (this.campaign.invitedDonorFilters?.excludeAnash && donor.isAnash) {
-      return true;
-    }
-
-    return false;
-  }
-
-  private calculateAge(birthDate: Date): number {
-    const today = new Date();
-    const birth = new Date(birthDate);
-    let age = today.getFullYear() - birth.getFullYear();
-    const monthDiff = today.getMonth() - birth.getMonth();
-
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-      age--;
-    }
-
-    return age;
-  }
-
-  private updateFilterStats() {
-    // Update filtering statistics for display
-    this.filteredByAnash = this.campaign.invitedDonorFilters?.isAnash ? this.invitedDonors.length : 0;
-  }
-
   async exportToExcel() {
     if (!this.campaign) return;
 
-    // בדיקה אם לייצא רק מסומנים או את כולם
-    let donorsToExport = this.displayedDonors;
+    let showOnlyIds: string[] | undefined;
 
-    if (this.selectedCount > 0 && this.selectedCount < this.displayedDonors.length) {
+    if (this.selectedCount > 0) {
       const exportSelected = await this.ui.yesNoQuestion(
-        `יש ${this.selectedCount} תורמים מסומנים מתוך ${this.displayedDonors.length}. האם לייצא רק את המסומנים?`
+        `יש ${this.selectedCount} תורמים מסומנים. האם לייצא רק את המסומנים?`
       );
       if (exportSelected) {
-        donorsToExport = this.displayedDonors.filter(d => this.isSelected(d.id));
+        showOnlyIds = Array.from(this.selectedDonors);
       }
     }
 
-    // Load fundraisers and contact persons for lookup
-    const [fundraisers, contactPersons] = await Promise.all([
+    const [exportResult, fundraisers, contactPersons] = await Promise.all([
+      DonorController.getInvitedDonorsPage({
+        page: 1,
+        pageSize: 99999,
+        showOnlyIds,
+        freeSearch: this.freeSearchText || undefined,
+      }),
       remult.repo(User).find({ where: { donator: true } }),
       remult.repo(ContactPerson).find()
     ]);
+
+    const donorsToExport = exportResult.rows;
     const fundraiserMap = new Map(fundraisers.map(f => [f.id, f.name]));
     const contactPersonMap = new Map(contactPersons.map(cp => [cp.id, cp.name]));
 
-    // הגדרת עמודות
-    const columns: ExcelColumn<Donor>[] = [
+    const columns: ExcelColumn<InvitedDonorRow>[] = [
       { header: 'שם מלא', mapper: (d) => this.getDonorDisplayName(d), width: 20 },
       { header: 'טלפון', mapper: (d) => this.getDonorPhone(d), width: 15 },
       { header: 'אימייל', mapper: (d) => this.getDonorEmail(d), width: 25 },
@@ -442,16 +321,15 @@ export class CampaignInvitedListModalComponent implements OnInit {
       { header: 'מסומן', mapper: (d) => this.isSelected(d.id) ? '✓' : '', width: 8 }
     ];
 
-    // ייצוא
     await this.excelService.export({
       data: donorsToExport,
-      columns: columns,
+      columns,
       sheetName: 'מוזמנים',
       fileName: this.excelService.generateFileName(`מוזמנים_${this.campaign.name}`),
       includeStats: true,
       stats: [
         { label: 'שם קמפיין', value: this.campaign.name },
-        { label: 'סה"כ מוזמנים מוצגים', value: this.displayedDonors.length },
+        { label: 'סה"כ מוזמנים', value: this.serverTotalCount },
         { label: 'מוזמנים מיוצאים', value: donorsToExport.length },
         { label: 'מסומנים', value: this.selectedCount },
         { label: 'תאריך ייצוא', value: new Date().toLocaleDateString('he-IL') }
@@ -460,18 +338,15 @@ export class CampaignInvitedListModalComponent implements OnInit {
   }
 
   async sendInvitations() {
-    // TODO: Implement send invitations
     this.snackBar.open('שליחת הזמנות בפיתוח', 'סגור', { duration: 3000 });
   }
 
-  openDonorDetails(donor: Donor) {
-    this.ui.donorDetailsDialog(donor.id);
+  openDonorDetails(row: InvitedDonorRow) {
+    this.ui.donorDetailsDialog(row.id);
   }
 
   closeModal(event?: MouseEvent) {
-    if (event) {
-      event.stopPropagation();
-    }
+    if (event) event.stopPropagation();
     this.dialogRef.close();
   }
 
@@ -495,23 +370,18 @@ export class CampaignInvitedListModalComponent implements OnInit {
     );
   }
 
-  markAsChanged() {
-    // Apply filters as selection (don't reload - just update selection)
-    this.applyFiltersAsSelection();
+  async markAsChanged() {
+    await this.applyFiltersAsSelection();
   }
 
-  onFilterChange() {
-    // Apply filters as selection (don't reload - just update selection)
-    this.applyFiltersAsSelection();
+  async onFilterChange() {
+    await this.applyFiltersAsSelection();
   }
 
-
-  // Methods for אנ"ש include/exclude
   onAnashIncludeChange() {
     if (!this.campaign.invitedDonorFilters) {
       this.campaign.invitedDonorFilters = {};
     }
-
     if (this.campaign.invitedDonorFilters.isAnash && this.campaign.invitedDonorFilters.excludeAnash) {
       this.campaign.invitedDonorFilters.excludeAnash = false;
     }
@@ -522,14 +392,12 @@ export class CampaignInvitedListModalComponent implements OnInit {
     if (!this.campaign.invitedDonorFilters) {
       this.campaign.invitedDonorFilters = {};
     }
-
     if (this.campaign.invitedDonorFilters.excludeAnash && this.campaign.invitedDonorFilters.isAnash) {
       this.campaign.invitedDonorFilters.isAnash = false;
     }
     this.markAsChanged();
   }
 
-  // Methods for Alumni include/exclude (like Anash)
   onAlumniIncludeChange() {
     if (this.includeAlumni && this.excludeAlumni) {
       this.excludeAlumni = false;
@@ -544,9 +412,7 @@ export class CampaignInvitedListModalComponent implements OnInit {
     this.markAsChanged();
   }
 
-  // Clear all filters
   clearFilters() {
-    // Clear campaign filters
     if (this.campaign) {
       if (!this.campaign.invitedDonorFilters) {
         this.campaign.invitedDonorFilters = {};
@@ -557,7 +423,6 @@ export class CampaignInvitedListModalComponent implements OnInit {
       this.campaign.invitedDonorFilters.maxAge = undefined;
     }
 
-    // Clear local filters
     this.selectedCountry = '';
     this.selectedCity = '';
     this.selectedNeighborhood = '';
@@ -567,20 +432,14 @@ export class CampaignInvitedListModalComponent implements OnInit {
     this.showOnlySelected = false;
     this.showSelectedFirst = false;
 
-    // Reapply (which will clear selection since no filters)
     this.markAsChanged();
   }
 
-
-  // Open activists related to campaign
   openActivists() {
-    // TODO: Implement navigation to activists with campaign filter
     console.log('Opening activists for campaign:', this.campaign.id);
   }
 
-  // Open contacts related to campaign
   openContacts() {
-    // TODO: Implement navigation to contacts with campaign filter
     console.log('Opening contacts for campaign:', this.campaign.id);
   }
 
@@ -589,13 +448,10 @@ export class CampaignInvitedListModalComponent implements OnInit {
 
     await this.busy.doWhileShowingBusy(async () => {
       try {
-        // Save selected donors to campaign
         this.campaign.invitedDonorIds = Array.from(this.selectedDonors);
-        // Save current filters to campaign
         this.campaign.invitedDonorFilters = this.getCurrentFilters();
         await remult.repo(Campaign).update(this.campaign.id, this.campaign);
         this.snackBar.open('הקמפיין נשמר בהצלחה', 'סגור', { duration: 3000 });
-        // Refresh data after save
         await this.refreshData();
       } catch (error: any) {
         console.error('Error saving campaign:', error);
@@ -604,35 +460,34 @@ export class CampaignInvitedListModalComponent implements OnInit {
     });
   }
 
-  getDonorDisplayName(donor: Donor): string {
-    return `${donor.firstName || ''} ${donor.lastName || ''}`.trim() || donor.id || 'לא ידוע';
+  getDonorDisplayName(row: InvitedDonorRow): string {
+    return `${row.firstName} ${row.lastName}`.trim() || row.id || 'לא ידוע';
   }
 
-  getDonorPhone(donor: Donor): string {
-    return this.donorPhoneMap.get(donor.id) || '-';
+  getDonorPhone(row: InvitedDonorRow): string {
+    return row.phone || '-';
   }
 
-  getDonorEmail(donor: Donor): string {
-    return this.donorEmailMap.get(donor.id) || '-';
+  getDonorEmail(row: InvitedDonorRow): string {
+    return row.email || '-';
   }
 
-  getDonorLevel(donor: Donor): string {
-    return donor.level || '-';
+  getDonorLevel(row: InvitedDonorRow): string {
+    return row.level || '-';
   }
 
-  getDonorCity(donor: Donor): string {
-    return this.donorPlaceMap.get(donor.id)?.city || '-';
+  getDonorCity(row: InvitedDonorRow): string {
+    return row.city || '-';
   }
 
-  getDonorNeighborhood(donor: Donor): string {
-    return this.donorPlaceMap.get(donor.id)?.neighborhood || '-';
+  getDonorNeighborhood(row: InvitedDonorRow): string {
+    return row.neighborhood || '-';
   }
 
-  getDonorCountryName(donor: Donor): string {
-    return this.donorPlaceMap.get(donor.id)?.country?.name || '-';
+  getDonorCountryName(row: InvitedDonorRow): string {
+    return row.country || '-';
   }
 
-  // Selection management methods
   isSelected(donorId: string): boolean {
     return this.selectedDonors.has(donorId);
   }
@@ -646,19 +501,25 @@ export class CampaignInvitedListModalComponent implements OnInit {
   }
 
   isAllSelected(): boolean {
-    return this.invitedDonors.length > 0 && this.selectedDonors.size === this.invitedDonors.length;
+    return this.serverTotalCount > 0 && this.selectedDonors.size >= this.serverTotalCount;
   }
 
-  toggleAllSelection() {
+  async toggleAllSelection() {
     if (this.isAllSelected()) {
-      this.selectedDonors.clear();
+      this.deselectAll();
     } else {
-      this.invitedDonors.forEach(donor => this.selectedDonors.add(donor.id));
+      await this.selectAll();
     }
   }
 
-  selectAll() {
-    this.invitedDonors.forEach(donor => this.selectedDonors.add(donor.id));
+  async selectAll() {
+    this.loading = true;
+    try {
+      const allIds = await DonorController.findFilteredIds();
+      allIds.forEach(id => this.selectedDonors.add(id));
+    } finally {
+      this.loading = false;
+    }
   }
 
   deselectAll() {
@@ -669,17 +530,13 @@ export class CampaignInvitedListModalComponent implements OnInit {
     return this.selectedDonors.size;
   }
 
-  // Load filters from campaign
   private loadFiltersFromCampaign() {
     if (!this.campaign) return;
-
     if (!this.campaign.invitedDonorFilters) {
       this.campaign.invitedDonorFilters = {};
     }
 
     const filters = this.campaign.invitedDonorFilters;
-
-    // Load local filters that are not part of campaign entity
     if (filters.selectedCountry !== undefined) this.selectedCountry = filters.selectedCountry;
     if (filters.selectedCity !== undefined) this.selectedCity = filters.selectedCity;
     if (filters.selectedNeighborhood !== undefined) this.selectedNeighborhood = filters.selectedNeighborhood;
@@ -690,7 +547,6 @@ export class CampaignInvitedListModalComponent implements OnInit {
     if (filters.showSelectedFirst !== undefined) this.showSelectedFirst = filters.showSelectedFirst;
   }
 
-  // Save current filters to object
   private getCurrentFilters() {
     return {
       selectedCountry: this.selectedCountry || undefined,
@@ -704,125 +560,39 @@ export class CampaignInvitedListModalComponent implements OnInit {
     };
   }
 
-  // Get filtered and sorted donors list based on display options
-  get displayedDonors(): Donor[] {
-    let result = [...this.invitedDonors];
-
-    // Filter 1: Free text search across all visible columns
-    if (this.freeSearchText && this.freeSearchText.trim()) {
-      const searchLower = this.freeSearchText.trim().toLowerCase();
-      result = result.filter(donor => {
-        const name = this.getDonorDisplayName(donor).toLowerCase();
-        const phone = this.getDonorPhone(donor).toLowerCase();
-        const email = this.getDonorEmail(donor).toLowerCase();
-        const level = this.getDonorLevel(donor).toLowerCase();
-        const city = this.getDonorCity(donor).toLowerCase();
-        const neighborhood = this.getDonorNeighborhood(donor).toLowerCase();
-        const country = this.getDonorCountryName(donor).toLowerCase();
-
-        return name.includes(searchLower) ||
-               phone.includes(searchLower) ||
-               email.includes(searchLower) ||
-               level.includes(searchLower) ||
-               city.includes(searchLower) ||
-               neighborhood.includes(searchLower) ||
-               country.includes(searchLower);
-      });
-    }
-
-    // Filter 2: Show only selected
-    if (this.showOnlySelected) {
-      result = result.filter(donor => this.selectedDonors.has(donor.id));
-    }
-
-    // Calculate total pages based on filtered results
-    this.totalPages = Math.ceil(result.length / this.pageSize);
-
-    // Sort: selected first (if enabled), then by sort field
-    result.sort((a, b) => {
-      // First: selected first (if enabled)
-      if (this.showSelectedFirst) {
-        const aSelected = this.selectedDonors.has(a.id);
-        const bSelected = this.selectedDonors.has(b.id);
-        if (aSelected && !bSelected) return -1;
-        if (!aSelected && bSelected) return 1;
-      }
-
-      // Second: by sort field
-      let aValue: any;
-      let bValue: any;
-
-      switch (this.sortField) {
-        case 'firstName':
-          aValue = a.firstName?.toLowerCase() || '';
-          bValue = b.firstName?.toLowerCase() || '';
-          break;
-        case 'lastName':
-          aValue = a.lastName?.toLowerCase() || '';
-          bValue = b.lastName?.toLowerCase() || '';
-          break;
-        case 'phone':
-          aValue = this.getDonorPhone(a).toLowerCase();
-          bValue = this.getDonorPhone(b).toLowerCase();
-          break;
-        case 'email':
-          aValue = this.getDonorEmail(a).toLowerCase();
-          bValue = this.getDonorEmail(b).toLowerCase();
-          break;
-        case 'level':
-          aValue = this.getDonorLevel(a).toLowerCase();
-          bValue = this.getDonorLevel(b).toLowerCase();
-          break;
-        case 'city':
-          aValue = this.getDonorCity(a).toLowerCase();
-          bValue = this.getDonorCity(b).toLowerCase();
-          break;
-        default:
-          aValue = a.firstName?.toLowerCase() || '';
-          bValue = b.firstName?.toLowerCase() || '';
-      }
-
-      const comparison = aValue.localeCompare(bValue, 'he');
-      return this.sortDirection === 'asc' ? comparison : -comparison;
-    });
-
-    // Apply pagination - return only current page
-    const startIndex = (this.currentPage - 1) * this.pageSize;
-    const endIndex = startIndex + this.pageSize;
-    return result.slice(startIndex, endIndex);
+  get displayedDonors(): InvitedDonorRow[] {
+    return this.invitedDonors;
   }
 
-  // Pagination methods
   goToPage(page: number) {
     if (page >= 1 && page <= this.totalPages) {
       this.currentPage = page;
-      // Auto-select donors on this page if they're in selectedDonors
-      this.autoSelectDisplayedDonors();
+      this.loadPage();
     }
   }
 
   nextPage() {
     if (this.currentPage < this.totalPages) {
       this.currentPage++;
-      this.autoSelectDisplayedDonors();
+      this.loadPage();
     }
   }
 
   previousPage() {
     if (this.currentPage > 1) {
       this.currentPage--;
-      this.autoSelectDisplayedDonors();
+      this.loadPage();
     }
   }
 
   firstPage() {
     this.currentPage = 1;
-    this.autoSelectDisplayedDonors();
+    this.loadPage();
   }
 
   lastPage() {
     this.currentPage = this.totalPages;
-    this.autoSelectDisplayedDonors();
+    this.loadPage();
   }
 
   getPageNumbers(): number[] {
@@ -841,14 +611,6 @@ export class CampaignInvitedListModalComponent implements OnInit {
     return pages;
   }
 
-  // Auto-select displayed donors if they're in selectedDonors (master list)
-  private autoSelectDisplayedDonors() {
-    // This is automatic - displayedDonors already checks isSelected()
-    // which checks against this.selectedDonors Set
-    // No action needed - the UI will reflect the selection state
-  }
-
-  // Sorting methods
   sortBy(field: string) {
     if (this.sortField === field) {
       this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
@@ -856,7 +618,13 @@ export class CampaignInvitedListModalComponent implements OnInit {
       this.sortField = field;
       this.sortDirection = 'asc';
     }
-    this.currentPage = 1; // Reset to first page after sorting
+    this.currentPage = 1;
+
+    if (['firstName', 'lastName'].includes(field)) {
+      this.loadPage();
+    } else if (['phone', 'email', 'city'].includes(field)) {
+      this.invitedDonors = this.sortRowsByField(this.invitedDonors, field, this.sortDirection);
+    }
   }
 
   getSortIcon(field: string): string {
@@ -864,37 +632,25 @@ export class CampaignInvitedListModalComponent implements OnInit {
     return this.sortDirection === 'asc' ? '↑' : '↓';
   }
 
-  // Free search change handler
   onFreeSearchChange() {
-    this.currentPage = 1; // Reset to first page on search
+    this.currentPage = 1;
+    this.loadPage();
+  }
+
+  onShowOnlySelectedChange() {
+    this.currentPage = 1;
+    this.loadPage();
+  }
+
+  onShowSelectedFirstChange() {
+    if (this.showSelectedFirst) {
+      this.invitedDonors = this.sortRowsBySelection(this.invitedDonors);
+    } else {
+      this.loadPage();
+    }
   }
 
   get totalFilteredCount(): number {
-    let result = [...this.invitedDonors];
-
-    // Apply free text search
-    if (this.freeSearchText && this.freeSearchText.trim()) {
-      const searchLower = this.freeSearchText.trim().toLowerCase();
-      result = result.filter(donor => {
-        const name = this.getDonorDisplayName(donor).toLowerCase();
-        const phone = this.getDonorPhone(donor).toLowerCase();
-        const email = this.getDonorEmail(donor).toLowerCase();
-        const level = this.getDonorLevel(donor).toLowerCase();
-        const city = this.getDonorCity(donor).toLowerCase();
-
-        return name.includes(searchLower) ||
-               phone.includes(searchLower) ||
-               email.includes(searchLower) ||
-               level.includes(searchLower) ||
-               city.includes(searchLower);
-      });
-    }
-
-    // Apply show only selected
-    if (this.showOnlySelected) {
-      result = result.filter(donor => this.selectedDonors.has(donor.id));
-    }
-
-    return result.length;
+    return this.serverTotalCount;
   }
 }

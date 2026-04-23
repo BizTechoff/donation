@@ -3,13 +3,11 @@ import { MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { DialogConfig } from 'common-ui-elements';
 import { remult } from 'remult';
-import { Campaign, Donation, DonationMethod, Donor } from '../../../../shared/entity';
-import { DonationController } from '../../../../shared/controllers/donation.controller';
+import { Campaign, Donation, DonationMethod } from '../../../../shared/entity';
+import { CampaignDonationRow, DonationController } from '../../../../shared/controllers/donation.controller';
 import { CampaignController } from '../../../../shared/controllers/campaign.controller';
-import { calculateEffectiveAmount, isPaymentBased, isStandingOrder, calculatePeriodsElapsed } from '../../../../shared/utils/donation-utils';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
-import { DonorService } from '../../../services/donor.service';
 import { HebrewDateService } from '../../../services/hebrew-date.service';
 import { PayerService } from '../../../services/payer.service';
 
@@ -30,14 +28,12 @@ export class CampaignDonationsModalComponent implements OnInit {
   args!: CampaignDonationsModalArgs;
 
   campaign?: Campaign;
-  donations: Donation[] = [];
+  donations: CampaignDonationRow[] = [];
   paymentTotals: Record<string, number> = {};
-  donors: Donor[] = [];
+  dropdownDonors: { id: string; firstName: string; lastName: string; fullName: string }[] = [];
   donationMethods: DonationMethod[] = [];
 
-  donationRepo = remult.repo(Donation);
   campaignRepo = remult.repo(Campaign);
-  donorRepo = remult.repo(Donor);
   donationMethodRepo = remult.repo(DonationMethod);
 
   loading = false;
@@ -71,6 +67,7 @@ export class CampaignDonationsModalComponent implements OnInit {
   commitmentDonationsCount = 0;
   fullDonationsByCurrency: Array<{ symbol: string; total: number }> = [];
   commitmentDonationsByCurrency: Array<{ symbol: string; total: number }> = [];
+  private totalsLoaded = false;
 
   constructor(
     public i18n: I18nService,
@@ -79,7 +76,6 @@ export class CampaignDonationsModalComponent implements OnInit {
     private cdr: ChangeDetectorRef,
     private hebrewDateService: HebrewDateService,
     public dialogRef: MatDialogRef<CampaignDonationsModalComponent>,
-    private donorService: DonorService,
     private payer: PayerService
   ) { }
 
@@ -123,85 +119,27 @@ export class CampaignDonationsModalComponent implements OnInit {
 
     this.loading = true;
     try {
-      // Get filtered donor IDs from global filters
-      const filteredDonorIds = await this.donorService.findFilteredIds();
-      console.log('CampaignDonations: Filtered donor IDs from global filters:', filteredDonorIds.length);
-
-      // Build where clause
-      const where: any = {
-        campaignId: this.args.campaignId
-      };
-
-      // Apply global filters - filter by donor IDs
-      if (filteredDonorIds.length > 0) {
-        where.donorId = { $in: filteredDonorIds };
-      } else {
-        // If no donors match global filters, show no donations
-        this.donations = [];
-        this.totalCount = 0;
-        this.totalPages = 0;
-        this.totalDonations = 0;
-        this.fullDonationsCount = 0;
-        this.commitmentDonationsCount = 0;
-        this.fullDonationsByCurrency = [];
-        this.commitmentDonationsByCurrency = [];
-        this.loading = false;
-        return;
-      }
-
-      // Apply local filters
-      if (this.filterDonor) {
-        where.donorId = this.filterDonor;
-      }
-
-      if (this.filterMethod) {
-        where.donationMethodId = this.filterMethod;
-      }
-
-      if (this.filterType) {
-        where.donationType = this.filterType;
-      }
-
-      // Get total count
-      this.totalCount = await this.donationRepo.count(where);
-      this.totalPages = Math.ceil(this.totalCount / this.pageSize);
-
-      // Build order by from sortColumns
-      const orderBy: any = {};
-      this.sortColumns.forEach(sort => {
-        orderBy[sort.field] = sort.direction;
-      });
-
-      // Get donations with includes
-      this.donations = await this.donationRepo.find({
-        where,
-        orderBy,
-        limit: this.pageSize,
+      const result = await DonationController.getCampaignDonationsPage({
+        campaignId: this.args.campaignId,
         page: this.currentPage,
-        include: {
-          donor: true,
-          donationMethod: true,
-          campaign: true
-        }
+        pageSize: this.pageSize,
+        filterDonorId: this.filterDonor || undefined,
+        filterMethodId: this.filterMethod || undefined,
+        filterType: this.filterType || undefined,
+        sortField: this.sortColumns[0]?.field,
+        sortDirection: this.sortColumns[0]?.direction
       });
 
-      // Load payment totals for commitment and standing order donations
-      const paymentBasedIds = this.donations.filter(d => isPaymentBased(d)).map(d => d.id).filter(Boolean);
-      this.paymentTotals = paymentBasedIds.length > 0
-        ? await DonationController.getPaymentTotalsForCommitments(paymentBasedIds)
-        : {};
+      this.donations = result.rows;
+      this.totalCount = result.total;
+      this.totalPages = Math.ceil(result.total / this.pageSize);
+      this.paymentTotals = result.paymentTotals;
+      this.dropdownDonors = result.dropdownDonors;
+      this.totalDonations = result.total;
 
-      // Calculate totals by currency from ALL donations (not just current page)
-      this.totalDonations = this.totalCount;
-      await this.loadTotalsFromAllDonations(filteredDonorIds);
-
-      // Load unique donors for filter dropdown
-      const uniqueDonorIds = [...new Set(this.donations.map(d => d.donorId))];
-      if (uniqueDonorIds.length > 0) {
-        this.donors = await this.donorRepo.find({
-          where: { id: { $in: uniqueDonorIds } },
-          orderBy: { lastName: 'asc', firstName: 'asc' }
-        });
+      if (!this.totalsLoaded) {
+        await this.loadTotalsFromAllDonations();
+        this.totalsLoaded = true;
       }
 
     } catch (error) {
@@ -213,15 +151,9 @@ export class CampaignDonationsModalComponent implements OnInit {
     }
   }
 
-  /**
-   * Load totals from ALL donations for this campaign (not just current page)
-   */
-  private async loadTotalsFromAllDonations(donorIds?: string[]) {
+  private async loadTotalsFromAllDonations() {
     try {
-      const totals = await CampaignController.getCampaignDonationTotals(
-        this.args.campaignId,
-        donorIds && donorIds.length > 0 ? donorIds : undefined
-      );
+      const totals = await CampaignController.getCampaignDonationTotals(this.args.campaignId);
 
       this.fullDonationsCount = totals.fullDonationsCount;
       this.commitmentDonationsCount = totals.commitmentDonationsCount;
@@ -392,25 +324,18 @@ export class CampaignDonationsModalComponent implements OnInit {
     }
   }
 
-  getDonorName(donation: Donation): string {
-    return donation.donor?.fullName || 'לא ידוע';
+  getDonorName(donation: CampaignDonationRow): string {
+    return donation.donorName;
   }
 
-  getMethodName(donation: Donation): string {
-    // התחייבות לא שייך לה אופן תרומה
+  getMethodName(donation: CampaignDonationRow): string {
     if (donation.donationType === 'commitment') return '-';
-    return donation.donationMethod?.name || '-';
+    return donation.donationMethodName;
   }
 
-  getDonationType(donation: Donation): string {
-    if (donation.donationType === 'full') return 'תרומה מלאה';
+  getDonationTypeDisplay(donation: CampaignDonationRow): string {
     if (donation.donationType === 'commitment') return 'התחייבות';
-    return donation.donationType || '';
-  }
-
-  getDonationTypeDisplay(donation: Donation): string {
-    if (donation.donationType === 'commitment') return 'התחייבות';
-    if (isStandingOrder(donation)) {
+    if (donation.donationMethodType === 'standing_order') {
       switch (donation.standingOrderType) {
         case 'bank': return 'הו"ק בנקאית';
         case 'creditCard': return 'הו"ק כ.אשראי';
@@ -428,27 +353,29 @@ export class CampaignDonationsModalComponent implements OnInit {
     return method.name;
   }
 
-  isStandingOrderDonation(donation: Donation): boolean {
-    return isStandingOrder(donation);
+  isStandingOrderDonation(donation: CampaignDonationRow): boolean {
+    return donation.donationMethodType === 'standing_order';
   }
 
-  getAmountDisplay(donation: Donation): string {
+  getAmountDisplay(donation: CampaignDonationRow): string {
     const fmt = (n: number) => n.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     if (donation.donationType === 'commitment') {
       const paid = this.paymentTotals[donation.id] || 0;
       return `(${fmt(paid)} / ${fmt(donation.amount)})`;
     }
-    if (isStandingOrder(donation)) {
+    if (donation.donationMethodType === 'standing_order') {
       const paid = this.paymentTotals[donation.id] || 0;
       if (donation.unlimitedPayments) {
-        // הו"ק ללא הגבלה: בפועל / צפי (מספר תקופות צפויות × סכום לתשלום)
-        const expectedPeriods = calculatePeriodsElapsed(donation);
-        const expectedAmount = expectedPeriods * donation.amount;
+        const expectedAmount = donation.periodsElapsed * donation.amount;
         return `${fmt(paid)} / ${fmt(expectedAmount)}`;
       }
       return `${fmt(paid)} / ${fmt(donation.amount)}`;
     }
     return fmt(donation.amount);
+  }
+
+  private invalidateTotals() {
+    this.totalsLoaded = false;
   }
 
   // Actions
@@ -459,8 +386,8 @@ export class CampaignDonationsModalComponent implements OnInit {
       const result = await this.ui.donationDetailsDialog('new', { campaignId: this.campaign.id });
 
       if (result) {
+        this.invalidateTotals();
         await this.loadDonations();
-        // Optionally reload campaign to update raised amount
         await this.loadCampaign();
       }
     } catch (error: any) {
@@ -469,11 +396,12 @@ export class CampaignDonationsModalComponent implements OnInit {
     }
   }
 
-  async editDonation(donation: Donation) {
+  async editDonation(donation: CampaignDonationRow) {
     try {
       const result = await this.ui.donationDetailsDialog(donation.id);
 
       if (result) {
+        this.invalidateTotals();
         await this.loadDonations();
         await this.loadCampaign();
       }
@@ -483,14 +411,15 @@ export class CampaignDonationsModalComponent implements OnInit {
     }
   }
 
-  async deleteDonation(donation: Donation) {
+  async deleteDonation(donation: CampaignDonationRow) {
     const confirmMessage = `האם אתה בטוח שברצונך למחוק את התרומה של ${this.getDonorName(donation)}?`;
     if (!confirm(confirmMessage)) return;
 
     try {
       this.loading = true;
-      await remult.repo(Donation).delete(donation);
+      await remult.repo(Donation).delete(donation.id);
       this.snackBar.open('התרומה נמחקה בהצלחה', 'סגור', { duration: 3000 });
+      this.invalidateTotals();
       await this.loadDonations();
       await this.loadCampaign();
     } catch (error: any) {

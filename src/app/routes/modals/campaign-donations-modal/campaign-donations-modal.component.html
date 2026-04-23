@@ -43,7 +43,7 @@
             <mat-icon class="filter-icon">person</mat-icon>
             <select class="filter-select" [(ngModel)]="filterDonor" (ngModelChange)="applyFilters()">
               <option value="">כל התורמים</option>
-              <option *ngFor="let donor of donors" [value]="donor.id">
+              <option *ngFor="let donor of dropdownDonors" [value]="donor.id">
                 {{donor.fullName}}
               </option>
             </select>
