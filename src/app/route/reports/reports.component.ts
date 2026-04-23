@@ -2,7 +2,7 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { BusyService, openDialog } from 'common-ui-elements';
 import { remult } from 'remult';
 import { Subscription } from 'rxjs';
-import { CampaignController, CurrencyTotal } from '../../../shared/controllers/campaign.controller';
+import { CurrencyTotal } from '../../../shared/controllers/campaign.controller';
 import { HebrewDateController } from '../../../shared/controllers/hebrew-date.controller';
 import { PersonalDonorReportData, ReportController } from '../../../shared/controllers/report.controller';
 import { Blessing } from '../../../shared/entity/blessing';
@@ -23,8 +23,6 @@ import { HebrewDateService } from '../../services/hebrew-date.service';
 import { PayerService } from '../../services/payer.service';
 import { ReportService } from '../../services/report.service';
 import { UIToolsService } from '../../common/UIToolsService';
-import { DonationController } from '../../../shared/controllers/donation.controller';
-import { calculateEffectiveAmount, isPaymentBased } from '../../../shared/utils/donation-utils';
 
 interface ChartData {
   label: string;
@@ -157,6 +155,8 @@ interface GroupedDonationReport {
   };
   donations?: DonationDetail[]; // Donation breakdown
   isExpanded?: boolean; // For UI toggle
+  formattedYearTotals?: Record<string, string>; // client-side pre-computed
+  donationsByYear?: Record<string, DonationDetail[]>; // client-side pre-computed
 }
 
 interface CurrencySummary {
@@ -370,120 +370,15 @@ export class ReportsComponent implements OnInit, OnDestroy {
 
   async loadCurrentHebrewYear() {
     try {
-      this.currentHebrewYear = await HebrewDateController.getCurrentHebrewYear();
-      // Generate last 4 Hebrew years (including current): current-3, current-2, current-1, current
-      this.hebrewYears = [];
-      for (let i = 3; i >= 0; i--) {
-        const year = this.currentHebrewYear - i;
-        const formatted = await HebrewDateController.formatHebrewYear(year);
-        this.hebrewYears.push(formatted);
-      }
+      const summary = await HebrewDateController.getHebrewYearsSummary();
+      this.currentHebrewYear = summary.currentYear;
+      this.hebrewYears = summary.last4Formatted;
     } catch (error) {
       console.error('Error loading Hebrew year:', error);
-      // Fallback
       this.hebrewYears = ['תשפ"ג', 'תשפ"ד', 'תשפ"ה', 'תשפ"ו'];
     }
   }
 
-
-  private async loadGeneralStats() {
-    // Note: Global filters are now applied on the backend automatically via user.settings
-    const donations = await this.donationRepo.find({
-      include: { donationMethod: true }
-    });
-    console.log('📊 Donations loaded:', donations.length);
-
-    const donors = await this.donorRepo.find();
-    console.log('📊 Donors loaded:', donors.length);
-
-    const campaigns = await this.campaignRepo.find();
-    console.log('📊 Campaigns loaded:', campaigns.length);
-
-    // Load payment totals for commitment and standing order donations
-    const paymentBasedIds = donations.filter(d => isPaymentBased(d)).map(d => d.id).filter(Boolean);
-    const paymentTotals = paymentBasedIds.length > 0
-      ? await DonationController.getPaymentTotalsForCommitments(paymentBasedIds)
-      : {};
-
-    this.totalStats.donations = donations.length;
-    this.totalStats.amount = donations.reduce((sum, d) => sum + calculateEffectiveAmount(d, paymentTotals[d.id]), 0);
-    this.totalStats.donors = donors.length;
-    this.totalStats.campaigns = campaigns.length;
-    this.totalStats.avgDonation = this.totalStats.donations > 0 ?
-      this.totalStats.amount / this.totalStats.donations : 0;
-    this.totalStats.recurringAmount = 0;
-  }
-
-  private async loadMonthlyTrends() {
-    // Note: Global filters are now applied on the backend automatically via user.settings
-    const donations = await this.donationRepo.find({
-      orderBy: { donationDate: 'asc' },
-      include: { donationMethod: true }
-    });
-
-    // Load payment totals for commitment and standing order donations
-    const paymentBasedIds = donations.filter(d => isPaymentBased(d)).map(d => d.id).filter(Boolean);
-    const paymentTotals = paymentBasedIds.length > 0
-      ? await DonationController.getPaymentTotalsForCommitments(paymentBasedIds)
-      : {};
-
-    const monthlyMap = new Map<string, { donations: number, amount: number }>();
-
-    donations.forEach(donation => {
-      const monthKey = new Date(donation.donationDate).toLocaleDateString('he-IL', {
-        year: 'numeric',
-        month: 'short'
-      });
-
-      if (!monthlyMap.has(monthKey)) {
-        monthlyMap.set(monthKey, { donations: 0, amount: 0 });
-      }
-
-      const monthData = monthlyMap.get(monthKey)!;
-      monthData.donations++;
-      monthData.amount += calculateEffectiveAmount(donation, paymentTotals[donation.id]);
-    });
-
-    this.monthlyData = Array.from(monthlyMap.entries()).map(([month, data]) => ({
-      month,
-      donations: data.donations,
-      amount: data.amount
-    }));
-  }
-
-  private async loadCampaignAnalysis() {
-    const campaigns = await this.campaignRepo.find({
-      orderBy: { name: 'asc' }
-    });
-
-    // Fetch raised amounts for all campaigns
-    const campaignIds = campaigns.map(c => c.id);
-    const raisedByCurrency = await CampaignController.getRaisedAmountsByCurrency(campaignIds);
-
-    // Build map of campaign -> currency totals
-    this.campaignRaisedByCurrencyMap.clear();
-    for (const item of raisedByCurrency) {
-      this.campaignRaisedByCurrencyMap.set(item.campaignId, item.totals);
-    }
-
-    // Sort campaigns by raised amount (converted to ILS) descending
-    const sortedCampaigns = [...campaigns].sort((a, b) => {
-      const raisedA = this.getCampaignRaisedInILS(a.id);
-      const raisedB = this.getCampaignRaisedInILS(b.id);
-      return raisedB - raisedA;
-    });
-
-    const totalRaised = campaigns.reduce((sum, c) => sum + this.getCampaignRaisedInILS(c.id), 0);
-
-    this.campaignData = sortedCampaigns.slice(0, 10).map(campaign => {
-      const raised = this.getCampaignRaisedInILS(campaign.id);
-      return {
-        label: campaign.name,
-        value: raised,
-        percentage: totalRaised > 0 ? (raised / totalRaised) * 100 : 0
-      };
-    });
-  }
 
   private getCampaignRaisedInILS(campaignId: string): number {
     const totals = this.campaignRaisedByCurrencyMap.get(campaignId) || [];
@@ -491,153 +386,6 @@ export class ReportsComponent implements OnInit, OnDestroy {
       const rate = this.currencyTypes[t.currencyId]?.rateInShekel || 1;
       return sum + (t.total * rate);
     }, 0);
-  }
-
-  private async loadDonorAnalysis() {
-    // Note: Global filters are now applied on the backend automatically via user.settings
-    const donations = await this.donationRepo.find({
-      include: { donor: true, donationMethod: true }
-    });
-
-    // Load donor places for all donors
-    const uniqueDonorIds = [...new Set(donations.map(d => d.donorId).filter(Boolean))];
-    const donorPlaces = await remult.repo(DonorPlace).find({
-      where: {
-        donorId: { $in: uniqueDonorIds },
-        isPrimary: true
-      },
-      include: { place: true }
-    });
-
-    // Create map of donorId -> city
-    const donorCityMap = new Map<string, string>();
-    donorPlaces.forEach(dp => {
-      if (dp.donorId && dp.place?.city) {
-        donorCityMap.set(dp.donorId, dp.place.city);
-      }
-    });
-
-    // Load payment totals for commitment and standing order donations
-    const paymentBasedIds = donations.filter(d => isPaymentBased(d)).map(d => d.id).filter(Boolean);
-    const paymentTotals = paymentBasedIds.length > 0
-      ? await DonationController.getPaymentTotalsForCommitments(paymentBasedIds)
-      : {};
-
-    // ניתוח לפי סוג תורם
-    const typeMap = new Map<string, number>();
-    donations.forEach(donation => {
-      const type = donation.donor?.donorType || 'אחר';
-      typeMap.set(type, (typeMap.get(type) || 0) + calculateEffectiveAmount(donation, paymentTotals[donation.id]));
-    });
-
-    const totalAmount = Array.from(typeMap.values()).reduce((sum, amount) => sum + amount, 0);
-
-    this.donorTypeData = Array.from(typeMap.entries()).map(([type, amount]) => ({
-      label: type,
-      value: amount,
-      percentage: totalAmount > 0 ? (amount / totalAmount) * 100 : 0
-    }));
-
-    // ניתוח לפי אזור
-    const regionMap = new Map<string, number>();
-    donations.forEach(donation => {
-      const city = donation.donorId ? donorCityMap.get(donation.donorId) : undefined;
-      const region = city || 'לא צוין';
-      regionMap.set(region, (regionMap.get(region) || 0) + calculateEffectiveAmount(donation, paymentTotals[donation.id]));
-    });
-
-    const regionTotal = Array.from(regionMap.values()).reduce((sum, amount) => sum + amount, 0);
-
-    this.regionData = Array.from(regionMap.entries())
-      .map(([region, amount]) => ({
-        label: region,
-        value: amount,
-        percentage: regionTotal > 0 ? (amount / regionTotal) * 100 : 0
-      }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 10);
-  }
-
-  private async loadTopPerformers() {
-    // תורמים מובילים
-    // Note: Global filters are now applied on the backend automatically via user.settings
-    const donations = await this.donationRepo.find({
-      include: { donor: true, donationMethod: true }
-    });
-
-    // Load payment totals for commitment and standing order donations
-    const paymentBasedIds = donations.filter(d => isPaymentBased(d)).map(d => d.id).filter(Boolean);
-    const paymentTotals = paymentBasedIds.length > 0
-      ? await DonationController.getPaymentTotalsForCommitments(paymentBasedIds)
-      : {};
-
-    const donorMap = new Map<string, { donor: any, total: number, count: number }>();
-    donations.forEach(donation => {
-      const donorKey = donation.donor?.id || 'unknown';
-      if (!donorMap.has(donorKey)) {
-        donorMap.set(donorKey, {
-          donor: donation.donor,
-          total: 0,
-          count: 0
-        });
-      }
-      const donorData = donorMap.get(donorKey)!;
-      donorData.total += calculateEffectiveAmount(donation, paymentTotals[donation.id]);
-      donorData.count++;
-    });
-
-    this.topDonors = Array.from(donorMap.values())
-      .filter(data => data.donor)
-      .sort((a, b) => b.total - a.total)
-      .slice(0, 10);
-
-    // קמפיינים מובילים - sort by raised amount calculated on demand
-    const allCampaigns = await this.campaignRepo.find({});
-    const topCampaignIds = allCampaigns.map(c => c.id);
-
-    // Fetch raised amounts if not already loaded
-    if (this.campaignRaisedByCurrencyMap.size === 0 && topCampaignIds.length > 0) {
-      const raisedByCurrency = await CampaignController.getRaisedAmountsByCurrency(topCampaignIds);
-      for (const item of raisedByCurrency) {
-        this.campaignRaisedByCurrencyMap.set(item.campaignId, item.totals);
-      }
-    }
-
-    this.topCampaigns = [...allCampaigns]
-      .sort((a, b) => {
-        const raisedA = this.getCampaignRaisedInILS(a.id);
-        const raisedB = this.getCampaignRaisedInILS(b.id);
-        return raisedB - raisedA;
-      })
-      .slice(0, 5);
-  }
-
-  private async loadRecentActivity() {
-    // Note: Global filters are now applied on the backend automatically via user.settings
-    const recentDonations = await this.donationRepo.find({
-      orderBy: { donationDate: 'desc' },
-      limit: 20,
-      include: {
-        donor: true,
-        campaign: true,
-        donationMethod: true
-      }
-    });
-
-    // Load payment totals for payment-based donations (commitments + standing orders)
-    const paymentBasedIds = recentDonations.filter(d => isPaymentBased(d)).map(d => d.id).filter(Boolean);
-    const paymentTotals = paymentBasedIds.length > 0
-      ? await DonationController.getPaymentTotalsForCommitments(paymentBasedIds)
-      : {};
-
-    this.recentActivity = recentDonations.map(donation => ({
-      type: 'donation',
-      date: donation.donationDate,
-      description: `תרומה מ${donation.donor?.fullName || 'תורם אלמוני'}`,
-      amount: calculateEffectiveAmount(donation, paymentTotals[donation.id]),
-      campaign: donation.campaign?.name,
-      details: donation
-    }));
   }
 
   formatCurrency(amount: number): string {
@@ -830,17 +578,52 @@ export class ReportsComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * טעינת נתוני דוח כללי
+   * טעינת נתוני דוח כללי — single server call instead of 6 client-side full-table loads
    */
   private async loadGeneralReportData() {
-    await Promise.all([
-      this.loadGeneralStats(),
-      this.loadMonthlyTrends(),
-      this.loadCampaignAnalysis(),
-      this.loadDonorAnalysis(),
-      this.loadTopPerformers(),
-      this.loadRecentActivity()
+    const [stats, allCampaigns] = await Promise.all([
+      ReportController.getGeneralStats(this.conversionRates),
+      this.campaignRepo.find({})
     ]);
+
+    this.totalStats.donations = stats.totalDonations;
+    this.totalStats.donors = stats.totalDonors;
+    this.totalStats.campaigns = stats.totalCampaigns;
+    this.totalStats.amount = stats.avgDonation * stats.totalDonations;
+    this.totalStats.avgDonation = stats.avgDonation;
+    this.totalStats.recurringAmount = 0;
+
+    this.monthlyData = stats.monthlyData;
+    this.donorTypeData = stats.donorTypeData;
+    this.regionData = stats.regionData;
+    this.campaignData = stats.campaignData;
+    this.paymentMethodData = stats.paymentMethodData;
+
+    this.topDonors = stats.topDonors.map(d => ({
+      donor: { id: d.donorId, lastAndFirstName: d.donorName, fullName: d.donorName },
+      total: d.total,
+      count: d.count
+    }));
+
+    // topCampaigns: reuse already-loaded campaigns, sort by stats amount
+    const campaignAmounts = new Map(stats.topCampaigns.map(c => [c.campaignId, c.raisedInShekel]));
+    this.topCampaigns = [...allCampaigns]
+      .filter(c => campaignAmounts.has(c.id))
+      .sort((a, b) => (campaignAmounts.get(b.id) || 0) - (campaignAmounts.get(a.id) || 0))
+      .slice(0, 5);
+
+    stats.topCampaigns.forEach(c => {
+      this.campaignRaisedByCurrencyMap.set(c.campaignId, [{ currencyId: 'ILS', symbol: '₪', total: c.raisedInShekel }]);
+    });
+
+    this.recentActivity = stats.recentActivity.map(a => ({
+      type: 'donation',
+      date: a.date,
+      description: a.description,
+      amount: a.amount,
+      campaign: a.campaign,
+      details: null
+    }));
   }
 
   onDateRangeChange() {
@@ -1069,6 +852,22 @@ export class ReportsComponent implements OnInit, OnDestroy {
       this.groupedDonationReport = reportResponse.reportData;
       this.currencySummaryData = reportResponse.currencySummary;
 
+      // Pre-compute per-row lookup maps to avoid function calls in change detection
+      for (const row of this.groupedDonationReport) {
+        row.formattedYearTotals = {};
+        for (const year of this.hebrewYears) {
+          row.formattedYearTotals[year] = this.formatYearTotal(row.yearlyTotals, year);
+        }
+        if (row.donations) {
+          row.donationsByYear = {};
+          for (const d of row.donations) {
+            const yr = d.hebrewYear || '';
+            if (!row.donationsByYear[yr]) row.donationsByYear[yr] = [];
+            row.donationsByYear[yr].push(d);
+          }
+        }
+      }
+
       // Auto-expand all rows when showDonationDetails is active
       if (this.filters.showDonationDetails) {
         this.groupedDonationReport.forEach(row => row.isExpanded = true);
@@ -1127,21 +926,17 @@ export class ReportsComponent implements OnInit, OnDestroy {
   }
 
   async loadPaymentsReport() {
-    // דוח תשלומים - Commitment vs Actual
     try {
-      // Build local filters
       const localFilters = {
         selectedDonorIds: this.filters.selectedDonorIds.length > 0 ? this.filters.selectedDonorIds : undefined
       };
-      // Global filters are now applied on the backend automatically via user.settings
-      this.paymentReportData = await this.reportService.getPaymentsReport(this.conversionRates, localFilters);
+      const response = await this.reportService.getPaymentsReport(this.conversionRates, localFilters);
+      this.paymentReportData = response.data;
+      this.paymentTotalCount = response.totalRecords;
+      this.paymentTotalPages = response.totalPages;
+      this.paymentCurrentPage = response.currentPage;
 
-      // Update pagination info
-      this.paymentTotalCount = this.paymentReportData.length;
-      this.paymentTotalPages = Math.ceil(this.paymentTotalCount / this.paymentPageSize);
-      this.paymentCurrentPage = 1; // Reset to first page
-
-      console.log(`✅ Loaded ${this.paymentReportData.length} payment report rows`);
+      console.log(`✅ Loaded ${response.totalRecords} payment report rows`);
     } catch (error) {
       console.error('Error loading payments report:', error);
       this.paymentReportData = [];
@@ -1926,6 +1721,10 @@ export class ReportsComponent implements OnInit, OnDestroy {
   getSortIcon(column: string): string {
     if (this.sortBy !== column) return 'unfold_more';
     return this.sortDirection === 'asc' ? 'arrow_upward' : 'arrow_downward';
+  }
+
+  trackByGroupRow(_index: number, row: GroupedDonationReport): string {
+    return row.donorId || row.donorName;
   }
 
   getPageNumbers(): number[] {

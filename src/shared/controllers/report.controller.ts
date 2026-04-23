@@ -7,8 +7,10 @@ import { DonorPlace } from '../entity/donor-place';
 import { Payment } from '../entity/payment';
 import { User } from '../entity/user';
 import { ContactPerson } from '../entity/contact-person';
+import { Campaign } from '../entity/campaign';
 import { Report } from '../enum/report';
 import { DocxCreateResponse } from '../type/letter.type';
+import { GeneralCurrencyStat, GeneralMonthlyStat, GeneralChartItem, GeneralTopDonor, GeneralTopCampaign, GeneralRecentActivity, GeneralStatsResponse } from '../type/report.res';
 import { calculateEffectiveAmount, calculatePaymentTotals, calculatePeriodsElapsed, isPaymentBased, isStandingOrder } from '../utils/donation-utils';
 import { HebrewDateController } from './hebrew-date.controller';
 import { GlobalFilterController } from './global-filter.controller';
@@ -134,11 +136,9 @@ export class ReportController {
   static async getGroupedDonationsReport(
     filters: ReportFilters
   ): Promise<GroupedReportResponse> {
-    console.log('getGroupedDonationsReport',JSON.stringify(filters))
     try {
       // 🎯 Fetch global filters using GlobalFilterController (handles all filter types: city, anash, alumni, etc.)
       const globalFilterDonorIds = await GlobalFilterController.getDonorIdsFromUserSettings();
-    console.log('getGroupedDonationsReport',JSON.stringify(globalFilterDonorIds))
 
       // Get other global filters for date/amount filtering
       const currentUserId = remult.user?.id;
@@ -249,109 +249,115 @@ export class ReportController {
         donationWhere.amount = amountFilter;
       }
 
-      const allDonations = await remult.repo(Donation).find({
-        where: donationWhere,
-        include: {
-          donor: { include: { fundraiser: true } },  // fundraiser נצרך בקיבוץ לפי fundraiser
-          campaign: true,
-          donationMethod: true
-          // הוסר: createdBy (לא בשימוש בדו"ח)
-        }
-      });
+      // donorType filter: pre-resolve to donorIds before find() to push to WHERE
+      if (filters.selectedDonorType && filters.selectedDonorType !== '') {
+        let typeField: 'isAnash' | 'isAlumni' | 'isOtherConnection' | null = null;
+        if (filters.selectedDonorType === 'אנ"ש') typeField = 'isAnash';
+        else if (filters.selectedDonorType === 'תלמידנו') typeField = 'isAlumni';
+        else if (filters.selectedDonorType === 'קשר אחר') typeField = 'isOtherConnection';
 
-      let filteredDonations = allDonations;
-
-      // פילטר נותר שצריך JS (donorType דרך donor.isAnash וכו') - כבר עם donor טעון
-      if (filters.selectedDonorType) {
-        filteredDonations = filteredDonations.filter(d => {
-          if (!d.donor) return false;
-          switch (filters.selectedDonorType) {
-            case 'אנ"ש': return d.donor.isAnash || false;
-            case 'תלמידנו': return d.donor.isAlumni || false;
-            case 'קשר אחר': return d.donor.isOtherConnection || false;
-            default: return true;
-          }
-        });
-      }
-      // ── הפילטרים (selectedDonor, selectedDonorIds, globalFilterDonorIds,
-      //    selectedCampaign, globalFilterCampaignIds, globalFilterDate*, globalFilterAmount*)
-      //    הועברו כולם ל-donationWhere לעיל. פילטר donorType נותר ב-JS כי תלוי ב-donor.isAnash.
-
-      console.log(`✅ Final filtered donations: ${filteredDonations.length}`);
-
-      // Load payment totals for payment-based donations (commitments + standing orders)
-      let paymentTotalsMap: Record<string, number> = {};
-      if (filteredDonations.length > 0) {
-        const paymentBasedDonations = filteredDonations.filter(d => isPaymentBased(d));
-        const paymentBasedIds = paymentBasedDonations.map(d => d.id!).filter(Boolean);
-
-        if (paymentBasedIds.length > 0) {
-          const allPaymentsForTotals = await remult.repo(Payment).find({
-            where: { donationId: { $in: paymentBasedIds }, isActive: true }
+        if (typeField) {
+          const matchingDonors = await remult.repo(Donor).find({
+            where: { [typeField]: true },
+            limit: 10000
           });
-          paymentTotalsMap = calculatePaymentTotals(paymentBasedDonations, allPaymentsForTotals);
+          const matchingIds = matchingDonors.map(d => d.id!).filter(Boolean);
+          const prev = donationWhere.donorId?.$in;
+          donationWhere.donorId = {
+            $in: prev ? prev.filter((x: string) => new Set(matchingIds).has(x)) : matchingIds
+          };
         }
       }
 
-      // Load payments if requested (for actualPayments column)
-      // ── אופטימיזציה: טוענים payments רק לתרומות payment-based (הו"ק/התחייבות),
-      //    לא לכל 10K התרומות - זה חוסך ~5MB זיכרון.
-      const allPayments: Payment[] = [];
-      if (filters.showActualPayments && filteredDonations.length > 0) {
-        const paymentBasedIds = filteredDonations
-          .filter(d => isPaymentBased(d))
-          .map(d => d.id!)
-          .filter(Boolean);
-        if (paymentBasedIds.length > 0) {
-          const payments = await remult.repo(Payment).find({
-            where: {
-              donationId: { $in: paymentBasedIds },
-              isActive: true
-            }
-          });
-          allPayments.push(...payments);
-        }
-      }
+      // ── DB-level pagination: lightweight first pass for group keys, full load only for page data
+      const allDonationsLight = await remult.repo(Donation).find({ where: donationWhere });
 
-      // Group the donations
-      let reportData = await ReportController.groupDonations(
-        filteredDonations,
-        allPayments,
-        filters,
-        paymentTotalsMap
+      const page = Number(filters.page) || 1;
+      const pageSize = Number(filters.pageSize) || 10;
+
+      // Step 1: Paginate at group-entity level — returns only page's donation subset
+      const { pageDonations, totalRecords } = await ReportController.paginateByGroupKey(
+        allDonationsLight, filters, page, pageSize
       );
-
-      // Calculate currency summary (before pagination)
-      const currencySummary = await ReportController.calculateCurrencySummary(
-        filteredDonations,
-        filters.conversionRates,
-        hebrewYears,
-        paymentTotalsMap
-      );
-
-      // Calculate total (before pagination)
-      const totalInShekel = currencySummary.reduce((sum, curr) => sum + curr.totalInShekel, 0);
-
-      // Apply sorting
-      if (filters.sortBy) {
-        reportData = ReportController.sortReportData(reportData, filters.sortBy, filters.sortDirection || 'asc', hebrewYears);
-      }
-
-      // Store total count before pagination
-      const totalRecords = reportData.length;
-
-      // Apply pagination
-      const page = filters.page || 1;
-      const pageSize = filters.pageSize || 10;
       const totalPages = Math.ceil(totalRecords / pageSize);
-      const startIndex = (page - 1) * pageSize;
-      const endIndex = startIndex + pageSize;
-      const paginatedData = reportData.slice(startIndex, endIndex);
+
+      // Step 2: Load related entities for page donations only
+      const pageDonorIds = [...new Set(pageDonations.map(d => d.donorId).filter((id): id is string => !!id))];
+      const pageCampaignIds = [...new Set(pageDonations.map(d => d.campaignId).filter((id): id is string => !!id))];
+      const pageMethodIds = [...new Set(pageDonations.map(d => d.donationMethodId).filter((id): id is string => !!id))];
+
+      const [pageDonors, pageCampaigns, pageMethods] = await Promise.all([
+        pageDonorIds.length > 0 ? remult.repo(Donor).find({ where: { id: { $in: pageDonorIds } } }) : Promise.resolve([]),
+        pageCampaignIds.length > 0 ? remult.repo(Campaign).find({ where: { id: { $in: pageCampaignIds } } }) : Promise.resolve([]),
+        pageMethodIds.length > 0 ? remult.repo(DonationMethod).find({ where: { id: { $in: pageMethodIds } } }) : Promise.resolve([])
+      ]);
+
+      const donorMap = new Map(pageDonors.map(d => [d.id!, d]));
+      const campaignMap = new Map(pageCampaigns.map(c => [c.id!, c]));
+      const methodMap = new Map(pageMethods.map(m => [m.id!, m]));
+
+      if (filters.groupBy === 'fundraiser' && pageDonors.length > 0) {
+        const fundraiserIds = [...new Set(pageDonors.map(d => d.fundraiserId).filter((id): id is string => !!id))];
+        if (fundraiserIds.length > 0) {
+          const fundraisers = await remult.repo(User).find({ where: { id: { $in: fundraiserIds } } });
+          const fundraiserMap = new Map(fundraisers.map(f => [f.id!, f]));
+          for (const donor of pageDonors) {
+            if (donor.fundraiserId) (donor as any).fundraiser = fundraiserMap.get(donor.fundraiserId);
+          }
+        }
+      }
+
+      for (const d of pageDonations) {
+        if (d.donorId) (d as any).donor = donorMap.get(d.donorId);
+        if (d.campaignId) (d as any).campaign = campaignMap.get(d.campaignId);
+        if (d.donationMethodId) (d as any).donationMethod = methodMap.get(d.donationMethodId);
+      }
+
+      // Step 3: Payment totals for page's payment-based donations only
+      let paymentTotalsMap: Record<string, number> = {};
+      if (pageDonations.length > 0) {
+        const pagePaymentBased = pageDonations.filter(d => isPaymentBased(d));
+        const pagePaymentBasedIds = pagePaymentBased.map(d => d.id!).filter(Boolean);
+        if (pagePaymentBasedIds.length > 0) {
+          const pagePaymentsForTotals = await remult.repo(Payment).find({
+            where: { donationId: { $in: pagePaymentBasedIds }, isActive: true }
+          });
+          paymentTotalsMap = calculatePaymentTotals(pagePaymentBased, pagePaymentsForTotals);
+        }
+      }
+
+      // Step 4: Actual payments for page's donations only (if requested)
+      const pageActualPayments: Payment[] = [];
+      if (filters.showActualPayments && pageDonations.length > 0) {
+        const pagePaymentBasedIds = pageDonations.filter(d => isPaymentBased(d)).map(d => d.id!).filter(Boolean);
+        if (pagePaymentBasedIds.length > 0) {
+          const payments = await remult.repo(Payment).find({
+            where: { donationId: { $in: pagePaymentBasedIds }, isActive: true }
+          });
+          pageActualPayments.push(...payments);
+        }
+      }
+
+      // Step 5: Group only page donations (fast — page data only)
+      const { data: groupedData } = await ReportController.groupDonations(
+        pageDonations, pageActualPayments, filters, paymentTotalsMap, hebrewYears, pageDonors
+      );
+
+      // Step 6: Currency summary from ALL donations (lightweight pass using donation.amount)
+      const currencySummary = filters.showCurrencySummary
+        ? ReportController.computeLightCurrencySummary(allDonationsLight, filters.conversionRates, hebrewYears)
+        : [];
+      const totalInShekel = currencySummary.reduce((sum, c) => sum + c.totalInShekel, 0);
+
+      // Step 7: Sort page data only (trivial — page rows only)
+      const reportData = filters.sortBy
+        ? ReportController.sortReportData(groupedData, filters.sortBy, filters.sortDirection || 'asc', hebrewYears)
+        : groupedData;
 
       return {
         hebrewYears,
-        reportData: paginatedData,
-        currencySummary: filters.showCurrencySummary ? currencySummary : [],
+        reportData,
+        currencySummary,
         totalInShekel,
         totalRecords,
         totalPages,
@@ -363,45 +369,198 @@ export class ReportController {
     }
   }
 
+  private static async paginateByGroupKey(
+    allDonations: Donation[],
+    filters: ReportFilters,
+    page: number,
+    pageSize: number
+  ): Promise<{ pageDonations: Donation[]; totalRecords: number }> {
+    const start = (page - 1) * pageSize;
+    const sortDir = (filters.sortDirection || 'asc') as 'asc' | 'desc';
+
+    switch (filters.groupBy) {
+      case 'donor': {
+        const allDonorIds = [...new Set(allDonations.map(d => d.donorId).filter((id): id is string => !!id))];
+        const totalRecords = allDonorIds.length;
+
+        let pageDonorIds: string[];
+
+        if (filters.sortBy === 'total' || filters.sortBy?.startsWith('year_')) {
+          // Sort by computed amount totals in JS (no DB GROUP BY needed)
+          const totals = new Map<string, number>();
+          for (const d of allDonations) {
+            if (d.donorId) totals.set(d.donorId, (totals.get(d.donorId) || 0) + d.amount);
+          }
+          pageDonorIds = [...allDonorIds]
+            .sort((a, b) => ((totals.get(a) || 0) - (totals.get(b) || 0)) * (sortDir === 'desc' ? -1 : 1))
+            .slice(start, start + pageSize);
+        } else {
+          // DB-level pagination sorted by real DB columns (lastAndFirstName is serverExpression, not a column)
+          const donors = await remult.repo(Donor).find({
+            where: { id: { $in: allDonorIds } },
+            orderBy: { lastName: sortDir, firstName: sortDir },
+            limit: pageSize,
+            page
+          });
+          pageDonorIds = donors.map(d => d.id!).filter(Boolean);
+        }
+
+        const idSet = new Set(pageDonorIds);
+        return {
+          pageDonations: allDonations.filter(d => d.donorId && idSet.has(d.donorId)),
+          totalRecords
+        };
+      }
+
+      case 'campaign': {
+        const allCampaignIds = [...new Set(allDonations.map(d => d.campaignId).filter((id): id is string => !!id))];
+        const hasUnknown = allDonations.some(d => !d.campaignId);
+        const allCampaigns = await remult.repo(Campaign).find({
+          where: { id: { $in: allCampaignIds } },
+          orderBy: { name: 'asc' }
+        });
+        const allGroupKeys = [
+          ...allCampaigns.map(c => c.id!).filter(Boolean),
+          ...(hasUnknown ? ['unknown'] : [])
+        ];
+        const totalRecords = allGroupKeys.length;
+        const pageKeys = new Set(allGroupKeys.slice(start, start + pageSize));
+        return {
+          pageDonations: allDonations.filter(d =>
+            (d.campaignId && pageKeys.has(d.campaignId)) || (!d.campaignId && pageKeys.has('unknown'))
+          ),
+          totalRecords
+        };
+      }
+
+      case 'paymentMethod': {
+        const allMethodIds = [...new Set(allDonations.map(d => d.donationMethodId).filter((id): id is string => !!id))];
+        const hasUnknown = allDonations.some(d => !d.donationMethodId);
+        const allMethods = await remult.repo(DonationMethod).find({
+          where: { id: { $in: allMethodIds } },
+          orderBy: { name: 'asc' }
+        });
+        const allGroupKeys = [
+          ...allMethods.map(m => m.id!).filter(Boolean),
+          ...(hasUnknown ? ['unknown'] : [])
+        ];
+        const totalRecords = allGroupKeys.length;
+        const pageKeys = new Set(allGroupKeys.slice(start, start + pageSize));
+        return {
+          pageDonations: allDonations.filter(d =>
+            (d.donationMethodId && pageKeys.has(d.donationMethodId)) || (!d.donationMethodId && pageKeys.has('unknown'))
+          ),
+          totalRecords
+        };
+      }
+
+      case 'fundraiser': {
+        const allDonorIds = [...new Set(allDonations.map(d => d.donorId).filter((id): id is string => !!id))];
+        if (allDonorIds.length === 0) return { pageDonations: [], totalRecords: 0 };
+
+        const allDonorsForFundraiser = await remult.repo(Donor).find({ where: { id: { $in: allDonorIds } } });
+        const allFundraiserIds = [...new Set(allDonorsForFundraiser.map(d => d.fundraiserId).filter((id): id is string => !!id))];
+        const hasNoFundraiser = allDonorsForFundraiser.some(d => !d.fundraiserId);
+        const allFundraisers = await remult.repo(User).find({
+          where: { id: { $in: allFundraiserIds } },
+          orderBy: { name: 'asc' }
+        });
+        const allGroupKeys = [
+          ...allFundraisers.map(f => f.id!).filter(Boolean),
+          ...(hasNoFundraiser ? ['unknown'] : [])
+        ];
+        const totalRecords = allGroupKeys.length;
+        const pageKeys = new Set(allGroupKeys.slice(start, start + pageSize));
+
+        const pageDonorIdSet = new Set(
+          allDonorsForFundraiser
+            .filter(d => pageKeys.has(d.fundraiserId || 'unknown'))
+            .map(d => d.id!)
+            .filter(Boolean)
+        );
+        return {
+          pageDonations: allDonations.filter(d => d.donorId && pageDonorIdSet.has(d.donorId)),
+          totalRecords
+        };
+      }
+
+      default:
+        return { pageDonations: allDonations, totalRecords: allDonations.length };
+    }
+  }
+
+  private static computeLightCurrencySummary(
+    donations: Donation[],
+    conversionRates: { [currency: string]: number },
+    hebrewYears: string[]
+  ): CurrencySummaryData[] {
+    const currencyYearTotals = new Map<string, { [year: string]: number }>();
+    const dateCache = new Map<string, string>();
+
+    const getYear = (date: Date): string => {
+      const key = date.toISOString().split('T')[0];
+      if (!dateCache.has(key)) {
+        dateCache.set(key, HebrewDateController.hebrewDateInfoSync(date).yearFormatted);
+      }
+      return dateCache.get(key)!;
+    };
+
+    for (const d of donations) {
+      const currency = ReportController.normalizeCurrencyName(d.currencyId);
+      const year = getYear(d.donationDate);
+      if (!currencyYearTotals.has(currency)) currencyYearTotals.set(currency, {});
+      const yt = currencyYearTotals.get(currency)!;
+      yt[year] = (yt[year] || 0) + d.amount;
+    }
+
+    return Array.from(currencyYearTotals.entries()).map(([currency, yearTotals]) => {
+      const yearlyTotalsInShekel: { [year: string]: number } = {};
+      let totalAmount = 0;
+      let totalInShekel = 0;
+      for (const year of hebrewYears) {
+        const amount = yearTotals[year] || 0;
+        const inShekel = amount * (conversionRates[currency] || 1);
+        yearlyTotalsInShekel[year] = inShekel;
+        totalAmount += amount;
+        totalInShekel += inShekel;
+      }
+      return { currency, yearlyTotals: yearTotals, yearlyTotalsInShekel, totalAmount, totalInShekel };
+    });
+  }
+
   private static async groupDonations(
     donations: Donation[],
     payments: Payment[],
     filters: ReportFilters,
-    paymentTotalsMap: Record<string, number> = {}
-  ): Promise<GroupedDonationReportData[]> {
+    paymentTotalsMap: Record<string, number> = {},
+    hebrewYears: string[] = [],
+    preloadedDonors?: Donor[]
+  ): Promise<{ data: GroupedDonationReportData[]; currencySummary: CurrencySummaryData[] }> {
     const grouped = new Map<string, GroupedDonationReportData>();
+    const currencyYearTotals = new Map<string, { [year: string]: number }>();
 
     // ✅ OPTIMIZATION 1: Pre-load all donor details in batch (if needed)
     let donorDetailsMap = new Map<string, { address?: string; phones?: string[]; emails?: string[] }>();
     if (filters.showDonorDetails && filters.groupBy === 'donor') {
       const donorIds = [...new Set(donations.map(d => d.donorId).filter(Boolean))];
       if (donorIds.length > 0) {
-        donorDetailsMap = await ReportController.loadAllDonorDetails(donorIds);
+        donorDetailsMap = await ReportController.loadAllDonorDetails(donorIds, preloadedDonors);
       }
     }
 
-    // ✅ OPTIMIZATION 2: Cache Hebrew date conversions
+    // ✅ OPTIMIZATION 2: Sync Hebrew date cache — @hebcal/core is pure JS, no async needed
     const hebrewDateCache = new Map<string, { year: number; yearFormatted: string; dateFormatted: string }>();
 
-    const getHebrewDateInfo = async (date: Date): Promise<{ yearFormatted: string; dateFormatted: string }> => {
-      const dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD
+    const getHebrewDateInfo = (date: Date): { yearFormatted: string; dateFormatted: string } => {
+      const dateKey = date.toISOString().split('T')[0];
       if (!hebrewDateCache.has(dateKey)) {
-        const hebrewDate = await HebrewDateController.convertGregorianToHebrew(date);
-        const yearFormatted = await HebrewDateController.formatHebrewYear(hebrewDate.year);
-        hebrewDateCache.set(dateKey, {
-          year: hebrewDate.year,
-          yearFormatted,
-          dateFormatted: hebrewDate.formatted
-        });
+        hebrewDateCache.set(dateKey, HebrewDateController.hebrewDateInfoSync(date));
       }
       const cached = hebrewDateCache.get(dateKey)!;
       return { yearFormatted: cached.yearFormatted, dateFormatted: cached.dateFormatted };
     };
 
-    const getHebrewYearFormatted = async (date: Date): Promise<string> => {
-      const info = await getHebrewDateInfo(date);
-      return info.yearFormatted;
-    };
+    const getHebrewYearFormatted = (date: Date): string => getHebrewDateInfo(date).yearFormatted;
 
     for (const donation of donations) {
       let groupKey = '';
@@ -447,8 +606,8 @@ export class ReportController {
 
       const group = grouped.get(groupKey)!;
 
-      // Determine Hebrew year and date of donation (use cache)
-      const hebrewDateInfo = await getHebrewDateInfo(donation.donationDate);
+      // Determine Hebrew year and date of donation (use sync cache)
+      const hebrewDateInfo = getHebrewDateInfo(donation.donationDate);
 
       // Add donation detail if requested
       if (filters.showDonationDetails && group.donations) {
@@ -495,6 +654,13 @@ export class ReportController {
         group.yearlyTotals[hebrewYearFormatted][donation.currencyId] = 0;
       }
       group.yearlyTotals[hebrewYearFormatted][donation.currencyId] += calculateEffectiveAmount(donation, paymentTotalsMap[donation.id!]);
+
+      // ── Accumulate currency summary in the same pass (replaces calculateCurrencySummary loop)
+      const normalizedCurrency = ReportController.normalizeCurrencyName(donation.currencyId);
+      if (!currencyYearTotals.has(normalizedCurrency)) currencyYearTotals.set(normalizedCurrency, {});
+      const currencyTotals = currencyYearTotals.get(normalizedCurrency)!;
+      if (!currencyTotals[hebrewYearFormatted]) currencyTotals[hebrewYearFormatted] = 0;
+      currencyTotals[hebrewYearFormatted] += calculateEffectiveAmount(donation, paymentTotalsMap[donation.id!]);
     }
 
     // Add partner donations to donation details (only for sub-table display, not for totals)
@@ -503,7 +669,7 @@ export class ReportController {
         // Check if donation has partners
         if (!donation.partnerIds || donation.partnerIds.length === 0) continue;
 
-        const hebrewDateInfo = await getHebrewDateInfo(donation.donationDate);
+        const hebrewDateInfo = getHebrewDateInfo(donation.donationDate);
 
         // Add this donation to each partner's donation details
         for (const partnerId of donation.partnerIds) {
@@ -553,8 +719,8 @@ export class ReportController {
         const group = grouped.get(groupKey);
         if (!group || !group.actualPayments) continue;
 
-        // Use cached Hebrew date conversion
-        const hebrewYearFormatted = await getHebrewYearFormatted(payment.paymentDate);
+        // Use cached Hebrew date conversion (sync)
+        const hebrewYearFormatted = getHebrewYearFormatted(payment.paymentDate);
 
         if (!group.actualPayments[hebrewYearFormatted]) {
           group.actualPayments[hebrewYearFormatted] = 0;
@@ -567,7 +733,22 @@ export class ReportController {
       }
     }
 
-    return Array.from(grouped.values());
+    // Build currencySummary from the accumulated map (no second loop over donations needed)
+    const currencySummary: CurrencySummaryData[] = Array.from(currencyYearTotals.entries()).map(([currency, yearTotals]) => {
+      const yearlyTotalsInShekel: { [year: string]: number } = {};
+      let totalAmount = 0;
+      let totalInShekel = 0;
+      for (const year of hebrewYears) {
+        const amount = yearTotals[year] || 0;
+        const amountInShekel = amount * (filters.conversionRates[currency] || 1);
+        yearlyTotalsInShekel[year] = amountInShekel;
+        totalAmount += amount;
+        totalInShekel += amountInShekel;
+      }
+      return { currency, yearlyTotals: yearTotals, yearlyTotalsInShekel, totalAmount, totalInShekel };
+    });
+
+    return { data: Array.from(grouped.values()), currencySummary };
   }
 
   /**
@@ -576,24 +757,24 @@ export class ReportController {
    * Returns expanded donor and address fields for Excel export
    */
   private static async loadAllDonorDetails(
-    donorIds: string[]
+    donorIds: string[],
+    preloadedDonors?: Donor[]
   ): Promise<Map<string, DonorExportDetails>> {
     const detailsMap = new Map<string, DonorExportDetails>();
 
     try {
-      // Load all donors in one query
-      const donors = await remult.repo(Donor).find({
-        where: { id: { $in: donorIds } }
-      });
-      const donorMap = new Map(donors.map(d => [d.id, d]));
+      const donorMap = preloadedDonors
+        ? new Map(preloadedDonors.map(d => [d.id, d]))
+        : new Map((await remult.repo(Donor).find({ where: { id: { $in: donorIds } } })).map(d => [d.id, d]));
 
       // Load primary places for all donors (בית first, then any other)
       const primaryPlacesMap = await DonorPlace.getPrimaryForDonors(donorIds);
 
-      // Load fundraisers and contact persons for name lookup
+      // Load fundraisers and contact persons for name lookup (scoped to referenced IDs only)
+      const referencedContactPersonIds = [...new Set([...donorMap.values()].map(d => (d as any).contactPersonId).filter((id): id is string => !!id))];
       const [fundraisers, contactPersons] = await Promise.all([
         remult.repo(User).find({ where: { donator: true } }),
-        remult.repo(ContactPerson).find()
+        referencedContactPersonIds.length > 0 ? remult.repo(ContactPerson).find({ where: { id: { $in: referencedContactPersonIds } } }) : Promise.resolve([])
       ]);
       const fundraiserMap = new Map(fundraisers.map(f => [f.id, f.name]));
       const contactPersonMap = new Map(contactPersons.map(cp => [cp.id, cp.name]));
@@ -879,27 +1060,21 @@ export class ReportController {
   @BackendMethod({ allowed: Allow.authenticated })
   static async getAvailableHebrewYears(): Promise<string[]> {
     try {
-      // Get all unique donation dates (only the date field, not the whole object)
-      const donations = await remult.repo(Donation).find({
-        orderBy: { donationDate: 'desc' }
-      });
-
-      // Extract unique Hebrew years
-      const hebrewYearsSet = new Set<number>();
-      for (const donation of donations) {
-        const hebrewDate = await HebrewDateController.convertGregorianToHebrew(donation.donationDate);
-        hebrewYearsSet.add(hebrewDate.year);
+      const donationRepo = remult.repo(Donation);
+      const [oldest, newest] = await Promise.all([
+        donationRepo.find({ orderBy: { donationDate: 'asc' }, limit: 1 }),
+        donationRepo.find({ orderBy: { donationDate: 'desc' }, limit: 1 })
+      ]);
+      if (oldest.length === 0 || newest.length === 0) return [];
+      const [oldestHebrew, newestHebrew] = await Promise.all([
+        HebrewDateController.convertGregorianToHebrew(oldest[0].donationDate),
+        HebrewDateController.convertGregorianToHebrew(newest[0].donationDate)
+      ]);
+      const years: string[] = [];
+      for (let y = newestHebrew.year; y >= oldestHebrew.year; y--) {
+        years.push(await HebrewDateController.formatHebrewYear(y));
       }
-
-      // Convert to formatted strings and sort descending
-      const sortedYears = Array.from(hebrewYearsSet).sort((a, b) => b - a);
-      const formattedYears: string[] = [];
-      for (const year of sortedYears) {
-        const formatted = await HebrewDateController.formatHebrewYear(year);
-        formattedYears.push(formatted);
-      }
-
-      return formattedYears;
+      return years;
     } catch (error) {
       console.error('Error getting available Hebrew years:', error);
       return [];
@@ -914,23 +1089,24 @@ export class ReportController {
   @BackendMethod({ allowed: Allow.authenticated })
   static async getPaymentsReport(
     conversionRates: { [currency: string]: number },
-    localFilters?: { selectedDonorIds?: string[] }
-  ): Promise<PaymentReportData[]> {
+    localFilters?: PaymentReportLocalFilters
+  ): Promise<PaymentReportResponse> {
     try {
-      // 🎯 Fetch global filters using GlobalFilterController (handles all filter types: city, anash, alumni, etc.)
       let globalFilterDonorIds = await GlobalFilterController.getDonorIdsFromUserSettings();
 
-      // If local filter exists, intersect with global filter
       if (localFilters?.selectedDonorIds && localFilters.selectedDonorIds.length > 0) {
-        if (globalFilterDonorIds !== undefined) {
-          // חיתוך עם הפילטר הגלובלי (אם ריק - התוצאה תהיה ריקה)
-          globalFilterDonorIds = localFilters.selectedDonorIds.filter(id => globalFilterDonorIds!.includes(id));
-        } else {
-          globalFilterDonorIds = localFilters.selectedDonorIds;
-        }
+        globalFilterDonorIds = globalFilterDonorIds !== undefined
+          ? localFilters.selectedDonorIds.filter(id => globalFilterDonorIds!.includes(id))
+          : localFilters.selectedDonorIds;
       }
 
-      // Get other global filters for date/amount filtering
+      const page = localFilters?.page ?? 1;
+      const pageSize = localFilters?.pageSize;
+
+      if (globalFilterDonorIds !== undefined && globalFilterDonorIds.length === 0) {
+        return { data: [], totalRecords: 0, totalPages: 0, currentPage: page };
+      }
+
       const currentUserId = remult.user?.id;
       let globalFilterCampaignIds: string[] | undefined = undefined;
       let globalFilterDateFrom: Date | undefined = undefined;
@@ -942,7 +1118,6 @@ export class ReportController {
         const { User } = await import('../entity/user');
         const user = await remult.repo(User).findId(currentUserId);
         const globalFilters = user?.settings?.globalFilters;
-
         if (globalFilters) {
           globalFilterCampaignIds = globalFilters.campaignIds;
           globalFilterDateFrom = globalFilters.dateFrom;
@@ -952,163 +1127,105 @@ export class ReportController {
         }
       }
 
-      // Load only commitment donations (not standing orders - they are not pledges)
-      // הו"ק היא לא התחייבות - היא אמצעי תשלום, לא הבטחה מחייבת
-      let donations = await remult.repo(Donation).find({
-        where: { donationType: 'commitment' },
-        include: {
-          donor: true,
-          donationMethod: true
-        },
+      // Build WHERE — הו"ק היא לא התחייבות, לכן סוג 'commitment' בלבד
+      const donationWhere: any = { donationType: 'commitment' };
+      if (globalFilterDonorIds !== undefined) {
+        donationWhere.donorId = { $in: globalFilterDonorIds };
+      }
+      if (globalFilterCampaignIds && globalFilterCampaignIds.length > 0) {
+        donationWhere.campaignId = { $in: globalFilterCampaignIds };
+      }
+      if (globalFilterDateFrom || globalFilterDateTo) {
+        const dateFilter: any = {};
+        if (globalFilterDateFrom) dateFilter.$gte = globalFilterDateFrom;
+        if (globalFilterDateTo) dateFilter.$lte = globalFilterDateTo;
+        donationWhere.donationDate = dateFilter;
+      }
+      if (globalFilterAmountMin !== undefined || globalFilterAmountMax !== undefined) {
+        const amountFilter: any = {};
+        if (globalFilterAmountMin !== undefined) amountFilter.$gte = globalFilterAmountMin;
+        if (globalFilterAmountMax !== undefined) amountFilter.$lte = globalFilterAmountMax;
+        donationWhere.amount = amountFilter;
+      }
+
+      const donations = await remult.repo(Donation).find({
+        where: donationWhere,
+        include: { donor: true },
         orderBy: { donationDate: 'desc' }
       });
 
       console.log(`📊 Loaded ${donations.length} commitment donations for payments report`);
 
-      // Apply global filters
-      // undefined = אין פילטר, [] = יש פילטר אבל אף תורם לא עונה לו
-      if (globalFilterDonorIds !== undefined) {
-        if (globalFilterDonorIds.length === 0) {
-          donations = [];
-          console.log(`  → Global donor filter: empty array - no donors match filter`);
-        } else {
-          const before = donations.length;
-          donations = donations.filter(d => d.donorId && globalFilterDonorIds!.includes(d.donorId));
-          console.log(`  → Global donor filter: ${before} → ${donations.length}`);
-        }
-      }
-
-      if (globalFilterCampaignIds && globalFilterCampaignIds.length > 0) {
-        const before = donations.length;
-        donations = donations.filter(d => d.campaignId && globalFilterCampaignIds!.includes(d.campaignId));
-        console.log(`  → Global campaign filter: ${before} → ${donations.length}`);
-      }
-
-      if (globalFilterDateFrom || globalFilterDateTo) {
-        const before = donations.length;
-        donations = donations.filter(d => {
-          const donationDate = new Date(d.donationDate);
-          if (globalFilterDateFrom && donationDate < globalFilterDateFrom) return false;
-          if (globalFilterDateTo && donationDate > globalFilterDateTo) return false;
-          return true;
-        });
-        console.log(`  → Global date filter: ${before} → ${donations.length}`);
-      }
-
-      if (globalFilterAmountMin !== undefined || globalFilterAmountMax !== undefined) {
-        const before = donations.length;
-        donations = donations.filter(d => {
-          if (globalFilterAmountMin !== undefined && d.amount < globalFilterAmountMin) return false;
-          if (globalFilterAmountMax !== undefined && d.amount > globalFilterAmountMax) return false;
-          return true;
-        });
-        console.log(`  → Global amount filter: ${before} → ${donations.length}`);
-      }
-
-      // Load payments for all donations with type filtering
       const donationIds = donations.map(d => d.id!).filter(Boolean);
-      const payments = await remult.repo(Payment).find({
-        where: {
-          donationId: { $in: donationIds },
-          isActive: true
-        }
-      });
+      const payments = donationIds.length > 0
+        ? await remult.repo(Payment).find({ where: { donationId: { $in: donationIds }, isActive: true } })
+        : [];
       const paymentTotalsMap = calculatePaymentTotals(donations, payments);
 
-      console.log(`📊 Loaded ${payments.length} payments`);
-
-      // Load donor details (addresses)
       const uniqueDonorIds = [...new Set(donations.map(d => d.donorId).filter(Boolean))];
-      const donorDetailsMap = await ReportController.loadAllDonorDetails(uniqueDonorIds);
+      const preloadedDonors = donations.map(d => d.donor).filter((d): d is Donor => d !== undefined);
+      const donorDetailsMap = await ReportController.loadAllDonorDetails(uniqueDonorIds, preloadedDonors);
 
-      // Group by donor
       const donorMap = new Map<string, {
         donor: Donor;
-        totalCommitment: number; // Total promised (in shekel)
-        totalActual: number; // Total paid (in shekel)
+        totalCommitment: number;
+        totalActual: number;
         donationCount: number;
         lastDonationDate: Date;
         donorDetails: DonorExportDetails;
       }>();
 
-      // Process donations (commitments and standing orders)
       for (const donation of donations) {
         if (!donation.donor) continue;
-
         const donorId = donation.donor.id;
-        const rate = conversionRates[donation.currencyId] || 1;
-
-        // התחייבות: donation.amount הוא סכום ההתחייבות המלא
-        const commitmentAmount = donation.amount;
-        const amountInShekel = commitmentAmount * rate;
+        const amountInShekel = donation.amount * (conversionRates[donation.currencyId] || 1);
 
         if (!donorMap.has(donorId)) {
-          const donorDetails = donorDetailsMap.get(donorId) || {};
-
           donorMap.set(donorId, {
             donor: donation.donor,
             totalCommitment: 0,
             totalActual: 0,
             donationCount: 0,
             lastDonationDate: donation.donationDate,
-            donorDetails: donorDetails
+            donorDetails: donorDetailsMap.get(donorId) || {}
           });
         }
-
         const data = donorMap.get(donorId)!;
         data.totalCommitment += amountInShekel;
         data.donationCount++;
-
-        // Update last donation date
         if (donation.donationDate > data.lastDonationDate) {
           data.lastDonationDate = donation.donationDate;
         }
       }
 
-      // Process payments (actual amounts) - using filtered payment totals
       for (const donation of donations) {
         if (!donation?.donor) continue;
-
-        const donorId = donation.donor.id;
-        const data = donorMap.get(donorId);
+        const data = donorMap.get(donation.donor.id);
         if (!data) continue;
-
-        // Get filtered payment total for this donation
-        const paymentTotal = paymentTotalsMap[donation.id!] || 0;
-        // Convert to shekel
-        const amountInShekel = paymentTotal * (conversionRates[donation.currencyId] || 1);
-        data.totalActual += amountInShekel;
+        data.totalActual += (paymentTotalsMap[donation.id!] || 0) * (conversionRates[donation.currencyId] || 1);
       }
 
-      // Convert to array and calculate remaining debt
-      const reportData: PaymentReportData[] = Array.from(donorMap.values())
+      const allRows: PaymentReportData[] = Array.from(donorMap.values())
         .map(data => {
           const remainingDebt = Math.max(0, data.totalCommitment - data.totalActual);
           let status: 'fullyPaid' | 'partiallyPaid' | 'notPaid';
-
-          if (data.totalActual >= data.totalCommitment) {
-            status = 'fullyPaid';
-          } else if (data.totalActual > 0) {
-            status = 'partiallyPaid';
-          } else {
-            status = 'notPaid';
-          }
+          if (data.totalActual >= data.totalCommitment) status = 'fullyPaid';
+          else if (data.totalActual > 0) status = 'partiallyPaid';
+          else status = 'notPaid';
 
           const details = data.donorDetails;
           return {
             donorName: data.donor.lastAndFirstName,
             promisedAmount: data.totalCommitment,
             actualAmount: data.totalActual,
-            remainingDebt: remainingDebt,
-            status: status,
-            currency: 'ILS', // Always in shekel after conversion
-            // Legacy fields
+            remainingDebt,
+            status,
+            currency: 'ILS',
             address: details.address || '',
             city: details.city || '',
             phones: details.phones || [],
             emails: details.emails || [],
             lastDonationDate: data.lastDonationDate,
-            // Expanded donor fields
             title: details.title || '',
             firstName: details.firstName || '',
             lastName: details.lastName || '',
@@ -1120,10 +1237,8 @@ export class ReportController {
             maritalStatus: details.maritalStatus || '',
             isAnash: details.isAnash || false,
             isAlumni: details.isAlumni || false,
-            // Fundraiser & Contact Person
             fundraiserName: details.fundraiserName || '',
             contactPersonName: details.contactPersonName || '',
-            // Expanded address fields
             country: details.country || '',
             state: details.state || '',
             neighborhood: details.neighborhood || '',
@@ -1137,8 +1252,14 @@ export class ReportController {
         })
         .sort((a, b) => a.donorName.localeCompare(b.donorName, 'he'));
 
-      console.log(`✅ Generated ${reportData.length} payment report rows`);
-      return reportData;
+      const totalRecords = allRows.length;
+      const totalPages = pageSize ? Math.ceil(totalRecords / pageSize) : 1;
+      const data = pageSize && pageSize < totalRecords
+        ? allRows.slice((page - 1) * pageSize, page * pageSize)
+        : allRows;
+
+      console.log(`✅ Generated ${totalRecords} payment report rows (page ${page}/${totalPages})`);
+      return { data, totalRecords, totalPages, currentPage: page };
 
     } catch (error) {
       console.error('Error in getPaymentsReport:', error);
@@ -1157,10 +1278,12 @@ export class ReportController {
     localFilters?: { selectedYear?: string | number }
   ): Promise<YearlySummaryData[]> {
     try {
-      // 🎯 Fetch global filters using GlobalFilterController (handles all filter types: city, anash, alumni, etc.)
       const globalFilterDonorIds = await GlobalFilterController.getDonorIdsFromUserSettings();
 
-      // Get other global filters for date/amount filtering
+      if (globalFilterDonorIds !== undefined && globalFilterDonorIds.length === 0) {
+        return [];
+      }
+
       const currentUserId = remult.user?.id;
       let globalFilterCampaignIds: string[] | undefined = undefined;
       let globalFilterDateFrom: Date | undefined = undefined;
@@ -1172,7 +1295,6 @@ export class ReportController {
         const { User } = await import('../entity/user');
         const user = await remult.repo(User).findId(currentUserId);
         const globalFilters = user?.settings?.globalFilters;
-
         if (globalFilters) {
           globalFilterCampaignIds = globalFilters.campaignIds;
           globalFilterDateFrom = globalFilters.dateFrom;
@@ -1182,80 +1304,51 @@ export class ReportController {
         }
       }
 
-      // Load all donations with donationMethod for isPaymentBased check
-      let donations = await remult.repo(Donation).find({
+      // Build WHERE before find()
+      const donationWhere: any = {};
+
+      if (globalFilterDonorIds !== undefined) {
+        donationWhere.donorId = { $in: globalFilterDonorIds };
+      }
+      if (globalFilterCampaignIds && globalFilterCampaignIds.length > 0) {
+        donationWhere.campaignId = { $in: globalFilterCampaignIds };
+      }
+      if (globalFilterAmountMin !== undefined || globalFilterAmountMax !== undefined) {
+        const amountFilter: any = {};
+        if (globalFilterAmountMin !== undefined) amountFilter.$gte = globalFilterAmountMin;
+        if (globalFilterAmountMax !== undefined) amountFilter.$lte = globalFilterAmountMax;
+        donationWhere.amount = amountFilter;
+      }
+
+      // Year filter: resolve to date range before find()
+      let yearDateFrom: Date | undefined = globalFilterDateFrom;
+      let yearDateTo: Date | undefined = globalFilterDateTo;
+      if (localFilters?.selectedYear && localFilters.selectedYear !== 'last4') {
+        let targetHebrewYear: number;
+        if (typeof localFilters.selectedYear === 'number') {
+          targetHebrewYear = localFilters.selectedYear;
+        } else {
+          targetHebrewYear = await HebrewDateController.parseHebrewYear(localFilters.selectedYear);
+        }
+        const dateRange = await HebrewDateController.getHebrewYearDateRange(targetHebrewYear);
+        yearDateFrom = yearDateFrom && yearDateFrom > dateRange.startDate ? yearDateFrom : dateRange.startDate;
+        yearDateTo = yearDateTo && yearDateTo < dateRange.endDate ? yearDateTo : dateRange.endDate;
+      }
+
+      if (yearDateFrom || yearDateTo) {
+        const dateFilter: any = {};
+        if (yearDateFrom) dateFilter.$gte = yearDateFrom;
+        if (yearDateTo) dateFilter.$lte = yearDateTo;
+        donationWhere.donationDate = dateFilter;
+      }
+
+      const donations = await remult.repo(Donation).find({
+        where: donationWhere,
         orderBy: { donationDate: 'desc' },
         include: { donationMethod: true }
       });
 
       console.log(`📊 Loaded ${donations.length} donations for yearly summary report`);
-
-      // Apply global filters
-      // undefined = אין פילטר, [] = יש פילטר אבל אף תורם לא עונה לו
-      if (globalFilterDonorIds !== undefined) {
-        if (globalFilterDonorIds.length === 0) {
-          donations = [];
-          console.log(`  → Global donor filter: empty array - no donors match filter`);
-        } else {
-          const before = donations.length;
-          donations = donations.filter(d => d.donorId && globalFilterDonorIds!.includes(d.donorId));
-          console.log(`  → Global donor filter: ${before} → ${donations.length}`);
-        }
-      }
-
-      if (globalFilterCampaignIds && globalFilterCampaignIds.length > 0) {
-        const before = donations.length;
-        donations = donations.filter(d => d.campaignId && globalFilterCampaignIds!.includes(d.campaignId));
-        console.log(`  → Global campaign filter: ${before} → ${donations.length}`);
-      }
-
-      if (globalFilterDateFrom || globalFilterDateTo) {
-        const before = donations.length;
-        donations = donations.filter(d => {
-          const donationDate = new Date(d.donationDate);
-          if (globalFilterDateFrom && donationDate < globalFilterDateFrom) return false;
-          if (globalFilterDateTo && donationDate > globalFilterDateTo) return false;
-          return true;
-        });
-        console.log(`  → Global date filter: ${before} → ${donations.length}`);
-      }
-
-      if (globalFilterAmountMin !== undefined || globalFilterAmountMax !== undefined) {
-        const before = donations.length;
-        donations = donations.filter(d => {
-          if (globalFilterAmountMin !== undefined && d.amount < globalFilterAmountMin) return false;
-          if (globalFilterAmountMax !== undefined && d.amount > globalFilterAmountMax) return false;
-          return true;
-        });
-        console.log(`  → Global amount filter: ${before} → ${donations.length}`);
-      }
-
-      // Apply local year filter
-      if (localFilters?.selectedYear && localFilters.selectedYear !== 'last4') {
-        const before = donations.length;
-        // Parse Hebrew year string to get numeric Hebrew year
-        let targetHebrewYear: number;
-        if (typeof localFilters.selectedYear === 'number') {
-          targetHebrewYear = localFilters.selectedYear;
-        } else {
-          // It's a Hebrew year string like "תשפ"ה" - parse it
-          targetHebrewYear = await HebrewDateController.parseHebrewYear(localFilters.selectedYear);
-        }
-
-        // Get date range for the Hebrew year
-        const dateRange = await HebrewDateController.getHebrewYearDateRange(targetHebrewYear);
-        console.log(`  → Filtering by Hebrew year ${targetHebrewYear}:`, {
-          startDate: dateRange.startDate,
-          endDate: dateRange.endDate
-        });
-
-        // Filter donations within the Hebrew year date range
-        donations = donations.filter(d => {
-          const donationDate = new Date(d.donationDate);
-          return donationDate >= dateRange.startDate && donationDate <= dateRange.endDate;
-        });
-        console.log(`  → Local year filter (${localFilters.selectedYear}): ${before} → ${donations.length}`);
-      }
 
       // Load payment totals for payment-based donations (commitments and standing orders)
       const paymentBasedIds = donations.filter(d => isPaymentBased(d)).map(d => d.id).filter(Boolean);
@@ -1316,6 +1409,193 @@ export class ReportController {
 
     } catch (error) {
       console.error('Error in getYearlySummaryReport:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * General Stats — replaces 5+ client-side full-table loads with a single server call
+   */
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async getGeneralStats(conversionRates: { [currency: string]: number }): Promise<GeneralStatsResponse> {
+    try {
+      const globalFilterDonorIds = await GlobalFilterController.getDonorIdsFromUserSettings();
+
+      if (globalFilterDonorIds !== undefined && globalFilterDonorIds.length === 0) {
+        return {
+          totalDonations: 0, totalDonors: 0, totalCampaigns: 0,
+          amountByCurrency: [], avgDonation: 0,
+          monthlyData: [], donorTypeData: [], regionData: [],
+          campaignData: [], paymentMethodData: [],
+          topDonors: [], topCampaigns: [], recentActivity: []
+        };
+      }
+
+      const donationWhere: any = {};
+      if (globalFilterDonorIds !== undefined) {
+        donationWhere.donorId = { $in: globalFilterDonorIds };
+      }
+
+      // Single donation load (with donor + donationMethod)
+      const donations = await remult.repo(Donation).find({
+        where: donationWhere,
+        include: { donor: true, donationMethod: true, campaign: true },
+        orderBy: { donationDate: 'desc' }
+      });
+
+      // Payment totals for payment-based donations
+      const paymentBasedIds = donations.filter(d => isPaymentBased(d)).map(d => d.id!).filter(Boolean);
+      let paymentTotals: Record<string, number> = {};
+      if (paymentBasedIds.length > 0) {
+        const { DonationController } = await import('./donation.controller');
+        paymentTotals = await DonationController.getPaymentTotalsForCommitments(paymentBasedIds);
+      }
+
+      const effectiveAmountILS = (d: Donation) =>
+        calculateEffectiveAmount(d, paymentTotals[d.id!]) * (conversionRates[d.currencyId] || 1);
+
+      // Summary counts
+      const totalDonations = donations.length;
+      const uniqueDonorIds = [...new Set(donations.map(d => d.donorId).filter(Boolean))];
+      const totalCampaigns = await remult.repo(Campaign).count();
+
+      // Amount by currency (face value per currency)
+      const currencyMap = new Map<string, number>();
+      let totalAmountILS = 0;
+      donations.forEach(d => {
+        const currency = ReportController.normalizeCurrencyName(d.currencyId);
+        currencyMap.set(currency, (currencyMap.get(currency) || 0) + d.amount);
+        totalAmountILS += effectiveAmountILS(d);
+      });
+      const amountByCurrency: GeneralCurrencyStat[] = Array.from(currencyMap.entries())
+        .map(([currencyId, total]) => ({ currencyId, total }));
+
+      const avgDonation = totalDonations > 0 ? totalAmountILS / totalDonations : 0;
+
+      // Monthly data (ILS)
+      const monthlyMap = new Map<string, { donations: number; amount: number }>();
+      donations.forEach(d => {
+        const monthKey = new Date(d.donationDate).toLocaleDateString('he-IL', { year: 'numeric', month: 'short' });
+        if (!monthlyMap.has(monthKey)) monthlyMap.set(monthKey, { donations: 0, amount: 0 });
+        const entry = monthlyMap.get(monthKey)!;
+        entry.donations++;
+        entry.amount += effectiveAmountILS(d);
+      });
+      const monthlyData: GeneralMonthlyStat[] = Array.from(monthlyMap.entries())
+        .map(([month, data]) => ({ month, ...data }))
+        .reverse();
+
+      // Donor type data (ILS)
+      const typeMap = new Map<string, number>();
+      donations.forEach(d => {
+        const type = d.donor?.donorType || 'אחר';
+        typeMap.set(type, (typeMap.get(type) || 0) + effectiveAmountILS(d));
+      });
+      const typeTotal = Array.from(typeMap.values()).reduce((s, v) => s + v, 0);
+      const donorTypeData: GeneralChartItem[] = Array.from(typeMap.entries())
+        .map(([label, value]) => ({ label, value, percentage: typeTotal > 0 ? (value / typeTotal) * 100 : 0 }));
+
+      // Payment method data (ILS)
+      const methodMap = new Map<string, number>();
+      donations.forEach(d => {
+        const method = d.donationMethod?.name || d.donationMethodId || 'לא צוין';
+        methodMap.set(method, (methodMap.get(method) || 0) + effectiveAmountILS(d));
+      });
+      const methodTotal = Array.from(methodMap.values()).reduce((s, v) => s + v, 0);
+      const paymentMethodData: GeneralChartItem[] = Array.from(methodMap.entries())
+        .map(([label, value]) => ({ label, value, percentage: methodTotal > 0 ? (value / methodTotal) * 100 : 0 }))
+        .sort((a, b) => b.value - a.value);
+
+      // Region data — primary place per donor
+      const donorPlaces = uniqueDonorIds.length > 0
+        ? await remult.repo(DonorPlace).find({
+            where: { donorId: { $in: uniqueDonorIds }, isPrimary: true },
+            include: { place: true }
+          })
+        : [];
+      const donorCityMap = new Map<string, string>();
+      donorPlaces.forEach(dp => { if (dp.donorId && dp.place?.city) donorCityMap.set(dp.donorId, dp.place.city); });
+
+      const regionMap = new Map<string, number>();
+      donations.forEach(d => {
+        const city = d.donorId ? donorCityMap.get(d.donorId) : undefined;
+        regionMap.set(city || 'לא צוין', (regionMap.get(city || 'לא צוין') || 0) + effectiveAmountILS(d));
+      });
+      const regionTotal = Array.from(regionMap.values()).reduce((s, v) => s + v, 0);
+      const regionData: GeneralChartItem[] = Array.from(regionMap.entries())
+        .map(([label, value]) => ({ label, value, percentage: regionTotal > 0 ? (value / regionTotal) * 100 : 0 }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 10);
+
+      // Campaign chart data (ILS, top 10)
+      const campaignAmountMap = new Map<string, number>();
+      donations.forEach(d => {
+        if (!d.campaignId) return;
+        const label = d.campaign?.name || d.campaignId;
+        campaignAmountMap.set(label, (campaignAmountMap.get(label) || 0) + effectiveAmountILS(d));
+      });
+      const campaignTotal = Array.from(campaignAmountMap.values()).reduce((s, v) => s + v, 0);
+      const campaignData: GeneralChartItem[] = Array.from(campaignAmountMap.entries())
+        .map(([label, value]) => ({ label, value, percentage: campaignTotal > 0 ? (value / campaignTotal) * 100 : 0 }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 10);
+
+      // Top donors (ILS, top 10)
+      const topDonorMap = new Map<string, GeneralTopDonor>();
+      donations.forEach(d => {
+        if (!d.donor) return;
+        if (!topDonorMap.has(d.donor.id)) {
+          topDonorMap.set(d.donor.id, { donorId: d.donor.id, donorName: d.donor.lastAndFirstName, total: 0, count: 0 });
+        }
+        const entry = topDonorMap.get(d.donor.id)!;
+        entry.total += effectiveAmountILS(d);
+        entry.count++;
+      });
+      const topDonors: GeneralTopDonor[] = Array.from(topDonorMap.values())
+        .sort((a, b) => b.total - a.total)
+        .slice(0, 10);
+
+      // Top campaigns (ILS, top 5 by donation amount for this donor filter)
+      const campaignIdAmountMap = new Map<string, { name: string; raisedInShekel: number }>();
+      donations.forEach(d => {
+        if (!d.campaignId) return;
+        const name = d.campaign?.name || d.campaignId;
+        const existing = campaignIdAmountMap.get(d.campaignId);
+        if (!existing) campaignIdAmountMap.set(d.campaignId, { name, raisedInShekel: 0 });
+        campaignIdAmountMap.get(d.campaignId)!.raisedInShekel += effectiveAmountILS(d);
+      });
+      const topCampaigns: GeneralTopCampaign[] = Array.from(campaignIdAmountMap.entries())
+        .map(([campaignId, { name, raisedInShekel }]) => ({ campaignId, name, raisedInShekel }))
+        .sort((a, b) => b.raisedInShekel - a.raisedInShekel)
+        .slice(0, 5);
+
+      // Recent activity (last 10)
+      const recentActivity: GeneralRecentActivity[] = donations.slice(0, 10).map(d => ({
+        date: d.donationDate,
+        description: d.donationMethod?.name || 'תרומה',
+        amount: effectiveAmountILS(d),
+        campaign: d.campaign?.name,
+        donorId: d.donorId
+      }));
+
+      return {
+        totalDonations,
+        totalDonors: uniqueDonorIds.length,
+        totalCampaigns,
+        amountByCurrency,
+        avgDonation,
+        monthlyData,
+        donorTypeData,
+        regionData,
+        campaignData,
+        paymentMethodData,
+        topDonors,
+        topCampaigns,
+        recentActivity
+      };
+
+    } catch (error) {
+      console.error('Error in getGeneralStats:', error);
       throw error;
     }
   }
@@ -1600,6 +1880,19 @@ export class ReportController {
     return str.replace(/_([a-z])/g, (match, char) => char.toUpperCase());
   }
 
+}
+
+export interface PaymentReportLocalFilters {
+  selectedDonorIds?: string[];
+  page?: number;
+  pageSize?: number;
+}
+
+export interface PaymentReportResponse {
+  data: PaymentReportData[];
+  totalRecords: number;
+  totalPages: number;
+  currentPage: number;
 }
 
 export interface PaymentReportData {

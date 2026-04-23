@@ -200,6 +200,29 @@ export class HebrewDateController {
     return new HDate().getFullYear()
   }
 
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async getHebrewYearsSummary(): Promise<HebrewYearsSummary> {
+    const currentYear = new HDate().getFullYear();
+    const last4: string[] = [];
+    for (let i = 3; i >= 0; i--) {
+      last4.push(await HebrewDateController.formatHebrewYear(currentYear - i));
+    }
+    return { currentYear, last4Formatted: last4 };
+  }
+
+  static hebrewDateInfoSync(date: Date): { year: number; yearFormatted: string; dateFormatted: string } {
+    const dateObj = date instanceof Date ? date : new Date(date as any);
+    if (!dateObj || isNaN(dateObj.getTime())) {
+      console.error('hebrewDateInfoSync: invalid date', date);
+      return { year: 0, yearFormatted: '', dateFormatted: '' };
+    }
+    const hDate = new HDate(dateObj);
+    const year = hDate.getFullYear();
+    const dateFormatted = hDate.renderGematriya(true);
+    const yearFormatted = new HDate(1, months.TISHREI, year).renderGematriya().split(' ').pop() || '';
+    return { year, yearFormatted, dateFormatted };
+  }
+
   /**
    * Check if a Hebrew year is a leap year
    * @param year Hebrew year
@@ -673,4 +696,9 @@ export class HebrewDateController {
 
     return monthNames[month] || ''
   }
+}
+
+export interface HebrewYearsSummary {
+  currentYear: number;
+  last4Formatted: string[];
 }
