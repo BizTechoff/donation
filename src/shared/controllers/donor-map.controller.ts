@@ -96,6 +96,28 @@ export interface DonorMapData {
   stats: DonorMapStats;
 }
 
+export interface DonorExportData {
+  id: string;
+  fullAddress: string;
+  phone: string;
+  email: string;
+  place: {
+    city: string;
+    state: string;
+    neighborhood: string;
+    street: string;
+    houseNumber: string;
+    building: string;
+    apartment: string;
+    postcode: string;
+    placeName: string;
+    country: { name: string };
+  } | null;
+  lastDonationDate: Date | null;
+  lastDonationAmount: number;
+  lastDonationCurrencySymbol: string;
+}
+
 export class DonorMapController {
 
   static DEFAULT_HIGH_DONOR_AMOUNT = 1500
@@ -437,48 +459,6 @@ export class DonorMapController {
       throw new Error(`Donor not found: ${donorId}`);
     }
     return results[0];
-  }
-
-  /**
-   * טוען את כל הנתונים הדרושים למפת תורמים כולל סטטיסטיקות
-   * מושך גלובל פילטרים מ-user.settings, ממזג עם פילטרים נוספים ומחיל אותם על השאילתא
-   * @param additionalFilters פילטרים נוספים מהקליינט (searchTerm, minTotalDonations וכו')
-   * @returns מערך של נתוני תורמים מעובדים עם סטטיסטיקות
-   * @deprecated השתמש ב-getMapMarkers במקום
-   */
-  @BackendMethod({ allowed: Allow.authenticated })
-  static async loadDonorsMapData(additionalFilters?: Partial<GlobalFilters>): Promise<DonorMapData[]> {
-    const { DonorController } = await import('./donor.controller');
-    const { User } = await import('../entity/user');
-
-    console.time('DonorMapController.loadDonorsMapData - Total');
-
-    // 🎯 Fetch global filters from user.settings
-    const currentUserId = remult.user?.id;
-    let globalFilters: GlobalFilters = {};
-    if (currentUserId) {
-      const user = await remult.repo(User).findId(currentUserId);
-      globalFilters = user?.settings?.globalFilters || {};
-    }
-
-    // Merge global filters with additional filters (from client)
-    const mergedFilters: GlobalFilters = { ...globalFilters, ...additionalFilters };
-
-    // console.log('DonorMapController: Global filters:', globalFilters);
-    // console.log('DonorMapController: Additional filters:', additionalFilters);
-    // console.log('DonorMapController: Merged filters:', mergedFilters);
-
-    // קבל IDs ממוסננים (משתמש בפילטרים הממוזגים)
-    console.time('Get filtered donor IDs');
-    const donorIds = await DonorController.findFilteredIds(mergedFilters);
-    console.timeEnd('Get filtered donor IDs');
-    console.log(`DonorMapController: Got ${donorIds.length} filtered donor IDs`);
-
-    // טען את הנתונים המלאים
-    const result = await DonorMapController.loadDonorsMapDataByIds(donorIds);
-
-    console.timeEnd('DonorMapController.loadDonorsMapData - Total');
-    return result;
   }
 
   /**
@@ -991,5 +971,91 @@ export class DonorMapController {
     console.log(`DonorMapController: Returning ${result.length} donors with complete data`);
 
     return result;
+  }
+
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async loadDonorsForExport(donorIds: string[]): Promise<DonorExportData[]> {
+    if (!donorIds || donorIds.length === 0) return [];
+    const sqlDb = remult.dataProvider as SqlDatabase;
+    const inLiteral = DonorMapController.buildInLiteral(donorIds);
+
+    const [contactRows, placeRows, donationRows] = await Promise.all([
+      sqlDb.execute(
+        `SELECT "donorId", "type", "phoneNumber", "email"
+         FROM "donor_contacts"
+         WHERE "isActive" = true AND "isPrimary" = true
+           AND "donorId" IN (${inLiteral})`
+      ),
+      sqlDb.execute(
+        `SELECT DISTINCT ON (dp."donorId")
+           dp."donorId",
+           p."fullAddress", p."city", p."state", p."neighborhood",
+           p."street", p."houseNumber", p."building", p."apartment",
+           p."postcode", p."placeName",
+           c."name" AS "countryName"
+         FROM "donor_places" dp
+         JOIN "places" p ON dp."placeId" = p."id"
+         LEFT JOIN "countries" c ON p."countryId" = c."id"
+         LEFT JOIN "donor_address_types" dat ON dp."addressTypeId" = dat."id"
+         WHERE dp."isActive" = true AND dp."donorId" IN (${inLiteral})
+         ORDER BY dp."donorId",
+           CASE WHEN dp."isPrimary" = true THEN 0 ELSE 1 END,
+           CASE WHEN dat."name" = 'בית' THEN 0 ELSE 1 END`
+      ),
+      sqlDb.execute(
+        `SELECT DISTINCT ON ("donorId") "donorId", "donationDate", "amount", "currencyId"
+         FROM "donations"
+         WHERE "donorId" IN (${inLiteral}) AND "donationDate" IS NOT NULL
+         ORDER BY "donorId", "donationDate" DESC`
+      )
+    ]);
+
+    const phoneMap = new Map<string, string>();
+    const emailMap = new Map<string, string>();
+    for (const r of contactRows.rows as any[]) {
+      if (r.type === 'phone' && r.phoneNumber && !phoneMap.has(r.donorId))
+        phoneMap.set(r.donorId, r.phoneNumber);
+      if (r.type === 'email' && r.email && !emailMap.has(r.donorId))
+        emailMap.set(r.donorId, r.email);
+    }
+
+    const placeMap = new Map<string, any>();
+    for (const r of placeRows.rows as any[])
+      placeMap.set(r.donorId, r);
+
+    const CURRENCY_SYMBOLS: Record<string, string> = { ILS: '₪', USD: '$', EUR: '€', GBP: '£' };
+    const donationMap = new Map<string, any>();
+    for (const r of donationRows.rows as any[])
+      donationMap.set(r.donorId, r);
+
+    return donorIds.map(id => {
+      const p = placeMap.get(id);
+      const d = donationMap.get(id);
+      return {
+        id,
+        fullAddress: p?.fullAddress || '',
+        phone: phoneMap.get(id) || '',
+        email: emailMap.get(id) || '',
+        place: p ? {
+          city: p.city || '',
+          state: p.state || '',
+          neighborhood: p.neighborhood || '',
+          street: p.street || '',
+          houseNumber: p.houseNumber || '',
+          building: p.building || '',
+          apartment: p.apartment || '',
+          postcode: p.postcode || '',
+          placeName: p.placeName || '',
+          country: { name: p.countryName || '' }
+        } : null,
+        lastDonationDate: d?.donationDate ? new Date(d.donationDate) : null,
+        lastDonationAmount: d?.amount ? Number(d.amount) : 0,
+        lastDonationCurrencySymbol: CURRENCY_SYMBOLS[d?.currencyId] || '₪'
+      };
+    });
+  }
+
+  private static buildInLiteral(ids: string[]): string {
+    return ids.map(id => `'${String(id).replace(/'/g, "''")}'`).join(',');
   }
 }
