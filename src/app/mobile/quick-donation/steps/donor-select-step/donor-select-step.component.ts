@@ -1,14 +1,17 @@
-import { Component, EventEmitter, OnInit, Output } from '@angular/core'
+import { Component, EventEmitter, OnInit, OnDestroy, Output } from '@angular/core'
+import { Subject } from 'rxjs'
+import { debounceTime, takeUntil } from 'rxjs/operators'
 import { remult } from 'remult'
 import { Donor, Donation, Place } from '../../../../../shared/entity'
-import { DonorController, DonorSelectionData } from '../../../../../shared/controllers/donor.controller'
+import { DonorController } from '../../../../../shared/controllers/donor.controller'
+import { DonorMapController } from '../../../../../shared/controllers/donor-map.controller'
 
 @Component({
   selector: 'app-donor-select-step',
   templateUrl: './donor-select-step.component.html',
   styleUrls: ['./donor-select-step.component.scss']
 })
-export class DonorSelectStepComponent implements OnInit {
+export class DonorSelectStepComponent implements OnInit, OnDestroy {
   @Output() donorSelected = new EventEmitter<Donor>()
   @Output() viewDonorDetails = new EventEmitter<Donor>()
 
@@ -16,27 +19,31 @@ export class DonorSelectStepComponent implements OnInit {
   loading = true
   searching = false
 
-  allDonors: Donor[] = []
   filteredDonors: Donor[] = []
   recentDonors: Donor[] = []
   donorPhoneMap: Record<string, string> = {}
   donorPlaceMap: Record<string, Place> = {}
 
-  private selectionData: DonorSelectionData | null = null
-  private searchTimeout: any
+  private searchSubject = new Subject<void>()
+  private destroy$ = new Subject<void>()
 
   async ngOnInit() {
+    this.searchSubject.pipe(
+      debounceTime(250),
+      takeUntil(this.destroy$)
+    ).subscribe(() => this.filterDonors())
+
     await this.loadData()
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next()
+    this.destroy$.complete()
   }
 
   private async loadData() {
     this.loading = true
     try {
-      this.selectionData = await DonorController.getDonorsForSelection()
-      this.allDonors = this.selectionData.donors
-      this.donorPhoneMap = this.selectionData.donorPhoneMap
-      this.donorPlaceMap = this.selectionData.donorPlaceMap
-
       await this.loadRecentDonors()
     } finally {
       this.loading = false
@@ -59,18 +66,31 @@ export class DonorSelectStepComponent implements OnInit {
       }
     }
 
+    if (recentDonorIds.length === 0) return
+
+    const [donors, exportData] = await Promise.all([
+      remult.repo(Donor).find({ where: { id: { $in: recentDonorIds } } }),
+      DonorMapController.loadDonorsForExport(recentDonorIds)
+    ])
+
+    for (const d of exportData) {
+      if (d.phone) this.donorPhoneMap[d.id] = d.phone
+      if (d.place?.city) {
+        this.donorPlaceMap[d.id] = { city: d.place.city, fullAddress: d.fullAddress } as any as Place
+      }
+    }
+
     this.recentDonors = recentDonorIds
-      .map(id => this.allDonors.find(d => d.id === id))
+      .map(id => donors.find(d => d.id === id))
       .filter((d): d is Donor => !!d)
   }
 
   onSearchChange() {
-    clearTimeout(this.searchTimeout)
-    this.searchTimeout = setTimeout(() => this.filterDonors(), 250)
+    this.searchSubject.next()
   }
 
   private async filterDonors() {
-    const term = this.searchTerm.trim().toLowerCase()
+    const term = this.searchTerm.trim()
     if (!term) {
       this.filteredDonors = []
       return
@@ -78,20 +98,20 @@ export class DonorSelectStepComponent implements OnInit {
 
     this.searching = true
     try {
-      const words = term.split(/\s+/).filter(w => w.length > 0)
-      this.filteredDonors = this.allDonors.filter(donor => {
-        const fullName = `${donor.firstName || ''} ${donor.lastName || ''}`.toLowerCase()
-        const phone = (this.donorPhoneMap[donor.id] || '').toLowerCase()
-        const place = this.donorPlaceMap[donor.id]
-        // Use fullAddress which contains the complete address
-        const fullAddress = (place?.fullAddress || '').toLowerCase()
+      const data = await DonorController.getDonorsForSelectionPage({
+        search: term,
+        page: 1,
+        pageSize: 20
+      })
 
-        // Combine all searchable text
-        const combinedText = `${fullName} ${phone} ${fullAddress}`
+      this.filteredDonors = data.donors
 
-        // All words must appear somewhere in the combined text
-        return words.every(w => combinedText.includes(w))
-      }).slice(0, 20)
+      for (const [id, phone] of Object.entries(data.donorPhoneMap)) {
+        this.donorPhoneMap[id] = phone
+      }
+      for (const [id, place] of Object.entries(data.donorPlaceMap)) {
+        this.donorPlaceMap[id] = place
+      }
     } finally {
       this.searching = false
     }
