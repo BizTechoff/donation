@@ -1,19 +1,19 @@
-import { Component, OnDestroy, OnInit, ViewChild, ElementRef } from '@angular/core';
-import { Subject } from 'rxjs';
-import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
+import { Subject } from 'rxjs';
+import { debounceTime, takeUntil } from 'rxjs/operators';
 import { BusyService, DialogConfig, openDialog } from 'common-ui-elements';
-import { Donor, Place } from '../../../../shared/entity';
 import { remult } from 'remult';
+import { Donor, Place } from '../../../../shared/entity';
 import { I18nService } from '../../../i18n/i18n.service';
 import { DonorDetailsModalComponent } from '../donor-details-modal/donor-details-modal.component';
 import { DonorController } from '../../../../shared/controllers/donor.controller';
 
 export interface DonorSelectionModalArgs {
   title?: string;
-  excludeIds?: string[]; // IDs to exclude from selection (e.g., main donor and already selected partners)
-  multiSelect?: boolean; // Enable multiple donor selection
-  selectedIds?: string[]; // IDs of donors that should be pre-selected (only relevant in multiSelect mode)
+  excludeIds?: string[];
+  multiSelect?: boolean;
+  selectedIds?: string[];
 }
 
 @DialogConfig({
@@ -31,31 +31,27 @@ export class DonorSelectionModalComponent implements OnInit, OnDestroy {
 
   args!: DonorSelectionModalArgs;
   selectedDonor: Donor | null = null;
-  selectedDonors: Donor[] = []; // For multi-select mode
-  selectedDonorIds: Set<string> = new Set(); // Track selected donor IDs
+  selectedDonors: Donor[] = [];
+  selectedDonorIds: Set<string> = new Set();
 
-  filteredDonors: Donor[] = []; // Current page from server
-  donorRepo = remult.repo(Donor);
+  availableDonors: Donor[] = [];
 
-  // Maps for donor-related data (populated per page)
   donorEmailMap = new Map<string, string>();
   donorPhoneMap = new Map<string, string>();
   donorPlaceMap = new Map<string, Place>();
 
-  // Search/Filter
   filterText = '';
 
-  // Pagination
   currentPage = 1;
   pageSize = 20;
   totalCount = 0;
   totalPages = 0;
   Math = Math;
 
-  // Sorting
   sortColumns: Array<{ field: string; direction: 'asc' | 'desc' }> = [];
 
-  private searchSubject = new Subject<string>();
+  private searchSubject = new Subject<void>();
+  private destroy$ = new Subject<void>();
 
   constructor(
     public i18n: I18nService,
@@ -64,26 +60,32 @@ export class DonorSelectionModalComponent implements OnInit, OnDestroy {
   ) {}
 
   async ngOnInit() {
-    this.searchSubject.pipe(debounceTime(300), distinctUntilChanged()).subscribe(() => {
-      this.currentPage = 1;
-      this.loadPage();
-    });
-
-    // Pre-resolve selected donors for multi-select mode
+    // Pre-populate selection state from args (before first load)
     if (this.args?.multiSelect && this.args?.selectedIds?.length) {
       this.selectedDonorIds = new Set(this.args.selectedIds);
-      const resolved = await Promise.all(
-        this.args.selectedIds.map(id => this.donorRepo.findId(id))
-      );
-      this.selectedDonors = resolved.filter((d): d is Donor => d !== null && d !== undefined);
+      // Preload selected donor objects so finishMultiSelect() can return them
+      const preloaded = await remult.repo(Donor).find({
+        where: { id: { $in: this.args.selectedIds } }
+      });
+      this.selectedDonors = preloaded;
     }
 
-    await this.loadPage();
+    // Debounced search
+    this.searchSubject.pipe(
+      debounceTime(300),
+      takeUntil(this.destroy$)
+    ).subscribe(() => {
+      this.currentPage = 1;
+      this.loadDonors();
+    });
+
+    await this.loadDonors();
     this.setFocusOnSearch();
   }
 
   ngOnDestroy() {
-    this.searchSubject.complete();
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   private setFocusOnSearch() {
@@ -92,42 +94,75 @@ export class DonorSelectionModalComponent implements OnInit, OnDestroy {
     }, 100);
   }
 
-  async loadPage() {
+  async loadDonors() {
     await this.busy.doWhileShowingBusy(async () => {
       try {
+        const dbSortColumns = this.sortColumns.filter(
+          s => s.field !== 'phone' && s.field !== 'email'
+        );
+
         const data = await DonorController.getDonorsForSelectionPage({
-          search: this.filterText.trim() || undefined,
+          search: this.filterText?.trim() || undefined,
           page: this.currentPage,
           pageSize: this.pageSize,
           excludeIds: this.args?.excludeIds,
-          sortColumns: this.sortColumns
+          sortColumns: dbSortColumns
         });
 
-        this.filteredDonors = data.donors;
+        this.availableDonors = data.donors;
         this.totalCount = data.totalCount;
         this.totalPages = Math.ceil(this.totalCount / this.pageSize);
 
         this.donorEmailMap = new Map(Object.entries(data.donorEmailMap));
         this.donorPhoneMap = new Map(Object.entries(data.donorPhoneMap));
         this.donorPlaceMap = new Map(Object.entries(data.donorPlaceMap));
+
+        // Merge any newly-seen pre-selected donors into selectedDonors
+        if (this.selectedDonorIds.size > 0) {
+          for (const donor of this.availableDonors) {
+            if (this.selectedDonorIds.has(donor.id) &&
+                !this.selectedDonors.some(s => s.id === donor.id)) {
+              this.selectedDonors.push(donor);
+            }
+          }
+        }
+
+        // Apply client-side sort for phone/email (within current page)
+        this.applySorting();
+
       } catch (error) {
         console.error('Error loading donors:', error);
       }
     });
   }
 
-  // Keep loadDonors as alias for backward compatibility (called in createNewDonor flow)
-  async loadDonors() {
-    this.currentPage = 1;
-    await this.loadPage();
+  onSearchChange() {
+    this.searchSubject.next();
   }
 
-  // Trigger debounced server search
-  applyFilters() {
-    this.searchSubject.next(this.filterText);
+  // Client-side sort for cross-entity fields (phone/email) — applied to current page only
+  private applySorting() {
+    const crossEntitySorts = this.sortColumns.filter(
+      s => s.field === 'phone' || s.field === 'email'
+    );
+    if (crossEntitySorts.length === 0) return;
+
+    this.availableDonors.sort((a, b) => {
+      for (const sort of crossEntitySorts) {
+        const aValue = (sort.field === 'phone'
+          ? this.getDonorPhone(a.id)
+          : this.getDonorEmail(a.id)).toLowerCase();
+        const bValue = (sort.field === 'phone'
+          ? this.getDonorPhone(b.id)
+          : this.getDonorEmail(b.id)).toLowerCase();
+
+        if (aValue < bValue) return sort.direction === 'asc' ? -1 : 1;
+        if (aValue > bValue) return sort.direction === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
   }
 
-  // Toggle sort — triggers server reload
   toggleSort(field: string, event: MouseEvent) {
     if (event.ctrlKey || event.metaKey) {
       const existingIndex = this.sortColumns.findIndex(s => s.field === field);
@@ -150,8 +185,12 @@ export class DonorSelectionModalComponent implements OnInit, OnDestroy {
       }
     }
 
-    this.currentPage = 1;
-    this.loadPage();
+    if (field === 'phone' || field === 'email') {
+      this.applySorting();
+    } else {
+      this.currentPage = 1;
+      this.loadDonors();
+    }
   }
 
   isSorted(field: string): boolean {
@@ -161,51 +200,48 @@ export class DonorSelectionModalComponent implements OnInit, OnDestroy {
   getSortIcon(field: string): string {
     const sortIndex = this.sortColumns.findIndex(s => s.field === field);
     if (sortIndex === -1) return '';
-
     const sort = this.sortColumns[sortIndex];
     const arrow = sort.direction === 'asc' ? '↑' : '↓';
-
-    if (this.sortColumns.length > 1) {
-      return `${arrow}${sortIndex + 1}`;
-    }
-    return arrow;
+    return this.sortColumns.length > 1 ? `${arrow}${sortIndex + 1}` : arrow;
   }
 
-  // Server already paginates — return current page directly
   get paginatedDonors(): Donor[] {
-    return this.filteredDonors;
+    return this.availableDonors;
   }
 
-  // Pagination methods — each triggers a server call
   goToPage(page: number) {
     if (page >= 1 && page <= this.totalPages) {
       this.currentPage = page;
-      this.loadPage();
+      this.loadDonors();
     }
   }
 
   nextPage() {
     if (this.currentPage < this.totalPages) {
       this.currentPage++;
-      this.loadPage();
+      this.loadDonors();
     }
   }
 
   previousPage() {
     if (this.currentPage > 1) {
       this.currentPage--;
-      this.loadPage();
+      this.loadDonors();
     }
   }
 
   firstPage() {
-    this.currentPage = 1;
-    this.loadPage();
+    if (this.currentPage !== 1) {
+      this.currentPage = 1;
+      this.loadDonors();
+    }
   }
 
   lastPage() {
-    this.currentPage = this.totalPages;
-    this.loadPage();
+    if (this.currentPage !== this.totalPages) {
+      this.currentPage = this.totalPages;
+      this.loadDonors();
+    }
   }
 
   getPageNumbers(): number[] {
@@ -213,27 +249,20 @@ export class DonorSelectionModalComponent implements OnInit, OnDestroy {
     const maxPagesToShow = 5;
 
     if (this.totalPages <= maxPagesToShow) {
-      for (let i = 1; i <= this.totalPages; i++) {
-        pages.push(i);
-      }
+      for (let i = 1; i <= this.totalPages; i++) pages.push(i);
     } else {
       const halfWindow = Math.floor(maxPagesToShow / 2);
       let startPage = Math.max(1, this.currentPage - halfWindow);
       let endPage = Math.min(this.totalPages, startPage + maxPagesToShow - 1);
-
       if (endPage - startPage < maxPagesToShow - 1) {
         startPage = Math.max(1, endPage - maxPagesToShow + 1);
       }
-
-      for (let i = startPage; i <= endPage; i++) {
-        pages.push(i);
-      }
+      for (let i = startPage; i <= endPage; i++) pages.push(i);
     }
 
     return pages;
   }
 
-  // Helper methods to get donor-related data from maps
   getDonorEmail(donorId: string): string {
     return this.donorEmailMap.get(donorId) || '';
   }
@@ -246,8 +275,6 @@ export class DonorSelectionModalComponent implements OnInit, OnDestroy {
     return this.donorPlaceMap.get(donorId);
   }
 
-  // Select donor and close dialog immediately (single select mode)
-  // Or toggle donor selection in multi-select mode
   selectDonor(donor: Donor) {
     if (this.args.multiSelect) {
       this.toggleDonorSelection(donor);
@@ -259,53 +286,47 @@ export class DonorSelectionModalComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Toggle donor selection in multi-select mode
   toggleDonorSelection(donor: Donor) {
     if (this.selectedDonorIds.has(donor.id)) {
       this.selectedDonorIds.delete(donor.id);
       const index = this.selectedDonors.findIndex(d => d.id === donor.id);
-      if (index !== -1) {
-        this.selectedDonors.splice(index, 1);
-      }
+      if (index !== -1) this.selectedDonors.splice(index, 1);
     } else {
       this.selectedDonorIds.add(donor.id);
       this.selectedDonors.push(donor);
     }
   }
 
-  // Check if donor is selected (for multi-select mode)
   isDonorSelected(donor: Donor): boolean {
     return this.selectedDonorIds.has(donor.id);
   }
 
-  // Check if all donors are selected (compares against server totalCount)
   areAllSelected(): boolean {
-    return this.totalCount > 0 && this.selectedDonorIds.size === this.totalCount;
+    return this.availableDonors.length > 0 &&
+           this.availableDonors.every(d => this.selectedDonorIds.has(d.id));
   }
 
-  // Toggle select all — loads all matching donors (capped at 500) for select-all case
-  async toggleSelectAll() {
+  toggleSelectAll() {
     if (this.areAllSelected()) {
-      this.selectedDonorIds.clear();
-      this.selectedDonors = [];
-    } else {
-      const allData = await DonorController.getDonorsForSelectionPage({
-        search: this.filterText.trim() || undefined,
-        page: 1,
-        pageSize: Math.min(this.totalCount, 500),
-        excludeIds: this.args?.excludeIds
+      this.availableDonors.forEach(d => {
+        this.selectedDonorIds.delete(d.id);
+        const idx = this.selectedDonors.findIndex(s => s.id === d.id);
+        if (idx !== -1) this.selectedDonors.splice(idx, 1);
       });
-      this.selectedDonorIds = new Set(allData.donors.map(d => d.id));
-      this.selectedDonors = allData.donors;
+    } else {
+      this.availableDonors.forEach(d => {
+        if (!this.selectedDonorIds.has(d.id)) {
+          this.selectedDonorIds.add(d.id);
+          this.selectedDonors.push(d);
+        }
+      });
     }
   }
 
-  // Finish multi-select and close dialog with selected donors
   finishMultiSelect() {
     this.dialogRef.close(this.selectedDonors);
   }
 
-  // Open create new donor modal
   async createNewDonor() {
     try {
       const dialogResult = await openDialog(
@@ -316,15 +337,12 @@ export class DonorSelectionModalComponent implements OnInit, OnDestroy {
       );
 
       if (dialogResult) {
-        // Load newest donor (by createdDate desc) to auto-select after creation
-        const newestData = await DonorController.getDonorsForSelectionPage({
-          page: 1,
-          pageSize: 1,
-          sortColumns: [{ field: 'createdDate', direction: 'desc' }]
-        });
-        await this.loadPage();
-        if (newestData.donors.length > 0) {
-          this.selectDonor(newestData.donors[0]);
+        await this.loadDonors();
+        if (this.availableDonors.length > 0) {
+          const newestDonor = this.availableDonors.reduce((prev, current) =>
+            (current.createdDate > prev.createdDate) ? current : prev
+          );
+          this.selectDonor(newestDonor);
         }
       }
     } catch (error) {
@@ -332,19 +350,16 @@ export class DonorSelectionModalComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Clear search
   clearSearch() {
     this.filterText = '';
     this.currentPage = 1;
-    this.loadPage();
+    this.loadDonors();
   }
 
-  // Close dialog without selection
   closeDialog() {
     this.dialogRef.close(null);
   }
 
-  // Get donor display name
   getDonorDisplayName(donor: Donor): string {
     return donor.lastAndFirstName;
   }
