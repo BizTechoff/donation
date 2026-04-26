@@ -1,7 +1,7 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { remult } from 'remult';
 import { Subscription } from 'rxjs';
-import { DonorMapController, DonorMapData } from '../../../shared/controllers/donor-map.controller';
+import { DonorExportData, DonorMapController, DonorMapData } from '../../../shared/controllers/donor-map.controller';
 import { PlaceController } from '../../../shared/controllers/place.controller';
 import { Donor, DonorPlace, User } from '../../../shared/entity';
 import { ContactPerson } from '../../../shared/entity/contact-person';
@@ -614,18 +614,18 @@ export class DonorListComponent implements OnInit, OnDestroy {
         );
 
         // Load related data for all donors
-        const donorDataList = await DonorMapController.loadDonorsMapDataByIds(
+        const donorDataList = await DonorMapController.loadDonorsForExport(
           allDonors.map(d => d.id)
         );
-        const dataMap = new Map<string, DonorMapData>();
-        donorDataList.forEach(data => dataMap.set(data.donor.id, data));
+        const dataMap = new Map<string, DonorExportData>();
+        donorDataList.forEach(data => dataMap.set(data.id, data));
 
         // Prepare data for print
         const printData = allDonors.map(donor => {
           const data = dataMap.get(donor.id);
-          const lastDonationDate = data?.stats.lastDonationDate;
-          const lastDonationAmount = data?.stats.lastDonationAmount || 0;
-          const lastDonationCurrencySymbol = data?.stats.lastDonationCurrencySymbol || '₪';
+          const lastDonationDate = data?.lastDonationDate;
+          const lastDonationAmount = data?.lastDonationAmount || 0;
+          const lastDonationCurrencySymbol = data?.lastDonationCurrencySymbol || '₪';
 
           // Format last donation: Hebrew date + amount with currency
           let lastDonationDisplay = '-';
@@ -691,11 +691,11 @@ export class DonorListComponent implements OnInit, OnDestroy {
         );
 
         // Load related data for all donors
-        const donorDataList = await DonorMapController.loadDonorsMapDataByIds(
+        const donorDataList = await DonorMapController.loadDonorsForExport(
           allDonors.map(d => d.id)
         );
-        const dataMap = new Map<string, DonorMapData>();
-        donorDataList.forEach(data => dataMap.set(data.donor.id, data));
+        const dataMap = new Map<string, DonorExportData>();
+        donorDataList.forEach(data => dataMap.set(data.id, data));
 
         // Load fundraisers and contact persons for lookup
         const [fundraisers, contactPersons] = await Promise.all([
@@ -708,10 +708,10 @@ export class DonorListComponent implements OnInit, OnDestroy {
         // Prepare data for export
         const exportData = allDonors.map(donor => {
           const data = dataMap.get(donor.id);
-          const place = data?.donorPlace?.place;
-          const lastDonationDate = data?.stats.lastDonationDate;
-          const lastDonationAmount = data?.stats.lastDonationAmount || 0;
-          const lastDonationCurrencySymbol = data?.stats.lastDonationCurrencySymbol || '₪';
+          const place = data?.place ?? null;
+          const lastDonationDate = data?.lastDonationDate;
+          const lastDonationAmount = data?.lastDonationAmount || 0;
+          const lastDonationCurrencySymbol = data?.lastDonationCurrencySymbol || '₪';
 
           // Format last donation: Hebrew date + amount with currency
           let lastDonationDisplay = '-';
