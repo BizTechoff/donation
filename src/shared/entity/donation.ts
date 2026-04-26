@@ -111,6 +111,9 @@ export class Donation extends IdEntity {
   })
   notes = ''
 
+  @Fields.string({ caption: 'מזהה תרומה מאקסל', allowNull: true })
+  excelDonationId = ''
+
   @Fields.string({
     caption: 'סיבה',
   })

@@ -180,6 +180,9 @@ export class Donor extends IdEntity {
   })
   idNumber = ''
 
+  @Fields.string({ caption: 'מזהה תורם מאקסל', allowNull: true })
+  excelDonorId = ''
+
   @Fields.string({
     caption: 'הערות',
   })

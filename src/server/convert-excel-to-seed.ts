@@ -49,7 +49,9 @@ const SHARED_DONOR_IDS        = new Set<number>([1908])
  * - IdName -> donorLegacyId
  * - IdDiner -> campaignName
  * - Tarich -> donationDate
- * - matbea -> currency
+ * - IconMatbea/matbea -> currencyId (mapped to ISO code)
+ * - TromaSiba -> reason
+ * - Id -> excelDonationId
  * - Kabala -> receiptNumber (אסמכתא)
  * - AccountNo -> accountNumber (מספר חשבון) -> אם יש ערך זה העברה בנקאית
  * - Voucher_Co -> voucherNumber (מספר שובר) -> אם יש ערך זה תשלום עמותה
@@ -77,6 +79,32 @@ function readExcelFile(filePath: string): any[] {
     console.error(`Error reading ${filePath}:`, error)
     return []
   }
+}
+
+// ─── Currency mapping ─────────────────────────────────────────────────────────
+
+const ICON_MATBEA_MAP: Record<string, string> = {
+  '₪': 'ILS', '$': 'USD', '€': 'EUR', '£': 'GBP', 'Fr': 'CHF', 'CAD': 'CAD',
+}
+const MATBEA_HEBREW_MAP: Record<string, string> = {
+  'שקל': 'ILS', 'ש"ח': 'ILS', 'שח': 'ILS',
+  'דולר': 'USD', 'יורו': 'EUR',
+  'לירה שטרלינג': 'GBP', 'פרנק שוויצרי': 'CHF', 'דולר קנדי': 'CAD',
+}
+function mapCurrencyFromExcel(iconMatbea?: string, matbea?: string): string | null {
+  if (iconMatbea?.trim()) return ICON_MATBEA_MAP[iconMatbea.trim()] ?? null
+  if (matbea?.trim())     return MATBEA_HEBREW_MAP[matbea.trim()] ?? null
+  return null
+}
+
+// ─── Country mapping (exact lookup — prevents UK→Ukraine false positive) ──────
+
+const COUNTRY_EXCEL_TO_CODE: Record<string, string> = {
+  'UK': 'GB', 'Scotland': 'GB',
+  'Israel': 'IL', 'USA': 'US', 'Belgium': 'BE', 'Switzerland': 'CH',
+  'Germany': 'DE', 'France': 'FR', 'Holland': 'NL', 'Netherlands': 'NL',
+  'Austria': 'AT', 'Canada': 'CA', 'Australia': 'AU',
+  'Ukraine': 'UA', 'Chicago': 'US',
 }
 
 /**
@@ -196,6 +224,7 @@ function processDonors(rows: DonorRow[]): any[] {
     try {
       const donor: any = {
         legacyId: row['IdName'] || index + 1,
+        excelDonorId: String(row['IdName'] || ''),
         // Hebrew names
         title: row['ToarHeb'] || '',
         firstName: row['FirstNameHeb'] || '',
@@ -336,8 +365,9 @@ function processDonations(rows: DonationRow[]): any[] {
 
       const donation: any = {
         donorLegacyId: row['IdName'],
+        excelDonationId: String(row['Id'] || ''),
         amount: Number(amount),
-        currency: row['matbea'] || 'USD',
+        currencyId: mapCurrencyFromExcel(row['IconMatbea'], row['matbea']) ?? 'ILS',
         donationDate: row['Tarich'] ? (excelDateToJSDate(row['Tarich']) || new Date()).toISOString() : new Date().toISOString(),
         campaignName: row['IdDiner'] || '',
         paymentMethod: paymentMethod,
@@ -345,6 +375,7 @@ function processDonations(rows: DonationRow[]): any[] {
         accountNumber: row['AccountNo'] || '',
         receiptNumber: row['Kabala'] || '',
         notes: row['Notes'] || '',
+        reason: row['TromaSiba'] || '',
         bankName: row['Sort_Code'] || '',
         organizationName: row['Voucher_Co'] ? (row['Voucher_Co']) : '',
         isExceptional: row['Hachragtit'] === true || row['Hachragtit'] === 1,
@@ -477,7 +508,9 @@ import { entities } from './api'
  * - IdName -> donorLegacyId
  * - IdDiner -> campaignName
  * - Tarich -> donationDate
- * - matbea -> currency
+ * - IconMatbea/matbea -> currencyId (mapped to ISO code)
+ * - TromaSiba -> reason
+ * - Id -> excelDonationId
  * - Kabala -> receiptNumber (אסמכתא)
  * - AccountNo -> accountNumber (מספר חשבון) -> אם יש ערך זה העברה בנקאית
  * - Voucher_Co -> voucherNumber (מספר שובר) -> אם יש ערך זה תשלום עמותה
@@ -587,6 +620,7 @@ export async function seedLegacyData() {
         const donor = donorRepo.create({
           legacyId: donorData.legacyId,
           idNumber: \`LEGACY-\${donorData.legacyId}\`,
+          excelDonorId: donorData.excelDonorId || '',
           title: donorData.title || '',
           firstName: firstName,
           lastName: lastName,
@@ -610,32 +644,29 @@ export async function seedLegacyData() {
             const addressType = addressTypes.get(addressData.type)
             if (!addressType) continue
 
-            // Find matching country
+            // Find matching country — lookup table first (prevents UK→Ukraine false positive)
             let matchedCountry = null
             if (addressData.country) {
-              const countryNameClean = addressData.country.trim().toLowerCase()
-              matchedCountry = allCountries.find(country => {
-                const countryToMatch = country.name.trim().toLowerCase()
-                const countryCodeToMatch = country.code?.trim().toLowerCase() || ''
-                const countryEnToMatch = country.nameEn?.trim().toLowerCase() || ''
+              const excelCountry  = addressData.country.trim()
+              const expectedCode  = COUNTRY_EXCEL_TO_CODE[excelCountry]
 
-                // Special handling for USA variations
-                const isUSA = countryNameClean === 'usa' || countryNameClean === 'us' ||
-                              countryNameClean === 'united states' || countryNameClean === 'united states of america'
-                const isCountryUS = countryCodeToMatch === 'us' || countryEnToMatch === 'united states'
-
-                if (isUSA && isCountryUS) {
-                  return true
-                }
-
-                return countryToMatch === countryNameClean ||
-                       countryCodeToMatch === countryNameClean ||
-                       countryEnToMatch === countryNameClean ||
-                       countryToMatch.includes(countryNameClean) ||
-                       countryNameClean.includes(countryToMatch) ||
-                       countryEnToMatch.includes(countryNameClean) ||
-                       countryNameClean.includes(countryEnToMatch)
-              })
+              if (expectedCode) {
+                // Exact code lookup — no ambiguity
+                matchedCountry = allCountries.find(c =>
+                  (c.code?.toUpperCase() ?? '') === expectedCode
+                )
+              } else {
+                // Fallback: exact match on Hebrew name, ISO code, or English name
+                const countryNameClean = excelCountry.toLowerCase()
+                matchedCountry = allCountries.find(country => {
+                  const countryToMatch  = country.name.trim().toLowerCase()
+                  const codeToMatch     = country.code?.trim().toLowerCase() || ''
+                  const nameEnToMatch   = country.nameEn?.trim().toLowerCase() || ''
+                  return countryToMatch === countryNameClean ||
+                         codeToMatch    === countryNameClean ||
+                         nameEnToMatch  === countryNameClean
+                })
+              }
 
               if (matchedCountry) {
                 countryMatchCount++
@@ -857,13 +888,15 @@ export async function seedLegacyData() {
         const donation = donationRepo.create({
           donor: donor,
           amount: donationData.amount,
-          currency: donationData.currency,
+          currencyId: donationData.currencyId || 'ILS',
+          excelDonationId: donationData.excelDonationId || '',
           donationDate: new Date(donationData.donationDate),
           donationMethod: paymentMethod,
           receiptNumber: donationData.receiptNumber || '',
           accountNumber: donationData.accountNumber || '',
           voucherNumber: donationData.voucherNumber || '',
           notes: donationData.notes || '',
+          reason: donationData.reason || '',
           bankId: matchedBank?.id || '',
           organizationId: matchedOrganization?.id || '',
           isExceptional: donationData.isExceptional || false,

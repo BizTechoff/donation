@@ -11,6 +11,7 @@
     "seed-multiplier": "tsx -r dotenv/config src/server/seed-multiplier.ts",
     "seed-data": "tsx -r dotenv/config src/server/seed-data.ts",
     "seed-fine-tuning": "tsx -r dotenv/config src/server/seed-fine-tuning.ts",
+    "seed-fix": "tsx -r dotenv/config src/server/seed-fix.ts",
     "convert-excel": "tsx src/server/convert-excel-to-seed.ts",
     "build": "ng build && tsc -p tsconfig.server.json",
     "watch": "ng build --watch --configuration development",

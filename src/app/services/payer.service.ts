@@ -5,18 +5,23 @@ import { CurrencyType } from '../../shared/type/currency.type';
 // Currency data
 const CURRENCIES: CurrencyType[] = [
 
-  // ישראל
+// ישראל
   { id: 'ILS', label: 'שקל', labelEnglish: 'Shekel', symbol: '₪', rateInShekel: 1 },
 
   // ארה"ב
-  { id: 'USD', label: 'דולר', labelEnglish: 'Dollar', symbol: '$', rateInShekel: 3.2 },
+  { id: 'USD', label: 'דולר', labelEnglish: 'Dollar', symbol: '$', rateInShekel: 2.99 },
 
   // אירופה
-  { id: 'EUR', label: 'יורו', labelEnglish: 'Euro', symbol: '€', rateInShekel: 3.77 },
+  { id: 'EUR', label: 'יורו', labelEnglish: 'Euro', symbol: '€', rateInShekel: 3.56 },
 
-  // בריטניה (לונדון)
-  { id: 'GBP', label: 'ליש"ט', labelEnglish: 'Pound', symbol: '£', rateInShekel: 4.31 },
+  // בריטניה
+  { id: 'GBP', label: 'ליש"ט', labelEnglish: 'Pound', symbol: '£', rateInShekel: 4.05 },
 
+  // שווייץ
+  { id: 'CHF', label: 'פרנק שוויצרי', labelEnglish: 'Swiss Franc', symbol: 'Fr', rateInShekel: 3.8 },
+
+  // קנדה
+  { id: 'CAD', label: 'דולר קנדי', labelEnglish: 'Canadian Dollar', symbol: 'CAD', rateInShekel: 2.18 },
 ]
 
 //   // צפון אמריקה
