@@ -1,4 +1,4 @@
-import { Allow, BackendMethod, Controller, remult } from 'remult';
+import { Allow, BackendMethod, Controller, remult, SqlDatabase } from 'remult';
 import { GlobalFilters } from '../../app/services/global-filter.service';
 import { Circle } from '../entity/circle';
 import { Company } from '../entity/company';
@@ -251,37 +251,12 @@ export class DonorController {
     return { donors: filteredDonors, totalCount, donorEmailMap, donorPhoneMap, donorPlaceMap };
   }
 
-  @BackendMethod({ allowed: Allow.authenticated })
-  static async findAll(): Promise<Donor[]> {
-    return await remult.repo(Donor).find({
-      orderBy: { lastName: 'asc' as 'asc' }
-    });
-  }
-
-  @BackendMethod({ allowed: Allow.authenticated })
-  static async findActive(): Promise<Donor[]> {
-    return await remult.repo(Donor).find({
-      where: { isActive: true },
-      orderBy: { lastName: 'asc' as 'asc' }
-    });
-  }
-
   /**
-   * Get only donor IDs without loading full donor objects - much faster for maps.
-   * Returns filtered IDs directly from GlobalFilter — no Donor objects loaded when filter is active.
-   * When no global filter is set, queries only active donor IDs.
+   * Get only donor IDs without loading full donor objects - much faster for maps
    */
   @BackendMethod({ allowed: Allow.authenticated })
   static async findFilteredIds(additionalFilters?: Partial<GlobalFilters>): Promise<string[]> {
-    const { GlobalFilterController } = await import('./global-filter.controller');
-    const donorIds = await GlobalFilterController.getDonorIdsFromUserSettings();
-
-    if (donorIds !== undefined) {
-      return donorIds; // Already filtered — zero Donor objects loaded
-    }
-
-    // No global filter — return all active donor IDs
-    const donors = await remult.repo(Donor).find({ where: { isActive: true }, limit: 100000 });
+    const donors = await DonorController.findFilteredDonors(undefined, additionalFilters);
     return donors.map(d => d.id);
   }
 
@@ -393,57 +368,28 @@ export class DonorController {
     return await remult.repo(Donor).count(whereClause);
   }
 
-  @BackendMethod({ allowed: Allow.authenticated })
-  static async getDonorsForSelection(excludeIds?: string[]): Promise<DonorSelectionData> {
-    // Load donors using global filters (fetched from user.settings in the backend)
-    let donors = await DonorController.findFilteredDonors();
+  private static escapeSqlLike(s: string): string {
+    return s.replace(/'/g, "''").replace(/%/g, '\\%').replace(/_/g, '\\_');
+  }
 
-    // Filter out excluded IDs
-    if (excludeIds && excludeIds.length > 0) {
-      donors = donors.filter(donor => !excludeIds.includes(donor.id));
+  private static buildIlikeClauses(columns: string[], words: string[]): string {
+    const clauses: string[] = [];
+    for (const word of words) {
+      const ew = DonorController.escapeSqlLike(word);
+      for (const col of columns) {
+        clauses.push(`"${col}" ILIKE '%${ew}%'`);
+      }
     }
+    return `(${clauses.join(' OR ')})`;
+  }
 
-    const donorIds = donors.map(d => d.id);
+  private static buildInLiteral(ids: string[]): string {
+    return ids.map(id => `'${String(id).replace(/'/g, "''")}'`).join(',');
+  }
 
-    // Load all related data in parallel
-    const [donorContacts, primaryPlacesMap] = await Promise.all([
-      remult.repo(DonorContact).find({
-        where: { donorId: { $in: donorIds } }
-      }),
-      // Use helper method to get primary addresses (respects isPrimary flag)
-      DonorPlace.getPrimaryForDonors(donorIds)
-    ]);
-
-    // Build maps for efficient lookup
-    const donorEmailMap: Record<string, string> = {};
-    const donorPhoneMap: Record<string, string> = {};
-    const donorPlaceMap: Record<string, Place> = {};
-
-    // Populate email and phone maps
-    donorContacts.forEach(contact => {
-      if (contact.donorId) {
-        if (contact.email && !donorEmailMap[contact.donorId]) {
-          donorEmailMap[contact.donorId] = contact.email;
-        }
-        if (contact.phoneNumber && !donorPhoneMap[contact.donorId]) {
-          donorPhoneMap[contact.donorId] = contact.phoneNumber;
-        }
-      }
-    });
-
-    // Populate place map from primary places
-    primaryPlacesMap.forEach((donorPlace, donorId) => {
-      if (donorPlace.place) {
-        donorPlaceMap[donorId] = donorPlace.place;
-      }
-    });
-
-    return {
-      donors,
-      donorEmailMap,
-      donorPhoneMap,
-      donorPlaceMap
-    };
+  private static async sqlSelectIds(sqlDb: SqlDatabase, sql: string, col: string): Promise<string[]> {
+    const { rows } = await sqlDb.execute(sql);
+    return (rows as any[]).map((r: any) => r[col]).filter(Boolean);
   }
 
   /**
@@ -461,17 +407,8 @@ export class DonorController {
     if (words.length === 0) return [];
     console.log(`[CrossFieldSearch] searchTerm="${searchTerm}", words=[${words.join(', ')}]`);
 
-    const nameFields = (word: string) => [
-      { title: { $contains: word } },
-      { firstName: { $contains: word } },
-      { lastName: { $contains: word } },
-      { suffix: { $contains: word } },
-      { titleEnglish: { $contains: word } },
-      { firstNameEnglish: { $contains: word } },
-      { lastNameEnglish: { $contains: word } },
-      { suffixEnglish: { $contains: word } },
-      { idNumber: { $contains: word } }
-    ];
+    const sqlDb = remult.dataProvider as SqlDatabase;
+    const nameCols = ['title', 'firstName', 'lastName', 'suffix', 'titleEnglish', 'firstNameEnglish', 'lastNameEnglish', 'suffixEnglish', 'idNumber'];
 
     // For each word, find all donor IDs matching in ANY field
     const perWordSets: Set<string>[] = [];
@@ -479,19 +416,19 @@ export class DonorController {
     for (const word of words) {
       const wordDonorIds = new Set<string>();
 
-      // Search in donor name fields
-      const nameWhere: any = { $or: nameFields(word) };
-      if (restrictToDonorIds) {
-        nameWhere.id = { $in: restrictToDonorIds };
+      // SELECT id only — avoids loading full Donor objects (ILIKE = case-insensitive)
+      let nameSql = `SELECT "id" FROM "donors" WHERE ${DonorController.buildIlikeClauses(nameCols, [word])}`;
+      if (restrictToDonorIds && restrictToDonorIds.length > 0) {
+        nameSql += ` AND "id" IN (${DonorController.buildInLiteral(restrictToDonorIds)})`;
       }
-      const matchingDonors = await remult.repo(Donor).find({ where: nameWhere, limit: 10000 });
-      matchingDonors.forEach(d => wordDonorIds.add(d.id));
+      const nameIds = await DonorController.sqlSelectIds(sqlDb, nameSql, 'id');
+      nameIds.forEach(id => wordDonorIds.add(id));
 
       // Search in contacts (phone/email) and places (address)
       const cpIds = await DonorController.searchDonorIdsFromContactsAndPlaces([word], restrictToDonorIds);
       cpIds.forEach(id => wordDonorIds.add(id));
 
-      console.log(`[CrossFieldSearch] word="${word}" → nameMatches=${matchingDonors.length}, contactPlaceMatches=${cpIds.length}, totalUnique=${wordDonorIds.size}`);
+      console.log(`[CrossFieldSearch] word="${word}" → nameMatches=${nameIds.length}, contactPlaceMatches=${cpIds.length}, totalUnique=${wordDonorIds.size}`);
       perWordSets.push(wordDonorIds);
     }
 
@@ -700,65 +637,23 @@ export class DonorController {
   ): Promise<string[]> {
     if (!words || words.length === 0) return [];
 
+    const sqlDb = remult.dataProvider as SqlDatabase;
     const allDonorIds = new Set<string>();
+    const restrictClause = restrictToDonorIds && restrictToDonorIds.length > 0
+      ? ` AND "donorId" IN (${DonorController.buildInLiteral(restrictToDonorIds)})`
+      : '';
 
-    // Search in DonorContact (phone & email)
-    const contactOrConditions: any[] = [];
-    for (const word of words) {
-      contactOrConditions.push(
-        { phoneNumber: { $contains: word } },
-        { email: { $contains: word } }
-      );
-    }
+    // donor_contacts: SELECT donorId only
+    const contactSql = `SELECT "donorId" FROM "donor_contacts" WHERE "isActive" = true AND ${DonorController.buildIlikeClauses(['phoneNumber', 'email'], words)}${restrictClause}`;
+    (await DonorController.sqlSelectIds(sqlDb, contactSql, 'donorId')).forEach(id => allDonorIds.add(id));
 
-    const contactWhere: any = {
-      isActive: true,
-      $or: contactOrConditions
-    };
-    if (restrictToDonorIds) {
-      contactWhere.donorId = { $in: restrictToDonorIds };
-    }
-
-    const matchingContacts = await remult.repo(DonorContact).find({
-      where: contactWhere,
-      limit: 10000
-    });
-    matchingContacts.forEach(c => { if (c.donorId) allDonorIds.add(c.donorId); });
-
-    // Search in Place (all address fields) - search both original and lowercase for case-insensitive match
-    const placeOrConditions: any[] = [];
-    const addressFields = ['fullAddress', 'city', 'street', 'houseNumber', 'building', 'apartment', 'neighborhood', 'state', 'postcode'];
-    for (const word of words) {
-      const lowerWord = word.toLowerCase();
-      for (const field of addressFields) {
-        placeOrConditions.push({ [field]: { $contains: word } });
-        // Also search lowercase for case-insensitive match on PostgreSQL
-        if (lowerWord !== word) {
-          placeOrConditions.push({ [field]: { $contains: lowerWord } });
-        }
-      }
-    }
-
-    const matchingPlaces = await remult.repo(Place).find({
-      where: { $or: placeOrConditions },
-      limit: 10000
-    });
-    const placeIds = matchingPlaces.map(p => p.id);
+    // places: SELECT id only, then donor_places for donorIds
+    const addrCols = ['fullAddress', 'city', 'street', 'houseNumber', 'building', 'apartment', 'neighborhood', 'state', 'postcode'];
+    const placeIds = await DonorController.sqlSelectIds(sqlDb, `SELECT "id" FROM "places" WHERE ${DonorController.buildIlikeClauses(addrCols, words)}`, 'id');
 
     if (placeIds.length > 0) {
-      const dpWhere: any = {
-        placeId: { $in: placeIds },
-        isActive: true
-      };
-      if (restrictToDonorIds) {
-        dpWhere.donorId = { $in: restrictToDonorIds };
-      }
-
-      const donorPlaces = await remult.repo(DonorPlace).find({
-        where: dpWhere,
-        limit: 10000
-      });
-      donorPlaces.forEach(dp => { if (dp.donorId) allDonorIds.add(dp.donorId); });
+      const dpSql = `SELECT "donorId" FROM "donor_places" WHERE "isActive" = true AND "placeId" IN (${DonorController.buildInLiteral(placeIds)})${restrictClause}`;
+      (await DonorController.sqlSelectIds(sqlDb, dpSql, 'donorId')).forEach(id => allDonorIds.add(id));
     }
 
     return [...allDonorIds];
