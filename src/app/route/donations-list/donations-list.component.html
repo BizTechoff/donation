@@ -231,7 +231,7 @@
           <td class="amount" [class.commitment-highlight]="donation.donationType === 'commitment'">
             <div>{{ getAmountDisplay(donation) }}</div>
           </td>
-          <td>{{ currencyTypes[donation.currencyId]?.symbol || '' }}</td>
+          <td>{{ currencyTypes[donation.currencyId].symbol || '' }}</td>
           <td>{{ getCampaignName(donation) }}</td>
           <td>{{ donation.donor?.fundraiser?.name || '-' }}</td>
           <td class="reason-cell" [title]="donation.reason || ''">{{ truncateReason(donation.reason) }}</td>

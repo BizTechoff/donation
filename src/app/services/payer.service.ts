@@ -52,7 +52,7 @@ export class PayerService {
   //   return CURRENCIES.map(cur => [cur.id, cur]);
   // }
 
-  getCurrencyTypesRecord(): Record<string, CurrencyType | undefined> {
+  getCurrencyTypesRecord(): Record<string, CurrencyType> {
     return Object.fromEntries(CURRENCIES.map(cur => [cur.id, cur]));
   }
 

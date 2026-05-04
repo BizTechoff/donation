@@ -469,7 +469,7 @@
                 </div>
                 <div class="payment-amount-display" *ngIf="getPaymentAmount()">
                   <span class="payment-amount-label">כל תשלום:</span>
-                  <span class="payment-amount-value">{{ getPaymentAmount() }} {{ currencyTypes[donation.currencyId]?.symbol }}</span>
+                  <span class="payment-amount-value">{{ getPaymentAmount() }} {{ currencyTypes[donation.currencyId].symbol }}</span>
                 </div>
               </div>
             </div>
