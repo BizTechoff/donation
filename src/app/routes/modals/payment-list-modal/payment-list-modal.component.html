@@ -99,7 +99,7 @@
           <ng-container matColumnDef="currency">
             <th mat-header-cell *matHeaderCellDef>מטבע</th>
             <td mat-cell *matCellDef="let payment">
-              <span class="currency-badge">{{currencyTypes[payment.currencyId]?.['symbol'] || getCurrencySymbol()}}</span>
+              <span class="currency-badge">{{currencyTypes[payment.currencyId].symbol || getCurrencySymbol()}}</span>
             </td>
           </ng-container>
 
