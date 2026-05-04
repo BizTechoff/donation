@@ -13,7 +13,7 @@
     "seed-fine-tuning": "tsx -r dotenv/config src/server/seed-fine-tuning.ts",
     "seed-fix": "tsx -r dotenv/config src/server/seed-fix.ts",
     "convert-excel": "tsx src/server/convert-excel-to-seed.ts",
-    "build": "ng build && tsc -p tsconfig.server.json",
+    "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
