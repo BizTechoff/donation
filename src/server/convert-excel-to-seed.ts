@@ -235,7 +235,7 @@ function processDonors(rows: DonorRow[]): any[] {
         firstNameEnglish: row['FirstNameEng'] || '',
         lastNameEnglish: row['LastNameEng'] || '',
         // Flags
-        isAnash: row['Anash'] === true || row['Anash'] === 'true' || row['Anash'] === 1,
+        isAnash: parseBoolean(row['Anash']),
         wantsUpdates: true,
         createdDate: row['TarichRishum'] ? (excelDateToJSDate(row['TarichRishum']) || new Date()).toISOString() : new Date().toISOString(),
         notes: row['Notes'] || '',
@@ -332,15 +332,40 @@ function processDonors(rows: DonorRow[]): any[] {
   }).filter(d => d !== null)
 }
 
+/**
+ * המרה של ערך amount מ-Excel למספר.
+ * Excel מחזיר ערכים מעוצבים כמחרוזות עם פסיקים (למשל "1,800.00").
+ * Number("1,800.00") = NaN, לכן צריך לנקות את הפסיקים לפני המרה.
+ */
+function parseAmount(val: any): number {
+  if (val == null || val === '') return 0
+  if (typeof val === 'number') return isFinite(val) ? val : 0
+  const cleaned = String(val).replace(/,/g, '').trim()
+  const n = parseFloat(cleaned)
+  return isFinite(n) ? n : 0
+}
+
+/**
+ * המרה של ערך boolean מ-Excel.
+ * Excel עם raw:false מחזיר booleans כמחרוזות "TRUE"/"FALSE" (גדולות).
+ * הבדיקה === 'true' (קטנה) מחמיצה - לכן צריך טיפול case-insensitive.
+ */
+function parseBoolean(val: any): boolean {
+  if (val === true || val === 1) return true
+  if (val == null || val === false || val === 0) return false
+  return String(val).toLowerCase().trim() === 'true'
+}
+
 function processDonations(rows: DonationRow[]): any[] {
   let skippedNoDonor = 0
   let skippedNoAmount = 0
   const result = rows.map((row, index) => {
     try {
       // Get amount from Scom, if amount is 0 or empty, use ScomChiyuv
-      let amount = row['Scom'] || 0
+      // ── שימוש ב-parseAmount שמטפל במחרוזות עם פסיקים ("1,800.00")
+      let amount = parseAmount(row['Scom'])
       if (amount === 0) {
-        amount = row['ScomChiyuv'] || 0
+        amount = parseAmount(row['ScomChiyuv'])
       }
 
       // Skip if no valid donor ID
@@ -378,9 +403,9 @@ function processDonations(rows: DonationRow[]): any[] {
         reason: row['TromaSiba'] || '',
         bankName: row['Sort_Code'] || '',
         organizationName: row['Voucher_Co'] ? (row['Voucher_Co']) : '',
-        isExceptional: row['Hachragtit'] === true || row['Hachragtit'] === 1,
-        isUrgent: row['Dachuf'] === true || row['Dachuf'] === 1,
-        receiptIssued: row['KabalaMatsa'] === true || row['KabalaMatsa'] === 1
+        isExceptional: parseBoolean(row['Hachragtit']),
+        isUrgent: parseBoolean(row['Dachuf']),
+        receiptIssued: parseBoolean(row['KabalaMatsa'])
       }
 
       // Company information from donation record
