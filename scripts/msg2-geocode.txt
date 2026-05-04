@@ -1,0 +1,7 @@
+feat(geocode): geocoding ברקע ב-startup + כתובת אנגלית ל-Google
+
+- api.ts: geocodeMissingPlaces() ללא await ב-initApi - לא חוסם boot
+- geocode-places.ts: count() לפני find - O(1) אחרי שכל places עם coords
+- geocode-places.ts: countryNames באנגלית במקום עברית - דיוק טוב יותר ב-Google
+
+BizTechoff™ - התאמת העסק לעידן הדיגיטלי

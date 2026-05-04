@@ -1,0 +1,8 @@
+fix(donor-map): SQL JOIN למיקום markers (Remult include hydration לא עבד)
+
+- getMapMarkers: SELECT DISTINCT ON (donorId) במקום find+include של DonorPlace+Place
+- getMapMarkers: SELECT donors מינימלי (id, isActive, lastAndFirstName) במקום entity מלא
+- createGoogleMarker בלקוח: parseFloat הגנתי ל-lat/lng
+- בעיית lat/lng strings מ-Postgres DECIMAL נפתרה
+
+BizTechoff™ - התאמת העסק לעידן הדיגיטלי

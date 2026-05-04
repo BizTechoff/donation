@@ -1,0 +1,7 @@
+fix(seed): parseAmount + parseBoolean - טיפול בעיצוב Excel
+
+- parseAmount: Number("1,800.00") החזיר NaN, 748 תרומות אבדו
+- parseBoolean: Excel raw:false מחזיר "TRUE" (גדולה), הבדיקה הקודמת חיפשה "true" (קטנה)
+- isAnash, Hachragtit, Dachuf, KabalaMatsa היו false לכולם בגלל זה
+
+BizTechoff™ - התאמת העסק לעידן הדיגיטלי

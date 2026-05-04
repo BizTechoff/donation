@@ -494,10 +494,10 @@ export class DonationsListComponent implements OnInit, OnDestroy {
     return Object.entries(this.donationsByCurrency)
       .map(([currency, amount]) => ({
         currency,
-        symbol: this.currencyTypes[currency]?.symbol || currency,
+        symbol: this.currencyTypes[currency]?.symbol || '',
         amount
       }))
-      .sort((a, b) => b.amount - a.amount); // Sort by amount descending
+      .sort((a, b) => b.amount - a.amount);
   }
 
   /**
@@ -507,11 +507,11 @@ export class DonationsListComponent implements OnInit, OnDestroy {
     return Object.entries(this.commitmentsByCurrency)
       .map(([currency, data]) => ({
         currency,
-        symbol: this.currencyTypes[currency]?.symbol || currency,
+        symbol: this.currencyTypes[currency]?.symbol || '',
         total: data.total,
         paid: data.paid
       }))
-      .sort((a, b) => b.total - a.total); // Sort by total descending
+      .sort((a, b) => b.total - a.total);
   }
 
   getDonorName(donation: Donation): string {
