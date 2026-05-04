@@ -57,13 +57,24 @@ if errorlevel 1 (
 ) else (echo   [SKIP])
 echo.
 
-REM ===== [4b] fix(build): NG8107 warnings - currencyTypes type + donor-avatar =====
-echo [4b] fix(build): NG8107 warnings cleanup
-git add src/app/services/payer.service.ts src/app/mobile/quick-donation/steps/donor-details-step/donor-details-step.component.html
+REM ===== [4b] fix(build): NG8107 warnings - remove unnecessary ?. in templates =====
+echo [4b] fix(build): NG8107 warnings cleanup in templates
+git add src/app/services/payer.service.ts src/app/mobile/quick-donation/steps/donor-details-step/donor-details-step.component.html src/app/route/donations-list/donations-list.component.html src/app/routes/modals/campaign-details-modal/campaign-details-modal.component.html src/app/routes/modals/campaign-donations-modal/campaign-donations-modal.component.html src/app/routes/modals/donation-details-modal/donation-details-modal.component.html src/app/routes/modals/donor-donations-modal/donor-donations-modal.component.html src/app/routes/modals/gift-catalog-modal/gift-catalog-modal.component.html src/app/routes/modals/payment-list-modal/payment-list-modal.component.html
 if errorlevel 1 goto :err
 git diff --cached --quiet
 if errorlevel 1 (
-  git commit -m "fix(build): NG8107 warnings - currencyTypes returns CurrencyType ^| undefined + donor-avatar charAt without optional chain" -m "BizTechoff(TM)"
+  git commit -m "fix(build): NG8107 cleanup - remove unnecessary ?. from templates" -m "currencyTypes is Record<string,CurrencyType> non-nullable, so ?. caused warnings" -m "BizTechoff(TM)"
+  if errorlevel 1 goto :err
+) else (echo   [SKIP])
+echo.
+
+REM ===== [4c] fix(build): drop tsc from npm build =====
+echo [4c] fix(build): simplify npm build (drop tsc, runtime uses tsx)
+git add package.json
+if errorlevel 1 goto :err
+git diff --cached --quiet
+if errorlevel 1 (
+  git commit -m "fix(build): drop tsc from npm build script - runtime uses tsx, no compiled output needed" -m "BizTechoff(TM)"
   if errorlevel 1 goto :err
 ) else (echo   [SKIP])
 echo.
