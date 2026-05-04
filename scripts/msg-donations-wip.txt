@@ -1,0 +1,3 @@
+wip(donations-list): עדכוני component + package-lock
+
+BizTechoff™ - התאמת העסק לעידן הדיגיטלי

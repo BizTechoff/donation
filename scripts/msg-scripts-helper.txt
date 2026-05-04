@@ -1,0 +1,6 @@
+chore(scripts): commit-by-topic helper - bat + Hebrew message files
+
+- scripts/commit-by-topic.bat: ASCII-only מריץ git עם הודעות UTF-8
+- scripts/msg*.txt: הודעות קומיט בעברית (UTF-8) ל-git commit -F
+
+BizTechoff™ - התאמת העסק לעידן הדיגיטלי

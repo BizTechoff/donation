@@ -1,0 +1,8 @@
+fix(build): תיקון build errors אחרי שינוי tsconfig
+
+- tsconfig: ignoreDeprecations מ-"6.0" ל-"5.0" (TS5103 - הערך לא נתמך בגרסה)
+- 2 modal templates: bracket notation על ?.symbol להתחמק מ-noPropertyAccessFromIndexSignature
+  - donor-donations-modal.component.html
+  - payment-list-modal.component.html
+
+BizTechoff™ - התאמת העסק לעידן הדיגיטלי
