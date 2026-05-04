@@ -101,12 +101,39 @@ export const api = remultExpress({
   },
   initApi: async r => {
     // ── הפעלת geocoding ברקע (לא awaited) כדי לא לעכב את עליית השרת.
-    //    רץ פעם ראשונה - ממלא קואורדינטות מ-Google. פעמים הבאות - no-op מהיר
-    //    (הפונקציה מסננת רק places עם latitude=0/undefined).
     // geocodeMissingPlaces()
     //   .then(result => console.log('[Geocode] Completed:', result))
     //   .catch(err => console.error('[Geocode] Error:', err));
-    // await geocodeMissingPlaces()  // גרסה awaited (לא מומלץ - חוסם boot עד 15 דק')
+
+    // ── הרצת seed מלא ברקע אם RUN_SEED=1 (משתנה סביבה ב-Railway/Heroku).
+    //    מריץ במחזור: seed-infrastructure → seed-data → seed-fine-tuning.
+    //    מומלץ: להגדיר ל-1, לעקוב אחרי הלוגים, ואז להחזיר ל-0 ולהפעיל restart.
+    if (process.env['RUN_SEED'] === '1') {
+      console.log('[RUN_SEED=1] Starting full seed in background...')
+      ;(async () => {
+        try {
+          console.log('[RUN_SEED] Step 1/3: seed-infrastructure...')
+          const { seedInfrastructure } = await import('./seed-infrastructure')
+          await seedInfrastructure()
+          console.log('[RUN_SEED] Step 1/3 done.')
+
+          console.log('[RUN_SEED] Step 2/3: seed-data (legacy donors+donations)...')
+          const { seedLegacyData } = await import('./seed-data')
+          await seedLegacyData()
+          console.log('[RUN_SEED] Step 2/3 done.')
+
+          console.log('[RUN_SEED] Step 3/3: seed-fine-tuning...')
+          const { fineTuning } = await import('./seed-fine-tuning')
+          await fineTuning()
+          console.log('[RUN_SEED] Step 3/3 done.')
+
+          console.log('[RUN_SEED] ALL DONE. Set RUN_SEED=0 (or remove) and restart to avoid running again.')
+        } catch (err) {
+          console.error('[RUN_SEED] ERROR:', err)
+        }
+      })()
+    }
+
     // Setup cron job to check reminders every 5 minutes
     console.log('[Server] Setting up reminder scheduler (every 5 minutes)...')
     cron.schedule('*/5 * * * *', async () => {
