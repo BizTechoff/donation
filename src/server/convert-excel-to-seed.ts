@@ -334,13 +334,24 @@ function processDonors(rows: DonorRow[]): any[] {
 
 /**
  * המרה של ערך amount מ-Excel למספר.
- * Excel מחזיר ערכים מעוצבים כמחרוזות עם פסיקים (למשל "1,800.00").
- * Number("1,800.00") = NaN, לכן צריך לנקות את הפסיקים לפני המרה.
+ * Excel מחזיר ערכים מעוצבים כמחרוזות עם תווים שונים שעוצרים את Number():
+ *   - פסיקים: "1,800.00"
+ *   - גרשיים/מירכאות: '"1800"', "'1800'", "1,800.00"
+ *   - סימני מטבע: "$1,800", "₪1,800", "£500"
+ *   - רווחים: " 1800 "
+ *   - תווי "no-break space" (160) או דומים
+ * הפתרון: מסירים *כל* תו שאינו ספרה/נקודה עשרונית/מינוס בתחילת המחרוזת.
  */
 function parseAmount(val: any): number {
   if (val == null || val === '') return 0
   if (typeof val === 'number') return isFinite(val) ? val : 0
-  const cleaned = String(val).replace(/,/g, '').trim()
+  // מסירים את כל מה שלא רלוונטי לחישוב מספר (סימני מטבע, גרשיים, רווחים, פסיקי אלפים)
+  let cleaned = String(val).replace(/[^0-9.\-]/g, '')
+  // מינוס רק אם הוא בתחילת המחרוזת
+  if (cleaned.indexOf('-') > 0) {
+    cleaned = cleaned.replace(/-/g, '')
+  }
+  if (cleaned === '' || cleaned === '-' || cleaned === '.') return 0
   const n = parseFloat(cleaned)
   return isFinite(n) ? n : 0
 }
