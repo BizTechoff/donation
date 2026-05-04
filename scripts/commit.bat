@@ -57,6 +57,17 @@ if errorlevel 1 (
 ) else (echo   [SKIP])
 echo.
 
+REM ===== [4b] fix(build): NG8107 warnings - currencyTypes type + donor-avatar =====
+echo [4b] fix(build): NG8107 warnings cleanup
+git add src/app/services/payer.service.ts src/app/mobile/quick-donation/steps/donor-details-step/donor-details-step.component.html
+if errorlevel 1 goto :err
+git diff --cached --quiet
+if errorlevel 1 (
+  git commit -m "fix(build): NG8107 warnings - currencyTypes returns CurrencyType ^| undefined + donor-avatar charAt without optional chain" -m "BizTechoff(TM)"
+  if errorlevel 1 goto :err
+) else (echo   [SKIP])
+echo.
+
 REM ===== [5] chore(scripts): helper bats =====
 echo [5] chore(scripts): commit + run helpers
 git add scripts/
