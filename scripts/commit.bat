@@ -79,6 +79,17 @@ if errorlevel 1 (
 ) else (echo   [SKIP])
 echo.
 
+REM ===== [4d] chore(deps): sync package-lock.json =====
+echo [4d] chore(deps): sync package-lock.json (Railway npm ci requirement)
+git add package-lock.json
+if errorlevel 1 goto :err
+git diff --cached --quiet
+if errorlevel 1 (
+  git commit -m "chore(deps): sync package-lock.json after package.json changes" -m "Required for Railway npm ci to succeed" -m "BizTechoff(TM)"
+  if errorlevel 1 goto :err
+) else (echo   [SKIP])
+echo.
+
 REM ===== [5] chore(scripts): helper bats =====
 echo [5] chore(scripts): commit + run helpers
 git add scripts/
