@@ -108,6 +108,7 @@ export const api = remultExpress({
     // ── הרצת seed מלא ברקע אם RUN_SEED=1 (משתנה סביבה ב-Railway/Heroku).
     //    מריץ במחזור: seed-infrastructure → seed-data → seed-fine-tuning.
     //    מומלץ: להגדיר ל-1, לעקוב אחרי הלוגים, ואז להחזיר ל-0 ולהפעיל restart.
+    console.log('RUN_SEED',process.env['RUN_SEED'],process.env['RUN_SEED'] === '1')
     if (process.env['RUN_SEED'] === '1') {
       console.log('[RUN_SEED=1] Starting full seed in background...')
       ;(async () => {
