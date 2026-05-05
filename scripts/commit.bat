@@ -70,8 +70,19 @@ if errorlevel 1 (
 ) else (echo   [SKIP])
 echo.
 
-REM ===== [6] catch-all (anything else still uncommitted) =====
-echo [6] catch-all: any remaining changes
+REM ===== [6] fix(modals): remove shimmer animation from headers =====
+echo [6] fix(modals): remove shimmer animation from dialog headers
+git add src/app/routes/modals/donor-details-modal/donor-details-modal.component.scss src/app/routes/modals/donation-details-modal/donation-details-modal.component.scss src/app/routes/modals/campaign-details-modal/campaign-details-modal.component.scss src/app/routes/modals/reminder-details-modal/reminder-details-modal.component.scss src/app/routes/modals/campaign-invited-list-modal/campaign-invited-list-modal.component.scss src/app/routes/modals/company-details-modal/company-details-modal.component.scss src/app/routes/modals/organization-details-modal/organization-details-modal.component.scss src/app/routes/modals/bank-details-modal/bank-details-modal.component.scss
+if errorlevel 1 goto :err
+git diff --cached --quiet
+if errorlevel 1 (
+  git commit -m "fix(modals): remove distracting shimmer animation from dialog headers" -m "Per client feedback: the white shimmer/sweep effect (animation: shimmer 3s/4s infinite) on .modal-header::before was visually distracting. Removed the ::before pseudo-element block AND the @keyframes shimmer definition from 8 modal SCSS files: donor-details, donation-details, campaign-details, reminder-details, campaign-invited-list (was 4s + 0.15 alpha), company-details, organization-details, bank-details. Kept .modal-header gradient background + position:relative + overflow:hidden (still needed for layout). Original block recoverable from git history if reverted." -m "BizTechoff(TM)"
+  if errorlevel 1 goto :err
+) else (echo   [SKIP])
+echo.
+
+REM ===== [7] catch-all (anything else still uncommitted) =====
+echo [7] catch-all: any remaining changes
 git add -A
 if errorlevel 1 goto :err
 git diff --cached --quiet
@@ -82,7 +93,7 @@ if errorlevel 1 (
 echo.
 
 echo === Done ===
-git log -7 --oneline
+git log -8 --oneline
 echo.
 git status --short
 echo.
