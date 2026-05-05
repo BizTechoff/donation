@@ -1,6 +1,8 @@
 @echo off
-REM commit.bat - subject-based commits, single self-contained file.
+REM commit.bat - subject-based commits, self-contained.
 REM Run from anywhere - CDs to repo root automatically.
+REM C.A.B.S = Commit All By Subject. Each group adds, checks, commits.
+REM Groups with no pending changes print [SKIP].
 
 setlocal
 cd /d "%~dp0.."
@@ -13,107 +15,52 @@ git status --short
 if errorlevel 1 goto :err
 echo.
 
-REM ===== [1] feat(seed): RUN_SEED env flag in api.ts =====
-echo [1] feat(seed): RUN_SEED env flag handler
-git add src/server/api.ts
+REM ===== [1] feat(scripts): copy-places + fix-places-fks (Heroku->Railway migration) =====
+echo [1] feat(scripts): copy-places + fix-places-fks
+git add scripts/copy-places.ts scripts/fix-places-fks.ts
 if errorlevel 1 goto :err
 git diff --cached --quiet
 if errorlevel 1 (
-  git commit -m "feat(seed): RUN_SEED=1 env flag triggers full seed on startup" -m "Background runs: seed-infrastructure -> seed-data -> seed-fine-tuning. Set on Railway, restart, watch logs, then unset." -m "BizTechoff(TM)"
+  git commit -m "feat(scripts): copy-places + fix-places-fks (Heroku->Railway migration)" -m "copy-places.ts: copies Place + DonorPlace with donor matching by idNumber (LEGACY-*) and FK remap for countries/addressTypes. Modes: --verify (default, diagnostics only), --dry-run, --confirm. Bulk pre-loads + transactional batch INSERT (200/chunk). fix-places-fks.ts: fixes orphan FK references in already-copied data by matching countries on code and donor_address_types on name. Same --verify/--confirm modes, transactional UPDATEs." -m "BizTechoff(TM)"
   if errorlevel 1 goto :err
 ) else (echo   [SKIP])
 echo.
 
-REM ===== [2] fix(seed): parseAmount enhanced =====
-echo [2] fix(seed): parseAmount handles currency, quotes, spaces
-git add src/server/convert-excel-to-seed.ts
+REM ===== [2] feat(scripts): copy-contacts (donor phones + emails) =====
+echo [2] feat(scripts): copy-contacts
+git add scripts/copy-contacts.ts
 if errorlevel 1 goto :err
 git diff --cached --quiet
 if errorlevel 1 (
-  git commit -m "fix(seed): parseAmount strips all non-numeric chars (currency, quotes, etc)" -m "Recovers donations that were lost as NaN due to formatted strings like $1,800 or quotes." -m "BizTechoff(TM)"
+  git commit -m "feat(scripts): copy-contacts (donor_contacts phones + emails)" -m "Same pattern as copy-places.ts. Modes: --verify/--dry-run/--confirm. Donor matching by idNumber. Dedup key: (donorId, type, value-lowercased-trimmed) where value is phoneNumber or email. Bulk pre-loads + transactional batch INSERT. Skips blank values (cannot dedup safely)." -m "BizTechoff(TM)"
   if errorlevel 1 goto :err
 ) else (echo   [SKIP])
 echo.
 
-REM ===== [3] chore(seed): regenerated seed-data.ts =====
-echo [3] chore(seed): regenerated seed-data.ts
-git add src/server/seed-data.ts
+REM ===== [3] feat(scripts): compare-dbs (read-only diagnostic) =====
+echo [3] feat(scripts): compare-dbs
+git add scripts/compare-dbs.ts
 if errorlevel 1 goto :err
 git diff --cached --quiet
 if errorlevel 1 (
-  git commit -m "chore(seed): regenerate seed-data.ts with parseAmount + parseBoolean fixes" -m "Now contains 1054 isAnash=true donors and recovers 748 donations previously lost." -m "BizTechoff(TM)"
+  git commit -m "feat(scripts): compare-dbs - 3-phase read-only DB comparison" -m "Phase 1: per-table row counts side-by-side with diff and notes. Phase 2: per-donor entity coverage (donations/places/contacts/notes/events/gifts) - shows how many donors have more on each side. Phase 3: donation date drift analysis with per-donor totals + sample comparison for timezone-shift detection. Skips donor_relations (different FK structure: donor1Id/donor2Id). Try/catch around each entity for resilience." -m "BizTechoff(TM)"
   if errorlevel 1 goto :err
 ) else (echo   [SKIP])
 echo.
 
-REM ===== [4] fix(build): tsconfig + 2 modal HTMLs =====
-echo [4] fix(build): tsconfig + bracket notation
-git add tsconfig.json src/app/routes/modals/donor-donations-modal/donor-donations-modal.component.html src/app/routes/modals/payment-list-modal/payment-list-modal.component.html
+REM ===== [4] feat(donor-map): granular performance timings =====
+echo [4] feat(donor-map): granular console.time markers
+git add src/shared/controllers/donor-map.controller.ts
 if errorlevel 1 goto :err
 git diff --cached --quiet
 if errorlevel 1 (
-  git commit -m "fix(build): tsconfig ignoreDeprecations 5.0 + bracket notation on currencyTypes" -m "BizTechoff(TM)"
+  git commit -m "feat(donor-map): granular console.time markers for hotspot analysis" -m "Adds timing markers to: getIntersectedIds (global+local filter split), buildMarkersFromIds (1.places SELECT, 2.donors SELECT, 3.donations groupBy sum+max, 4.thresholds load, 5.marker+status calc, 6.statusFilter apply), buildStatisticsFromIds (1.donor counts, 2.coord query, 3.PayerService+currencyTypes, 4.donations groupBy by currency, 5.count). Logs intermediate counts (placeRows, high-donor count, after-filter count). Pinpoints time hotspots for legend filters like 'high-donor > 1500'. Logic unchanged - timing only." -m "BizTechoff(TM)"
   if errorlevel 1 goto :err
 ) else (echo   [SKIP])
 echo.
 
-REM ===== [4b] fix(build): NG8107 warnings - remove unnecessary ?. in templates =====
-echo [4b] fix(build): NG8107 warnings cleanup in templates
-git add src/app/services/payer.service.ts src/app/mobile/quick-donation/steps/donor-details-step/donor-details-step.component.html src/app/route/donations-list/donations-list.component.html src/app/routes/modals/campaign-details-modal/campaign-details-modal.component.html src/app/routes/modals/campaign-donations-modal/campaign-donations-modal.component.html src/app/routes/modals/donation-details-modal/donation-details-modal.component.html src/app/routes/modals/donor-donations-modal/donor-donations-modal.component.html src/app/routes/modals/gift-catalog-modal/gift-catalog-modal.component.html src/app/routes/modals/payment-list-modal/payment-list-modal.component.html
-if errorlevel 1 goto :err
-git diff --cached --quiet
-if errorlevel 1 (
-  git commit -m "fix(build): NG8107 cleanup - remove unnecessary ?. from templates" -m "currencyTypes is Record<string,CurrencyType> non-nullable, so ?. caused warnings" -m "BizTechoff(TM)"
-  if errorlevel 1 goto :err
-) else (echo   [SKIP])
-echo.
-
-REM ===== [4c] fix(build): drop tsc from npm build =====
-echo [4c] fix(build): simplify npm build (drop tsc, runtime uses tsx)
-git add package.json
-if errorlevel 1 goto :err
-git diff --cached --quiet
-if errorlevel 1 (
-  git commit -m "fix(build): drop tsc from npm build script - runtime uses tsx, no compiled output needed" -m "BizTechoff(TM)"
-  if errorlevel 1 goto :err
-) else (echo   [SKIP])
-echo.
-
-REM ===== [4d] chore(deps): sync package-lock.json =====
-echo [4d] chore(deps): sync package-lock.json (Railway npm ci requirement)
-git add package-lock.json
-if errorlevel 1 goto :err
-git diff --cached --quiet
-if errorlevel 1 (
-  git commit -m "chore(deps): sync package-lock.json after package.json changes" -m "Required for Railway npm ci to succeed" -m "BizTechoff(TM)"
-  if errorlevel 1 goto :err
-) else (echo   [SKIP])
-echo.
-
-REM ===== [5] chore(scripts): helper bats =====
-echo [5] chore(scripts): commit + run helpers
-git add scripts/
-if errorlevel 1 goto :err
-git diff --cached --quiet
-if errorlevel 1 (
-  git commit -m "chore(scripts): commit-by-subject and run-convert-excel helpers" -m "BizTechoff(TM)"
-  if errorlevel 1 goto :err
-) else (echo   [SKIP])
-echo.
-
-REM ===== [6] wip(donations-list): leftover changes =====
-echo [6] wip(donations-list): list component + package-lock
-git add src/app/route/donations-list/ package-lock.json
-if errorlevel 1 goto :err
-git diff --cached --quiet
-if errorlevel 1 (
-  git commit -m "wip(donations-list): updates + package-lock" -m "BizTechoff(TM)"
-  if errorlevel 1 goto :err
-) else (echo   [SKIP])
-echo.
-
-REM ===== [7] catch-all =====
-echo [7] catch-all: any remaining changes
+REM ===== [5] catch-all (anything else still uncommitted) =====
+echo [5] catch-all: any remaining changes
 git add -A
 if errorlevel 1 goto :err
 git diff --cached --quiet
@@ -124,15 +71,13 @@ if errorlevel 1 (
 echo.
 
 echo === Done ===
-git log -7 --oneline
+git log -6 --oneline
 echo.
 git status --short
 echo.
-echo To deploy:
+echo To push (manual, requires your explicit decision):
 echo   git push origin master
-echo   git push railway main
 echo.
-echo Then on Railway: set RUN_SEED=1, restart, watch logs, unset RUN_SEED after completion.
 
 endlocal
 exit /b 0
