@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { remult } from 'remult';
 import { Subscription } from 'rxjs';
@@ -72,6 +72,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
 
   // Filter variables
   searchTerm = '';
+  @ViewChild('searchInput') searchInput?: ElementRef<HTMLInputElement>;
   dateFrom: Date | null = null;
   dateTo: Date | null = null;
   selectedMethodId = '';
@@ -236,11 +237,29 @@ export class DonationsListComponent implements OnInit, OnDestroy {
     }
 
     // Set a new timeout to reload data after user stops typing/changing filters
-    this.filterTimeout = setTimeout(() => {
+    this.filterTimeout = setTimeout(async () => {
       console.log('Filter changed, reloading donations');
-      this.currentPage = 1; // Reset to first page when filters change
-      this.refreshData();
+      this.currentPage = 1;
+      await this.refreshData();
+      this.restoreSearchFocus();
     }, 800); // 800ms debounce (was 300ms - too fast for slow typists)
+  }
+
+  private restoreSearchFocus() {
+    setTimeout(() => {
+      const native = this.searchInput?.nativeElement;
+      if (!native) return;
+      const active = document.activeElement;
+      const isInputAlready = active === native;
+      const isOtherInteractive = active && (
+        active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT'
+      ) && active !== native;
+      if (!isInputAlready && !isOtherInteractive) {
+        native.focus();
+        const len = native.value?.length ?? 0;
+        try { native.setSelectionRange(len, len); } catch {}
+      }
+    }, 150);
   }
 
   async loadCampaigns() {

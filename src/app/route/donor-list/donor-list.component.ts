@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { remult } from 'remult';
 import { Subscription } from 'rxjs';
 import { DonorExportData, DonorMapController, DonorMapData } from '../../../shared/controllers/donor-map.controller';
@@ -44,6 +44,7 @@ export class DonorListComponent implements OnInit, OnDestroy {
 
   // Local filter properties
   searchTerm = '';
+  @ViewChild('searchInput') searchInput?: ElementRef<HTMLInputElement>;
 
   // Pagination
   currentPage = 1;
@@ -185,16 +186,35 @@ export class DonorListComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.searchTermTimeout = setTimeout(() => {
-      // Reset to first page when search changes
+    this.searchTermTimeout = setTimeout(async () => {
       this.currentPage = 1;
-
-      // Refresh data with new search term
-      this.refreshData();
-
-      // Save search term to user settings
+      await this.refreshData();
       this.saveSearchTerm();
+      // Restore focus to the search input - so user can keep typing without
+      // having to click back into the field after results refresh.
+      this.restoreSearchFocus();
     }, 800); // Wait 800ms after user stops typing (was 500ms - too fast)
+  }
+
+  private restoreSearchFocus() {
+    // 150ms delay so Angular finishes change-detection AND the BusyService
+    // overlay closes BEFORE we try to focus. With 0ms the busy overlay was
+    // still the active element on slower connections, so the focus restore
+    // condition was never met.
+    setTimeout(() => {
+      const native = this.searchInput?.nativeElement;
+      if (!native) return;
+      const active = document.activeElement;
+      const isInputAlready = active === native;
+      const isOtherInteractive = active && (
+        active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT'
+      ) && active !== native;
+      if (!isInputAlready && !isOtherInteractive) {
+        native.focus();
+        const len = native.value?.length ?? 0;
+        try { native.setSelectionRange(len, len); } catch {}
+      }
+    }, 150);
   }
 
   async createDonor() {
