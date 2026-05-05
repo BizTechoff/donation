@@ -708,6 +708,8 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
       console.log('Map not ready');
       return;
     }
+    console.log(`[map] addMarkersToMap start - existing=${this.markers.length}, new=${this.markersData.length}`);
+    console.time('[map] addMarkersToMap TOTAL');
 
     // Clear active route if present
     if (this.isRouteActive) {
@@ -715,14 +717,17 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     // Clear existing markers
+    console.time('[map] 1.clearMarkers');
     this.markers.forEach(marker => marker.setMap(null));
     this.markers = [];
+    console.timeEnd('[map] 1.clearMarkers');
 
     console.log('Adding markers:', this.markersData.length);
 
     const bounds = new google.maps.LatLngBounds();
     let addedCount = 0;
 
+    console.time('[map] 2.createMarkers (new google.maps.Marker x N)');
     this.markersData.forEach((markerData) => {
       try {
         const marker = this.createGoogleMarker(markerData);
@@ -733,11 +738,13 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
         console.error('Error creating marker for donor:', markerData.donorName, error);
       }
     });
+    console.timeEnd('[map] 2.createMarkers (new google.maps.Marker x N)');
 
     console.log('Total markers added:', addedCount);
 
     // Fit map to markers bounds if there are any markers (skip if preserving view)
     if (addedCount > 0 && !this.preserveMapView) {
+      console.time('[map] 3.fitBounds');
       this.map.fitBounds(bounds);
 
       // Don't zoom in too much if there's only one marker
@@ -747,8 +754,10 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
         }
         google.maps.event.removeListener(listener);
       });
+      console.timeEnd('[map] 3.fitBounds');
     }
     this.preserveMapView = false;
+    console.timeEnd('[map] addMarkersToMap TOTAL');
   }
 
   /**
