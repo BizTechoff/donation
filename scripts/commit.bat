@@ -242,13 +242,13 @@ echo   [SKIP]
 :next16
 echo.
 
-REM ===== [17] catch-all (anything else still uncommitted) =====
-echo [17] catch-all - any remaining changes
-git add -A
+REM ===== [17] feat(donor-controller): add timings to find/count for diagnosis =====
+echo [17] feat(donor-controller): timings for findFiltered and countFiltered
+git add src/shared/controllers/donor.controller.ts
 if errorlevel 1 goto :err
 git diff --cached --quiet
 if not errorlevel 1 goto :skip17
-git commit -m "wip: misc remaining changes" -m "BizTechoff(TM)"
+git commit -m "feat(donor-controller): add granular console.time markers in findFilteredDonors and countFilteredDonors - diagnose 3.5s API time" -m "BizTechoff(TM)"
 if errorlevel 1 goto :err
 goto :next17
 :skip17
@@ -256,8 +256,22 @@ echo   [SKIP]
 :next17
 echo.
 
+REM ===== [18] catch-all (anything else still uncommitted) =====
+echo [18] catch-all - any remaining changes
+git add -A
+if errorlevel 1 goto :err
+git diff --cached --quiet
+if not errorlevel 1 goto :skip18
+git commit -m "wip: misc remaining changes" -m "BizTechoff(TM)"
+if errorlevel 1 goto :err
+goto :next18
+:skip18
+echo   [SKIP]
+:next18
+echo.
+
 echo === Done ===
-git log -18 --oneline
+git log -20 --oneline
 echo.
 git status --short
 echo.
