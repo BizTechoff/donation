@@ -21,6 +21,7 @@ import { TargetAudience } from '../../../shared/entity/target-audience';
 import { Roles } from '../../../shared/enum/roles';
 import { HebrewDateService } from '../../services/hebrew-date.service';
 import { BusyService } from '../../common-ui-elements/src/angular/wait/busy-service';
+import { MarkerClusterer } from '@googlemaps/markerclusterer';
 
 // Declare google as global
 declare const google: any;
@@ -46,6 +47,10 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private map!: google.maps.Map;
   private markers: google.maps.Marker[] = [];
+  // Clusterer manages bulk add/remove of markers in O(n) instead of the
+  // O(n^2) cost of repeated marker.setMap(null). Initialized after the
+  // map is created. Replaces direct setMap on each marker.
+  private markerClusterer?: MarkerClusterer;
   private infoWindow!: google.maps.InfoWindow;
   private currentPolygonPoints: google.maps.LatLng[] = [];
   private tempPolyline?: google.maps.Polyline;
@@ -628,6 +633,10 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
       this.map = new google.maps.Map(this.mapElement.nativeElement, mapOptions);
 
+      // Initialize MarkerClusterer (O(n) bulk operations instead of O(n^2)
+      // setMap(null) per marker). Replaces direct map={...} on each marker.
+      this.markerClusterer = new MarkerClusterer({ map: this.map, markers: [] });
+
       // יצירת InfoWindow משותף
       this.infoWindow = new google.maps.InfoWindow();
 
@@ -716,34 +725,46 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
       this.clearRoute();
     }
 
-    // Clear existing markers
-    console.time('[map] 1.clearMarkers');
-    this.markers.forEach(marker => marker.setMap(null));
+    // Clear existing markers via clusterer (O(n) bulk operation; was O(n^2)
+    // when calling marker.setMap(null) per marker - 88s for 3,216 markers).
+    console.time('[map] 1.clearMarkers (clusterer bulk)');
+    if (this.markerClusterer) {
+      this.markerClusterer.clearMarkers();
+    } else {
+      // Defensive fallback for the (unexpected) case the clusterer didn't init
+      this.markers.forEach(marker => marker.setMap(null));
+    }
     this.markers = [];
-    console.timeEnd('[map] 1.clearMarkers');
+    console.timeEnd('[map] 1.clearMarkers (clusterer bulk)');
 
     console.log('Adding markers:', this.markersData.length);
 
     const bounds = new google.maps.LatLngBounds();
-    let addedCount = 0;
+    const newMarkers: google.maps.Marker[] = [];
 
-    console.time('[map] 2.createMarkers (new google.maps.Marker x N)');
+    console.time('[map] 2.createMarkers (new google.maps.Marker x N, no map assignment)');
     this.markersData.forEach((markerData) => {
       try {
         const marker = this.createGoogleMarker(markerData);
-        this.markers.push(marker);
+        newMarkers.push(marker);
         bounds.extend(marker.getPosition()!);
-        addedCount++;
       } catch (error) {
         console.error('Error creating marker for donor:', markerData.donorName, error);
       }
     });
-    console.timeEnd('[map] 2.createMarkers (new google.maps.Marker x N)');
+    console.timeEnd('[map] 2.createMarkers (new google.maps.Marker x N, no map assignment)');
 
-    console.log('Total markers added:', addedCount);
+    // Bulk add to clusterer - one operation, O(n).
+    console.time('[map] 2b.addToClusterer (bulk)');
+    this.markers = newMarkers;
+    if (this.markerClusterer && newMarkers.length > 0) {
+      this.markerClusterer.addMarkers(newMarkers);
+    }
+    console.timeEnd('[map] 2b.addToClusterer (bulk)');
+    console.log('Total markers added:', newMarkers.length);
 
     // Fit map to markers bounds if there are any markers (skip if preserving view)
-    if (addedCount > 0 && !this.preserveMapView) {
+    if (newMarkers.length > 0 && !this.preserveMapView) {
       console.time('[map] 3.fitBounds');
       this.map.fitBounds(bounds);
 
@@ -779,9 +800,11 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     // המרה בטוחה של lat/lng ל-numbers (PG יכול להחזיר DECIMAL כמחרוזת)
     const lat = typeof markerData.lat === 'number' ? markerData.lat : parseFloat(markerData.lat as any);
     const lng = typeof markerData.lng === 'number' ? markerData.lng : parseFloat(markerData.lng as any);
+    // NOTE: do NOT pass `map: this.map` - the MarkerClusterer manages the
+    // map assignment in bulk. Adding marker directly to map here would
+    // bypass the cluster optimization and slow down the page.
     const marker = new google.maps.Marker({
       position: { lat, lng },
-      map: this.map,
       icon: svgIcon,
       title: markerData.donorName
     });
