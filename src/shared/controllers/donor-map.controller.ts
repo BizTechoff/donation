@@ -1,9 +1,11 @@
 import { Allow, BackendMethod, remult, SqlDatabase } from 'remult';
 import { GlobalFilters } from '../../app/services/global-filter.service';
+import { Country } from '../entity/country';
 import { Donation } from '../entity/donation';
 import { Donor } from '../entity/donor';
 import { DonorContact } from '../entity/donor-contact';
 import { DonorPlace } from '../entity/donor-place';
+import { Place } from '../entity/place';
 import { calculateEffectiveAmount, calculatePaymentTotals, calculatePeriodsElapsed, isPaymentBased, isStandingOrder } from '../utils/donation-utils';
 
 // ממשק לפילטרים מקומיים של המפה
@@ -1037,12 +1039,18 @@ export class DonorMapController {
            AND "donorId" IN (${inLiteral})`
       ),
       sqlDb.execute(
+        // Include country.code + includeCountryInLetter + nameEn so we can
+        // reuse Place.getDisplayAddress() for consistent formatting (matches
+        // the on-screen donor list table, which also uses getDisplayAddress).
         `SELECT DISTINCT ON (dp."donorId")
            dp."donorId",
            p."fullAddress", p."city", p."state", p."neighborhood",
            p."street", p."houseNumber", p."building", p."apartment",
            p."postcode", p."placeName",
-           c."name" AS "countryName"
+           c."name" AS "countryName",
+           c."nameEn" AS "countryNameEn",
+           c."code" AS "countryCode",
+           c."includeCountryInLetter" AS "countryIncludeInLetter"
          FROM "donor_places" dp
          JOIN "places" p ON dp."placeId" = p."id"
          LEFT JOIN "countries" c ON p."countryId" = c."id"
@@ -1078,12 +1086,38 @@ export class DonorMapController {
     for (const r of donationRows.rows as any[])
       donationMap.set(r.donorId, r);
 
+    // Build a Place instance from raw SQL row so we can reuse the entity's
+    // getDisplayAddress() formatting (UK/US/CA/AU specific layout, country
+    // line per includeCountryInLetter, etc.) - same logic the on-screen
+    // donor list table uses, so print/Excel addresses match the table.
+    const buildDisplayAddress = (p: any): string => {
+      if (!p) return '';
+      const place = new Place();
+      place.fullAddress = p.fullAddress || '';
+      place.city = p.city || '';
+      place.state = p.state || undefined;
+      place.neighborhood = p.neighborhood || undefined;
+      place.street = p.street || undefined;
+      place.houseNumber = p.houseNumber || undefined;
+      place.building = p.building || undefined;
+      place.apartment = p.apartment || undefined;
+      place.postcode = p.postcode || undefined;
+      place.placeName = p.placeName || undefined;
+      const country = new Country();
+      country.name = p.countryName || '';
+      country.nameEn = p.countryNameEn || '';
+      country.code = p.countryCode || '';
+      country.includeCountryInLetter = p.countryIncludeInLetter !== false;
+      place.country = country;
+      return place.getDisplayAddress() || place.fullAddress || '';
+    };
+
     return donorIds.map(id => {
       const p = placeMap.get(id);
       const d = donationMap.get(id);
       return {
         id,
-        fullAddress: p?.fullAddress || '',
+        fullAddress: buildDisplayAddress(p),
         phone: phoneMap.get(id) || '',
         email: emailMap.get(id) || '',
         place: p ? {
