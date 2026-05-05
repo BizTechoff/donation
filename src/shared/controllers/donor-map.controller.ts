@@ -256,20 +256,36 @@ export class DonorMapController {
   }
 
   private static async getIntersectedIds(mapFilters: MapFilters): Promise<string[]> {
+    console.time('[intersect] TOTAL');
     const { GlobalFilterController } = await import('./global-filter.controller');
+    console.time('[intersect] global filter');
     const globalDonorIds = await GlobalFilterController.getDonorIdsFromUserSettings();
+    console.timeEnd('[intersect] global filter');
+    console.log(`[intersect]   global=${globalDonorIds === undefined ? 'no-restriction' : globalDonorIds.length}`);
+    console.time('[intersect] local filter');
     const localDonorIds = await DonorMapController.getDonorIds(mapFilters);
-    if (globalDonorIds === undefined) return localDonorIds;
+    console.timeEnd('[intersect] local filter');
+    console.log(`[intersect]   local=${localDonorIds.length}`);
+    if (globalDonorIds === undefined) {
+      console.timeEnd('[intersect] TOTAL');
+      return localDonorIds;
+    }
     const globalSet = new Set(globalDonorIds);
-    return localDonorIds.filter(id => globalSet.has(id));
+    const result = localDonorIds.filter(id => globalSet.has(id));
+    console.log(`[intersect]   intersected=${result.length}`);
+    console.timeEnd('[intersect] TOTAL');
+    return result;
   }
 
   private static async buildMarkersFromIds(intersectedIds: string[], mapFilters: MapFilters): Promise<MarkerData[]> {
     if (intersectedIds.length === 0) return [];
+    console.log(`[buildMarkers] start - intersectedIds=${intersectedIds.length}`);
+    console.time('[buildMarkers] TOTAL');
 
     const sqlDb = remult.dataProvider as SqlDatabase;
     const idsLit = intersectedIds.map(id => `'${String(id).replace(/'/g, "''")}'`).join(',');
 
+    console.time('[buildMarkers] 1.SELECT places+locations');
     const { rows: placeRows } = await sqlDb.execute(
       `SELECT DISTINCT ON (dp."donorId") dp."donorId", p."latitude", p."longitude"
        FROM "donor_places" dp
@@ -279,6 +295,8 @@ export class DonorMapController {
          AND p."latitude" IS NOT NULL
          AND p."longitude" IS NOT NULL`
     );
+    console.timeEnd('[buildMarkers] 1.SELECT places+locations');
+    console.log(`[buildMarkers]   placeRows=${(placeRows as any[]).length}`);
 
     const locationMap = new Map<string, { lat: number; lng: number }>();
     for (const r of placeRows as any[]) {
@@ -290,19 +308,26 @@ export class DonorMapController {
     }
 
     const donorIdsWithLocation = Array.from(locationMap.keys());
-    if (donorIdsWithLocation.length === 0) return [];
+    console.log(`[buildMarkers]   donorIdsWithLocation=${donorIdsWithLocation.length}`);
+    if (donorIdsWithLocation.length === 0) {
+      console.timeEnd('[buildMarkers] TOTAL');
+      return [];
+    }
 
     const locIdsLit = donorIdsWithLocation.map(id => `'${String(id).replace(/'/g, "''")}'`).join(',');
+    console.time('[buildMarkers] 2.SELECT donors');
     const { rows: donorRows } = await sqlDb.execute(
       `SELECT "id", "isActive", "lastName", "firstName"
        FROM "donors" WHERE "id" IN (${locIdsLit})`
     );
+    console.timeEnd('[buildMarkers] 2.SELECT donors');
     const donors = (donorRows as any[]).map(r => ({
       id: r.id,
       isActive: r.isActive,
       lastAndFirstName: `${r.lastName || ''} ${r.firstName || ''}`.trim()
     }));
 
+    console.time('[buildMarkers] 3.groupBy donations (sum amount + max date)');
     const donationRepo = remult.repo(Donation);
     const donationStatsByDonor = new Map<string, { total: number; lastDate: Date | null }>();
     const statsRows = await donationRepo.groupBy({
@@ -318,9 +343,15 @@ export class DonorMapController {
         lastDate: maxDate ? new Date(maxDate) : null
       });
     }
+    console.timeEnd('[buildMarkers] 3.groupBy donations (sum amount + max date)');
+    console.log(`[buildMarkers]   stats rows=${statsRows.length}`);
 
+    console.time('[buildMarkers] 4.getThresholds');
     const thresholds = await DonorMapController.getThresholds();
+    console.timeEnd('[buildMarkers] 4.getThresholds');
+    console.log(`[buildMarkers]   thresholds: highDonor>${thresholds.highDonorAmount}, recent<${thresholds.recentDonorMonths}mo`);
 
+    console.time('[buildMarkers] 5.build markers + status calc');
     const markers: MarkerData[] = donors
       .filter(d => locationMap.has(d.id))
       .map(d => {
@@ -349,19 +380,26 @@ export class DonorMapController {
           statuses
         };
       });
+    console.timeEnd('[buildMarkers] 5.build markers + status calc');
+    const highDonorCount = markers.filter(m => m.statuses.includes('high-donor')).length;
+    console.log(`[buildMarkers]   total markers=${markers.length}, high-donor=${highDonorCount}`);
 
+    console.time('[buildMarkers] 6.apply statusFilter + hasRecentDonation');
     let filteredMarkers = markers;
     if (mapFilters.statusFilter && mapFilters.statusFilter.length > 0) {
       filteredMarkers = filteredMarkers.filter(m =>
         mapFilters.statusFilter!.every(s => m.statuses.includes(s))
       );
+      console.log(`[buildMarkers]   after statusFilter [${mapFilters.statusFilter.join(',')}]: ${filteredMarkers.length} markers`);
     }
     if (mapFilters.hasRecentDonation !== null && mapFilters.hasRecentDonation !== undefined) {
       filteredMarkers = mapFilters.hasRecentDonation
         ? filteredMarkers.filter(m => m.statuses.includes('recent-donor'))
         : filteredMarkers.filter(m => !m.statuses.includes('recent-donor'));
     }
+    console.timeEnd('[buildMarkers] 6.apply statusFilter + hasRecentDonation');
 
+    console.timeEnd('[buildMarkers] TOTAL');
     return filteredMarkers;
   }
 
@@ -369,17 +407,21 @@ export class DonorMapController {
     if (intersectedIds.length === 0) {
       return { totalDonors: 0, activeDonors: 0, donorsOnMap: 0, averageDonation: 0 };
     }
+    console.time('[buildStats] TOTAL');
 
     const sqlDb = remult.dataProvider as SqlDatabase;
     const idsLit = intersectedIds.map(id => `'${String(id).replace(/'/g, "''")}'`).join(',');
 
+    console.time('[buildStats] 1.count donors (total+active)');
     const { rows: countRows } = await sqlDb.execute(
       `SELECT COUNT(*)::int AS total, COUNT(*) FILTER (WHERE "isActive") ::int AS active
        FROM "donors" WHERE "id" IN (${idsLit})`
     );
+    console.timeEnd('[buildStats] 1.count donors (total+active)');
     const totalDonors = (countRows[0] as any)?.total || 0;
     const activeDonors = (countRows[0] as any)?.active || 0;
 
+    console.time('[buildStats] 2.donors with coords');
     const { rows: coordRows } = await sqlDb.execute(
       `SELECT DISTINCT dp."donorId"
        FROM "donor_places" dp
@@ -389,25 +431,33 @@ export class DonorMapController {
          AND p."latitude" IS NOT NULL
          AND p."longitude" IS NOT NULL`
     );
+    console.timeEnd('[buildStats] 2.donors with coords');
     const donorsOnMap = (coordRows as any[]).length;
 
     const donationRepo = remult.repo(Donation);
+    console.time('[buildStats] 3.PayerService + currencyTypes');
     const { PayerService } = await import('../../app/services/payer.service');
     const payerService = new PayerService();
     const currencyTypes = await payerService.getCurrencyTypesRecord();
+    console.timeEnd('[buildStats] 3.PayerService + currencyTypes');
 
+    console.time('[buildStats] 4.groupBy donations sum/currency');
     const sumsByCurrency = await donationRepo.groupBy({
       group: ['currencyId'],
       sum: ['amount'],
       where: { donorId: { $in: intersectedIds } }
     });
+    console.timeEnd('[buildStats] 4.groupBy donations sum/currency');
     const totalAmount = sumsByCurrency.reduce((sum, row) => {
       const rate = currencyTypes[row.currencyId]?.rateInShekel || 1;
       return sum + ((row.amount?.sum || 0) * rate);
     }, 0);
+    console.time('[buildStats] 5.count donations');
     const totalCount = await donationRepo.count({ donorId: { $in: intersectedIds } });
+    console.timeEnd('[buildStats] 5.count donations');
     const averageDonation = totalCount > 0 ? totalAmount / totalCount : 0;
 
+    console.timeEnd('[buildStats] TOTAL');
     return { totalDonors, activeDonors, donorsOnMap, averageDonation };
   }
 
