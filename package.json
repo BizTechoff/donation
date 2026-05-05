@@ -29,6 +29,7 @@
     "@angular/platform-browser": "^18.0.0",
     "@angular/platform-browser-dynamic": "^18.0.0",
     "@angular/router": "^18.0.0",
+    "@googlemaps/markerclusterer": "^2.5.3",
     "@hebcal/core": "^5.10.1",
     "@types/node-fetch": "^2.6.6",
     "@types/pdfmake": "^0.2.12",
