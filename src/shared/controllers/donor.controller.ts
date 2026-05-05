@@ -268,10 +268,13 @@ export class DonorController {
     pageSize?: number,
     sortColumns?: Array<{ field: string; direction: 'asc' | 'desc' }>
   ): Promise<Donor[]> {
+    console.log(`[findFilteredDonors] start - searchTerm="${searchTerm}", page=${page}`);
+    console.time('[findFilteredDonors] TOTAL');
     const { GlobalFilterController } = await import('./global-filter.controller');
 
-    // 🎯 קבל donorIds מסוננים מ-GlobalFilterController (כולל כל הפילטרים: מיקום, קהל יעד, קמפיין, סכום)
+    console.time('[findFilteredDonors] 1.GlobalFilter.getDonorIds');
     const donorIds = await GlobalFilterController.getDonorIdsFromUserSettings();
+    console.timeEnd('[findFilteredDonors] 1.GlobalFilter.getDonorIds');
 
     console.log('DonorController.findFilteredDonors - donorIds from GlobalFilter:', donorIds?.length ?? 'all');
 
@@ -307,18 +310,27 @@ export class DonorController {
     // Apply search term filter - cross-field search (name, phone, email, address)
     // Each word must match at least one field, AND between words
     if (searchTerm && searchTerm.trim()) {
+      console.time('[findFilteredDonors] 2.searchAcrossAllFields');
       const matchingIds = await DonorController.searchDonorIdsAcrossAllFields(searchTerm, donorIds);
+      console.timeEnd('[findFilteredDonors] 2.searchAcrossAllFields');
+      console.log(`[findFilteredDonors]   matchingIds=${matchingIds.length}`);
       if (matchingIds.length === 0) {
+        console.timeEnd('[findFilteredDonors] TOTAL');
         return [];
       }
       whereClause.id = { $in: matchingIds };
     }
 
-    return await remult.repo(Donor).find({
+    console.time('[findFilteredDonors] 3.repo.find (final page query)');
+    const result = await remult.repo(Donor).find({
       where: whereClause,
       orderBy,
       ...(page && pageSize ? { page, limit: pageSize } : {})
     });
+    console.timeEnd('[findFilteredDonors] 3.repo.find (final page query)');
+    console.log(`[findFilteredDonors]   donors returned=${result.length}`);
+    console.timeEnd('[findFilteredDonors] TOTAL');
+    return result;
   }
 
   @BackendMethod({ allowed: Allow.authenticated })
@@ -339,33 +351,42 @@ export class DonorController {
 
   @BackendMethod({ allowed: Allow.authenticated })
   static async countFilteredDonors(searchTerm?: string, additionalFilters?: Partial<GlobalFilters>): Promise<number> {
+    console.log(`[countFilteredDonors] start - searchTerm="${searchTerm}"`);
+    console.time('[countFilteredDonors] TOTAL');
     const { GlobalFilterController } = await import('./global-filter.controller');
 
-    // 🎯 קבל donorIds מסוננים מ-GlobalFilterController (כולל כל הפילטרים: מיקום, קהל יעד, קמפיין, סכום)
+    console.time('[countFilteredDonors] 1.GlobalFilter.getDonorIds');
     const donorIds = await GlobalFilterController.getDonorIdsFromUserSettings();
+    console.timeEnd('[countFilteredDonors] 1.GlobalFilter.getDonorIds');
 
-    // אם יש פילטרים גלובליים ואין תוצאות - החזר 0
     if (donorIds !== undefined && donorIds.length === 0) {
+      console.timeEnd('[countFilteredDonors] TOTAL');
       return 0;
     }
 
-    // Build final where clause
     let whereClause: any = { isActive: true };
     if (donorIds) {
       whereClause.id = { $in: donorIds };
     }
 
-    // Apply search term filter - cross-field search (name, phone, email, address)
-    // Each word must match at least one field, AND between words
     if (searchTerm && searchTerm.trim()) {
+      console.time('[countFilteredDonors] 2.searchAcrossAllFields');
       const matchingIds = await DonorController.searchDonorIdsAcrossAllFields(searchTerm, donorIds);
+      console.timeEnd('[countFilteredDonors] 2.searchAcrossAllFields');
+      console.log(`[countFilteredDonors]   matchingIds=${matchingIds.length}`);
       if (matchingIds.length === 0) {
+        console.timeEnd('[countFilteredDonors] TOTAL');
         return 0;
       }
       whereClause.id = { $in: matchingIds };
     }
 
-    return await remult.repo(Donor).count(whereClause);
+    console.time('[countFilteredDonors] 3.repo.count');
+    const c = await remult.repo(Donor).count(whereClause);
+    console.timeEnd('[countFilteredDonors] 3.repo.count');
+    console.log(`[countFilteredDonors]   count=${c}`);
+    console.timeEnd('[countFilteredDonors] TOTAL');
+    return c;
   }
 
   private static escapeSqlLike(s: string): string {
