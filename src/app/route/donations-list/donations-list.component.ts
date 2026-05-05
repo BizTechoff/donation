@@ -963,7 +963,10 @@ export class DonationsListComponent implements OnInit, OnDestroy {
             { header: this.i18n.currentTerms.maritalStatus || 'מצב משפחתי', mapper: (item) => this.getMaritalStatusText(item.donation.donor?.maritalStatus || ''), width: 12 },
             { header: this.i18n.currentTerms.anash || 'אנ"ש', mapper: (item) => item.donation.donor?.isAnash ? '✓' : '', width: 8 },
             { header: this.i18n.currentTerms.alumni || 'תלמידנו', mapper: (item) => item.donation.donor?.isAlumni ? '✓' : '', width: 8 },
-            // Address fields
+            // Full address (formatted same as table + print, getDisplayAddress)
+            // Aligned LEFT (LTR) since addresses are in English/Latin script.
+            { header: this.i18n.currentTerms.address || 'כתובת', mapper: (item) => (item.donation.donor as any)?.homeAddress || '-', width: 40, align: 'left' },
+            // Address fields (granular)
             { header: this.i18n.currentTerms.country || 'מדינה', mapper: (item) => item.place?.country?.name || '', width: 12 },
             { header: this.i18n.currentTerms.city || 'עיר', mapper: (item) => item.place?.city || '', width: 15 },
             { header: this.i18n.currentTerms.state || 'מחוז', mapper: (item) => item.place?.state || '', width: 12 },

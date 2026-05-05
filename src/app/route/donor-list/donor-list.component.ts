@@ -754,6 +754,8 @@ export class DonorListComponent implements OnInit, OnDestroy {
           return {
             donor,
             place,
+            // Full formatted address (matches the on-screen table via getDisplayAddress)
+            fullAddress: data?.fullAddress || '-',
             phone: data?.phone || '-',
             email: data?.email || '-',
             lastDonation: lastDonationDisplay
@@ -780,7 +782,10 @@ export class DonorListComponent implements OnInit, OnDestroy {
             { header: this.i18n.currentTerms.maritalStatus || 'מצב משפחתי', mapper: (item) => this.getMaritalStatusText(item.donor.maritalStatus), width: 12 },
             { header: this.i18n.currentTerms.anash || 'אנ"ש', mapper: (item) => item.donor.isAnash ? '✓' : '', width: 8 },
             { header: this.i18n.currentTerms.alumni || 'תלמידנו', mapper: (item) => item.donor.isAlumni ? '✓' : '', width: 8 },
-            // Address fields
+            // Full address (formatted same as table + print, getDisplayAddress)
+            // Aligned LEFT (LTR) since addresses are in English/Latin script.
+            { header: this.i18n.currentTerms.address || 'כתובת', mapper: (item) => item.fullAddress || '-', width: 40, align: 'left' },
+            // Address fields (granular)
             { header: this.i18n.currentTerms.country || 'מדינה', mapper: (item) => item.place?.country?.name || '', width: 12 },
             { header: this.i18n.currentTerms.city || 'עיר', mapper: (item) => item.place?.city || '', width: 15 },
             { header: this.i18n.currentTerms.state || 'מחוז', mapper: (item) => item.place?.state || '', width: 12 },
