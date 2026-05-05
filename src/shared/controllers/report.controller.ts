@@ -914,11 +914,18 @@ export class ReportController {
     };
 
     // Return standard code if already in correct format, otherwise convert
-    const normalized = hebrewToCode[currency] || currency.toUpperCase();
+    const normalized = hebrewToCode[currency] || (currency || '').toUpperCase();
 
-    // Ensure it's one of the valid codes
-    const validCodes = ['ILS', 'USD', 'EUR', 'GBP'];
-    return validCodes.includes(normalized) ? normalized : 'ILS';
+    // Accept any 3-letter ISO currency code (ILS/USD/EUR/GBP/CHF/CAD/etc.)
+    // Previously this whitelisted only 4 currencies and silently mapped
+    // anything else to 'ILS' - which caused CHF/CAD donations to be lost
+    // in totals (PayerService defines all platform currencies as the
+    // single source of truth).
+    if (/^[A-Z]{3}$/.test(normalized)) return normalized;
+
+    // Truly unknown/empty input - fallback to ILS so we don't crash, but
+    // this is a rare edge case (donation with no currencyId).
+    return 'ILS';
   }
 
   private static async calculateCurrencySummary(
@@ -1359,44 +1366,57 @@ export class ReportController {
       }
       console.log(`  → Loaded payment totals for ${paymentBasedIds.length} payment-based donations`);
 
-      // Group by year
-      const yearlyMap = new Map<number, { currencies: { [currency: string]: number }, hebrewYear?: string }>();
+      // Group by HEBREW year (NOT Gregorian year). A Gregorian year (e.g.
+      // 2023) spans 2 Hebrew years (Tashpa"g ends Sep 2023, Tashpa"d starts
+      // Sep 2023). Bucketing by Greg year merged both into one row, with
+      // the Hebrew label of whichever donation was processed first - leading
+      // to misclassification where a CAD donation in early 2023 (Tashpa"g)
+      // was reported under Tashpa"d because later Tashpa"d donations also
+      // fell in Greg 2023.
+      const yearlyMap = new Map<number /* hebrewYear num, e.g. 5783 */, {
+        currencies: { [currency: string]: number };
+        hebrewYear: string; // formatted (e.g. 'תשפ"ג')
+        gregYear: number;   // Greg year of Tishrei start, for the (YYYY) suffix in UI
+      }>();
 
-      // Process donations and convert dates to Hebrew years
       for (const donation of donations) {
-        const year = new Date(donation.donationDate).getFullYear();
+        const hebrewDate = await HebrewDateController.convertGregorianToHebrew(donation.donationDate);
+        const hebrewYearNum = hebrewDate.year;
 
-        if (!yearlyMap.has(year)) {
-          // Get Hebrew year for this Gregorian year
-          const hebrewDate = await HebrewDateController.convertGregorianToHebrew(donation.donationDate);
-          const hebrewYearFormatted = await HebrewDateController.formatHebrewYear(hebrewDate.year);
-
-          yearlyMap.set(year, {
+        if (!yearlyMap.has(hebrewYearNum)) {
+          const hebrewYearFormatted = await HebrewDateController.formatHebrewYear(hebrewYearNum);
+          // Greg year that contains MOST months of this Hebrew year.
+          // Hebrew year starts in Tishrei (~Sep). Most of it falls in the
+          // following Greg year, so use hebrewYearNum - 3760:
+          //   Tashpa"g (5783) -> 2023 (mostly in 2023)
+          //   Tashpa"d (5784) -> 2024
+          // This matches user expectation that "2023 ~= Tashpa"g".
+          const gregYearMostly = hebrewYearNum - 3760;
+          yearlyMap.set(hebrewYearNum, {
             currencies: {},
-            hebrewYear: hebrewYearFormatted
+            hebrewYear: hebrewYearFormatted,
+            gregYear: gregYearMostly,
           });
         }
 
-        const yearData = yearlyMap.get(year)!;
-        // Normalize currency code to standard format
+        const yearData = yearlyMap.get(hebrewYearNum)!;
         const normalizedCurrency = ReportController.normalizeCurrencyName(donation.currencyId);
         if (!yearData.currencies[normalizedCurrency]) {
           yearData.currencies[normalizedCurrency] = 0;
         }
-        // Use effective amount (what was actually paid) for commitments and standing orders
         yearData.currencies[normalizedCurrency] += calculateEffectiveAmount(donation, paymentTotals[donation.id]);
       }
 
       // Convert to array with totals
       const reportData = Array.from(yearlyMap.entries())
-        .map(([year, data]) => {
+        .map(([hebrewYearNum, data]) => {
           let totalInShekel = 0;
           Object.entries(data.currencies).forEach(([currency, amount]) => {
             totalInShekel += amount * (conversionRates[currency] || 1);
           });
 
           return {
-            year,
+            year: data.gregYear, // shown as (YYYY) hint in UI
             hebrewYear: data.hebrewYear || '',
             currencies: data.currencies,
             totalInShekel
