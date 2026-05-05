@@ -24,17 +24,24 @@ export class GlobalFilterController {
    */
   @BackendMethod({ allowed: Allow.authenticated })
   static async getDonorIdsFromUserSettings(): Promise<string[] | undefined> {
-    // שלוף globalFilters מ-user.settings
+    console.time('[GlobalFilter] getDonorIdsFromUserSettings TOTAL');
     const currentUserId = remult.user?.id;
     let globalFilters: GlobalFilters = {};
     if (currentUserId) {
+      console.time('[GlobalFilter] User.findId (useCache:false)');
       const { User } = await import('../entity/user');
       const user = await remult.repo(User).findId(currentUserId, {useCache: false});
+      console.timeEnd('[GlobalFilter] User.findId (useCache:false)');
       globalFilters = user?.settings?.globalFilters || {};
+      console.log(`[GlobalFilter]   filters keys: [${Object.keys(globalFilters).join(',')}]`);
     }
 
-    // קרא למתודה המקורית עם הפילטרים
-    return await GlobalFilterController.getDonorIds(globalFilters);
+    console.time('[GlobalFilter] getDonorIds(filters)');
+    const result = await GlobalFilterController.getDonorIds(globalFilters);
+    console.timeEnd('[GlobalFilter] getDonorIds(filters)');
+    console.log(`[GlobalFilter]   result: ${result === undefined ? 'undefined (no filter)' : result.length + ' donors'}`);
+    console.timeEnd('[GlobalFilter] getDonorIdsFromUserSettings TOTAL');
+    return result;
   }
 
   /**
@@ -52,43 +59,47 @@ export class GlobalFilterController {
 
     let donorIds: string[] | undefined = undefined;
 
-    // סינון לפי מיקום (מדינה, עיר, שכונה)
+    console.time('[GlobalFilter.getDonorIds] places');
     const placeFiltered = await GlobalFilterController.getDonorIdsFromPlaces(filters);
+    console.timeEnd('[GlobalFilter.getDonorIds] places');
     if (placeFiltered !== undefined) {
-      if (placeFiltered.length === 0) return []; // אין התאמות
+      if (placeFiltered.length === 0) return [];
       donorIds = placeFiltered;
     }
 
-    // ── אופטימיזציה: חיתוך דרך Set = O(n+m) במקום O(n*m) של .includes() על מערכים.
     const intersectWithSet = (current: string[] | undefined, next: string[]): string[] => {
       if (current === undefined) return next;
       const nextSet = new Set(next);
       return current.filter(id => nextSet.has(id));
     };
 
-    // סינון לפי קהל יעד
+    console.time('[GlobalFilter.getDonorIds] targetAudience');
     const audienceFiltered = await GlobalFilterController.getDonorIdsFromTargetAudience(filters);
+    console.timeEnd('[GlobalFilter.getDonorIds] targetAudience');
     if (audienceFiltered !== undefined) {
       donorIds = intersectWithSet(donorIds, audienceFiltered);
       if (donorIds.length === 0) return [];
     }
 
-    // סינון לפי קמפיינים
+    console.time('[GlobalFilter.getDonorIds] campaigns');
     const campaignFiltered = await GlobalFilterController.getDonorIdsFromCampaigns(filters);
+    console.timeEnd('[GlobalFilter.getDonorIds] campaigns');
     if (campaignFiltered !== undefined) {
       donorIds = intersectWithSet(donorIds, campaignFiltered);
       if (donorIds.length === 0) return [];
     }
 
-    // סינון לפי טווח סכום תרומה
+    console.time('[GlobalFilter.getDonorIds] amountRange');
     const amountFiltered = await GlobalFilterController.getDonorIdsFromAmountRange(filters);
+    console.timeEnd('[GlobalFilter.getDonorIds] amountRange');
     if (amountFiltered !== undefined) {
       donorIds = intersectWithSet(donorIds, amountFiltered);
       if (donorIds.length === 0) return [];
     }
 
-    // סינון לפי אנ"ש / תלמידנו
+    console.time('[GlobalFilter.getDonorIds] anashAlumni');
     const anashAlumniFiltered = await GlobalFilterController.getDonorIdsFromAnashAlumni(filters);
+    console.timeEnd('[GlobalFilter.getDonorIds] anashAlumni');
     if (anashAlumniFiltered !== undefined) {
       donorIds = intersectWithSet(donorIds, anashAlumniFiltered);
       if (donorIds.length === 0) return [];
