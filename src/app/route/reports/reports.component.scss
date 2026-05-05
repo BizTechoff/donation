@@ -7,6 +7,24 @@
   gap: 0.5rem;
 }
 
+/* ─────────────────────────────────────────────────────────────────────────
+   STICKY TABLE HEADERS - minimal change.
+   Original .report-table had overflow:hidden which created a non-scrolling
+   sticky scope ancestor for the thead, trapping the thead inside the table
+   so it moved with the page scroll. By switching to overflow:visible on
+   screen, the thead's sticky scope walks up to the body (the natural page
+   scroll). Now thead { position: sticky; top: 0 } pins to the top of the
+   viewport while the table is in view. Print uses the default block layout
+   (this @media screen block does not apply during print). The minor visual
+   trade-off: thead may bleed slightly past the .report-table's rounded
+   corners; the gradient bg + box-shadow usually covers this.
+   ──────────────────────────────────────────────────────────────────────── */
+@media screen {
+  .reports-container .report-table {
+    overflow: visible;
+  }
+}
+
 .page-header {
   display: flex;
   justify-content: space-between;
