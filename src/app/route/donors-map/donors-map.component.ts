@@ -44,6 +44,7 @@ export interface MapFilters {
 })
 export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('mapElement', { static: true }) mapElement!: ElementRef;
+  @ViewChild('searchInput') searchInput?: ElementRef<HTMLInputElement>;
 
   private map!: google.maps.Map;
   private markers: google.maps.Marker[] = [];
@@ -181,9 +182,12 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
       })
     );
 
-    // Debounce local filter changes to avoid rapid server calls
+    // Debounce local filter changes to avoid rapid server calls.
+    // 800ms (was 300) - too fast for slow typists. Subject is shared for
+    // both search input and number filters (min donations etc.) - the
+    // typing-specific guard (skip 1-char) is in onSearchChange below.
     this.subscription.add(
-      this.filterSubject.pipe(debounceTime(300)).subscribe(() => {
+      this.filterSubject.pipe(debounceTime(800)).subscribe(() => {
         this.loadData();
         this.saveMapSettings();
       })
@@ -512,10 +516,34 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.filterSubject.next();
   }
 
-  // Search-specific handler: search + highlight/zoom to found donor(s)
+  private restoreSearchFocus() {
+    setTimeout(() => {
+      const native = this.searchInput?.nativeElement;
+      if (!native) return;
+      const active = document.activeElement;
+      const isInputAlready = active === native;
+      const isOtherInteractive = active && (
+        active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT'
+      ) && active !== native;
+      if (!isInputAlready && !isOtherInteractive) {
+        native.focus();
+        const len = native.value?.length ?? 0;
+        try { native.setSelectionRange(len, len); } catch {}
+      }
+    }, 150);
+  }
+
+  // Search-specific handler: skip 1-char input (too many matches; slows
+  // typing). Empty string is allowed - clearing the search resets the map.
+  // Routes through filterSubject so the same 800ms debounce applies.
   async onSearchChange() {
+    const trimmed = (this.mapFilters.searchTerm || '').trim();
+    if (trimmed.length > 0 && trimmed.length < 2) {
+      return;
+    }
     await this.loadData();
     this.saveMapSettings();
+    this.restoreSearchFocus();
 
     // If search has results, highlight the found donors
     if (this.mapFilters.searchTerm?.trim() && this.markers.length > 0) {
