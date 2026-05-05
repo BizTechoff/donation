@@ -92,8 +92,41 @@ if errorlevel 1 (
 ) else (echo   [SKIP])
 echo.
 
-REM ===== [8] catch-all (anything else still uncommitted) =====
-echo [8] catch-all: any remaining changes
+REM ===== [8] fix(reports): currency calculation bugs =====
+echo [8] fix(reports): currency calculation bugs
+git add src/shared/controllers/report.controller.ts
+if errorlevel 1 goto :err
+git diff --cached --quiet
+if errorlevel 1 (
+  git commit -m "fix(reports): currency bugs - normalizeCurrencyName whitelist + yearly Hebrew year bucketing" -m "Two distinct bugs caused CHF/CAD donations to disappear or be misclassified: (1) normalizeCurrencyName had a hardcoded whitelist of 4 ISO codes (ILS/USD/EUR/GBP) and silently mapped any other currency (CHF/CAD/etc.) to ILS - so CHF/CAD donations were summed under ILS and never appeared in their own column. Fix: accept any 3-letter ISO code via /^[A-Z]{3}$/ regex; ILS fallback only for truly unknown/empty input. (2) getYearlySummaryReport bucketed donations by Gregorian year (e.g. 2023) but Greg 2023 spans both Tashpa'g (Sep 2022 - Sep 2023) and Tashpa'd (Sep 2023 - Sep 2024). The Hebrew year label was set ONCE per Greg year using whichever donation was processed first - with orderBy donationDate desc, that was the latest 2023 donation (typically in Tashpa'd), so all 2023 donations got the Tashpa'd label. Fix: bucket by Hebrew year number (5783, 5784); display the Greg year that contains MOST months of that Hebrew year (hebrewYearNum - 3760)." -m "BizTechoff(TM)"
+  if errorlevel 1 goto :err
+) else (echo   [SKIP])
+echo.
+
+REM ===== [9] feat(reports): all platform currencies in screen/print/excel =====
+echo [9] feat(reports): all platform currencies (PayerService as SSOT)
+git add src/app/route/reports/reports.component.ts src/app/route/reports/reports.component.html
+if errorlevel 1 goto :err
+git diff --cached --quiet
+if errorlevel 1 (
+  git commit -m "feat(reports): show all platform currencies in yearly + donations reports (screen/print/excel)" -m "Yearly summary report and donations currency-summary now display ALL currencies defined in PayerService (single source of truth: ILS/USD/EUR/GBP/CHF/CAD), not just hardcoded ILS/USD/EUR. Coherent across surfaces: screen UI, print output, and Excel export. Currencies with no data render as '-' but the column/row still appears, so users can see at a glance which platform currencies are absent. Component additions: allPlatformCurrencies getter (Object.keys of currencyTypes from PayerService), yearlySummaryActiveCurrencies alias, getCurrencySummaryYearAmount(currency,year) and getCurrencySummaryTotal(currency) lookup helpers. Template changes: yearly summary thead/tbody/tfoot use *ngFor over yearlySummaryActiveCurrencies; donations currency-summary tbody uses *ngFor over allPlatformCurrencies with helper lookups (no longer iterates currencySummaryData directly). Print version (printYearlySummaryReport) and Excel exports (exportYearlySummaryToExcel + donations Sheet 2) generate columns/rows dynamically from allPlatformCurrencies." -m "BizTechoff(TM)"
+  if errorlevel 1 goto :err
+) else (echo   [SKIP])
+echo.
+
+REM ===== [10] fix(donations-list): currency-totals card layout =====
+echo [10] fix(donations-list): currency-totals card layout
+git add src/app/route/donations-list/donations-list.component.scss
+if errorlevel 1 goto :err
+git diff --cached --quiet
+if errorlevel 1 (
+  git commit -m "fix(donations-list): currency-totals card - natural width per currency, column-gap only" -m "Per client feedback: with many currencies (6+ in PayerService), the .currency-totals stat card looked crowded - amounts ran into each other (e.g. EUR85,723.67Fr115,525) because each .currency-row had flex:1 forcing equal-width division. Fix: drop flex:1 (now flex:0 0 auto = natural width per currency), add column-gap:1.5rem for consistent horizontal spacing, keep flex-wrap:wrap for overflow to next line. Set row-gap:0 explicitly so wrapped rows stay tight (preserves vertical room for table rows below the card; line-height:1.3 on .amount provides natural row separation). Applies to BOTH 'total donations' and 'total commitments' summary cards (same currency-totals/currency-row classes)." -m "BizTechoff(TM)"
+  if errorlevel 1 goto :err
+) else (echo   [SKIP])
+echo.
+
+REM ===== [11] catch-all (anything else still uncommitted) =====
+echo [11] catch-all: any remaining changes
 git add -A
 if errorlevel 1 goto :err
 git diff --cached --quiet
@@ -104,7 +137,7 @@ if errorlevel 1 (
 echo.
 
 echo === Done ===
-git log -9 --oneline
+git log -12 --oneline
 echo.
 git status --short
 echo.
