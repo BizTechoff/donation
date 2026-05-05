@@ -624,9 +624,9 @@
                  those with data. Look up actual values via getCurrencySummaryRow. -->
             <tr *ngFor="let cur of allPlatformCurrencies">
               <td>
-                <strong>{{currencyTypes[cur]?.label || cur}}</strong>
-                <span *ngIf="currencyTypes[cur]?.symbol" style="margin-right:6px; color:#7f8c8d;">
-                  ({{currencyTypes[cur]?.symbol}})
+                <strong>{{currencyTypes[cur].label || cur}}</strong>
+                <span *ngIf="currencyTypes[cur].symbol" style="margin-right:6px; color:#7f8c8d;">
+                  ({{currencyTypes[cur].symbol}})
                 </span>
               </td>
               <td *ngFor="let year of hebrewYears">
@@ -773,7 +773,7 @@
                   }}</span>
               </th>
               <th *ngFor="let cur of yearlySummaryActiveCurrencies">
-                {{ currencyTypes[cur]?.label || cur }}
+                {{ currencyTypes[cur].label || cur }}
               </th>
               <!-- <th class="sortable" [class.sorted]="isYearlySummarySorted('totalInShekel')"
                 (click)="toggleYearlySummarySort('totalInShekel', $event)">
@@ -792,7 +792,7 @@
               </td>
               <td *ngFor="let cur of yearlySummaryActiveCurrencies">
                 {{ (yearData.currencies[cur] || 0) > 0
-                   ? (currencyTypes[cur]?.symbol || cur) + ' ' + Math.round(yearData.currencies[cur]).toLocaleString()
+                   ? (currencyTypes[cur].symbol || cur) + ' ' + Math.round(yearData.currencies[cur]).toLocaleString()
                    : '-' }}
               </td>
               <!-- <td><strong>₪{{Math.round(yearData.totalInShekel).toLocaleString()}}</strong></td> -->
@@ -803,7 +803,7 @@
               <td><strong>{{ (i18n.terms$ | async)?.totalText }}</strong></td>
               <td *ngFor="let cur of yearlySummaryActiveCurrencies">
                 {{ getTotalByCurrency(cur) > 0
-                   ? (currencyTypes[cur]?.symbol || cur) + ' ' + Math.round(getTotalByCurrency(cur)).toLocaleString()
+                   ? (currencyTypes[cur].symbol || cur) + ' ' + Math.round(getTotalByCurrency(cur)).toLocaleString()
                    : '-' }}
               </td>
               <!-- <td><strong style="color: #27ae60;">₪{{Math.round(getGrandTotalInShekel()).toLocaleString()}}</strong>
