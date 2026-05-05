@@ -125,8 +125,30 @@ if errorlevel 1 (
 ) else (echo   [SKIP])
 echo.
 
-REM ===== [11] catch-all (anything else still uncommitted) =====
-echo [11] catch-all: any remaining changes
+REM ===== [11] perf(donors-map): MarkerClusterer for bulk operations =====
+echo [11] perf(donors-map): MarkerClusterer (fix 88s clearMarkers bottleneck)
+git add package.json package-lock.json src/app/route/donors-map/donors-map.component.ts
+if errorlevel 1 goto :err
+git diff --cached --quiet
+if errorlevel 1 (
+  git commit -m "perf(donors-map): use @googlemaps/markerclusterer for bulk add/clear (fix 88s freeze)" -m "Diagnosed via the new client-side timings: clicking the 'high-donor' filter took 88 seconds, with 88,256ms spent in clearMarkers (calling marker.setMap(null) on each of 3,216 existing markers). Each setMap(null) on the legacy google.maps.Marker triggers internal overlay recalculation - cumulative cost is O(n^2). Asymmetric: removing the filter (351->3,216) is fast because clearing 351 is cheap; adding the filter (3,216->351) is slow because clearing 3,216 is O(3,216^2). Fix: integrate @googlemaps/markerclusterer (Google's official library). The clusterer manages map assignment in bulk via clearMarkers() and addMarkers(arr) - both O(n) instead of O(n^2). Bonus: clusters nearby markers when zoomed out, making the map cleaner with 3K+ donors. Changes: dependency @googlemaps/markerclusterer ^2.5.3; private markerClusterer property initialized after new google.maps.Map(); createGoogleMarker no longer passes map: this.map (clusterer manages it); addMarkersToMap calls clusterer.clearMarkers() then clusterer.addMarkers(newMarkers) instead of looping setMap(null). Existing timings preserved so before/after is measurable - expecting ~300ms vs 88,000ms (~290x faster)." -m "BizTechoff(TM)"
+  if errorlevel 1 goto :err
+) else (echo   [SKIP])
+echo.
+
+REM ===== [12] fix(reports): NG8107 cleanup =====
+echo [12] fix(reports): NG8107 cleanup - remove unnecessary ?. on currencyTypes
+git add src/app/route/reports/reports.component.html
+if errorlevel 1 goto :err
+git diff --cached --quiet
+if errorlevel 1 (
+  git commit -m "fix(reports): NG8107 cleanup - remove unnecessary ?. on currencyTypes[cur] in templates" -m "currencyTypes is Record<string, CurrencyType> (non-nullable per type), so the optional chain operator on currencyTypes[cur]?.label / .symbol triggers Angular template warning NG8107. Same pattern as a previous fix for this file. Removed ?. in 5 places: yearly summary thead/tbody/tfoot, donations currency-summary tbody (label + symbol). Logic-equivalent: at runtime currencyTypes[cur] always returns a CurrencyType for the platform's defined codes (PayerService is the SSOT). The ?. in the .ts file remains - NG8107 only checks templates, and the TS-side defensive ?. is actually safer." -m "BizTechoff(TM)"
+  if errorlevel 1 goto :err
+) else (echo   [SKIP])
+echo.
+
+REM ===== [13] catch-all (anything else still uncommitted) =====
+echo [13] catch-all: any remaining changes
 git add -A
 if errorlevel 1 goto :err
 git diff --cached --quiet
@@ -137,7 +159,7 @@ if errorlevel 1 (
 echo.
 
 echo === Done ===
-git log -12 --oneline
+git log -14 --oneline
 echo.
 git status --short
 echo.
