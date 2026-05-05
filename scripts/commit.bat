@@ -81,8 +81,19 @@ if errorlevel 1 (
 ) else (echo   [SKIP])
 echo.
 
-REM ===== [7] catch-all (anything else still uncommitted) =====
-echo [7] catch-all: any remaining changes
+REM ===== [7] fix(reports): sticky table headers across all reports =====
+echo [7] fix(reports): sticky table headers (column headers stay on scroll)
+git add src/app/route/reports/reports.component.scss
+if errorlevel 1 goto :err
+git diff --cached --quiet
+if errorlevel 1 (
+  git commit -m "fix(reports): make table column headers sticky during scroll (all 5 reports)" -m "Per client request: when scrolling table data down, column headers were scrolling away too, leaving rows without column context. Root cause: .report-table had overflow:hidden which created a non-scrolling sticky scope for the thead - the thead's existing position:sticky;top:0 was scoped to the table itself, so it moved with page scroll instead of pinning to the viewport. Fix: minimal @media screen override .reports-container .report-table { overflow: visible } - the thead's sticky scope now walks up to body (the natural page scroll), so it pins to the viewport top while the table is in view. Print mode unaffected (uses default block layout). Trade-off: thead may visually bleed past .report-table's border-radius corners, normally hidden by gradient bg + box-shadow." -m "BizTechoff(TM)"
+  if errorlevel 1 goto :err
+) else (echo   [SKIP])
+echo.
+
+REM ===== [8] catch-all (anything else still uncommitted) =====
+echo [8] catch-all: any remaining changes
 git add -A
 if errorlevel 1 goto :err
 git diff --cached --quiet
@@ -93,7 +104,7 @@ if errorlevel 1 (
 echo.
 
 echo === Done ===
-git log -8 --oneline
+git log -9 --oneline
 echo.
 git status --short
 echo.
