@@ -152,9 +152,15 @@
 
         .currency-totals {
           display: flex;
-          justify-content: space-evenly;
+          justify-content: center;
           align-items: center;
           flex-wrap: wrap;
+          // Horizontal gap between currency items (column-gap), but ZERO
+          // row-gap so wrapped rows stay tight - keeps the card height
+          // compact and preserves vertical room for table rows below.
+          // Each amount has its own line-height for natural row separation.
+          column-gap: 1.5rem;
+          row-gap: 0;
           width: 100%;
 
           &.single-currency {
@@ -167,7 +173,7 @@
           }
 
           .currency-row {
-            flex: 1;
+            flex: 0 0 auto;
             text-align: center;
 
             .amount {
