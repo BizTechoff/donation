@@ -238,7 +238,12 @@ export class PrintService {
       background: #edf2f7;
     }
 
-    .align-left { text-align: left; }
+    /* align:left implies LTR text direction so addresses, numbers, and Latin
+       script render in the natural order. Without dir:ltr, Hebrew/RTL parent
+       could push numbers to the wrong side (e.g. '10 Downing Street' rendered
+       with the '10' at the end). The unicode-bidi:plaintext keeps mixed text
+       (Hebrew comments inside an English address) sane. */
+    .align-left { text-align: left; direction: ltr; unicode-bidi: plaintext; }
     .align-right { text-align: right; }
     .align-center { text-align: center; }
 

@@ -6,6 +6,7 @@ export interface ExcelColumn<T> {
   key?: keyof T;                     // שדה מהאובייקט (אופציונלי)
   mapper?: (item: T) => any;         // פונקציה מותאמת אישית
   width?: number;                    // רוחב עמודה
+  align?: 'left' | 'right' | 'center'; // יישור (LTR/RTL): שימושי לכתובות באנגלית
 }
 
 export interface ExcelExportConfig<T> {
@@ -77,6 +78,32 @@ export class ExcelExportService {
       // הגדרת רוחב עמודות
       if (config.columns.some(col => col.width)) {
         ws['!cols'] = config.columns.map(col => ({ wch: col.width || 15 }));
+      }
+
+      // Force LTR rendering on cells with align:'left' by prepending the
+      // Unicode LRE marker (U+202A). xlsx 0.18 (open-source) does not support
+      // per-cell style/alignment without xlsx-style, but the LRE marker forces
+      // most viewers (Excel, Google Sheets, LibreOffice) to render the value
+      // left-to-right - effective for Latin-script address columns embedded in
+      // an otherwise RTL Hebrew sheet.
+      const ltrCols = config.columns
+        .map((col, idx) => ({ col, idx }))
+        .filter(({ col }) => col.align === 'left');
+      if (ltrCols.length > 0) {
+        const range = XLSX.utils.decode_range(ws['!ref'] as string);
+        for (const { col, idx } of ltrCols) {
+          for (let r = range.s.r + 1; r <= range.e.r; r++) { // +1 to skip header
+            const cellAddr = XLSX.utils.encode_cell({ r, c: idx });
+            const cell = ws[cellAddr];
+            if (cell && cell.v != null && cell.v !== '') {
+              const text = String(cell.v);
+              if (!text.startsWith('‪')) {
+                cell.v = '‪' + text + '‬';
+                if (typeof cell.w === 'string') cell.w = cell.v;
+              }
+            }
+          }
+        }
       }
 
       // יצירת workbook
