@@ -609,7 +609,7 @@
       </div>
 
       <!-- טבלת סיכום מטבעות -->
-      <div *ngIf="filters.showCurrencySummary && currencySummaryData.length > 0" class="currency-summary-section">
+      <div *ngIf="filters.showCurrencySummary" class="currency-summary-section">
         <h3>{{ (i18n.terms$ | async)?.currencySummaryTitle }}</h3>
         <table class="data-table currency-summary">
           <thead>
@@ -620,12 +620,23 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let curr of currencySummaryData">
-              <td><strong>{{curr.currency}}</strong></td>
-              <td *ngFor="let year of hebrewYears">
-                {{formatCurrencyWithSymbol(curr.yearlyTotals[year] || 0, curr.currency)}}
+            <!-- Iterate over ALL platform currencies (PayerService), not only
+                 those with data. Look up actual values via getCurrencySummaryRow. -->
+            <tr *ngFor="let cur of allPlatformCurrencies">
+              <td>
+                <strong>{{currencyTypes[cur]?.label || cur}}</strong>
+                <span *ngIf="currencyTypes[cur]?.symbol" style="margin-right:6px; color:#7f8c8d;">
+                  ({{currencyTypes[cur]?.symbol}})
+                </span>
               </td>
-              <td><strong>{{formatCurrencyWithSymbol(curr.totalAmount, curr.currency)}}</strong></td>
+              <td *ngFor="let year of hebrewYears">
+                {{ getCurrencySummaryYearAmount(cur, year) > 0
+                   ? formatCurrencyWithSymbol(getCurrencySummaryYearAmount(cur, year), cur)
+                   : '-' }}
+              </td>
+              <td><strong>{{ getCurrencySummaryTotal(cur) > 0
+                   ? formatCurrencyWithSymbol(getCurrencySummaryTotal(cur), cur)
+                   : '-' }}</strong></td>
             </tr>
             <!-- <tr class="shgetratesekel-row">
               <td><strong>בשקלים</strong></td>
@@ -761,9 +772,9 @@
                 <span class="sort-icon" *ngIf="getYearlySummarySortIcon('year')">{{ getYearlySummarySortIcon('year')
                   }}</span>
               </th>
-              <th>{{ (i18n.terms$ | async)?.shekel || 'שקל' }}</th>
-              <th>{{ (i18n.terms$ | async)?.dollar || 'דולר' }}</th>
-              <th>{{ (i18n.terms$ | async)?.euro || 'יורו' }}</th>
+              <th *ngFor="let cur of yearlySummaryActiveCurrencies">
+                {{ currencyTypes[cur]?.label || cur }}
+              </th>
               <!-- <th class="sortable" [class.sorted]="isYearlySummarySorted('totalInShekel')"
                 (click)="toggleYearlySummarySort('totalInShekel', $event)">
                 {{ (i18n.terms$ | async)?.totalByShekel || 'סה"כ בשקלים' }}
@@ -779,23 +790,21 @@
                 <br>
                 <small style="color: #999;">({{yearData.year}})</small>
               </td>
-              <td>{{(yearData.currencies['ILS'] || 0) > 0 ? '₪' +
-                Math.round(yearData.currencies['ILS']).toLocaleString() : '-'}}</td>
-              <td>{{(yearData.currencies['USD'] || 0) > 0 ? '$' +
-                Math.round(yearData.currencies['USD']).toLocaleString() : '-'}}</td>
-              <td>{{(yearData.currencies['EUR'] || 0) > 0 ? '€' +
-                Math.round(yearData.currencies['EUR']).toLocaleString() : '-'}}</td>
+              <td *ngFor="let cur of yearlySummaryActiveCurrencies">
+                {{ (yearData.currencies[cur] || 0) > 0
+                   ? (currencyTypes[cur]?.symbol || cur) + ' ' + Math.round(yearData.currencies[cur]).toLocaleString()
+                   : '-' }}
+              </td>
               <!-- <td><strong>₪{{Math.round(yearData.totalInShekel).toLocaleString()}}</strong></td> -->
             </tr>
           </tbody>
           <tfoot *ngIf="yearlySummaryData.length > 0">
             <tr style="background-color: #f5f5f5; font-weight: bold; border-top: 2px solid #333;">
               <td><strong>{{ (i18n.terms$ | async)?.totalText }}</strong></td>
-              <td>{{getTotalByCurrency('ILS') > 0 ? '₪' + Math.round(getTotalByCurrency('ILS')).toLocaleString() : '-'}}
-              </td>
-              <td>{{getTotalByCurrency('USD') > 0 ? '$' + Math.round(getTotalByCurrency('USD')).toLocaleString() : '-'}}
-              </td>
-              <td>{{getTotalByCurrency('EUR') > 0 ? '€' + Math.round(getTotalByCurrency('EUR')).toLocaleString() : '-'}}
+              <td *ngFor="let cur of yearlySummaryActiveCurrencies">
+                {{ getTotalByCurrency(cur) > 0
+                   ? (currencyTypes[cur]?.symbol || cur) + ' ' + Math.round(getTotalByCurrency(cur)).toLocaleString()
+                   : '-' }}
               </td>
               <!-- <td><strong style="color: #27ae60;">₪{{Math.round(getGrandTotalInShekel()).toLocaleString()}}</strong>
               </td> -->

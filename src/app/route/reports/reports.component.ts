@@ -513,6 +513,42 @@ export class ReportsComponent implements OnInit, OnDestroy {
     }, 0);
   }
 
+  /**
+   * Returns ALL currencies defined in PayerService (single source of truth for
+   * platform currencies). Used to render columns/cells/footer in the yearly
+   * summary report, AND the rows of the donations-report currency-summary
+   * section. Cells show '-' when no value, so columns/rows for unused
+   * currencies still appear consistently.
+   *
+   * Order is the order defined in PayerService.CURRENCIES (ILS, USD, EUR,
+   * GBP, CHF, CAD as of writing) - Object.keys preserves insertion order.
+   */
+  get allPlatformCurrencies(): string[] {
+    return Object.keys(this.currencyTypes || {});
+  }
+
+  /** Backwards-compatible alias used by yearly summary template. */
+  get yearlySummaryActiveCurrencies(): string[] {
+    return this.allPlatformCurrencies;
+  }
+
+  /**
+   * Currency-summary helpers (donations report bottom section).
+   * Look up the amount for a given currency+year (or total) in the
+   * server-built currencySummaryData array. Returns 0 if the currency
+   * isn't present in the data - so unused currencies render as '-' (via
+   * formatCurrencyWithSymbol's fallback) but the row still appears.
+   */
+  getCurrencySummaryYearAmount(currency: string, hebrewYear: string): number {
+    const row = this.currencySummaryData.find(c => c.currency === currency);
+    return row?.yearlyTotals?.[hebrewYear] || 0;
+  }
+
+  getCurrencySummaryTotal(currency: string): number {
+    const row = this.currencySummaryData.find(c => c.currency === currency);
+    return row?.totalAmount || 0;
+  }
+
   getGrandTotalInShekel(): number {
     return this.yearlySummaryData.reduce((sum, yearData) => {
       return sum + yearData.totalInShekel;
@@ -1475,7 +1511,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
       XLSX.utils.book_append_sheet(wb, ws, 'דוח תרומות');
 
       // ===== Sheet 2: Currency Summary =====
-      if (this.filters.showCurrencySummary && fullReportResponse.currencySummary.length > 0) {
+      if (this.filters.showCurrencySummary) {
         const summaryData: any[] = [];
 
         summaryData.push(['סיכום לפי מטבעות']);
@@ -1487,15 +1523,23 @@ export class ReportsComponent implements OnInit, OnDestroy {
         summaryHeaders.push('סה"כ');
         summaryData.push(summaryHeaders);
 
-        // Currency rows
-        fullReportResponse.currencySummary.forEach(curr => {
-          const row: any[] = [curr.currency];
+        // Currency rows: iterate ALL platform currencies (PayerService),
+        // matching on-screen UI. Look up amounts by currency code; show '-'
+        // when the currency has no data on this report.
+        const currencyByCode = new Map<string, any>();
+        fullReportResponse.currencySummary.forEach(c => currencyByCode.set(c.currency, c));
+        for (const cur of this.allPlatformCurrencies) {
+          const data = currencyByCode.get(cur);
+          const label = this.currencyTypes[cur]?.label || cur;
+          const row: any[] = [label];
           fullReportResponse.hebrewYears.forEach(year => {
-            row.push(this.formatCurrencyWithSymbol(curr.yearlyTotals[year] || 0, curr.currency));
+            const amount = data?.yearlyTotals?.[year] || 0;
+            row.push(amount > 0 ? this.formatCurrencyWithSymbol(amount, cur) : '-');
           });
-          row.push(this.formatCurrencyWithSymbol(curr.totalAmount, curr.currency));
+          const total = data?.totalAmount || 0;
+          row.push(total > 0 ? this.formatCurrencyWithSymbol(total, cur) : '-');
           summaryData.push(row);
-        });
+        }
 
         // Shekel totals row
         const shekelRow: any[] = ['בשקלים'];
@@ -1605,14 +1649,24 @@ export class ReportsComponent implements OnInit, OnDestroy {
         return;
       }
 
+      // Dynamic columns: ALL platform currencies (PayerService) - matches
+      // on-screen + print versions. No longer hardcoded to ILS/USD/EUR.
+      const currencyColumns = this.allPlatformCurrencies.map(cur => ({
+        header: this.currencyTypes[cur]?.label || cur,
+        mapper: (row: any) => {
+          const amount = row.currencies?.[cur] || 0;
+          const symbol = this.currencyTypes[cur]?.symbol || cur;
+          return amount > 0 ? `${symbol}${Math.round(amount).toLocaleString()}` : '-';
+        },
+        width: 15
+      }));
+
       await this.excelService.export({
         data: this.yearlySummaryData,
         columns: [
           { header: 'שנה עברית', mapper: (row) => row.hebrewYear, width: 15 },
           { header: 'שנה לועזית', mapper: (row) => row.year.toString(), width: 12 },
-          { header: 'שקל', mapper: (row) => (row.currencies['ILS'] || 0) > 0 ? `₪${Math.round(row.currencies['ILS']).toLocaleString()}` : '-', width: 15 },
-          { header: 'דולר', mapper: (row) => (row.currencies['USD'] || 0) > 0 ? `$${Math.round(row.currencies['USD']).toLocaleString()}` : '-', width: 15 },
-          { header: 'יורו', mapper: (row) => (row.currencies['EUR'] || 0) > 0 ? `€${Math.round(row.currencies['EUR']).toLocaleString()}` : '-', width: 15 }
+          ...currencyColumns
         ],
         sheetName: 'סיכום שנתי',
         fileName: this.excelService.generateFileName('סיכום_שנתי')
@@ -3035,52 +3089,48 @@ export class ReportsComponent implements OnInit, OnDestroy {
   }
 
   private printYearlySummaryReport() {
+    // Dynamic columns + totals: use ALL platform currencies (PayerService) -
+    // matches the on-screen yearly summary report (no longer hardcoded
+    // ILS/USD/EUR only). Coherent across screen + print.
+    const currencyColumns: PrintColumn[] = this.allPlatformCurrencies.map(cur => ({
+      header: this.currencyTypes[cur]?.label || cur,
+      field: `currencies.${cur}`,
+      customFormatter: (val: any, row: any) => {
+        const amount = row.currencies?.[cur] || 0;
+        const symbol = this.currencyTypes[cur]?.symbol || cur;
+        return amount > 0 ? symbol + Math.round(amount).toLocaleString('he-IL') : '-';
+      }
+    }));
+
     const columns: PrintColumn[] = [
       {
         header: 'שנה',
         field: 'hebrewYear',
         customFormatter: (val, row) => `${row.hebrewYear} (${row.year})`
       },
-      {
-        header: 'שקל',
-        field: 'currencies.ILS',
-        customFormatter: (val, row) => {
-          const amount = row.currencies?.['ILS'] || 0;
-          return amount > 0 ? '₪' + Math.round(amount).toLocaleString('he-IL') : '-';
-        }
-      },
-      {
-        header: 'דולר',
-        field: 'currencies.USD',
-        customFormatter: (val, row) => {
-          const amount = row.currencies?.['USD'] || 0;
-          return amount > 0 ? '$' + Math.round(amount).toLocaleString('he-IL') : '-';
-        }
-      },
-      {
-        header: 'יורו',
-        field: 'currencies.EUR',
-        customFormatter: (val, row) => {
-          const amount = row.currencies?.['EUR'] || 0;
-          return amount > 0 ? '€' + Math.round(amount).toLocaleString('he-IL') : '-';
-        }
-      }
+      ...currencyColumns
     ];
 
     const filters = [
       { label: 'שנים', value: this.filters.selectedYear === 'last4' ? 'כל השנים' : String(this.filters.selectedYear) }
     ];
 
+    const totals = this.allPlatformCurrencies.map(cur => {
+      const amount = this.getTotalByCurrency(cur);
+      const symbol = this.currencyTypes[cur]?.symbol || cur;
+      const label = this.currencyTypes[cur]?.label || cur;
+      return {
+        label: `סה"כ ${label}`,
+        value: amount > 0 ? symbol + Math.round(amount).toLocaleString('he-IL') : '-'
+      };
+    });
+
     this.printService.print({
       title: 'דוח סיכום שנים',
       filters,
       columns,
       data: this.yearlySummaryData,
-      totals: [
-        { label: 'סה"כ שקל', value: this.getTotalByCurrency('ILS') > 0 ? '₪' + Math.round(this.getTotalByCurrency('ILS')).toLocaleString('he-IL') : '-' },
-        { label: 'סה"כ דולר', value: this.getTotalByCurrency('USD') > 0 ? '$' + Math.round(this.getTotalByCurrency('USD')).toLocaleString('he-IL') : '-' },
-        { label: 'סה"כ יורו', value: this.getTotalByCurrency('EUR') > 0 ? '€' + Math.round(this.getTotalByCurrency('EUR')).toLocaleString('he-IL') : '-' }
-      ]
+      totals
     });
   }
 
