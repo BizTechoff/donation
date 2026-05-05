@@ -185,12 +185,12 @@ export class Place {
   }
 
   /**
-   * שורת דירה ובניין - UK/GB בלבד
+   * שורת דירה ובניין - לכל המדינות
    * Returns: "Apt 5, Building A" or null
+   * (היה UK/GB בלבד; הורחב כדי שגם כתובות ישראל/USA/וכו' יציגו את שדות
+   *  building ו-apartment בטבלה, בהדפסה ובייצוא לאקסל - אחיד בכל המקומות.)
    */
   getApartmentLine(): string | null {
-    if (!this.isGBAddress()) return null;
-
     const parts = [];
     if (this.apartment) parts.push(this.apartment);
     if (this.building) parts.push(this.building);
