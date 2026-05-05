@@ -177,6 +177,14 @@ export class DonorListComponent implements OnInit, OnDestroy {
       clearTimeout(this.searchTermTimeout);
     }
 
+    // Skip server search for very short input (1 character matches too many
+    // donors and makes typing feel laggy). Empty string is allowed - clearing
+    // the search should reset the list.
+    const trimmed = (this.searchTerm || '').trim();
+    if (trimmed.length > 0 && trimmed.length < 2) {
+      return;
+    }
+
     this.searchTermTimeout = setTimeout(() => {
       // Reset to first page when search changes
       this.currentPage = 1;
@@ -186,7 +194,7 @@ export class DonorListComponent implements OnInit, OnDestroy {
 
       // Save search term to user settings
       this.saveSearchTerm();
-    }, 500); // Wait 500ms after user stops typing
+    }, 800); // Wait 800ms after user stops typing (was 500ms - too fast)
   }
 
   async createDonor() {

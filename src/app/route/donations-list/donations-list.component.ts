@@ -226,12 +226,21 @@ export class DonationsListComponent implements OnInit, OnDestroy {
       clearTimeout(this.filterTimeout);
     }
 
+    // Skip server search for very short text input (1 character matches too
+    // many donations and makes typing feel laggy). Empty string is allowed -
+    // clearing the search should reset the list. Other filters (dates, etc.)
+    // still trigger immediately because they go through different controls.
+    const trimmed = (this.searchTerm || '').trim();
+    if (trimmed.length > 0 && trimmed.length < 2) {
+      return;
+    }
+
     // Set a new timeout to reload data after user stops typing/changing filters
     this.filterTimeout = setTimeout(() => {
       console.log('Filter changed, reloading donations');
       this.currentPage = 1; // Reset to first page when filters change
       this.refreshData();
-    }, 300); // 300ms debounce
+    }, 800); // 800ms debounce (was 300ms - too fast for slow typists)
   }
 
   async loadCampaigns() {
