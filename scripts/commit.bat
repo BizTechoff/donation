@@ -48,19 +48,30 @@ if errorlevel 1 (
 ) else (echo   [SKIP])
 echo.
 
-REM ===== [4] feat(donor-map): granular performance timings =====
-echo [4] feat(donor-map): granular console.time markers
+REM ===== [4] feat(donor-map): granular performance timings (server) =====
+echo [4] feat(donor-map): granular console.time markers (server)
 git add src/shared/controllers/donor-map.controller.ts
 if errorlevel 1 goto :err
 git diff --cached --quiet
 if errorlevel 1 (
-  git commit -m "feat(donor-map): granular console.time markers for hotspot analysis" -m "Adds timing markers to: getIntersectedIds (global+local filter split), buildMarkersFromIds (1.places SELECT, 2.donors SELECT, 3.donations groupBy sum+max, 4.thresholds load, 5.marker+status calc, 6.statusFilter apply), buildStatisticsFromIds (1.donor counts, 2.coord query, 3.PayerService+currencyTypes, 4.donations groupBy by currency, 5.count). Logs intermediate counts (placeRows, high-donor count, after-filter count). Pinpoints time hotspots for legend filters like 'high-donor > 1500'. Logic unchanged - timing only." -m "BizTechoff(TM)"
+  git commit -m "feat(donor-map): granular console.time markers for hotspot analysis (server)" -m "Adds timing markers to: getIntersectedIds (global+local filter split), buildMarkersFromIds (1.places SELECT, 2.donors SELECT, 3.donations groupBy sum+max, 4.thresholds load, 5.marker+status calc, 6.statusFilter apply), buildStatisticsFromIds (1.donor counts, 2.coord query, 3.PayerService+currencyTypes, 4.donations groupBy by currency, 5.count). Logs intermediate counts (placeRows, high-donor count, after-filter count). Pinpoints time hotspots for legend filters like 'high-donor > 1500'. Logic unchanged - timing only." -m "BizTechoff(TM)"
   if errorlevel 1 goto :err
 ) else (echo   [SKIP])
 echo.
 
-REM ===== [5] catch-all (anything else still uncommitted) =====
-echo [5] catch-all: any remaining changes
+REM ===== [5] feat(donors-map): client-side timings in addMarkersToMap =====
+echo [5] feat(donors-map): client-side timings (addMarkersToMap)
+git add src/app/route/donors-map/donors-map.component.ts
+if errorlevel 1 goto :err
+git diff --cached --quiet
+if errorlevel 1 (
+  git commit -m "feat(donors-map): client-side console.time markers in addMarkersToMap" -m "Adds timings to: 1.clearMarkers (setMap(null) loop), 2.createMarkers (new google.maps.Marker loop), 3.fitBounds, plus addMarkersToMap TOTAL. Diagnoses why UI loading spinner persists ~60s after server returns in 223ms - suspect: Google Maps Marker creation runs synchronously and blocks main thread when N is large. Logic unchanged - timing only." -m "BizTechoff(TM)"
+  if errorlevel 1 goto :err
+) else (echo   [SKIP])
+echo.
+
+REM ===== [6] catch-all (anything else still uncommitted) =====
+echo [6] catch-all: any remaining changes
 git add -A
 if errorlevel 1 goto :err
 git diff --cached --quiet
@@ -71,7 +82,7 @@ if errorlevel 1 (
 echo.
 
 echo === Done ===
-git log -6 --oneline
+git log -7 --oneline
 echo.
 git status --short
 echo.
