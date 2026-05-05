@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { remult } from 'remult';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
@@ -47,6 +47,7 @@ export class RemindersComponent implements OnInit, OnDestroy {
   filterDateTo: Date | null = null;
   filterReminderType = '';
   filterDonorSearch = '';
+  @ViewChild('searchInput') searchInput?: ElementRef<HTMLInputElement>;
 
   // Pagination
   currentPage = 1;
@@ -108,14 +109,35 @@ export class RemindersComponent implements OnInit, OnDestroy {
       this.refreshData();
     });
 
-    // Debounce donor search to avoid firing on every keystroke
+    // Debounce donor search: 800ms (was 300 - too fast for slow typists);
+    // skip if input has 1 char only (too many matches, slows the experience).
     this.donorSearchSubject.pipe(
-      debounceTime(300),
+      debounceTime(800),
       distinctUntilChanged()
-    ).subscribe(() => {
+    ).subscribe(async (text) => {
+      const trimmed = (text || '').trim();
+      if (trimmed.length > 0 && trimmed.length < 2) return;
       this.currentPage = 1;
-      this.refreshData();
+      await this.refreshData();
+      this.restoreSearchFocus();
     });
+  }
+
+  private restoreSearchFocus() {
+    setTimeout(() => {
+      const native = this.searchInput?.nativeElement;
+      if (!native) return;
+      const active = document.activeElement;
+      const isInputAlready = active === native;
+      const isOtherInteractive = active && (
+        active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT'
+      ) && active !== native;
+      if (!isInputAlready && !isOtherInteractive) {
+        native.focus();
+        const len = native.value?.length ?? 0;
+        try { native.setSelectionRange(len, len); } catch {}
+      }
+    }, 150);
   }
 
   /**

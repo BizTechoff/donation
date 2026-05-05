@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, ElementRef, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { remult } from 'remult';
 import { Campaign } from '../../../shared/entity/campaign';
@@ -35,6 +35,7 @@ export class CampaignsListComponent implements OnInit, OnDestroy {
   searchTerm = '';
   filterName = '';
   filterActive = '';
+  @ViewChild('searchInput') searchInput?: ElementRef<HTMLInputElement>;
   private filterTimeout: any;
   private subscriptions = new Subscription();
 
@@ -224,17 +225,46 @@ export class CampaignsListComponent implements OnInit, OnDestroy {
   }
 
   applyFilters() {
-    // Clear any existing timeout
     if (this.filterTimeout) {
       clearTimeout(this.filterTimeout);
     }
 
-    // Set a new timeout to reload data after user stops typing/changing filters
-    this.filterTimeout = setTimeout(() => {
+    // Skip server search for very short text input (1 char matches too many).
+    // Empty string allowed - clearing the search resets the list.
+    const trimmed = (this.filterName || '').trim();
+    if (trimmed.length > 0 && trimmed.length < 2) {
+      return;
+    }
+
+    this.filterTimeout = setTimeout(async () => {
       console.log('Filter changed, reloading campaigns');
-      this.currentPage = 1; // Reset to first page when filters change
-      this.refreshData();
-    }, 300); // 300ms debounce
+      this.currentPage = 1;
+      await this.refreshData();
+      this.restoreSearchFocus();
+    }, 800); // 800ms debounce (was 300ms - too fast for slow typists)
+  }
+
+  private restoreSearchFocus() {
+    // 150ms delay so Angular finishes change-detection AND the BusyService
+    // overlay closes BEFORE we try to focus. With 0ms the busy overlay was
+    // still the active element on slower connections, so the focus restore
+    // condition (active===body) was never met.
+    setTimeout(() => {
+      const native = this.searchInput?.nativeElement;
+      if (!native) return;
+      const active = document.activeElement;
+      // Restore focus if it was lost (body) OR currently on the busy overlay /
+      // a non-input element that took focus during loading.
+      const isInputAlready = active === native;
+      const isInteractive = active && (
+        active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT'
+      ) && active !== native;
+      if (!isInputAlready && !isInteractive) {
+        native.focus();
+        const len = native.value?.length ?? 0;
+        try { native.setSelectionRange(len, len); } catch {}
+      }
+    }, 150);
   }
 
   onFilterChange() {

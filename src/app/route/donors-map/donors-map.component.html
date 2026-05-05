@@ -78,7 +78,7 @@
         <!-- Search Filter -->
         <div class="filter-group">
           <label>{{ i18n.terms.search || 'חיפוש' }}</label>
-          <input type="text"
+          <input #searchInput type="text"
                  class="form-control"
                  [(ngModel)]="mapFilters.searchTerm"
                  (ngModelChange)="onSearchChange()"

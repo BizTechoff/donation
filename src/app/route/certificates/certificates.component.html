@@ -64,7 +64,7 @@
 
       <div class="filter-group">
         <label>{{ (i18n.terms$ | async)?.donorSearch }}</label>
-        <input type="text" class="form-control"
+        <input #searchInput type="text" class="form-control"
                [placeholder]="(i18n.terms$ | async)?.donorNamePlaceholder"
                [(ngModel)]="donorSearchText"
                (ngModelChange)="onDonorSearchChange($event)">

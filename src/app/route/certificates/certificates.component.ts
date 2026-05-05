@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { remult, repo } from 'remult';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
@@ -37,6 +37,7 @@ export class CertificatesComponent implements OnInit, OnDestroy {
   filterDateFrom: Date | null = null;
   filterDateTo: Date | null = null;
   donorSearchText = '';
+  @ViewChild('searchInput') searchInput?: ElementRef<HTMLInputElement>;
   private donorSearchSubject = new Subject<string>();
   private filterTimeout: any;
   private subscriptions = new Subscription();
@@ -95,13 +96,33 @@ export class CertificatesComponent implements OnInit, OnDestroy {
     // Load user settings
     await this.loadUserSettings();
 
-    // הגדרת debounce לחיפוש תורם
+    // הגדרת debounce לחיפוש תורם: 800ms (was 300 - too fast); skip 1-char input.
     this.donorSearchSubject.pipe(
-      debounceTime(300),
+      debounceTime(800),
       distinctUntilChanged()
-    ).subscribe(searchText => {
+    ).subscribe(async searchText => {
+      const trimmed = (searchText || '').trim();
+      if (trimmed.length > 0 && trimmed.length < 2) return;
       this.onFilterChange();
+      this.restoreSearchFocus();
     });
+  }
+
+  private restoreSearchFocus() {
+    setTimeout(() => {
+      const native = this.searchInput?.nativeElement;
+      if (!native) return;
+      const active = document.activeElement;
+      const isInputAlready = active === native;
+      const isOtherInteractive = active && (
+        active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT'
+      ) && active !== native;
+      if (!isInputAlready && !isOtherInteractive) {
+        native.focus();
+        const len = native.value?.length ?? 0;
+        try { native.setSelectionRange(len, len); } catch {}
+      }
+    }, 150);
 
     // Set CSS variables for mobile labels
     this.updateMobileLabels();

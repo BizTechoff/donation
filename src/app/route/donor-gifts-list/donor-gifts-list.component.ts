@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, ElementRef, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { remult } from 'remult';
 import { DonorGift, Donor, Gift, Reminder } from '../../../shared/entity';
@@ -42,6 +42,7 @@ export class DonorGiftsListComponent implements OnInit, OnDestroy {
   selectedGiftId = '';
   selectedYear = '';
   searchDonorName = '';
+  @ViewChild('searchInput') searchInput?: ElementRef<HTMLInputElement>;
 
   years: number[] = [];
   hebrewYearLabels: { [key: number]: string } = {};
@@ -201,17 +202,40 @@ export class DonorGiftsListComponent implements OnInit, OnDestroy {
   }
 
   applyFilters() {
-    // Clear any existing timeout
     if (this.filterTimeout) {
       clearTimeout(this.filterTimeout);
     }
 
-    // Set a new timeout to reload data after user stops typing/changing filters
-    this.filterTimeout = setTimeout(() => {
+    // Skip server search for very short text input (1 char matches too many).
+    // Empty string allowed - clearing the search resets the list.
+    const trimmed = (this.searchDonorName || '').trim();
+    if (trimmed.length > 0 && trimmed.length < 2) {
+      return;
+    }
+
+    this.filterTimeout = setTimeout(async () => {
       console.log('Filter changed, reloading donor gifts');
-      this.currentPage = 1; // Reset to first page when filters change
-      this.refreshData();
-    }, 300); // 300ms debounce
+      this.currentPage = 1;
+      await this.refreshData();
+      this.restoreSearchFocus();
+    }, 800); // 800ms debounce (was 300 - too fast for slow typists)
+  }
+
+  private restoreSearchFocus() {
+    setTimeout(() => {
+      const native = this.searchInput?.nativeElement;
+      if (!native) return;
+      const active = document.activeElement;
+      const isInputAlready = active === native;
+      const isOtherInteractive = active && (
+        active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT'
+      ) && active !== native;
+      if (!isInputAlready && !isOtherInteractive) {
+        native.focus();
+        const len = native.value?.length ?? 0;
+        try { native.setSelectionRange(len, len); } catch {}
+      }
+    }, 150);
   }
 
   clearFilters() {
