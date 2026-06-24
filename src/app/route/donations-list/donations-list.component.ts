@@ -4,6 +4,7 @@ import { remult } from 'remult';
 import { Subscription } from 'rxjs';
 import { DonationController, DonationFilters } from '../../../shared/controllers/donation.controller';
 import { CampaignController } from '../../../shared/controllers/campaign.controller';
+import { DonorMapController } from '../../../shared/controllers/donor-map.controller';
 import { Campaign, Donation, DonationMethod, DonorPlace, User } from '../../../shared/entity';
 import { ContactPerson } from '../../../shared/entity/contact-person';
 import { BusyService } from '../../common-ui-elements/src/angular/wait/busy-service';
@@ -848,15 +849,24 @@ export class DonationsListComponent implements OnInit, OnDestroy {
           }
         } else {
           // Table print (existing behavior)
+          // Pre-load donor contacts so we can show phone + mobile phones + email columns.
+          const printDonorIds = [...new Set(allDonations.map(d => d.donorId).filter(id => id))] as string[];
+          const printContactData = printDonorIds.length > 0
+            ? await DonorMapController.loadDonorsForExport(printDonorIds)
+            : [];
+          const printContactsMap = new Map(printContactData.map(d => [d.id, d]));
+
           const printData = allDonations.map(donation => {
             const hebrewDate = donation.donationDate
               ? this.hebrewDateService.convertGregorianToHebrew(new Date(donation.donationDate)).formatted
               : '-';
             const currencySymbol = this.currencyTypes[donation.currencyId]?.symbol || '₪';
+            const contact = donation.donorId ? printContactsMap.get(donation.donorId) : undefined;
 
             return {
               donorName: this.getDonorName(donation),
               address: this.getDonorHomeAddress(donation),
+              mobilePhones: contact?.mobilePhones || '-',
               date: hebrewDate,
               donationType: this.getDonationTypeDisplay(donation),
               method: this.getMethodName(donation),
@@ -873,6 +883,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
             columns: [
               { header: this.i18n.currentTerms.donor || 'תורם', field: 'donorName' },
               { header: this.i18n.currentTerms.address || 'כתובת', field: 'address', align: 'left' },
+              { header: this.i18n.currentTerms.mobilePhone || 'טלפון נייד', field: 'mobilePhones', align: 'left' },
               { header: this.i18n.currentTerms.date || 'תאריך', field: 'date' },
               { header: this.i18n.currentTerms.donationType || 'סוג', field: 'donationType' },
               { header: this.i18n.currentTerms.donationMethodFilter || 'אופן תרומה', field: 'method' },
@@ -926,7 +937,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
         );
 
         // Load place data for all donors
-        const donorIds = [...new Set(allDonations.map(d => d.donorId).filter(id => id))];
+        const donorIds = [...new Set(allDonations.map(d => d.donorId).filter(id => id))] as string[];
         const placesMap = await DonorPlace.getPrimaryForDonors(donorIds);
 
         // Load fundraisers and contact persons for lookup
@@ -937,10 +948,20 @@ export class DonationsListComponent implements OnInit, OnDestroy {
         const fundraiserMap = new Map(fundraisers.map(f => [f.id, f.name]));
         const contactPersonMap = new Map(contactPersons.map(cp => [cp.id, cp.name]));
 
-        // Prepare export data with place info
+        // Load donor contacts (phone + mobile phones + email) via shared
+        // loadDonorsForExport - same source of truth used by donor-list.
+        const contactExportData = donorIds.length > 0
+          ? await DonorMapController.loadDonorsForExport(donorIds)
+          : [];
+        const contactsMap = new Map(contactExportData.map(d => [d.id, d]));
+
+        // Prepare export data with place + contacts
         const exportData = allDonations.map(d => ({
           donation: d,
-          place: d.donorId ? placesMap.get(d.donorId)?.place : undefined
+          place: d.donorId ? placesMap.get(d.donorId)?.place : undefined,
+          phone: d.donorId ? (contactsMap.get(d.donorId)?.phone || '-') : '-',
+          mobilePhones: d.donorId ? (contactsMap.get(d.donorId)?.mobilePhones || '-') : '-',
+          email: d.donorId ? (contactsMap.get(d.donorId)?.email || '-') : '-'
         }));
 
         await this.excelExportService.export({
@@ -956,9 +977,10 @@ export class DonationsListComponent implements OnInit, OnDestroy {
             { header: this.i18n.currentTerms.firstNameEnglish || 'First Name', mapper: (item) => item.donation.donor?.firstNameEnglish || '', width: 15 },
             { header: this.i18n.currentTerms.lastNameEnglish || 'Last Name', mapper: (item) => item.donation.donor?.lastNameEnglish || '', width: 15 },
             { header: this.i18n.currentTerms.suffixEnglish || 'Suffix', mapper: (item) => item.donation.donor?.suffixEnglish || '', width: 10 },
-            // Fundraiser & Contact Person
+            // Fundraiser & Contact Person + mobile phone (per client request)
             { header: this.i18n.currentTerms.fundraiser || 'מתרים', mapper: (item) => item.donation.donor?.fundraiserId ? fundraiserMap.get(item.donation.donor.fundraiserId) || '' : '', width: 15 },
             { header: this.i18n.currentTerms.contactPerson || 'איש קשר', mapper: (item) => item.donation.donor?.contactPersonId ? contactPersonMap.get(item.donation.donor.contactPersonId) || '' : '', width: 15 },
+            { header: this.i18n.currentTerms.mobilePhone || 'טלפון נייד', mapper: (item) => item.mobilePhones, width: 25, align: 'left' },
             // Donor characteristics
             { header: this.i18n.currentTerms.maritalStatus || 'מצב משפחתי', mapper: (item) => this.getMaritalStatusText(item.donation.donor?.maritalStatus || ''), width: 12 },
             { header: this.i18n.currentTerms.anash || 'אנ"ש', mapper: (item) => item.donation.donor?.isAnash ? '✓' : '', width: 8 },
