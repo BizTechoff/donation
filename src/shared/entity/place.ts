@@ -234,14 +234,26 @@ export class Place {
 
   /**
    * שורת מדינה - לפי הגדרת includeCountryInLetter
-   * UK/GB/US: קוד מדינה
-   * Others: שם מדינה
+   *
+   * @param context 'letter' - לכתובת מכתב יוצא. 'display' (ברירת מחדל) - לתצוגה
+   *                 בטבלה / כרטיס תורם / ייצוא / הדפסה.
+   *
+   * התנהגות לפי מדינה:
+   *   UK/GB: 'letter' -> null (מיקוד בריטי מנותב בלעדית, אין צורך ב-"GB")
+   *           'display' -> 'GB' (כדי שהמשתמש יראה שזו כתובת בריטניה בטבלה)
+   *   US:    'US' תמיד
+   *   אחרים: שם מדינה (nameEn או name)
    */
-  getCountryLine(): string | null {
+  getCountryLine(context: 'letter' | 'display' = 'display'): string | null {
     if (!this.country?.includeCountryInLetter) return null;
 
-    // UK/GB/US show country code, others show name
-    if (this.isGBAddress() || this.isUSAddress()) {
+    // UK: hide in outgoing letter only - keep visible in display contexts.
+    if (this.isGBAddress()) {
+      return context === 'letter' ? null : (this.country.code?.toUpperCase() || null);
+    }
+
+    // US: show country code in all contexts
+    if (this.isUSAddress()) {
       return this.country.code?.toUpperCase() || null;
     }
 
@@ -256,7 +268,7 @@ export class Place {
       this.getApartmentLine(),
       this.getStreetLine(),
       this.getCityLine(),
-      this.getCountryLine()
+      this.getCountryLine('letter')
     ];
 
     return lines.filter(line => line && line.trim().length > 0) as string[];
