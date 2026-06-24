@@ -7,6 +7,7 @@ import { DonorContact } from '../entity/donor-contact';
 import { DonorPlace } from '../entity/donor-place';
 import { Place } from '../entity/place';
 import { calculateEffectiveAmount, calculatePaymentTotals, calculatePeriodsElapsed, isPaymentBased, isStandingOrder } from '../utils/donation-utils';
+import { formatDisplayPhones, isMobilePhone, selectDisplayPhones } from '../utils/phone-utils';
 
 // ממשק לפילטרים מקומיים של המפה
 export interface MapFilters {
@@ -101,11 +102,9 @@ export interface DonorMapData {
 export interface DonorExportData {
   id: string;
   fullAddress: string;
+  /** Display phones - newline-separated list selected by phone-utils.selectDisplayPhones:
+   *  prefers all mobiles when any exist, falls back to all landlines, empty otherwise. */
   phone: string;
-  /** All mobile phones of this donor, semicolon-separated.
-   *  "Mobile" = Israeli prefix 05X (most common) OR international mobile patterns.
-   *  Used by all Excel/Print exports - shows the full set of mobile contacts. */
-  mobilePhones: string;
   email: string;
   place: {
     city: string;
@@ -574,19 +573,25 @@ export class DonorMapController {
 
     console.timeEnd('Load related data (places & contacts)');
     const emailMap = new Map<string, string>();
-    const phoneMap = new Map<string, string>();
-
-    // מלא מפות אימייל וטלפון
+    // Gather ALL phones per donor; canonical display value via shared helper -
+    // prefers mobiles when any exist, else falls back to landlines.
+    const allPhonesByDonor = new Map<string, string[]>();
     contacts.forEach(contact => {
-      if (contact.donorId) {
-        if (contact.type === 'email' && contact.email && !emailMap.has(contact.donorId)) {
-          emailMap.set(contact.donorId, contact.email);
-        }
-        if (contact.type === 'phone' && contact.phoneNumber && !phoneMap.has(contact.donorId)) {
-          phoneMap.set(contact.donorId, contact.phoneNumber);
-        }
+      if (!contact.donorId) return;
+      if (contact.type === 'email' && contact.email && !emailMap.has(contact.donorId)) {
+        emailMap.set(contact.donorId, contact.email);
+      }
+      if (contact.type === 'phone' && contact.phoneNumber) {
+        const list = allPhonesByDonor.get(contact.donorId) || [];
+        list.push(contact.phoneNumber);
+        allPhonesByDonor.set(contact.donorId, list);
       }
     });
+    const phoneMap = new Map<string, string>();
+    for (const [donorId, list] of allPhonesByDonor) {
+      const value = formatDisplayPhones(list);
+      if (value) phoneMap.set(donorId, value);
+    }
 
     console.time('Load donations');
     // טען תרומות - גם כתורם ראשי וגם כשותף
@@ -1077,35 +1082,26 @@ export class DonorMapController {
       )
     ]);
 
-    const phoneMap = new Map<string, string>();
+    // Gather ALL phones per donor (mobile + landline together) and emails.
+    // The canonical display value is computed via phone-utils.formatDisplayPhones
+    // which picks mobiles when any exist (else landlines) - single source of truth.
+    const allPhonesByDonor = new Map<string, string[]>();
     const emailMap = new Map<string, string>();
-    const mobilesMap = new Map<string, string[]>(); // donorId -> array of mobile numbers
-
-    // Mobile-phone detection: Israeli pattern (most common in this app).
-    // 05X-XXXXXXX or +9725X-XXXXXXX. International patterns can be added later.
-    const isMobile = (raw: string | null | undefined): boolean => {
-      if (!raw) return false;
-      const digits = String(raw).replace(/\D/g, '');
-      // Israeli: 05X with at least 9 digits, or +972 5X
-      if (/^05\d{8}$/.test(digits)) return true;
-      if (/^9725\d{8}$/.test(digits)) return true;
-      // UK mobile: 07X or +447X
-      if (/^07\d{9}$/.test(digits)) return true;
-      if (/^447\d{9}$/.test(digits)) return true;
-      return false;
-    };
 
     for (const r of contactRows.rows as any[]) {
       if (r.type === 'phone' && r.phoneNumber) {
-        if (!phoneMap.has(r.donorId)) phoneMap.set(r.donorId, r.phoneNumber);
-        if (isMobile(r.phoneNumber)) {
-          const list = mobilesMap.get(r.donorId) || [];
-          if (!list.includes(r.phoneNumber)) list.push(r.phoneNumber);
-          mobilesMap.set(r.donorId, list);
-        }
+        const list = allPhonesByDonor.get(r.donorId) || [];
+        list.push(r.phoneNumber);
+        allPhonesByDonor.set(r.donorId, list);
       }
       if (r.type === 'email' && r.email && !emailMap.has(r.donorId))
         emailMap.set(r.donorId, r.email);
+    }
+
+    const phoneMap = new Map<string, string>();
+    for (const [donorId, list] of allPhonesByDonor) {
+      const value = formatDisplayPhones(list); // newline-separated
+      if (value) phoneMap.set(donorId, value);
     }
 
     const placeMap = new Map<string, any>();
@@ -1150,7 +1146,6 @@ export class DonorMapController {
         id,
         fullAddress: buildDisplayAddress(p),
         phone: phoneMap.get(id) || '',
-        mobilePhones: (mobilesMap.get(id) || []).join('; '),
         email: emailMap.get(id) || '',
         place: p ? {
           city: p.city || '',

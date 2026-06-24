@@ -421,7 +421,10 @@ export class PrintService {
       let html = `
       <tr class="main-row">
         ${columns.map(col => {
-          const value = this.getCellValue(col, row);
+          // Convert newlines to <br> so multi-line cell values (e.g. multiple
+          // phones from phone-utils.formatDisplayPhones) render on separate
+          // lines in print HTML. \n in HTML otherwise collapses to a space.
+          const value = String(this.getCellValue(col, row) ?? '').replace(/\n/g, '<br>');
           const align = col.align || defaultAlign;
           return `<td class="align-${align}">${value}</td>`;
         }).join('')}

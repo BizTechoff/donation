@@ -75,10 +75,41 @@ export class ExcelExportService {
       // יצירת worksheet
       const ws = XLSX.utils.json_to_sheet(data);
 
-      // הגדרת רוחב עמודות
+      // הגדרת רוחב עמודות + wrap-text כברירת מחדל כדי שערכים שמכילים
+      // newline (כמו כמה טלפונים מ-phone-utils.formatDisplayPhones) יוצגו
+      // כל אחד בשורה משלו בתוך התא.
       if (config.columns.some(col => col.width)) {
         ws['!cols'] = config.columns.map(col => ({ wch: col.width || 15 }));
       }
+      // Enable wrap-text on cells that contain newlines, plus auto-grow row
+      // height. Without wrap-text Excel shows the embedded \n as a single
+      // square glyph instead of wrapping to a new line.
+      try {
+        const range = XLSX.utils.decode_range(ws['!ref'] as string);
+        const rowHeights: { hpt?: number; hpx?: number }[] = [];
+        for (let r = range.s.r; r <= range.e.r; r++) {
+          let maxLines = 1;
+          for (let c = range.s.c; c <= range.e.c; c++) {
+            const addr = XLSX.utils.encode_cell({ r, c });
+            const cell = ws[addr];
+            if (cell && cell.v != null) {
+              const text = String(cell.v);
+              if (text.includes('\n')) {
+                cell.s = Object.assign({}, cell.s || {}, {
+                  alignment: Object.assign({}, (cell.s && cell.s.alignment) || {}, { wrapText: true, vertical: 'top' })
+                });
+                const lines = text.split('\n').length;
+                if (lines > maxLines) maxLines = lines;
+              }
+            }
+          }
+          // ~15pt per line - reasonable for default font
+          if (maxLines > 1) rowHeights[r] = { hpt: maxLines * 15 };
+        }
+        if (rowHeights.some(h => h)) {
+          ws['!rows'] = rowHeights;
+        }
+      } catch { /* style support best-effort */ }
 
       // Force LTR rendering on cells with align:'left' by prepending the
       // Unicode LRE marker (U+202A). xlsx 0.18 (open-source) does not support

@@ -866,7 +866,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
             return {
               donorName: this.getDonorName(donation),
               address: this.getDonorHomeAddress(donation),
-              mobilePhones: contact?.mobilePhones || '-',
+              phone: contact?.phone || '-',
               date: hebrewDate,
               donationType: this.getDonationTypeDisplay(donation),
               method: this.getMethodName(donation),
@@ -883,7 +883,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
             columns: [
               { header: this.i18n.currentTerms.donor || 'תורם', field: 'donorName' },
               { header: this.i18n.currentTerms.address || 'כתובת', field: 'address', align: 'left' },
-              { header: this.i18n.currentTerms.mobilePhone || 'טלפון נייד', field: 'mobilePhones', align: 'left' },
+              { header: this.i18n.currentTerms.phone || 'טלפון', field: 'phone', align: 'left' },
               { header: this.i18n.currentTerms.date || 'תאריך', field: 'date' },
               { header: this.i18n.currentTerms.donationType || 'סוג', field: 'donationType' },
               { header: this.i18n.currentTerms.donationMethodFilter || 'אופן תרומה', field: 'method' },
@@ -955,12 +955,11 @@ export class DonationsListComponent implements OnInit, OnDestroy {
           : [];
         const contactsMap = new Map(contactExportData.map(d => [d.id, d]));
 
-        // Prepare export data with place + contacts
+        // Prepare export data with place + contacts (phone uses shared helper - mobiles preferred)
         const exportData = allDonations.map(d => ({
           donation: d,
           place: d.donorId ? placesMap.get(d.donorId)?.place : undefined,
           phone: d.donorId ? (contactsMap.get(d.donorId)?.phone || '-') : '-',
-          mobilePhones: d.donorId ? (contactsMap.get(d.donorId)?.mobilePhones || '-') : '-',
           email: d.donorId ? (contactsMap.get(d.donorId)?.email || '-') : '-'
         }));
 
@@ -977,10 +976,10 @@ export class DonationsListComponent implements OnInit, OnDestroy {
             { header: this.i18n.currentTerms.firstNameEnglish || 'First Name', mapper: (item) => item.donation.donor?.firstNameEnglish || '', width: 15 },
             { header: this.i18n.currentTerms.lastNameEnglish || 'Last Name', mapper: (item) => item.donation.donor?.lastNameEnglish || '', width: 15 },
             { header: this.i18n.currentTerms.suffixEnglish || 'Suffix', mapper: (item) => item.donation.donor?.suffixEnglish || '', width: 10 },
-            // Fundraiser & Contact Person + mobile phone (per client request)
+            // Fundraiser & Contact Person + donor phone (mobiles preferred via shared helper)
             { header: this.i18n.currentTerms.fundraiser || 'מתרים', mapper: (item) => item.donation.donor?.fundraiserId ? fundraiserMap.get(item.donation.donor.fundraiserId) || '' : '', width: 15 },
             { header: this.i18n.currentTerms.contactPerson || 'איש קשר', mapper: (item) => item.donation.donor?.contactPersonId ? contactPersonMap.get(item.donation.donor.contactPersonId) || '' : '', width: 15 },
-            { header: this.i18n.currentTerms.mobilePhone || 'טלפון נייד', mapper: (item) => item.mobilePhones, width: 25, align: 'left' },
+            { header: this.i18n.currentTerms.phone || 'טלפון', mapper: (item) => item.phone || '-', width: 20, align: 'left' },
             // Donor characteristics
             { header: this.i18n.currentTerms.maritalStatus || 'מצב משפחתי', mapper: (item) => this.getMaritalStatusText(item.donation.donor?.maritalStatus || ''), width: 12 },
             { header: this.i18n.currentTerms.anash || 'אנ"ש', mapper: (item) => item.donation.donor?.isAnash ? '✓' : '', width: 8 },

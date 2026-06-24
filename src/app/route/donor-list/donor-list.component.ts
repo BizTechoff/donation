@@ -669,7 +669,6 @@ export class DonorListComponent implements OnInit, OnDestroy {
             fullName: donor.lastAndFirstName || donor.fullName || '',
             address: data?.fullAddress || '-',
             phone: data?.phone || '-',
-            mobilePhones: data?.mobilePhones || '-',
             email: data?.email || '-',
             lastDonation: lastDonationDisplay
           };
@@ -681,9 +680,9 @@ export class DonorListComponent implements OnInit, OnDestroy {
           columns: [
             { header: this.i18n.currentTerms.name || 'שם', field: 'fullName' },
             // Latin-script content: align LEFT (LTR) - same as address.
+            // phone column already prefers mobile via shared helper.
             { header: this.i18n.currentTerms.address || 'כתובת', field: 'address', align: 'left' },
             { header: this.i18n.currentTerms.phone || 'טלפון', field: 'phone', align: 'left' },
-            { header: this.i18n.currentTerms.mobilePhone || 'טלפון נייד', field: 'mobilePhones', align: 'left' },
             { header: this.i18n.currentTerms.email || 'דוא"ל', field: 'email', align: 'left' },
             { header: this.i18n.currentTerms.lastDonation || 'תרומה אחרונה', field: 'lastDonation' }
           ],
@@ -760,7 +759,6 @@ export class DonorListComponent implements OnInit, OnDestroy {
             // Full formatted address (matches the on-screen table via getDisplayAddress)
             fullAddress: data?.fullAddress || '-',
             phone: data?.phone || '-',
-            mobilePhones: data?.mobilePhones || '-',
             email: data?.email || '-',
             lastDonation: lastDonationDisplay
           };
@@ -801,8 +799,9 @@ export class DonorListComponent implements OnInit, OnDestroy {
             { header: this.i18n.currentTerms.postcode || 'מיקוד', mapper: (item) => item.place?.postcode || '', width: 10 },
             { header: this.i18n.currentTerms.placeName || 'שם מקום', mapper: (item) => item.place?.placeName || '', width: 15 },
             // Contact & other
-            { header: this.i18n.currentTerms.phone || 'טלפון', mapper: (item) => item.phone, width: 15, align: 'left' },
-            { header: this.i18n.currentTerms.mobilePhone || 'טלפון נייד', mapper: (item) => item.mobilePhones || '-', width: 25, align: 'left' },
+            // "phone" already prefers mobiles via shared phone-utils.selectDisplayPhones;
+            // returns newline-separated string when multiple numbers exist.
+            { header: this.i18n.currentTerms.phone || 'טלפון', mapper: (item) => item.phone || '-', width: 20, align: 'left' },
             { header: this.i18n.currentTerms.email || 'דוא"ל', mapper: (item) => item.email, width: 25, align: 'left' },
             { header: this.i18n.currentTerms.lastDonation || 'תרומה אחרונה', mapper: (item) => item.lastDonation, width: 25 }
           ],

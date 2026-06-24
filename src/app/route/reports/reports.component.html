@@ -903,7 +903,6 @@
                   }}</span>
               </th>
               <th>{{ (i18n.terms$ | async)?.phoneColumn }}</th>
-              <th>{{ (i18n.terms$ | async)?.mobileColumn }}</th>
               <th>{{ (i18n.terms$ | async)?.emailColumn }}</th>
             </tr>
           </thead>
@@ -922,9 +921,8 @@
                   {{blessing.status}}
                 </span>
               </td>
-              <td>{{blessing.phone}}</td>
-              <td>{{blessing.mobile}}</td>
-              <td>{{blessing.email}}</td>
+              <td style="text-align: left; direction: ltr; white-space: pre-line;">{{blessing.phone}}</td>
+              <td style="text-align: left; direction: ltr;">{{blessing.email}}</td>
             </tr>
           </tbody>
         </table>

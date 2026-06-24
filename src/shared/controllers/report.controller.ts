@@ -12,6 +12,7 @@ import { Report } from '../enum/report';
 import { DocxCreateResponse } from '../type/letter.type';
 import { GeneralCurrencyStat, GeneralMonthlyStat, GeneralChartItem, GeneralTopDonor, GeneralTopCampaign, GeneralRecentActivity, GeneralStatsResponse } from '../type/report.res';
 import { calculateEffectiveAmount, calculatePaymentTotals, calculatePeriodsElapsed, isPaymentBased, isStandingOrder } from '../utils/donation-utils';
+import { selectDisplayPhones } from '../utils/phone-utils';
 import { HebrewDateController } from './hebrew-date.controller';
 import { GlobalFilterController } from './global-filter.controller';
 
@@ -36,10 +37,9 @@ export interface DonationDetailData {
 export interface DonorExportDetails {
   // Address fields
   address?: string;
+  /** Display phones selected by phone-utils.selectDisplayPhones - mobiles when any
+   *  exist, else landlines. Joined newline-separated when stringified for cells. */
   phones?: string[];
-  /** Subset of `phones` that match mobile patterns (Israeli 05X, UK 07X, etc.).
-   *  Used by Excel/Print export columns "טלפון נייד" per client request. */
-  mobilePhones?: string[];
   emails?: string[];
   // Expanded address fields
   country?: string;
@@ -790,36 +790,26 @@ export class ReportController {
         }
       });
 
-      // ── אופטימיזציה: pre-group contacts ב-Map לפי donorId (O(n) פעם אחת)
-      //    במקום filter על כל הרשימה פר-תורם (היה O(n²)).
-      // Mobile detection: Israeli 05X (most common in this app) + UK 07X + intl.
-      const isMobilePhone = (raw: string): boolean => {
-        const digits = String(raw || '').replace(/\D/g, '');
-        if (/^05\d{8}$/.test(digits)) return true;     // Israeli 05X
-        if (/^9725\d{8}$/.test(digits)) return true;   // Israeli +972 5X
-        if (/^07\d{9}$/.test(digits)) return true;     // UK 07X
-        if (/^447\d{9}$/.test(digits)) return true;    // UK +44 7X
-        return false;
-      };
-      const phonesByDonor = new Map<string, string[]>();
-      const mobilesByDonor = new Map<string, string[]>();
+      // ── pre-group contacts ב-Map לפי donorId (O(n) פעם אחת).
+      // Display phones via shared phone-utils.selectDisplayPhones (mobiles if any,
+      // else landlines). Single source of truth across the app.
+      const allPhonesByDonor = new Map<string, string[]>();
       const emailsByDonor = new Map<string, string[]>();
       for (const c of allContacts) {
         if (!c.donorId) continue;
         if (c.type === 'phone' && c.phoneNumber) {
-          const arr = phonesByDonor.get(c.donorId) || [];
-          arr.push(c.phoneNumber);
-          phonesByDonor.set(c.donorId, arr);
-          if (isMobilePhone(c.phoneNumber)) {
-            const m = mobilesByDonor.get(c.donorId) || [];
-            if (!m.includes(c.phoneNumber)) m.push(c.phoneNumber);
-            mobilesByDonor.set(c.donorId, m);
-          }
+          const list = allPhonesByDonor.get(c.donorId) || [];
+          list.push(c.phoneNumber);
+          allPhonesByDonor.set(c.donorId, list);
         } else if (c.type === 'email' && c.email) {
           const arr = emailsByDonor.get(c.donorId) || [];
           arr.push(c.email);
           emailsByDonor.set(c.donorId, arr);
         }
+      }
+      const phonesByDonor = new Map<string, string[]>();
+      for (const [donorId, list] of allPhonesByDonor) {
+        phonesByDonor.set(donorId, selectDisplayPhones(list));
       }
 
       // Group data by donorId
@@ -832,14 +822,12 @@ export class ReportController {
         const address = place?.getDisplayAddress() || undefined;
 
         const phones = phonesByDonor.get(donorId) || [];
-        const mobilePhones = mobilesByDonor.get(donorId) || [];
         const emails = emailsByDonor.get(donorId) || [];
 
         detailsMap.set(donorId, {
           // Legacy fields
           address,
           phones,
-          mobilePhones,
           emails,
           // Expanded address fields
           country: place?.country?.name || '',
@@ -1251,7 +1239,6 @@ export class ReportController {
             address: details.address || '',
             city: details.city || '',
             phones: details.phones || [],
-            mobilePhones: details.mobilePhones || [],
             emails: details.emails || [],
             lastDonationDate: data.lastDonationDate,
             title: details.title || '',
@@ -1945,9 +1932,8 @@ export interface PaymentReportData {
   currency: string;
   address?: string;
   city?: string;
+  /** Display phones - mobiles when any exist, else landlines (selectDisplayPhones). */
   phones?: string[];
-  /** Subset of `phones` matching mobile patterns - used by Excel/Print "טלפון נייד" column. */
-  mobilePhones?: string[];
   emails?: string[];
   lastDonationDate?: Date;
   // Expanded donor fields

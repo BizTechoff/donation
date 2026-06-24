@@ -896,10 +896,10 @@ getTypeText(type: string): string {
             { header: this.i18n.currentTerms.firstNameEnglish || 'First Name', mapper: (r) => r.donor?.firstNameEnglish || '', width: 15 },
             { header: this.i18n.currentTerms.lastNameEnglish || 'Last Name', mapper: (r) => r.donor?.lastNameEnglish || '', width: 15 },
             { header: this.i18n.currentTerms.suffixEnglish || 'Suffix', mapper: (r) => r.donor?.suffixEnglish || '', width: 10 },
-            // Fundraiser & Contact Person + mobile phone (per client request)
+            // Fundraiser & Contact Person + donor phone (mobiles preferred via shared helper)
             { header: this.i18n.currentTerms.fundraiser || 'מתרים', mapper: (r) => r.donor?.fundraiserId ? fundraiserMap.get(r.donor.fundraiserId) || '' : '', width: 15 },
             { header: this.i18n.currentTerms.contactPerson || 'איש קשר', mapper: (r) => r.donor?.contactPersonId ? contactPersonMap.get(r.donor.contactPersonId) || '' : '', width: 15 },
-            { header: this.i18n.currentTerms.mobilePhone || 'טלפון נייד', mapper: (r) => remContactsMap.get(r.donor?.id || '')?.mobilePhones || '-', width: 25, align: 'left' },
+            { header: this.i18n.currentTerms.phone || 'טלפון', mapper: (r) => remContactsMap.get(r.donor?.id || '')?.phone || '-', width: 20, align: 'left' },
             // Donor characteristics
             { header: this.i18n.currentTerms.maritalStatus || 'מצב משפחתי', mapper: (r) => this.getMaritalStatusText(r.donor?.maritalStatus || ''), width: 12 },
             { header: this.i18n.currentTerms.anash || 'אנ"ש', mapper: (r) => r.donor?.isAnash ? '✓' : '', width: 8 },

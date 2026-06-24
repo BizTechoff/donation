@@ -713,10 +713,10 @@ export class CertificatesComponent implements OnInit, OnDestroy {
             { header: this.i18n.currentTerms.firstNameEnglish || 'First Name', mapper: (c) => c.donor?.firstNameEnglish || '', width: 15 },
             { header: this.i18n.currentTerms.lastNameEnglish || 'Last Name', mapper: (c) => c.donor?.lastNameEnglish || '', width: 15 },
             { header: this.i18n.currentTerms.suffixEnglish || 'Suffix', mapper: (c) => c.donor?.suffixEnglish || '', width: 10 },
-            // Fundraiser & Contact Person + mobile phone (per client request)
+            // Fundraiser & Contact Person + donor phone (mobiles preferred via shared helper)
             { header: this.i18n.currentTerms.fundraiser || 'מתרים', mapper: (c) => c.donor?.fundraiserId ? fundraiserMap.get(c.donor.fundraiserId) || '' : '', width: 15 },
             { header: this.i18n.currentTerms.contactPerson || 'איש קשר', mapper: (c) => c.donor?.contactPersonId ? contactPersonMap.get(c.donor.contactPersonId) || '' : '', width: 15 },
-            { header: this.i18n.currentTerms.mobilePhone || 'טלפון נייד', mapper: (c) => certContactsMap.get(c.donor?.id || '')?.mobilePhones || '-', width: 25, align: 'left' },
+            { header: this.i18n.currentTerms.phone || 'טלפון', mapper: (c) => certContactsMap.get(c.donor?.id || '')?.phone || '-', width: 20, align: 'left' },
             // Donor characteristics
             { header: this.i18n.currentTerms.maritalStatus || 'מצב משפחתי', mapper: (c) => this.getMaritalStatusText(c.donor?.maritalStatus || ''), width: 12 },
             { header: this.i18n.currentTerms.anash || 'אנ"ש', mapper: (c) => c.donor?.isAnash ? '✓' : '', width: 8 },
