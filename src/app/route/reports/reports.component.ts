@@ -58,6 +58,8 @@ interface PaymentReportData {
   address?: string;
   city?: string;
   phones?: string[];
+  /** Subset of `phones` matching mobile patterns - used by Excel/Print "טלפון נייד" column. */
+  mobilePhones?: string[];
   emails?: string[];
   lastDonationDate?: Date;
   // Expanded donor fields
@@ -143,7 +145,10 @@ interface GroupedDonationReport {
   donorDetails?: {
     address?: string;
     phones?: string[];
+    /** Subset of phones matching mobile patterns - used by "טלפון נייד" column. */
+    mobilePhones?: string[];
     emails?: string[];
+    [key: string]: any; // tolerate extra server fields without strict typing
   };
   yearlyTotals: {
     [hebrewYear: string]: {
@@ -1117,21 +1122,28 @@ export class ReportsComponent implements OnInit, OnDestroy {
       const displayName = donor.fullName || `${donor.firstName} ${donor.lastName}`;
       const nameParts = displayName.trim().split(' ');
 
-      // מציאת טלפון, נייד ואימייל
+      // מציאת טלפון, נייד ואימייל - mobile detection by pattern (Israeli 05X, UK 07X)
+      const isMobilePhone = (raw: string): boolean => {
+        const digits = String(raw || '').replace(/\D/g, '');
+        return /^05\d{8}$/.test(digits) || /^9725\d{8}$/.test(digits)
+            || /^07\d{9}$/.test(digits) || /^447\d{9}$/.test(digits);
+      };
       let phone = '';
-      let mobile = '';
+      const mobileList: string[] = [];
       let email = '';
 
       const donorContactsList = contactsMap.get(donor.id) || [];
       for (const contact of donorContactsList) {
-        if (contact.type === 'phone' && contact.phoneNumber && !phone) {
-          phone = contact.phoneNumber;
-        } else if (contact.type === 'phone' && contact.phoneNumber && !mobile) {
-          mobile = contact.phoneNumber;
+        if (contact.type === 'phone' && contact.phoneNumber) {
+          if (!phone) phone = contact.phoneNumber;
+          if (isMobilePhone(contact.phoneNumber) && !mobileList.includes(contact.phoneNumber)) {
+            mobileList.push(contact.phoneNumber);
+          }
         } else if (contact.type === 'email' && contact.email && !email) {
           email = contact.email;
         }
       }
+      const mobile = mobileList.join('; ');
 
       // Check if this donor has a blessing
       const blessing = blessingMap.get(donor.id);
@@ -1281,9 +1293,10 @@ export class ReportsComponent implements OnInit, OnDestroy {
         { header: 'מצב משפחתי', mapper: (row: any) => this.getMaritalStatusText(row.donorDetails?.maritalStatus || ''), width: 12 },
         { header: 'אנ"ש', mapper: (row: any) => row.donorDetails?.isAnash ? '✓' : '', width: 8 },
         { header: 'תלמידנו', mapper: (row: any) => row.donorDetails?.isAlumni ? '✓' : '', width: 8 },
-        // Fundraiser & Contact Person
+        // Fundraiser & Contact Person + mobile phone (per client request)
         { header: 'מתרים', mapper: (row: any) => row.donorDetails?.fundraiserName || '', width: 15 },
         { header: 'איש קשר', mapper: (row: any) => row.donorDetails?.contactPersonName || '', width: 15 },
+        { header: 'טלפון נייד', mapper: (row: any) => (row.donorDetails?.mobilePhones || []).join('; ') || '-', width: 25, align: 'left' },
         // Expanded address fields
         { header: 'מדינה', mapper: (row: any) => row.donorDetails?.country || '', width: 12 },
         { header: 'עיר', mapper: (row: any) => row.donorDetails?.city || '', width: 15 },
@@ -1362,8 +1375,8 @@ export class ReportsComponent implements OnInit, OnDestroy {
         headers.push('Title', 'First Name', 'Last Name', 'Suffix');
         // Donor type fields
         headers.push('מצב משפחתי', 'אנ"ש', 'תלמידנו');
-        // Fundraiser & Contact Person
-        headers.push('מתרים', 'איש קשר');
+        // Fundraiser & Contact Person + mobile phone (per client request)
+        headers.push('מתרים', 'איש קשר', 'טלפון נייד');
         // Expanded address fields (if showDonorAddress)
         if (this.filters.showDonorAddress) {
           headers.push('מדינה', 'עיר', 'מחוז', 'שכונה', 'רחוב', 'מספר', 'בניין', 'דירה', 'מיקוד', 'שם מקום');
@@ -1399,9 +1412,10 @@ export class ReportsComponent implements OnInit, OnDestroy {
           dataRow.push(this.getMaritalStatusText(row.donorDetails?.maritalStatus || ''));
           dataRow.push(row.donorDetails?.isAnash ? '✓' : '');
           dataRow.push(row.donorDetails?.isAlumni ? '✓' : '');
-          // Fundraiser & Contact Person
+          // Fundraiser & Contact Person + mobile phone (per client request)
           dataRow.push(row.donorDetails?.fundraiserName || '');
           dataRow.push(row.donorDetails?.contactPersonName || '');
+          dataRow.push((row.donorDetails?.mobilePhones || []).join('; ') || '-');
           // Expanded address fields (if showDonorAddress)
           if (this.filters.showDonorAddress) {
             dataRow.push(row.donorDetails?.country || '');
@@ -1610,9 +1624,10 @@ export class ReportsComponent implements OnInit, OnDestroy {
           { header: 'מצב משפחתי', mapper: (row) => this.getMaritalStatusText(row.maritalStatus || ''), width: 12 },
           { header: 'אנ"ש', mapper: (row) => row.isAnash ? '✓' : '', width: 8 },
           { header: 'תלמידנו', mapper: (row) => row.isAlumni ? '✓' : '', width: 8 },
-          // Fundraiser & Contact Person
+          // Fundraiser & Contact Person + mobile phone (per client request)
           { header: 'מתרים', mapper: (row) => row.fundraiserName || '', width: 15 },
           { header: 'איש קשר', mapper: (row) => row.contactPersonName || '', width: 15 },
+          { header: 'טלפון נייד', mapper: (row) => (row.mobilePhones || []).join('; ') || '-', width: 25, align: 'left' },
           // Expanded address fields
           { header: 'מדינה', mapper: (row) => row.country || '', width: 12 },
           { header: 'עיר', mapper: (row) => row.city || '', width: 15 },
