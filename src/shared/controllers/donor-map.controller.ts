@@ -102,6 +102,10 @@ export interface DonorExportData {
   id: string;
   fullAddress: string;
   phone: string;
+  /** All mobile phones of this donor, semicolon-separated.
+   *  "Mobile" = Israeli prefix 05X (most common) OR international mobile patterns.
+   *  Used by all Excel/Print exports - shows the full set of mobile contacts. */
+  mobilePhones: string;
   email: string;
   place: {
     city: string;
@@ -1033,10 +1037,15 @@ export class DonorMapController {
 
     const [contactRows, placeRows, donationRows] = await Promise.all([
       sqlDb.execute(
-        `SELECT "donorId", "type", "phoneNumber", "email"
+        // Load ALL active contacts (not just isPrimary) so we can extract:
+        // - primary phone (first or isPrimary)
+        // - primary email (first or isPrimary)
+        // - all mobile phones (filtered by mobile pattern below)
+        `SELECT "donorId", "type", "phoneNumber", "email", "isPrimary"
          FROM "donor_contacts"
-         WHERE "isActive" = true AND "isPrimary" = true
-           AND "donorId" IN (${inLiteral})`
+         WHERE "isActive" = true
+           AND "donorId" IN (${inLiteral})
+         ORDER BY "donorId", CASE WHEN "isPrimary" = true THEN 0 ELSE 1 END, "createdDate"`
       ),
       sqlDb.execute(
         // Include country.code + includeCountryInLetter + nameEn so we can
@@ -1070,9 +1079,31 @@ export class DonorMapController {
 
     const phoneMap = new Map<string, string>();
     const emailMap = new Map<string, string>();
+    const mobilesMap = new Map<string, string[]>(); // donorId -> array of mobile numbers
+
+    // Mobile-phone detection: Israeli pattern (most common in this app).
+    // 05X-XXXXXXX or +9725X-XXXXXXX. International patterns can be added later.
+    const isMobile = (raw: string | null | undefined): boolean => {
+      if (!raw) return false;
+      const digits = String(raw).replace(/\D/g, '');
+      // Israeli: 05X with at least 9 digits, or +972 5X
+      if (/^05\d{8}$/.test(digits)) return true;
+      if (/^9725\d{8}$/.test(digits)) return true;
+      // UK mobile: 07X or +447X
+      if (/^07\d{9}$/.test(digits)) return true;
+      if (/^447\d{9}$/.test(digits)) return true;
+      return false;
+    };
+
     for (const r of contactRows.rows as any[]) {
-      if (r.type === 'phone' && r.phoneNumber && !phoneMap.has(r.donorId))
-        phoneMap.set(r.donorId, r.phoneNumber);
+      if (r.type === 'phone' && r.phoneNumber) {
+        if (!phoneMap.has(r.donorId)) phoneMap.set(r.donorId, r.phoneNumber);
+        if (isMobile(r.phoneNumber)) {
+          const list = mobilesMap.get(r.donorId) || [];
+          if (!list.includes(r.phoneNumber)) list.push(r.phoneNumber);
+          mobilesMap.set(r.donorId, list);
+        }
+      }
       if (r.type === 'email' && r.email && !emailMap.has(r.donorId))
         emailMap.set(r.donorId, r.email);
     }
@@ -1119,6 +1150,7 @@ export class DonorMapController {
         id,
         fullAddress: buildDisplayAddress(p),
         phone: phoneMap.get(id) || '',
+        mobilePhones: (mobilesMap.get(id) || []).join('; '),
         email: emailMap.get(id) || '',
         place: p ? {
           city: p.city || '',
