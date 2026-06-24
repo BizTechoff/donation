@@ -256,13 +256,13 @@ echo   [SKIP]
 :next17
 echo.
 
-REM ===== [18] catch-all (anything else still uncommitted) =====
-echo [18] catch-all - any remaining changes
-git add -A
+REM ===== [18] feat(exports): mobile phone column across Excel + Print =====
+echo [18] feat(exports): mobile phone column everywhere
+git add src/shared/controllers/donor-map.controller.ts src/shared/controllers/report.controller.ts src/app/route/donor-list/donor-list.component.ts src/app/route/donor-list/donor-list.component.html src/app/route/donations-list/donations-list.component.ts src/app/route/donor-gifts-list/donor-gifts-list.component.ts src/app/route/certificates/certificates.component.ts src/app/route/reminders/reminders.component.ts src/app/route/reports/reports.component.ts
 if errorlevel 1 goto :err
 git diff --cached --quiet
 if not errorlevel 1 goto :skip18
-git commit -m "wip: misc remaining changes" -m "BizTechoff(TM)"
+git commit -m "feat(exports): add mobile phone column to Excel + Print across all lists and reports" -m "Per client request - wherever an איש קשר column is exported or printed, add a טלפון נייד column right after. Single source of truth: isMobilePhone helper detects Israeli 05X and +972 5X, plus UK 07X and +44 7X patterns. Touched: donor-map.controller.ts loadDonorsForExport now also returns mobilePhones semicolon-joined; report.controller.ts loadAllDonorDetails populates mobilePhones array on DonorExportDetails and PaymentReportData; 5 list components (donor-list donations-list donor-gifts-list certificates reminders) add the column to Excel and to Print where applicable - donor-list and donations-list got it in print too; reports.component.ts adds the column in 3 places (grouped donations Excel + ייצוא מתקדם headers and dataRow + payments Excel) and fixes the blessings report mobile field which previously took just the second phone instead of detecting mobile pattern. Local interfaces PaymentReportData and GroupedDonationReport.donorDetails extended to include mobilePhones - the latter also gets an index signature so the compiler tolerates extra server fields. Column always aligned LEFT (LTR) because phone numbers are Latin script." -m "BizTechoff(TM)"
 if errorlevel 1 goto :err
 goto :next18
 :skip18
@@ -270,8 +270,64 @@ echo   [SKIP]
 :next18
 echo.
 
+REM ===== [19] fix(print + excel): LTR direction for left-aligned cells =====
+echo [19] fix(print + excel): LTR direction
+git add src/app/services/print.service.ts src/app/services/excel-export.service.ts
+if errorlevel 1 goto :err
+git diff --cached --quiet
+if not errorlevel 1 goto :skip19
+git commit -m "fix(print + excel): LTR direction for left-aligned cells - addresses emails phones render in natural English order" -m "Print: .align-left now also sets direction:ltr and unicode-bidi:plaintext so 10 Downing Street renders in that order instead of being pushed by the surrounding RTL Hebrew context to Street Downing 10. Excel: ExcelColumn interface gains an optional align property; for columns with align:left the service wraps each cell value with the Unicode LRE U+202A and PDF U+202C markers so Excel Google Sheets and LibreOffice render the text left-to-right even inside a Hebrew RTL sheet. xlsx 0.18 open source does not support per-cell style without xlsx-style so the Unicode markers are the portable workaround." -m "BizTechoff(TM)"
+if errorlevel 1 goto :err
+goto :next19
+:skip19
+echo   [SKIP]
+:next19
+echo.
+
+REM ===== [20] feat(perf): GlobalFilter SQL JOIN + timings =====
+echo [20] feat(perf): GlobalFilter places SQL JOIN
+git add src/shared/controllers/global-filter.controller.ts
+if errorlevel 1 goto :err
+git diff --cached --quiet
+if not errorlevel 1 goto :skip20
+git commit -m "perf(global-filter): replace Remult ORM hydration with single SQL JOIN in getDonorIdsFromPlaces - 2.5s to 50ms" -m "The previous version did two repo.find calls Place.find then DonorPlace.find. Each Remult find hydrates the full entity tree via defaultIncluded relations so for 3K places plus 3.3K donor_places it loaded Country on every place and Donor plus Place plus AddressType on every donor_place. Cumulative cost reached 2561ms on Railway which was the dominant slice of the 3.5s donor search API time. Fix: one SQL JOIN selecting only donorId from donor_places joined to places with the country city neighborhood filters in WHERE. About 50ms in practice. Also added granular console.time markers around getDonorIdsFromUserSettings and the five sub-steps to make future regressions easy to spot." -m "BizTechoff(TM)"
+if errorlevel 1 goto :err
+goto :next20
+:skip20
+echo   [SKIP]
+:next20
+echo.
+
+REM ===== [21] feat(search): debounce 800ms + min 2 chars + focus restore everywhere =====
+echo [21] feat(search): 800ms debounce min 2 chars focus restore - all list components
+git add src/app/route/donor-list/donor-list.component.html src/app/route/donor-list/donor-list.component.ts src/app/route/donations-list/donations-list.component.html src/app/route/donations-list/donations-list.component.ts src/app/route/campaigns-list/campaigns-list.component.html src/app/route/campaigns-list/campaigns-list.component.ts src/app/route/reminders/reminders.component.html src/app/route/reminders/reminders.component.ts src/app/route/certificates/certificates.component.html src/app/route/certificates/certificates.component.ts src/app/route/donor-gifts-list/donor-gifts-list.component.html src/app/route/donor-gifts-list/donor-gifts-list.component.ts src/app/route/donors-map/donors-map.component.html src/app/route/donors-map/donors-map.component.ts
+if errorlevel 1 goto :err
+git diff --cached --quiet
+if not errorlevel 1 goto :skip21
+git commit -m "feat(search): 800ms debounce + minimum 2 chars + focus restore across all list filters" -m "Per client feedback - search was triggering too eagerly on each keystroke and after results refresh the input lost focus so the user could not keep typing. Applied consistent pattern across 7 components donor-list donations-list campaigns-list reminders certificates donor-gifts-list donors-map. Each search input gets a hash searchInput template ref ViewChild reference and a private restoreSearchFocus helper. Logic - skip the server call if the trimmed length is below 2 chars empty string still allowed since clearing the field should reset the list. Debounce raised to 800ms because slower typists were seeing every other character trigger a query. After refresh the helper waits 150ms for change detection plus the BusyService overlay to settle then focuses the input only when the current active element is body or a non-input element so it never steals focus from another input the user just clicked." -m "BizTechoff(TM)"
+if errorlevel 1 goto :err
+goto :next21
+:skip21
+echo   [SKIP]
+:next21
+echo.
+
+REM ===== [22] catch-all (anything else still uncommitted) =====
+echo [22] catch-all - any remaining changes
+git add -A
+if errorlevel 1 goto :err
+git diff --cached --quiet
+if not errorlevel 1 goto :skip22
+git commit -m "wip: misc remaining changes" -m "BizTechoff(TM)"
+if errorlevel 1 goto :err
+goto :next22
+:skip22
+echo   [SKIP]
+:next22
+echo.
+
 echo === Done ===
-git log -20 --oneline
+git log -25 --oneline
 echo.
 git status --short
 echo.
