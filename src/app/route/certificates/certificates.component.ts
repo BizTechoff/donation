@@ -16,6 +16,7 @@ import { Reminder } from '../../../shared/entity/reminder';
 import { Blessing } from '../../../shared/entity/blessing';
 import { BusyService } from '../../common-ui-elements/src/angular/wait/busy-service';
 import { DonorController } from '../../../shared/controllers/donor.controller';
+import { DonorMapController } from '../../../shared/controllers/donor-map.controller';
 
 @Component({
   selector: 'app-certificates',
@@ -692,6 +693,13 @@ export class CertificatesComponent implements OnInit, OnDestroy {
         const fundraiserMap = new Map(fundraisers.map(f => [f.id, f.name]));
         const contactPersonMap = new Map(contactPersons.map(cp => [cp.id, cp.name]));
 
+        // Load donor contacts (phone + mobile phones + email) for export columns
+        const certDonorIds = [...new Set(allCertificates.map(c => c.donor?.id).filter(id => id))] as string[];
+        const certContactData = certDonorIds.length > 0
+          ? await DonorMapController.loadDonorsForExport(certDonorIds)
+          : [];
+        const certContactsMap = new Map(certContactData.map(d => [d.id, d]));
+
         await this.excelExportService.export({
           data: allCertificates,
           columns: [
@@ -705,9 +713,10 @@ export class CertificatesComponent implements OnInit, OnDestroy {
             { header: this.i18n.currentTerms.firstNameEnglish || 'First Name', mapper: (c) => c.donor?.firstNameEnglish || '', width: 15 },
             { header: this.i18n.currentTerms.lastNameEnglish || 'Last Name', mapper: (c) => c.donor?.lastNameEnglish || '', width: 15 },
             { header: this.i18n.currentTerms.suffixEnglish || 'Suffix', mapper: (c) => c.donor?.suffixEnglish || '', width: 10 },
-            // Fundraiser & Contact Person
+            // Fundraiser & Contact Person + mobile phone (per client request)
             { header: this.i18n.currentTerms.fundraiser || 'מתרים', mapper: (c) => c.donor?.fundraiserId ? fundraiserMap.get(c.donor.fundraiserId) || '' : '', width: 15 },
             { header: this.i18n.currentTerms.contactPerson || 'איש קשר', mapper: (c) => c.donor?.contactPersonId ? contactPersonMap.get(c.donor.contactPersonId) || '' : '', width: 15 },
+            { header: this.i18n.currentTerms.mobilePhone || 'טלפון נייד', mapper: (c) => certContactsMap.get(c.donor?.id || '')?.mobilePhones || '-', width: 25, align: 'left' },
             // Donor characteristics
             { header: this.i18n.currentTerms.maritalStatus || 'מצב משפחתי', mapper: (c) => this.getMaritalStatusText(c.donor?.maritalStatus || ''), width: 12 },
             { header: this.i18n.currentTerms.anash || 'אנ"ש', mapper: (c) => c.donor?.isAnash ? '✓' : '', width: 8 },
