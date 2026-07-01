@@ -631,7 +631,14 @@
         <!-- *ngIf="!isNewDonation && selectedPaymentMethod && selectedPaymentMethod.type === 'standing_order' && donation.donationType !== 'commitment' &&
         ((donation.standingOrderType === 'bank' && donationBanks.length) || (donation.standingOrderType === 'organization' && donationOrganizations.length))" -->
 <!-- {{this.selectedPaymentMethod | json}} -->
-      <button *ngIf="!isNewDonation && donation && (donation.donationType === 'commitment' || isStandingOrderPayment)"
+      <!--
+        Show "תנועות" also for BRAND-NEW commitment donations (per client
+        Israel Glikson, 30.6.2026 #3): clicking will save+validate first
+        and only then open the payment list, so the user does not have to
+        close & reopen the modal to attach payments. Standing-order flow is
+        unchanged - it still needs an existing (saved) donation record.
+      -->
+      <button *ngIf="donation && (donation.donationType === 'commitment' || (!isNewDonation && isStandingOrderPayment))"
         mat-stroked-button class="action-button payment-list-btn" (click)="openPaymentList()" title="תנועות">
         <mat-icon>payment</mat-icon>
         תנועות

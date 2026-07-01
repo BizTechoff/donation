@@ -344,7 +344,18 @@ export class DonationDetailsModalComponent implements OnInit {
     return JSON.stringify(this.donation) !== this.originalDonationData;
   }
 
-  async saveDonation() {
+  /**
+   * Validates required fields and persists the donation + its side entities.
+   * Does NOT close the dialog - callers decide what to do next:
+   *   - saveDonation() closes the modal on success (the "Save" button flow)
+   *   - openPaymentList() keeps the modal open so the user can attach
+   *     payments to a brand-new commitment donation without a save/close
+   *     /reopen round-trip.
+   *
+   * Returns true on success, false on validation error or persistence failure.
+   * The relevant ui.error message is already displayed by the time we return.
+   */
+  private async saveDonationCore(): Promise<boolean> {
     if (!this.donation) return false;
 
     // Validate required fields
@@ -397,13 +408,25 @@ export class DonationDetailsModalComponent implements OnInit {
       }
 
       this.changed = wasNew || this.hasChanges();
-      this.dialogRef.close(this.changed);
-      return true
+      // A donation that just got its ID is no longer "new" - subsequent
+      // interactions (payment list, more edits) should treat it as existing.
+      if (wasNew && this.donation.id) {
+        this.isNewDonation = false;
+      }
+      return true;
     } catch (error) {
       console.error('Error saving donation:', error);
       this.ui.error('שגיאה בשמירת התרומה');
-      return false
+      return false;
     }
+  }
+
+  async saveDonation() {
+    const success = await this.saveDonationCore();
+    if (success) {
+      this.dialogRef.close(this.changed);
+    }
+    return success;
   }
 
   async deleteDonation() {
@@ -510,15 +533,32 @@ export class DonationDetailsModalComponent implements OnInit {
   }
 
   async openPaymentList() {
-    if (this.donation?.id) {
-      await this.donationRepo.save(this.donation)
-      // alert(this.donation.donationMethod)
-      await this.ui.paymentListDialog(this.donation.id, {
-        donationType: this.donation.donationType,
-        donationMethod: this.donation.donationMethod,
-        standingOrderType: this.donation.standingOrderType
-      });
+    if (!this.donation) return;
+
+    // Brand-new commitment path (per client Israel Glikson, 30.6.2026 #3):
+    // no id yet → run the same validation + save the user would get from the
+    // "Save" button, but do NOT close the details modal. Only if the save
+    // succeeds do we open the payment list; if any required field is missing,
+    // saveDonationCore already displayed the ui.error and we bail out.
+    if (!this.donation.id) {
+      const saved = await this.saveDonationCore();
+      if (!saved) return;
+    } else {
+      // Existing donation: flush any pending edits before opening the list.
+      try {
+        await this.donationRepo.save(this.donation);
+      } catch (error) {
+        console.error('Error updating donation before opening payments:', error);
+        this.ui.error('שגיאה בשמירת התרומה');
+        return;
+      }
     }
+
+    await this.ui.paymentListDialog(this.donation.id, {
+      donationType: this.donation.donationType,
+      donationMethod: this.donation.donationMethod,
+      standingOrderType: this.donation.standingOrderType
+    });
   }
 
   closeModal(event?: MouseEvent) {
