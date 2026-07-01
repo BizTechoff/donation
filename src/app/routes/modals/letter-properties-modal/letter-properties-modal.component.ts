@@ -5,6 +5,8 @@ import { remult } from 'remult';
 import { Company, Donation, DonorPlace, LetterTitle, LetterTitleDefault } from '../../../../shared/entity';
 import { Letter } from '../../../../shared/enum/letter';
 import { DonationController } from '../../../../shared/controllers/donation.controller';
+import { PaymentController } from '../../../../shared/controllers/payment.controller';
+import { getPledgeSummary } from '../../../../shared/utils/donation-utils';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
 import { LetterService } from '../../../services/letter.service';
@@ -425,7 +427,18 @@ export class LetterPropertiesModalComponent implements OnInit {
     switch (field) {
       // ===== English/American Letter Fields =====
       case 'Amount': {
-        result = this.donation.amount.toString();
+        // For pledge donations, show "pledgeTotal / paidTotal" (same format as
+        // the main donations list summary) so the recipient can see both the
+        // commitment amount and how much has been paid so far - per client
+        // request (Israel Glikson, 30.6.2026 #4). Regular one-off donations
+        // keep the previous behavior of showing just the amount.
+        if (this.donation.donationType === 'commitment') {
+          const payments = await PaymentController.getPaymentsByDonation(this.donation.id, 'התחייבות');
+          const summary = getPledgeSummary(this.donation, payments);
+          result = `${summary.pledgeTotal.toLocaleString()} / ${summary.paidTotal.toLocaleString()}`;
+        } else {
+          result = this.donation.amount.toString();
+        }
         break;
       }
       case 'Number_receipt': {
@@ -549,7 +562,17 @@ export class LetterPropertiesModalComponent implements OnInit {
       }
       case 'תרומה': {
         const currency = await this.getFieldValue('Currency_symbol')
-        result = `${currency}${this.donation.amount.toString()}`;
+        // For pledge donations - show "currency pledgeTotal / currency paidTotal"
+        // so the letter reflects both the commitment and what has already been
+        // received against it. Regular donations - unchanged. Shared with the
+        // 'Amount' case above via getPledgeSummary helper - one source of truth.
+        if (this.donation.donationType === 'commitment') {
+          const payments = await PaymentController.getPaymentsByDonation(this.donation.id, 'התחייבות');
+          const summary = getPledgeSummary(this.donation, payments);
+          result = `${currency}${summary.pledgeTotal.toLocaleString()} / ${currency}${summary.paidTotal.toLocaleString()}`;
+        } else {
+          result = `${currency}${this.donation.amount.toLocaleString()}`;
+        }
         break
       }
       case 'סיבה_תרומה': {

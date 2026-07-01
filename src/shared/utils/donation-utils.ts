@@ -85,6 +85,38 @@ export function isPaymentBased(donation: Donation): boolean {
 }
 
 /**
+ * סיכום מצב תרומת התחייבות: סך ההתחייבות, סך התנועות המשוייכות, והיתרה.
+ * מקור אמת אחד לכל מי שרוצה להציג את שני הסכומים יחד — רשימת התרומות,
+ * המכתב לתורם, דוחות וכיו"ב.
+ *
+ * טהור וללא I/O: מקבל את התשלומים כפרמטר כדי לאפשר שני שימושים:
+ *   - רשימות שכבר טענו תשלומים ב-bulk (מקבלות את המערך הרלוונטי)
+ *   - קונטקסטים של תרומה בודדת (טוענים דרך PaymentController.getPaymentsByDonation
+ *     ואז מעבירים)
+ *
+ * חוזר לוגיקת הסינון ל-calculatePaymentTotals — בלי שכפול.
+ * לתרומה שאינה התחייבות: pledgeTotal = amount, paidTotal = 0, remaining = amount.
+ */
+export interface PledgeSummary {
+  pledgeTotal: number
+  paidTotal: number
+  remaining: number
+}
+
+export function getPledgeSummary(
+  donation: Donation,
+  payments: Payment[]
+): PledgeSummary {
+  const pledgeTotal = donation.amount || 0
+  const paidTotal = calculatePaymentTotals([donation], payments)[donation.id] || 0
+  return {
+    pledgeTotal,
+    paidTotal,
+    remaining: pledgeTotal - paidTotal
+  }
+}
+
+/**
  * מחשב כמה תקופות תשלום חלפו מאז תחילת ההו"ק
  */
 export function calculatePeriodsElapsed(
