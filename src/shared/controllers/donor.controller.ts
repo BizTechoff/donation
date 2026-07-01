@@ -219,12 +219,12 @@ export class DonorController {
   }): Promise<DonorSelectionPageData> {
     const { search, page, pageSize, excludeIds, sortColumns } = params;
 
-    const donors = await DonorController.findFilteredDonors(search, undefined, page, pageSize, sortColumns);
-    const totalCount = await DonorController.countFilteredDonors(search);
+    // excludeIds are applied at the SQL level in both queries below, so page
+    // size, totalCount and select-all all agree. No in-memory post-filter.
+    const donors = await DonorController.findFilteredDonors(search, undefined, page, pageSize, sortColumns, excludeIds);
+    const totalCount = await DonorController.countFilteredDonors(search, undefined, excludeIds);
 
-    const filteredDonors = excludeIds?.length
-      ? donors.filter(d => !excludeIds.includes(d.id))
-      : donors;
+    const filteredDonors = donors;
 
     const donorIds = filteredDonors.map(d => d.id);
 
@@ -252,6 +252,27 @@ export class DonorController {
   }
 
   /**
+   * Returns all donors that match the current selection filter (search + excludeIds).
+   *
+   * Used by donor-selection-modal's "select all" checkbox to select donors across
+   * every page of the current filter (not only the visible page). Returns FULL
+   * Donor objects (not just ids) so the caller can push straight into
+   * selectedDonors without a second round-trip - the server already loaded them,
+   * sending only ids and then re-loading the same rows would be a pessimization.
+   *
+   * excludeIds applied at SQL level - result matches getDonorsForSelectionPage
+   * totalCount exactly, so header "select all (N)" matches footer "N out of N".
+   */
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async getAllDonorsForSelection(params: {
+    search?: string;
+    excludeIds?: string[];
+  }): Promise<Donor[]> {
+    const { search, excludeIds } = params;
+    return await DonorController.findFilteredDonors(search, undefined, undefined, undefined, undefined, excludeIds);
+  }
+
+  /**
    * Get only donor IDs without loading full donor objects - much faster for maps
    */
   @BackendMethod({ allowed: Allow.authenticated })
@@ -260,15 +281,35 @@ export class DonorController {
     return donors.map(d => d.id);
   }
 
+  /**
+   * Applies excludeIds to a whereClause that may already have `id: { $in: [...] }`.
+   * Filters the $in list when present, otherwise adds `id: { '!=': excludeIds }`.
+   * Returns `false` if the resulting id list is provably empty (caller can early-out).
+   */
+  private static applyExcludeIdsToWhere(whereClause: any, excludeIds?: string[]): boolean {
+    if (!excludeIds?.length) return true;
+    const excludeSet = new Set(excludeIds);
+    if (whereClause.id?.$in) {
+      const filtered = (whereClause.id.$in as string[]).filter(id => !excludeSet.has(id));
+      if (filtered.length === 0) return false;
+      whereClause.id = { $in: filtered };
+    } else {
+      // No pre-existing $in restriction — use Remult "!=" against the array.
+      whereClause.id = { '!=': excludeIds };
+    }
+    return true;
+  }
+
   @BackendMethod({ allowed: Allow.authenticated })
   static async findFilteredDonors(
     searchTerm?: string,
     additionalFilters?: Partial<GlobalFilters>,
     page?: number,
     pageSize?: number,
-    sortColumns?: Array<{ field: string; direction: 'asc' | 'desc' }>
+    sortColumns?: Array<{ field: string; direction: 'asc' | 'desc' }>,
+    excludeIds?: string[]
   ): Promise<Donor[]> {
-    console.log(`[findFilteredDonors] start - searchTerm="${searchTerm}", page=${page}`);
+    console.log(`[findFilteredDonors] start - searchTerm="${searchTerm}", page=${page}, excludeIds=${excludeIds?.length ?? 0}`);
     console.time('[findFilteredDonors] TOTAL');
     const { GlobalFilterController } = await import('./global-filter.controller');
 
@@ -321,6 +362,12 @@ export class DonorController {
       whereClause.id = { $in: matchingIds };
     }
 
+    // Apply excludeIds at SQL level so counts, paging and select-all all agree.
+    if (!DonorController.applyExcludeIdsToWhere(whereClause, excludeIds)) {
+      console.timeEnd('[findFilteredDonors] TOTAL');
+      return [];
+    }
+
     console.time('[findFilteredDonors] 3.repo.find (final page query)');
     const result = await remult.repo(Donor).find({
       where: whereClause,
@@ -350,8 +397,12 @@ export class DonorController {
   }
 
   @BackendMethod({ allowed: Allow.authenticated })
-  static async countFilteredDonors(searchTerm?: string, additionalFilters?: Partial<GlobalFilters>): Promise<number> {
-    console.log(`[countFilteredDonors] start - searchTerm="${searchTerm}"`);
+  static async countFilteredDonors(
+    searchTerm?: string,
+    additionalFilters?: Partial<GlobalFilters>,
+    excludeIds?: string[]
+  ): Promise<number> {
+    console.log(`[countFilteredDonors] start - searchTerm="${searchTerm}", excludeIds=${excludeIds?.length ?? 0}`);
     console.time('[countFilteredDonors] TOTAL');
     const { GlobalFilterController } = await import('./global-filter.controller');
 
@@ -379,6 +430,12 @@ export class DonorController {
         return 0;
       }
       whereClause.id = { $in: matchingIds };
+    }
+
+    // Apply excludeIds at SQL level - keeps count in sync with paged data & select-all.
+    if (!DonorController.applyExcludeIdsToWhere(whereClause, excludeIds)) {
+      console.timeEnd('[countFilteredDonors] TOTAL');
+      return 0;
     }
 
     console.time('[countFilteredDonors] 3.repo.count');
