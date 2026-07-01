@@ -34,15 +34,26 @@ if errorlevel 1 goto :err
 :next2
 echo.
 
-REM ===== [3] catch-all (anything else still uncommitted) =====
-git add -A
+REM ===== [3] chore(deps): remove unused puppeteer devDependency (unblocks Railway build) =====
+git add package.json package-lock.json
 if errorlevel 1 goto :err
 git diff --cached --quiet
 if not errorlevel 1 goto :next3
-echo [3] catch-all - misc remaining changes
-git commit -m "wip: misc remaining changes" -m "BizTechoff(TM)"
+echo [3] chore(deps): remove unused puppeteer devDependency
+git commit -m "chore(deps): remove unused puppeteer devDependency - unblocks Railway build" -m "Railway (nixpacks) auto-detects puppeteer in the dependency tree and injects a hard-coded list of Chromium apt packages into the build image, including gconf-service and libappindicator1 which have been removed from current Debian / Ubuntu repositories. apt-get install fails, the entire image build aborts, and no version of the app ever reaches the deploy step - the v2026.07.01 build reported 'Failed to build an image' during apt install. Root cause is that puppeteer was pulled in as a devDependency at some point but is not referenced anywhere in src/, scripts/ or any *.ts across the repo (checked before removal). Karma still runs its own headless browser via karma-chrome-launcher, so removing puppeteer does not break the test setup either. Package removed via 'npm uninstall puppeteer' so both package.json and package-lock.json stay in sync; local 'npm run build' verified green before commit." -m "BizTechoff(TM)"
 if errorlevel 1 goto :err
 :next3
+echo.
+
+REM ===== [4] catch-all (anything else still uncommitted) =====
+git add -A
+if errorlevel 1 goto :err
+git diff --cached --quiet
+if not errorlevel 1 goto :next4
+echo [4] catch-all - misc remaining changes
+git commit -m "wip: misc remaining changes" -m "BizTechoff(TM)"
+if errorlevel 1 goto :err
+:next4
 echo.
 
 echo === Done ===
