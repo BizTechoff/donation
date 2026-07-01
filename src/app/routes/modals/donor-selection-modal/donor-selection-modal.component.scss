@@ -229,9 +229,36 @@
 
 // Table styling
 .data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+
+  thead th {
+    // Sticky header inside the scrollable table body so column headers remain
+    // visible while paging through 50 rows.
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: #f1f3f9;
+    padding: 8px 10px;
+    font-weight: 600;
+    color: #2c3e50;
+    border-bottom: 2px solid #e1e8ed;
+    text-align: right;
+    white-space: nowrap;
+  }
+
   tbody tr {
     cursor: pointer;
     transition: background-color 0.2s ease;
+
+    // Denser rows (per client request 30.6.2026 - Israel Glikson) so more
+    // donors fit in the visible area without scrolling.
+    td {
+      padding: 6px 10px;
+      border-bottom: 1px solid #eef1f5;
+      line-height: 1.35;
+    }
 
     &:hover {
       background-color: #f7f9fc;
@@ -244,13 +271,13 @@
   }
 
   .checkbox-col {
-    width: 60px;
+    width: 44px;
     text-align: center;
 
     input[type="checkbox"] {
       cursor: pointer;
-      width: 18px;
-      height: 18px;
+      width: 16px;
+      height: 16px;
     }
   }
 

@@ -43,10 +43,17 @@ export class DonorSelectionModalComponent implements OnInit, OnDestroy {
   filterText = '';
 
   currentPage = 1;
-  pageSize = 20;
+  pageSize = 50;
   totalCount = 0;
   totalPages = 0;
   Math = Math;
+
+  // Tracks whether "select all" was clicked and applied to the whole current
+  // filter (across all pages). Reset when the user unchecks any single donor
+  // or when the filter changes (search / page navigation reload sets this via
+  // recomputeAllInFilterFlag()). Used by areAllSelected() so the header
+  // checkbox stays "checked" while paging through the results.
+  private allInCurrentFilterSelected = false;
 
   sortColumns: Array<{ field: string; direction: 'asc' | 'desc' }> = [];
 
@@ -137,6 +144,10 @@ export class DonorSelectionModalComponent implements OnInit, OnDestroy {
   }
 
   onSearchChange() {
+    // Changing the search means the "current filter" changes too, so the
+    // header checkbox must no longer report "all selected" until the user
+    // presses it again for the new filter.
+    this.allInCurrentFilterSelected = false;
     this.searchSubject.next();
   }
 
@@ -291,6 +302,8 @@ export class DonorSelectionModalComponent implements OnInit, OnDestroy {
       this.selectedDonorIds.delete(donor.id);
       const index = this.selectedDonors.findIndex(d => d.id === donor.id);
       if (index !== -1) this.selectedDonors.splice(index, 1);
+      // Any single un-check breaks the "all in current filter" state.
+      this.allInCurrentFilterSelected = false;
     } else {
       this.selectedDonorIds.add(donor.id);
       this.selectedDonors.push(donor);
@@ -301,26 +314,50 @@ export class DonorSelectionModalComponent implements OnInit, OnDestroy {
     return this.selectedDonorIds.has(donor.id);
   }
 
+  /**
+   * Header checkbox is "checked" when either:
+   *   - The user pressed "select all" for the current filter (flag stays true
+   *     across page navigation), OR
+   *   - Every donor visible on the current page is already selected
+   *     (backwards-compatible behavior for small result sets).
+   */
   areAllSelected(): boolean {
+    if (this.allInCurrentFilterSelected) return true;
     return this.availableDonors.length > 0 &&
            this.availableDonors.every(d => this.selectedDonorIds.has(d.id));
   }
 
-  toggleSelectAll() {
+  /**
+   * "Select all" now spans every page of the current filter (per client
+   * request 30.6.2026 - Israel Glikson). Single backend round-trip: the
+   * controller returns full Donor objects (the server already loaded them
+   * to compute the filter), so we can push them straight into selectedDonors
+   * without a second .find() query.
+   */
+  async toggleSelectAll() {
     if (this.areAllSelected()) {
-      this.availableDonors.forEach(d => {
-        this.selectedDonorIds.delete(d.id);
-        const idx = this.selectedDonors.findIndex(s => s.id === d.id);
-        if (idx !== -1) this.selectedDonors.splice(idx, 1);
-      });
-    } else {
-      this.availableDonors.forEach(d => {
-        if (!this.selectedDonorIds.has(d.id)) {
-          this.selectedDonorIds.add(d.id);
-          this.selectedDonors.push(d);
-        }
-      });
+      // Uncheck - clear ALL selections (including from other pages).
+      this.selectedDonorIds.clear();
+      this.selectedDonors = [];
+      this.allInCurrentFilterSelected = false;
+      return;
     }
+
+    await this.busy.doWhileShowingBusy(async () => {
+      const allDonors = await DonorController.getAllDonorsForSelection({
+        search: this.filterText?.trim() || undefined,
+        excludeIds: this.args?.excludeIds
+      });
+
+      for (const donor of allDonors) {
+        if (!this.selectedDonorIds.has(donor.id)) {
+          this.selectedDonorIds.add(donor.id);
+          this.selectedDonors.push(donor);
+        }
+      }
+
+      this.allInCurrentFilterSelected = true;
+    });
   }
 
   finishMultiSelect() {

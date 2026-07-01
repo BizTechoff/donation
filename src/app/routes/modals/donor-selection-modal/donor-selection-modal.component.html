@@ -25,7 +25,7 @@
         <thead>
           <tr>
             <th *ngIf="args.multiSelect" class="checkbox-col">
-              <input type="checkbox" [checked]="areAllSelected()" (change)="toggleSelectAll()" title="בחר/בטל הכל">
+              <input type="checkbox" [checked]="areAllSelected()" (change)="toggleSelectAll()" title="בחר/בטל הכל - על פני כל הדפים">
             </th>
             <th class="sortable" [class.sorted]="isSorted('fullName')" (click)="toggleSort('fullName', $event)">
               {{ (i18n.terms$ | async)?.donorNameColumn }}
