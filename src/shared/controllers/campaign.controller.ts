@@ -2,6 +2,7 @@ import { Allow, BackendMethod, Controller } from 'remult';
 import { remult } from 'remult';
 import { Campaign } from '../entity';
 import { GlobalFilters } from '../../app/services/global-filter.service';
+import { formatDisplayPhones } from '../utils/phone-utils';
 
 export interface CampaignSelectionData {
   campaigns: Campaign[];
@@ -472,15 +473,25 @@ export class CampaignController {
       });
     }
 
-    // Build contact maps (primary only)
+    // Build contact maps. Phones go through shared phone-utils.formatDisplayPhones
+    // so campaign blessings/reports show mobiles when they exist (falling back
+    // to landlines) - same rule as the donor list, reports and exports.
     const phoneMap = new Map<string, string>();
     const emailMap = new Map<string, string>();
+    const allPhonesByDonor = new Map<string, string[]>();
     for (const c of contacts) {
-      if (c.donorId && c.type === 'phone' && c.phoneNumber && !phoneMap.has(c.donorId)) {
-        phoneMap.set(c.donorId, c.phoneNumber);
-      } else if (c.donorId && c.type === 'email' && c.email && !emailMap.has(c.donorId)) {
+      if (!c.donorId) continue;
+      if (c.type === 'phone' && c.phoneNumber) {
+        const list = allPhonesByDonor.get(c.donorId) || [];
+        list.push(c.phoneNumber);
+        allPhonesByDonor.set(c.donorId, list);
+      } else if (c.type === 'email' && c.email && !emailMap.has(c.donorId)) {
         emailMap.set(c.donorId, c.email);
       }
+    }
+    for (const [donorId, list] of allPhonesByDonor) {
+      const value = formatDisplayPhones(list);
+      if (value) phoneMap.set(donorId, value);
     }
 
     // Group donations by donor

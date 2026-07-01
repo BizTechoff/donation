@@ -1,5 +1,6 @@
 import { Allow, BackendMethod, Controller, remult, SqlDatabase } from 'remult';
 import { GlobalFilters } from '../../app/services/global-filter.service';
+import { formatDisplayPhones } from '../utils/phone-utils';
 import { Circle } from '../entity/circle';
 import { Company } from '../entity/company';
 import { Country } from '../entity/country';
@@ -237,12 +238,24 @@ export class DonorController {
     const donorPhoneMap: Record<string, string> = {};
     const donorPlaceMap: Record<string, Place> = {};
 
+    // Gather ALL phones per donor first; canonical display value is derived
+    // via the shared phone-utils.formatDisplayPhones - mobiles first, else
+    // landlines - so the selection modal shows the same phone the donor list,
+    // reports and exports show. First-email-wins is fine for the email field.
+    const allPhonesByDonor = new Map<string, string[]>();
     donorContacts.forEach(contact => {
-      if (contact.donorId) {
-        if (contact.email && !donorEmailMap[contact.donorId]) donorEmailMap[contact.donorId] = contact.email;
-        if (contact.phoneNumber && !donorPhoneMap[contact.donorId]) donorPhoneMap[contact.donorId] = contact.phoneNumber;
+      if (!contact.donorId) return;
+      if (contact.email && !donorEmailMap[contact.donorId]) donorEmailMap[contact.donorId] = contact.email;
+      if (contact.phoneNumber) {
+        const list = allPhonesByDonor.get(contact.donorId) || [];
+        list.push(contact.phoneNumber);
+        allPhonesByDonor.set(contact.donorId, list);
       }
     });
+    for (const [donorId, list] of allPhonesByDonor) {
+      const value = formatDisplayPhones(list);
+      if (value) donorPhoneMap[donorId] = value;
+    }
 
     primaryPlacesMap.forEach((donorPlace, donorId) => {
       if (donorPlace.place) donorPlaceMap[donorId] = donorPlace.place;
@@ -677,11 +690,22 @@ export class DonorController {
   ): InvitedDonorRow[] {
     const phoneMap = new Map<string, string>();
     const emailMap = new Map<string, string>();
+    // Gather ALL phones per donor first, then derive the canonical display
+    // value via shared phone-utils.formatDisplayPhones (mobiles preferred over
+    // landlines) so campaign invited lists match the donor list / reports.
+    const allPhonesByDonor = new Map<string, string[]>();
     for (const c of contacts) {
-      if (c.donorId) {
-        if (c.phoneNumber && !phoneMap.has(c.donorId)) phoneMap.set(c.donorId, c.phoneNumber);
-        if (c.email && !emailMap.has(c.donorId)) emailMap.set(c.donorId, c.email);
+      if (!c.donorId) continue;
+      if (c.email && !emailMap.has(c.donorId)) emailMap.set(c.donorId, c.email);
+      if (c.phoneNumber) {
+        const list = allPhonesByDonor.get(c.donorId) || [];
+        list.push(c.phoneNumber);
+        allPhonesByDonor.set(c.donorId, list);
       }
+    }
+    for (const [donorId, list] of allPhonesByDonor) {
+      const value = formatDisplayPhones(list);
+      if (value) phoneMap.set(donorId, value);
     }
     return donors.map(d => {
       const dp = primaryPlacesMap.get(d.id);

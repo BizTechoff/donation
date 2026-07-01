@@ -3,6 +3,7 @@ import { remult } from 'remult';
 import { DonorMapController, DonorMapData } from '../../shared/controllers/donor-map.controller';
 import { DonorController } from '../../shared/controllers/donor.controller';
 import { Donation, Donor, DonorContact, DonorEvent, DonorPlace, Event, Place } from '../../shared/entity';
+import { formatDisplayPhones } from '../../shared/utils/phone-utils';
 import { GlobalFilters, GlobalFilterService } from './global-filter.service';
 
 @Injectable({
@@ -227,15 +228,26 @@ export class DonorService {
       }
     });
 
-    // Process contacts
+    // Process contacts. Gather ALL phones per donor first, then derive the
+    // canonical display value via shared phone-utils.formatDisplayPhones -
+    // mobiles preferred over landlines. Same rule the donor list, reports and
+    // exports already use, so the reminders/notes UI that consumes this map
+    // shows the same phone the rest of the platform shows.
+    const allPhonesByDonor = new Map<string, string[]>();
     allContacts.forEach(contact => {
       if (!contact.donorId) return;
       if (contact.type === 'email' && contact.email) {
         donorEmailMap.set(contact.donorId, contact.email);
       } else if (contact.type === 'phone' && contact.phoneNumber) {
-        donorPhoneMap.set(contact.donorId, contact.phoneNumber);
+        const list = allPhonesByDonor.get(contact.donorId) || [];
+        list.push(contact.phoneNumber);
+        allPhonesByDonor.set(contact.donorId, list);
       }
     });
+    for (const [donorId, list] of allPhonesByDonor) {
+      const value = formatDisplayPhones(list);
+      if (value) donorPhoneMap.set(donorId, value);
+    }
 
     // Process birth dates
     allBirthEvents.forEach(de => {
