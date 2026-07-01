@@ -83,6 +83,49 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   private filterTimeout: any;
   private subscriptions = new Subscription();
 
+  // Header accordion state (סיכום + פילטרים) — two independent toggles per
+  // client 30.6.2026. Persisted per-user in localStorage so the collapsed
+  // choice survives page reloads.
+  summaryExpanded = this.loadAccordionState('donations-list.summary', true);
+  filtersExpanded = this.loadAccordionState('donations-list.filters', true);
+
+  private loadAccordionState(key: string, defaultOpen: boolean): boolean {
+    const saved = localStorage.getItem(`accordion.${key}`);
+    if (saved === null) return defaultOpen;
+    return saved === '1';
+  }
+
+  private saveAccordionState(key: string, open: boolean) {
+    localStorage.setItem(`accordion.${key}`, open ? '1' : '0');
+  }
+
+  toggleSummaryExpanded() {
+    this.summaryExpanded = !this.summaryExpanded;
+    this.saveAccordionState('donations-list.summary', this.summaryExpanded);
+  }
+
+  toggleFiltersExpanded() {
+    this.filtersExpanded = !this.filtersExpanded;
+    this.saveAccordionState('donations-list.filters', this.filtersExpanded);
+  }
+
+  /**
+   * Drives the small orange dot next to "פילטרים" when the filters section is
+   * collapsed. True when any of the filter inputs has a non-default value, so
+   * the user knows results are being narrowed even while the filters row is hidden.
+   */
+  get hasActiveFilter(): boolean {
+    return !!(
+      (this.searchTerm && this.searchTerm.trim()) ||
+      this.dateFrom ||
+      this.dateTo ||
+      this.selectedMethodId ||
+      this.amountFrom !== undefined ||
+      this.selectedCampaignId ||
+      this.selectedDonationType
+    );
+  }
+
   // Currency types with rates
   currencyTypes = this.payerService.getCurrencyTypesRecord()
 

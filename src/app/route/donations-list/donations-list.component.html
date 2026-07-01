@@ -3,7 +3,15 @@
   <!-- HEADER: Sticky top - כותרת + כפתור הוספה + פילטרים -->
   <div class="module-header">
 
-    <!-- סיכום כרטיסים -->
+    <!-- סיכום כרטיסים (accordion inline - מקביל לתבנית שקיימת ב-reports.component) -->
+    <div class="donations-summary-accordion" [class.collapsed]="!summaryExpanded">
+      <div class="accordion-header" (click)="toggleSummaryExpanded()">
+        <div class="accordion-title">
+          <mat-icon class="accordion-arrow" [class.expanded]="summaryExpanded">expand_more</mat-icon>
+          <span>סיכום</span>
+        </div>
+      </div>
+      <div class="accordion-content" [class.expanded]="summaryExpanded">
     <div class="summary-cards">
       <div class="summary-card total">
         <div class="card-icon">💰</div>
@@ -48,8 +56,22 @@
         </div>
       </div>
     </div>
+      </div>
+    </div>
 
-    <!-- פילטרים -->
+    <!-- פילטרים (accordion inline - מקביל לתבנית שקיימת ב-reports.component) -->
+    <div class="donations-filters-accordion" [class.collapsed]="!filtersExpanded">
+      <div class="accordion-header" (click)="toggleFiltersExpanded()">
+        <div class="accordion-title">
+          <mat-icon class="accordion-arrow" [class.expanded]="filtersExpanded">expand_more</mat-icon>
+          <span>פילטרים</span>
+          <span *ngIf="!filtersExpanded && hasActiveFilter"
+                class="active-filter-dot"
+                title="יש פילטר פעיל"
+                aria-hidden="true"></span>
+        </div>
+      </div>
+      <div class="accordion-content" [class.expanded]="filtersExpanded">
     <div class="filters-section">
       <div class="filter-row">
         <div class="filter-group search-group">
@@ -133,6 +155,8 @@
             {{ (i18n.terms$ | async)?.recordNewDonation }}
           </button>
         </div>
+      </div>
+    </div>
       </div>
     </div>
   </div>
