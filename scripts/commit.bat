@@ -12,13 +12,13 @@ git status --short
 if errorlevel 1 goto :err
 echo.
 
-REM ===== [1] feat(letter): pledge donations show pledgeTotal / paidTotal in Amount field =====
-git add src/shared/utils/donation-utils.ts src/app/routes/modals/letter-properties-modal/letter-properties-modal.component.ts
+REM ===== [1] feat(donation-details): "תנועות" for new commitment + saveDonationCore refactor =====
+git add src/app/routes/modals/donation-details-modal/donation-details-modal.component.html src/app/routes/modals/donation-details-modal/donation-details-modal.component.ts
 if errorlevel 1 goto :err
 git diff --cached --quiet
 if not errorlevel 1 goto :next1
-echo [1] feat(letter): pledge total + paid total in Amount field
-git commit -m "feat(letter): pledge donations show pledgeTotal / paidTotal in Amount field" -m "Per client report (Israel Glikson, 30.6.2026 #4): when printing a letter for a pledge donation the Amount field showed only the full commitment number, so the recipient could not see how much had already been paid against the pledge. Fix: the letter's Amount (English template) and תרומה (Hebrew template) fields now render as pledgeTotal / paidTotal for commitment donations - the same numbers already visible in the donations list summary - while regular one-off donations keep their existing single-amount output and standing-orders are untouched (not in scope). Implemented as a shared helper getPledgeSummary(donation, payments) in donation-utils.ts that returns { pledgeTotal, paidTotal, remaining } and reuses the existing calculatePaymentTotals filter (payment.type=התחייבות, isActive) - one source of truth so the list, the letter and any future consumer stay in sync. The Modal fetches the payments through the existing PaymentController.getPaymentsByDonation(donation.id, 'התחייבות') backend method - no new API surface, no duplicated query. No entity fields, business logic, or letter delegate touched." -m "BizTechoff(TM)"
+echo [1] feat(donation-details): "תנועות" button for brand-new commitment + saveDonationCore
+git commit -m "feat(donation-details): show תנועות button for brand-new commitment + save-first flow" -m "Per client report (Israel Glikson, 30.6.2026 #3): recording a new commitment donation was a two-round-trip experience - the תנועות button was gated behind !isNewDonation, so users had to save the donation with the top-right Save button (which also closes the details modal), reopen the same donation and only then attach payments. The friction was noticed most in the common flow of entering a pledge with an immediate partial payment. Fix has two parts: (1) the button's *ngIf now shows for any commitment donation - new or existing - while standing-order behavior is untouched (still requires an existing record); (2) openPaymentList now runs the same validation + save path the top-right Save button uses and only then opens the payment list, without closing the details modal - so the user can attach payments and return straight to the same edit surface. To keep the two flows in sync, the validation + persist logic was extracted from saveDonation into a private saveDonationCore that returns a boolean and does NOT touch the dialog. saveDonation now delegates to it and closes the modal on success (unchanged behavior), openPaymentList delegates to it too but stays open. A wasNew flag flips isNewDonation to false once the record has an id so subsequent interactions treat it as existing. No entity fields, permissions or business logic touched." -m "BizTechoff(TM)"
 if errorlevel 1 goto :err
 :next1
 echo.
