@@ -23,15 +23,26 @@ if errorlevel 1 goto :err
 :next1
 echo.
 
-REM ===== [2] catch-all (anything else still uncommitted) =====
-git add -A
+REM ===== [2] fix(phone-utils audit): route all remaining phone-display sites through formatDisplayPhones =====
+git add src/shared/controllers/donor.controller.ts src/shared/controllers/campaign.controller.ts src/app/services/donor.service.ts
 if errorlevel 1 goto :err
 git diff --cached --quiet
 if not errorlevel 1 goto :next2
-echo [2] catch-all - misc remaining changes
-git commit -m "wip: misc remaining changes" -m "BizTechoff(TM)"
+echo [2] fix(phone-utils audit): all phone display sites now use formatDisplayPhones
+git commit -m "fix(phone-utils audit): route all remaining phone-display sites through the shared helper" -m "Per client request (Israel Glikson, 30.6.2026 #6): the mobile-first phone rendering already landed for the donor list, reports and exports (Excel/Print) via phone-utils.formatDisplayPhones, but the client asked to make sure every canonical 'phone column' across the platform - including selection modals - obeys the same rule so a donor's mobile is what shows everywhere, falling back to landlines only when no mobile exists. Audit found four call-sites that were still using a first-phone-wins pattern (whichever DonorContact came out of the query first): DonorController.getDonorsForSelectionPage (drives the donor-selection modal and the mobile quick-donation donor lookup), DonorController.buildInvitedRows (drives the campaign invited list / blessing selection), CampaignController.getBlessingBookData (drives the blessing book of a campaign), and DonorService.loadDonorRelatedData (drives reminder-details-modal, campaign-donors-modal and any other consumer). All four now gather ALL phones per donor into a Map first and derive the display string via formatDisplayPhones - same pattern the fixed donor-map controller already uses. Nothing was extracted into a new UI component - business logic is the modular concern, presentation stays inline (per user's philosophy). Excluded on purpose: single-value form fields (donor/company/organization/bank .phone edit inputs), the full per-phone list on mobile donor-details-step (a different UX), getPrimaryPhoneForDonor (business primary-flag concept, not display), and Google Contacts sync (data mapping, not display). Ten files across the platform now import phone-utils - one source of truth for canonical phone rendering." -m "BizTechoff(TM)"
 if errorlevel 1 goto :err
 :next2
+echo.
+
+REM ===== [3] catch-all (anything else still uncommitted) =====
+git add -A
+if errorlevel 1 goto :err
+git diff --cached --quiet
+if not errorlevel 1 goto :next3
+echo [3] catch-all - misc remaining changes
+git commit -m "wip: misc remaining changes" -m "BizTechoff(TM)"
+if errorlevel 1 goto :err
+:next3
 echo.
 
 echo === Done ===
