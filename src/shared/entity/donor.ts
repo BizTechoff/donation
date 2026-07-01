@@ -18,7 +18,7 @@ import { ContactPerson } from './contact-person'
   allowApiCrud: Allow.authenticated,
   allowApiRead: Allow.authenticated,
   allowApiUpdate: Allow.authenticated,
-  allowApiDelete: [Roles.admin],
+  allowApiDelete: [Roles.admin, Roles.secretary],
   allowApiInsert: Allow.authenticated,
   // saving: async (donor) => {
   //   if (isBackend()) {

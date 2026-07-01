@@ -21,7 +21,7 @@ import { calculateEffectiveAmount, calculatePaymentTotals, isPaymentBased } from
   allowApiCrud: Allow.authenticated,
   allowApiRead: Allow.authenticated,
   allowApiUpdate: Allow.authenticated,
-  allowApiDelete: [Roles.admin],
+  allowApiDelete: [Roles.admin, Roles.secretary],
   allowApiInsert: Allow.authenticated,
   defaultOrderBy: { donationDate: 'desc', createdDate: 'desc' },
   // saving: async (donation) => {

@@ -17,7 +17,7 @@ import { Roles } from '../enum/roles'
   allowApiCrud: Allow.authenticated,
   allowApiRead: Allow.authenticated,
   allowApiUpdate: Allow.authenticated,
-  allowApiDelete: [Roles.admin],
+  allowApiDelete: [Roles.admin, Roles.secretary],
   allowApiInsert: Allow.authenticated,
   saving: async (certificate) => {
     if (isBackend()) {
