@@ -337,8 +337,12 @@ export class DonorController {
       return [];
     }
 
-    // Build orderBy from sortColumns or use default
-    let orderBy: any = { lastName: 'asc' as 'asc' }; // Default sort
+    // Build orderBy from sortColumns or use default. Both lastName AND firstName
+    // are sorted ascending by default so donors sharing a last name come out
+    // alphabetically within that group (per client Israel Glikson 1.7.2026:
+    // "פעלדמאן דוד משה" was showing after "פעלדמאן חיים אריה"). Matches the
+    // behavior a user gets by clicking the fullName column header.
+    let orderBy: any = { lastName: 'asc' as 'asc', firstName: 'asc' as 'asc' };
     if (sortColumns && sortColumns.length > 0) {
       orderBy = {};
       sortColumns.forEach(sort => {
