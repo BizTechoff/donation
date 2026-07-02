@@ -461,7 +461,7 @@
     <div *ngIf="activeReport === 'donations'" class="donations-report">
 
       <!-- טבלה מקובצת -->
-      <div class="report-table grouped-report">
+      <div class="report-table grouped-report" #reportResults>
         <table class="data-table">
           <thead>
             <tr>
@@ -496,7 +496,7 @@
               <tr class="main-row" [class.expanded]="row.isExpanded"
                   [class.clickable]="filters.showDonationDetails && row.donations?.length"
                   (click)="filters.showDonationDetails && row.donations?.length ? row.isExpanded = !row.isExpanded : null">
-                <td [style.direction]="isEnglishName(row.donorName) ? 'ltr' : 'rtl'">
+                <td class="cell-ellipsis" [title]="row.donorName" [style.direction]="isEnglishName(row.donorName) ? 'ltr' : 'rtl'">
                   <span class="donor-name-wrapper">
                     <span class="expand-icon" *ngIf="filters.showDonationDetails && row.donations?.length">
                       {{row.isExpanded ? '▶' : '▼'}}
@@ -504,7 +504,7 @@
                     <strong>{{row.donorName}}</strong>
                   </span>
                 </td>
-                <td class="donor-address" *ngIf="filters.showDonorAddress && filters.groupBy === 'donor'">{{row.donorDetails?.address || '-'}}
+                <td class="donor-address cell-ellipsis" [title]="row.donorDetails?.address || ''" *ngIf="filters.showDonorAddress && filters.groupBy === 'donor'">{{row.donorDetails?.address || '-'}}
                 </td>
                 <td *ngIf="filters.showDonorPhone && filters.groupBy === 'donor'">
                   <div *ngIf="row.donorDetails && row.donorDetails.phones && row.donorDetails.phones.length > 0">
@@ -685,7 +685,7 @@
         </div>
       </div>
 
-      <div class="report-table">
+      <div class="report-table" #reportResults>
         <table class="data-table">
           <thead>
             <tr>
@@ -720,8 +720,8 @@
           </thead>
           <tbody>
             <tr *ngFor="let payment of paginatedPaymentReport">
-              <td class="donor-name">{{payment.donorName}}</td>
-              <td class="donor-address">{{payment.address || '-'}}</td>
+              <td class="donor-name cell-ellipsis" [title]="payment.donorName">{{payment.donorName}}</td>
+              <td class="donor-address cell-ellipsis" [title]="payment.address || ''">{{payment.address || '-'}}</td>
               <td>{{payment.city || '-'}}</td>
               <td>{{formatHebrewDate(payment.lastDonationDate)}}</td>
               <td>{{formatCurrency(payment.promisedAmount)}}</td>
@@ -762,7 +762,7 @@
     <div *ngIf="activeReport === 'yearly'" class="yearly-report">
       <h2>{{ (i18n.terms$ | async)?.yearlySummaryTitle }}</h2>
 
-      <div class="report-table">
+      <div class="report-table" #reportResults>
         <table class="data-table">
           <thead>
             <tr>
@@ -873,7 +873,7 @@
         </div>
       </div>
 
-      <div class="report-table">
+      <div class="report-table" #reportResults>
         <table class="data-table">
           <thead>
             <tr>
@@ -908,21 +908,21 @@
           </thead>
           <tbody>
             <tr *ngFor="let blessing of paginatedBlessingsReport">
-              <td class="donor-name">{{blessing.lastName}}</td>
-              <td class="donor-address">{{blessing.firstName}}</td>
+              <td class="donor-name cell-ellipsis" [title]="blessing.lastName">{{blessing.lastName}}</td>
+              <td class="donor-address cell-ellipsis" [title]="blessing.firstName">{{blessing.firstName}}</td>
               <td>
                 <span class="blessing-type">
                   {{blessing.blessingBookType}}
                 </span>
               </td>
-              <td>{{blessing.notes}}</td>
+              <td class="cell-ellipsis" [title]="blessing.notes || ''">{{blessing.notes}}</td>
               <td>
                 <span class="status-badge" [class]="'status-' + blessing.status">
                   {{blessing.status}}
                 </span>
               </td>
               <td style="text-align: left; direction: ltr; white-space: pre-line;">{{blessing.phone}}</td>
-              <td style="text-align: left; direction: ltr;">{{blessing.email}}</td>
+              <td class="cell-ellipsis" [title]="blessing.email || ''" style="text-align: left; direction: ltr;">{{blessing.email}}</td>
             </tr>
           </tbody>
         </table>

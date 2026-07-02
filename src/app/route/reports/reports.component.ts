@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { BusyService, openDialog } from 'common-ui-elements';
 import { remult } from 'remult';
 import { Subscription } from 'rxjs';
@@ -1750,10 +1750,23 @@ export class ReportsComponent implements OnInit, OnDestroy {
     return this.donationReportData.reduce((sum, d) => sum + d.amount, 0);
   }
 
+  // Active report results wrapper (#reportResults sits on each report's
+  // .report-table - only one branch is alive at a time thanks to *ngIf).
+  // In reports the page itself scrolls (window scroll), not an inner div,
+  // so R2 is implemented with scrollIntoView instead of scrollTop=0
+  // (Israel Glikson, 1.7.2026).
+  @ViewChild('reportResults') reportResults?: ElementRef<HTMLElement>;
+
+  // Scroll the window so the active report table starts at the top.
+  private scrollToReportTop() {
+    this.reportResults?.nativeElement?.scrollIntoView({ behavior: 'auto', block: 'start' });
+  }
+
   // Pagination handlers
   async onPageChange(page: number) {
     this.currentPage = page;
     await this.refreshData();
+    this.scrollToReportTop();
   }
 
   async onPageSizeChange(size: number) {
@@ -1973,27 +1986,32 @@ export class ReportsComponent implements OnInit, OnDestroy {
   goToPaymentPage(page: number) {
     if (page >= 1 && page <= this.paymentTotalPages) {
       this.paymentCurrentPage = page;
+      this.scrollToReportTop();
     }
   }
 
   nextPaymentPage() {
     if (this.paymentCurrentPage < this.paymentTotalPages) {
       this.paymentCurrentPage++;
+      this.scrollToReportTop();
     }
   }
 
   previousPaymentPage() {
     if (this.paymentCurrentPage > 1) {
       this.paymentCurrentPage--;
+      this.scrollToReportTop();
     }
   }
 
   firstPaymentPage() {
     this.paymentCurrentPage = 1;
+    this.scrollToReportTop();
   }
 
   lastPaymentPage() {
     this.paymentCurrentPage = this.paymentTotalPages;
+    this.scrollToReportTop();
   }
 
   getPaymentPageNumbers(): number[] {
@@ -2117,27 +2135,32 @@ export class ReportsComponent implements OnInit, OnDestroy {
   goToYearlySummaryPage(page: number) {
     if (page >= 1 && page <= this.yearlySummaryTotalPages) {
       this.yearlySummaryCurrentPage = page;
+      this.scrollToReportTop();
     }
   }
 
   nextYearlySummaryPage() {
     if (this.yearlySummaryCurrentPage < this.yearlySummaryTotalPages) {
       this.yearlySummaryCurrentPage++;
+      this.scrollToReportTop();
     }
   }
 
   previousYearlySummaryPage() {
     if (this.yearlySummaryCurrentPage > 1) {
       this.yearlySummaryCurrentPage--;
+      this.scrollToReportTop();
     }
   }
 
   firstYearlySummaryPage() {
     this.yearlySummaryCurrentPage = 1;
+    this.scrollToReportTop();
   }
 
   lastYearlySummaryPage() {
     this.yearlySummaryCurrentPage = this.yearlySummaryTotalPages;
+    this.scrollToReportTop();
   }
 
   getYearlySummaryPageNumbers(): number[] {
@@ -2269,27 +2292,32 @@ export class ReportsComponent implements OnInit, OnDestroy {
   goToBlessingsPage(page: number) {
     if (page >= 1 && page <= this.blessingsTotalPages) {
       this.blessingsCurrentPage = page;
+      this.scrollToReportTop();
     }
   }
 
   nextBlessingsPage() {
     if (this.blessingsCurrentPage < this.blessingsTotalPages) {
       this.blessingsCurrentPage++;
+      this.scrollToReportTop();
     }
   }
 
   previousBlessingsPage() {
     if (this.blessingsCurrentPage > 1) {
       this.blessingsCurrentPage--;
+      this.scrollToReportTop();
     }
   }
 
   firstBlessingsPage() {
     this.blessingsCurrentPage = 1;
+    this.scrollToReportTop();
   }
 
   lastBlessingsPage() {
     this.blessingsCurrentPage = this.blessingsTotalPages;
+    this.scrollToReportTop();
   }
 
   getBlessingsPageNumbers(): number[] {
