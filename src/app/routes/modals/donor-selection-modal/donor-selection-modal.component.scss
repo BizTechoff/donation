@@ -1,8 +1,11 @@
 .module-container {
   display: flex;
   flex-direction: column;
-  height: 80vh;
-  max-height: 90vh;
+  // Per client (Israel Glikson 1.7.2026): match the enlarged DialogConfig
+  // (95vw x 95vh) so the inner shell fills the whole modal and rows are
+  // maximally visible.
+  height: 95vh;
+  max-height: 95vh;
   width: 100%;
   font-family: 'Segoe UI', Arial, sans-serif;
   background: #f5f7fa;
@@ -235,12 +238,13 @@
 
   thead th {
     // Sticky header inside the scrollable table body so column headers remain
-    // visible while paging through 50 rows.
+    // visible while paging through 50 rows. Padding kept a touch larger than
+    // rows so headers stand out.
     position: sticky;
     top: 0;
     z-index: 5;
     background: #f1f3f9;
-    padding: 8px 10px;
+    padding: 6px 10px;
     font-weight: 600;
     color: #2c3e50;
     border-bottom: 2px solid #e1e8ed;
@@ -252,12 +256,14 @@
     cursor: pointer;
     transition: background-color 0.2s ease;
 
-    // Denser rows (per client request 30.6.2026 - Israel Glikson) so more
-    // donors fit in the visible area without scrolling.
+    // Denser rows (per client Israel Glikson - iterated 30.6 → 1.7.2026): row
+    // padding tightened from 8/12 → 6/10 → 4/8 so the enlarged modal (95vw x
+    // 95vh) shows the largest possible number of donors on screen without
+    // sacrificing legibility.
     td {
-      padding: 6px 10px;
+      padding: 4px 8px;
       border-bottom: 1px solid #eef1f5;
-      line-height: 1.35;
+      line-height: 1.3;
     }
 
     &:hover {

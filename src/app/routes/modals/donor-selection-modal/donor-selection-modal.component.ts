@@ -18,8 +18,14 @@ export interface DonorSelectionModalArgs {
 
 @DialogConfig({
   hasBackdrop: true,
-  maxWidth: '800px',
-  maxHeight: '90vh'
+  // Per client (Israel Glikson 1.7.2026): the donor picker used to top out at
+  // 800px which was too narrow for a comfortable multi-column donor list -
+  // names + addresses were getting squeezed. Widen to 95vw / 95vh so the modal
+  // uses almost the whole viewport and many more rows fit at a glance.
+  maxWidth: '75vw',
+  maxHeight: '95vh',
+  width: '75vw',
+  height: '95vh'
 })
 @Component({
   selector: 'app-donor-selection-modal',
