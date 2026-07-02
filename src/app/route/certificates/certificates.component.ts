@@ -39,6 +39,9 @@ export class CertificatesComponent implements OnInit, OnDestroy {
   filterDateTo: Date | null = null;
   donorSearchText = '';
   @ViewChild('searchInput') searchInput?: ElementRef<HTMLInputElement>;
+  // Scrollable table body handle — reset to top on each refresh so paging
+  // lands the user at the top of the new page (Israel Glikson, 1.7.2026).
+  @ViewChild('scrollableTable') scrollableTable?: ElementRef<HTMLElement>;
   private donorSearchSubject = new Subject<string>();
   private filterTimeout: any;
   private subscriptions = new Subscription();
@@ -169,6 +172,12 @@ export class CertificatesComponent implements OnInit, OnDestroy {
 
       // Load related data for certificates
       await this.loadRelatedData();
+
+      // Reset table scroll to the top after each refresh (Israel Glikson,
+      // 1.7.2026) — paging + filter changes land at the top of the new page.
+      if (this.scrollableTable?.nativeElement) {
+        this.scrollableTable.nativeElement.scrollTop = 0;
+      }
     } catch (error) {
       console.error('Error in refreshData:', error);
       this.certificates = [];

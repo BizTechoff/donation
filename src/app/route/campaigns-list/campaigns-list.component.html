@@ -81,7 +81,7 @@
   <div class="module-content">
 
     <!-- Table Body: Scrollable area -->
-    <div class="table-body">
+    <div class="table-body" #scrollableTable>
       <div class="loading-overlay" *ngIf="loading">
         <div class="spinner">{{ (i18n.terms$ | async)?.loadingCampaigns }}</div>
       </div>
@@ -129,7 +129,7 @@
       </thead>
       <tbody>
         <tr *ngFor="let campaign of campaigns" [class.inactive]="!campaign.isActive">
-          <td>
+          <td class="cell-ellipsis" [title]="campaign.name + (campaign.description ? ' — ' + campaign.description : '')">
             <div class="campaign-info">
               <strong>{{campaign.name}}</strong>
               <small *ngIf="campaign.description">{{campaign.description}}</small>

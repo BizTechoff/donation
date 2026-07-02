@@ -53,11 +53,11 @@
           </thead>
           <tbody>
             <tr *ngFor="let donor of invitedDonors" class="donor-row">
-              <td class="donor-name">
+              <td class="donor-name cell-ellipsis" [title]="getDonorDisplayName(donor)">
                 <strong>{{getDonorDisplayName(donor)}}</strong>
               </td>
-              <td>{{getDonorPhone(donor)}}</td>
-              <td>{{getDonorEmail(donor)}}</td>
+              <td class="cell-ellipsis" [title]="getDonorPhone(donor)">{{getDonorPhone(donor)}}</td>
+              <td class="cell-ellipsis" [title]="getDonorEmail(donor)">{{getDonorEmail(donor)}}</td>
               <td>
                 <span class="level-badge">{{getDonorLevel(donor)}}</span>
               </td>

@@ -165,7 +165,7 @@
   <div class="module-content">
 
     <!-- Table Body: Scrollable area -->
-    <div class="table-body">
+    <div class="table-body" #scrollableTable>
       <div class="loading-overlay" *ngIf="loading">
         <div class="spinner">טוען...</div>
       </div>
@@ -237,12 +237,12 @@
       </thead>
       <tbody>
         <tr *ngFor="let donation of donations">
-          <td class="donor-name">
+          <td class="donor-name cell-ellipsis" [title]="getDonorName(donation)">
             <a class="donor-link" (click)="openDonorDetails(donation); $event.stopPropagation()">
               {{ getDonorName(donation) }}
             </a>
           </td>
-          <td class="donor-address">{{ getDonorHomeAddress(donation) }}</td>
+          <td class="donor-address cell-ellipsis" [title]="getDonorHomeAddress(donation)">{{ getDonorHomeAddress(donation) }}</td>
           <td>{{ formatHebrewDate(donation.donationDate) }}</td>
           <td>
             <span [class.commitment-highlight]="donation.donationType === 'commitment'">

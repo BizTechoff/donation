@@ -93,7 +93,7 @@
   <div class="module-content">
 
     <!-- Table Body: Scrollable area -->
-    <div class="table-body">
+    <div class="table-body" #scrollableTable>
       <div class="loading-overlay" *ngIf="loading">
         <div class="spinner">טוען...</div>
       </div>
@@ -140,7 +140,7 @@
       </thead>
       <tbody>
         <tr *ngFor="let certificate of certificates">
-          <td class="donor-name">
+          <td class="donor-name cell-ellipsis" [title]="certificate.recipientName + (certificate.donor ? ' — ' + getDonorName(certificate) : '')">
             <strong>{{certificate.recipientName}}</strong>
             <small *ngIf="certificate.donor">{{getDonorName(certificate)}}</small>
           </td>

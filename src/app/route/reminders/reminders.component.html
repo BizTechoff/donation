@@ -117,7 +117,7 @@
   </div>
 
   <!-- CONTENT: Main scrollable area -->
-  <div class="module-content">
+  <div class="module-content" #scrollableTable>
 
     <!-- <div class="reminders-tabs">
       <button class="tab-btn" [class.active]="activeTab === 'today'" (click)="switchTab('today')">
@@ -203,14 +203,14 @@
               </span>
             </td>
 
-            <td class="donor-col">
+            <td class="donor-col cell-ellipsis" [title]="getDonorName(reminder) + (getReminderDonorPhone(reminder) ? ' — ' + getReminderDonorPhone(reminder) : '')">
               <div class="donor-info">
                 <strong>{{getDonorName(reminder)}}</strong>
                 <small *ngIf="getReminderDonorPhone(reminder)">{{getReminderDonorPhone(reminder)}}</small>
               </div>
             </td>
 
-            <td class="subject-col">
+            <td class="subject-col cell-ellipsis" [title]="reminder.title + (reminder.description ? ' — ' + reminder.description : '')">
               <div class="subject-info">
                 <span class="subject">{{reminder.title}}</span>
                 <small class="notes" *ngIf="reminder.description">{{reminder.description | slice:0:50}}<span

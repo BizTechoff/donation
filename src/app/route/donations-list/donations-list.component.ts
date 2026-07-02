@@ -74,6 +74,9 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   // Filter variables
   searchTerm = '';
   @ViewChild('searchInput') searchInput?: ElementRef<HTMLInputElement>;
+  // Scrollable table body handle - reset to top on each data refresh so paging
+  // does not leave the user mid-page (Israel Glikson, 1.7.2026).
+  @ViewChild('scrollableTable') scrollableTable?: ElementRef<HTMLElement>;
   dateFrom: Date | null = null;
   dateTo: Date | null = null;
   selectedMethodId = '';
@@ -204,6 +207,12 @@ export class DonationsListComponent implements OnInit, OnDestroy {
         }
 
         console.log('refreshData 3: Loaded', this.donations.length, 'donations, total:', this.totalCount, 'totalAmount:', this.totalAmountCache);
+
+        // Reset table scroll to top after each refresh (Israel Glikson,
+        // 1.7.2026) - paging + filter changes should land at the top.
+        if (this.scrollableTable?.nativeElement) {
+          this.scrollableTable.nativeElement.scrollTop = 0;
+        }
       } catch (error) {
         console.error('Error refreshing donations:', error);
         this.donations = [];

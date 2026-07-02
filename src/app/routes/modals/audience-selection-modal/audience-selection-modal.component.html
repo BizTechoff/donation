@@ -49,7 +49,7 @@
                 {{ isAudienceSelected(audience) ? 'check_box' : 'check_box_outline_blank' }}
               </mat-icon>
             </td>
-            <td class="col-name">
+            <td class="col-name cell-ellipsis" [title]="audience.name + (audience.description ? ' — ' + audience.description : '')">
               <div class="audience-name">{{ audience.name }}</div>
               <div class="audience-description" *ngIf="audience.description">{{ audience.description }}</div>
             </td>

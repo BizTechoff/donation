@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
 import { BusyService, DialogConfig, openDialog } from 'common-ui-elements';
 import { Donation, Donor, Campaign } from '../../../../shared/entity';
@@ -43,6 +43,12 @@ export class DonationSelectionModalComponent implements OnInit {
 
   // Search/Filter
   filterText = '';
+
+  // Scrollable table body handle - reset to top on every page change so paging
+  // does not leave the user mid-page (Israel Glikson, 1.7.2026).
+  // Pagination here is client-side (slice), so the reset lives in the paging
+  // methods rather than in loadDonations().
+  @ViewChild('scrollableTable') scrollableTable?: ElementRef<HTMLElement>;
 
   // Pagination
   currentPage = 1;
@@ -224,31 +230,43 @@ currencyTypes = this.payer.getCurrencyTypesRecord()
     return this.filteredDonations.slice(startIndex, endIndex);
   }
 
+  // Reset the scrollable table body to the top (Israel Glikson, 1.7.2026).
+  private resetTableScroll() {
+    if (this.scrollableTable?.nativeElement) {
+      this.scrollableTable.nativeElement.scrollTop = 0;
+    }
+  }
+
   // Pagination methods
   goToPage(page: number) {
     if (page >= 1 && page <= this.totalPages) {
       this.currentPage = page;
+      this.resetTableScroll();
     }
   }
 
   nextPage() {
     if (this.currentPage < this.totalPages) {
       this.currentPage++;
+      this.resetTableScroll();
     }
   }
 
   previousPage() {
     if (this.currentPage > 1) {
       this.currentPage--;
+      this.resetTableScroll();
     }
   }
 
   firstPage() {
     this.currentPage = 1;
+    this.resetTableScroll();
   }
 
   lastPage() {
     this.currentPage = this.totalPages;
+    this.resetTableScroll();
   }
 
   getPageNumbers(): number[] {

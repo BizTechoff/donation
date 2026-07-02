@@ -36,6 +36,9 @@ export class CampaignsListComponent implements OnInit, OnDestroy {
   filterName = '';
   filterActive = '';
   @ViewChild('searchInput') searchInput?: ElementRef<HTMLInputElement>;
+  // Scrollable table body handle - reset to top on each data refresh so paging
+  // does not leave the user mid-page (Israel Glikson, 1.7.2026).
+  @ViewChild('scrollableTable') scrollableTable?: ElementRef<HTMLElement>;
   private filterTimeout: any;
   private subscriptions = new Subscription();
 
@@ -149,6 +152,12 @@ export class CampaignsListComponent implements OnInit, OnDestroy {
           this.loadBlessingCounts(),
           this.loadRaisedAmountsByCurrency()
         ]);
+
+        // Reset table scroll to top after each refresh (Israel Glikson,
+        // 1.7.2026) - paging + filter changes should land at the top.
+        if (this.scrollableTable?.nativeElement) {
+          this.scrollableTable.nativeElement.scrollTop = 0;
+        }
 
       } catch (error) {
         console.error('Error refreshing campaigns:', error);

@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, ElementRef, OnInit, ChangeDetectorRef, ViewChild } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialogRef } from '@angular/material/dialog';
 import { DialogConfig } from 'common-ui-elements';
@@ -62,6 +62,12 @@ export class DonorDonationsModalComponent implements OnInit {
   // Pagination
   currentPage = 1;
   pageSize = 50;
+
+  // Scrollable table container handles - one per mode (*ngIf keeps only one
+  // alive at a time). Reset to top on every page change so paging does not
+  // leave the user mid-page (Israel Glikson, 1.7.2026).
+  @ViewChild('scrollableTable') scrollableTable?: ElementRef<HTMLElement>;
+  @ViewChild('scrollableTableGifts') scrollableTableGifts?: ElementRef<HTMLElement>;
   totalCount = 0;
   totalPages = 0;
   Math = Math; // Expose Math to template
@@ -589,6 +595,13 @@ currencyTypes = this.payer.getCurrencyTypesRecord()
     const dataLength = this.isGiftsMode ? this.donorGifts.length : this.donations.length;
     this.totalCount = dataLength;
     this.totalPages = Math.ceil(dataLength / this.pageSize);
+
+    // Reset the active table scroll to top on page change (Israel Glikson,
+    // 1.7.2026) - paging should land at the top of the new page.
+    const active = this.isGiftsMode ? this.scrollableTableGifts : this.scrollableTable;
+    if (active?.nativeElement) {
+      active.nativeElement.scrollTop = 0;
+    }
   }
 
   getPageNumbers(): number[] {

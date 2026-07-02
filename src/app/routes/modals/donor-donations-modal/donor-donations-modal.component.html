@@ -84,7 +84,7 @@
       </div>
 
       <!-- Scrollable Table Container: Donations -->
-      <div class="table-container" *ngIf="!isGiftsMode">
+      <div class="table-container" *ngIf="!isGiftsMode" #scrollableTable>
         <table class="data-table">
           <thead>
             <tr>
@@ -135,14 +135,14 @@
               <td>
                 <span class="currency-badge">{{currencyTypes[donation.currencyId].symbol}}</span>
               </td>
-              <td>
+              <td class="cell-ellipsis" [title]="donation.campaignId ? getCampaignName(donation.campaignId) : ''">
                 <div class="campaign-cell" *ngIf="donation.campaignId">
                   <!-- <mat-icon class="cell-icon">campaign</mat-icon> -->
                   {{getCampaignName(donation.campaignId)}}
                 </div>
                 <span *ngIf="!donation.campaignId" class="no-data">-</span>
               </td>
-              <td>
+              <td class="cell-ellipsis" [title]="donation.reason || ''">
                 <div class="reason-cell">
                   {{donation.reason || '-'}}
                 </div>
@@ -185,7 +185,7 @@
       </div>
 
       <!-- Scrollable Table Container: Gifts -->
-      <div class="table-container" *ngIf="isGiftsMode">
+      <div class="table-container" *ngIf="isGiftsMode" #scrollableTableGifts
         <table class="data-table">
           <thead>
             <tr>
@@ -209,7 +209,7 @@
                   {{formatHebrewDate(donorGift.deliveryDate)}}
                 </div>
               </td>
-              <td>
+              <td class="cell-ellipsis" [title]="donorGift.gift?.name || ''">
                 <div class="gift-cell">
                   <mat-icon class="cell-icon">redeem</mat-icon>
                   {{donorGift.gift?.name || 'לא מוגדר'}}

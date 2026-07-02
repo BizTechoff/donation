@@ -588,3 +588,22 @@ th {
   }
 
 }
+
+/* ============================================================================
+ * Table cell utilities - shared truncation class
+ * ----------------------------------------------------------------------------
+ * Per client request (Israel Glikson, 1.7.2026): long names and addresses in
+ * -list / -selection / -details tables were wrapping onto a second line and
+ * inflating row height, hurting scan-ability. Attach `.cell-ellipsis` to any
+ * <td> where the text should stay on one line and show "..." if it overflows.
+ * Pair with `[title]="..."` in the template so the user gets the full text as
+ * a hover tooltip. Not applied globally on purpose - some columns (reason,
+ * notes, blessing text) legitimately wrap and must keep their current
+ * behaviour. Explicit opt-in per cell keeps the change safe.
+ * ========================================================================= */
+.cell-ellipsis {
+  max-width: 250px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

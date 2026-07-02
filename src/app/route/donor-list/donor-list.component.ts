@@ -45,6 +45,10 @@ export class DonorListComponent implements OnInit, OnDestroy {
   // Local filter properties
   searchTerm = '';
   @ViewChild('searchInput') searchInput?: ElementRef<HTMLInputElement>;
+  // Handle to the scrollable table body so page changes can reset scroll to
+  // the top (per client Israel Glikson, 1.7.2026 - navigating to a next page
+  // used to leave the user mid-page instead of at the top).
+  @ViewChild('scrollableTable') scrollableTable?: ElementRef<HTMLElement>;
 
   // Pagination
   currentPage = 1;
@@ -123,6 +127,13 @@ export class DonorListComponent implements OnInit, OnDestroy {
         donorDataList.forEach(data => {
           this.donorDataMap.set(data.donor.id, data);
         });
+
+        // Reset scroll to the top of the table body after each refresh - so
+        // paging + search-change lands the user at the top of the new results
+        // instead of leaving them mid-page (Israel Glikson, 1.7.2026).
+        if (this.scrollableTable?.nativeElement) {
+          this.scrollableTable.nativeElement.scrollTop = 0;
+        }
 
       } catch (error) {
         console.error('Error refreshing donors:', error);

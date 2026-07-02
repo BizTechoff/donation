@@ -20,7 +20,7 @@
   </div>
 
   <div class="module-content">
-    <div class="table-body">
+    <div class="table-body" #scrollableTable>
       <table class="data-table">
         <thead>
           <tr>
@@ -48,10 +48,10 @@
             <td *ngIf="args.multiSelect" class="checkbox-col">
               <input type="checkbox" [checked]="isDonationSelected(donation)" (click)="$event.stopPropagation()">
             </td>
-            <td>{{ getDonor(donation.donorId)?.fullName || (i18n.terms$ | async)?.unknownDonor }}</td>
+            <td class="cell-ellipsis" [title]="getDonor(donation.donorId)?.fullName || ''">{{ getDonor(donation.donorId)?.fullName || (i18n.terms$ | async)?.unknownDonor }}</td>
             <td class="amount-cell">{{ donation.amount | number }} {{currencyTypes[donation.currencyId] }}</td>
             <td>{{ formatDate(donation.donationDate) }}</td>
-            <td>{{ getCampaign(donation.campaignId)?.name || '-' }}</td>
+            <td class="cell-ellipsis" [title]="getCampaign(donation.campaignId)?.name || ''">{{ getCampaign(donation.campaignId)?.name || '-' }}</td>
           </tr>
           <tr *ngIf="paginatedDonations.length === 0">
             <td [attr.colspan]="args.multiSelect ? 5 : 4" class="no-data">{{ (i18n.terms$ | async)?.noDonationsFound }}</td>

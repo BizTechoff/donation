@@ -91,18 +91,18 @@
               <!-- <th>{{ (i18n.terms$ | async)?.actions }}</th> -->
             </tr>
           </thead>
-          <tbody>
+          <tbody #scrollableTable>
             <tr *ngFor="let donor of displayedDonors" class="donor-row">
               <td class="checkbox-column">
                 <input type="checkbox"
                        [checked]="isSelected(donor.id)"
                        (change)="toggleSelection(donor.id)">
               </td>
-              <td class="donor-name clickable" (click)="openDonorDetails(donor)">
+              <td class="donor-name clickable cell-ellipsis" [title]="getDonorDisplayName(donor)" (click)="openDonorDetails(donor)">
                 <strong>{{getDonorDisplayName(donor)}}</strong>
               </td>
-              <td>{{getDonorPhone(donor)}}</td>
-              <td>{{getDonorEmail(donor)}}</td>
+              <td class="cell-ellipsis" [title]="getDonorPhone(donor)">{{getDonorPhone(donor)}}</td>
+              <td class="cell-ellipsis" [title]="getDonorEmail(donor)">{{getDonorEmail(donor)}}</td>
               <!-- <td>
                 <span class="level-badge">{{getDonorLevel(donor)}}</span>
               </td> -->

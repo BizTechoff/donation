@@ -96,7 +96,7 @@
   <div class="module-content">
 
     <!-- Table Body: Scrollable area -->
-    <div class="table-body">
+    <div class="table-body" #scrollableTable>
       <div class="loading-overlay" *ngIf="loading">
         <div class="spinner">{{ (i18n.terms$ | async)?.loading }}</div>
       </div>
@@ -141,7 +141,7 @@
       </thead>
       <tbody>
         <tr *ngFor="let donorGift of donorGifts">
-          <td class="donor-name">{{ getDonorName(donorGift) }}</td>
+          <td class="donor-name cell-ellipsis" [title]="getDonorName(donorGift)">{{ getDonorName(donorGift) }}</td>
           <td>{{ donorGift.gift?.name || '-' }}</td>
           <td>{{ formatHebrewDate(donorGift.deliveryDate) }}</td>
           <td>

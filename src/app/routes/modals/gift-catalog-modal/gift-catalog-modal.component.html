@@ -59,7 +59,7 @@
         </thead>
         <tbody>
           <tr *ngFor="let gift of filteredGifts" [class.inactive-row]="!gift.isActive">
-            <td class="gift-name">
+            <td class="gift-name cell-ellipsis" [title]="gift.name">
               <mat-icon class="gift-icon">redeem</mat-icon>
               <span>{{gift.name}}</span>
             </td>
@@ -69,7 +69,7 @@
                 {{gift.estimatedValue | number:'1.0-0'}} {{currencyTypes[gift.currencyId].symbol || '₪'}}
               </span>
             </td>
-            <td class="description-cell">
+            <td class="description-cell cell-ellipsis" [title]="gift.description || ''">
               <span class="description-text">{{gift.description || '-'}}</span>
             </td>
             <td>

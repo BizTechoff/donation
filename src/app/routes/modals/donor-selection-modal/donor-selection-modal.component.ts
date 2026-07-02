@@ -34,6 +34,10 @@ export interface DonorSelectionModalArgs {
 })
 export class DonorSelectionModalComponent implements OnInit, OnDestroy {
   @ViewChild('searchInput') searchInput!: ElementRef<HTMLInputElement>;
+  // Handle to the scrollable table body so paging can reset scroll to the top
+  // (per client Israel Glikson, 1.7.2026 - user was ending up mid-page on the
+  // next page's data and having to scroll up manually).
+  @ViewChild('scrollableTable') scrollableTable?: ElementRef<HTMLElement>;
 
   args!: DonorSelectionModalArgs;
   selectedDonor: Donor | null = null;
@@ -142,6 +146,13 @@ export class DonorSelectionModalComponent implements OnInit, OnDestroy {
 
         // Apply client-side sort for phone/email (within current page)
         this.applySorting();
+
+        // Reset scroll to top after each data load - page navigation used to
+        // leave the user mid-page (Israel Glikson, 1.7.2026). Also natural for
+        // search-change and initial load, which are the other callers.
+        if (this.scrollableTable?.nativeElement) {
+          this.scrollableTable.nativeElement.scrollTop = 0;
+        }
 
       } catch (error) {
         console.error('Error loading donors:', error);

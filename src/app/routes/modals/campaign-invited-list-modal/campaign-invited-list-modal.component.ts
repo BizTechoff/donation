@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, ElementRef, OnInit, ChangeDetectorRef, ViewChild } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Campaign, Circle } from '../../../../shared/entity';
@@ -65,6 +65,11 @@ export class CampaignInvitedListModalComponent implements OnInit {
   currentPage = 1;
   pageSize = 50;
   totalPages = 0;
+
+  // Scrollable rows handle - in this table the <tbody> itself scrolls
+  // (display: block + overflow-y). Reset to top on each page load so paging
+  // does not leave the user mid-page (Israel Glikson, 1.7.2026).
+  @ViewChild('scrollableTable') scrollableTable?: ElementRef<HTMLElement>;
 
   // Sorting
   sortField = 'firstName';
@@ -173,6 +178,12 @@ export class CampaignInvitedListModalComponent implements OnInit {
       }
 
       this.invitedDonors = rows;
+
+      // Reset rows scroll to top after each load (Israel Glikson, 1.7.2026) -
+      // paging + filter changes should land at the top of the new page.
+      if (this.scrollableTable?.nativeElement) {
+        this.scrollableTable.nativeElement.scrollTop = 0;
+      }
     } catch (error: any) {
       console.error('Error loading page:', error);
       this.ui.error('שגיאה בטעינת הרשימה: ' + (error.message || error));

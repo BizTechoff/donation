@@ -49,6 +49,10 @@ export class RemindersComponent implements OnInit, OnDestroy {
   filterReminderType = '';
   filterDonorSearch = '';
   @ViewChild('searchInput') searchInput?: ElementRef<HTMLInputElement>;
+  // Scrollable content handle - reset to top on each data refresh so paging
+  // does not leave the user mid-page (Israel Glikson, 1.7.2026).
+  // Note: in reminders the scrollable area is .module-content (not .table-body).
+  @ViewChild('scrollableTable') scrollableTable?: ElementRef<HTMLElement>;
 
   // Pagination
   currentPage = 1;
@@ -197,6 +201,12 @@ export class RemindersComponent implements OnInit, OnDestroy {
 
       // Apply local filters (tabs, parasha)
       this.applyLocalFilters();
+
+      // Reset scroll to top after each refresh (Israel Glikson, 1.7.2026) -
+      // paging + filter changes should land at the top of the new page.
+      if (this.scrollableTable?.nativeElement) {
+        this.scrollableTable.nativeElement.scrollTop = 0;
+      }
 
     } catch (error) {
       console.error('Error loading reminders:', error);

@@ -44,6 +44,9 @@ export class DonorGiftsListComponent implements OnInit, OnDestroy {
   selectedYear = '';
   searchDonorName = '';
   @ViewChild('searchInput') searchInput?: ElementRef<HTMLInputElement>;
+  // Scrollable table body handle — reset to top on each refresh so paging
+  // starts at the top of the new page (Israel Glikson, 1.7.2026).
+  @ViewChild('scrollableTable') scrollableTable?: ElementRef<HTMLElement>;
 
   years: number[] = [];
   hebrewYearLabels: { [key: number]: string } = {};
@@ -137,6 +140,12 @@ export class DonorGiftsListComponent implements OnInit, OnDestroy {
         await this.loadReminders();
 
         console.log('refreshData 2: Loaded', this.donorGifts.length, 'donor gifts, total:', this.totalCount);
+
+        // Reset table scroll to the top after each refresh (Israel Glikson,
+        // 1.7.2026) — paging + filter changes land at the top of the list.
+        if (this.scrollableTable?.nativeElement) {
+          this.scrollableTable.nativeElement.scrollTop = 0;
+        }
 
       } catch (error) {
         console.error('Error refreshing donor gifts:', error);

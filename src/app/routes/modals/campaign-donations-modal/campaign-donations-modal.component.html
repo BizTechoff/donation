@@ -81,7 +81,7 @@
       </div>
 
       <!-- Scrollable Table Container: Donations -->
-      <div class="table-container">
+      <div class="table-container" #scrollableTable>
         <table class="data-table">
           <thead>
             <tr>
@@ -109,7 +109,7 @@
           </thead>
           <tbody>
             <tr *ngFor="let donation of donations" class="data-row">
-              <td>
+              <td class="cell-ellipsis" [title]="getDonorName(donation)">
                 <div class="donor-cell">
                   {{getDonorName(donation)}}
                 </div>
@@ -139,7 +139,7 @@
               <td>
                 <span class="currency-badge">{{currencyTypes[donation.currencyId].symbol}}</span>
               </td>
-              <td>
+              <td class="cell-ellipsis" [title]="donation.reason || ''">
                 <div class="reason-cell">
                   {{donation.reason || '-'}}
                 </div>

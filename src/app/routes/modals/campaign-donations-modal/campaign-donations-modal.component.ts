@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { DialogConfig } from 'common-ui-elements';
@@ -50,6 +50,10 @@ export class CampaignDonationsModalComponent implements OnInit {
   ];
 
   // Pagination
+  // Scrollable table container handle - reset to top on each data load so
+  // paging does not leave the user mid-page (Israel Glikson, 1.7.2026).
+  @ViewChild('scrollableTable') scrollableTable?: ElementRef<HTMLElement>;
+
   currentPage = 1;
   pageSize = 50;
   totalCount = 0;
@@ -140,6 +144,12 @@ export class CampaignDonationsModalComponent implements OnInit {
       if (!this.totalsLoaded) {
         await this.loadTotalsFromAllDonations();
         this.totalsLoaded = true;
+      }
+
+      // Reset table scroll to top after each load (Israel Glikson, 1.7.2026) -
+      // paging + filter changes should land at the top of the new page.
+      if (this.scrollableTable?.nativeElement) {
+        this.scrollableTable.nativeElement.scrollTop = 0;
       }
 
     } catch (error) {
