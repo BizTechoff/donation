@@ -17,6 +17,9 @@
 # internal work docs (plans, notes, drafts)
 /docs
 
+# local commit helper (session-generated, not part of the platform)
+/scripts/commit.bat
+
 # Word temp/lock files
 ~$*
 
