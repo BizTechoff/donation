@@ -641,3 +641,16 @@ th.sortable {
   opacity: 0.9;
   margin-inline-start: 4px;
 }
+
+/* C3 - an email cell that opens a new Gmail message on a single click.
+ * Looks like the link it is, so the click is discoverable rather than a hidden
+ * behaviour the user has to find by accident. */
+.email-link {
+  color: #1a73e8;
+  cursor: pointer;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}

@@ -46,7 +46,8 @@
             </td>
             <td class="donor-name-cell cell-ellipsis" [title]="donor.lastAndFirstName">{{ donor.lastAndFirstName }}</td>
             <td class="cell-ellipsis" [title]="getDonorPhone(donor.id)">{{ getDonorPhone(donor.id) }}</td>
-            <td class="cell-ellipsis" [title]="getDonorEmail(donor.id)">{{ getDonorEmail(donor.id) }}</td>
+            <td class="cell-ellipsis" [title]="getDonorEmail(donor.id)"
+                [appMailto]="getDonorEmail(donor.id)">{{ getDonorEmail(donor.id) }}</td>
             <td class="donor-address-cell cell-ellipsis" [title]="getDonorPlace(donor.id)?.fullAddress || '-'">{{ getDonorPlace(donor.id)?.fullAddress || '-' }}</td>
           </tr>
           <tr *ngIf="paginatedDonors.length === 0">

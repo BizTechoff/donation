@@ -2,6 +2,7 @@ import { APP_INITIALIZER, LOCALE_ID, NgModule } from '@angular/core'
 import { BrowserModule } from '@angular/platform-browser'
 import { CommonModule, registerLocaleData } from '@angular/common'
 import { FormFieldDirective } from './common/directives/form-field.directive'
+import { MailtoDirective } from './common/directives/mailto.directive'
 import { AmountPipe } from './common/pipes/amount.pipe'
 import localeHe from '@angular/common/locales/he'
 import { AppRoutingModule } from './app-routing.module'
@@ -132,6 +133,7 @@ import { A11yModule } from "@angular/cdk/a11y";
 @NgModule({
   declarations: [
     FormFieldDirective,
+    MailtoDirective,
     AmountPipe,
     AutoYearDirective,
     DateFastInputComponent,

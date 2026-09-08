@@ -57,7 +57,8 @@
                 <strong>{{getDonorDisplayName(donor)}}</strong>
               </td>
               <td class="cell-ellipsis" [title]="getDonorPhone(donor)">{{getDonorPhone(donor)}}</td>
-              <td class="cell-ellipsis" [title]="getDonorEmail(donor)">{{getDonorEmail(donor)}}</td>
+              <td class="cell-ellipsis" [title]="getDonorEmail(donor)"
+                  [appMailto]="getDonorEmail(donor)">{{getDonorEmail(donor)}}</td>
               <td>
                 <span class="level-badge">{{getDonorLevel(donor)}}</span>
               </td>
