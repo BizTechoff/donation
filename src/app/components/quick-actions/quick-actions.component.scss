@@ -140,3 +140,51 @@
     transform: translateY(0) scale(1);
   }
 }
+
+// B5 - the two always-visible actions in the top bar.
+// Icon-only buttons - the action name is in the tooltip, so no text to hide
+// and no width that changes with the language.
+.quick-action-visible {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-inline-end: 8px;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+    line-height: 20px;
+  }
+}
+
+
+// The money-bag mark on the always-visible "new donation" button - same shape
+// as .btn-add-donation in the donor/donations lists, sized for the toolbar.
+.quick-action-donation .moneybag {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  line-height: 1;
+
+  .plus-badge {
+    position: absolute;
+    top: -1px;
+    inset-inline-end: -3px;
+    font-size: 9px;
+    font-weight: 900;
+    line-height: 10px;
+    width: 10px;
+    text-align: center;
+    color: #fff;
+    background: #1d6b41;
+    border-radius: 50%;
+    box-shadow: 0 0 0 1px #fff;
+    pointer-events: none;
+  }
+}

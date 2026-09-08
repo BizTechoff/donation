@@ -14,7 +14,8 @@
       </div>
     </div>
 
-    <div class="summary-cards">
+    <!-- כרטיסי סיכום - מוסתרים לפי בקשת הלקוח (showSummary) -->
+    <div class="summary-cards" *ngIf="showSummary">
       <div class="summary-card">
         <div class="card-icon">🎁</div>
         <div class="card-content">

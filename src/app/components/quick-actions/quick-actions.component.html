@@ -1,8 +1,23 @@
-<button mat-icon-button 
-        [matMenuTriggerFor]="quickActionsMenu"
-        class="quick-actions-button"
-        matTooltip="{{ (i18n.terms$ | async)?.quickActions }}">
-  <mat-icon>add_box</mat-icon>
+<!-- B5 - the two everyday actions, always visible on every screen. The rest
+     stay inside the menu, which the client did not ask to change.
+     Icon only: the label lives in the tooltip, so the toolbar stays compact
+     at every width instead of dropping the words only under 900px. -->
+<button mat-icon-button
+        class="quick-action-visible"
+        (click)="createNewDonor()"
+        [attr.aria-label]="(i18n.terms$ | async)?.newDonor"
+        matTooltip="{{ (i18n.terms$ | async)?.newDonor }}">
+  <mat-icon>{{ getActionIcon('donor') }}</mat-icon>
+</button>
+
+<!-- The money-bag-with-a-plus, the same mark the donor and donation lists use
+     for "new donation for this donor" - one visual for one action. -->
+<button mat-icon-button
+        class="quick-action-visible quick-action-donation"
+        (click)="createNewDonation()"
+        [attr.aria-label]="(i18n.terms$ | async)?.newDonation"
+        matTooltip="{{ (i18n.terms$ | async)?.newDonation }}">
+  <span class="moneybag">💰<span class="plus-badge">+</span></span>
 </button>
 
 <mat-menu #quickActionsMenu="matMenu" class="quick-actions-menu" [dir]="i18n.lang.RTL ? 'rtl' : 'ltr'">

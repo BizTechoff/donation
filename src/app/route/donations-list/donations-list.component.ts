@@ -81,6 +81,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   dateTo: Date | null = null;
   selectedMethodId = '';
   amountFrom: number | undefined;
+  amountTo: number | undefined;   // K1
   selectedCampaignId = '';
   selectedDonationType = '';
   private filterTimeout: any;
@@ -89,6 +90,10 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   // Header accordion state (סיכום + פילטרים) — two independent toggles per
   // client 30.6.2026. Persisted per-user in localStorage so the collapsed
   // choice survives page reloads.
+  // Z12 - the summary block is hidden per client decision (Zoom 24.08.2026).
+  // Flip to true to bring it back; nothing was deleted.
+  showSummary = false;
+
   summaryExpanded = this.loadAccordionState('donations-list.summary', true);
   filtersExpanded = this.loadAccordionState('donations-list.filters', true);
 
@@ -124,6 +129,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
       this.dateTo ||
       this.selectedMethodId ||
       this.amountFrom !== undefined ||
+      this.amountTo !== undefined ||
       this.selectedCampaignId ||
       this.selectedDonationType
     );
@@ -178,11 +184,10 @@ export class DonationsListComponent implements OnInit, OnDestroy {
           dateTo: this.dateTo ? this.formatDateForFilter(this.dateTo) : undefined,
           selectedMethodId: this.selectedMethodId?.trim() || undefined,
           amountFrom: this.amountFrom,
+          amountTo: this.amountTo,
           selectedCampaignId: this.selectedCampaignId?.trim() || undefined,
           selectedDonationType: this.selectedDonationType?.trim() || undefined
         };
-
-        // console.log('refreshData: Fetching donations with filters:', filters, 'page:', this.currentPage, 'sorting:', this.sortColumns);
 
         // Get total count, total amount, commitments, and donations from server with all filters and sorting
         [this.totalCount, this.totalFullDonationsCount, this.donationsByCurrency, this.totalCommitmentCount, this.commitmentsByCurrency, this.donations] = await Promise.all([
@@ -205,9 +210,6 @@ export class DonationsListComponent implements OnInit, OnDestroy {
         } else {
           this.commitmentPaymentTotals = {};
         }
-
-        console.log('refreshData 3: Loaded', this.donations.length, 'donations, total:', this.totalCount, 'totalAmount:', this.totalAmountCache);
-
         // Reset table scroll to top after each refresh (Israel Glikson,
         // 1.7.2026) - paging + filter changes should land at the top.
         if (this.scrollableTable?.nativeElement) {
@@ -291,7 +293,6 @@ export class DonationsListComponent implements OnInit, OnDestroy {
 
     // Set a new timeout to reload data after user stops typing/changing filters
     this.filterTimeout = setTimeout(async () => {
-      console.log('Filter changed, reloading donations');
       this.currentPage = 1;
       await this.refreshData();
       this.restoreSearchFocus();
@@ -342,6 +343,19 @@ export class DonationsListComponent implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * Z13 - a new donation for the donor on this row, prefilled, from the
+   * donations list itself. Same call as donor-list.addDonationForDonor so the
+   * two screens open the identical dialog in the identical state.
+   */
+  async addDonationForDonor(donation: Donation) {
+    if (!donation.donorId) return;
+    const changed = await this.ui.donationDetailsDialog('new', { donorId: donation.donorId });
+    if (changed) {
+      await this.refreshData();
+    }
+  }
+
   async openDonorDetails(donation: Donation) {
     if (!donation.donorId) return;
     const changed = await this.ui.donorDetailsDialog(donation.donorId);
@@ -387,11 +401,9 @@ export class DonationsListComponent implements OnInit, OnDestroy {
 
     try {
       // Open letter properties modal
-      console.log('Opening letter properties selection for donation:', donation.id);
       const result = await this.ui.letterPropertiesDialog(donation.id);
 
       if (result) {
-        console.log('Letter generated successfully:', result);
       }
     } catch (error) {
       console.error('Error printing letter:', error);
@@ -720,9 +732,6 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   toggleSort(field: string, event: Event) {
     event.preventDefault();
     event.stopPropagation();
-
-    console.log('toggleSort called with field:', field);
-
     // Find existing sort for this field
     const existingIndex = this.sortColumns.findIndex(s => s.field === field);
 
@@ -739,9 +748,6 @@ export class DonationsListComponent implements OnInit, OnDestroy {
       // Add new sort (ascending first)
       this.sortColumns.push({ field, direction: 'asc' });
     }
-
-    console.log('sortColumns after toggle:', this.sortColumns);
-
     // Reset to first page when sorting changes
     this.currentPage = 1;
 
@@ -833,6 +839,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
           dateTo: this.dateTo ? this.formatDateForFilter(this.dateTo) : undefined,
           selectedMethodId: this.selectedMethodId?.trim() || undefined,
           amountFrom: this.amountFrom,
+          amountTo: this.amountTo,
           selectedCampaignId: this.selectedCampaignId?.trim() || undefined,
           selectedDonationType: this.selectedDonationType?.trim() || undefined
         };
@@ -976,6 +983,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
           dateTo: this.dateTo ? this.formatDateForFilter(this.dateTo) : undefined,
           selectedMethodId: this.selectedMethodId?.trim() || undefined,
           amountFrom: this.amountFrom,
+          amountTo: this.amountTo,
           selectedCampaignId: this.selectedCampaignId?.trim() || undefined,
           selectedDonationType: this.selectedDonationType?.trim() || undefined
         };

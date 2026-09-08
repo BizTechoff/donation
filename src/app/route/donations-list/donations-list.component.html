@@ -3,8 +3,11 @@
   <!-- HEADER: Sticky top - כותרת + כפתור הוספה + פילטרים -->
   <div class="module-header">
 
-    <!-- סיכום כרטיסים (accordion inline - מקביל לתבנית שקיימת ב-reports.component) -->
-    <div class="donations-summary-accordion" [class.collapsed]="!summaryExpanded">
+    <!-- סיכום כרטיסים - מוסתר לבקשת הלקוח (Z12, זום 24.08.2026: "זה לא נותן
+         לי שום דבר"). לא נמחק: showSummary=true מחזיר אותו, ואם יוחלט להציג
+         כאן "סה״כ תרומות שבוע אחרון" זה המקום. *ngIf ולא display:none - כך גם
+         החישוב לא רץ. -->
+    <div class="donations-summary-accordion" *ngIf="showSummary" [class.collapsed]="!summaryExpanded">
       <div class="accordion-header" (click)="toggleSummaryExpanded()">
         <div class="accordion-title">
           <mat-icon class="accordion-arrow" [class.expanded]="summaryExpanded">expand_more</mat-icon>
@@ -127,6 +130,17 @@
             placeholder="0">
         </div>
 
+        <!-- K1 - upper bound of the amount range (Zoom ב׳ ~0:38) -->
+        <div class="filter-group">
+          <label>{{ (i18n.terms$ | async)?.amountToFilter }}</label>
+          <input
+            type="number"
+            class="form-control"
+            [(ngModel)]="amountTo"
+            (ngModelChange)="onFilterChange()"
+            placeholder="0">
+        </div>
+
         <div class="filter-group">
           <label>{{ (i18n.terms$ | async)?.campaignFilter }}</label>
           <select
@@ -238,9 +252,17 @@
       <tbody>
         <tr *ngFor="let donation of donations">
           <td class="donor-name cell-ellipsis" [title]="getDonorName(donation)">
-            <a class="donor-link" (click)="openDonorDetails(donation); $event.stopPropagation()">
-              {{ getDonorName(donation) }}
-            </a>
+            <!-- Z13 - new donation for THIS donor straight from the row, the
+                 same overlay button as in the donor list: hidden until the row
+                 is hovered, so it costs the column no width. -->
+            <div class="donor-name-row">
+              <a class="donor-link" (click)="openDonorDetails(donation); $event.stopPropagation()">
+                {{ getDonorName(donation) }}
+              </a>
+              <button class="btn-icon btn-add-donation"
+                      (click)="addDonationForDonor(donation); $event.stopPropagation()"
+                      [title]="'תרומה חדשה ל' + getDonorName(donation)">💰<span class="plus-badge">+</span></button>
+            </div>
           </td>
           <td class="donor-address cell-ellipsis" [title]="getDonorHomeAddress(donation)">{{ getDonorHomeAddress(donation) }}</td>
           <td>{{ formatHebrewDate(donation.donationDate) }}</td>

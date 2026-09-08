@@ -7,7 +7,8 @@
       <button class="btn btn-primary create-certificate-btn" (click)="openCreateModal()">{{ (i18n.terms$ | async)?.createNewCertificate }}</button>
     </div>
 
-    <div class="certificate-types">
+    <!-- כרטיסי סיכום - מוסתרים לפי בקשת הלקוח (showSummary) -->
+    <div class="certificate-types" *ngIf="showSummary">
     <div class="type-card memorial-cert">
       <div class="card-icon">🕯️</div>
       <!-- <h3>{{ (i18n.terms$ | async)?.memorialCertificatesCard }}</h3>

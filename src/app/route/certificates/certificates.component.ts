@@ -24,6 +24,12 @@ import { DonorMapController } from '../../../shared/controllers/donor-map.contro
   styleUrls: ['./certificates.component.scss']
 })
 export class CertificatesComponent implements OnInit, OnDestroy {
+  // Summary block hidden per client request (08.09.2026) - the counters at the
+  // top of this list are not used day to day and cost vertical space.
+  // Same switch as donations-list (Z12): flip to true to bring it back;
+  // the markup itself was not removed.
+  showSummary = false;
+
 
   certificates: Certificate[] = [];
   loading = false;
