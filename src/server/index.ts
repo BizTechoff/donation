@@ -62,7 +62,17 @@ async function startup() {
     console.log('[Server] Assets contents:', fs.readdirSync(assetsPath))
   }
 
-  app.use(express.static(dist))
+  // Hashed bundles may be cached forever; index.html must NOT be, or the
+  // browser keeps serving an old index that points at old bundles until the
+  // user presses Ctrl+Shift+R. That is the likely mechanism behind the
+  // "filter sometimes hidden" report (W14) - a stale build, not stale data.
+  app.use(express.static(dist, {
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('index.html')) {
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
+      }
+    }
+  }))
   app.use('/*', async (req, res) => {
     if (req.headers.accept?.includes('json')) {
       console.log(req)
@@ -70,6 +80,7 @@ async function startup() {
       return
     }
     try {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
       res.sendFile(dist + '/index.html')
     } catch (err) {
       res.sendStatus(500)

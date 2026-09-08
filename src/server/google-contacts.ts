@@ -204,12 +204,16 @@ export function donorToGooglePerson(
     ]
   }
 
-  // Phone numbers - send in international format so Google recognizes the country
+  // Phone numbers - send in international format so Google recognizes the country.
+  // The type is derived from the Hebrew description through the SAME map the
+  // import uses (reversed), so 'נייד' goes out as 'mobile' and comes back as
+  // 'נייד'. Before this, every phone was exported as main/other and a single
+  // export→import round trip silently erased the mobile/home classification.
   const phones = contacts.filter(c => c.type === 'phone' && c.isActive && c.phoneNumber)
   if (phones.length) {
     person.phoneNumbers = phones.map(p => ({
       value: toInternationalPhone(p.phoneNumber!, p.prefix || '+972'),
-      type: p.isPrimary ? 'main' : 'other'
+      type: HEBREW_PHONE_TYPE_TO_GOOGLE[(p.description || '').trim()] || (p.isPrimary ? 'main' : 'other')
     }))
   }
 
@@ -218,7 +222,7 @@ export function donorToGooglePerson(
   if (emails.length) {
     person.emailAddresses = emails.map(e => ({
       value: e.email,
-      type: e.isPrimary ? 'home' : 'other'
+      type: HEBREW_EMAIL_TYPE_TO_GOOGLE[(e.description || '').trim()] || (e.isPrimary ? 'home' : 'other')
     }))
   }
 
@@ -319,6 +323,12 @@ const GOOGLE_PHONE_TYPE_MAP: { [key: string]: string } = {
 const GOOGLE_EMAIL_TYPE_MAP: { [key: string]: string } = {
   'home': 'בית', 'work': 'עבודה', 'other': 'אחר'
 }
+// Reverse maps for export - built from the import maps so there is exactly
+// one place that knows how Google types and Hebrew descriptions correspond.
+const reverse = (m: { [key: string]: string }) =>
+  Object.fromEntries(Object.entries(m).map(([g, he]) => [he, g])) as { [key: string]: string }
+const HEBREW_PHONE_TYPE_TO_GOOGLE = reverse(GOOGLE_PHONE_TYPE_MAP)
+const HEBREW_EMAIL_TYPE_TO_GOOGLE = reverse(GOOGLE_EMAIL_TYPE_MAP)
 
 // ============ Field Mapping: Google Person → Donor fields ============
 export function googlePersonToDonorFields(person: people_v1.Schema$Person) {
