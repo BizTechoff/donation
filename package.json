@@ -1,6 +1,6 @@
 {
   "name": "donation",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "scripts": {
     "dev-web": "ng serve --proxy-config proxy.conf.json --open",
     "dev-node": "tsx watch -r dotenv/config src/server/",
