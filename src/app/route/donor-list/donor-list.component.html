@@ -58,6 +58,14 @@
             <small>({{ (i18n.terms$ | async)?.inLast12Months }})</small>
             <span class="sort-icon" *ngIf="table.getSortIcon('averageDonation')">{{ table.getSortIcon('averageDonation') }}</span>
           </th> -->
+          <!-- B2 - אנ"ש as a tick box. isAnash was already in the Excel export
+               but had no column on screen, the reverse of the platform rule
+               that what is visible is what gets exported. Sortable like the
+               rest: it is a plain boolean field on Donor. -->
+          <th class="col-anash" [class.sortable]="table.isSortable('isAnash')" [class.sorted]="table.isSorted('isAnash')" (click)="table.toggleSort('isAnash', $event)">
+            {{ (i18n.terms$ | async)?.anash }}
+            <span class="sort-icon" *ngIf="table.getSortIcon('isAnash')">{{ table.getSortIcon('isAnash') }}</span>
+          </th>
           <th class="actions-header">
             <div class="actions-header-content">
               <span>{{ (i18n.terms$ | async)?.actions }}</span>
@@ -100,6 +108,10 @@
             <small *ngIf="getDonorDonationsCount(donor.id) === 1">תרומה אחת</small>
             <small *ngIf="getDonorDonationsCount(donor.id) > 1">{{getDonorDonationsCount(donor.id)}} תרומות</small>
           </td> -->
+          <td class="col-anash">
+            <span class="anash-mark" [class.on]="donor.isAnash"
+                  [title]="donor.isAnash ? ((i18n.terms$ | async)?.anash) : ''">{{ donor.isAnash ? '✓' : '' }}</span>
+          </td>
           <td class="actions">
             <button class="btn-icon btn-donations" (click)="openDonorDonations(donor); $event.stopPropagation()" [title]="(i18n.terms$ | async)?.donations || 'תרומות'">💰</button>
             <button class="btn-icon btn-gifts" (click)="openDonorGifts(donor); $event.stopPropagation()" [title]="(i18n.terms$ | async)?.gifts || 'מתנות'">🎁</button>

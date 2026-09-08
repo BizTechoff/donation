@@ -743,3 +743,32 @@ tr:hover .btn-add-donation {
   min-width: 150px;
   max-width: 150px;
 }
+
+
+// B2 - the אנ"ש column: a narrow tick box, empty when the donor is not אנ"ש.
+// Narrow on purpose so it costs the name and address columns almost nothing.
+.col-anash {
+  width: 46px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.anash-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: 1px solid #cfd4dc;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+  color: transparent;
+
+  &.on {
+    color: #1d6b41;
+    border-color: #1d6b41;
+    background: #eaf6ef;
+  }
+}

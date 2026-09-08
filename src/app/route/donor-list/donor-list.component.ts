@@ -61,7 +61,7 @@ export class DonorListComponent implements OnInit, OnDestroy {
     // All five are ordered in SQL: fullName maps to lastName+firstName, the
     // rest map to sqlExpression fields on Donor. lastDonationDate matches the
     // displayed value: commitments excluded, partner donations included.
-    sortableFields: ['fullName', 'address', 'phone', 'email', 'lastDonationDate'],
+    sortableFields: ['fullName', 'address', 'phone', 'email', 'lastDonationDate', 'isAnash'],
     scrollContainer: () => this.scrollableTable?.nativeElement,
     load: req => this.loadDonors(req)
   });
@@ -563,7 +563,10 @@ export class DonorListComponent implements OnInit, OnDestroy {
             address: data?.fullAddress || '-',
             phone: data?.phone || '-',
             email: data?.email || '-',
-            lastDonation: lastDonationDisplay
+            lastDonation: lastDonationDisplay,
+            // B2 - the אנ"ש tick is on screen, so it is on the printout too
+            // (platform rule: what is visible is what gets exported).
+            anash: donor.isAnash ? '✓' : ''
           };
         });
 
@@ -577,7 +580,8 @@ export class DonorListComponent implements OnInit, OnDestroy {
             { header: this.i18n.currentTerms.address || 'כתובת', field: 'address', align: 'left' },
             { header: this.i18n.currentTerms.phone || 'טלפון', field: 'phone', align: 'left' },
             { header: this.i18n.currentTerms.email || 'דוא"ל', field: 'email', align: 'left' },
-            { header: this.i18n.currentTerms.lastDonation || 'תרומה אחרונה', field: 'lastDonation' }
+            { header: this.i18n.currentTerms.lastDonation || 'תרומה אחרונה', field: 'lastDonation' },
+            { header: this.i18n.currentTerms.anash || 'אנ"ש', field: 'anash' }
           ],
           data: printData,
           direction: 'rtl'
