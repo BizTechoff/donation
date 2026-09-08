@@ -83,6 +83,10 @@ export const api = remultExpress({
         // Expression GIN index - "partnerIds" is a json column; every partner
         // lookup (and the lastDonationDate sqlExpression) casts it to jsonb.
         await provider.execute('create index if not exists "idx_donations_partner_ids" on "donations" using gin (("partnerIds"::jsonb))')
+        // W7 - Donor.defaultOrderBy is now (lastName, firstName), so every
+        // unordered donor query sorts by this pair. Without the index that is a
+        // sort over the whole table on each one.
+        await provider.execute('create index if not exists "idx_donors_last_first_name" on "donors" ("lastName", "firstName")')
 
         /*
                 let seq = `

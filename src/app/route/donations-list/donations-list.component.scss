@@ -1020,3 +1020,12 @@ tr:hover .btn-add-donation {
     pointer-events: none;
   }
 }
+
+
+// Z15 - the father sub-line: small, muted, on its own line under the name.
+.donor-father {
+  display: block;
+  font-size: 11px;
+  color: #6b7280;
+  line-height: 1.3;
+}

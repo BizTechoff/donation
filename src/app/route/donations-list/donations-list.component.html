@@ -187,49 +187,48 @@
       <table class="data-table">
       <thead>
         <tr>
-          <th class="sortable" [class.sorted]="isSorted('donorName')" (click)="toggleSort('donorName', $event)">
+          <th [class.sortable]="table.isSortable('donorName')" [class.sorted]="table.isSorted('donorName')" (click)="table.toggleSort('donorName', $event)">
             {{ (i18n.terms$ | async)?.donorColumn }}
-            <span class="sort-icon" *ngIf="getSortIcon('donorName')">{{ getSortIcon('donorName') }}</span>
+            <span class="sort-icon" *ngIf="table.getSortIcon('donorName')">{{ table.getSortIcon('donorName') }}</span>
           </th>
-          <th class="sortable" [class.sorted]="isSorted('address')" (click)="toggleSort('address', $event)">
-            {{ (i18n.terms$ | async)?.homeAddressColumn }}
-            <span class="sort-icon" *ngIf="getSortIcon('address')">{{ getSortIcon('address') }}</span>
-          </th>
-          <th class="sortable" [class.sorted]="isSorted('donationDate')" (click)="toggleSort('donationDate', $event)">
+<!-- Z15 - the address column is gone; the father's name now appears under
+               the donor's name, and only for donors whose name is shared. The
+               address was only ever there to tell two same-named donors apart. -->
+          <th [class.sortable]="table.isSortable('donationDate')" [class.sorted]="table.isSorted('donationDate')" (click)="table.toggleSort('donationDate', $event)">
             {{ (i18n.terms$ | async)?.dateColumn }}
-            <span class="sort-icon" *ngIf="getSortIcon('donationDate')">{{ getSortIcon('donationDate') }}</span>
+            <span class="sort-icon" *ngIf="table.getSortIcon('donationDate')">{{ table.getSortIcon('donationDate') }}</span>
           </th>
-          <th class="sortable" [class.sorted]="isSorted('donationType')" (click)="toggleSort('donationType', $event)">
+          <th [class.sortable]="table.isSortable('donationType')" [class.sorted]="table.isSorted('donationType')" (click)="table.toggleSort('donationType', $event)">
             {{ (i18n.terms$ | async)?.donationType }}
-            <span class="sort-icon" *ngIf="getSortIcon('donationType')">{{ getSortIcon('donationType') }}</span>
+            <span class="sort-icon" *ngIf="table.getSortIcon('donationType')">{{ table.getSortIcon('donationType') }}</span>
           </th>
-          <th class="sortable" [class.sorted]="isSorted('method')" (click)="toggleSort('method', $event)">
+          <th [class.sortable]="table.isSortable('method')" [class.sorted]="table.isSorted('method')" (click)="table.toggleSort('method', $event)">
             {{ (i18n.terms$ | async)?.methodColumn }}
-            <span class="sort-icon" *ngIf="getSortIcon('method')">{{ getSortIcon('method') }}</span>
+            <span class="sort-icon" *ngIf="table.getSortIcon('method')">{{ table.getSortIcon('method') }}</span>
           </th>
-          <!-- <th class="sortable" [class.sorted]="isSorted('amountInShekel')" (click)="toggleSort('amountInShekel', $event)">
+          <!-- <th [class.sortable]="table.isSortable('amountInShekel')" [class.sorted]="table.isSorted('amountInShekel')" (click)="table.toggleSort('amountInShekel', $event)">
             {{ (i18n.terms$ | async)?.amountInShekelColumn }}
-            <span class="sort-icon" *ngIf="getSortIcon('amountInShekel')">{{ getSortIcon('amountInShekel') }}</span>
+            <span class="sort-icon" *ngIf="table.getSortIcon('amountInShekel')">{{ table.getSortIcon('amountInShekel') }}</span>
           </th> -->
-          <th class="sortable" [class.sorted]="isSorted('amount')" (click)="toggleSort('amount', $event)">
+          <th [class.sortable]="table.isSortable('amount')" [class.sorted]="table.isSorted('amount')" (click)="table.toggleSort('amount', $event)">
             {{ (i18n.terms$ | async)?.amountColumn }}
-            <span class="sort-icon" *ngIf="getSortIcon('amount')">{{ getSortIcon('amount') }}</span>
+            <span class="sort-icon" *ngIf="table.getSortIcon('amount')">{{ table.getSortIcon('amount') }}</span>
           </th>
-          <th class="sortable" [class.sorted]="isSorted('currency')" (click)="toggleSort('currency', $event)">
+          <th [class.sortable]="table.isSortable('currency')" [class.sorted]="table.isSorted('currency')" (click)="table.toggleSort('currency', $event)">
             {{ (i18n.terms$ | async)?.currencyColumn }}
-            <span class="sort-icon" *ngIf="getSortIcon('currency')">{{ getSortIcon('currency') }}</span>
+            <span class="sort-icon" *ngIf="table.getSortIcon('currency')">{{ table.getSortIcon('currency') }}</span>
           </th>
-          <th class="sortable" [class.sorted]="isSorted('campaign')" (click)="toggleSort('campaign', $event)">
+          <th [class.sortable]="table.isSortable('campaign')" [class.sorted]="table.isSorted('campaign')" (click)="table.toggleSort('campaign', $event)">
             {{ (i18n.terms$ | async)?.campaign }}
-            <span class="sort-icon" *ngIf="getSortIcon('campaign')">{{ getSortIcon('campaign') }}</span>
+            <span class="sort-icon" *ngIf="table.getSortIcon('campaign')">{{ table.getSortIcon('campaign') }}</span>
           </th>
-          <th class="sortable" [class.sorted]="isSorted('fundraiser')" (click)="toggleSort('fundraiser', $event)">
+          <th [class.sortable]="table.isSortable('fundraiser')" [class.sorted]="table.isSorted('fundraiser')" (click)="table.toggleSort('fundraiser', $event)">
             {{ (i18n.terms$ | async)?.fundraiserColumn }}
-            <span class="sort-icon" *ngIf="getSortIcon('fundraiser')">{{ getSortIcon('fundraiser') }}</span>
+            <span class="sort-icon" *ngIf="table.getSortIcon('fundraiser')">{{ table.getSortIcon('fundraiser') }}</span>
           </th>
-          <th class="sortable" [class.sorted]="isSorted('reason')" (click)="toggleSort('reason', $event)">
+          <th [class.sortable]="table.isSortable('reason')" [class.sorted]="table.isSorted('reason')" (click)="table.toggleSort('reason', $event)">
             {{ (i18n.terms$ | async)?.reason }}
-            <span class="sort-icon" *ngIf="getSortIcon('reason')">{{ getSortIcon('reason') }}</span>
+            <span class="sort-icon" *ngIf="table.getSortIcon('reason')">{{ table.getSortIcon('reason') }}</span>
           </th>
           <th class="actions-header">
             <div class="actions-header-content">
@@ -259,12 +258,12 @@
               <a class="donor-link" (click)="openDonorDetails(donation); $event.stopPropagation()">
                 {{ getDonorName(donation) }}
               </a>
+              <small class="donor-father" *ngIf="getFatherName(donation)">{{ getFatherName(donation) }}</small>
               <button class="btn-icon btn-add-donation"
                       (click)="addDonationForDonor(donation); $event.stopPropagation()"
                       [title]="'תרומה חדשה ל' + getDonorName(donation)">💰<span class="plus-badge">+</span></button>
             </div>
           </td>
-          <td class="donor-address cell-ellipsis" [title]="getDonorHomeAddress(donation)">{{ getDonorHomeAddress(donation) }}</td>
           <td>{{ formatHebrewDate(donation.donationDate) }}</td>
           <td>
             <span [class.commitment-highlight]="donation.donationType === 'commitment'">
@@ -305,30 +304,30 @@
     <!-- Table Footer: Sticky bottom - Pagination -->
     <div class="table-footer">
       <div class="pagination-info">
-        <span>{{ (i18n.terms$ | async)?.showing }} {{(currentPage - 1) * pageSize + 1}} - {{Math.min(currentPage * pageSize, totalCount)}} {{ (i18n.terms$ | async)?.of }} {{totalCount}}</span>
+        <span>{{ (i18n.terms$ | async)?.showing }} {{table.rangeStart}} - {{table.rangeEnd}} {{ (i18n.terms$ | async)?.of }} {{table.totalCount}}</span>
       </div>
 
       <div class="pagination-controls">
         <button
           class="btn-page"
-          (click)="firstPage()"
-          [disabled]="currentPage === 1 || loading">
+          (click)="table.firstPage()"
+          [disabled]="table.isFirstPage || loading">
           {{ (i18n.terms$ | async)?.first }} ⏭
         </button>
 
         <button
           class="btn-page"
-          (click)="previousPage()"
-          [disabled]="currentPage === 1 || loading">
+          (click)="table.previousPage()"
+          [disabled]="table.isFirstPage || loading">
           {{ (i18n.terms$ | async)?.previous }} →
         </button>
 
         <div class="page-numbers">
           <button
-            *ngFor="let page of getPageNumbers()"
+            *ngFor="let page of table.getPageNumbers()"
             class="btn-page-number"
-            [class.active]="page === currentPage"
-            (click)="goToPage(page)"
+            [class.active]="page === table.currentPage"
+            (click)="table.goToPage(page)"
             [disabled]="loading">
             {{page}}
           </button>
@@ -336,15 +335,15 @@
 
         <button
           class="btn-page"
-          (click)="nextPage()"
-          [disabled]="currentPage === totalPages || loading">
+          (click)="table.nextPage()"
+          [disabled]="table.isLastPage || loading">
           ← {{ (i18n.terms$ | async)?.next }}
         </button>
 
         <button
           class="btn-page"
-          (click)="lastPage()"
-          [disabled]="currentPage === totalPages || loading">
+          (click)="table.lastPage()"
+          [disabled]="table.isLastPage || loading">
           ⏮ {{ (i18n.terms$ | async)?.last }}
         </button>
       </div>

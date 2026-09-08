@@ -18,6 +18,7 @@ import { PayerService } from '../../services/payer.service';
 import { PrintService, LabelData, DonationPrintData } from '../../services/print.service';
 import { PrintType, DonationPrintOptions } from '../../routes/modals/print-options-modal/print-options-modal.component';
 import { FileUploadService } from '../../services/file-upload.service';
+import { TableState, TableLoadRequest } from '../../common/table/table-state';
 
 @Component({
   selector: 'app-donations-list',
@@ -57,14 +58,20 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   commitmentPaymentTotals: Record<string, number> = {};
 
   // Pagination
-  currentPage = 1;
-  pageSize = 50;
-  totalCount = 0;
-  totalPages = 0;
-  Math = Math; // Make Math available in template
+  // P6 / W1 - sorting and paging come from the shared TableState. The five
+  // related columns are ordered in SQL through the sqlExpression fields on
+  // Donation (see donation.controller), which is what makes them sort the
+  // whole list instead of just the page on screen.
+  readonly table = new TableState({
+    pageSize: 50,
+    settingsKey: 'donationsList',
+    sortableFields: ['donorName', 'donationDate', 'donationType',
+                     'method', 'amount', 'currency', 'campaign', 'fundraiser', 'reason'],
+    scrollContainer: () => this.scrollableTable?.nativeElement,
+    load: req => this.loadDonations(req)
+  });
 
   // Sorting
-  sortColumns: Array<{ field: string; direction: 'asc' | 'desc' }> = [];
 
   // תצוגה מקדימה ונתונים נוספים
   showPreview = false;
@@ -152,15 +159,17 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   ) { }
 
   async ngOnInit() {
-    // Listen for global filter changes
+    // A global filter change alters the result set - back to page 1.
     this.subscriptions.add(
       this.globalFilterService.filters$.subscribe(() => {
-        this.refreshData();
+        this.table.reloadFromFirstPage();
       })
     );
 
-    // Initial data load (includes base data on first call)
-    await this.refreshData();
+    // Saved sort first, then the first fetch - so the very first request
+    // already carries the user's persisted sort (same order as donor-list).
+    await this.table.loadSettings();
+    await this.table.reload();
   }
 
   /**
@@ -169,6 +178,12 @@ export class DonationsListComponent implements OnInit, OnDestroy {
    * On first call, also loads base data (currency types, donors, campaigns, methods)
    */
   async refreshData() {
+    await this.table.reload();
+  }
+
+  /** Fetches one page. TableState owns page/pageSize/sort; this component owns
+   *  its rows. Scroll-to-top is handled by TableState. */
+  private async loadDonations(req: TableLoadRequest) {
     await this.busy.doWhileShowingBusy(async () => {
       try {
         // Load base data once on first call
@@ -190,16 +205,14 @@ export class DonationsListComponent implements OnInit, OnDestroy {
         };
 
         // Get total count, total amount, commitments, and donations from server with all filters and sorting
-        [this.totalCount, this.totalFullDonationsCount, this.donationsByCurrency, this.totalCommitmentCount, this.commitmentsByCurrency, this.donations] = await Promise.all([
+        [this.table.totalCount, this.totalFullDonationsCount, this.donationsByCurrency, this.totalCommitmentCount, this.commitmentsByCurrency, this.donations] = await Promise.all([
           DonationController.countFilteredDonations(filters),
           DonationController.countFullDonations(filters),
           DonationController.sumFilteredDonationsByCurrency(filters),
           DonationController.countCommitments(filters),
           DonationController.sumCommitmentsByCurrency(filters),
-          DonationController.findFilteredDonations(filters, this.currentPage, this.pageSize, this.sortColumns)
+          DonationController.findFilteredDonations(filters, req.page, req.pageSize, req.sort)
         ]);
-
-        this.totalPages = Math.ceil(this.totalCount / this.pageSize);
 
         // Load payment totals for commitment and standing order donations
         const paymentBasedIds = this.donations
@@ -210,20 +223,14 @@ export class DonationsListComponent implements OnInit, OnDestroy {
         } else {
           this.commitmentPaymentTotals = {};
         }
-        // Reset table scroll to top after each refresh (Israel Glikson,
-        // 1.7.2026) - paging + filter changes should land at the top.
-        if (this.scrollableTable?.nativeElement) {
-          this.scrollableTable.nativeElement.scrollTop = 0;
-        }
       } catch (error) {
         console.error('Error refreshing donations:', error);
         this.donations = [];
-        this.totalCount = 0;
+        this.table.totalCount = 0;
         this.totalFullDonationsCount = 0;
         this.donationsByCurrency = {};
         this.totalCommitmentCount = 0;
         this.commitmentsByCurrency = {};
-        this.totalPages = 0;
       }
     });
   }
@@ -293,8 +300,8 @@ export class DonationsListComponent implements OnInit, OnDestroy {
 
     // Set a new timeout to reload data after user stops typing/changing filters
     this.filterTimeout = setTimeout(async () => {
-      this.currentPage = 1;
-      await this.refreshData();
+      // a filter changes the result set - back to page 1
+      await this.table.reloadFromFirstPage();
       this.restoreSearchFocus();
     }, 800); // 800ms debounce (was 300ms - too fast for slow typists)
   }
@@ -611,6 +618,17 @@ export class DonationsListComponent implements OnInit, OnDestroy {
     return donation.donor?.lastAndFirstName || '-';
   }
 
+  /**
+   * Z15 - the father's name, shown as a small sub-line under the donor's name,
+   * ONLY when another donor shares that name. Both values are computed by the
+   * DB on Donor (fatherName / hasDuplicateName), so the screen just reads them.
+   */
+  getFatherName(donation: Donation): string {
+    const donor = donation.donor as any;
+    if (!donor?.hasDuplicateName) return '';
+    return donor.fatherName ? `בן ${donor.fatherName}` : '';
+  }
+
   getDonorHomeAddress(donation: Donation): string {
     if (!donation.donor) return '-';
     return (donation.donor as any).homeAddress || '-';
@@ -671,99 +689,8 @@ export class DonationsListComponent implements OnInit, OnDestroy {
     return this.donations.filter(donation => donation.campaignId);
   }
 
-  // Pagination methods
-  async goToPage(page: number) {
-    if (page >= 1 && page <= this.totalPages) {
-      this.currentPage = page;
-      await this.refreshData();
-    }
-  }
-
-  async nextPage() {
-    if (this.currentPage < this.totalPages) {
-      this.currentPage++;
-      await this.refreshData();
-    }
-  }
-
-  async previousPage() {
-    if (this.currentPage > 1) {
-      this.currentPage--;
-      await this.refreshData();
-    }
-  }
-
-  async firstPage() {
-    this.currentPage = 1;
-    await this.refreshData();
-  }
-
-  async lastPage() {
-    this.currentPage = this.totalPages;
-    await this.refreshData();
-  }
-
-  getPageNumbers(): number[] {
-    const pages: number[] = [];
-    const maxPagesToShow = 5;
-
-    if (this.totalPages <= maxPagesToShow) {
-      for (let i = 1; i <= this.totalPages; i++) {
-        pages.push(i);
-      }
-    } else {
-      const halfWindow = Math.floor(maxPagesToShow / 2);
-      let startPage = Math.max(1, this.currentPage - halfWindow);
-      let endPage = Math.min(this.totalPages, startPage + maxPagesToShow - 1);
-
-      if (endPage - startPage < maxPagesToShow - 1) {
-        startPage = Math.max(1, endPage - maxPagesToShow + 1);
-      }
-
-      for (let i = startPage; i <= endPage; i++) {
-        pages.push(i);
-      }
-    }
-
-    return pages;
-  }
-
-  // Sorting methods
-  toggleSort(field: string, event: Event) {
-    event.preventDefault();
-    event.stopPropagation();
-    // Find existing sort for this field
-    const existingIndex = this.sortColumns.findIndex(s => s.field === field);
-
-    if (existingIndex !== -1) {
-      // Toggle direction or remove if descending
-      const current = this.sortColumns[existingIndex];
-      if (current.direction === 'asc') {
-        this.sortColumns[existingIndex].direction = 'desc';
-      } else {
-        // Remove sort
-        this.sortColumns.splice(existingIndex, 1);
-      }
-    } else {
-      // Add new sort (ascending first)
-      this.sortColumns.push({ field, direction: 'asc' });
-    }
-    // Reset to first page when sorting changes
-    this.currentPage = 1;
-
-    // Reload with new sort
-    this.refreshData();
-  }
-
-  isSorted(field: string): boolean {
-    return this.sortColumns.some(s => s.field === field);
-  }
-
-  getSortIcon(field: string): string {
-    const sort = this.sortColumns.find(s => s.field === field);
-    if (!sort) return '';
-    return sort.direction === 'asc' ? '↑' : '↓';
-  }
+  // Sorting and paging live in `table` (TableState) - the block that used to
+  // sit here was another drifted copy (P6/W1).
 
   truncateReason(reason: string | undefined): string {
     if (!reason) return '-';
@@ -825,7 +752,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
       onPrint: (printType: PrintType, donationOptions?: DonationPrintOptions) =>
         this.executePrint(printType, donationOptions),
       scansCount,
-      totalCount: this.totalCount
+      totalCount: this.table.totalCount
     });
   }
 
@@ -849,7 +776,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
           filters,
           undefined,
           undefined,
-          this.sortColumns
+          this.table.sortColumns
         );
 
         if (printType === 'donations') {
@@ -923,8 +850,11 @@ export class DonationsListComponent implements OnInit, OnDestroy {
             const contact = donation.donorId ? printContactsMap.get(donation.donorId) : undefined;
 
             return {
-              donorName: this.getDonorName(donation),
-              address: this.getDonorHomeAddress(donation),
+              // Z15 - the printout mirrors the screen: no address column, and
+              // the father's name appended to the donor's name where the name
+              // is shared. The full Excel export still carries the address.
+              donorName: this.getDonorName(donation) +
+                (this.getFatherName(donation) ? ` (${this.getFatherName(donation)})` : ''),
               phone: contact?.phone || '-',
               date: hebrewDate,
               donationType: this.getDonationTypeDisplay(donation),
@@ -941,7 +871,6 @@ export class DonationsListComponent implements OnInit, OnDestroy {
             subtitle: `${allDonations.length} ${this.i18n.currentTerms.donations || 'תרומות'}`,
             columns: [
               { header: this.i18n.currentTerms.donor || 'תורם', field: 'donorName' },
-              { header: this.i18n.currentTerms.address || 'כתובת', field: 'address', align: 'left' },
               { header: this.i18n.currentTerms.phone || 'טלפון', field: 'phone', align: 'left' },
               { header: this.i18n.currentTerms.date || 'תאריך', field: 'date' },
               { header: this.i18n.currentTerms.donationType || 'סוג', field: 'donationType' },
@@ -993,7 +922,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
           filters,
           undefined,
           undefined,
-          this.sortColumns
+          this.table.sortColumns
         );
 
         // Load place data for all donors
@@ -1044,9 +973,13 @@ export class DonationsListComponent implements OnInit, OnDestroy {
             { header: this.i18n.currentTerms.maritalStatus || 'מצב משפחתי', mapper: (item) => this.getMaritalStatusText(item.donation.donor?.maritalStatus || ''), width: 12 },
             { header: this.i18n.currentTerms.anash || 'אנ"ש', mapper: (item) => item.donation.donor?.isAnash ? '✓' : '', width: 8 },
             { header: this.i18n.currentTerms.alumni || 'תלמידנו', mapper: (item) => item.donation.donor?.isAlumni ? '✓' : '', width: 8 },
-            // Full address (formatted same as table + print, getDisplayAddress)
-            // Aligned LEFT (LTR) since addresses are in English/Latin script.
-            { header: this.i18n.currentTerms.address || 'כתובת', mapper: (item) => (item.donation.donor as any)?.homeAddress || '-', width: 40, align: 'left' },
+            // Z15 - the combined address column is gone here too, so the export
+            // matches the screen and the printout. The granular address fields
+            // below are untouched - they are the point of a full export.
+            { header: 'שם האב', mapper: (item) => {
+                const donor = item.donation.donor as any;
+                return donor?.hasDuplicateName && donor?.fatherName ? donor.fatherName : '';
+              }, width: 15 },
             // Address fields (granular)
             { header: this.i18n.currentTerms.country || 'מדינה', mapper: (item) => item.place?.country?.name || '', width: 12 },
             { header: this.i18n.currentTerms.city || 'עיר', mapper: (item) => item.place?.city || '', width: 15 },

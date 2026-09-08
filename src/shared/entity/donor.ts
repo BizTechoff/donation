@@ -20,6 +20,13 @@ import { ContactPerson } from './contact-person'
   allowApiUpdate: Allow.authenticated,
   allowApiDelete: [Roles.admin, Roles.secretary],
   allowApiInsert: Allow.authenticated,
+  // W7 - "עריכת קהל יעד: הצגת שמות לפי א-ב שם משפחה". Donor had no
+  // defaultOrderBy at all (Donation and User both do), so every query that did
+  // not name an order got whatever order Postgres felt like - which is what the
+  // target-audience editor showed. Setting it here fixes the whole class in one
+  // place instead of adding an orderBy to each call site; a query that passes
+  // its own orderBy still overrides this.
+  defaultOrderBy: { lastName: 'asc', firstName: 'asc' },
   // saving: async (donor) => {
   //   if (isBackend()) {
   //     if (donor._.isNew()) {
@@ -212,6 +219,47 @@ export class Donor extends IdEntity {
   // jsonb - same as the existing partner query). Empty is coalesced to the
   // minimum date so "never donated" sorts last on desc (recent first) and
   // first on asc (stalest first) - both the orders the user actually wants.
+  // Z15 - the donations list drops the address column and shows the father's
+  // name under the donor's name INSTEAD, but only where it is actually needed:
+  // the address was there to tell two donors with the same name apart (Zoom ב׳
+  // ~0:49-0:55), so the sub-line appears only when the name really is shared.
+  //
+  // Nothing new is stored. The father already exists in donor_relations, from
+  // the family-relations work (W13), in either direction:
+  //   - this donor is donor1 and the other side is labelled 'אבא'
+  //   - this donor is donor2 labelled 'בן'/'בת', so donor1 is the parent -
+  //     and the father specifically when that parent is male
+  // A donor with no family relation recorded simply has no sub-line, which is
+  // the honest answer rather than an empty field on every row.
+  @Fields.string<Donor>({
+    caption: 'שם האב',
+    allowNull: true,
+    sqlExpression: () => `(
+      select trim(coalesce(f."firstName",'') || ' ' || coalesce(f."lastName",''))
+      from "donor_relations" r
+      join "donors" f on f."id" = case
+        when r."donor1Id" = "donors"."id" then r."donor2Id" else r."donor1Id" end
+      where (
+              (r."donor1Id" = "donors"."id" and r."relationshipType1" = 'אבא')
+           or (r."donor2Id" = "donors"."id" and r."relationshipType1" in ('בן','בת')
+               and f."gender" = 'male')
+            )
+      limit 1)`
+  })
+  fatherName?: string
+
+  // True when another donor carries the same first+last name - the condition
+  // under which the father's name is worth showing at all.
+  @Fields.boolean<Donor>({
+    caption: 'שם כפול',
+    sqlExpression: () => `exists(
+      select 1 from "donors" d2
+      where d2."id" <> "donors"."id"
+        and d2."lastName" = "donors"."lastName"
+        and coalesce(d2."firstName",'') = coalesce("donors"."firstName",''))`
+  })
+  hasDuplicateName?: boolean
+
   @Fields.dateOnly<Donor>({
     caption: 'תרומה אחרונה',
     sqlExpression: () => `coalesce(greatest(
