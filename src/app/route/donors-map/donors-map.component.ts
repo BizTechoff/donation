@@ -292,13 +292,10 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
           this.isFullscreen = savedSettings.fullscreen;
         }
 
-        // Load filter preferences
-        if (savedSettings.filters) {
-          this.mapFilters = {
-            ...this.mapFilters,
-            ...savedSettings.filters
-          };
-        }
+        // Filters are deliberately NOT restored - see saveMapSettings. An older
+        // settings row may still carry some; they are ignored, and the map
+        // always opens showing everything.
+
       }
     } catch (error) {
       console.error('Error loading map settings:', error);
@@ -322,9 +319,17 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
           };
         }
 
+        // The map FILTERS are not persisted at all any more - not the search
+        // text, not the minimum/maximum donation amounts, not the status or
+        // date conditions. A filter is a momentary act of looking at a subset;
+        // restoring one silently means the next session opens on a partial map
+        // with no indication why, and the user reads missing donors as missing
+        // data. Only the genuine view preference survives.
+        //
+        // (The global filter bar is the deliberate exception - it is visible,
+        // it is explicit, and it clears itself on sign-out and on tab close.)
         user.settings.mapSettings = {
-          fullscreen: this.isFullscreen,
-          filters: { ...this.mapFilters }
+          fullscreen: this.isFullscreen
         };
 
         await userRepo.save(user);

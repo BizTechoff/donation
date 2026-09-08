@@ -72,6 +72,35 @@ export class AppComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    // A1 - the global filters must not outlive the session. signOut() clears
+    // them, but closing the tab with the X never reaches signOut, so the next
+    // visit used to open behind a filter nobody set.
+    //
+    // sendBeacon is used rather than a normal request: the browser guarantees
+    // delivery of a beacon while the page is being torn down, and cancels a
+    // fetch. It carries the session cookie, which is all the endpoint needs.
+    // 'pagehide' is the one that fires reliably on mobile Safari, where
+    // 'beforeunload' often does not - both are registered, and the server
+    // clearing twice is harmless.
+    // A RELOAD (F5) fires the same unload events as a close, and the browser
+    // gives no way to tell them apart at that moment. So both are treated the
+    // same on the way out - the server is cleared - and the difference is
+    // settled on the way back IN: the service stashes the filters in
+    // sessionStorage, which survives a reload and dies with the tab. A reload
+    // finds the stash and puts the filters back; a closed tab left nothing.
+    const clearFiltersOnExit = () => {
+      if (!remult.user?.id) return
+      try {
+        this.globalFilterService.stashForReload()
+        navigator.sendBeacon('/api/session/clear-global-filters')
+      } catch {
+        // a browser without sendBeacon simply keeps the filters - not worth
+        // blocking the unload over
+      }
+    }
+    window.addEventListener('beforeunload', clearFiltersOnExit)
+    window.addEventListener('pagehide', clearFiltersOnExit)
+
     // Auto-redirect to mobile view on small screens
     if (remult.user && this.isMobileDevice() && !this.router.url.startsWith('/m')) {
       this.router.navigate(['/m'])

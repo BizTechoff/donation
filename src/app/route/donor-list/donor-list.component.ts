@@ -211,7 +211,6 @@ export class DonorListComponent implements OnInit, OnDestroy {
 
     this.searchTermTimeout = setTimeout(async () => {
       await this.table.reloadFromFirstPage();
-      this.saveSearchTerm();
       // Restore focus to the search input - so user can keep typing without
       // having to click back into the field after results refresh.
       this.restoreSearchFocus();
@@ -459,10 +458,8 @@ export class DonorListComponent implements OnInit, OnDestroy {
         if (user) {
           this.currentUser = user;
           // The saved sort is loaded by TableState.loadSettings()
-          // Load saved search term
-          if (this.currentUser?.settings?.donorList?.searchTerm !== undefined) {
-            this.searchTerm = this.currentUser.settings.donorList.searchTerm;
-          }
+          // The search text is deliberately NOT restored - see clearStoredSearchTerm.
+          await this.clearStoredSearchTerm('donorList');
         }
       }
     } catch (error) {
@@ -470,23 +467,22 @@ export class DonorListComponent implements OnInit, OnDestroy {
     }
   }
 
-  async saveSearchTerm() {
-    if (!this.currentUser) return;
-
+  /**
+   * A search box is a momentary action, not a preference, so the text is no
+   * longer persisted: it used to be written to user.settings on the SERVER,
+   * which meant yesterday's search came back on a different machine.
+   *
+   * The stored value is not read any more and is cleared once on load, so an
+   * existing settings row does not keep resurfacing an old search.
+   */
+  private async clearStoredSearchTerm(key: 'donorList' | 'reminderList') {
     try {
-      if (!this.currentUser.settings) {
-        this.currentUser.settings = {} as any;
-      }
-      if (this.currentUser.settings && !this.currentUser.settings.donorList) {
-        this.currentUser.settings.donorList = {};
-      }
-      if (this.currentUser.settings && this.currentUser.settings.donorList) {
-        this.currentUser.settings.donorList.searchTerm = this.searchTerm;
-      }
-
-      await remult.repo(User).save(this.currentUser);
+      const settings: any = this.currentUser?.settings;
+      if (!settings?.[key] || settings[key].searchTerm === undefined) return;
+      delete settings[key].searchTerm;
+      await remult.repo(User).save(this.currentUser!);
     } catch (error) {
-      console.error('Error saving search term:', error);
+      console.error('clearStoredSearchTerm', error);
     }
   }
 

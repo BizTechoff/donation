@@ -14,6 +14,8 @@ import './google-contacts'
 import { scanRouter } from './scan-api'
 import { googleContactsRouter } from './google-contacts-routes'
 import { checkAndSendReminders } from './scheduler'
+import { remult } from 'remult'
+import { User } from '../shared/entity/user'
 
 async function startup() {
   const app = express()
@@ -38,6 +40,31 @@ async function startup() {
   )
 
   app.use(api)
+  // Clears the user's global filters when the browser goes away.
+  //
+  // A1 says the filters must not survive the session, and signOut() already
+  // clears them - but closing the tab with the X never reaches signOut. The
+  // client sends navigator.sendBeacon() here on beforeunload, which the browser
+  // delivers even while the page is being torn down (a normal fetch is cancelled).
+  // A beacon cannot carry headers or read a response, so this route relies on
+  // the same session cookie as the rest of the API, and always answers 204.
+  app.post('/api/session/clear-global-filters', async (req, res) => {
+    res.sendStatus(204)
+    try {
+      const sessionUser = (req as any).session?.['user']
+      if (!sessionUser?.id) return
+      await api.withRemult(req, undefined as any, async () => {
+        const user = await remult.repo(User).findId(sessionUser.id)
+        if (user?.settings?.globalFilters) {
+          user.settings = { ...user.settings, globalFilters: undefined }
+          await remult.repo(User).save(user)
+        }
+      })
+    } catch (err) {
+      console.error('[clear-global-filters]', err)
+    }
+  })
+
   app.use('/api/scan', scanRouter)
   app.use('/api/geo/places', getPlaces)
   app.use('/api/geo/place-details', getPlace)

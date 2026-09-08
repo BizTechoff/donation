@@ -32,9 +32,56 @@ export class GlobalFilterService {
 
   private userRepo = remult.repo(User);
 
+  /**
+   * Key under sessionStorage holding the filters across a RELOAD.
+   *
+   * sessionStorage lives exactly as long as the tab: it survives F5 and dies
+   * with the tab or the browser. That is precisely the distinction the global
+   * filters need - "clear when the session ends, keep while the user works".
+   */
+  private static readonly RELOAD_KEY = 'globalFilters.acrossReload';
+
   constructor() {
-    this.loadFiltersFromUserSettings();
+    this.restoreOrLoad();
     // Note: donorIds calculation removed - now done in backend from user.settings
+  }
+
+  /**
+   * On the way out (tab close OR reload) the app clears the filters on the
+   * server and stashes them here. If this was a reload, the copy is still in
+   * sessionStorage on the way back in and is put back - so F5 keeps the user
+   * exactly where they were. If the tab really closed, sessionStorage went with
+   * it and there is nothing to restore, which is the intended outcome.
+   */
+  stashForReload() {
+    try {
+      sessionStorage.setItem(
+        GlobalFilterService.RELOAD_KEY,
+        JSON.stringify(this.filtersSubject.value)
+      );
+    } catch { /* private mode - the filters simply do not survive the reload */ }
+  }
+
+  private async restoreOrLoad() {
+    let stashed: GlobalFilters | undefined;
+    try {
+      const raw = sessionStorage.getItem(GlobalFilterService.RELOAD_KEY);
+      if (raw) {
+        stashed = JSON.parse(raw) as GlobalFilters;
+        // Read once: a later close must not resurrect them.
+        sessionStorage.removeItem(GlobalFilterService.RELOAD_KEY);
+      }
+    } catch { /* unreadable - fall through to the server copy */ }
+
+    if (stashed && Object.keys(stashed).length > 0) {
+      this.filtersSubject.next(stashed);
+      // The server was cleared on the way out - put the filters back, so the
+      // backend filters queries by the same set the bar is showing.
+      await this.saveFiltersToUserSettings(stashed);
+      return;
+    }
+
+    await this.loadFiltersFromUserSettings();
   }
 
   get currentFilters(): GlobalFilters {
