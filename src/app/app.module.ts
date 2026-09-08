@@ -1,6 +1,8 @@
 import { APP_INITIALIZER, LOCALE_ID, NgModule } from '@angular/core'
 import { BrowserModule } from '@angular/platform-browser'
 import { CommonModule, registerLocaleData } from '@angular/common'
+import { FormFieldDirective } from './common/directives/form-field.directive'
+import { AmountPipe } from './common/pipes/amount.pipe'
 import localeHe from '@angular/common/locales/he'
 import { AppRoutingModule } from './app-routing.module'
 import { AppComponent } from './app.component'
@@ -129,6 +131,8 @@ import { A11yModule } from "@angular/cdk/a11y";
 
 @NgModule({
   declarations: [
+    FormFieldDirective,
+    AmountPipe,
     AutoYearDirective,
     DateFastInputComponent,
     AppComponent,
