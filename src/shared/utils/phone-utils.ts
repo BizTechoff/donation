@@ -64,8 +64,17 @@ export function isMobilePhone(raw: string | null | undefined, description?: stri
 }
 
 /**
- * True when we genuinely cannot tell: no pattern matched and the description
- * gives no hint. Feeds the "numbers to classify" list handed to the client.
+ * True when the number genuinely cannot be classified: no pattern matched and
+ * the description gives no hint. In practice this is US/Canada, where the same
+ * area codes serve mobile, landline and office - the digits simply do not carry
+ * the answer, and no rule here will ever recover it.
+ *
+ * NOT CALLED ANYWHERE TODAY, and kept on purpose. Z8 was closed by adding the
+ * Belgian and Swiss patterns; the American remainder falls back to the contact
+ * description. The real fix is H2 - a CLOSED list of contact descriptions
+ * (נייד / בית / משרד) instead of free text - after which this predicate becomes
+ * the way to find the rows that still need a human to say which they are.
+ * Delete it only if H2 is dropped for good.
  */
 export function isMobileUnknown(raw: string | null | undefined, description?: string | null): boolean {
   if (!raw) return false
