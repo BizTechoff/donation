@@ -162,6 +162,67 @@ export class Donor extends IdEntity {
   })
   lastAndFirstName!: string
 
+  // ── Sortable related-value fields (sqlExpression) ──────────────────────
+  // One definition per value, computed by the DB inside the SAME query that
+  // loads the donors - so lists ORDER BY them with LIMIT applied in SQL, and
+  // the sort can never disagree with the value that was loaded.
+  // They pick the PRIMARY stored contact/place (isPrimary first, then oldest),
+  // i.e. the stored value - display-format unification is priced item B4.
+  // allowNull so an empty value sorts LAST in ascending order (pg default).
+  @Fields.string<Donor>({
+    caption: 'טלפון ראשי',
+    allowNull: true,
+    sqlExpression: () => `(
+      select dc."phoneNumber" from "donor_contacts" dc
+      where dc."donorId" = "donors"."id" and dc."type" = 'phone' and dc."isActive" = true
+      order by dc."isPrimary" desc, dc."createdDate" limit 1)`
+  })
+  primaryPhone?: string
+
+  @Fields.string<Donor>({
+    caption: 'אימייל ראשי',
+    allowNull: true,
+    sqlExpression: () => `(
+      select dc."email" from "donor_contacts" dc
+      where dc."donorId" = "donors"."id" and dc."type" = 'email' and dc."isActive" = true
+      order by dc."isPrimary" desc, dc."createdDate" limit 1)`
+  })
+  primaryEmail?: string
+
+  // City then street of the primary place ('בית' preferred, matching the
+  // list display query in donor-map.controller) - the value address-sorting
+  // actually means to the user.
+  @Fields.string<Donor>({
+    caption: 'עיר ורחוב',
+    allowNull: true,
+    sqlExpression: () => `(
+      select trim(coalesce(p."city",'') || ' ' || coalesce(p."street",''))
+      from "donor_places" dp
+      join "places" p on p."id" = dp."placeId"
+      left join "donor_address_types" dat on dat."id" = dp."addressTypeId"
+      where dp."donorId" = "donors"."id" and dp."isActive" = true
+      order by dp."isPrimary" desc, case when dat."name" = 'בית' then 0 else 1 end
+      limit 1)`
+  })
+  primaryCityStreet?: string
+
+  // Latest donation date - matching exactly what the list displays
+  // (donor-map.controller): commitments are EXCLUDED, donations where this
+  // donor is a partner are INCLUDED ("partnerIds" is a json column, cast to
+  // jsonb - same as the existing partner query). Empty is coalesced to the
+  // minimum date so "never donated" sorts last on desc (recent first) and
+  // first on asc (stalest first) - both the orders the user actually wants.
+  @Fields.dateOnly<Donor>({
+    caption: 'תרומה אחרונה',
+    sqlExpression: () => `coalesce(greatest(
+      (select max(d1."donationDate") from "donations" d1
+       where d1."donorId" = "donors"."id" and d1."donationType" <> 'commitment'),
+      (select max(d2."donationDate") from "donations" d2
+       where d2."partnerIds"::jsonb ? "donors"."id" and d2."donationType" <> 'commitment')
+      ), date '0001-01-01')`
+  })
+  lastDonationDate?: Date
+
   // Computed field for fullNameEnglish - so it's available when loaded from server
   @Fields.string<Donor>({
     caption: 'שם מלא באנגלית',

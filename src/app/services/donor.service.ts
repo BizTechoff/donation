@@ -23,7 +23,6 @@ export class DonorService {
    * Global filters are fetched from user.settings in the backend
    */
   async findFilteredIds(additionalFilters?: Partial<GlobalFilters>): Promise<string[]> {
-    console.log('DonorService.findFilteredIds - additionalFilters:', JSON.stringify(additionalFilters, null, 2));
     return await DonorController.findFilteredIds(additionalFilters);
   }
 

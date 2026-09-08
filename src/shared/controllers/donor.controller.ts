@@ -354,9 +354,22 @@ export class DonorController {
           orderBy.firstName = sort.direction;
         } else if (fieldName === 'createdDate') {
           orderBy.createdDate = sort.direction;
+        } else if (fieldName === 'phone') {
+          orderBy.primaryPhone = sort.direction;   // sqlExpression on Donor
+        } else if (fieldName === 'email') {
+          orderBy.primaryEmail = sort.direction;   // sqlExpression on Donor
+        } else if (fieldName === 'address') {
+          orderBy.primaryCityStreet = sort.direction; // sqlExpression on Donor
+        } else if (fieldName === 'lastDonationDate') {
+          orderBy.lastDonationDate = sort.direction;  // sqlExpression on Donor
         }
-        // Note: address, phone, email sorting would require joins and are done client-side
       });
+      // An unrecognized field must never leave orderBy EMPTY - that returns
+      // rows in arbitrary DB order, which reads as a broken sort. Fall back
+      // to the default name order instead.
+      if (Object.keys(orderBy).length === 0) {
+        orderBy = { lastName: 'asc' as 'asc', firstName: 'asc' as 'asc' };
+      }
     }
 
     // Build final where clause

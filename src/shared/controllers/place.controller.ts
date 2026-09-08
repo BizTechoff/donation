@@ -111,10 +111,22 @@ export class PlaceController {
       orderBy: { city: 'asc' }
     });
 
-    // Group by city and count
+    // E1 - only offer cities that an ACTIVE donor actually lives in. Until now
+    // this counted every row in "places", so a city whose place was created
+    // once and never linked to a donor still showed up in the filter (the
+    // client demonstrated it with Alabama, Zoom א׳ 13:02-14:57).
+    const { rows: linkedRows } = await (remult.dataProvider as SqlDatabase).execute(
+      `SELECT DISTINCT dp."placeId"
+         FROM "donor_places" dp
+         JOIN "donors" d ON d."id" = dp."donorId"
+        WHERE dp."isActive" = true AND d."isActive" = true`
+    );
+    const placeIdsWithDonors = new Set((linkedRows as any[]).map(r => r.placeId));
+
+    // Group by city and count - only places that have a donor behind them
     const cityMap = new Map<string, CityData>();
     places.forEach(place => {
-      if (place.city) {
+      if (place.city && placeIdsWithDonors.has(place.id)) {
         const existing = cityMap.get(place.city);
         if (existing) {
           existing.placeCount++;

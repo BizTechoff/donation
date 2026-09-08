@@ -73,6 +73,17 @@ export const api = remultExpress({
           sslInDev:  !(process.env['DEV_MODE'] === 'DEV')
          })
 
+        // Related-table indexes. Donor lists resolve phone / email / address /
+        // last donation per donor on every page (raw queries and the Donor
+        // sqlExpression fields alike); without these every lookup is a full
+        // scan. IF NOT EXISTS keeps startup idempotent.
+        await provider.execute('create index if not exists "idx_donor_contacts_donor_type_active" on "donor_contacts" ("donorId", "type", "isActive")')
+        await provider.execute('create index if not exists "idx_donor_places_donor_active" on "donor_places" ("donorId", "isActive")')
+        await provider.execute('create index if not exists "idx_donations_donor_date" on "donations" ("donorId", "donationDate" desc)')
+        // Expression GIN index - "partnerIds" is a json column; every partner
+        // lookup (and the lastDonationDate sqlExpression) casts it to jsonb.
+        await provider.execute('create index if not exists "idx_donations_partner_ids" on "donations" using gin (("partnerIds"::jsonb))')
+
         /*
                 let seq = `
                 CREATE SEQUENCE IF NOT EXISTS public.donations_donationnum_seq

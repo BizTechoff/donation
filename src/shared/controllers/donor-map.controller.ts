@@ -159,42 +159,6 @@ export class DonorMapController {
 
     // searchTerm - חיפוש משופר בשם/ת.ז./כתובת
     // כל מילה צריכה להופיע או בשם או בכתובת (לא חייבים באותו שדה)
-    // ── גרסה מקורית (שמורה להשוואה/חזרה) - טוענת את *כל* הטבלאות (donors+donor_places+places)
-    //    ובונה maps ב-JS. ~35MB memory + O(n*m) עבור התאמה. OOM.
-    // if (mapFilters.searchTerm?.trim()) {
-    //   const words = mapFilters.searchTerm.trim().toLowerCase().split(/\s+/).filter(w => w.length > 0);
-    //   const donorRepo = remult.repo(Donor);
-    //   const allDonors = await donorRepo.find({ where: { isActive: true } });
-    //   const { Place } = await import('../entity/place');
-    //   const allDonorPlaces = await remult.repo(DonorPlace).find({ where: { isActive: true } });
-    //   const placeIds = [...new Set(allDonorPlaces.map(dp => dp.placeId).filter(Boolean))];
-    //   const allPlaces = placeIds.length > 0
-    //     ? await remult.repo(Place).find({ where: { id: { $in: placeIds } } }) : [];
-    //   const placeMap = new Map(allPlaces.map(p => [p.id, p]));
-    //   const donorAddressMap = new Map<string, string[]>();
-    //   for (const dp of allDonorPlaces) {
-    //     if (!dp.donorId || !dp.placeId) continue;
-    //     const place = placeMap.get(dp.placeId);
-    //     if (place) {
-    //       const addresses = donorAddressMap.get(dp.donorId) || [];
-    //       const addressText = [place.city, place.street, place.neighborhood, place.houseNumber]
-    //         .filter(Boolean).join(' ').toLowerCase();
-    //       addresses.push(addressText);
-    //       donorAddressMap.set(dp.donorId, addresses);
-    //     }
-    //   }
-    //   const matchingDonorIds = allDonors.filter(donor => {
-    //     const nameText = [donor.firstName, donor.lastName, donor.firstNameEnglish, donor.lastNameEnglish, donor.idNumber]
-    //       .filter(Boolean).join(' ').toLowerCase();
-    //     const addresses = donorAddressMap.get(donor.id) || [];
-    //     const combinedText = `${nameText} ${addresses.join(' ')}`;
-    //     return words.every(word => combinedText.includes(word));
-    //   }).map(d => d.id);
-    //   donorIds = matchingDonorIds;
-    // }
-
-    // ── אופטימיזציה: SQL JOIN + LOWER(concat_ws(...)) LIKE בעבור כל מילה.
-    //    שאילתה אחת, מחזירה רק donorId. ~0MB memory overhead.
     if (mapFilters.searchTerm?.trim()) {
       const words = mapFilters.searchTerm.trim().toLowerCase().split(/\s+/).filter(w => w.length > 0);
       if (words.length > 0) {
@@ -245,12 +209,6 @@ export class DonorMapController {
     }
 
     // אם אין פילטרים מקומיים - החזר את כולם
-    // ── גרסה מקורית (שמורה): טעינה של 3K+ donor entities מלאות רק לקחת id. ~15MB.
-    // if (!donorIds) {
-    //   const donors = await donorRepo.find({ where: { isActive: true } });
-    //   donorIds = donors.map(d => d.id);
-    // }
-    // ── אופטימיזציה: SELECT id בלבד.
     if (!donorIds) {
       const sqlDb = remult.dataProvider as SqlDatabase;
       const { rows } = await sqlDb.execute(`SELECT "id" FROM "donors" WHERE "isActive" = true`);
@@ -606,19 +564,6 @@ export class DonorMapController {
         include: { donationMethod: true }
       }),
       // תרומות שהתורם הוא שותף (לא כולל התחייבויות)
-      // ── גרסה מקורית (שמורה להשוואה/חזרה) - טוענת את *כל* התרומות ב-DB ומסננת ב-JS.
-      //    בעייתית בגלל memory: ~30MB על 10K+ תרומות, גורמת ל-R14 ב-Heroku.
-      // donationRepo.find({
-      //   where: {
-      //     donationType: { $ne: 'commitment' }
-      //   },
-      //   include: { donationMethod: true }
-      // }).then(donations => donations.filter(d =>
-      //   d.partnerIds && d.partnerIds.some(pid => donorIdsList.includes(pid) && pid !== d.donorId)
-      // )),
-      //
-      // ── אופטימיזציה פעילה: JSONB operator ?| למצוא IDs רלוונטיים ב-SQL,
-      // ואז טעינה מוגבלת של תרומות השותף בלבד.
       (async () => {
         if (donorIdsList.length === 0) return [];
         const sqlDb = remult.dataProvider as SqlDatabase;

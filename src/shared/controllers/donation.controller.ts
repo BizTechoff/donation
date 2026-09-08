@@ -23,6 +23,7 @@ export interface DonationFilters {
   dateTo?: string;
   selectedMethodId?: string;
   amountFrom?: number;
+  amountTo?: number;   // K1 - upper bound of the amount range
   selectedCampaignId?: string;
   donorId?: string;
   selectedDonationType?: string;
@@ -318,6 +319,17 @@ export class DonationController {
         }
       } else {
         whereClause.amount = { $gte: filters.amountFrom };
+      }
+    }
+
+    // K1 - upper bound, mirroring the "from" logic above (Zoom ב׳ ~0:38).
+    if (filters.amountTo !== undefined && filters.amountTo !== null && filters.amountTo > 0) {
+      if (whereClause.amount) {
+        if (!whereClause.amount.$lte || filters.amountTo < whereClause.amount.$lte) {
+          whereClause.amount.$lte = filters.amountTo;
+        }
+      } else {
+        whereClause.amount = { $lte: filters.amountTo };
       }
     }
 
@@ -866,6 +878,17 @@ export class DonationController {
         }
       } else {
         whereClause.amount = { $gte: filters.amountFrom };
+      }
+    }
+
+    // K1 - upper bound, mirroring the "from" logic above (Zoom ב׳ ~0:38).
+    if (filters.amountTo !== undefined && filters.amountTo !== null && filters.amountTo > 0) {
+      if (whereClause.amount) {
+        if (!whereClause.amount.$lte || filters.amountTo < whereClause.amount.$lte) {
+          whereClause.amount.$lte = filters.amountTo;
+        }
+      } else {
+        whereClause.amount = { $lte: filters.amountTo };
       }
     }
 
