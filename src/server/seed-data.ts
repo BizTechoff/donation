@@ -57,6 +57,21 @@ import { entities } from './api'
  * - Payment method: Voucher_Co = תשלום עמותה, AccountNo = העברה בנקאית
  */
 
+/**
+ * טבלת המרה משם המדינה באקסל לקוד ISO.
+ * המקור הוא convert-excel-to-seed.ts (המחולל של הקובץ הזה) - שם המפה מוגדרת
+ * כ-const מקומי ואינה מיוצאת, והקוד שנוצר כאן השתמש בה בלי שהיא קיימת בקובץ.
+ * התוצאה: ReferenceError בזמן ריצה על התורם הראשון עם מדינה.
+ * הועתקה לכאן כדי שהקובץ יעמוד בפני עצמו. אם המחולל מריץ מחדש - לוודא שהיא נשמרת.
+ */
+const COUNTRY_EXCEL_TO_CODE: Record<string, string> = {
+  'UK': 'GB', 'Scotland': 'GB',
+  'Israel': 'IL', 'USA': 'US', 'Belgium': 'BE', 'Switzerland': 'CH',
+  'Germany': 'DE', 'France': 'FR', 'Holland': 'NL', 'Netherlands': 'NL',
+  'Austria': 'AT', 'Canada': 'CA', 'Australia': 'AU',
+  'Ukraine': 'UA', 'Chicago': 'US',
+}
+
 // Donors data
 const DONORS_DATA = [
   {
@@ -350191,7 +350206,8 @@ export async function seedLegacyData() {
 
         // Create donor
         const donor = donorRepo.create({
-          legacyId: donorData.legacyId,
+          // legacyId אינו שדה של Donor - הזיהוי הישן נשמר ב-idNumber ובשדה excelDonorId.
+          // legacyId: donorData.legacyId,
           idNumber: `LEGACY-${donorData.legacyId}`,
           excelDonorId: donorData.excelDonorId || '',
           title: donorData.title || '',
@@ -350311,8 +350327,10 @@ export async function seedLegacyData() {
           if (!company) {
             company = companyRepo.create({
               name: companyData.name,
-              address: companyData.address,
-              city: companyData.cityAndZip,
+              // address/city אינם שדות של Company - הכתובת עברה למודל Place
+              // דרך placeId. הנתונים קיימים ב-companyData אך אין להם יעד ביישות.
+              // address: companyData.address,
+              // city: companyData.cityAndZip,
               isActive: true
             })
             await company.save()
@@ -350397,8 +350415,9 @@ export async function seedLegacyData() {
           if (!company) {
             company = companyRepo.create({
               name: companyData.name,
-              address: companyData.address,
-              city: companyData.city,
+              // address/city אינם שדות של Company - הכתובת עברה למודל Place דרך placeId.
+              // address: companyData.address,
+              // city: companyData.city,
               isActive: true
             })
             await company.save()
@@ -350466,15 +350485,18 @@ export async function seedLegacyData() {
           donationDate: new Date(donationData.donationDate),
           donationMethod: paymentMethod,
           receiptNumber: donationData.receiptNumber || '',
-          accountNumber: donationData.accountNumber || '',
+          // accountNumber אינו שדה של Donation (מעולם לא היה - קיים רק ב-Organization).
+          // הנתון קיים ב-donationData אך אין לו יעד ביישות; להפעיל רק אם יתווסף שדה.
+          // accountNumber: donationData.accountNumber || '',
           voucherNumber: donationData.voucherNumber || '',
           notes: donationData.notes || '',
           reason: donationData.reason || '',
           bankId: matchedBank?.id || '',
           organizationId: matchedOrganization?.id || '',
           isExceptional: donationData.isExceptional || false,
-          isUrgent: donationData.isUrgent || false,
-          receiptIssued: donationData.receiptIssued || false
+          // isUrgent / receiptIssued אינם שדות של Donation.
+          // isUrgent: donationData.isUrgent || false,
+          // receiptIssued: donationData.receiptIssued || false
         })
         await donation.save()
         donationCount++
@@ -350507,7 +350529,7 @@ if (typeof module !== 'undefined' && require.main === module) {
   }, {
     dataProvider,
     entities
-  })
+  } as any)
     .then(() => {
       console.log('\nDone!')
       process.exit(0)

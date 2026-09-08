@@ -384,11 +384,13 @@ async function seedCountries() {
         country.code = countryData.code
         country.phonePrefix = countryData.phonePrefix
         country.currencyId = countryData.currency
-        country.currencySymbol = currencySymbols[countryData.currency] || countryData.currency
+        // currencySymbol הוסר מ-Country ב-2db249f (31.12.2025, איחוד שמות שדות המטבע);
+        // הסמל נגזר היום מקוד המטבע ואינו נשמר ביישות.
+        // country.currencySymbol = currencySymbols[countryData.currency] || countryData.currency
         country.isActive = true
         await country.save()
         created++
-        console.log(`  ✓ ${countryData.name} (${country.currencySymbol})`)
+        console.log(`  ✓ ${countryData.name} (${country.currencyId})`)
       } else {
         // עדכון מדינה קיימת אם חסרים נתונים
         let needsUpdate = false
@@ -408,10 +410,11 @@ async function seedCountries() {
           existing.currencyId = countryData.currency
           needsUpdate = true
         }
-        if (!existing.currencySymbol && countryData.currency) {
-          existing.currencySymbol = currencySymbols[countryData.currency] || countryData.currency
-          needsUpdate = true
-        }
+        // currencySymbol הוסר מ-Country ב-2db249f - אין מה לעדכן.
+        // if (!existing.currencySymbol && countryData.currency) {
+        //   existing.currencySymbol = currencySymbols[countryData.currency] || countryData.currency
+        //   needsUpdate = true
+        // }
         if (needsUpdate) {
           await existing.save()
           updated++
@@ -503,7 +506,7 @@ async function findOrCreateCountry(countryCode: string): Promise<Country | undef
         code: countryCode,
         phonePrefix: defaultData.phonePrefix,
         currencyId: defaultData.currency,
-        currencySymbol: defaultData.currency === 'USD' ? '$' : defaultData.currency === 'ILS' ? '₪' : defaultData.currency === 'EUR' ? '€' : defaultData.currency === 'GBP' ? '£' : defaultData.currency === 'CAD' ? 'C$' : defaultData.currency,
+        // currencySymbol הוסר מ-Country ב-2db249f - הסמל נגזר מקוד המטבע.
         isActive: true
       })
       await country.save()
@@ -768,7 +771,7 @@ export async function seedInfrastructure() {
         const organization = remult.repo(Organization).create({
           name: orgData.name,
           placeId: place.id,  // This is the UUID (place.id), not the Google placeId
-          currency: country?.currencyId || 'USD',
+          currencyId: country?.currencyId || 'USD',
           isActive: true
         })
         await organization.save()
@@ -941,7 +944,7 @@ export async function seedInfrastructure() {
         const bank = remult.repo(Bank).create({
           name: bankData.name,
           placeId: place.id,  // This is the UUID (place.id), not the Google placeId
-          currency: country?.currencyId || 'USD',
+          currencyId: country?.currencyId || 'USD',
           isActive: true
         })
         await bank.save()
@@ -990,7 +993,7 @@ if (typeof module !== 'undefined' && require.main === module) {
   }, {
     dataProvider,
     entities
-  })
+  } as any)
     .then(() => {
       console.log('\nDone!')
       process.exit(0)
