@@ -15,6 +15,8 @@ import { Donation } from './donation'
 import { Roles } from '../enum/roles'
 import { EmailController } from '../controllers/email.controller'
 import { ReminderController } from '../controllers/reminder.controller'
+import { REMINDER_TYPE_LABELS, REMINDER_SOURCE_LABELS, REMINDER_SOURCE_MANUAL } from '../enum/reminder-type'
+import { sqlCaseFromLabels } from '../utils/table-query'
 
 @Entity<Reminder>('reminders', {
   allowApiCrud: Allow.authenticated,
@@ -108,6 +110,44 @@ export class Reminder extends IdEntity {
     allowNull: true
   })
   donorId?: string
+
+  // ── Sortable related-value field (sqlExpression) ───────────────────────
+  // P5 - "חסר מיון לפי תורם". The reminders table shows a donor column but its
+  // header was never clickable, and the controller had nothing to order by:
+  // the donor's name lives on another table. Same pattern as
+  // Donor.primaryPhone and DonorGift.donorName - Postgres computes the name
+  // inside the SAME query that loads the rows, so ORDER BY runs over the whole
+  // result set before LIMIT and sorts exactly the value the screen shows.
+  // allowNull so a reminder with no donor sorts LAST ascending (pg default).
+  @Fields.string<Reminder>({
+    caption: 'שם תורם',
+    allowNull: true,
+    sqlExpression: () => `(
+      select trim(coalesce(d."lastName",'') || ' ' || coalesce(d."firstName",''))
+      from "donors" d where d."id" = "reminders"."donorId")`
+  })
+  donorName?: string
+
+  // The type and source columns show HEBREW but store an English code, so
+  // ordering by the stored column sorted by 'birthday' / 'general' / 'receipt'
+  // while the user was reading 'יום הולדת' / 'כללי' / 'קבלה' - an order that
+  // matched nothing on screen. These two expressions translate in SQL, built
+  // from the same maps the screen uses (shared/enum/reminder-type.ts), so the
+  // sorted value and the displayed value cannot drift apart.
+  @Fields.string<Reminder>({
+    caption: 'סוג (תווית)',
+    allowNull: true,
+    sqlExpression: () => sqlCaseFromLabels('"reminders"."type"', REMINDER_TYPE_LABELS, '')
+  })
+  typeLabel?: string
+
+  @Fields.string<Reminder>({
+    caption: 'מקור (תווית)',
+    allowNull: true,
+    sqlExpression: () =>
+      sqlCaseFromLabels('"reminders"."sourceEntityType"', REMINDER_SOURCE_LABELS, REMINDER_SOURCE_MANUAL)
+  })
+  sourceLabel?: string
 
   @Fields.string({
     caption: 'סוג ישות מקור',

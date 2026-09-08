@@ -5,6 +5,7 @@ import { GlobalFilters } from '../../app/services/global-filter.service';
 import { GlobalFilterController } from './global-filter.controller';
 import { DonorController } from './donor.controller';
 import { HebrewDateController } from './hebrew-date.controller';
+import { buildOrderBy } from '../utils/table-query'
 
 export interface CertificateFilters {
   certificateType?: string;
@@ -35,31 +36,15 @@ export class CertificateController {
     const whereClause = await CertificateController.buildWhereClause(filters);
     if (whereClause === null) return [];
 
-    // Build orderBy from sortColumns or use default
-    let orderBy: any = { createdDate: 'desc' as 'desc' }; // Default sort
-    if (sortColumns && sortColumns.length > 0) {
-      orderBy = {};
-      sortColumns.forEach(sort => {
-        let fieldName = sort.field;
-        switch (fieldName) {
-          case 'eventDate':
-            orderBy.eventDate = sort.direction;
-            break;
-          case 'createdDate':
-            orderBy.createdDate = sort.direction;
-            break;
-          case 'type':
-            orderBy.type = sort.direction;
-            break;
-          case 'amount':
-            orderBy.amount = sort.direction;
-            break;
-          // Note: recipientName, donorName sorting would require joins and are done client-side
-          default:
-            break;
-        }
-      });
-    }
+    // Ordering goes through the shared builder. recipientName had NO case in
+    // the switch this replaces, so it fell through to `default: break` and was
+    // dropped without a word - that is why the name column did not sort. type
+    // maps to the typeLabel sqlExpression, so it sorts by the Hebrew shown.
+    const orderBy = buildOrderBy(
+      sortColumns,
+      { createdDate: 'desc' },
+      { type: 'typeLabel' }
+    );
 
     // If parasha filter is applied, we need to fetch all and filter in memory
     // because parasha is calculated per date, not stored in DB

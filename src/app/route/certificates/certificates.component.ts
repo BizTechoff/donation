@@ -17,6 +17,7 @@ import { Blessing } from '../../../shared/entity/blessing';
 import { BusyService } from '../../common-ui-elements/src/angular/wait/busy-service';
 import { DonorController } from '../../../shared/controllers/donor.controller';
 import { DonorMapController } from '../../../shared/controllers/donor-map.controller';
+import { TableState, TableLoadRequest } from '../../common/table/table-state';
 
 @Component({
   selector: 'app-certificates',
@@ -53,13 +54,19 @@ export class CertificatesComponent implements OnInit, OnDestroy {
   private subscriptions = new Subscription();
 
   // Pagination
-  currentPage = 1;
-  pageSize = 50;
-  totalCount = 0;
-  totalPages = 0;
+  // Sorting and paging come from the shared TableState. 'type' is ordered in
+  // SQL through the typeLabel sqlExpression on Certificate, so the column sorts
+  // by the Hebrew it displays; recipientName is a plain field that the old
+  // controller switch simply had no case for.
+  readonly table = new TableState({
+    pageSize: 50,
+    settingsKey: 'certificateList',
+    sortableFields: ['recipientName', 'type', 'eventDate', 'amount'],
+    scrollContainer: () => this.scrollableTable?.nativeElement,
+    load: req => this.loadCertificates(req)
+  });
 
   // Sorting
-  sortColumns: Array<{ field: string; direction: 'asc' | 'desc' }> = [];
   private currentUser?: User;
 
   // Maps for certificate-related data
@@ -88,15 +95,16 @@ export class CertificatesComponent implements OnInit, OnDestroy {
     // Load base data once
     await this.loadBase();
 
-    // Listen for global filter changes
+    // A global filter change alters the result set - back to page 1.
     this.subscriptions.add(
       this.globalFilterService.filters$.subscribe(() => {
-        this.refreshData();
+        this.table.reloadFromFirstPage();
       })
     );
 
-    // Initial data load
-    await this.refreshData();
+    // Saved sort first, then the first fetch.
+    await this.table.loadSettings();
+    await this.table.reload();
   }
 
   /**
@@ -148,6 +156,11 @@ export class CertificatesComponent implements OnInit, OnDestroy {
    * Called whenever filters or sorting changes
    */
   async refreshData() {
+    await this.table.reload();
+  }
+
+  /** Fetches one page. TableState owns page/pageSize/sort and the scroll reset. */
+  private async loadCertificates(req: TableLoadRequest) {
     this.loading = true;
     try {
       // Build filters object for server-side filtering (local filters only)
@@ -165,12 +178,11 @@ export class CertificatesComponent implements OnInit, OnDestroy {
       const [count, summary, certificates] = await Promise.all([
         CertificateController.countFilteredCertificates(filters),
         CertificateController.getSummaryForFilteredCertificates(filters),
-        CertificateController.findFilteredCertificates(filters, this.currentPage, this.pageSize, this.sortColumns)
+        CertificateController.findFilteredCertificates(filters, req.page, req.pageSize, req.sort)
       ]);
 
-      this.totalCount = count;
+      this.table.totalCount = count;
       this.certificates = certificates;
-      this.totalPages = Math.ceil(this.totalCount / this.pageSize);
 
       // Use summary data from server
       this.memorialCertificatesCount = summary.memorialCertificates;
@@ -179,16 +191,10 @@ export class CertificatesComponent implements OnInit, OnDestroy {
       // Load related data for certificates
       await this.loadRelatedData();
 
-      // Reset table scroll to the top after each refresh (Israel Glikson,
-      // 1.7.2026) — paging + filter changes land at the top of the new page.
-      if (this.scrollableTable?.nativeElement) {
-        this.scrollableTable.nativeElement.scrollTop = 0;
-      }
     } catch (error) {
       console.error('Error in refreshData:', error);
       this.certificates = [];
-      this.totalCount = 0;
-      this.totalPages = 0;
+      this.table.totalCount = 0;
       this.memorialCertificatesCount = 0;
       this.memorialDayCertificatesCount = 0;
     } finally {
@@ -301,7 +307,6 @@ export class CertificatesComponent implements OnInit, OnDestroy {
     }
 
     // Reset to page 1 when filter changes
-    this.currentPage = 1;
 
     // Debounce the filter change
     this.filterTimeout = setTimeout(() => {
@@ -420,63 +425,8 @@ export class CertificatesComponent implements OnInit, OnDestroy {
   }
 
   // Pagination methods
-  async goToPage(page: number) {
-    if (page >= 1 && page <= this.totalPages) {
-      this.currentPage = page;
-      await this.refreshData();
-    }
-  }
+  // Sorting and paging live in `table` (TableState).
 
-  async nextPage() {
-    if (this.currentPage < this.totalPages) {
-      this.currentPage++;
-      await this.refreshData();
-    }
-  }
-
-  async previousPage() {
-    if (this.currentPage > 1) {
-      this.currentPage--;
-      await this.refreshData();
-    }
-  }
-
-  async firstPage() {
-    this.currentPage = 1;
-    await this.refreshData();
-  }
-
-  async lastPage() {
-    this.currentPage = this.totalPages;
-    await this.refreshData();
-  }
-
-  getPageNumbers(): number[] {
-    const pages: number[] = [];
-    const maxPagesToShow = 5;
-
-    if (this.totalPages <= maxPagesToShow) {
-      for (let i = 1; i <= this.totalPages; i++) {
-        pages.push(i);
-      }
-    } else {
-      const halfWindow = Math.floor(maxPagesToShow / 2);
-      let startPage = Math.max(1, this.currentPage - halfWindow);
-      let endPage = Math.min(this.totalPages, startPage + maxPagesToShow - 1);
-
-      if (endPage - startPage < maxPagesToShow - 1) {
-        startPage = Math.max(1, endPage - maxPagesToShow + 1);
-      }
-
-      for (let i = startPage; i <= endPage; i++) {
-        pages.push(i);
-      }
-    }
-
-    return pages;
-  }
-
-  // Sorting methods
   async loadUserSettings() {
     try {
       const userRepo = remult.repo(User);
@@ -485,10 +435,7 @@ export class CertificatesComponent implements OnInit, OnDestroy {
         const user = await userRepo.findId(userId);
         if (user) {
           this.currentUser = user;
-          // Load saved sort settings
-          if (this.currentUser?.settings?.certificateList?.sort) {
-            this.sortColumns = this.currentUser.settings.certificateList.sort;
-          }
+          // the saved sort is loaded by TableState (settingsKey 'certificateList')
         }
       }
     } catch (error) {
@@ -507,59 +454,13 @@ export class CertificatesComponent implements OnInit, OnDestroy {
         this.currentUser.settings.certificateList = {};
       }
       if (this.currentUser.settings && this.currentUser.settings.certificateList) {
-        this.currentUser.settings.certificateList.sort = this.sortColumns;
+        this.currentUser.settings.certificateList.sort = this.table.sortColumns;
       }
 
       await remult.repo(User).save(this.currentUser);
     } catch (error) {
       console.error('Error saving sort settings:', error);
     }
-  }
-
-  async toggleSort(field: string, event: MouseEvent) {
-    if (event.ctrlKey || event.metaKey) {
-      // CTRL/CMD pressed - multi-column sort
-      const existingIndex = this.sortColumns.findIndex(s => s.field === field);
-      if (existingIndex >= 0) {
-        const current = this.sortColumns[existingIndex];
-        if (current.direction === 'asc') {
-          this.sortColumns[existingIndex].direction = 'desc';
-        } else {
-          this.sortColumns.splice(existingIndex, 1);
-        }
-      } else {
-        this.sortColumns.push({ field, direction: 'asc' });
-      }
-    } else {
-      // Single column sort
-      const existing = this.sortColumns.find(s => s.field === field);
-      if (existing && this.sortColumns.length === 1) {
-        existing.direction = existing.direction === 'asc' ? 'desc' : 'asc';
-      } else {
-        this.sortColumns = [{ field, direction: 'asc' }];
-      }
-    }
-
-    // Reload from server with new sort
-    await this.refreshData();
-    this.saveSortSettings();
-  }
-
-  getSortIcon(field: string): string {
-    const sortIndex = this.sortColumns.findIndex(s => s.field === field);
-    if (sortIndex === -1) return '';
-
-    const sort = this.sortColumns[sortIndex];
-    const arrow = sort.direction === 'asc' ? '↑' : '↓';
-
-    if (this.sortColumns.length > 1) {
-      return `${arrow}${sortIndex + 1}`;
-    }
-    return arrow;
-  }
-
-  isSorted(field: string): boolean {
-    return this.sortColumns.some(s => s.field === field);
   }
 
   formatHebrewDate(date: Date | undefined): string {
@@ -623,7 +524,7 @@ export class CertificatesComponent implements OnInit, OnDestroy {
           filters,
           undefined,
           undefined,
-          this.sortColumns
+          this.table.sortColumns
         );
 
         // Prepare data for print
@@ -700,7 +601,7 @@ export class CertificatesComponent implements OnInit, OnDestroy {
           filters,
           undefined,
           undefined,
-          this.sortColumns
+          this.table.sortColumns
         );
 
         // Load fundraisers and contact persons for lookup

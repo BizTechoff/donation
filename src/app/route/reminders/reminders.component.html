@@ -140,23 +140,29 @@
       <table class="reminders-table">
         <thead>
           <tr>
-            <th class="sortable" [class.sorted]="isSorted('dueDate')" (click)="toggleSort('dueDate', $event)">
+            <th [class.sortable]="table.isSortable('dueDate')" [class.sorted]="table.isSorted('dueDate')" (click)="table.toggleSort('dueDate', $event)">
               {{ (i18n.terms$ | async)?.reminderDateHeader }}
-              <span class="sort-icon">{{ getSortIcon('dueDate') }}</span>
+              <span class="sort-icon" *ngIf="table.getSortIcon('dueDate')">{{ table.getSortIcon('dueDate') }}</span>
             </th>
-            <th class="sortable" [class.sorted]="isSorted('type')" (click)="toggleSort('type', $event)">
+            <th [class.sortable]="table.isSortable('type')" [class.sorted]="table.isSorted('type')" (click)="table.toggleSort('type', $event)">
               {{ (i18n.terms$ | async)?.typeHeader }}
-              <span class="sort-icon">{{ getSortIcon('type') }}</span>
+              <span class="sort-icon" *ngIf="table.getSortIcon('type')">{{ table.getSortIcon('type') }}</span>
             </th>
-            <th>מקור</th>
-            <th>{{ (i18n.terms$ | async)?.donorHeader }}</th>
-            <th class="sortable" [class.sorted]="isSorted('title')" (click)="toggleSort('title', $event)">
+            <th [class.sortable]="table.isSortable('source')" [class.sorted]="table.isSorted('source')" (click)="table.toggleSort('source', $event)">
+              מקור
+              <span class="sort-icon" *ngIf="table.getSortIcon('source')">{{ table.getSortIcon('source') }}</span>
+            </th>
+            <th [class.sortable]="table.isSortable('donor')" [class.sorted]="table.isSorted('donor')" (click)="table.toggleSort('donor', $event)">
+              {{ (i18n.terms$ | async)?.donorHeader }}
+              <span class="sort-icon" *ngIf="table.getSortIcon('donor')">{{ table.getSortIcon('donor') }}</span>
+            </th>
+            <th [class.sortable]="table.isSortable('title')" [class.sorted]="table.isSorted('title')" (click)="table.toggleSort('title', $event)">
               {{ (i18n.terms$ | async)?.subjectHeader }}
-              <span class="sort-icon">{{ getSortIcon('title') }}</span>
+              <span class="sort-icon" *ngIf="table.getSortIcon('title')">{{ table.getSortIcon('title') }}</span>
             </th>
-            <th class="sortable" [class.sorted]="isSorted('priority')" (click)="toggleSort('priority', $event)">
+            <th [class.sortable]="table.isSortable('priority')" [class.sorted]="table.isSorted('priority')" (click)="table.toggleSort('priority', $event)">
               {{ (i18n.terms$ | async)?.priorityHeader }}
-              <span class="sort-icon">{{ getSortIcon('priority') }}</span>
+              <span class="sort-icon" *ngIf="table.getSortIcon('priority')">{{ table.getSortIcon('priority') }}</span>
             </th>
             <!-- <th>{{ (i18n.terms$ | async)?.statusHeaderReminder }}</th> -->
             <th class="actions-header">
@@ -306,33 +312,35 @@
   <!-- FOOTER: Sticky bottom -->
   <div class="module-footer">
     <div class="pagination-controls">
-      <button class="btn-page" (click)="firstPage()" [disabled]="currentPage === 1 || loading">
-        ⏮ {{ (i18n.terms$ | async)?.first }}
+      <!-- RTL: "previous" sits to the RIGHT, so its arrow points right. The
+           arrows here used to be the LTR set and read backwards - same footer
+           as donor-list and the other lists. -->
+      <button class="btn-page" (click)="table.firstPage()" [disabled]="table.isFirstPage || loading">
+        ⏭ {{ (i18n.terms$ | async)?.first }}
       </button>
 
-      <button class="btn-page" (click)="previousPage()" [disabled]="currentPage === 1 || loading">
-        ← {{ (i18n.terms$ | async)?.previous }}
+      <button class="btn-page" (click)="table.previousPage()" [disabled]="table.isFirstPage || loading">
+        → {{ (i18n.terms$ | async)?.previous }}
       </button>
 
       <div class="page-numbers">
-        <button *ngFor="let page of getPageNumbers()" class="btn-page-number" [class.active]="page === currentPage"
-          [disabled]="page === -1" (click)="page !== -1 && goToPage(page)">
-          {{ page === -1 ? '...' : page }}
+        <button *ngFor="let page of table.getPageNumbers()" class="btn-page-number" [class.active]="page === table.currentPage"
+          [disabled]="loading" (click)="table.goToPage(page)">
+          {{ page }}
         </button>
       </div>
 
-      <button class="btn-page" (click)="nextPage()" [disabled]="currentPage === totalPages || loading">
-        {{ (i18n.terms$ | async)?.next }} →
+      <button class="btn-page" (click)="table.nextPage()" [disabled]="table.isLastPage || loading">
+        {{ (i18n.terms$ | async)?.next }} ←
       </button>
 
-      <button class="btn-page" (click)="lastPage()" [disabled]="currentPage === totalPages || loading">
-        {{ (i18n.terms$ | async)?.last }} ⏭
+      <button class="btn-page" (click)="table.lastPage()" [disabled]="table.isLastPage || loading">
+        {{ (i18n.terms$ | async)?.last }} ⏮
       </button>
     </div>
 
     <div class="pagination-info">
-      <span>{{ (i18n.terms$ | async)?.showing }} {{(currentPage - 1) * pageSize + 1}} - {{Math.min(currentPage *
-        pageSize, totalCount)}} {{ (i18n.terms$ | async)?.of }} {{totalCount}}</span>
+      <span>{{ (i18n.terms$ | async)?.showing }} {{table.rangeStart}} - {{table.rangeEnd}} {{ (i18n.terms$ | async)?.of }} {{table.totalCount}}</span>
     </div>
   </div>
 

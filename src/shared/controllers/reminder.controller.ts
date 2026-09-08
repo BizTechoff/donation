@@ -4,6 +4,7 @@ import { HebrewDateController } from './hebrew-date.controller'
 import { GlobalFilters } from '../../app/services/global-filter.service'
 import { DonorController } from './donor.controller'
 import { GlobalFilterController } from './global-filter.controller'
+import { buildOrderBy } from '../utils/table-query'
 
 export interface RemindersPageData {
   count: number;
@@ -42,26 +43,31 @@ export class ReminderController {
 
     const where = await ReminderController.buildWhereClause(filters)
 
-    // Build orderBy clause
-    const orderBy: any = {}
-    if (sortColumns.length > 0) {
-      for (const sort of sortColumns) {
-        orderBy[sort.field] = sort.direction
+    // P5 - ordering goes through the shared builder. 'donor' maps to the
+    // donorName sqlExpression on Reminder; without it there was nothing on this
+    // entity to order the donor column by, which is why it had no sort at all.
+    const orderBy = buildOrderBy(
+      sortColumns,
+      { nextReminderDate: 'asc', dueTime: 'asc' },
+      {
+        // Each column maps to the field that holds THE VALUE THE SCREEN SHOWS:
+        // the list displays nextReminderDate (not dueDate), and Hebrew labels
+        // (not the stored codes).
+        dueDate: 'nextReminderDate',
+        type: 'typeLabel',
+        source: 'sourceLabel',
+        donor: 'donorName'
       }
-    } else {
-      // Default sort
-      orderBy.dueDate = 'asc'
-      orderBy.dueTime = 'asc'
-    }
+    )
 
-    // Apply pagination
-    const skip = (page - 1) * pageSize
-
+    // remult's `page` is a PAGE NUMBER, not an offset - it applies the limit
+    // itself. This used to pass (page-1)*pageSize, so page 2 of a 50-row list
+    // asked remult for page 50 and came back empty.
     return await remult.repo(Reminder).find({
       where,
       orderBy,
       limit: pageSize,
-      page: skip,
+      page,
       include: { donor: true }
     })
   }
@@ -143,17 +149,20 @@ export class ReminderController {
     tomorrow.setDate(tomorrow.getDate() + 1)
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
 
-    const orderBy: any = {}
-    if (sortColumns.length > 0) {
-      for (const sort of sortColumns) {
-        orderBy[sort.field] = sort.direction
+    const orderBy = buildOrderBy(
+      sortColumns,
+      { nextReminderDate: 'asc', dueTime: 'asc' },
+      {
+        // Each column maps to the field that holds THE VALUE THE SCREEN SHOWS:
+        // the list displays nextReminderDate (not dueDate), and Hebrew labels
+        // (not the stored codes).
+        dueDate: 'nextReminderDate',
+        type: 'typeLabel',
+        source: 'sourceLabel',
+        donor: 'donorName'
       }
-    } else {
-      orderBy.dueDate = 'asc'
-      orderBy.dueTime = 'asc'
-    }
+    )
 
-    const skip = (page - 1) * pageSize
     const repo = remult.repo(Reminder)
 
     const [count, todayCount, pendingCount, overdueCount, completedThisMonthCount, reminders] = await Promise.all([
@@ -162,7 +171,7 @@ export class ReminderController {
       repo.count({ ...where, isCompleted: false }),
       repo.count({ ...where, nextReminderDate: { $lt: today }, isCompleted: false }),
       repo.count({ ...where, isCompleted: true, completedDate: { $gte: startOfMonth, $lte: today } }),
-      repo.find({ where, orderBy, limit: pageSize, page: skip, include: { donor: true } })
+      repo.find({ where, orderBy, limit: pageSize, page, include: { donor: true } })
     ])
 
     return {

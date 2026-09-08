@@ -17,6 +17,8 @@ import { ExcelExportService } from '../../services/excel-export.service';
 import { BusyService } from '../../common-ui-elements/src/angular/wait/busy-service';
 import { DonorController } from '../../../shared/controllers/donor.controller';
 import { DonorMapController } from '../../../shared/controllers/donor-map.controller';
+import { TableState, TableLoadRequest } from '../../common/table/table-state';
+import { REMINDER_TYPE_LABELS, REMINDER_SOURCE_LABELS, REMINDER_SOURCE_MANUAL } from '../../../shared/enum/reminder-type';
 
 @DialogConfig({
   hasBackdrop: true
@@ -60,13 +62,18 @@ export class RemindersComponent implements OnInit, OnDestroy {
   @ViewChild('scrollableTable') scrollableTable?: ElementRef<HTMLElement>;
 
   // Pagination
-  currentPage = 1;
-  pageSize = 50;
-  totalCount = 0;
-  totalPages = 0;
+  // P5 - sorting and paging come from the shared TableState. 'donor' is ordered
+  // in SQL through the donorName sqlExpression on Reminder (see
+  // reminder.controller), which is what gives the donor column a sort at all.
+  readonly table = new TableState({
+    pageSize: 50,
+    settingsKey: 'reminderList',
+    sortableFields: ['dueDate', 'type', 'source', 'donor', 'title', 'priority'],
+    scrollContainer: () => this.scrollableTable?.nativeElement,
+    load: req => this.loadReminders(req)
+  });
 
   // Sorting
-  sortColumns: Array<{ field: string; direction: 'asc' | 'desc' }> = [];
   private currentUser?: User;
 
   // Parasha filter
@@ -103,8 +110,10 @@ export class RemindersComponent implements OnInit, OnDestroy {
     // Load base data once
     await this.loadBase();
 
-    // Initial data load
-    await this.refreshData();
+    // Saved sort first, then the first fetch - so the very first request
+    // already carries the user's persisted sort (same order as donor-list).
+    await this.table.loadSettings();
+    await this.table.reload();
   }
 
   /**
@@ -127,8 +136,7 @@ export class RemindersComponent implements OnInit, OnDestroy {
     ).subscribe(async (text) => {
       const trimmed = (text || '').trim();
       if (trimmed.length > 0 && trimmed.length < 2) return;
-      this.currentPage = 1;
-      await this.refreshData();
+      await this.table.reloadFromFirstPage();
       this.restoreSearchFocus();
     });
   }
@@ -155,6 +163,11 @@ export class RemindersComponent implements OnInit, OnDestroy {
    * Called whenever filters or sorting changes
    */
   async refreshData() {
+    await this.table.reload();
+  }
+
+  /** Fetches one page. TableState owns page/pageSize/sort and the scroll reset. */
+  private async loadReminders(req: TableLoadRequest) {
     this.loading = true;
     try {
       // Build filters (local filters only)
@@ -179,16 +192,15 @@ export class RemindersComponent implements OnInit, OnDestroy {
 
       // Get count, summary stats, and reminders in a single server round-trip
       const { count, summary, reminders } = await this.reminderService.getRemindersData(
-        filters, this.currentPage, this.pageSize, this.sortColumns
+        filters, req.page, req.pageSize, req.sort
       );
 
-      this.totalCount = count;
+      this.table.totalCount = count;
       this.todayCount = summary.todayCount;
       this.pendingCountStat = summary.pendingCount;
       this.overdueCountStat = summary.overdueCount;
       this.completedThisMonthCountStat = summary.completedThisMonthCount;
       this.reminders = reminders;
-      this.totalPages = Math.ceil(this.totalCount / this.pageSize);
 
       // Load phone data for related donors
       const donorIds = this.reminders
@@ -206,12 +218,6 @@ export class RemindersComponent implements OnInit, OnDestroy {
 
       // Apply local filters (tabs, parasha)
       this.applyLocalFilters();
-
-      // Reset scroll to top after each refresh (Israel Glikson, 1.7.2026) -
-      // paging + filter changes should land at the top of the new page.
-      if (this.scrollableTable?.nativeElement) {
-        this.scrollableTable.nativeElement.scrollTop = 0;
-      }
 
     } catch (error) {
       console.error('Error loading reminders:', error);
@@ -267,7 +273,6 @@ export class RemindersComponent implements OnInit, OnDestroy {
 
   onLocalFilterChange() {
     // Reset to page 1 when filter changes
-    this.currentPage = 1;
     this.refreshData();
 
     // Debounce save searchTerm
@@ -360,7 +365,11 @@ export class RemindersComponent implements OnInit, OnDestroy {
   }
   
 getTypeText(type: string): string {
-  const typeMap: Record<string, string> = {
+  // The Hebrew label falls back to shared/enum/reminder-type.ts, which is the
+  // SAME map the typeLabel sqlExpression sorts by - so what is displayed and
+  // what is ordered can never drift. i18n still wins when a term exists, so
+  // the display stays translatable.
+  const translated: Record<string, string | undefined> = {
     'donation_followup': this.i18n.terms.donationFollowUp,
     'thank_you': this.i18n.terms.thankYouLetter,
     'receipt': this.i18n.terms.receipt,
@@ -374,7 +383,7 @@ getTypeText(type: string): string {
     'memorial': this.i18n.terms.memorialMonumentType,
     'yahrzeit': this.i18n.terms.yahrzeitType
   };
-  return typeMap[type] || type;
+  return translated[type] || REMINDER_TYPE_LABELS[type] || type;
 }
 
   getPriorityText(priority: string): string {
@@ -416,17 +425,10 @@ getTypeText(type: string): string {
   }
 
   getSourceText(reminder: Reminder): string {
-    if (!reminder.sourceEntityType) {
-      return 'ידנית';
-    }
-
-    switch (reminder.sourceEntityType) {
-      case 'donation': return 'תרומה';
-      case 'certificate': return 'תעודה';
-      case 'donor_gift': return 'מתנה';
-      case 'donor_event': return 'אירוע';
-      default: return 'ידנית';
-    }
+    // Reads the shared map that the sourceLabel sqlExpression is built from -
+    // one list, so the column sorts by exactly what it displays.
+    if (!reminder.sourceEntityType) return REMINDER_SOURCE_MANUAL;
+    return REMINDER_SOURCE_LABELS[reminder.sourceEntityType] || REMINDER_SOURCE_MANUAL;
   }
 
   getSourceIcon(reminder: Reminder): string {
@@ -595,64 +597,9 @@ getTypeText(type: string): string {
     }
   }
 
-  // Pagination methods
-  async goToPage(page: number) {
-    if (page >= 1 && page <= this.totalPages) {
-      this.currentPage = page;
-      await this.refreshData();
-    }
-  }
+  // Sorting and paging live in `table` (TableState) - another drifted copy
+  // removed (P5).
 
-  async nextPage() {
-    if (this.currentPage < this.totalPages) {
-      this.currentPage++;
-      await this.refreshData();
-    }
-  }
-
-  async previousPage() {
-    if (this.currentPage > 1) {
-      this.currentPage--;
-      await this.refreshData();
-    }
-  }
-
-  async firstPage() {
-    this.currentPage = 1;
-    await this.refreshData();
-  }
-
-  async lastPage() {
-    this.currentPage = this.totalPages;
-    await this.refreshData();
-  }
-
-  getPageNumbers(): number[] {
-    const pages: number[] = [];
-    const maxPagesToShow = 5;
-
-    if (this.totalPages <= maxPagesToShow) {
-      for (let i = 1; i <= this.totalPages; i++) {
-        pages.push(i);
-      }
-    } else {
-      const halfWindow = Math.floor(maxPagesToShow / 2);
-      let startPage = Math.max(1, this.currentPage - halfWindow);
-      let endPage = Math.min(this.totalPages, startPage + maxPagesToShow - 1);
-
-      if (endPage - startPage < maxPagesToShow - 1) {
-        startPage = Math.max(1, endPage - maxPagesToShow + 1);
-      }
-
-      for (let i = startPage; i <= endPage; i++) {
-        pages.push(i);
-      }
-    }
-
-    return pages;
-  }
-
-  // Sorting methods
   async loadUserSettings() {
     try {
       const userRepo = remult.repo(User);
@@ -661,10 +608,7 @@ getTypeText(type: string): string {
         const user = await userRepo.findId(userId);
         if (user) {
           this.currentUser = user;
-          // Load saved sort settings
-          if (this.currentUser?.settings?.reminderList?.sort) {
-            this.sortColumns = this.currentUser.settings.reminderList.sort;
-          }
+          // the saved sort is loaded by TableState (settingsKey 'reminderList')
           // Load saved search term
           if (this.currentUser?.settings?.reminderList?.searchTerm !== undefined) {
             this.searchTerm = this.currentUser.settings.reminderList.searchTerm;
@@ -687,7 +631,7 @@ getTypeText(type: string): string {
         this.currentUser.settings.reminderList = {};
       }
       if (this.currentUser.settings && this.currentUser.settings.reminderList) {
-        this.currentUser.settings.reminderList.sort = this.sortColumns;
+        this.currentUser.settings.reminderList.sort = this.table.sortColumns;
       }
 
       await remult.repo(User).save(this.currentUser);
@@ -714,52 +658,6 @@ getTypeText(type: string): string {
     } catch (error) {
       console.error('Error saving search term:', error);
     }
-  }
-
-  async toggleSort(field: string, event: MouseEvent) {
-    if (event.ctrlKey || event.metaKey) {
-      // CTRL/CMD pressed - multi-column sort
-      const existingIndex = this.sortColumns.findIndex(s => s.field === field);
-      if (existingIndex >= 0) {
-        const current = this.sortColumns[existingIndex];
-        if (current.direction === 'asc') {
-          this.sortColumns[existingIndex].direction = 'desc';
-        } else {
-          this.sortColumns.splice(existingIndex, 1);
-        }
-      } else {
-        this.sortColumns.push({ field, direction: 'asc' });
-      }
-    } else {
-      // Single column sort
-      const existing = this.sortColumns.find(s => s.field === field);
-      if (existing && this.sortColumns.length === 1) {
-        existing.direction = existing.direction === 'asc' ? 'desc' : 'asc';
-      } else {
-        this.sortColumns = [{ field, direction: 'asc' }];
-      }
-    }
-
-    // Reload from server with new sort
-    await this.refreshData();
-    this.saveSortSettings();
-  }
-
-  getSortIcon(field: string): string {
-    const sortIndex = this.sortColumns.findIndex(s => s.field === field);
-    if (sortIndex === -1) return '';
-
-    const sort = this.sortColumns[sortIndex];
-    const arrow = sort.direction === 'asc' ? '↑' : '↓';
-
-    if (this.sortColumns.length > 1) {
-      return `${arrow}${sortIndex + 1}`;
-    }
-    return arrow;
-  }
-
-  isSorted(field: string): boolean {
-    return this.sortColumns.some(s => s.field === field);
   }
 
   formatHebrewDate(date: Date | undefined): string {
@@ -811,7 +709,7 @@ getTypeText(type: string): string {
           filters,
           undefined,
           undefined,
-          this.sortColumns
+          this.table.sortColumns
         );
 
         // Prepare data for print
@@ -883,7 +781,7 @@ getTypeText(type: string): string {
           filters,
           undefined,
           undefined,
-          this.sortColumns
+          this.table.sortColumns
         );
 
         // Load fundraisers and contact persons for lookup

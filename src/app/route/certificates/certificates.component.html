@@ -102,21 +102,21 @@
       <table class="data-table">
       <thead>
         <tr>
-          <th class="sortable" [class.sorted]="isSorted('recipientName')" (click)="toggleSort('recipientName', $event)">
+          <th [class.sortable]="table.isSortable('recipientName')" [class.sorted]="table.isSorted('recipientName')" (click)="table.toggleSort('recipientName', $event)">
             {{ (i18n.terms$ | async)?.donorRecipient }}
-            <span class="sort-icon" *ngIf="getSortIcon('recipientName')">{{ getSortIcon('recipientName') }}</span>
+            <span class="sort-icon" *ngIf="table.getSortIcon('recipientName')">{{ table.getSortIcon('recipientName') }}</span>
           </th>
-          <th class="sortable" [class.sorted]="isSorted('type')" (click)="toggleSort('type', $event)">
+          <th [class.sortable]="table.isSortable('type')" [class.sorted]="table.isSorted('type')" (click)="table.toggleSort('type', $event)">
             {{ (i18n.terms$ | async)?.certificateTypeHeader }}
-            <span class="sort-icon" *ngIf="getSortIcon('type')">{{ getSortIcon('type') }}</span>
+            <span class="sort-icon" *ngIf="table.getSortIcon('type')">{{ table.getSortIcon('type') }}</span>
           </th>
-          <th class="sortable" [class.sorted]="isSorted('eventDate')" (click)="toggleSort('eventDate', $event)">
+          <th [class.sortable]="table.isSortable('eventDate')" [class.sorted]="table.isSorted('eventDate')" (click)="table.toggleSort('eventDate', $event)">
             {{ (i18n.terms$ | async)?.eventDate }}
-            <span class="sort-icon" *ngIf="getSortIcon('eventDate')">{{ getSortIcon('eventDate') }}</span>
+            <span class="sort-icon" *ngIf="table.getSortIcon('eventDate')">{{ table.getSortIcon('eventDate') }}</span>
           </th>
-          <th class="sortable" [class.sorted]="isSorted('amount')" (click)="toggleSort('amount', $event)">
+          <th [class.sortable]="table.isSortable('amount')" [class.sorted]="table.isSorted('amount')" (click)="table.toggleSort('amount', $event)">
             {{ (i18n.terms$ | async)?.amountEvent }}
-            <span class="sort-icon" *ngIf="getSortIcon('amount')">{{ getSortIcon('amount') }}</span>
+            <span class="sort-icon" *ngIf="table.getSortIcon('amount')">{{ table.getSortIcon('amount') }}</span>
           </th>
           <th>{{ (i18n.terms$ | async)?.nextReminderColumn }}</th>
           <th>{{ (i18n.terms$ | async)?.blessingsColumn }}</th>
@@ -186,24 +186,24 @@
     <div class="pagination-controls">
       <button
         class="btn-page"
-        (click)="firstPage()"
-        [disabled]="currentPage === 1 || loading">
-        ⏮ ראשון
+        (click)="table.firstPage()"
+        [disabled]="table.isFirstPage || loading">
+        ⏭ ראשון
       </button>
 
       <button
         class="btn-page"
-        (click)="previousPage()"
-        [disabled]="currentPage === 1 || loading">
-        ← {{ (i18n.terms$ | async)?.previousPage }}
+        (click)="table.previousPage()"
+        [disabled]="table.isFirstPage || loading">
+        → {{ (i18n.terms$ | async)?.previousPage }}
       </button>
 
       <div class="page-numbers">
         <button
-          *ngFor="let page of getPageNumbers()"
+          *ngFor="let page of table.getPageNumbers()"
           class="btn-page-number"
-          [class.active]="page === currentPage"
-          (click)="goToPage(page)"
+          [class.active]="page === table.currentPage"
+          (click)="table.goToPage(page)"
           [disabled]="loading">
           {{page}}
         </button>
@@ -211,21 +211,21 @@
 
       <button
         class="btn-page"
-        (click)="nextPage()"
-        [disabled]="currentPage === totalPages || loading">
-        {{ (i18n.terms$ | async)?.nextPage }} →
+        (click)="table.nextPage()"
+        [disabled]="table.isLastPage || loading">
+        {{ (i18n.terms$ | async)?.nextPage }} ←
       </button>
 
       <button
         class="btn-page"
-        (click)="lastPage()"
-        [disabled]="currentPage === totalPages || loading">
-        אחרון ⏭
+        (click)="table.lastPage()"
+        [disabled]="table.isLastPage || loading">
+        אחרון ⏮
       </button>
     </div>
 
     <div class="pagination-info">
-      <span>מציג {{(currentPage - 1) * pageSize + 1}} - {{Math.min(currentPage * pageSize, totalCount)}} מתוך {{totalCount}}</span>
+      <span>מציג {{table.rangeStart}} - {{table.rangeEnd}} מתוך {{table.totalCount}}</span>
     </div>
     </div>
 

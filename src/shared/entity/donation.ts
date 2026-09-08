@@ -107,6 +107,71 @@ export class Donation extends IdEntity {
   })
   donationMethodId = ''
 
+  // ── Sortable related-value fields (sqlExpression) ──────────────────────
+  // P6 / W1 - "רשימת התרומות, לפי איזה סדר?". These five columns used to be
+  // sorted POST-FETCH: the server pulled one page of 50 rows and reordered
+  // that page in memory. So the sort only ever rearranged the rows already on
+  // screen - page 2 started over, and the list was never sorted as a whole.
+  // That is what the client sees as "מיון לפי תורם לא תקין".
+  //
+  // Same pattern as Donor.primaryPhone and DonorGift.donorName: Postgres
+  // computes the related value inside the SAME query that loads the rows, so
+  // ORDER BY runs over the whole result set BEFORE LIMIT, and the value sorted
+  // is exactly the value displayed.
+  // allowNull so an empty value sorts LAST in ascending order (pg default).
+  @Fields.string<Donation>({
+    caption: 'שם תורם',
+    allowNull: true,
+    sqlExpression: () => `(
+      select trim(coalesce(d."lastName",'') || ' ' || coalesce(d."firstName",''))
+      from "donors" d where d."id" = "donations"."donorId")`
+  })
+  donorName?: string
+
+  // Matches DonorPlace.getPrimaryForDonors, which is what fills the column:
+  // the active primary place, 'בית' preferred.
+  @Fields.string<Donation>({
+    caption: 'כתובת תורם',
+    allowNull: true,
+    sqlExpression: () => `(
+      select trim(coalesce(p."city",'') || ' ' || coalesce(p."street",''))
+      from "donor_places" dp
+      join "places" p on p."id" = dp."placeId"
+      left join "donor_address_types" dat on dat."id" = dp."addressTypeId"
+      where dp."donorId" = "donations"."donorId" and dp."isActive" = true
+      order by dp."isPrimary" desc, case when dat."name" = 'בית' then 0 else 1 end
+      limit 1)`
+  })
+  donorAddress?: string
+
+  @Fields.string<Donation>({
+    caption: 'אופן תרומה',
+    allowNull: true,
+    sqlExpression: () => `(
+      select dm."name" from "donation_methods" dm
+      where dm."id" = "donations"."donationMethodId")`
+  })
+  methodName?: string
+
+  @Fields.string<Donation>({
+    caption: 'קמפיין',
+    allowNull: true,
+    sqlExpression: () => `(
+      select c."name" from "campaigns" c where c."id" = "donations"."campaignId")`
+  })
+  campaignName?: string
+
+  // The fundraiser hangs off the DONOR, not off the donation - two hops.
+  @Fields.string<Donation>({
+    caption: 'מגייס',
+    allowNull: true,
+    sqlExpression: () => `(
+      select u."name" from "users" u
+      where u."id" = (select d."fundraiserId" from "donors" d
+                      where d."id" = "donations"."donorId"))`
+  })
+  fundraiserName?: string
+
   @Fields.string({
     caption: 'הערות',
   })

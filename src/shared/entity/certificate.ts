@@ -12,6 +12,8 @@ import { User } from './user'
 import { Donor } from './donor'
 import { Reminder } from './reminder'
 import { Roles } from '../enum/roles'
+import { CERTIFICATE_TYPE_LABELS } from '../enum/certificate-type'
+import { sqlCaseFromLabels } from '../utils/table-query'
 
 @Entity<Certificate>('certificates', {
   allowApiCrud: Allow.authenticated,
@@ -39,6 +41,21 @@ export class Certificate extends IdEntity {
     caption: 'טקסט סוג התעודה',
   })
   typeText = ''
+
+  // ── Sortable label field (sqlExpression) ───────────────────────────────
+  // The type column displays Hebrew but "type" stores an English code, so
+  // ordering by it sorted 'appreciation' / 'donation' / 'memorial' while the
+  // user read 'תעודת הוקרה' / 'תעודת תרומה' / 'תעודת הנצחה'. This resolves the
+  // label in SQL - the stored typeText when it has one (that is what the screen
+  // shows), otherwise the shared map - so the sorted value is the shown value.
+  @Fields.string<Certificate>({
+    caption: 'סוג (תווית)',
+    allowNull: true,
+    sqlExpression: () =>
+      `coalesce(nullif("certificates"."typeText", ''), ` +
+      sqlCaseFromLabels('"certificates"."type"', CERTIFICATE_TYPE_LABELS, '') + `)`
+  })
+  typeLabel?: string
 
   @Relations.toOne<Certificate, Donor>(() => Donor, {
     caption: 'תורם',

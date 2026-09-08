@@ -16,6 +16,7 @@ import { DonationFile } from '../entity/file';
 import { Payment } from '../entity/payment';
 import { CurrencyType } from '../type/currency.type';
 import { calculateEffectiveAmount, calculatePaymentTotals, isPaymentBased } from '../utils/donation-utils';
+import { buildOrderBy } from '../utils/table-query'
 
 export interface DonationFilters {
   searchTerm?: string;
@@ -363,44 +364,23 @@ export class DonationController {
       whereClause.donationType = filters.selectedDonationType;
     }
 
-    // Build orderBy from sortColumns or use default
-    let orderBy: any = { donationDate: 'desc' as 'desc' }; // Default sort
-    // Track fields that require post-fetch sorting (related entities)
-    let postFetchSortColumns: Array<{ field: string; direction: 'asc' | 'desc' }> = [];
-
-    if (sortColumns && sortColumns.length > 0) {
-      orderBy = {};
-      sortColumns.forEach(sort => {
-        // Map frontend field names to backend entity fields
-        let fieldName = sort.field;
-        switch (fieldName) {
-          case 'amount':
-            orderBy.amount = sort.direction;
-            break;
-          case 'currency':
-          case 'currencyId':
-            orderBy.currencyId = sort.direction;
-            break;
-          case 'donationDate':
-            orderBy.donationDate = sort.direction;
-            break;
-          case 'donationType':
-            orderBy.donationType = sort.direction;
-            break;
-          // Fields that require post-fetch sorting (related entities)
-          case 'donorName':
-          case 'address':
-          case 'method':
-          case 'campaign':
-          case 'fundraiser':
-            postFetchSortColumns.push(sort);
-            break;
-          default:
-            console.log('DonationController: Unsupported sort field for server-side:', fieldName);
-            break;
-        }
-      });
-    }
+    // P6 / W1 - ordering goes through the shared builder, entirely in SQL.
+    // donorName / address / method / campaign / fundraiser used to be sorted
+    // POST-FETCH, i.e. only the 50 rows of the current page were reordered -
+    // so the list was never sorted as a whole and page 2 started over. They
+    // now map to sqlExpression fields on Donation, so ORDER BY is applied to
+    // the full result set before LIMIT.
+    const orderBy = buildOrderBy(
+      sortColumns,
+      { donationDate: 'desc' },
+      {
+        currency: 'currencyId',
+        address: 'donorAddress',
+        method: 'methodName',
+        campaign: 'campaignName',
+        fundraiser: 'fundraiserName'
+      }
+    );
 
     // If we have a search term, find matching donors using cross-field search
     // Each word must match at least one field (name, phone, email, address), AND between words
@@ -492,42 +472,8 @@ export class DonationController {
       }
     }
 
-    // Apply post-fetch sorting for related entity fields
-    if (postFetchSortColumns.length > 0) {
-      donations.sort((a, b) => {
-        for (const sort of postFetchSortColumns) {
-          let aValue: string = '';
-          let bValue: string = '';
-
-          switch (sort.field) {
-            case 'donorName':
-              aValue = `${a.donor?.firstName || ''} ${a.donor?.lastName || ''}`.trim().toLowerCase();
-              bValue = `${b.donor?.firstName || ''} ${b.donor?.lastName || ''}`.trim().toLowerCase();
-              break;
-            case 'address':
-              aValue = ((a.donor as any)?.homeAddress || '').toLowerCase();
-              bValue = ((b.donor as any)?.homeAddress || '').toLowerCase();
-              break;
-            case 'method':
-              aValue = (a.donationMethod?.name || '').toLowerCase();
-              bValue = (b.donationMethod?.name || '').toLowerCase();
-              break;
-            case 'campaign':
-              aValue = (a.campaign?.name || '').toLowerCase();
-              bValue = (b.campaign?.name || '').toLowerCase();
-              break;
-            case 'fundraiser':
-              aValue = (a.donor?.fundraiser?.name || '').toLowerCase();
-              bValue = (b.donor?.fundraiser?.name || '').toLowerCase();
-              break;
-          }
-
-          if (aValue < bValue) return sort.direction === 'asc' ? -1 : 1;
-          if (aValue > bValue) return sort.direction === 'asc' ? 1 : -1;
-        }
-        return 0;
-      });
-    }
+    // (the post-fetch in-memory sort that used to live here is gone - see
+    //  the sqlExpression fields on Donation and buildOrderBy above)
 
     return donations;
   }

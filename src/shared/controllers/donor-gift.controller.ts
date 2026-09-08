@@ -4,6 +4,7 @@ import { DonorGift } from '../entity';
 import { GlobalFilters } from '../../app/services/global-filter.service';
 import { GlobalFilterController } from './global-filter.controller';
 import { DonorController } from './donor.controller';
+import { buildOrderBy } from '../utils/table-query'
 
 export interface DonorGiftFilters {
   searchDonorName?: string;
@@ -35,20 +36,15 @@ export class DonorGiftController {
 
     console.log('DonorGiftController.findFilteredDonorGifts', globalFilterDonorIds, localFilters);
 
-    // Build orderBy from sortColumns or use default
-    let orderBy: any = { deliveryDate: 'desc' };
-    if (sortColumns && sortColumns.length > 0) {
-      orderBy = {};
-      sortColumns.forEach(sort => {
-        if (sort.field === 'donor') {
-          orderBy['donor.lastName'] = sort.direction;
-        } else if (sort.field === 'gift') {
-          orderBy['gift.name'] = sort.direction;
-        } else {
-          orderBy[sort.field] = sort.direction;
-        }
-      });
-    }
+    // O1 - ordering goes through the shared builder. 'donor' and 'gift' map to
+    // the sqlExpression fields on DonorGift; the old code asked for the related
+    // paths 'donor.lastName' / 'gift.name', which remult drops without a word,
+    // which is why sorting by those two columns did nothing.
+    const orderBy = buildOrderBy(
+      sortColumns,
+      { deliveryDate: 'desc' },
+      { donor: 'donorName', gift: 'giftName' }
+    );
 
     // Build where clause
     let whereClause: any = {};

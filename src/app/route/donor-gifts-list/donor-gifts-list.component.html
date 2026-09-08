@@ -20,7 +20,7 @@
         <div class="card-icon">🎁</div>
         <div class="card-content">
           <h3>{{ (i18n.terms$ | async)?.totalGifts }}</h3>
-          <span class="count">{{ totalCount }}</span>
+          <span class="count">{{ table.totalCount }}</span>
         </div>
       </div>
       <div class="summary-card">
@@ -105,21 +105,21 @@
       <table class="data-table">
       <thead>
         <tr>
-          <th class="sortable" [class.sorted]="isSorted('donor')" (click)="toggleSort('donor', $event)">
+          <th [class.sortable]="table.isSortable('donor')" [class.sorted]="table.isSorted('donor')" (click)="table.toggleSort('donor', $event)">
             {{ (i18n.terms$ | async)?.donor }}
-            <span class="sort-icon">{{ getSortIcon('donor') }}</span>
+            <span class="sort-icon" *ngIf="table.getSortIcon('donor')">{{ table.getSortIcon('donor') }}</span>
           </th>
-          <th class="sortable" [class.sorted]="isSorted('gift')" (click)="toggleSort('gift', $event)">
+          <th [class.sortable]="table.isSortable('gift')" [class.sorted]="table.isSorted('gift')" (click)="table.toggleSort('gift', $event)">
             {{ (i18n.terms$ | async)?.gift }}
-            <span class="sort-icon">{{ getSortIcon('gift') }}</span>
+            <span class="sort-icon" *ngIf="table.getSortIcon('gift')">{{ table.getSortIcon('gift') }}</span>
           </th>
-          <th class="sortable" [class.sorted]="isSorted('deliveryDate')" (click)="toggleSort('deliveryDate', $event)">
+          <th [class.sortable]="table.isSortable('deliveryDate')" [class.sorted]="table.isSorted('deliveryDate')" (click)="table.toggleSort('deliveryDate', $event)">
             {{ (i18n.terms$ | async)?.deliveryDate }}
-            <span class="sort-icon">{{ getSortIcon('deliveryDate') }}</span>
+            <span class="sort-icon" *ngIf="table.getSortIcon('deliveryDate')">{{ table.getSortIcon('deliveryDate') }}</span>
           </th>
-          <th class="sortable" [class.sorted]="isSorted('isDelivered')" (click)="toggleSort('isDelivered', $event)">
+          <th [class.sortable]="table.isSortable('isDelivered')" [class.sorted]="table.isSorted('isDelivered')" (click)="table.toggleSort('isDelivered', $event)">
             {{ (i18n.terms$ | async)?.status }}
-            <span class="sort-icon">{{ getSortIcon('isDelivered') }}</span>
+            <span class="sort-icon" *ngIf="table.getSortIcon('isDelivered')">{{ table.getSortIcon('isDelivered') }}</span>
           </th>
           <th>{{ (i18n.terms$ | async)?.notes }}</th>
           <th class="actions-header">
@@ -176,46 +176,46 @@
       <div class="pagination-controls">
         <button
           class="btn-page"
-          (click)="firstPage()"
-          [disabled]="currentPage === 1 || loading">
+          (click)="table.firstPage()"
+          [disabled]="table.isFirstPage || loading">
           ⏮ {{ (i18n.terms$ | async)?.first }}
         </button>
 
         <button
           class="btn-page"
-          (click)="previousPage()"
-          [disabled]="currentPage === 1 || loading">
+          (click)="table.previousPage()"
+          [disabled]="table.isFirstPage || loading">
           ← {{ (i18n.terms$ | async)?.previous }}
         </button>
 
         <div class="page-numbers">
           <button
-            *ngFor="let page of getPageNumbers()"
+            *ngFor="let page of table.getPageNumbers()"
             class="btn-page-number"
-            [class.active]="page === currentPage"
+            [class.active]="page === table.currentPage"
             [disabled]="page === -1"
-            (click)="page !== -1 && goToPage(page)">
+            (click)="page !== -1 && table.goToPage(page)">
             {{ page === -1 ? '...' : page }}
           </button>
         </div>
 
         <button
           class="btn-page"
-          (click)="nextPage()"
-          [disabled]="currentPage === totalPages || loading">
+          (click)="table.nextPage()"
+          [disabled]="table.isLastPage || loading">
           {{ (i18n.terms$ | async)?.next }} →
         </button>
 
         <button
           class="btn-page"
-          (click)="lastPage()"
-          [disabled]="currentPage === totalPages || loading">
+          (click)="table.lastPage()"
+          [disabled]="table.isLastPage || loading">
           {{ (i18n.terms$ | async)?.last }} ⏭
         </button>
       </div>
 
       <div class="pagination-info">
-        <span>{{ (i18n.terms$ | async)?.showing }} {{(currentPage - 1) * pageSize + 1}} - {{Math.min(currentPage * pageSize, totalCount)}} {{ (i18n.terms$ | async)?.of }} {{totalCount}}</span>
+        <span>{{ (i18n.terms$ | async)?.showing }} {{table.rangeStart}} - {{table.rangeEnd}} {{ (i18n.terms$ | async)?.of }} {{table.totalCount}}</span>
       </div>
     </div>
   </div>
