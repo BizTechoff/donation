@@ -43,7 +43,7 @@ export class CertificateController {
     const orderBy = buildOrderBy(
       sortColumns,
       { createdDate: 'desc' },
-      { type: 'typeLabel' }
+      { type: 'typeLabel', recipientName: ['recipientName', 'donorName'] }
     );
 
     // If parasha filter is applied, we need to fetch all and filter in memory

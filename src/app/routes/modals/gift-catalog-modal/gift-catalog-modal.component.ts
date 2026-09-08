@@ -7,6 +7,8 @@ import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
 import { GiftDetailsModalComponent } from '../gift-details-modal/gift-details-modal.component';
 import { PayerService } from '../../../services/payer.service';
+import { TableState } from '../../../common/table/table-state';
+import { sortRows } from '../../../common/table/table-sort';
 
 @DialogConfig({
   hasBackdrop: true,
@@ -21,6 +23,13 @@ import { PayerService } from '../../../services/payer.service';
 export class GiftCatalogModalComponent implements OnInit {
   gifts: Gift[] = [];
   filteredGifts: Gift[] = [];
+
+  // Sorting via the shared TableState, like every other table. The catalog is
+  // loaded whole, so sortRows orders the array - no paging here.
+  readonly table = new TableState({
+    sortableFields: ['name', 'category', 'estimatedValue', 'description', 'isActive'],
+    load: async () => { this.applyFilters(); }
+  });
   giftRepo = remult.repo(Gift);
 
   loading = false;
@@ -66,6 +75,7 @@ export class GiftCatalogModalComponent implements OnInit {
         gift.description?.toLowerCase().includes(searchLower)
       );
     });
+    this.filteredGifts = sortRows(this.filteredGifts, this.table.sortColumns);
   }
 
   async addNewGift() {

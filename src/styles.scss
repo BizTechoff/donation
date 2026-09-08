@@ -607,3 +607,37 @@ th {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* ---------------------------------------------------------------------------
+ * Sortable table headers - table-class agnostic.
+ *
+ * .data-table already styles its own sortable headers above, but the modals
+ * each use their own table class, so those rules never reached them. Rather
+ * than copying the same block into a dozen component stylesheets, this one
+ * applies wherever a th carries .sortable - which, since every table now goes
+ * through TableState, is every sortable column in the platform.
+ *
+ * The tint is neutral grey on purpose: it has to read on a dark gradient header
+ * and on a plain light one alike, which a white overlay does not.
+ * .data-table's own rules are more specific and still win where they apply.
+ * ------------------------------------------------------------------------ */
+th.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: rgba(128, 128, 128, 0.12);
+  }
+
+  &.sorted {
+    font-weight: 700;
+  }
+}
+
+.sort-icon {
+  font-size: 12px;
+  font-weight: bold;
+  opacity: 0.9;
+  margin-inline-start: 4px;
+}

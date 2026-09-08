@@ -38,13 +38,13 @@
             <mat-icon class="filter-icon">search</mat-icon>
             <input type="text"
                    class="filter-input"
-                   [(ngModel)]="filterText"
+                   [(ngModel)]="filterText" (ngModelChange)="onFilterChanged()"
                    [placeholder]="isGiftsMode ? 'חיפוש שם מתנה או הערות' : 'חיפוש בהערות או סכום'">
           </div>
 
           <div class="filter-group" *ngIf="!isGiftsMode">
             <mat-icon class="filter-icon">campaign</mat-icon>
-            <select class="filter-select" [(ngModel)]="filterCampaign">
+            <select class="filter-select" [(ngModel)]="filterCampaign" (ngModelChange)="onFilterChanged()">
               <option value="">כל הקמפיינים</option>
               <option *ngFor="let campaign of campaigns" [value]="campaign.id">
                 {{campaign.name}}
@@ -88,22 +88,22 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th class="sortable" [class.sorted]="isSorted('donationDate')" (click)="toggleSort('donationDate', $event)">
+              <th [class.sortable]="table.isSortable('donationDate')" [class.sorted]="table.isSorted('donationDate')" (click)="table.toggleSort('donationDate', $event)">
                 תאריך
-                <span class="sort-icon" *ngIf="getSortIcon('donationDate')">{{ getSortIcon('donationDate') }}</span>
+                <span class="sort-icon" *ngIf="table.getSortIcon('donationDate')">{{ table.getSortIcon('donationDate') }}</span>
               </th>
-              <th class="sortable" [class.sorted]="isSorted('donationType')" (click)="toggleSort('donationType', $event)">
+              <th [class.sortable]="table.isSortable('donationType')" [class.sorted]="table.isSorted('donationType')" (click)="table.toggleSort('donationType', $event)">
                 סוג
-                <span class="sort-icon" *ngIf="getSortIcon('donationType')">{{ getSortIcon('donationType') }}</span>
+                <span class="sort-icon" *ngIf="table.getSortIcon('donationType')">{{ table.getSortIcon('donationType') }}</span>
               </th>
-              <th>אופן תרומה</th>
-              <th class="sortable" [class.sorted]="isSorted('amount')" (click)="toggleSort('amount', $event)">
+              <th [class.sortable]="table.isSortable('method')" [class.sorted]="table.isSorted('method')" (click)="table.toggleSort('method', $event)">אופן תרומה<span class="sort-icon" *ngIf="table.getSortIcon('method')">{{ table.getSortIcon('method') }}</span></th>
+              <th [class.sortable]="table.isSortable('amount')" [class.sorted]="table.isSorted('amount')" (click)="table.toggleSort('amount', $event)">
                 סכום
-                <span class="sort-icon" *ngIf="getSortIcon('amount')">{{ getSortIcon('amount') }}</span>
+                <span class="sort-icon" *ngIf="table.getSortIcon('amount')">{{ table.getSortIcon('amount') }}</span>
               </th>
-              <th>מטבע</th>
-              <th>קמפיין</th>
-              <th>סיבת התרומה</th>
+              <th [class.sortable]="table.isSortable('currency')" [class.sorted]="table.isSorted('currency')" (click)="table.toggleSort('currency', $event)">מטבע<span class="sort-icon" *ngIf="table.getSortIcon('currency')">{{ table.getSortIcon('currency') }}</span></th>
+              <th [class.sortable]="table.isSortable('campaign')" [class.sorted]="table.isSorted('campaign')" (click)="table.toggleSort('campaign', $event)">קמפיין<span class="sort-icon" *ngIf="table.getSortIcon('campaign')">{{ table.getSortIcon('campaign') }}</span></th>
+              <th [class.sortable]="table.isSortable('reason')" [class.sorted]="table.isSorted('reason')" (click)="table.toggleSort('reason', $event)">סיבת התרומה<span class="sort-icon" *ngIf="table.getSortIcon('reason')">{{ table.getSortIcon('reason') }}</span></th>
               <th>פעולות</th>
             </tr>
           </thead>
@@ -189,15 +189,15 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th class="sortable" [class.sorted]="isSorted('deliveryDate')" (click)="toggleSort('deliveryDate', $event)">
+              <th [class.sortable]="table.isSortable('deliveryDate')" [class.sorted]="table.isSorted('deliveryDate')" (click)="table.toggleSort('deliveryDate', $event)">
                 תאריך מסירה
-                <span class="sort-icon" *ngIf="getSortIcon('deliveryDate')">{{ getSortIcon('deliveryDate') }}</span>
+                <span class="sort-icon" *ngIf="table.getSortIcon('deliveryDate')">{{ table.getSortIcon('deliveryDate') }}</span>
               </th>
-              <th class="sortable" [class.sorted]="isSorted('giftName')" (click)="toggleSort('giftName', $event)">
+              <th [class.sortable]="table.isSortable('giftName')" [class.sorted]="table.isSorted('giftName')" (click)="table.toggleSort('giftName', $event)">
                 שם המתנה
-                <span class="sort-icon" *ngIf="getSortIcon('giftName')">{{ getSortIcon('giftName') }}</span>
+                <span class="sort-icon" *ngIf="table.getSortIcon('giftName')">{{ table.getSortIcon('giftName') }}</span>
               </th>
-              <th>סטטוס</th>
+              <th [class.sortable]="table.isSortable('isDelivered')" [class.sorted]="table.isSorted('isDelivered')" (click)="table.toggleSort('isDelivered', $event)">סטטוס<span class="sort-icon" *ngIf="table.getSortIcon('isDelivered')">{{ table.getSortIcon('isDelivered') }}</span></th>
               <th>פעולות</th>
             </tr>
           </thead>
@@ -254,24 +254,24 @@
         <div class="pagination-controls">
           <button
             class="btn-page"
-            (click)="firstPage()"
-            [disabled]="currentPage === 1 || loading">
+            (click)="table.firstPage()"
+            [disabled]="table.isFirstPage || loading">
             ⏮ ראשון
           </button>
 
           <button
             class="btn-page"
-            (click)="previousPage()"
-            [disabled]="currentPage === 1 || loading">
+            (click)="table.previousPage()"
+            [disabled]="table.isFirstPage || loading">
             ← קודם
           </button>
 
           <div class="page-numbers">
             <button
-              *ngFor="let page of getPageNumbers()"
+              *ngFor="let page of table.getPageNumbers()"
               class="btn-page-number"
-              [class.active]="page === currentPage"
-              (click)="goToPage(page)"
+              [class.active]="page === table.currentPage"
+              (click)="table.goToPage(page)"
               [disabled]="loading">
               {{page}}
             </button>
@@ -279,21 +279,21 @@
 
           <button
             class="btn-page"
-            (click)="nextPage()"
-            [disabled]="currentPage === totalPages || loading">
+            (click)="table.nextPage()"
+            [disabled]="table.isLastPage || loading">
             הבא →
           </button>
 
           <button
             class="btn-page"
-            (click)="lastPage()"
-            [disabled]="currentPage === totalPages || loading">
+            (click)="table.lastPage()"
+            [disabled]="table.isLastPage || loading">
             אחרון ⏭
           </button>
         </div>
 
         <div class="pagination-info">
-          <span>מציג {{(currentPage - 1) * pageSize + 1}} - {{Math.min(currentPage * pageSize, totalCount)}} מתוך {{totalCount}}</span>
+          <span>מציג {{table.rangeStart}} - {{table.rangeEnd}} מתוך {{table.totalCount}}</span>
         </div>
       </div>
 

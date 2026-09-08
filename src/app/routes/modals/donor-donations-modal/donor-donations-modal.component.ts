@@ -10,6 +10,8 @@ import { HebrewDateService } from '../../../services/hebrew-date.service';
 import { PayerService } from '../../../services/payer.service';
 import { DonationController } from '../../../../shared/controllers/donation.controller';
 import { calculateEffectiveAmount, isPaymentBased, isStandingOrder, calculatePeriodsElapsed } from '../../../../shared/utils/donation-utils';
+import { TableState } from '../../../common/table/table-state';
+import { sortRows } from '../../../common/table/table-sort';
 
 export interface DonorDonationsModalArgs {
   donorId: string;
@@ -57,20 +59,29 @@ export class DonorDonationsModalComponent implements OnInit {
   filterDonationType = '';
 
   // Sorting
-  sortColumns: Array<{ field: string; direction: 'asc' | 'desc' }> = [];
 
   // Pagination
-  currentPage = 1;
-  pageSize = 50;
+  // Sorting and paging come from the shared TableState, the same one the list
+  // screens use. This table loads the donor's WHOLE set in one query and pages
+  // in the browser, so load() sorts the array rather than asking the server -
+  // sortRows handles the values the columns actually display.
+  readonly table = new TableState({
+    pageSize: 50,
+    // Every column in both tables, not a subset - the ones left out were the
+    // ones that display a related or formatted value, which is exactly where
+    // the user needs the sort most.
+    sortableFields: ['donationDate', 'donationType', 'method', 'amount', 'currency',
+                     'campaign', 'reason',
+                     'deliveryDate', 'giftName', 'isDelivered'],
+    scrollContainer: () => (this.isGiftsMode ? this.scrollableTableGifts : this.scrollableTable)?.nativeElement,
+    load: async () => { this.applyPaging(); }
+  });
 
   // Scrollable table container handles - one per mode (*ngIf keeps only one
   // alive at a time). Reset to top on every page change so paging does not
   // leave the user mid-page (Israel Glikson, 1.7.2026).
   @ViewChild('scrollableTable') scrollableTable?: ElementRef<HTMLElement>;
   @ViewChild('scrollableTableGifts') scrollableTableGifts?: ElementRef<HTMLElement>;
-  totalCount = 0;
-  totalPages = 0;
-  Math = Math; // Expose Math to template
 
   // Table configuration
   displayedColumns: string[] = ['donationDate', 'amount', 'currency', 'campaign', 'method', 'actions'];
@@ -147,7 +158,7 @@ currencyTypes = this.payer.getCurrencyTypesRecord()
       }
 
       this.calculateTotals();
-      this.updatePaginatedData();
+      this.resetToFirstPage();
     } catch (error) {
       console.error('Error loading donor donations:', error);
       this.ui.error('שגיאה בטעינת נתוני התרומות');
@@ -483,162 +494,48 @@ currencyTypes = this.payer.getCurrencyTypesRecord()
   }
 
   // Sorting methods
-  async toggleSort(field: string, event: MouseEvent) {
-    if (event.ctrlKey || event.metaKey) {
-      // Multi-column sort
-      const existingIndex = this.sortColumns.findIndex(s => s.field === field);
-      if (existingIndex >= 0) {
-        const current = this.sortColumns[existingIndex];
-        if (current.direction === 'asc') {
-          this.sortColumns[existingIndex].direction = 'desc';
-        } else {
-          this.sortColumns.splice(existingIndex, 1);
-        }
-      } else {
-        this.sortColumns.push({ field, direction: 'asc' });
-      }
-    } else {
-      // Single column sort
-      const existing = this.sortColumns.find(s => s.field === field);
-      if (existing && this.sortColumns.length === 1) {
-        existing.direction = existing.direction === 'asc' ? 'desc' : 'asc';
-      } else {
-        this.sortColumns = [{ field, direction: 'asc' }];
-      }
-    }
-
-    this.applySorting();
+  // Sorting and paging live in `table` (TableState); the rows themselves are
+  // sorted by the shared sortRows, which reads the value each column displays.
+  private applyPaging() {
+    this.table.totalCount = this.isGiftsMode
+      ? this.filteredDonorGifts.length
+      : this.filteredDonations.length;
   }
 
-  applySorting() {
-    if (this.sortColumns.length === 0) return;
-
-    const sortedData = this.isGiftsMode ? [...this.donorGifts] : [...this.donations];
-
-    sortedData.sort((a: any, b: any) => {
-      for (const sort of this.sortColumns) {
-        let aVal = a[sort.field];
-        let bVal = b[sort.field];
-
-        // Handle nested properties for gifts
-        if (sort.field === 'giftName' && this.isGiftsMode) {
-          aVal = a.gift?.name || '';
-          bVal = b.gift?.name || '';
-        }
-
-        if (aVal === bVal) continue;
-
-        const comparison = aVal < bVal ? -1 : 1;
-        return sort.direction === 'asc' ? comparison : -comparison;
-      }
-      return 0;
-    });
-
-    if (this.isGiftsMode) {
-      this.donorGifts = sortedData as DonorGift[];
-    } else {
-      this.donations = sortedData as Donation[];
-    }
+  /** Anything that changes the result set - a filter, a reload - starts over. */
+  private resetToFirstPage() {
+    this.table.reloadFromFirstPage();
   }
 
-  isSorted(field: string): boolean {
-    return this.sortColumns.some(s => s.field === field);
-  }
-
-  getSortIcon(field: string): string {
-    const sortIndex = this.sortColumns.findIndex(s => s.field === field);
-    if (sortIndex === -1) return '';
-
-    const sort = this.sortColumns[sortIndex];
-    const arrow = sort.direction === 'asc' ? '↑' : '↓';
-
-    if (this.sortColumns.length > 1) {
-      return `${arrow}${sortIndex + 1}`;
-    }
-    return arrow;
-  }
-
-  // Pagination methods
-  async goToPage(page: number) {
-    if (page >= 1 && page <= this.totalPages) {
-      this.currentPage = page;
-      this.updatePaginatedData();
-    }
-  }
-
-  async nextPage() {
-    if (this.currentPage < this.totalPages) {
-      this.currentPage++;
-      this.updatePaginatedData();
-    }
-  }
-
-  async previousPage() {
-    if (this.currentPage > 1) {
-      this.currentPage--;
-      this.updatePaginatedData();
-    }
-  }
-
-  async firstPage() {
-    this.currentPage = 1;
-    this.updatePaginatedData();
-  }
-
-  async lastPage() {
-    this.currentPage = this.totalPages;
-    this.updatePaginatedData();
-  }
-
-  updatePaginatedData() {
-    // Update total count and pages
-    const dataLength = this.isGiftsMode ? this.donorGifts.length : this.donations.length;
-    this.totalCount = dataLength;
-    this.totalPages = Math.ceil(dataLength / this.pageSize);
-
-    // Reset the active table scroll to top on page change (Israel Glikson,
-    // 1.7.2026) - paging should land at the top of the new page.
-    const active = this.isGiftsMode ? this.scrollableTableGifts : this.scrollableTable;
-    if (active?.nativeElement) {
-      active.nativeElement.scrollTop = 0;
-    }
-  }
-
-  getPageNumbers(): number[] {
-    const pages: number[] = [];
-    const maxPagesToShow = 5;
-
-    if (this.totalPages <= maxPagesToShow) {
-      for (let i = 1; i <= this.totalPages; i++) {
-        pages.push(i);
-      }
-    } else {
-      const halfWindow = Math.floor(maxPagesToShow / 2);
-      let startPage = Math.max(1, this.currentPage - halfWindow);
-      let endPage = Math.min(this.totalPages, startPage + maxPagesToShow - 1);
-
-      if (endPage - startPage < maxPagesToShow - 1) {
-        startPage = Math.max(1, endPage - maxPagesToShow + 1);
-      }
-
-      for (let i = startPage; i <= endPage; i++) {
-        pages.push(i);
-      }
-    }
-
-    return pages;
-  }
-
+  // These getters run on every change-detection pass, so they must stay PURE -
+  // assigning table.totalCount from inside one is what produces Angular's
+  // ExpressionChangedAfterItHasBeenChecked. The count is set in applyPaging(),
+  // which every path that changes the result set calls.
   get paginatedDonations(): Donation[] {
-    const start = (this.currentPage - 1) * this.pageSize;
-    const end = start + this.pageSize;
-    return this.filteredDonations.slice(start, end);
+    const sorted = sortRows(this.filteredDonations, this.table.sortColumns, {
+      // The columns that show a related value have no such property on the row.
+      campaign: d => this.getCampaignName(d.campaignId),
+      method: d => d.donationType === 'commitment' ? '' : this.getMethodName(d.donationMethodId),
+      currency: d => d.currencyId,
+      // Sort by the numeric amount even though the cell can read "paid / total".
+      amount: d => d.amount
+    });
+    const start = (this.table.currentPage - 1) * this.table.pageSize;
+    return sorted.slice(start, start + this.table.pageSize);
   }
 
   get paginatedDonorGifts(): DonorGift[] {
-    const start = (this.currentPage - 1) * this.pageSize;
-    const end = start + this.pageSize;
-    return this.filteredDonorGifts.slice(start, end);
+    const sorted = sortRows(this.filteredDonorGifts, this.table.sortColumns, {
+      giftName: g => g.gift?.name || '',
+      isDelivered: g => g.isDelivered
+    });
+    const start = (this.table.currentPage - 1) * this.table.pageSize;
+    return sorted.slice(start, start + this.table.pageSize);
+  }
+
+  /** A filter changes the result set - recount and go back to page 1. */
+  onFilterChanged() {
+    this.resetToFirstPage();
   }
 
   closeModal() {

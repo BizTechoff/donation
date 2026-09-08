@@ -49,11 +49,11 @@
       <table class="gifts-table" *ngIf="filteredGifts.length > 0">
         <thead>
           <tr>
-            <th>שם המתנה</th>
-            <th>קטגוריה</th>
-            <th>ערך משוער</th>
-            <th>תיאור</th>
-            <th>סטטוס</th>
+            <th [class.sortable]="table.isSortable('name')" [class.sorted]="table.isSorted('name')" (click)="table.toggleSort('name', $event)">שם המתנה<span class="sort-icon" *ngIf="table.getSortIcon('name')">{{ table.getSortIcon('name') }}</span></th>
+            <th [class.sortable]="table.isSortable('category')" [class.sorted]="table.isSorted('category')" (click)="table.toggleSort('category', $event)">קטגוריה<span class="sort-icon" *ngIf="table.getSortIcon('category')">{{ table.getSortIcon('category') }}</span></th>
+            <th [class.sortable]="table.isSortable('estimatedValue')" [class.sorted]="table.isSorted('estimatedValue')" (click)="table.toggleSort('estimatedValue', $event)">ערך משוער<span class="sort-icon" *ngIf="table.getSortIcon('estimatedValue')">{{ table.getSortIcon('estimatedValue') }}</span></th>
+            <th [class.sortable]="table.isSortable('description')" [class.sorted]="table.isSorted('description')" (click)="table.toggleSort('description', $event)">תיאור<span class="sort-icon" *ngIf="table.getSortIcon('description')">{{ table.getSortIcon('description') }}</span></th>
+            <th [class.sortable]="table.isSortable('isActive')" [class.sorted]="table.isSorted('isActive')" (click)="table.toggleSort('isActive', $event)">סטטוס<span class="sort-icon" *ngIf="table.getSortIcon('isActive')">{{ table.getSortIcon('isActive') }}</span></th>
             <th>פעולות</th>
           </tr>
         </thead>

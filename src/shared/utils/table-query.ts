@@ -39,9 +39,12 @@ export interface SortColumn {
  *
  * @param sortColumns what the user clicked, in priority order
  * @param defaultOrderBy used when nothing is sorted - the list's natural order
- * @param fieldMap      column key on the screen -> field name on the entity.
- *                      Only needed where the two differ; unmapped keys pass
- *                      through unchanged.
+ * @param fieldMap      column key on the screen -> field name on the entity, or
+ *                      a LIST of fields when one column displays more than one
+ *                      value (certificates show the recipient with the donor
+ *                      underneath) - they are applied in order as primary,
+ *                      secondary, ... Only needed where screen and entity
+ *                      differ; unmapped keys pass through unchanged.
  *
  * A mapped value MUST be a real field of the entity (a plain column or a
  * sqlExpression field). A dotted path is dropped on purpose rather than
@@ -51,21 +54,23 @@ export interface SortColumn {
 export function buildOrderBy(
   sortColumns: SortColumn[] | undefined,
   defaultOrderBy: Record<string, SortDirection>,
-  fieldMap: Record<string, string> = {}
+  fieldMap: Record<string, string | string[]> = {}
 ): Record<string, SortDirection> {
   if (!sortColumns || sortColumns.length === 0) return { ...defaultOrderBy }
 
   const orderBy: Record<string, SortDirection> = {}
   for (const sort of sortColumns) {
-    const field = fieldMap[sort.field] ?? sort.field
-    if (field.includes('.')) {
-      console.warn(
-        `[buildOrderBy] '${sort.field}' maps to '${field}', which is a related path and ` +
-        `cannot be ordered by. Expose it as a sqlExpression field on the entity instead.`
-      )
-      continue
+    const mapped = fieldMap[sort.field] ?? sort.field
+    for (const field of Array.isArray(mapped) ? mapped : [mapped]) {
+      if (field.includes('.')) {
+        console.warn(
+          `[buildOrderBy] '${sort.field}' maps to '${field}', which is a related path and ` +
+          `cannot be ordered by. Expose it as a sqlExpression field on the entity instead.`
+        )
+        continue
+      }
+      orderBy[field] = sort.direction
     }
-    orderBy[field] = sort.direction
   }
 
   // Every requested column was unusable - fall back rather than return {},

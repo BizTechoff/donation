@@ -8,6 +8,7 @@ import { Donor, Place } from '../../../../shared/entity';
 import { I18nService } from '../../../i18n/i18n.service';
 import { DonorDetailsModalComponent } from '../donor-details-modal/donor-details-modal.component';
 import { DonorController } from '../../../../shared/controllers/donor.controller';
+import { TableState, TableLoadRequest } from '../../../common/table/table-state';
 
 export interface DonorSelectionModalArgs {
   title?: string;
@@ -55,11 +56,16 @@ export class DonorSelectionModalComponent implements OnInit, OnDestroy {
 
   filterText = '';
 
-  currentPage = 1;
-  pageSize = 50;
-  totalCount = 0;
-  totalPages = 0;
-  Math = Math;
+  // Sorting and paging come from the shared TableState. All four columns are
+  // ordered by the DB now - phone and email map to sqlExpression fields on
+  // Donor (see donor.controller), so the old in-memory sort of the CURRENT
+  // PAGE only is gone.
+  readonly table = new TableState({
+    pageSize: 50,
+    sortableFields: ['fullName', 'phone', 'email', 'address'],
+    scrollContainer: () => this.scrollableTable?.nativeElement,
+    load: req => this.loadDonorsPage(req)
+  });
 
   // Tracks whether "select all" was clicked and applied to the whole current
   // filter (across all pages). Reset when the user unchecks any single donor
@@ -68,7 +74,6 @@ export class DonorSelectionModalComponent implements OnInit, OnDestroy {
   // checkbox stays "checked" while paging through the results.
   private allInCurrentFilterSelected = false;
 
-  sortColumns: Array<{ field: string; direction: 'asc' | 'desc' }> = [];
 
   private searchSubject = new Subject<void>();
   private destroy$ = new Subject<void>();
@@ -95,7 +100,6 @@ export class DonorSelectionModalComponent implements OnInit, OnDestroy {
       debounceTime(300),
       takeUntil(this.destroy$)
     ).subscribe(() => {
-      this.currentPage = 1;
       this.loadDonors();
     });
 
@@ -115,23 +119,22 @@ export class DonorSelectionModalComponent implements OnInit, OnDestroy {
   }
 
   async loadDonors() {
+    await this.table.reload();
+  }
+
+  private async loadDonorsPage(req: TableLoadRequest) {
     await this.busy.doWhileShowingBusy(async () => {
       try {
-        const dbSortColumns = this.sortColumns.filter(
-          s => s.field !== 'phone' && s.field !== 'email'
-        );
-
         const data = await DonorController.getDonorsForSelectionPage({
           search: this.filterText?.trim() || undefined,
-          page: this.currentPage,
-          pageSize: this.pageSize,
+          page: req.page,
+          pageSize: req.pageSize,
           excludeIds: this.args?.excludeIds,
-          sortColumns: dbSortColumns
+          sortColumns: req.sort
         });
 
         this.availableDonors = data.donors;
-        this.totalCount = data.totalCount;
-        this.totalPages = Math.ceil(this.totalCount / this.pageSize);
+        this.table.totalCount = data.totalCount;
 
         this.donorEmailMap = new Map(Object.entries(data.donorEmailMap));
         this.donorPhoneMap = new Map(Object.entries(data.donorPhoneMap));
@@ -145,16 +148,6 @@ export class DonorSelectionModalComponent implements OnInit, OnDestroy {
               this.selectedDonors.push(donor);
             }
           }
-        }
-
-        // Apply client-side sort for phone/email (within current page)
-        this.applySorting();
-
-        // Reset scroll to top after each data load - page navigation used to
-        // leave the user mid-page (Israel Glikson, 1.7.2026). Also natural for
-        // search-change and initial load, which are the other callers.
-        if (this.scrollableTable?.nativeElement) {
-          this.scrollableTable.nativeElement.scrollTop = 0;
         }
 
       } catch (error) {
@@ -171,128 +164,12 @@ export class DonorSelectionModalComponent implements OnInit, OnDestroy {
     this.searchSubject.next();
   }
 
-  // Client-side sort for cross-entity fields (phone/email) — applied to current page only
-  private applySorting() {
-    const crossEntitySorts = this.sortColumns.filter(
-      s => s.field === 'phone' || s.field === 'email'
-    );
-    if (crossEntitySorts.length === 0) return;
-
-    this.availableDonors.sort((a, b) => {
-      for (const sort of crossEntitySorts) {
-        const aValue = (sort.field === 'phone'
-          ? this.getDonorPhone(a.id)
-          : this.getDonorEmail(a.id)).toLowerCase();
-        const bValue = (sort.field === 'phone'
-          ? this.getDonorPhone(b.id)
-          : this.getDonorEmail(b.id)).toLowerCase();
-
-        if (aValue < bValue) return sort.direction === 'asc' ? -1 : 1;
-        if (aValue > bValue) return sort.direction === 'asc' ? 1 : -1;
-      }
-      return 0;
-    });
-  }
-
-  toggleSort(field: string, event: MouseEvent) {
-    if (event.ctrlKey || event.metaKey) {
-      const existingIndex = this.sortColumns.findIndex(s => s.field === field);
-      if (existingIndex >= 0) {
-        const current = this.sortColumns[existingIndex];
-        if (current.direction === 'asc') {
-          this.sortColumns[existingIndex].direction = 'desc';
-        } else {
-          this.sortColumns.splice(existingIndex, 1);
-        }
-      } else {
-        this.sortColumns.push({ field, direction: 'asc' });
-      }
-    } else {
-      const existing = this.sortColumns.find(s => s.field === field);
-      if (existing && this.sortColumns.length === 1) {
-        existing.direction = existing.direction === 'asc' ? 'desc' : 'asc';
-      } else {
-        this.sortColumns = [{ field, direction: 'asc' }];
-      }
-    }
-
-    if (field === 'phone' || field === 'email') {
-      this.applySorting();
-    } else {
-      this.currentPage = 1;
-      this.loadDonors();
-    }
-  }
-
-  isSorted(field: string): boolean {
-    return this.sortColumns.some(s => s.field === field);
-  }
-
-  getSortIcon(field: string): string {
-    const sortIndex = this.sortColumns.findIndex(s => s.field === field);
-    if (sortIndex === -1) return '';
-    const sort = this.sortColumns[sortIndex];
-    const arrow = sort.direction === 'asc' ? '↑' : '↓';
-    return this.sortColumns.length > 1 ? `${arrow}${sortIndex + 1}` : arrow;
-  }
+  // Sorting and paging live in `table` (TableState).
 
   get paginatedDonors(): Donor[] {
     return this.availableDonors;
   }
 
-  goToPage(page: number) {
-    if (page >= 1 && page <= this.totalPages) {
-      this.currentPage = page;
-      this.loadDonors();
-    }
-  }
-
-  nextPage() {
-    if (this.currentPage < this.totalPages) {
-      this.currentPage++;
-      this.loadDonors();
-    }
-  }
-
-  previousPage() {
-    if (this.currentPage > 1) {
-      this.currentPage--;
-      this.loadDonors();
-    }
-  }
-
-  firstPage() {
-    if (this.currentPage !== 1) {
-      this.currentPage = 1;
-      this.loadDonors();
-    }
-  }
-
-  lastPage() {
-    if (this.currentPage !== this.totalPages) {
-      this.currentPage = this.totalPages;
-      this.loadDonors();
-    }
-  }
-
-  getPageNumbers(): number[] {
-    const pages: number[] = [];
-    const maxPagesToShow = 5;
-
-    if (this.totalPages <= maxPagesToShow) {
-      for (let i = 1; i <= this.totalPages; i++) pages.push(i);
-    } else {
-      const halfWindow = Math.floor(maxPagesToShow / 2);
-      let startPage = Math.max(1, this.currentPage - halfWindow);
-      let endPage = Math.min(this.totalPages, startPage + maxPagesToShow - 1);
-      if (endPage - startPage < maxPagesToShow - 1) {
-        startPage = Math.max(1, endPage - maxPagesToShow + 1);
-      }
-      for (let i = startPage; i <= endPage; i++) pages.push(i);
-    }
-
-    return pages;
-  }
 
   getDonorEmail(donorId: string): string {
     return this.donorEmailMap.get(donorId) || '';
@@ -409,8 +286,7 @@ export class DonorSelectionModalComponent implements OnInit, OnDestroy {
 
   clearSearch() {
     this.filterText = '';
-    this.currentPage = 1;
-    this.loadDonors();
+    this.table.reloadFromFirstPage();
   }
 
   closeDialog() {

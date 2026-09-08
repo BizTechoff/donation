@@ -6,6 +6,8 @@ import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
 import { TargetAudienceController } from '../../../../shared/controllers/target-audience.controller';
 import { UIToolsService } from '../../../common/UIToolsService';
+import { TableState } from '../../../common/table/table-state';
+import { sortRows } from '../../../common/table/table-sort';
 
 export interface AudienceSelectionModalArgs {
   title?: string;
@@ -62,6 +64,14 @@ export class AudienceSelectionModalComponent implements OnInit {
     });
   }
 
+  // Sorting comes from the shared TableState, the same one the list screens use.
+  // This modal loads every audience in one query, so there is nothing left for
+  // the server to order - sortRows sorts the array, and there is no paging.
+  readonly table = new TableState({
+    sortableFields: ['name', 'donorCount', 'createdDate'],
+    load: async () => { }
+  });
+
   // Filter audiences based on search term, with selected items first in multi-select mode
   getFilteredAudiences(): TargetAudience[] {
     let audiences = this.availableAudiences;
@@ -74,7 +84,11 @@ export class AudienceSelectionModalComponent implements OnInit {
       );
     }
 
-    // In multi-select mode, show selected items first
+    audiences = sortRows(audiences, this.table.sortColumns);
+
+    // In multi-select mode, show selected items first. Deliberately AFTER the
+    // sort: the two groups keep the chosen order inside themselves, and the
+    // user does not lose track of what they already picked.
     if (this.args?.multiSelect) {
       const selected = audiences.filter(a => this.isAudienceSelected(a));
       const unselected = audiences.filter(a => !this.isAudienceSelected(a));

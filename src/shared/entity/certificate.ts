@@ -57,6 +57,19 @@ export class Certificate extends IdEntity {
   })
   typeLabel?: string
 
+  // The name column shows TWO values: the recipient in bold, and the linked
+  // donor's name underneath. Ordering by recipientName alone left the second
+  // line unsorted, so the column carries both - recipient first, donor as the
+  // tie-breaker (see the fieldMap in certificate.controller).
+  @Fields.string<Certificate>({
+    caption: 'שם תורם',
+    allowNull: true,
+    sqlExpression: () => `(
+      select trim(coalesce(d."lastName",'') || ' ' || coalesce(d."firstName",''))
+      from "donors" d where d."id" = "certificates"."donorId")`
+  })
+  donorName?: string
+
   @Relations.toOne<Certificate, Donor>(() => Donor, {
     caption: 'תורם',
     field: 'donorId'

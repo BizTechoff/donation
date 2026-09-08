@@ -30,13 +30,13 @@
             <th *ngIf="args.multiSelect" class="checkbox-col">
               <input type="checkbox" [checked]="areAllSelected()" (change)="toggleSelectAll()" title="בחר/בטל הכל - על פני כל הדפים">
             </th>
-            <th class="sortable" [class.sorted]="isSorted('fullName')" (click)="toggleSort('fullName', $event)">
+            <th [class.sortable]="table.isSortable('fullName')" [class.sorted]="table.isSorted('fullName')" (click)="table.toggleSort('fullName', $event)">
               {{ (i18n.terms$ | async)?.donorNameColumn }}
-              <span class="sort-icon" *ngIf="getSortIcon('fullName')">{{getSortIcon('fullName')}}</span>
+              <span class="sort-icon" *ngIf="table.getSortIcon('fullName')">{{ table.getSortIcon('fullName')}}</span>
             </th>
-            <th>{{ (i18n.terms$ | async)?.phoneColumn }}</th>
-            <th>{{ (i18n.terms$ | async)?.emailColumn }}</th>
-            <th>{{ (i18n.terms$ | async)?.addressColumn }}</th>
+            <th [class.sortable]="table.isSortable('phone')" [class.sorted]="table.isSorted('phone')" (click)="table.toggleSort('phone', $event)">{{ (i18n.terms$ | async)?.phoneColumn }}<span class="sort-icon" *ngIf="table.getSortIcon('phone')">{{ table.getSortIcon('phone') }}</span></th>
+            <th [class.sortable]="table.isSortable('email')" [class.sorted]="table.isSorted('email')" (click)="table.toggleSort('email', $event)">{{ (i18n.terms$ | async)?.emailColumn }}<span class="sort-icon" *ngIf="table.getSortIcon('email')">{{ table.getSortIcon('email') }}</span></th>
+            <th [class.sortable]="table.isSortable('address')" [class.sorted]="table.isSorted('address')" (click)="table.toggleSort('address', $event)">{{ (i18n.terms$ | async)?.addressColumn }}<span class="sort-icon" *ngIf="table.getSortIcon('address')">{{ table.getSortIcon('address') }}</span></th>
           </tr>
         </thead>
         <tbody>
@@ -58,16 +58,16 @@
 
     <div class="table-footer">
       <div class="pagination-controls">
-        <button (click)="firstPage()" [disabled]="currentPage === 1">⏮ {{ (i18n.terms$ | async)?.firstButton }}</button>
-        <button (click)="previousPage()" [disabled]="currentPage === 1">← {{ (i18n.terms$ | async)?.previousButton }}</button>
+        <button (click)="table.firstPage()" [disabled]="table.isFirstPage">⏮ {{ (i18n.terms$ | async)?.firstButton }}</button>
+        <button (click)="table.previousPage()" [disabled]="table.isFirstPage">← {{ (i18n.terms$ | async)?.previousButton }}</button>
         <div class="page-numbers">
-          <button *ngFor="let page of getPageNumbers()" (click)="goToPage(page)" [class.active]="page === currentPage">{{page}}</button>
+          <button *ngFor="let page of table.getPageNumbers()" (click)="table.goToPage(page)" [class.active]="page === table.currentPage">{{page}}</button>
         </div>
-        <button (click)="nextPage()" [disabled]="currentPage === totalPages">{{ (i18n.terms$ | async)?.nextButton }} →</button>
-        <button (click)="lastPage()" [disabled]="currentPage === totalPages">{{ (i18n.terms$ | async)?.lastButton }} ⏭</button>
+        <button (click)="table.nextPage()" [disabled]="table.isLastPage">{{ (i18n.terms$ | async)?.nextButton }} →</button>
+        <button (click)="table.lastPage()" [disabled]="table.isLastPage">{{ (i18n.terms$ | async)?.lastButton }} ⏭</button>
       </div>
       <div class="pagination-info">
-        <span>{{ (i18n.terms$ | async)?.showingText }} {{(currentPage - 1) * pageSize + 1}} - {{Math.min(currentPage * pageSize, totalCount)}} {{ (i18n.terms$ | async)?.ofText }} {{totalCount}}</span>
+        <span>{{ (i18n.terms$ | async)?.showingText }} {{table.rangeStart}} - {{table.rangeEnd}} {{ (i18n.terms$ | async)?.ofText }} {{table.totalCount}}</span>
       </div>
     </div>
   </div>

@@ -17,6 +17,7 @@ import { Place } from '../entity/place';
 import { User } from '../entity/user';
 import { ContactPerson } from '../entity/contact-person';
 import { ExportLookups, LookupItem } from '../type/lookup.type';
+import { buildOrderBy } from '../utils/table-query'
 
 export interface DonorDetailsData {
   donor: Donor | null | undefined;
@@ -342,35 +343,20 @@ export class DonorController {
     // alphabetically within that group (per client Israel Glikson 1.7.2026:
     // "פעלדמאן דוד משה" was showing after "פעלדמאן חיים אריה"). Matches the
     // behavior a user gets by clicking the fullName column header.
-    let orderBy: any = { lastName: 'asc' as 'asc', firstName: 'asc' as 'asc' };
-    if (sortColumns && sortColumns.length > 0) {
-      orderBy = {};
-      sortColumns.forEach(sort => {
-        // Map frontend field names to backend entity fields
-        let fieldName = sort.field;
-        if (fieldName === 'fullName') {
-          // Sort by lastName, then firstName
-          orderBy.lastName = sort.direction;
-          orderBy.firstName = sort.direction;
-        } else if (fieldName === 'createdDate') {
-          orderBy.createdDate = sort.direction;
-        } else if (fieldName === 'phone') {
-          orderBy.primaryPhone = sort.direction;   // sqlExpression on Donor
-        } else if (fieldName === 'email') {
-          orderBy.primaryEmail = sort.direction;   // sqlExpression on Donor
-        } else if (fieldName === 'address') {
-          orderBy.primaryCityStreet = sort.direction; // sqlExpression on Donor
-        } else if (fieldName === 'lastDonationDate') {
-          orderBy.lastDonationDate = sort.direction;  // sqlExpression on Donor
-        }
-      });
-      // An unrecognized field must never leave orderBy EMPTY - that returns
-      // rows in arbitrary DB order, which reads as a broken sort. Fall back
-      // to the default name order instead.
-      if (Object.keys(orderBy).length === 0) {
-        orderBy = { lastName: 'asc' as 'asc', firstName: 'asc' as 'asc' };
+    // Ordering through the shared builder. phone / email / address map to the
+    // sqlExpression fields on Donor, so they are ordered by the DB over the
+    // whole result set - the donor-selection modal used to sort those two in
+    // memory, within the current page only.
+    const orderBy = buildOrderBy(
+      sortColumns,
+      { lastName: 'asc', firstName: 'asc' },
+      {
+        fullName: ['lastName', 'firstName'],
+        phone: 'primaryPhone',
+        email: 'primaryEmail',
+        address: 'primaryCityStreet'
       }
-    }
+    );
 
     // Build final where clause
     let whereClause: any = { isActive: true };

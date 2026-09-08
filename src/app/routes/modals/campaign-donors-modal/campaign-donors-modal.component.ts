@@ -7,6 +7,8 @@ import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { DonorService } from '../../../services/donor.service';
+import { TableState } from '../../../common/table/table-state';
+import { sortRows } from '../../../common/table/table-sort';
 
 export interface CampaignDonorsModalArgs {
   campaignId: string;
@@ -25,6 +27,25 @@ export class CampaignDonorsModalComponent implements OnInit {
 
   campaign!: Campaign;
   invitedDonors: Donor[] = [];
+
+  // Sorting via the shared TableState. Every column here shows a value read
+  // through a helper rather than a plain property, so the accessors below tell
+  // sortRows what the column actually displays.
+  readonly table = new TableState({
+    sortableFields: ['name', 'phone', 'email', 'level', 'city'],
+    load: async () => { }
+  });
+
+  /** The rows as displayed: the invited donors in the chosen order. */
+  get sortedInvitedDonors(): Donor[] {
+    return sortRows(this.invitedDonors, this.table.sortColumns, {
+      name: d => this.getDonorDisplayName(d),
+      phone: d => this.getDonorPhone(d),
+      email: d => this.getDonorEmail(d),
+      level: d => this.getDonorLevel(d),
+      city: d => this.getDonorCity(d)
+    });
+  }
   loading = false;
 
   campaignRepo = remult.repo(Campaign);
