@@ -157,7 +157,15 @@ export class AppComponent implements OnInit {
     document.documentElement.setAttribute('lang', this.i18n.currentLanguage)
   }
 
-  signOut() {
+  async signOut() {
+    // A1 - filters persist between screens but are cleared on the way out, so
+    // the next session never starts behind a filter nobody set (Zoom א׳
+    // 04:31-08:48, זום ב׳ ~0:33). Also covers closing via the X.
+    try {
+      await this.globalFilterService.clearFilters()
+    } catch (e) {
+      console.error('clearFilters on signOut failed', e)
+    }
     SignInController.signOut()
     remult.user = undefined
     this.router.navigate(['/'])

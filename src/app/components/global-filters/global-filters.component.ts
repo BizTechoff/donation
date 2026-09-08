@@ -122,9 +122,19 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
   }
   
   // עדכון פילטר ממתין (לא שולח ל-subscribers עדיין)
+  /**
+   * Z1 - filters apply the moment they change. The "סיים בחירה" gate was added
+   * long ago at Israel's request and the client asked to undo it (Zoom א׳
+   * 08:48-13:02). Applying immediately also closes Z19: the donor picker in
+   * gifts filters by what the SERVER has, and a pending-but-unsaved filter
+   * meant the server still knew nothing - the picker showed all 396 donors.
+   * And it removes the pending/applied gap that let the panel show one filter
+   * while the data obeyed another (one of the two W14 suspects).
+   */
   updatePendingFilter(key: keyof GlobalFilters, value: any) {
     this.pendingFilters = { ...this.pendingFilters, [key]: value };
     this.cdr.detectChanges();
+    void this.applyFilters();
   }
 
   // For backward compatibility
