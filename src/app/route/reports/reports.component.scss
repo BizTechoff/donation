@@ -2384,3 +2384,14 @@ td.year-col {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+// D1 - the donor's name in the report is a link to the donor card, styled the
+// same as C1 in the lists so the two behave and read alike.
+.donor-name-link {
+  color: #1a73e8;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}

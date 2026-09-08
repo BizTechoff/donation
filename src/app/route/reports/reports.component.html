@@ -253,7 +253,9 @@
           {{ (i18n.terms$ | async)?.showCurrencySummaryLabel }}
         </label>
         <label class="checkbox-label">
-          <input type="checkbox" [(ngModel)]="filters.showDonationDetails" (ngModelChange)="applyFilters()">
+          <!-- D2 - now a bulk action: ticking it opens every row, unticking closes
+               them. Individual rows can still be opened one at a time. -->
+          <input type="checkbox" [(ngModel)]="filters.showDonationDetails" (ngModelChange)="onShowDetailsToggled()">
           {{ (i18n.terms$ | async)?.showDonationDetailsLabel }}
         </label>
       </div>
@@ -493,15 +495,22 @@
           <tbody>
             <ng-container *ngFor="let row of groupedDonationReport; trackBy: trackByGroupRow; let i = index">
               <!-- Main row -->
+              <!-- D2 - the arrow is shown whenever the row HAS donations, not only
+                   when "הצג פירוט" is ticked; rows start collapsed, and the
+                   checkbox is a bulk open/close. D1 - the donor name is a link
+                   to the donor card, so its click must not also toggle the row. -->
               <tr class="main-row" [class.expanded]="row.isExpanded"
-                  [class.clickable]="filters.showDonationDetails && row.donations?.length"
-                  (click)="filters.showDonationDetails && row.donations?.length ? row.isExpanded = !row.isExpanded : null">
+                  [class.clickable]="row.donations?.length"
+                  (click)="row.donations?.length ? row.isExpanded = !row.isExpanded : null">
                 <td class="cell-ellipsis" [title]="row.donorName" [style.direction]="isEnglishName(row.donorName) ? 'ltr' : 'rtl'">
                   <span class="donor-name-wrapper">
-                    <span class="expand-icon" *ngIf="filters.showDonationDetails && row.donations?.length">
+                    <span class="expand-icon" *ngIf="row.donations?.length">
                       {{row.isExpanded ? '▶' : '▼'}}
                     </span>
-                    <strong>{{row.donorName}}</strong>
+                    <strong *ngIf="!row.donorId">{{row.donorName}}</strong>
+                    <strong *ngIf="row.donorId" class="donor-name-link"
+                            [title]="(i18n.terms$ | async)?.donorDetails || 'פרטי תורם'"
+                            (click)="openDonorCard(row.donorId, $event)">{{row.donorName}}</strong>
                   </span>
                 </td>
                 <td class="donor-address cell-ellipsis" [title]="row.donorDetails?.address || ''" *ngIf="filters.showDonorAddress && filters.groupBy === 'donor'">{{row.donorDetails?.address || '-'}}
@@ -532,7 +541,7 @@
                 </td>
               </tr>
               <!-- Donation details - aligned under year columns -->
-              <tr *ngIf="filters.showDonationDetails && row.isExpanded && row.donations?.length" class="details-row inline-details">
+              <tr *ngIf="row.isExpanded && row.donations?.length" class="details-row inline-details">
                 <!-- Empty cells for name and donor details columns -->
                 <td class="details-spacer"></td>
                 <td class="details-spacer" *ngIf="filters.showDonorAddress && filters.groupBy === 'donor'"></td>
