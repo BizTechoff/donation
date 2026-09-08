@@ -6,7 +6,7 @@ import { DocxContentControl, DocxCreateResponse } from '../type/letter.type';
 @Controller('letter')
 export class LetterController {
   
-  static createLetterDelegate: (type: Letter, contents: DocxContentControl[]) => Promise<DocxCreateResponse>
+  static createLetterDelegate: (type: Letter, contents: DocxContentControl[], fileName?: string) => Promise<DocxCreateResponse>
 
   @BackendMethod({ allowed: Allow.authenticated })
   static async createLetter(donationId = '', type: Letter, fieldValues: { [key: string]: string }, prefix = [] as string[], suffix = [] as string[]): Promise<DocxCreateResponse> {
@@ -33,7 +33,16 @@ export class LetterController {
     contents.push({ name: 'letter_suffix', value: suffix.join('\n') })
     console.table(contents)
 
-    return await LetterController.createLetterDelegate(type, contents)
+    // N1 - the client produces dozens of letters and the folder filled up with
+    // anonymous files named after the letter type (Zoom ב׳ ~2:01). Name the
+    // file after the donor instead, falling back to the type when there is no
+    // donor name. Sanitised for characters Windows rejects in a file name.
+    const donorName = (donation.donor?.fullName || '').trim()
+    const fileName = donorName
+      ? `${donorName.replace(/[\\/:*?"<>|]/g, ' ').replace(/\s+/g, ' ').trim()}.docx`
+      : undefined
+
+    return await LetterController.createLetterDelegate(type, contents, fileName)
   }
 
   // static async getValue(donation: Donation, type: Letter, field: string): Promise<string> {

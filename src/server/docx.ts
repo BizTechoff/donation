@@ -15,7 +15,7 @@ config()
 const isProduction = process.env['NODE_ENV'] === "production";
 
 
-LetterController.createLetterDelegate = async (type: Letter, contents = [] as DocxContentControl[]) => await createLetterDocX(type, contents)
+LetterController.createLetterDelegate = async (type: Letter, contents = [] as DocxContentControl[], fileName?: string) => await createLetterDocX(type, contents, fileName)
 console.info('createLetterDelegate succesfuly registered.')
 ReportController.createReportDelegate = async (report: Report, contents: Record<string, any>) => await createReportDocX(report, contents)
 console.info('createReportDelegate succesfuly registered.')
@@ -23,7 +23,7 @@ ReportController.createReportPdfDelegate = async (report: Report, contents: Reco
 console.info('createReportPdfDelegate succesfuly registered.')
 
 
-export const createLetterDocX = async (type: Letter, contents = [] as DocxContentControl[]) => {
+export const createLetterDocX = async (type: Letter, contents = [] as DocxContentControl[], fileNameOverride?: string) => {
 
     var result: DocxCreateResponse = { success: false, url: '', error: '', fileName: '' }
 
@@ -96,8 +96,9 @@ export const createLetterDocX = async (type: Letter, contents = [] as DocxConten
 
     // Convert buffer to base64 for client download
     const base64 = buf.toString('base64');
-    const fileName = `${type.caption}.docx`;
-    // const fileName = `${type.caption}_${new Date().getTime()}.docx`;
+    // N1 - the caller (LetterController) decides the name, because it is the
+    // one that knows the donor. Falls back to the letter type.
+    const fileName = fileNameOverride || `${type.caption}.docx`;
 
     result.success = true;
     result.url = `data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,${base64}`;

@@ -117,6 +117,37 @@ export function getPledgeSummary(
 }
 
 /**
+ * מנסח את שני סכומי ההתחייבות כמחרוזת אחת למכתב:
+ *   "<ששולם> מתוך סך <ההתחייבות> נדבת לבכם הטוב"
+ *
+ * הניסוח נקבע מפורשות בזום 24.08: יעקב ביקש "נתת 7,654 מתוך 10,000 על חשבון
+ * ההתחייבות", מוטי פסל את הסלאש ("פחות ברור ופחות מכובד"), ויעקב הוסיף את
+ * "נדבת לבכם הטוב". לכן הסדר: קודם מה שכבר שולם, אחר כך סך ההתחייבות.
+ *
+ * המחרוזת נכנסת לתוך משפט קיים בתבנית ה-DOCX -
+ *   "בהרימכם תרומת ה' בסך {תרומה} {סיבה_תרומה}, לכבוד התורה ולומדיה"
+ * ולכן היא חוזרת בלי פסיק בסוף; הפיסוק שייך לתבנית, לא לקוד.
+ *
+ * מקור אמת אחד לכל מקום שמציג את הצמד הזה - שינוי ניסוח נעשה כאן בלבד.
+ * `separator` ו-`suffix` פתוחים כדי שנוסח לועזי יוכל להעביר מילים אחרות
+ * (או מחרוזת ריקה) בלי לשכפל את הפונקציה.
+ */
+export const PLEDGE_SEPARATOR = 'מתוך סך'
+export const PLEDGE_SUFFIX = 'נדבת לבכם הטוב'
+
+export function formatPledgeAmount(
+  summary: PledgeSummary,
+  options: { currency?: string; separator?: string; suffix?: string } = {}
+): string {
+  const currency = options.currency || ''
+  const separator = options.separator ?? PLEDGE_SEPARATOR
+  const suffix = options.suffix ?? PLEDGE_SUFFIX
+  const paid = `${currency}${summary.paidTotal.toLocaleString()}`
+  const pledge = `${currency}${summary.pledgeTotal.toLocaleString()}`
+  return [paid, separator, pledge, suffix].filter(part => part).join(' ')
+}
+
+/**
  * מחשב כמה תקופות תשלום חלפו מאז תחילת ההו"ק
  */
 export function calculatePeriodsElapsed(

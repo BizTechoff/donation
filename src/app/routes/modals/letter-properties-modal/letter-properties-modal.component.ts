@@ -6,7 +6,7 @@ import { Company, Donation, DonorPlace, LetterTitle, LetterTitleDefault } from '
 import { Letter } from '../../../../shared/enum/letter';
 import { DonationController } from '../../../../shared/controllers/donation.controller';
 import { PaymentController } from '../../../../shared/controllers/payment.controller';
-import { getPledgeSummary } from '../../../../shared/utils/donation-utils';
+import { getPledgeSummary, formatPledgeAmount } from '../../../../shared/utils/donation-utils';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
 import { LetterService } from '../../../services/letter.service';
@@ -562,14 +562,15 @@ export class LetterPropertiesModalComponent implements OnInit {
       }
       case 'תרומה': {
         const currency = await this.getFieldValue('Currency_symbol')
-        // For pledge donations - show "currency pledgeTotal / currency paidTotal"
-        // so the letter reflects both the commitment and what has already been
-        // received against it. Regular donations - unchanged. Shared with the
-        // 'Amount' case above via getPledgeSummary helper - one source of truth.
+        // תרומה על חשבון התחייבות - המכתב מציג
+        // "<ששולם> מתוך סך <ההתחייבות> נדבת לבכם הטוב", הניסוח שנקבע בזום 24.08
+        // (הסלאש נפסל). הניסוח עצמו יושב ב-formatPledgeAmount, כך שכל מקום
+        // שמציג את הצמד הזה משתנה יחד. תרומה רגילה - ללא שינוי, המשפט הזה
+        // כולו לא מופיע.
         if (this.donation.donationType === 'commitment') {
           const payments = await PaymentController.getPaymentsByDonation(this.donation.id, 'התחייבות');
           const summary = getPledgeSummary(this.donation, payments);
-          result = `${currency}${summary.pledgeTotal.toLocaleString()} / ${currency}${summary.paidTotal.toLocaleString()}`;
+          result = formatPledgeAmount(summary, { currency });
         } else {
           result = `${currency}${this.donation.amount.toLocaleString()}`;
         }
@@ -988,7 +989,9 @@ export class LetterPropertiesModalComponent implements OnInit {
       );
 
       if (response.success) {
-        await this.ui.yesNoQuestion('מכתב הופק והורד בהצלחה', false);
+        // N2 - a toast that disappears on its own, instead of a dialog the
+        // user has to dismiss on every single letter.
+        this.ui.info('מכתב הופק והורד בהצלחה');
         this.dialogRef.close({
           selectedType: this.selectedLetterType,
           prefix: this.selectedPrefixLines.map(l => l.text),
