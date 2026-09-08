@@ -9,6 +9,7 @@ import {
 } from 'remult'
 import { Roles } from '../enum/roles'
 import { Place } from './place'
+import { DEFAULT_CURRENCY } from '../enum/currency'
 
 @Entity<Organization>('organizations', {
   allowApiCrud: Allow.authenticated,
@@ -47,7 +48,7 @@ export class Organization extends IdEntity {// ארגונים שתורמים ב�
     // Note: Stored as currency ID (e.g., 'ILS', 'USD')
     // Use getCurrencyType() from PayerService to get full CurrencyType object
   })
-  currencyId = 'ILS'
+  currencyId = DEFAULT_CURRENCY
 
   @Fields.string({
     caption: 'מספר חשבון',

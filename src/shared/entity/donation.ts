@@ -16,6 +16,7 @@ import { Bank } from './bank'
 import { Reminder } from './reminder'
 import { Roles } from '../enum/roles'
 import { calculateEffectiveAmount, calculatePaymentTotals, isPaymentBased } from '../utils/donation-utils'
+import { DEFAULT_CURRENCY } from '../enum/currency'
 
 @Entity<Donation>('donations', {
   allowApiCrud: Allow.authenticated,
@@ -69,7 +70,7 @@ export class Donation extends IdEntity {
     // Note: Stored as currency ID (e.g., 'ILS', 'USD')
     // Use getCurrencyType() from PayerService to get full CurrencyType object
   })
-  currencyId = 'ILS'
+  currencyId = DEFAULT_CURRENCY
 
   @Relations.toOne<Donation, Donor>(() => Donor, {
     caption: 'תורם',

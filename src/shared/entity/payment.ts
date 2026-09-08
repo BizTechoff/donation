@@ -9,6 +9,7 @@ import {
 } from 'remult'
 import { Donation } from './donation'
 import { Roles } from '../enum/roles'
+import { DEFAULT_CURRENCY } from '../enum/currency'
 
 @Entity<Payment>('payments', {
   allowApiCrud: Allow.authenticated,
@@ -48,7 +49,7 @@ export class Payment extends IdEntity {
   @Fields.string({
     caption: 'מטבע',
   })
-  currencyId = 'ILS'
+  currencyId = DEFAULT_CURRENCY
 
   @Fields.dateOnly({
     caption: 'תאריך תשלום',

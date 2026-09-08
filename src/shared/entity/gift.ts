@@ -7,6 +7,7 @@ import {
   Fields
 } from 'remult'
 import { Roles } from '../enum/roles'
+import { DEFAULT_CURRENCY } from '../enum/currency'
 
 @Entity<Gift>('gifts', {
   allowApiCrud: Allow.authenticated,
@@ -50,7 +51,7 @@ export class Gift extends IdEntity {
     // Note: Stored as currency ID (e.g., 'ILS', 'USD')
     // Use getCurrencyType() from PayerService to get full CurrencyType object
   })
-  currencyId = 'ILS'
+  currencyId = DEFAULT_CURRENCY
 
   @Fields.string({
     caption: 'הערות',

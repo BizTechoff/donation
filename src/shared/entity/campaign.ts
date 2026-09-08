@@ -11,6 +11,7 @@ import {
 import { Roles } from '../enum/roles'
 import { Place } from './place'
 import { User } from './user'
+import { DEFAULT_CURRENCY } from '../enum/currency'
 
 @Entity<Campaign>('campaigns', {
   allowApiCrud: Allow.authenticated,
@@ -50,7 +51,7 @@ export class Campaign extends IdEntity {
     // Note: Stored as currency ID (e.g., 'ILS', 'USD')
     // Use getCurrencyType() from PayerService to get full CurrencyType object
   })
-  currencyId = 'ILS'
+  currencyId = DEFAULT_CURRENCY
 
   @Fields.date({
     caption: 'תאריך התחלה',

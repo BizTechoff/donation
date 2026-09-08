@@ -11,6 +11,7 @@ import {
 import { User } from './user'
 import { Roles } from '../enum/roles'
 import { getCurrentTerms } from '../entity-captions'
+import { DEFAULT_CURRENCY } from '../enum/currency'
 
 @Entity<DonationMethod>('donation_methods', {
   allowApiCrud: Allow.authenticated,
@@ -87,7 +88,7 @@ export class DonationMethod extends IdEntity {
   @Fields.string({
     caption: 'מטבע',
   })
-  currency = 'ILS'
+  currency = DEFAULT_CURRENCY
 
   @Fields.number({
     caption: 'סכום מינימלי',
