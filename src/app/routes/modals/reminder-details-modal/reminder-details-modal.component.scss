@@ -1,5 +1,9 @@
 /* Modal Content */
 .reminder-details-modal {
+  // Z22 - without an explicit direction this modal laid its header out LTR,
+  // so "עריכת תזכורת" sat on the left and the X on the right - reversed
+  // compared to every other modal (Zoom ב׳ ~3:02).
+  direction: rtl;
   width: 100%;
   max-width: 1200px;
   height: 90vh;

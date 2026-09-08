@@ -7,6 +7,7 @@ import { remult } from 'remult';
 import { DonationController } from '../../../../shared/controllers/donation.controller';
 import { Bank, Campaign, Company, Country, Donation, DonationBank, DonationFile, DonationMethod, DonationOrganization, DonationPartner, Donor, DonorPlace, Organization, Reminder, User } from '../../../../shared/entity';
 import { UIToolsService } from '../../../common/UIToolsService';
+import { EntityChangedService } from '../../../services/entity-changed.service';
 import { I18nService } from '../../../i18n/i18n.service';
 import { DonorService } from '../../../services/donor.service';
 import { LetterService } from '../../../services/letter.service';
@@ -85,7 +86,8 @@ export class DonationDetailsModalComponent implements OnInit {
     private letter: LetterService,
     private donorService: DonorService,
     private payerService: PayerService,
-    public dialogRef: MatDialogRef<DonationDetailsModalComponent>
+    public dialogRef: MatDialogRef<DonationDetailsModalComponent>,
+    private entityChanged: EntityChangedService
   ) { }
 
   async ngOnInit() {
@@ -419,6 +421,20 @@ export class DonationDetailsModalComponent implements OnInit {
       this.ui.error('שגיאה בשמירת התרומה');
       return false;
     }
+  }
+
+  /**
+   * "+" in the files section. A file needs a donation ID to attach to, so a
+   * brand-new donation is saved first (client decision, Zoom 24.08.2026 W6 -
+   * same rule as family relations on a new donor), then the picker opens.
+   */
+  async addFile() {
+    if (this.isNewDonation || !this.donation?.id) {
+      const saved = await this.saveDonationCore();
+      if (!saved || !this.donation?.id) return;
+      this.entityChanged.notify('donation', this.donation.id);
+    }
+    this.fileUploadComponent?.openFilePicker();
   }
 
   async saveDonation() {

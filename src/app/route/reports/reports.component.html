@@ -484,7 +484,7 @@
                 {{ (i18n.terms$ | async)?.emailsColumn }} <mat-icon
                   class="sort-icon">{{getSortIcon('emails')}}</mat-icon>
               </th>
-              <th *ngFor="let year of hebrewYears" class="sortable-header" (click)="onSortChange('year_' + year)">
+              <th *ngFor="let year of hebrewYears" class="sortable-header year-col" (click)="onSortChange('year_' + year)">
                 {{year}} <mat-icon class="sort-icon">{{getSortIcon('year_' + year)}}</mat-icon>
               </th>
               <th *ngIf="filters.showActualPayments">{{ (i18n.terms$ | async)?.actualPaymentsColumn }}</th>
@@ -520,7 +520,7 @@
                   <span
                     *ngIf="!row.donorDetails || !row.donorDetails.emails || row.donorDetails.emails.length === 0">-</span>
                 </td>
-                <td *ngFor="let year of hebrewYears">
+                <td *ngFor="let year of hebrewYears" class="year-col">
                   {{row.formattedYearTotals?.[year] ?? '-'}}
                 </td>
                 <td *ngIf="filters.showActualPayments">
@@ -615,7 +615,7 @@
           <thead>
             <tr>
               <th>{{ (i18n.terms$ | async)?.currencyColumnSummary }}</th>
-              <th *ngFor="let year of hebrewYears">{{year}}</th>
+              <th *ngFor="let year of hebrewYears" class="year-col">{{year}}</th>
               <th>{{ (i18n.terms$ | async)?.totalColumnSummary }}</th>
             </tr>
           </thead>
@@ -629,7 +629,7 @@
                   ({{currencyTypes[cur].symbol}})
                 </span>
               </td>
-              <td *ngFor="let year of hebrewYears">
+              <td *ngFor="let year of hebrewYears" class="year-col">
                 {{ getCurrencySummaryYearAmount(cur, year) > 0
                    ? formatCurrencyWithSymbol(getCurrencySummaryYearAmount(cur, year), cur)
                    : '-' }}
@@ -640,7 +640,7 @@
             </tr>
             <!-- <tr class="shgetratesekel-row">
               <td><strong>בשקלים</strong></td>
-              <td *ngFor="let year of hebrewYears">
+              <td *ngFor="let year of hebrewYears" class="year-col">
                 ₪{{getCurrencySummaryYearTotal(year).toLocaleString()}}
               </td>
               <td><strong>₪{{getTotalInShekel().toLocaleString()}}</strong></td>

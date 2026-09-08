@@ -7,9 +7,14 @@
         <mat-icon>{{isNewDonor ? 'person_add' : 'person'}}</mat-icon>
       </div>
       <div class="header-text">
-        <h2>{{isNewDonor ? ((i18n.terms$ | async)?.addNewDonor) : ((i18n.terms$ | async)?.donorDetails)}}</h2>
+        <!-- F1 - name first and large, the label beside it on the same line,
+             address underneath (Zoom ב׳ ~0:23-0:25). -->
+        <h2 class="header-title-row">
+          <span class="header-donor-name" *ngIf="!isNewDonor && donor">{{donor.fullName}}</span>
+          <span class="header-label">{{isNewDonor ? ((i18n.terms$ | async)?.addNewDonor) : ((i18n.terms$ | async)?.donorDetails)}}</span>
+        </h2>
         <p class="header-subtitle" *ngIf="!isNewDonor && donor">
-          {{donor.fullName}}
+          {{getHeaderAddress()}}
         </p>
       </div>
     </div>
@@ -301,6 +306,26 @@
                   <button class="remove-contact-btn" (click)="removeDonorContact(donorContact)" title="הסר">
                     <mat-icon>close</mat-icon>
                   </button>
+                  <!-- H1 - סדר העמודות: תיאור בימין, ואז המספר, והקידומת
+                       צמודה לו משמאל (זום ב׳ ~0:01). -->
+                  <div class="form-group phone-description">
+                    <div class="field-title">
+                      <mat-icon class="field-icon">description</mat-icon>
+                      <label>תיאור</label>
+                    </div>
+                    <!-- (ngModelChange)="onContactChange(donorContact)" -->
+                    <input type="text" class="form-control" [(ngModel)]="donorContact.description"
+                      placeholder="למשל: בית, עבודה...">
+                  </div>
+                  <div class="form-group phone-number">
+                    <div class="field-title">
+                      <mat-icon class="field-icon">phone</mat-icon>
+                      <label>מספר</label>
+                    </div>
+                    <!-- (ngModelChange)="onContactChange(donorContact)" -->
+                    <input type="tel" class="form-control" [(ngModel)]="donorContact.phoneNumber"
+                      placeholder="מספר טלפון">
+                  </div>
                   <div class="form-group phone-prefix">
                     <div class="field-title">
                       <mat-icon class="field-icon">flag</mat-icon>
@@ -312,24 +337,6 @@
                         {{ prefix.label }}
                       </option>
                     </select>
-                  </div>
-                  <div class="form-group phone-number">
-                    <div class="field-title">
-                      <mat-icon class="field-icon">phone</mat-icon>
-                      <label>מספר</label>
-                    </div>
-                    <!-- (ngModelChange)="onContactChange(donorContact)" -->
-                    <input type="tel" class="form-control" [(ngModel)]="donorContact.phoneNumber"
-                      placeholder="מספר טלפון">
-                  </div>
-                  <div class="form-group phone-description">
-                    <div class="field-title">
-                      <mat-icon class="field-icon">description</mat-icon>
-                      <label>תיאור</label>
-                    </div>
-                    <!-- (ngModelChange)="onContactChange(donorContact)" -->
-                    <input type="text" class="form-control" [(ngModel)]="donorContact.description"
-                      placeholder="למשל: בית, עבודה...">
                   </div>
                 </div>
               </div>
@@ -471,7 +478,7 @@
                         <mat-icon class="field-icon">person_outline</mat-icon>
                         <label>{{ (i18n.terms$ | async)?.spouseTitleEnglish }}</label>
                       </div>
-                      <select class="form-control" [(ngModel)]="donor.wifeTitleEnglish">
+                      <select dir="ltr" class="form-control" [(ngModel)]="donor.wifeTitleEnglish">
                         <option value="">-- Select Title --</option>
                         <option value="Mr.">Mr.</option>
                         <option value="Mrs.">Mrs.</option>

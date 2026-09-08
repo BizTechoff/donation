@@ -2369,3 +2369,18 @@
 
 // Print styles for Personal Donor Report
 // Note: Global print styles are in styles.scss
+
+// Z7 - every year column gets the SAME width, so the header row is symmetric
+// instead of each column sizing to its own content (Zoom א׳ 63:23-64:35).
+// Z24 - and the width is enough for a four-digit amount, which used to be
+// clipped (Zoom ב׳ ~3:11).
+th.year-col,
+td.year-col {
+  width: 92px;
+  min-width: 92px;
+  max-width: 92px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

@@ -117,6 +117,9 @@
     position: relative;
 
     .search-input {
+      // Z11 - without border-box the 56px of padding is ADDED to the 100%
+      // width, and the overflow lands on the button next to it.
+      box-sizing: border-box;
       width: 100%;
       padding: 12px 40px 12px 16px;
       border: 2px solid #e1e8ed;
@@ -165,6 +168,12 @@
   }
 
   .btn-create-new {
+    // Z11 - the search group is position:relative and therefore paints above
+    // a static sibling. Give the button its own stacking position so its "+"
+    // is visible at rest, not only while hovered, and stop it shrinking.
+    position: relative;
+    z-index: 1;
+    flex-shrink: 0;
     background: linear-gradient(135deg, #10b981 0%, #059669 100%);
     color: white;
     border: none;

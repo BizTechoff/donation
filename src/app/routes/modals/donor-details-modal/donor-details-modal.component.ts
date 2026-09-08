@@ -7,6 +7,7 @@ import { Circle, Company, Country, Donation, Donor, DonorAddressType, DonorConta
 import { ContactPerson } from '../../../../shared/entity/contact-person';
 import { AddressComponents } from '../../../common/osm-address-input/osm-address-input.component';
 import { UIToolsService } from '../../../common/UIToolsService';
+import { EntityChangedService } from '../../../services/entity-changed.service';
 import { I18nService } from '../../../i18n/i18n.service';
 import { CircleDetailsModalComponent } from '../circle-details-modal/circle-details-modal.component';
 import { CircleSelectionModalComponent } from '../circle-selection-modal/circle-selection-modal.component';
@@ -114,7 +115,8 @@ export class DonorDetailsModalComponent implements OnInit {
     private ui: UIToolsService,
     private changeDetector: ChangeDetectorRef,
     public dialogRef: MatDialogRef<any>,
-    private busyService: BusyService
+    private busyService: BusyService,
+    private entityChanged: EntityChangedService
   ) { }
 
   async ngOnInit() {
@@ -395,22 +397,29 @@ export class DonorDetailsModalComponent implements OnInit {
     return { valid: true };
   }
 
-  async saveDonor() {
-    if (!this.donor) return;
+  /**
+   * Save without closing. Client decision (Zoom 24.08.2026, W13/W16): "שמור
+   * תורם" keeps the card open and refreshes, and any action that needs an ID
+   * (family relation, files) saves automatically first. After the first save
+   * of a new donor the card reloads as an existing donor, so every section
+   * that was hidden behind isNewDonor appears - no reopen needed.
+   */
+  private async saveDonorCore(): Promise<boolean> {
+    if (!this.donor) return false;
 
     try {
 
       const familyName = this.donor.lastName
       if (!familyName) {
         this.ui.error('שם משפחה: שדה חובה');
-        return;
+        return false;
       }
 
       // Validate reception hours before saving
       const validationResult = this.validateReceptionHours();
       if (!validationResult.valid) {
         this.ui.error(validationResult.error || 'שגיאה בשעות הקבלה');
-        return;
+        return false;
       }
 
       // Force new array references for JSON fields so Remult detects mutations
@@ -472,13 +481,32 @@ export class DonorDetailsModalComponent implements OnInit {
         console.log('Saved all donor relations using Unit of Work pattern');
       }
 
-      this.changed = wasNew || this.hasChanges();
-      this.dialogRef.close(this.changed);
+      this.changed = this.changed || wasNew || this.hasChanges();
+
+      if (wasNew && this.donor.id) {
+        // First save of a new donor: reload as an existing donor so the
+        // sections gated by isNewDonor (navigation, relations, actions) show.
+        const data = await DonorController.getDonorDetailsData(this.donor.id);
+        await this.applyDonorDetailsData(data);
+        this.dialogRef.disableClose = false;
+      }
+      this.originalDonorData = JSON.stringify(this.donor);
+
+      // Lists behind the card refresh now, not only on close.
+      this.entityChanged.notify('donor', this.donor.id);
+      return true;
     } catch (error) {
       const msg = `Error saving donor: ${error}`
       console.error(msg);
       this.ui.error(msg)
+      return false;
     }
+  }
+
+  /** The "שמור תורם" button - saves and STAYS OPEN (client decision). */
+  async saveDonor() {
+    const ok = await this.saveDonorCore();
+    if (ok) this.ui.info(this.i18n.currentTerms.donorSaved || 'התורם נשמר');
   }
 
   async onHomePlaceSelected(place: Place | undefined) {
@@ -1203,6 +1231,14 @@ export class DonorDetailsModalComponent implements OnInit {
   }
 
   // Convert Place to AddressComponents for the address input component
+  /** F1 - the one line shown under the donor name in the card header. */
+  getHeaderAddress(): string {
+    const place = this.donorPlaces?.find(dp => dp.place)?.place;
+    if (!place) return '';
+    const parts = [place.street, place.houseNumber, place.city].filter(p => !!p);
+    return parts.join(' ');
+  }
+
   getHomeAddressComponents(): AddressComponents | undefined {
     console.log('getHomeAddressComponents called - looking in donorPlaces');
 
@@ -1957,8 +1993,9 @@ export class DonorDetailsModalComponent implements OnInit {
 
   async addNewFamilyRelation() {
     if (!this.donor?.id) {
-      this.ui.info('יש לשמור את התורם תחילה');
-      return;
+      // New donor: save first (client decision), then continue as usual.
+      const saved = await this.saveDonorCore();
+      if (!saved || !this.donor?.id) return;
     }
 
     const result = await openDialog(FamilyRelationDetailsModalComponent, (dlg) => {

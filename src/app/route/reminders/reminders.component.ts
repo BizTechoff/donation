@@ -28,6 +28,11 @@ import { DonorMapController } from '../../../shared/controllers/donor-map.contro
 })
 export class RemindersComponent implements OnInit, OnDestroy {
 
+  // P1 - the summary block is hidden per client request. Flip to true to restore.
+
+  showSummary = false;
+
+
   reminders: Reminder[] = [];
   filteredReminders: Reminder[] = [];
   loading = false;

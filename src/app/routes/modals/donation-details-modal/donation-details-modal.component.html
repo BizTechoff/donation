@@ -50,7 +50,7 @@
       <mat-icon>note</mat-icon>
       <span>{{ i18n.terms.notes || 'הערות' }}</span>
     </button>
-    <button class="nav-btn" (click)="scrollToSection('section-files')" *ngIf="!isNewDonation"
+    <button class="nav-btn" (click)="scrollToSection('section-files')"
       [title]="i18n.terms.attachedFiles || 'קבצים'">
       <mat-icon>attach_file</mat-icon>
       <span>{{ i18n.terms.files || 'קבצים' }}</span>
@@ -575,11 +575,11 @@
       </div>
 
       <!-- קבצים מצורפים -->
-      <div id="section-files" class="section files-section" *ngIf="!isNewDonation">
+      <div id="section-files" class="section files-section">
         <h3>
           <mat-icon class="section-icon">attach_file</mat-icon>
           {{i18n.terms.attachedFiles || 'קבצים מצורפים'}}
-          <button class="add-btn" (click)="fileUploadComponent.openFilePicker()"
+          <button class="add-btn" (click)="addFile()"
             [title]="i18n.terms.uploadFile || 'העלה קובץ'">
             <mat-icon>add</mat-icon>
           </button>

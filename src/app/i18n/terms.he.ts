@@ -775,6 +775,7 @@ export const termsHe = {
   bankTransfer: 'העברה בנקאית',
   standingOrderMethod: 'הוראת קבע',
   amountFromFilter: 'סכום מ-',
+  amountToFilter: 'עד סכום',
   campaignFilter: 'קמפיין',
   productFilter: 'מוצר',
   generalProduct: 'כללי',
@@ -1144,6 +1145,7 @@ export const termsHe = {
   familyInformation: 'מידע משפחתי',
   generalPreferences: 'העדפות כלליות',
   saveDonor: 'שמור תורם',
+  donorSaved: 'התורם נשמר',
   unauthorizedOperation: 'אינך מורשה לפעולה זו',
 
   // Certificates component hardcoded terms

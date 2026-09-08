@@ -777,6 +777,7 @@ export const termsEn = {
   bankTransfer: 'Bank Transfer',
   standingOrderMethod: 'Standing Order',
   amountFromFilter: 'Amount From',
+  amountToFilter: 'Amount To',
   campaignFilter: 'Campaign',
   productFilter: 'Product',
   generalProduct: 'General',
@@ -1146,6 +1147,7 @@ export const termsEn = {
   familyInformation: 'Family Information',
   generalPreferences: 'General Preferences',
   saveDonor: 'Save Donor',
+  donorSaved: 'Donor saved',
   unauthorizedOperation: 'Unauthorized Operation',
 
   // Certificates component hardcoded terms

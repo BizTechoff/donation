@@ -14,6 +14,9 @@ export interface DonorSelectionModalArgs {
   excludeIds?: string[];
   multiSelect?: boolean;
   selectedIds?: string[];
+  /** Z5 - set false when the picker is used for filtering, where creating a
+   *  new donor is meaningless. Defaults to allowed for every existing caller. */
+  allowCreate?: boolean;
 }
 
 @DialogConfig({

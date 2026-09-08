@@ -11,7 +11,7 @@
         <div class="header-text">
           <h2>{{modalTitle}}</h2>
           <p class="header-subtitle" *ngIf="!loading && !isGiftsMode">
-            תרומות: {{fullDonationsCount}} <ng-container *ngFor="let c of fullDonationsByCurrency; let i = index">{{i > 0 ? ' + ' : ''}}{{c.symbol}}{{c.total | number:'1.2-2'}}</ng-container><ng-container *ngIf="commitmentDonationsCount > 0"> <span class="subtitle-divider">|</span> <span class="commitment-text">התחייבויות: {{commitmentDonationsCount}} <ng-container *ngFor="let c of commitmentDonationsByCurrency; let i = index">{{i > 0 ? ' + ' : ''}}{{c.symbol}}{{c.total | number:'1.2-2'}}</ng-container></span></ng-container>
+            תרומות: {{fullDonationsCount}} <ng-container *ngFor="let c of fullDonationsByCurrency; let i = index">{{i > 0 ? ' + ' : ''}}{{c.symbol}}{{c.total | amount}}</ng-container><ng-container *ngIf="commitmentDonationsCount > 0"> <span class="subtitle-divider">|</span> <span class="commitment-text">התחייבויות: {{commitmentDonationsCount}} <ng-container *ngFor="let c of commitmentDonationsByCurrency; let i = index">{{i > 0 ? ' + ' : ''}}{{c.symbol}}{{c.total | amount}}</ng-container></span></ng-container>
           </p>
           <p class="header-subtitle" *ngIf="!loading && isGiftsMode">
             סה"כ {{totalDonations}} מתנות
@@ -307,7 +307,7 @@
           <span>סה"כ תרומות: {{fullDonationsCount}}</span>
         </div>
         <div class="summary-item" *ngFor="let c of fullDonationsByCurrency">
-          <span>{{c.symbol}}{{c.total | number:'1.2-2'}}</span>
+          <span>{{c.symbol}}{{c.total | amount}}</span>
         </div>
         <ng-container *ngIf="commitmentDonationsCount > 0">
           <div class="summary-divider">|</div>
@@ -316,7 +316,7 @@
             <span>סה"כ התחייבויות: {{commitmentDonationsCount}}</span>
           </div>
           <div class="summary-item commitment" *ngFor="let c of commitmentDonationsByCurrency">
-            <span>{{c.symbol}}{{c.total | number:'1.2-2'}}</span>
+            <span>{{c.symbol}}{{c.total | amount}}</span>
           </div>
         </ng-container>
       </div>

@@ -33,30 +33,30 @@
       <table class="data-table">
       <thead>
         <tr>
-          <th class="sortable" [class.sorted]="isSorted('fullName')" (click)="toggleSort('fullName', $event)">
+          <th [class.sortable]="table.isSortable('fullName')" [class.sorted]="table.isSorted('fullName')" (click)="table.toggleSort('fullName', $event)">
             {{ (i18n.terms$ | async)?.name }}
-            <span class="sort-icon" *ngIf="getSortIcon('fullName')">{{ getSortIcon('fullName') }}</span>
+            <span class="sort-icon" *ngIf="table.getSortIcon('fullName')">{{ table.getSortIcon('fullName') }}</span>
           </th>
-          <th class="sortable" [class.sorted]="isSorted('address')" (click)="toggleSort('address', $event)">
+          <th [class.sortable]="table.isSortable('address')" [class.sorted]="table.isSorted('address')" (click)="table.toggleSort('address', $event)">
             {{ (i18n.terms$ | async)?.address }}
-            <span class="sort-icon" *ngIf="getSortIcon('address')">{{ getSortIcon('address') }}</span>
+            <span class="sort-icon" *ngIf="table.getSortIcon('address')">{{ table.getSortIcon('address') }}</span>
           </th>
-          <th class="sortable" [class.sorted]="isSorted('phone')" (click)="toggleSort('phone', $event)">
+          <th [class.sortable]="table.isSortable('phone')" [class.sorted]="table.isSorted('phone')" (click)="table.toggleSort('phone', $event)">
             {{ (i18n.terms$ | async)?.phone }}
-            <span class="sort-icon" *ngIf="getSortIcon('phone')">{{ getSortIcon('phone') }}</span>
+            <span class="sort-icon" *ngIf="table.getSortIcon('phone')">{{ table.getSortIcon('phone') }}</span>
           </th>
-          <th class="sortable" [class.sorted]="isSorted('email')" (click)="toggleSort('email', $event)">
+          <th class="col-email" [class.sortable]="table.isSortable('email')" [class.sorted]="table.isSorted('email')" (click)="table.toggleSort('email', $event)">
             {{ (i18n.terms$ | async)?.email }}
-            <span class="sort-icon" *ngIf="getSortIcon('email')">{{ getSortIcon('email') }}</span>
+            <span class="sort-icon" *ngIf="table.getSortIcon('email')">{{ table.getSortIcon('email') }}</span>
           </th>
-          <th class="sortable" [class.sorted]="isSorted('lastDonationDate')" (click)="toggleSort('lastDonationDate', $event)">
+          <th class="col-last-donation" [class.sortable]="table.isSortable('lastDonationDate')" [class.sorted]="table.isSorted('lastDonationDate')" (click)="table.toggleSort('lastDonationDate', $event)">
             {{ (i18n.terms$ | async)?.lastDonation }}
-            <span class="sort-icon" *ngIf="getSortIcon('lastDonationDate')">{{ getSortIcon('lastDonationDate') }}</span>
+            <span class="sort-icon" *ngIf="table.getSortIcon('lastDonationDate')">{{ table.getSortIcon('lastDonationDate') }}</span>
           </th>
-          <!-- <th class="sortable" [class.sorted]="isSorted('averageDonation')" (click)="toggleSort('averageDonation', $event)">
+          <!-- <th [class.sortable]="table.isSortable('averageDonation')" [class.sorted]="table.isSorted('averageDonation')" (click)="table.toggleSort('averageDonation', $event)">
             <div>{{ (i18n.terms$ | async)?.averageDonation }}</div>
             <small>({{ (i18n.terms$ | async)?.inLast12Months }})</small>
-            <span class="sort-icon" *ngIf="getSortIcon('averageDonation')">{{ getSortIcon('averageDonation') }}</span>
+            <span class="sort-icon" *ngIf="table.getSortIcon('averageDonation')">{{ table.getSortIcon('averageDonation') }}</span>
           </th> -->
           <th class="actions-header">
             <div class="actions-header-content">
@@ -80,20 +80,23 @@
         <tr *ngFor="let donor of this.donors" class="clickable-row" (dblclick)="openDonorDonations(donor)">
           <td class="cell-ellipsis" [title]="donor.lastAndFirstName">
             <div class="donor-name">
-              <strong>{{donor.lastAndFirstName}}</strong>
+              <div class="donor-name-row">
+                <strong class="donor-name-link" (click)="editDonor(donor); $event.stopPropagation()" [title]="(i18n.terms$ | async)?.donorDetails || 'פרטי תורם'">{{donor.lastAndFirstName}}</strong>
+                <button class="btn-icon btn-add-donation" (click)="addDonationForDonor(donor); $event.stopPropagation()" [title]="'תרומה חדשה ל' + donor.lastAndFirstName">💰<span class="plus-badge">+</span></button>
+              </div>
               <!-- <small *ngIf="donor.idNumber">({{ (i18n.terms$ | async)?.idNumberShort }}: {{donor.idNumber}})</small> -->
             </div>
           </td>
           <td class="donor-address cell-ellipsis" [title]="getDonorAddress(donor.id)">{{getDonorAddress(donor.id)}}</td>
           <td class="cell-ellipsis" [title]="getDonorPhone(donor.id)">{{getDonorPhone(donor.id)}}</td>
-          <td class="cell-ellipsis" [title]="getDonorEmail(donor.id)">{{getDonorEmail(donor.id)}}</td>
+          <td class="cell-ellipsis col-email" [title]="getDonorEmail(donor.id)">{{getDonorEmail(donor.id)}}</td>
           <td>
             <div>{{ formatHebrewDate(getDonorLastDonationDate(donor.id)) }}</div>
             <small *ngIf="getDonorLastDonationAmount(donor.id)">{{getDonorLastDonationCurrencySymbol(donor.id)}}{{getDonorLastDonationAmount(donor.id) | number:'1.0-0'}}{{isDonorLastDonationAsPartner(donor.id) ? ' - שותף' : ''}}</small>
             <small *ngIf="getDonorLastDonationReason(donor.id) && getDonorLastDonationReason(donor.id) !== '-'"> - {{getDonorLastDonationReason(donor.id)}}</small>
           </td>
           <!-- <td>
-            <div>{{getDonorAverageDonationCurrencySymbol(donor.id)}}{{getDonorAverageDonation(donor.id) | number:'1.2-2'}}</div>
+            <div>{{getDonorAverageDonationCurrencySymbol(donor.id)}}{{getDonorAverageDonation(donor.id) | amount}}</div>
             <small *ngIf="getDonorDonationsCount(donor.id) === 1">תרומה אחת</small>
             <small *ngIf="getDonorDonationsCount(donor.id) > 1">{{getDonorDonationsCount(donor.id)}} תרומות</small>
           </td> -->
@@ -118,24 +121,24 @@
       <div class="pagination-controls">
         <button
           class="btn-page"
-          (click)="firstPage()"
-          [disabled]="currentPage === 1 || loading">
-          ⏮ {{ (i18n.terms$ | async)?.first }}
+          (click)="table.firstPage()"
+          [disabled]="table.isFirstPage || loading">
+          ⏭ {{ (i18n.terms$ | async)?.first }}
         </button>
 
         <button
           class="btn-page"
-          (click)="previousPage()"
-          [disabled]="currentPage === 1 || loading">
-          ← {{ (i18n.terms$ | async)?.previous }}
+          (click)="table.previousPage()"
+          [disabled]="table.isFirstPage || loading">
+          → {{ (i18n.terms$ | async)?.previous }}
         </button>
 
         <div class="page-numbers">
           <button
-            *ngFor="let page of getPageNumbers()"
+            *ngFor="let page of table.getPageNumbers()"
             class="btn-page-number"
-            [class.active]="page === currentPage"
-            (click)="goToPage(page)"
+            [class.active]="page === table.currentPage"
+            (click)="table.goToPage(page)"
             [disabled]="loading">
             {{page}}
           </button>
@@ -143,21 +146,21 @@
 
         <button
           class="btn-page"
-          (click)="nextPage()"
-          [disabled]="currentPage === totalPages || loading">
-          {{ (i18n.terms$ | async)?.next }} →
+          (click)="table.nextPage()"
+          [disabled]="table.isLastPage || loading">
+          {{ (i18n.terms$ | async)?.next }} ←
         </button>
 
         <button
           class="btn-page"
-          (click)="lastPage()"
-          [disabled]="currentPage === totalPages || loading">
-          {{ (i18n.terms$ | async)?.last }} ⏭
+          (click)="table.lastPage()"
+          [disabled]="table.isLastPage || loading">
+          {{ (i18n.terms$ | async)?.last }} ⏮
         </button>
       </div>
 
       <div class="pagination-info">
-        <span>{{ (i18n.terms$ | async)?.showing }} {{(currentPage - 1) * pageSize + 1}} - {{Math.min(currentPage * pageSize, totalCount)}} {{ (i18n.terms$ | async)?.of }} {{totalCount}}</span>
+        <span>{{ (i18n.terms$ | async)?.showing }} {{table.rangeStart}} - {{table.rangeEnd}} {{ (i18n.terms$ | async)?.of }} {{table.totalCount}}</span>
       </div>
     </div>
   </div>

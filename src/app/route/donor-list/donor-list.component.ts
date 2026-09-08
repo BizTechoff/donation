@@ -14,6 +14,8 @@ import { GlobalFilterService } from '../../services/global-filter.service';
 import { HebrewDateService } from '../../services/hebrew-date.service';
 import { PrintService } from '../../services/print.service';
 import { ActiveFilter, FilterOption, NavigationRecord } from '../../shared/modal-navigation-header/modal-navigation-header.component';
+import { TableLoadRequest, TableState } from '../../common/table/table-state';
+import { EntityChangedService } from '../../services/entity-changed.service';
 
 @Component({
   selector: 'app-donor-list',
@@ -50,14 +52,19 @@ export class DonorListComponent implements OnInit, OnDestroy {
   // used to leave the user mid-page instead of at the top).
   @ViewChild('scrollableTable') scrollableTable?: ElementRef<HTMLElement>;
 
-  // Pagination
-  currentPage = 1;
-  pageSize = 50;
-  totalCount = 0;
-  totalPages = 0;
-
-  // Sorting
-  sortColumns: Array<{ field: string; direction: 'asc' | 'desc' }> = [];
+  // Table behaviour - sorting, paging, scroll-reset and the persisted per-user
+  // sort - lives in the shared TableState (app/common/table/table-state.ts).
+  // The markup and SCSS stay local to this component by design.
+  readonly table = new TableState({
+    pageSize: 50,
+    settingsKey: 'donorList',
+    // All five are ordered in SQL: fullName maps to lastName+firstName, the
+    // rest map to sqlExpression fields on Donor. lastDonationDate matches the
+    // displayed value: commitments excluded, partner donations included.
+    sortableFields: ['fullName', 'address', 'phone', 'email', 'lastDonationDate'],
+    scrollContainer: () => this.scrollableTable?.nativeElement,
+    load: req => this.loadDonors(req)
+  });
   private currentUser?: User;
 
   constructor(
@@ -68,19 +75,33 @@ export class DonorListComponent implements OnInit, OnDestroy {
     private busy: BusyService,
     private hebrewDateService: HebrewDateService,
     private printService: PrintService,
-    private excelExportService: ExcelExportService
+    private excelExportService: ExcelExportService,
+    private entityChanged: EntityChangedService
   ) { }
 
   async ngOnInit() {
-    // Subscribe to filter changes
+    // Subscribe to filter changes - a filter change alters the result set, so
+    // it always restarts at page 1.
     this.subscription.add(
       this.globalFilterService.filters$.subscribe(() => {
-        this.refreshData();
+        this.table.reloadFromFirstPage();
       })
     );
 
-    // Initial data load (includes base data on first call)
-    await this.refreshData();
+    // A donor saved in an open card shows up here immediately (W16) - the
+    // card no longer has to close for the list to learn about it.
+    this.subscription.add(
+      this.entityChanged.on('donor').subscribe(() => {
+        this.table.reload();
+      })
+    );
+
+    // Base data first, then the saved sort, and only then the first fetch -
+    // so the very first request already carries the user's persisted sort.
+    await this.loadBaseData();
+    this.baseDataLoaded = true;
+    await this.table.loadSettings();
+    await this.table.reload();
   }
 
   /**
@@ -89,6 +110,13 @@ export class DonorListComponent implements OnInit, OnDestroy {
    * On first call, also loads base data (user settings, mobile labels, etc.)
    */
   async refreshData() {
+    await this.table.reload();
+  }
+
+  /**
+   * The fetch itself. Called by TableState with the current page / size / sort.
+   */
+  private async loadDonors(req: TableLoadRequest) {
     await this.busy.doWhileShowingBusy(async () => {
       try {
         // Load base data once on first call
@@ -100,22 +128,13 @@ export class DonorListComponent implements OnInit, OnDestroy {
         // Prepare search term (trim and undefined if empty)
         const searchTerm = this.searchTerm?.trim() || undefined;
 
-        // console.log('refreshData: Fetching donors with searchTerm:', searchTerm, 'page:', this.currentPage, 'sorting:', this.sortColumns);
-
-        // Get total count for pagination with search term
-        this.totalCount = await this.donorService.countFiltered(searchTerm);
-        this.totalPages = Math.ceil(this.totalCount / this.pageSize);
-
-        // Fetch donors with current filters: global filters (auto), searchTerm, pagination, and sorting
-        this.donors = await this.donorService.findFiltered(
-          searchTerm,
-          undefined,
-          this.currentPage,
-          this.pageSize,
-          this.sortColumns
-        );
-
-        // console.log('refreshData 4: Loaded', this.donors.length, 'donors');
+        // Count and page rows are independent - fire both together, one hop.
+        const [totalCount, donors] = await Promise.all([
+          this.donorService.countFiltered(searchTerm),
+          this.donorService.findFiltered(searchTerm, undefined, req.page, req.pageSize, req.sort)
+        ]);
+        this.table.totalCount = totalCount;
+        this.donors = donors;
 
         // Load all related data using DonorMapController (same as map popup)
         const donorDataList = await DonorMapController.loadDonorsMapDataByIds(
@@ -127,13 +146,6 @@ export class DonorListComponent implements OnInit, OnDestroy {
         donorDataList.forEach(data => {
           this.donorDataMap.set(data.donor.id, data);
         });
-
-        // Reset scroll to the top of the table body after each refresh - so
-        // paging + search-change lands the user at the top of the new results
-        // instead of leaving them mid-page (Israel Glikson, 1.7.2026).
-        if (this.scrollableTable?.nativeElement) {
-          this.scrollableTable.nativeElement.scrollTop = 0;
-        }
 
       } catch (error) {
         console.error('Error refreshing donors:', error);
@@ -198,8 +210,7 @@ export class DonorListComponent implements OnInit, OnDestroy {
     }
 
     this.searchTermTimeout = setTimeout(async () => {
-      this.currentPage = 1;
-      await this.refreshData();
+      await this.table.reloadFromFirstPage();
       this.saveSearchTerm();
       // Restore focus to the search input - so user can keep typing without
       // having to click back into the field after results refresh.
@@ -424,79 +435,18 @@ export class DonorListComponent implements OnInit, OnDestroy {
 
   onSearchChanged(searchTerm: string) {
     // Implement search logic here
-    console.log('Search term changed:', searchTerm);
   }
 
   onFiltersChanged(filters: ActiveFilter[]) {
     // Implement filter logic here
-    console.log('Filters changed:', filters);
   }
 
   onNavigateNext() {
     // Implement navigation logic
-    console.log('Navigate to next');
   }
 
   onNavigatePrevious() {
     // Implement navigation logic
-    console.log('Navigate to previous');
-  }
-
-  // Pagination methods
-  async goToPage(page: number) {
-    if (page >= 1 && page <= this.totalPages) {
-      this.currentPage = page;
-      await this.refreshData();
-    }
-  }
-
-  async nextPage() {
-    if (this.currentPage < this.totalPages) {
-      this.currentPage++;
-      await this.refreshData();
-    }
-  }
-
-  async previousPage() {
-    if (this.currentPage > 1) {
-      this.currentPage--;
-      await this.refreshData();
-    }
-  }
-
-  async firstPage() {
-    this.currentPage = 1;
-    await this.refreshData();
-  }
-
-  async lastPage() {
-    this.currentPage = this.totalPages;
-    await this.refreshData();
-  }
-
-  getPageNumbers(): number[] {
-    const pages: number[] = [];
-    const maxPagesToShow = 5;
-
-    if (this.totalPages <= maxPagesToShow) {
-      for (let i = 1; i <= this.totalPages; i++) {
-        pages.push(i);
-      }
-    } else {
-      const halfWindow = Math.floor(maxPagesToShow / 2);
-      let startPage = Math.max(1, this.currentPage - halfWindow);
-      let endPage = Math.min(this.totalPages, startPage + maxPagesToShow - 1);
-
-      if (endPage - startPage < maxPagesToShow - 1) {
-        startPage = Math.max(1, endPage - maxPagesToShow + 1);
-      }
-
-      for (let i = startPage; i <= endPage; i++) {
-        pages.push(i);
-      }
-    }
-
-    return pages;
   }
 
   // Sorting methods
@@ -508,11 +458,7 @@ export class DonorListComponent implements OnInit, OnDestroy {
         const user = await userRepo.findId(userId, {useCache: false});
         if (user) {
           this.currentUser = user;
-          // console.log('loadUserSettings',this.currentUser?.settings)
-          // Load saved sort settings
-          if (this.currentUser?.settings?.donorList?.sort) {
-            this.sortColumns = this.currentUser.settings.donorList.sort;
-          }
+          // The saved sort is loaded by TableState.loadSettings()
           // Load saved search term
           if (this.currentUser?.settings?.donorList?.searchTerm !== undefined) {
             this.searchTerm = this.currentUser.settings.donorList.searchTerm;
@@ -521,26 +467,6 @@ export class DonorListComponent implements OnInit, OnDestroy {
       }
     } catch (error) {
       console.error('Error loading user settings:', error);
-    }
-  }
-
-  async saveSortSettings() {
-    if (!this.currentUser) return;
-
-    try {
-      if (!this.currentUser.settings) {
-        this.currentUser.settings = {} as any;
-      }
-      if (this.currentUser.settings && !this.currentUser.settings.donorList) {
-        this.currentUser.settings.donorList = {};
-      }
-      if (this.currentUser.settings && this.currentUser.settings.donorList) {
-        this.currentUser.settings.donorList.sort = this.sortColumns;
-      }
-
-      await remult.repo(User).save(this.currentUser);
-    } catch (error) {
-      console.error('Error saving sort settings:', error);
     }
   }
 
@@ -564,58 +490,6 @@ export class DonorListComponent implements OnInit, OnDestroy {
     }
   }
 
-  async toggleSort(field: string, event: MouseEvent) {
-    if (event.ctrlKey || event.metaKey) {
-      // CTRL/CMD pressed - multi-column sort
-      const existingIndex = this.sortColumns.findIndex(s => s.field === field);
-      if (existingIndex >= 0) {
-        // Toggle direction or remove
-        const current = this.sortColumns[existingIndex];
-        if (current.direction === 'asc') {
-          this.sortColumns[existingIndex].direction = 'desc';
-        } else {
-          // Remove from sort
-          this.sortColumns.splice(existingIndex, 1);
-        }
-      } else {
-        // Add new sort column
-        this.sortColumns.push({ field, direction: 'asc' });
-      }
-    } else {
-      // Single column sort
-      const existing = this.sortColumns.find(s => s.field === field);
-      if (existing && this.sortColumns.length === 1) {
-        // Toggle direction
-        existing.direction = existing.direction === 'asc' ? 'desc' : 'asc';
-      } else {
-        // Set as only sort column
-        this.sortColumns = [{ field, direction: 'asc' }];
-      }
-    }
-
-    // All sorting is now handled on server - just reload with new sort
-    await this.refreshData();
-    this.saveSortSettings();
-  }
-
-  getSortIcon(field: string): string {
-    const sortIndex = this.sortColumns.findIndex(s => s.field === field);
-    if (sortIndex === -1) return '';
-
-    const sort = this.sortColumns[sortIndex];
-    const arrow = sort.direction === 'asc' ? '↑' : '↓';
-
-    // Show number if multiple sorts
-    if (this.sortColumns.length > 1) {
-      return `${arrow}${sortIndex + 1}`;
-    }
-    return arrow;
-  }
-
-  isSorted(field: string): boolean {
-    return this.sortColumns.some(s => s.field === field);
-  }
-
   formatHebrewDate(date: Date | undefined): string {
     if (!date) return '-';
     try {
@@ -624,6 +498,14 @@ export class DonorListComponent implements OnInit, OnDestroy {
     } catch (error) {
       console.error('Error formatting Hebrew date:', error);
       return '-';
+    }
+  }
+
+  /** New-donation column: opens a new donation with this donor preselected. */
+  async addDonationForDonor(donor: Donor) {
+    const changed = await this.ui.donationDetailsDialog('new', { donorId: donor.id });
+    if (changed) {
+      await this.refreshData();
     }
   }
 
@@ -649,7 +531,7 @@ export class DonorListComponent implements OnInit, OnDestroy {
           undefined,
           undefined, // no page
           undefined, // no pageSize = fetch all
-          this.sortColumns
+          this.table.sortColumns
         );
 
         // Load related data for all donors
@@ -728,7 +610,7 @@ export class DonorListComponent implements OnInit, OnDestroy {
           undefined,
           undefined, // no page
           undefined, // no pageSize = fetch all
-          this.sortColumns
+          this.table.sortColumns
         );
 
         // Load related data for all donors

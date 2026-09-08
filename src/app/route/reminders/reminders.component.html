@@ -8,7 +8,9 @@
         }}</button>
     </div>
 
-    <div class="summary-cards">
+    <!-- P1 - אזור הסיכומים מוסתר לבקשת הלקוח (מייל ישראל: "לצמצם את החלק
+         העליון"). אותו דפוס כמו Z12 ברשימת התרומות. -->
+    <div class="summary-cards" *ngIf="showSummary">
       <div class="summary-card today">
         <div class="card-icon">🔔</div>
         <div class="card-content">

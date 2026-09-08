@@ -14,7 +14,10 @@
           <label>{{ (i18n.terms$ | async)?.searchLabel }}</label>
           <input #searchInput type="text" [(ngModel)]="filterText" (ngModelChange)="onSearchChange()" [placeholder]="(i18n.terms$ | async)?.searchDonorPlaceholder || ''" autofocus cdkFocusInitial>
         </div>
-        <button class="btn-create" (click)="createNewDonor()">{{ (i18n.terms$ | async)?.createNewDonorButton }}</button>
+        <!-- Z5 - creating a donor makes no sense when the picker is used to
+             choose whom to FILTER by (Zoom א׳ 65:18-66:13). Callers that do
+             want it pass allowCreate. -->
+        <button *ngIf="args?.allowCreate !== false" class="btn-create" (click)="createNewDonor()">{{ (i18n.terms$ | async)?.createNewDonorButton }}</button>
       </div>
     </div>
   </div>

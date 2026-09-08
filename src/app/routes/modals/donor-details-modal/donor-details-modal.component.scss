@@ -3619,3 +3619,23 @@
     }
   }
 }
+
+// F1 - donor name and the "פרטי תורם" label share one line, name dominant,
+// address on the line below (Zoom 24.08.2026 ~0:23-0:25).
+.header-title-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+
+  .header-donor-name {
+    font-size: 22px;
+    font-weight: 700;
+  }
+
+  .header-label {
+    font-size: 14px;
+    font-weight: 400;
+    opacity: 0.85;
+  }
+}

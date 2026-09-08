@@ -315,6 +315,18 @@
     font-weight: 600;
   }
 
+  // Clickable donor name - opens the donor card. Single click on the NAME
+  // opens details, double click on the ROW opens donations (client decision,
+  // Zoom 24.08.2026).
+  strong.donor-name-link {
+    color: #1e5fa8;
+    cursor: pointer;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
   small {
     color: #7f8c8d;
     font-size: 11px;
@@ -667,4 +679,67 @@
       font-size: 12px;
     }
   }
+}
+
+// New-donation icon lives INSIDE the donor-name cell as an OVERLAY: absolutely
+// positioned at the cell's end, display:none until the row is hovered - so it
+// reserves no width, the column stays full, and the text never moves.
+.donor-name-row {
+  position: relative;
+}
+
+tr:hover .btn-add-donation {
+  display: inline-flex;
+}
+
+.btn-add-donation {
+  display: none;          // shown on row hover only
+  position: absolute;
+  inset-inline-end: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  align-items: center;
+  background: transparent;
+  border-radius: 6px;
+  padding: 1px 2px;       // beats .btn-icon's 8px - the icon stays compact
+
+  // .btn-icon's generic hover sets transform: scale(1.15), which REPLACES the
+  // translateY(-50%) that centers this absolutely-positioned button - so the
+  // icon dropped downward. Keep both: recenter and scale from the middle.
+  &:hover {
+    background: transparent;
+    transform: translateY(-50%) scale(1.15);
+  }
+
+  .plus-badge {
+    position: absolute;   // sitting ON the moneybag itself
+    top: 28%;                 // a bit above center
+    inset-inline-end: 1px;    // tucked closer to the moneybag
+    transform: translateY(-50%);
+    font-size: 9px;
+    font-weight: 900;
+    line-height: 10px;
+    width: 10px;
+    text-align: center;
+    color: #fff;
+    background: #1d6b41;
+    border-radius: 50%;
+    box-shadow: 0 0 0 1px #fff;
+    pointer-events: none;
+  }
+}
+
+// Z2 - the email column reads left-to-right, so align it left inside the RTL
+// table instead of leaving it ragged on the right (Zoom א׳ 28:50-29:07).
+.col-email {
+  direction: ltr;
+  text-align: left;
+}
+
+// Z3 - "תרומה אחרונה" was far wider than its content needed, squeezing the
+// columns that matter (Zoom א׳ 29:07-29:56).
+.col-last-donation {
+  width: 150px;
+  min-width: 150px;
+  max-width: 150px;
 }

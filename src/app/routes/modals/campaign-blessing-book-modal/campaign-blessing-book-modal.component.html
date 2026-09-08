@@ -196,7 +196,7 @@
                    *ngIf="donorBlessing.blessing?.blessingBookType && donorBlessing.donation"
                    (click)="openDonationDetails(donorBlessing.donation)">
                 <mat-icon class="cell-icon">attach_money</mat-icon>
-                <span class="amount">{{donorBlessing.donation.amount | number:'1.2-2'}} ₪</span>
+                <span class="amount">{{donorBlessing.donation.amount | amount}} ₪</span>
               </div>
               <!-- Show button if no donation selected yet -->
               <button *ngIf="donorBlessing.blessing?.blessingBookType && !donorBlessing.donation"
