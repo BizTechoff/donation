@@ -49,11 +49,17 @@ async function startup() {
   // A beacon cannot carry headers or read a response, so this route relies on
   // the same session cookie as the rest of the API, and always answers 204.
   app.post('/api/session/clear-global-filters', async (req, res) => {
+    // Answer immediately: a beacon cannot read a response, and the browser is
+    // already tearing the page down.
     res.sendStatus(204)
     try {
       const sessionUser = (req as any).session?.['user']
       if (!sessionUser?.id) return
-      await api.withRemult(req, undefined as any, async () => {
+
+      // withRemultAsync, NOT withRemult - the latter is the express middleware
+      // (req, res, next) and would swallow this callback as `next`, running it
+      // outside a remult context with nothing awaiting it or catching its errors.
+      await api.withRemultAsync(req, async () => {
         const user = await remult.repo(User).findId(sessionUser.id)
         if (user?.settings?.globalFilters) {
           user.settings = { ...user.settings, globalFilters: undefined }
