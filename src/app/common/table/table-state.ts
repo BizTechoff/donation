@@ -123,10 +123,21 @@ export class TableState {
     return this.sortColumns.some(s => s.field === field)
   }
 
-  /** '↑' / '↓', with the priority number appended while multi-sorting. */
+  /**
+   * W5 - "כשלוחצים על סינון לפי תאריך משהו זז שם". A sortable column that is
+   * not yet sorted returns the neutral '⇅' rather than an empty string, so the
+   * icon element EXISTS from the first render. It used to be born on the first
+   * click (every template guards it with *ngIf on this value), which widened
+   * the header and shoved the whole table sideways - the movement the client
+   * demonstrated. The space is now reserved up front, and as a bonus the user
+   * can see which columns are sortable at all.
+   *
+   * '↑' / '↓' once sorted, with the priority number appended while multi-sorting.
+   * Non-sortable columns still return '' so nothing is drawn for them.
+   */
   getSortIcon(field: string): string {
     const i = this.sortColumns.findIndex(s => s.field === field)
-    if (i === -1) return ''
+    if (i === -1) return this.isSortable(field) ? '⇅' : ''
     const arrow = this.sortColumns[i].direction === 'asc' ? '↑' : '↓'
     return this.sortColumns.length > 1 ? `${arrow}${i + 1}` : arrow
   }

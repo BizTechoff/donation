@@ -151,17 +151,30 @@ a:hover {
             background: rgba(255, 255, 255, 0.1);
           }
 
+          /* W5 - the tint alone marks the sorted column. Bolding it changed
+             the width of the header text and shifted the whole table on every
+             click, which is the movement the client reported. */
           &.sorted {
             background: rgba(255, 255, 255, 0.15);
-            font-weight: 700;
           }
         }
 
+        /* W5 - a fixed slot so ⇅ → ↑ → ↓ never changes the header's width. */
         .sort-icon {
+          display: inline-block;
+          min-width: 1em;
+          text-align: center;
           font-size: 12px;
           font-weight: bold;
           opacity: 0.9;
           margin-inline-start: 4px;
+        }
+
+        /* The neutral ⇅ is a hint that the column CAN be sorted - dimmed, so it
+           does not read as an active sort. */
+        &:not(.sorted) .sort-icon {
+          opacity: 0.35;
+          font-weight: normal;
         }
       }
     }
@@ -630,16 +643,31 @@ th.sortable {
     background: rgba(128, 128, 128, 0.12);
   }
 
+  /* W5 - a tint, not bold: changing the font weight changes the text width
+     and shifts every column beside it on each click. */
   &.sorted {
-    font-weight: 700;
+    background: rgba(128, 128, 128, 0.18);
   }
 }
 
+/* W5 - a fixed slot for the icon, so swapping ⇅ for ↑ or ↓ cannot change the
+   header's width. min-width, not width, so the priority number of a multi-sort
+   still has room to grow into. The neutral state is dimmed: it is a hint that
+   the column can be sorted, not a claim that it is. */
 .sort-icon {
+  display: inline-block;
+  min-width: 1em;
+  text-align: center;
   font-size: 12px;
   font-weight: bold;
   opacity: 0.9;
   margin-inline-start: 4px;
+}
+
+th:not(.sorted) > .sort-icon,
+th:not(.sorted) .sort-icon {
+  opacity: 0.3;
+  font-weight: normal;
 }
 
 /* C3 - an email cell that opens a new Gmail message on a single click.
@@ -652,5 +680,30 @@ th.sortable {
 
   &:hover {
     text-decoration: underline;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Keep the "מציג 1 - 10 מתוך N" line clear of the floating search button.
+ *
+ * .global-search-fab is position:fixed at bottom:24px left:24px, so it sits on
+ * top of the bottom-left corner of EVERY screen. In an RTL table footer that
+ * corner is exactly where the pagination line ends, and the button was covering
+ * the total - the user saw "מציג 1 - 10 מ" and nothing after it.
+ *
+ * padding-left and not padding-inline-end on purpose: the button is pinned to
+ * the physical left edge whatever the text direction, so the clearance has to
+ * be physical too.
+ *
+ * One rule here rather than in each screen's stylesheet - the footer is the
+ * same footer everywhere, and only two of the screens style it at all today.
+ * ------------------------------------------------------------------------ */
+.pagination-info {
+  padding-left: 90px;
+}
+
+@media (max-width: 768px) {
+  .pagination-info {
+    padding-left: 64px; /* the button shrinks to bottom:16px left:16px there */
   }
 }
