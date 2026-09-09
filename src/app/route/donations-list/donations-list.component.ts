@@ -641,11 +641,6 @@ export class DonationsListComponent implements OnInit, OnDestroy {
     return donor.fatherName ? `בן ${donor.fatherName}` : '';
   }
 
-  getDonorHomeAddress(donation: Donation): string {
-    if (!donation.donor) return '-';
-    return (donation.donor as any).homeAddress || '-';
-  }
-
   getAmountInShekel(donation: Donation): number {
     const rate = this.currencyTypes[donation.currencyId]?.rateInShekel || 1;
     return donation.amount * rate;

@@ -464,13 +464,7 @@ export class DonorGiftsListComponent implements OnInit, OnDestroy {
   async onPrint() {
     await this.busy.doWhileShowingBusy(async () => {
       try {
-        // Build filters (same as refreshData)
-        const localFilters: DonorGiftFilters = {
-          searchDonorName: this.searchDonorName?.trim() || undefined,
-          selectedDonorId: this.selectedDonorId?.trim() || undefined,
-          selectedGiftId: this.selectedGiftId?.trim() || undefined,
-          selectedYear: this.selectedYear?.trim() || undefined
-        };
+        const localFilters = this.buildFilters();
 
         // Fetch ALL donor gifts (no pagination)
         const allDonorGifts = await DonorGiftController.findFilteredDonorGifts(
@@ -523,13 +517,7 @@ export class DonorGiftsListComponent implements OnInit, OnDestroy {
   async onExport() {
     await this.busy.doWhileShowingBusy(async () => {
       try {
-        // Build filters (same as refreshData)
-        const localFilters: DonorGiftFilters = {
-          searchDonorName: this.searchDonorName?.trim() || undefined,
-          selectedDonorId: this.selectedDonorId?.trim() || undefined,
-          selectedGiftId: this.selectedGiftId?.trim() || undefined,
-          selectedYear: this.selectedYear?.trim() || undefined
-        };
+        const localFilters = this.buildFilters();
 
         // Fetch ALL donor gifts (no pagination)
         const allDonorGifts = await DonorGiftController.findFilteredDonorGifts(

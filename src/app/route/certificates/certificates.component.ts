@@ -36,7 +36,6 @@ export class CertificatesComponent implements OnInit, OnDestroy {
   loading = false;
 
   // Expose Math to template
-  Math = Math;
 
   // Filters
   filterFromParasha = '';

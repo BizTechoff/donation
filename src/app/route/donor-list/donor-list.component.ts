@@ -32,7 +32,6 @@ export class DonorListComponent implements OnInit, OnDestroy {
   private baseDataLoaded = false;
 
   // Expose Math to template
-  Math = Math;
 
   // Map for donor stats from DonorMapController
   donorDataMap = new Map<string, DonorMapData>();
