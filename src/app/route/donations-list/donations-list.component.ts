@@ -351,6 +351,18 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * C2 - double-clicking a row opens that donor's donations list, the same as
+   * double-clicking a row in the donor list. Guarded on donorId because a row
+   * without a linked donor has nothing to open.
+   */
+  async openDonorDonationsFromRow(donation: Donation) {
+    if (!donation.donorId) return;
+    await this.ui.donorDonationsDialog(
+      donation.donorId, 'donations', this.getDonorName(donation)
+    );
+  }
+
+  /**
    * Z13 - a new donation for the donor on this row, prefilled, from the
    * donations list itself. Same call as donor-list.addDonationForDonor so the
    * two screens open the identical dialog in the identical state.
