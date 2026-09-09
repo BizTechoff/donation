@@ -36,14 +36,12 @@ export class RemindersComponent implements OnInit, OnDestroy {
 
 
   reminders: Reminder[] = [];
-  filteredReminders: Reminder[] = [];
   loading = false;
 
   // Remult repo
   reminderRepo = remult.repo(Reminder);
 
   // Expose Math to template
-  Math = Math;
 
   // Maps for donor-related data
   donorPhoneMap = new Map<string, string>();
@@ -91,7 +89,6 @@ export class RemindersComponent implements OnInit, OnDestroy {
   activeTab: 'today' | 'week' | 'overdue' | 'all' = 'all';
 
   private filterSubscription?: Subscription;
-  private searchTermTimeout: any;
   private donorSearchSubject = new Subject<string>();
 
   constructor(
@@ -167,28 +164,32 @@ export class RemindersComponent implements OnInit, OnDestroy {
   }
 
   /** Fetches one page. TableState owns page/pageSize/sort and the scroll reset. */
+  /**
+   * The filters exactly as the server expects them - built in ONE place.
+   *
+   * This block used to be copied three times: once for the screen, once for
+   * print and once for export. The copies drifted, which is how the tab
+   * (היום / השבוע / באיחור) ended up applied on screen but missing from both
+   * print and export - Yaakov would stand on "היום", see four reminders, press
+   * print and get all of them.
+   */
+  private buildFilters(): any {
+    const filters: any = {};
+    if (this.filterDateFrom) filters.dateFrom = this.filterDateFrom;
+    if (this.filterDateTo) filters.dateTo = this.filterDateTo;
+    if (this.searchTerm?.trim()) filters.searchTerm = this.searchTerm;
+    if (this.filterReminderType?.trim()) filters.reminderType = this.filterReminderType;
+    if (this.filterDonorSearch?.trim()) filters.donorSearch = this.filterDonorSearch;
+    // The tab is a filter like the rest, and the server applies it - so paging,
+    // the total count, print and export all agree with what is on screen.
+    filters.tab = this.activeTab;
+    return filters;
+  }
+
   private async loadReminders(req: TableLoadRequest) {
     this.loading = true;
     try {
-      // Build filters (local filters only)
-      // Global filters are fetched from user.settings in the backend
-      const filters: any = {};
-
-      if (this.filterDateFrom) {
-        filters.dateFrom = this.filterDateFrom;
-      }
-      if (this.filterDateTo) {
-        filters.dateTo = this.filterDateTo;
-      }
-      if (this.searchTerm && this.searchTerm.trim() !== '') {
-        filters.searchTerm = this.searchTerm;
-      }
-      if (this.filterReminderType && this.filterReminderType.trim() !== '') {
-        filters.reminderType = this.filterReminderType;
-      }
-      if (this.filterDonorSearch && this.filterDonorSearch.trim() !== '') {
-        filters.donorSearch = this.filterDonorSearch;
-      }
+      const filters = this.buildFilters();
 
       // Get count, summary stats, and reminders in a single server round-trip
       const { count, summary, reminders } = await this.reminderService.getRemindersData(
@@ -213,11 +214,6 @@ export class RemindersComponent implements OnInit, OnDestroy {
         this.donorCountryIdMap = relatedData.donorCountryIdMap;
       }
 
-      // Initialize filteredReminders
-      this.filteredReminders = [...this.reminders];
-
-      // Apply local filters (tabs, parasha)
-      this.applyLocalFilters();
 
     } catch (error) {
       console.error('Error loading reminders:', error);
@@ -230,9 +226,6 @@ export class RemindersComponent implements OnInit, OnDestroy {
     if (this.filterSubscription) {
       this.filterSubscription.unsubscribe();
     }
-    if (this.searchTermTimeout) {
-      clearTimeout(this.searchTermTimeout);
-    }
     this.donorSearchSubject.complete();
   }
 
@@ -242,34 +235,11 @@ export class RemindersComponent implements OnInit, OnDestroy {
   overdueCountStat = 0;
   completedThisMonthCountStat = 0;
 
-  applyLocalFilters() {
-    let filtered = [...this.reminders];
+  // The tabs are applied by the SERVER now (reminder.controller buildWhereClause).
+  // applyLocalFilters used to filter this.reminders - one page - so a reminder
+  // due today on page 3 never showed under "היום", and the count in the footer
+  // ignored the tab entirely.
 
-    // Apply tab filter
-    switch (this.activeTab) {
-      case 'today':
-        filtered = filtered.filter(r => r.isDueToday && !r.isCompleted);
-        break;
-      case 'week':
-        const today = new Date();
-        const oneWeekFromNow = new Date(today.getTime() + (7 * 24 * 60 * 60 * 1000));
-        filtered = filtered.filter(r =>
-          !r.isCompleted &&
-          r.dueDate >= today &&
-          r.dueDate <= oneWeekFromNow
-        );
-        break;
-      case 'overdue':
-        filtered = filtered.filter(r => r.isOverdue);
-        break;
-      case 'all':
-      default:
-        // No additional filter
-        break;
-    }
-
-    this.filteredReminders = filtered;
-  }
 
   onLocalFilterChange() {
     // A filter changes the result set - back to page 1, not just a reload of
@@ -486,11 +456,13 @@ getTypeText(type: string): string {
 
   switchTab(tab: 'today' | 'week' | 'overdue' | 'all') {
     this.activeTab = tab;
-    this.applyLocalFilters();
+    // The tab changes the RESULT SET, so it goes back to the server and back to
+    // page 1 - the same as any other filter.
+    this.table.reloadFromFirstPage();
   }
 
   applyParashaFilter() {
-    this.applyLocalFilters();
+    this.table.reloadFromFirstPage();
   }
 
   /**
@@ -676,24 +648,7 @@ getTypeText(type: string): string {
   async onPrint() {
     await this.busy.doWhileShowingBusy(async () => {
       try {
-        // Build filters (same as refreshData)
-        const filters: any = {};
-
-        if (this.filterDateFrom) {
-          filters.dateFrom = this.filterDateFrom;
-        }
-        if (this.filterDateTo) {
-          filters.dateTo = this.filterDateTo;
-        }
-        if (this.searchTerm && this.searchTerm.trim() !== '') {
-          filters.searchTerm = this.searchTerm;
-        }
-        if (this.filterReminderType && this.filterReminderType.trim() !== '') {
-          filters.reminderType = this.filterReminderType;
-        }
-        if (this.filterDonorSearch && this.filterDonorSearch.trim() !== '') {
-          filters.donorSearch = this.filterDonorSearch;
-        }
+        const filters = this.buildFilters();
 
         // Fetch ALL reminders (no pagination)
         const allReminders = await this.reminderService.findFiltered(
@@ -748,24 +703,7 @@ getTypeText(type: string): string {
   async onExport() {
     await this.busy.doWhileShowingBusy(async () => {
       try {
-        // Build filters (same as refreshData)
-        const filters: any = {};
-
-        if (this.filterDateFrom) {
-          filters.dateFrom = this.filterDateFrom;
-        }
-        if (this.filterDateTo) {
-          filters.dateTo = this.filterDateTo;
-        }
-        if (this.searchTerm && this.searchTerm.trim() !== '') {
-          filters.searchTerm = this.searchTerm;
-        }
-        if (this.filterReminderType && this.filterReminderType.trim() !== '') {
-          filters.reminderType = this.filterReminderType;
-        }
-        if (this.filterDonorSearch && this.filterDonorSearch.trim() !== '') {
-          filters.donorSearch = this.filterDonorSearch;
-        }
+        const filters = this.buildFilters();
 
         // Fetch ALL reminders (no pagination)
         const allReminders = await this.reminderService.findFiltered(

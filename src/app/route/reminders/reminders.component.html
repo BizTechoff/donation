@@ -184,7 +184,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let reminder of filteredReminders" [class.overdue]="reminder.isOverdue"
+          <tr *ngFor="let reminder of reminders" [class.overdue]="reminder.isOverdue"
             [class.today]="reminder.isDueToday" [class.completed]="reminder.isCompleted">
 
             <td class="date-col"

@@ -22,6 +22,7 @@ export class ReminderService {
       searchTerm?: string
       reminderType?: string
       donorSearch?: string
+      tab?: 'today' | 'week' | 'overdue' | 'all'
     } = {},
     page: number = 1,
     pageSize: number = 50,
@@ -110,6 +111,7 @@ export class ReminderService {
       searchTerm?: string
       reminderType?: string
       donorSearch?: string
+      tab?: 'today' | 'week' | 'overdue' | 'all'
     } = {},
     page: number = 1,
     pageSize: number = 50,

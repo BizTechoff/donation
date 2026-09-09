@@ -34,6 +34,7 @@ export class ReminderController {
       searchTerm?: string
       reminderType?: string
       donorSearch?: string
+      tab?: 'today' | 'week' | 'overdue' | 'all'
     } = {},
     page: number = 1,
     pageSize: number = 50,
@@ -83,6 +84,7 @@ export class ReminderController {
       searchTerm?: string
       reminderType?: string
       donorSearch?: string
+      tab?: 'today' | 'week' | 'overdue' | 'all'
     } = {}
   ): Promise<number> {
     const where = await ReminderController.buildWhereClause(filters)
@@ -100,6 +102,7 @@ export class ReminderController {
       searchTerm?: string
       reminderType?: string
       donorSearch?: string
+      tab?: 'today' | 'week' | 'overdue' | 'all'
     } = {}
   ): Promise<{
     todayCount: number
@@ -136,6 +139,7 @@ export class ReminderController {
       searchTerm?: string
       reminderType?: string
       donorSearch?: string
+      tab?: 'today' | 'week' | 'overdue' | 'all'
     } = {},
     page: number = 1,
     pageSize: number = 50,
@@ -191,9 +195,44 @@ export class ReminderController {
       searchTerm?: string
       reminderType?: string
       donorSearch?: string
+      tab?: 'today' | 'week' | 'overdue' | 'all'
     } = {}
   ): Promise<any> {
     const where: any = { isActive: true }
+
+    // The tab (היום / השבוע / באיחור / הכל) is a FILTER like any other, and it
+    // belongs here rather than in the component.
+    //
+    // It used to be applied in the browser, over `this.reminders` - which holds
+    // ONE PAGE. So "היום" only ever found today's reminders that happened to
+    // land on the current page, the footer counted the unfiltered total, and
+    // print and export - which fetch their own rows - skipped the tab entirely
+    // and produced every reminder instead of the ones on screen.
+    //
+    // Matches the entity getters exactly: isDueToday and isOverdue both read
+    // dueDate and both exclude completed reminders.
+    if (filters.tab && filters.tab !== 'all') {
+      const startOfToday = new Date()
+      startOfToday.setHours(0, 0, 0, 0)
+      const startOfTomorrow = new Date(startOfToday)
+      startOfTomorrow.setDate(startOfTomorrow.getDate() + 1)
+
+      where.isCompleted = false
+      switch (filters.tab) {
+        case 'today':
+          where.dueDate = { $gte: startOfToday, $lt: startOfTomorrow }
+          break
+        case 'week': {
+          const inAWeek = new Date(startOfToday)
+          inAWeek.setDate(inAWeek.getDate() + 7)
+          where.dueDate = { $gte: startOfToday, $lte: inAWeek }
+          break
+        }
+        case 'overdue':
+          where.dueDate = { $lt: startOfToday }
+          break
+      }
+    }
 
     // Apply reminder type filter
     if (filters.reminderType && filters.reminderType.trim() !== '') {
@@ -220,7 +259,17 @@ export class ReminderController {
       const donorIds = await DonorController.searchDonorIdsAcrossAllFields(filters.donorSearch)
 
       if (donorIds.length === 0) {
-        where.donorId = null // This will return no reminders
+        // No donor matches the text. The old line here was
+        //     where.donorId = null   // "This will return no reminders"
+        // and the comment was simply wrong: donorId = null MATCHES every
+        // reminder that has no donor at all. So searching for a donor who does
+        // not exist returned the donor-less reminders instead of nothing -
+        // the user typed "רכ", no donor by that name exists, and four
+        // reminders with an empty donor column came back as if they matched.
+        //
+        // An id can never be the empty string, so this genuinely matches
+        // nothing - which is what a search with no results must return.
+        where.donorId = ''
       } else {
         // Combine with existing donor filter if exists
         if (where.$or) {
@@ -236,9 +285,11 @@ export class ReminderController {
       }
     }
 
-    // Date range filter
+    // Date range filter. MERGED into whatever the tab already put on dueDate -
+    // assigning a fresh object here would silently drop the tab's range, and
+    // "היום" plus a date filter would quietly become just the date filter.
     if (filters.dateFrom || filters.dateTo) {
-      where.dueDate = {}
+      where.dueDate = { ...(where.dueDate || {}) }
       if (filters.dateFrom) {
         where.dueDate.$gte = filters.dateFrom
       }
