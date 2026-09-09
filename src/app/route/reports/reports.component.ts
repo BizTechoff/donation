@@ -1396,20 +1396,6 @@ export class ReportsComponent implements OnInit, OnDestroy {
       }
       reportData.push(headers);
 
-      // Z6 - same rule as the printout: a row the user has open on screen is
-      // exported open. Rows from pages never displayed fall back to the bulk
-      // "הצג פירוט" switch.
-      const expandedOnScreen = new Set(
-        this.groupedDonationReport.filter(r => r.isExpanded).map(r => this.reportRowKey(r))
-      );
-      const seenOnScreen = new Set(this.groupedDonationReport.map(r => this.reportRowKey(r)));
-      const exportRowExpanded = (row: any): boolean => {
-        const key = this.reportRowKey(row);
-        return seenOnScreen.has(key)
-          ? expandedOnScreen.has(key)
-          : this.filters.showDonationDetails;
-      };
-
       // Add data rows
       fullReportResponse.reportData.forEach(row => {
         const dataRow: any[] = [];
@@ -1470,10 +1456,9 @@ export class ReportsComponent implements OnInit, OnDestroy {
 
         reportData.push(dataRow);
 
-        // Z6 - the export follows the same rule as the printout: the state of
-        // the rows on screen, falling back to the bulk switch for rows the user
-        // has not seen. Screen, print and export therefore agree.
-        if (exportRowExpanded(row) && row.donations && row.donations.length > 0) {
+        // Z6 - the export follows the same rule as the printout: the checkbox
+        // decides, never the rows the user opened or closed by hand.
+        if (this.filters.showDonationDetails && row.donations && row.donations.length > 0) {
           // Calculate number of columns before years
           let preYearCols = 1; // Name column (for non-donor groupBy)
           if (isDonorGroupBy) {
@@ -2980,24 +2965,18 @@ export class ReportsComponent implements OnInit, OnDestroy {
     const showEmail = this.filters.showDonorEmail && isDonorGroupBy;
     const showActualPayments = this.filters.showActualPayments;
 
-    // Z6 - "ההדפסה בדוחות תשקף את מצב המסך (פתוח/סגור)". The printout used to
-    // follow the "הצג פירוט" checkbox, so a report the user had collapsed row
-    // by row still printed fully expanded. It now follows the ROWS.
+    // Z6 - the printout follows the "הצג פירוט" CHECKBOX, and nothing else.
     //
-    // Print re-fetches every page, while the screen holds only the current one,
-    // so rows the user has never seen have no state of their own - they fall
-    // back to the bulk switch, which is what the user last said about "all
-    // rows". Rows on screen win over it.
-    const expandedOnScreen = new Set(
-      this.groupedDonationReport.filter(r => r.isExpanded).map(r => this.reportRowKey(r))
-    );
-    const seenOnScreen = new Set(this.groupedDonationReport.map(r => this.reportRowKey(r)));
-    const isRowExpanded = (row: any): boolean => {
-      const key = this.reportRowKey(row);
-      return seenOnScreen.has(key)
-        ? expandedOnScreen.has(key)
-        : this.filters.showDonationDetails;
-    };
+    // Yaakov was explicit about this twice (Zoom א׳ ~61:02, ~62:08):
+    //   "אם הצג תרומות סגור, הוא מדפיס את הכול סגור.
+    //    אם הצג תרומות פתוח, הוא מדפיס את הכול פתוח."
+    // and asked what happens if a single row was opened by hand:
+    //   מוטי: "מה אם פתחת V1?"   יעקב: "לא, שום דבר לא."
+    // To print one donor he uses that donor's personal report instead.
+    //
+    // An earlier version of this let the per-row state win, which is the
+    // behaviour he ruled out.
+    const showDonationDetails = this.filters.showDonationDetails;
 
     // Calculate column count for details row
     let detailsColSpan = 1; // name column
@@ -3064,7 +3043,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
       </tr>
     </thead>
     <tbody>
-      ${data.map((row: any) => this.generateDonationRowHtml(row, hebrewYears, showAddress, showPhone, showEmail, isRowExpanded(row), showActualPayments, detailsColSpan)).join('')}
+      ${data.map((row: any) => this.generateDonationRowHtml(row, hebrewYears, showAddress, showPhone, showEmail, showDonationDetails, showActualPayments, detailsColSpan)).join('')}
     </tbody>
   </table>
 
@@ -3075,10 +3054,6 @@ export class ReportsComponent implements OnInit, OnDestroy {
 </html>`;
   }
 
-  /** Identifies a report row across the screen copy and the print copy. */
-  private reportRowKey(row: any): string {
-    return row.donorId || row.donorName || '';
-  }
 
   private generateDonationRowHtml(row: any, hebrewYears: string[], showAddress: boolean, showPhone: boolean, showEmail: boolean, showDonationDetails: boolean, showActualPayments: boolean, detailsColSpan: number): string {
     // Main row

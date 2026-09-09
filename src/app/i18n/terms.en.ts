@@ -1760,7 +1760,7 @@ export const termsEn = {
   showDonorDetailsLabel: 'Show Donor Details',
   showActualPaymentsLabel: 'Show Actual Payments',
   showCurrencySummaryLabel: 'Show Currency Summary',
-  showDonationDetailsLabel: 'Show Donation Details',
+  showDonationDetailsLabel: 'Expand Donation Details',
   printButton: 'Print',
 
   // Donations Report - Sub-table columns

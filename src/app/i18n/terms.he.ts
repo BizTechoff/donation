@@ -1758,7 +1758,7 @@ export const termsHe = {
   showDonorDetailsLabel: 'הצג פרטי תורם',
   showActualPaymentsLabel: 'הצג תרומות בפועל',
   showCurrencySummaryLabel: 'הצג סיכום מטבעות',
-  showDonationDetailsLabel: 'הצג פירוט תרומות',
+  showDonationDetailsLabel: 'פתח פירוט תרומות',
   printButton: 'הדפסה',
 
   // Donations Report - Sub-table columns

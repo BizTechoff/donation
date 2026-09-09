@@ -114,7 +114,11 @@ export interface ReportFilters {
   showDonorDetails: boolean;
   showActualPayments: boolean;
   showCurrencySummary: boolean;
-  showDonationDetails?: boolean; // Show donation breakdown under each row
+  // D2 - the donation breakdown is ALWAYS returned so every row can show its
+  // arrow and open its sub-rows on demand. This flag no longer gates the
+  // payload; it is the client's "open all / close all" state only, and print
+  // and export decide by it at render time - not by what was fetched.
+  showDonationDetails?: boolean;
   selectedDonor?: string;
   selectedDonorIds?: string[]; // For multi-select donor filter
   selectedCampaign?: string;
@@ -596,7 +600,7 @@ export class ReportController {
           donorName: groupName,
           yearlyTotals: {},
           actualPayments: filters.showActualPayments ? {} : undefined,
-          donations: filters.showDonationDetails ? [] : undefined
+          donations: [] // D2 - always populated; the client decides what to open
         };
 
         // Add donor details if requested and grouping by donor (use pre-loaded data)
@@ -613,7 +617,7 @@ export class ReportController {
       const hebrewDateInfo = getHebrewDateInfo(donation.donationDate);
 
       // Add donation detail if requested
-      if (filters.showDonationDetails && group.donations) {
+      if (group.donations) {
         const donationPaymentTotal = paymentTotalsMap[donation.id!] || 0;
         const donationIsStandingOrder = isStandingOrder(donation);
         const donationIsPaymentBased = isPaymentBased(donation);
@@ -667,7 +671,7 @@ export class ReportController {
     }
 
     // Add partner donations to donation details (only for sub-table display, not for totals)
-    if (filters.showDonationDetails && filters.groupBy === 'donor') {
+    if (filters.groupBy === 'donor') {
       for (const donation of donations) {
         // Check if donation has partners
         if (!donation.partnerIds || donation.partnerIds.length === 0) continue;
@@ -1040,6 +1044,14 @@ export class ReportController {
         // Sorting by total across all years
         aValue = ReportController.calculateGrandTotal(a, hebrewYears);
         bValue = ReportController.calculateGrandTotal(b, hebrewYears);
+      } else if (sortBy === 'actualPayments') {
+        // "תשלומים בפועל" - the cell lists a figure per year, so the column is
+        // ordered by their sum, which is the number the reader is comparing
+        // rows on. Missing years count as zero.
+        const sumPayments = (row: GroupedDonationReportData) =>
+          Object.values(row.actualPayments || {}).reduce((t, v) => t + (v || 0), 0);
+        aValue = sumPayments(a);
+        bValue = sumPayments(b);
       } else {
         return 0;
       }
