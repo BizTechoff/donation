@@ -23,6 +23,14 @@
 # local commit helper (session-generated, not part of the platform)
 /scripts/commit.bat
 
+# AI session artifact - a copy of the project instructions, regenerated per
+# session. Not part of the platform.
+/AGENTS.md
+
+# Local backups of letter templates, kept beside the original while a new
+# version from the client is being verified. Prefixed with an underscore.
+src/assets/letters/**/_*.docx
+
 # Word temp/lock files
 ~$*
 
