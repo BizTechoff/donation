@@ -489,7 +489,10 @@
               <th *ngFor="let year of hebrewYears" class="sortable-header year-col" (click)="onSortChange('year_' + year)">
                 {{year}} <mat-icon class="sort-icon">{{getSortIcon('year_' + year)}}</mat-icon>
               </th>
-              <th *ngIf="filters.showActualPayments">{{ (i18n.terms$ | async)?.actualPaymentsColumn }}</th>
+              <th *ngIf="filters.showActualPayments" class="sortable-header" (click)="onSortChange('actualPayments')">
+                {{ (i18n.terms$ | async)?.actualPaymentsColumn }} <mat-icon
+                  class="sort-icon">{{getSortIcon('actualPayments')}}</mat-icon>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -505,7 +508,7 @@
                 <td class="cell-ellipsis" [title]="row.donorName" [style.direction]="isEnglishName(row.donorName) ? 'ltr' : 'rtl'">
                   <span class="donor-name-wrapper">
                     <span class="expand-icon" *ngIf="row.donations?.length">
-                      {{row.isExpanded ? '▶' : '▼'}}
+                      {{row.isExpanded ? '▼' : '◀'}}
                     </span>
                     <strong *ngIf="!row.donorId">{{row.donorName}}</strong>
                     <strong *ngIf="row.donorId" class="donor-name-link"
