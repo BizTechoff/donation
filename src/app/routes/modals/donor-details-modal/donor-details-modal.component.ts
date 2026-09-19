@@ -216,13 +216,21 @@ export class DonorDetailsModalComponent implements OnInit {
     }));
 
     this.isNewDonor = false;
-    this.donor = data.donor || undefined;
-    this.donorEvents = data.donorEvents;
-    this.donorNotes = data.donorNotes;
-    this.donorPlaces = data.donorPlaces;
-    this.donorReceptionHours = data.donorReceptionHours;
-    this.donorContacts = data.donorContacts;
-    this.donorRelations = data.donorRelations;
+    // A BackendMethod returns JSON, not a tracked entity - `data.donor` arrived
+    // as a plain object with no `_` ref, so remult could not tell which fields
+    // changed and built `update "donors" set  where "id" = $1`, an UPDATE with
+    // an empty SET, which Postgres rejects (42601). Saving a donor after a
+    // change that touched only a child row - adding an email, say - hit exactly
+    // that. fromJson rehydrates it into a real, tracked Donor.
+    this.donor = data.donor ? this.donorRepo.fromJson(data.donor) : undefined;
+    // Same reason as the donor above: every child collection crosses the wire
+    // as plain JSON, so each one is rehydrated through its own repo.
+    this.donorEvents = this.donorEventRepo.fromJson(data.donorEvents);
+    this.donorNotes = this.donorNoteRepo.fromJson(data.donorNotes);
+    this.donorPlaces = this.donorPlaceRepo.fromJson(data.donorPlaces);
+    this.donorReceptionHours = this.donorReceptionHourRepo.fromJson(data.donorReceptionHours);
+    this.donorContacts = this.donorContactRepo.fromJson(data.donorContacts);
+    this.donorRelations = this.donorRelationRepo.fromJson(data.donorRelations);
     this.selectedCompanies = [];
     this.selectedCircles = [];
 
@@ -421,10 +429,6 @@ export class DonorDetailsModalComponent implements OnInit {
         this.ui.error(validationResult.error || 'שגיאה בשעות הקבלה');
         return false;
       }
-
-      // Force new array references for JSON fields so Remult detects mutations
-      this.donor.companyIds = [...(this.donor.companyIds || [])];
-      this.donor.circleIds = [...(this.donor.circleIds || [])];
 
       const wasNew = this.isNewDonor;
       await remult.repo(Donor).save(this.donor);
