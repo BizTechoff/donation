@@ -1,0 +1,43 @@
+fix(donor-card): שמירת תורם נכשלה כששינוי נגע רק בישות בת
+
+יעקב דיווח (17.09): עדכון אימייל של תורם קיים נפל עם
+"Error saving donor: [object Object]". בלוג השרת:
+
+  syntax error at or near "where"   (Postgres 42601)
+  update "donors" set  where "id" = $1 returning ...
+
+ה-SET ריק. רימלט לא ידע איזו עמודה השתנתה, ולכן בנה UPDATE בלי עמודות.
+
+השורש: applyDonorDetailsData מקבל את הנתונים מ-DonorController.getDonorDetailsData,
+שהוא BackendMethod - כלומר גבול סריאליזציה. מה שחוזר ממנו הוא JSON מפוענח, לא
+ישות מנוטרת. אומת בדיבאג בדפדפן:
+
+  [DBG] has _ ref: false | ctor: Object | isDonorInstance: false
+
+בלי `_` אין מעקב שינויים. כל עוד שינו שדה של התורם עצמו רימלט שלח UPDATE עם
+עמודות והכל עבד; שינוי שנגע רק בישות בת - הוספת אימייל - הותיר SET ריק. הבאג
+היה חבוי חודשים.
+
+התיקון: רהידרציה של כל מה שחוצה את החוט, דרך ה-repo שלו.
+
+  this.donor = data.donor ? this.donorRepo.fromJson(data.donor) : undefined
+  this.donorEvents / donorNotes / donorPlaces / donorReceptionHours /
+  donorContacts / donorRelations - כל אחת דרך ה-repo שלה
+
+fromJson מחזיר ישות אמיתית ומנוטרת, זהה למה ש-findId היה מחזיר, בלי קריאה
+נוספת לשרת.
+
+הוסרו שתי השורות:
+
+  // Force new array references for JSON fields so Remult detects mutations
+  this.donor.companyIds = [...(this.donor.companyIds || [])]
+  this.donor.circleIds  = [...(this.donor.circleIds  || [])]
+
+הן ניסו לכפות זיהוי שינוי על אובייקט שאין לו מעקב - טיפול בתסמין. עכשיו הן
+מסמנות שינוי מזויף על ישות שיודעת לדווח על עצמה.
+
+ידוע ולא טופל: `Error saving donor: ${error}` מעביר ל-ui.error מחרוזת מוכנה,
+ולכן extractError מחזיר אותה כמו שהיא במקום לקרוא message/modelState. זה מה
+שהציג [object Object] והסתיר את השגיאה האמיתית. אותו דפוס קיים במסכים נוספים.
+
+BizTechoff™ - התאמת העסק לעידן הדיגיטלי
