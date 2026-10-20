@@ -10,17 +10,22 @@ import { Pipe, PipeTransform } from '@angular/core';
  *
  * Usage: {{ amount | amount }}   ·   {{ amount | amount:'always' }}
  */
+export function formatAmount(value: number | null | undefined, mode: 'auto' | 'always' = 'auto'): string {
+  if (value === null || value === undefined || isNaN(value)) return '';
+
+  const hasFraction = Math.abs(value % 1) > 0.004; // tolerate float noise
+  const decimals = mode === 'always' || hasFraction ? 2 : 0;
+
+  return value.toLocaleString('en-US', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals
+  });
+}
+
+/** Same rule for code that builds strings (formatAmount) and for templates (| amount). */
 @Pipe({ name: 'amount' })
 export class AmountPipe implements PipeTransform {
   transform(value: number | null | undefined, mode: 'auto' | 'always' = 'auto'): string {
-    if (value === null || value === undefined || isNaN(value)) return '';
-
-    const hasFraction = Math.abs(value % 1) > 0.004; // tolerate float noise
-    const decimals = mode === 'always' || hasFraction ? 2 : 0;
-
-    return value.toLocaleString('en-US', {
-      minimumFractionDigits: decimals,
-      maximumFractionDigits: decimals
-    });
+    return formatAmount(value, mode);
   }
 }

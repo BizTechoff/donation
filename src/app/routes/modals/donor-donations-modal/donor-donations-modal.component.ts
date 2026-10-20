@@ -1,4 +1,5 @@
 import { Component, ElementRef, OnInit, ChangeDetectorRef, ViewChild } from '@angular/core';
+import { formatAmount } from '../../../common/pipes/amount.pipe';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialogRef } from '@angular/material/dialog';
 import { DialogConfig } from 'common-ui-elements';
@@ -360,7 +361,8 @@ currencyTypes = this.payer.getCurrencyTypesRecord()
   }
 
   getAmountDisplay(donation: Donation): string {
-    const fmt = (n: number) => n.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    // Item 16 - no '.00' on whole amounts: the shared amount rule (Z16).
+    const fmt = (n: number) => formatAmount(n);
     if (donation.donationType === 'commitment') {
       const paid = this.paymentTotals[donation.id] || 0;
       return `(${fmt(paid)} / ${fmt(donation.amount)})`;
