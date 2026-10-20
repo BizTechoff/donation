@@ -123,23 +123,41 @@ export class CampaignController {
 
     console.log('CampaignController.findFilteredCampaigns', globalFilters, localFilters);
 
-    // Build orderBy from sortColumns or use default
-    let orderBy: any = { name: 'asc' };
-    if (sortColumns && sortColumns.length > 0) {
-      orderBy = {};
-      sortColumns.forEach(sort => {
-        orderBy[sort.field] = sort.direction;
-      });
-    }
-
     const whereClause = CampaignController.buildWhereClause(globalFilters, localFilters);
+    const where = Object.keys(whereClause).length > 0 ? whereClause : undefined;
 
-    return await remult.repo(Campaign).find({
-      where: Object.keys(whereClause).length > 0 ? whereClause : undefined,
-      orderBy,
+    // Shared loader (table-query): 'invitees' / 'blessings' are sqlExpression
+    // counts on Campaign, sorted by Postgres. 'collected' / 'progress' are
+    // money - effective amounts per currency, converted to shekels - so they
+    // are computed with the same functions the screen displays with, never
+    // re-implemented in SQL.
+    const { findSortedPage } = await import('../utils/table-query');
+    return findSortedPage(remult.repo(Campaign), {
+      where,
       include: { createdBy: true },
-      ...(page && pageSize ? { page, limit: pageSize } : {})
+      sortColumns,
+      defaultOrderBy: { name: 'asc' },
+      fieldMap: { invitees: 'invitedCount', blessings: 'blessingCount' },
+      computed: {
+        collected: rows => CampaignController.computeMoney(rows, 'collected'),
+        progress: rows => CampaignController.computeMoney(rows, 'progress')
+      },
+      page,
+      pageSize
     });
+  }
+
+  /** Per-campaign "נאסף" in shekels, or progress %, for the computed sort. */
+  private static async computeMoney(rows: Campaign[], kind: 'collected' | 'progress'): Promise<Map<string, number>> {
+    const { PayerService } = await import('../../app/services/payer.service');
+    const { raisedInShekel, campaignProgress } = await import('../utils/campaign-utils');
+    const rates = new PayerService().getCurrencyTypesRecord();
+    const raised = await CampaignController.getRaisedAmountsByCurrency(rows.map(c => c.id));
+    const totalsById = new Map(raised.map(r => [r.campaignId, r.totals]));
+    return new Map(rows.map(c => {
+      const totals = totalsById.get(c.id) || [];
+      return [c.id, kind === 'collected' ? raisedInShekel(totals, rates) : campaignProgress(c, totals, rates)];
+    }));
   }
 
   @BackendMethod({ allowed: Allow.authenticated })

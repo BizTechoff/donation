@@ -133,6 +133,28 @@ export class Campaign extends IdEntity {
   })
   invitedDonorIds: string[] = []
 
+  // ── Sortable computed counts (sqlExpression) ──────────────────────────
+  // Campaigns list: "מוזמנים" and "ברכות" were computed on the client for the
+  // rows on screen only, so the server had nothing to ORDER BY. Same pattern
+  // as Donation.donorName - Postgres computes the value inside the query that
+  // loads the rows, the sort runs before LIMIT, and the value sorted is the
+  // value shown. Read-only, no column, no migration.
+  @Fields.number<Campaign>({
+    caption: 'מספר מוזמנים',
+    // Guarded: an empty, null or non-array value counts as 0 instead of
+    // failing the whole query (json_array_length throws on a scalar).
+    sqlExpression: () => `(select case when json_typeof(j) = 'array' then json_array_length(j) else 0 end
+      from (select coalesce(nullif("campaigns"."invitedDonorIds"::text, ''), '[]')::json as j) x)`
+  })
+  invitedCount = 0
+
+  // Same rule as campaigns-list loadBlessingCounts: approved blessings only.
+  @Fields.number<Campaign>({
+    caption: 'מספר ברכות',
+    sqlExpression: () => `(select count(*) from "blessings" b where b."campaignId" = "campaigns"."id" and b."status" = 'מאושר')`
+  })
+  blessingCount = 0
+
   @Fields.json({
     caption: 'פילטרי מוזמנים',
   })

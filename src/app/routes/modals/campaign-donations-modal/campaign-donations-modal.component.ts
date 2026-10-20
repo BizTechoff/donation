@@ -1,4 +1,5 @@
 import { ChangeDetectorRef, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { TableState, TableLoadRequest } from '../../../common/table/table-state';
 import { MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { DialogConfig } from 'common-ui-elements';
@@ -44,21 +45,20 @@ export class CampaignDonationsModalComponent implements OnInit {
   filterMethod = '';
   filterType = '';
 
-  // Sorting
-  sortColumns: Array<{ field: string; direction: 'asc' | 'desc' }> = [
-    { field: 'donationDate', direction: 'desc' }
-  ];
+  // Sorting and paging - the shared TableState. Default order (date desc)
+  // comes from the server when nothing is sorted.
+  readonly table = new TableState({
+    pageSize: 50,
+    sortableFields: ['donor', 'donationDate', 'donationType', 'amount'],
+    scrollContainer: () => this.scrollableTable?.nativeElement,
+    load: req => this.loadPage(req)
+  });
 
   // Pagination
   // Scrollable table container handle - reset to top on each data load so
   // paging does not leave the user mid-page (Israel Glikson, 1.7.2026).
   @ViewChild('scrollableTable') scrollableTable?: ElementRef<HTMLElement>;
 
-  currentPage = 1;
-  pageSize = 50;
-  totalCount = 0;
-  totalPages = 0;
-  Math = Math; // Expose Math to template
 
   // Table configuration
   displayedColumns: string[] = ['donationDate', 'donor', 'amount', 'currency', 'method', 'type', 'actions'];
@@ -119,24 +119,27 @@ export class CampaignDonationsModalComponent implements OnInit {
   }
 
   async loadDonations() {
+    await this.table.reload();
+  }
+
+  /** TableState's loader - one page, with the sort the user chose. */
+  private async loadPage(req: TableLoadRequest) {
     if (!this.args?.campaignId) return;
 
     this.loading = true;
     try {
       const result = await DonationController.getCampaignDonationsPage({
         campaignId: this.args.campaignId,
-        page: this.currentPage,
-        pageSize: this.pageSize,
+        page: req.page,
+        pageSize: req.pageSize,
         filterDonorId: this.filterDonor || undefined,
         filterMethodId: this.filterMethod || undefined,
         filterType: this.filterType || undefined,
-        sortField: this.sortColumns[0]?.field,
-        sortDirection: this.sortColumns[0]?.direction
+        sortColumns: req.sort
       });
 
       this.donations = result.rows;
-      this.totalCount = result.total;
-      this.totalPages = Math.ceil(result.total / this.pageSize);
+      this.table.totalCount = result.total;
       this.paymentTotals = result.paymentTotals;
       this.dropdownDonors = result.dropdownDonors;
       this.totalDonations = result.total;
@@ -146,11 +149,7 @@ export class CampaignDonationsModalComponent implements OnInit {
         this.totalsLoaded = true;
       }
 
-      // Reset table scroll to top after each load (Israel Glikson, 1.7.2026) -
-      // paging + filter changes should land at the top of the new page.
-      if (this.scrollableTable?.nativeElement) {
-        this.scrollableTable.nativeElement.scrollTop = 0;
-      }
+      // Scroll-to-top after each load is done by TableState.
 
     } catch (error) {
       console.error('Error loading donations:', error);
@@ -186,8 +185,7 @@ export class CampaignDonationsModalComponent implements OnInit {
   }
 
   applyFilters() {
-    this.currentPage = 1;
-    this.loadDonations();
+    this.table.reloadFromFirstPage();
   }
 
   clearFilters() {
@@ -199,106 +197,8 @@ export class CampaignDonationsModalComponent implements OnInit {
   }
 
   // Sorting
-  async toggleSort(field: string, event?: MouseEvent) {
-    if (event && (event.ctrlKey || event.metaKey)) {
-      // Multi-column sort
-      const existingIndex = this.sortColumns.findIndex(s => s.field === field);
-      if (existingIndex >= 0) {
-        const current = this.sortColumns[existingIndex];
-        if (current.direction === 'asc') {
-          this.sortColumns[existingIndex].direction = 'desc';
-        } else {
-          this.sortColumns.splice(existingIndex, 1);
-        }
-      } else {
-        this.sortColumns.push({ field, direction: 'asc' });
-      }
-    } else {
-      // Single column sort
-      const existing = this.sortColumns.find(s => s.field === field);
-      if (existing && this.sortColumns.length === 1) {
-        existing.direction = existing.direction === 'asc' ? 'desc' : 'asc';
-      } else {
-        this.sortColumns = [{ field, direction: 'asc' }];
-      }
-    }
-
-    await this.loadDonations();
-  }
-
-  getSortIcon(field: string): string {
-    const sortIndex = this.sortColumns.findIndex(s => s.field === field);
-    if (sortIndex === -1) return '';
-
-    const sort = this.sortColumns[sortIndex];
-    const arrow = sort.direction === 'asc' ? '↑' : '↓';
-
-    if (this.sortColumns.length > 1) {
-      return `${arrow}${sortIndex + 1}`;
-    }
-    return arrow;
-  }
-
-  isSorted(field: string): boolean {
-    return this.sortColumns.some(s => s.field === field);
-  }
-
-  // Pagination
-  async goToPage(page: number) {
-    if (page >= 1 && page <= this.totalPages) {
-      this.currentPage = page;
-      await this.loadDonations();
-    }
-  }
-
-  async nextPage() {
-    if (this.currentPage < this.totalPages) {
-      this.currentPage++;
-      await this.loadDonations();
-    }
-  }
-
-  async previousPage() {
-    if (this.currentPage > 1) {
-      this.currentPage--;
-      await this.loadDonations();
-    }
-  }
-
-  async firstPage() {
-    this.currentPage = 1;
-    await this.loadDonations();
-  }
-
-  async lastPage() {
-    this.currentPage = this.totalPages;
-    await this.loadDonations();
-  }
-
-  getPageNumbers(): number[] {
-    const pages: number[] = [];
-    const maxPagesToShow = 5;
-
-    if (this.totalPages <= maxPagesToShow) {
-      for (let i = 1; i <= this.totalPages; i++) {
-        pages.push(i);
-      }
-    } else {
-      const halfWindow = Math.floor(maxPagesToShow / 2);
-      let startPage = Math.max(1, this.currentPage - halfWindow);
-      let endPage = Math.min(this.totalPages, startPage + maxPagesToShow - 1);
-
-      if (endPage - startPage < maxPagesToShow - 1) {
-        startPage = Math.max(1, endPage - maxPagesToShow + 1);
-      }
-
-      for (let i = startPage; i <= endPage; i++) {
-        pages.push(i);
-      }
-    }
-
-    return pages;
-  }
+  // Sorting and paging: this.table (TableState) - the local toggleSort/
+  // getSortIcon/isSorted and the paging methods were replaced by it.
 
   // Format helpers
   formatCurrency(amount: number, currency: string): string {

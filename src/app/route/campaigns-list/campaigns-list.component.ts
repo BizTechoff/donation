@@ -10,6 +10,8 @@ import { BusyService } from '../../common-ui-elements/src/angular/wait/busy-serv
 import { CampaignController, CampaignFilters, CampaignRaisedByCurrency, CurrencyTotal } from '../../../shared/controllers/campaign.controller';
 import { HebrewDateService } from '../../services/hebrew-date.service';
 import { Blessing } from '../../../shared/entity/blessing';
+import { campaignProgress } from '../../../shared/utils/campaign-utils';
+import { TableState, TableLoadRequest } from '../../common/table/table-state';
 import { PayerService } from '../../services/payer.service';
 import { PrintService } from '../../services/print.service';
 import { ExcelExportService } from '../../services/excel-export.service';
@@ -60,14 +62,15 @@ export class CampaignsListComponent implements OnInit, OnDestroy {
   totalRaisedAmount = 0;
   totalRaisedByCurrency: CurrencyTotal[] = [];
 
-  // Pagination
-  currentPage = 1;
-  pageSize = 50;
-  totalCount = 0;
-  totalPages = 0;
-
-  // Sorting
-  sortColumns: Array<{ field: string; direction: 'asc' | 'desc' }> = [{ field: 'name', direction: 'asc' }];
+  // Sorting and paging - the shared TableState, like every other list.
+  // Default order (name asc) comes from the server when nothing is sorted.
+  readonly table = new TableState({
+    pageSize: 50,
+    settingsKey: 'campaignList',
+    sortableFields: ['name', 'targetAmount', 'collected', 'progress', 'invitees', 'blessings', 'startDate', 'endDate'],
+    scrollContainer: () => this.scrollableTable?.nativeElement,
+    load: req => this.loadPage(req)
+  });
 
   // Maps for campaign-related data
   campaignBlessingCountMap = new Map<string, number>();
@@ -100,6 +103,7 @@ export class CampaignsListComponent implements OnInit, OnDestroy {
       })
     );
 
+    await this.table.loadSettings();
     await this.refreshData();
   }
 
@@ -122,6 +126,11 @@ export class CampaignsListComponent implements OnInit, OnDestroy {
    * Called whenever filters or sorting changes
    */
   async refreshData() {
+    await this.table.reload();
+  }
+
+  /** TableState's loader - one page, with the sort the user chose. */
+  private async loadPage(req: TableLoadRequest) {
     this.loading = true;
     await this.busy.doWhileShowingBusy(async () => {
       try {
@@ -131,19 +140,18 @@ export class CampaignsListComponent implements OnInit, OnDestroy {
           isActive: this.filterActive ? this.filterActive === 'true' : undefined
         };
 
-        // console.log('refreshData: Fetching campaigns with localFilters:', localFilters, 'page:', this.currentPage, 'sorting:', this.sortColumns);
+        // console.log('refreshData: Fetching campaigns with localFilters:', localFilters, 'page:', this.currentPage, 'sorting:', this.table.sortColumns);
 
         // Get total count, summary data, and campaigns from server
         // Global filters are fetched from user.settings in the backend
         const [count, summary, campaigns] = await Promise.all([
           CampaignController.countFilteredCampaigns(localFilters),
           CampaignController.getSummaryForFilteredCampaigns(localFilters),
-          CampaignController.findFilteredCampaigns(localFilters, this.currentPage, this.pageSize, this.sortColumns)
+          CampaignController.findFilteredCampaigns(localFilters, req.page, req.pageSize, req.sort)
         ]);
 
-        this.totalCount = count;
+        this.table.totalCount = count;
         this.campaigns = campaigns;
-        this.totalPages = Math.ceil(this.totalCount / this.pageSize);
 
         // Use summary data from server (calculated from all filtered campaigns, not just current page)
         this.activeCampaigns = summary.activeCampaigns;
@@ -151,7 +159,7 @@ export class CampaignsListComponent implements OnInit, OnDestroy {
         this.totalRaisedAmount = summary.totalRaisedAmount;
         this.totalRaisedByCurrency = summary.totalRaisedByCurrency || [];
 
-        console.log('refreshData 1: Loaded', this.campaigns.length, 'campaigns, total:', this.totalCount, 'active:', this.activeCampaigns);
+        console.log('refreshData 1: Loaded', this.campaigns.length, 'campaigns, total:', this.table.totalCount, 'active:', this.activeCampaigns);
 
         // Load blessing counts and raised amounts by currency for all campaigns
         await Promise.all([
@@ -159,17 +167,12 @@ export class CampaignsListComponent implements OnInit, OnDestroy {
           this.loadRaisedAmountsByCurrency()
         ]);
 
-        // Reset table scroll to top after each refresh (Israel Glikson,
-        // 1.7.2026) - paging + filter changes should land at the top.
-        if (this.scrollableTable?.nativeElement) {
-          this.scrollableTable.nativeElement.scrollTop = 0;
-        }
+        // Scroll-to-top after each load is done by TableState.
 
       } catch (error) {
         console.error('Error refreshing campaigns:', error);
         this.campaigns = [];
-        this.totalCount = 0;
-        this.totalPages = 0;
+        this.table.totalCount = 0;
       } finally {
         this.loading = false;
       }
@@ -253,8 +256,7 @@ export class CampaignsListComponent implements OnInit, OnDestroy {
 
     this.filterTimeout = setTimeout(async () => {
       console.log('Filter changed, reloading campaigns');
-      this.currentPage = 1;
-      await this.refreshData();
+      await this.table.reloadFromFirstPage();
       this.restoreSearchFocus();
     }, 800); // 800ms debounce (was 300ms - too fast for slow typists)
   }
@@ -317,20 +319,8 @@ export class CampaignsListComponent implements OnInit, OnDestroy {
   }
 
   getProgressPercentage(campaign: Campaign): number {
-    if (!campaign.targetAmount || campaign.targetAmount === 0) return 0;
-
-    // Convert all raised amounts to ILS for accurate comparison
-    const totals = this.getRaisedByCurrency(campaign);
-    const raisedInILS = totals.reduce((sum, t) => {
-      const rate = this.currencyTypes[t.currencyId]?.rateInShekel || 1;
-      return sum + (t.total * rate);
-    }, 0);
-
-    // Convert target amount to ILS
-    const targetRate = this.currencyTypes[campaign.currencyId]?.rateInShekel || 1;
-    const targetInILS = campaign.targetAmount * targetRate;
-
-    return Math.min(100, Math.round((raisedInILS / targetInILS) * 100));
+    // Shared with the server sort - see shared/utils/campaign-utils.
+    return campaignProgress(campaign, this.getRaisedByCurrency(campaign), this.currencyTypes);
   }
 
   // Modal event handlers
@@ -430,114 +420,9 @@ export class CampaignsListComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Pagination methods
-  async goToPage(page: number) {
-    if (page >= 1 && page <= this.totalPages) {
-      this.currentPage = page;
-      await this.refreshData();
-    }
-  }
-
-  async nextPage() {
-    if (this.currentPage < this.totalPages) {
-      this.currentPage++;
-      await this.refreshData();
-    }
-  }
-
-  async previousPage() {
-    if (this.currentPage > 1) {
-      this.currentPage--;
-      await this.refreshData();
-    }
-  }
-
-  async firstPage() {
-    this.currentPage = 1;
-    await this.refreshData();
-  }
-
-  async lastPage() {
-    this.currentPage = this.totalPages;
-    await this.refreshData();
-  }
-
-  getPageNumbers(): number[] {
-    const pages: number[] = [];
-    const maxPagesToShow = 5;
-
-    if (this.totalPages <= maxPagesToShow) {
-      for (let i = 1; i <= this.totalPages; i++) {
-        pages.push(i);
-      }
-    } else {
-      const halfWindow = Math.floor(maxPagesToShow / 2);
-      let startPage = Math.max(1, this.currentPage - halfWindow);
-      let endPage = Math.min(this.totalPages, startPage + maxPagesToShow - 1);
-
-      if (endPage - startPage < maxPagesToShow - 1) {
-        startPage = Math.max(1, endPage - maxPagesToShow + 1);
-      }
-
-      for (let i = startPage; i <= endPage; i++) {
-        pages.push(i);
-      }
-    }
-
-    return pages;
-  }
-
-  // Sorting methods
-  async toggleSort(field: string, event?: MouseEvent) {
-    if (event && (event.ctrlKey || event.metaKey)) {
-      // CTRL/CMD pressed - multi-column sort
-      const existingIndex = this.sortColumns.findIndex(s => s.field === field);
-      if (existingIndex >= 0) {
-        // Toggle direction or remove
-        const current = this.sortColumns[existingIndex];
-        if (current.direction === 'asc') {
-          this.sortColumns[existingIndex].direction = 'desc';
-        } else {
-          // Remove from sort
-          this.sortColumns.splice(existingIndex, 1);
-        }
-      } else {
-        // Add new sort column
-        this.sortColumns.push({ field, direction: 'asc' });
-      }
-    } else {
-      // Single column sort
-      const existing = this.sortColumns.find(s => s.field === field);
-      if (existing && this.sortColumns.length === 1) {
-        // Toggle direction
-        existing.direction = existing.direction === 'asc' ? 'desc' : 'asc';
-      } else {
-        // Set as only sort column
-        this.sortColumns = [{ field, direction: 'asc' }];
-      }
-    }
-
-    // Reload with new sort
-    await this.refreshData();
-  }
-
-  getSortIcon(field: string): string {
-    const sortIndex = this.sortColumns.findIndex(s => s.field === field);
-    if (sortIndex === -1) return '';
-
-    const sort = this.sortColumns[sortIndex];
-    const arrow = sort.direction === 'asc' ? '↑' : '↓';
-
-    // Show number if multiple sorts
-    if (this.sortColumns.length > 1) {
-      return `${arrow}${sortIndex + 1}`;
-    }
-    return arrow;
-  }
-
-  isSorted(field: string): boolean {
-    return this.sortColumns.some(s => s.field === field);
-  }
+  // Paging and sorting: this.table (TableState) - the local copies of
+  // goToPage/next/prev/first/last/getPageNumbers/toggleSort/getSortIcon/
+  // isSorted were replaced by the shared implementation.
 
   // Modal methods
   openModal(campaign?: Campaign) {
@@ -582,7 +467,7 @@ export class CampaignsListComponent implements OnInit, OnDestroy {
           localFilters,
           undefined,
           undefined,
-          this.sortColumns
+          this.table.sortColumns
         );
 
         // Need to load raised amounts for printing
@@ -649,7 +534,7 @@ export class CampaignsListComponent implements OnInit, OnDestroy {
           localFilters,
           undefined,
           undefined,
-          this.sortColumns
+          this.table.sortColumns
         );
 
         // Need to load raised amounts for export
@@ -691,18 +576,6 @@ export class CampaignsListComponent implements OnInit, OnDestroy {
    * Helper to get progress percentage for print/export (with provided totals)
    */
   private getProgressPercentageForCampaign(campaign: Campaign, totals: CurrencyTotal[]): number {
-    if (!campaign.targetAmount || campaign.targetAmount === 0) return 0;
-
-    // Convert all raised amounts to ILS for accurate comparison
-    const raisedInILS = totals.reduce((sum, t) => {
-      const rate = this.currencyTypes[t.currencyId]?.rateInShekel || 1;
-      return sum + (t.total * rate);
-    }, 0);
-
-    // Convert target amount to ILS
-    const targetRate = this.currencyTypes[campaign.currencyId]?.rateInShekel || 1;
-    const targetInILS = campaign.targetAmount * targetRate;
-
-    return Math.min(100, Math.round((raisedInILS / targetInILS) * 100));
+    return campaignProgress(campaign, totals, this.currencyTypes);
   }
 }

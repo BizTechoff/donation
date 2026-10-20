@@ -85,26 +85,26 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th class="sortable" [class.sorted]="isSorted('donor')" (click)="toggleSort('donor', $event)">
+              <th class="w-name w-flex" [class.sortable]="table.isSortable('donor')" [class.sorted]="table.isSorted('donor')" (click)="table.toggleSort('donor', $event)">
                 תורם
-                <span class="sort-icon" *ngIf="getSortIcon('donor')">{{ getSortIcon('donor') }}</span>
+                <span class="sort-icon" *ngIf="table.getSortIcon('donor')">{{ table.getSortIcon('donor') }}</span>
               </th>
-              <th class="sortable" [class.sorted]="isSorted('donationDate')" (click)="toggleSort('donationDate', $event)">
+              <th class="w-date" [class.sortable]="table.isSortable('donationDate')" [class.sorted]="table.isSorted('donationDate')" (click)="table.toggleSort('donationDate', $event)">
                 תאריך
-                <span class="sort-icon" *ngIf="getSortIcon('donationDate')">{{ getSortIcon('donationDate') }}</span>
+                <span class="sort-icon" *ngIf="table.getSortIcon('donationDate')">{{ table.getSortIcon('donationDate') }}</span>
               </th>
-              <th class="sortable" [class.sorted]="isSorted('donationType')" (click)="toggleSort('donationType', $event)">
+              <th class="w-type" [class.sortable]="table.isSortable('donationType')" [class.sorted]="table.isSorted('donationType')" (click)="table.toggleSort('donationType', $event)">
                 סוג
-                <span class="sort-icon" *ngIf="getSortIcon('donationType')">{{ getSortIcon('donationType') }}</span>
+                <span class="sort-icon" *ngIf="table.getSortIcon('donationType')">{{ table.getSortIcon('donationType') }}</span>
               </th>
-              <th>אופן תרומה</th>
-              <th class="sortable" [class.sorted]="isSorted('amount')" (click)="toggleSort('amount', $event)">
+              <th class="w-method">אופן תרומה</th>
+              <th class="w-amount" [class.sortable]="table.isSortable('amount')" [class.sorted]="table.isSorted('amount')" (click)="table.toggleSort('amount', $event)">
                 סכום
-                <span class="sort-icon" *ngIf="getSortIcon('amount')">{{ getSortIcon('amount') }}</span>
+                <span class="sort-icon" *ngIf="table.getSortIcon('amount')">{{ table.getSortIcon('amount') }}</span>
               </th>
-              <th>מטבע</th>
-              <th>סיבת התרומה</th>
-              <th class="actions-column">פעולות</th>
+              <th class="w-currency">מטבע</th>
+              <th class="w-reason">סיבת התרומה</th>
+              <th class="w-actions actions-column">פעולות</th>
             </tr>
           </thead>
           <tbody>
@@ -172,44 +172,44 @@
       </div>
 
       <!-- Pagination: Fixed at bottom -->
-      <div class="pagination-container" *ngIf="totalPages > 1">
+      <div class="pagination-container" *ngIf="table.totalPages > 1">
         <div class="pagination-controls">
           <button mat-icon-button
-                  (click)="firstPage()"
-                  [disabled]="currentPage === 1"
+                  (click)="table.firstPage()"
+                  [disabled]="table.isFirstPage"
                   matTooltip="עמוד ראשון"
                   [dir]="'rtl'">
             <mat-icon>first_page</mat-icon>
           </button>
 
           <button mat-icon-button
-                  (click)="previousPage()"
-                  [disabled]="currentPage === 1"
+                  (click)="table.previousPage()"
+                  [disabled]="table.isFirstPage"
                   matTooltip="עמוד קודם"
                   [dir]="'rtl'">
             <mat-icon>chevron_right</mat-icon>
           </button>
 
           <div class="page-numbers">
-            <button *ngFor="let page of getPageNumbers()"
+            <button *ngFor="let page of table.getPageNumbers()"
                     mat-button
-                    [class.active]="page === currentPage"
-                    (click)="goToPage(page)">
+                    [class.active]="page === table.currentPage"
+                    (click)="table.goToPage(page)">
               {{page}}
             </button>
           </div>
 
           <button mat-icon-button
-                  (click)="nextPage()"
-                  [disabled]="currentPage === totalPages"
+                  (click)="table.nextPage()"
+                  [disabled]="table.isLastPage"
                   matTooltip="עמוד הבא"
                   [dir]="'rtl'">
             <mat-icon>chevron_left</mat-icon>
           </button>
 
           <button mat-icon-button
-                  (click)="lastPage()"
-                  [disabled]="currentPage === totalPages"
+                  (click)="table.lastPage()"
+                  [disabled]="table.isLastPage"
                   matTooltip="עמוד אחרון"
                   [dir]="'rtl'">
             <mat-icon>last_page</mat-icon>
@@ -217,7 +217,7 @@
         </div>
 
         <div class="pagination-info">
-          <span>מציג {{(currentPage - 1) * pageSize + 1}} - {{Math.min(currentPage * pageSize, totalCount)}} מתוך {{totalCount}}</span>
+          <span>מציג {{ table.rangeStart }} - {{ table.rangeEnd }} מתוך {{ table.totalCount }}</span>
         </div>
       </div>
 

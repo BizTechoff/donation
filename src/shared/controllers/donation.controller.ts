@@ -80,6 +80,8 @@ export interface CampaignDonationsPageParams {
   filterType?: string;
   sortField?: string;
   sortDirection?: 'asc' | 'desc';
+  /** Full sort chain from TableState - preferred over sortField/sortDirection. */
+  sortColumns?: Array<{ field: string; direction: 'asc' | 'desc' }>;
 }
 
 export interface CampaignDonationsPageResult {
@@ -1038,10 +1040,14 @@ export class DonationController {
     if (filterMethodId) where.donationMethodId = filterMethodId;
     if (filterType) where.donationType = filterType;
 
-    const dbSortFields = ['donationDate', 'amount', 'currencyId', 'donationType'];
-    const orderBy: any = dbSortFields.includes(sortField ?? '')
-      ? { [sortField!]: sortDirection }
-      : { donationDate: 'desc' };
+    // Shared builder - multi-column, and 'donor' sorts by the donorName
+    // sqlExpression (before: only date/amount/currency/type sorted; a click on
+    // the donor column silently fell back to date).
+    const orderBy: any = buildOrderBy(
+      params.sortColumns ?? (sortField ? [{ field: sortField, direction: sortDirection }] : []),
+      { donationDate: 'desc' },
+      { donor: 'donorName', currency: 'currencyId' }
+    );
 
     const [total, pageDonations] = await Promise.all([
       remult.repo(Donation).count(where),
