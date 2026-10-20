@@ -79,8 +79,10 @@ export interface GroupedDonationReportData {
       [currency: string]: number;
     };
   };
+  /** Item 12 - per year, per currency, in the donation's own currency
+   *  (was one shekel sum per year, shown with a hard-coded ₪). */
   actualPayments?: {
-    [hebrewYear: string]: number; // in shekel
+    [hebrewYear: string]: { [currency: string]: number };
   };
   donations?: DonationDetailData[]; // Donation breakdown
 }
@@ -285,7 +287,7 @@ export class ReportController {
 
       // Step 1: Paginate at group-entity level — returns only page's donation subset
       const { pageDonations, totalRecords } = await ReportController.paginateByGroupKey(
-        allDonationsLight, filters, page, pageSize
+        allDonationsLight, filters, page, pageSize, hebrewYears
       );
       const totalPages = Math.ceil(totalRecords / pageSize);
 
@@ -359,7 +361,7 @@ export class ReportController {
 
       // Step 7: Sort page data only (trivial — page rows only)
       const reportData = filters.sortBy
-        ? ReportController.sortReportData(groupedData, filters.sortBy, filters.sortDirection || 'asc', hebrewYears)
+        ? ReportController.sortReportData(groupedData, filters.sortBy, filters.sortDirection || 'asc', hebrewYears, filters.conversionRates)
         : groupedData;
 
       return {
@@ -381,7 +383,8 @@ export class ReportController {
     allDonations: Donation[],
     filters: ReportFilters,
     page: number,
-    pageSize: number
+    pageSize: number,
+    hebrewYears: string[] = []
   ): Promise<{ pageDonations: Donation[]; totalRecords: number }> {
     const start = (page - 1) * pageSize;
     const sortDir = (filters.sortDirection || 'asc') as 'asc' | 'desc';
@@ -393,20 +396,38 @@ export class ReportController {
 
         let pageDonorIds: string[];
 
-        if (filters.sortBy === 'total' || filters.sortBy?.startsWith('year_')) {
-          // Sort by computed amount totals in JS (no DB GROUP BY needed)
-          const totals = new Map<string, number>();
-          for (const d of allDonations) {
-            if (d.donorId) totals.set(d.donorId, (totals.get(d.donorId) || 0) + d.amount);
-          }
+        // The PAGE must be chosen by the sort - otherwise only the 25 rows that
+        // were picked by name get reordered, which is what the client felt as
+        // "מיון לפי תשלומים בפועל לא תקין" (and the same for total / years).
+        const sortBy = filters.sortBy || '';
+        if (sortBy === 'total' || sortBy.startsWith('year_') || sortBy === 'actualPayments') {
+          // Money columns: the same math the cells show (effective amounts /
+          // active payments), over ALL filtered donations, in shekels so
+          // different currencies compare. Then the page is cut.
+          const values = await ReportController.donorMoneySortValues(allDonations, sortBy, hebrewYears, filters.conversionRates || {});
+          const nameOrder = await remult.repo(Donor).find({
+            where: { id: { $in: allDonorIds } },
+            orderBy: { lastName: 'asc', firstName: 'asc' }
+          });
+          const rank = new Map(nameOrder.map((d, i) => [d.id!, i]));
           pageDonorIds = [...allDonorIds]
-            .sort((a, b) => ((totals.get(a) || 0) - (totals.get(b) || 0)) * (sortDir === 'desc' ? -1 : 1))
+            .sort((a, b) =>
+              ((values.get(a) || 0) - (values.get(b) || 0)) * (sortDir === 'desc' ? -1 : 1)
+              || (rank.get(a) ?? 0) - (rank.get(b) ?? 0))   // equal amounts: by name
             .slice(start, start + pageSize);
         } else {
-          // DB-level pagination sorted by real DB columns (lastAndFirstName is serverExpression, not a column)
+          // Text columns: the DB sorts (sqlExpression fields on Donor, same
+          // values the columns show), then pages with LIMIT.
+          const FIELD: Record<string, string> = {
+            address: 'primaryCityStreet', phones: 'primaryLandline', mobiles: 'primaryMobile', emails: 'primaryEmail'
+          };
+          const field = FIELD[sortBy];
+          const orderBy: any = field
+            ? { [field]: sortDir, lastName: 'asc', firstName: 'asc' }
+            : { lastName: sortDir, firstName: sortDir };
           const donors = await remult.repo(Donor).find({
             where: { id: { $in: allDonorIds } },
-            orderBy: { lastName: sortDir, firstName: sortDir },
+            orderBy,
             limit: pageSize,
             page
           });
@@ -730,14 +751,11 @@ export class ReportController {
         // Use cached Hebrew date conversion (sync)
         const hebrewYearFormatted = getHebrewYearFormatted(payment.paymentDate);
 
-        if (!group.actualPayments[hebrewYearFormatted]) {
-          group.actualPayments[hebrewYearFormatted] = 0;
-        }
-
-        // Convert to shekel
-        const currency = donation.currencyId;
-        const amountInShekel = payment.amount * (filters.conversionRates[currency] || 1);
-        group.actualPayments[hebrewYearFormatted] += amountInShekel;
+        // Item 12 - kept in the donation's currency, like yearlyTotals; no
+        // conversion here (a pound payment used to arrive as shekels).
+        const currency = donation.currencyId || 'ILS';
+        const yearMap = group.actualPayments[hebrewYearFormatted] ||= {};
+        yearMap[currency] = (yearMap[currency] || 0) + payment.amount;
       }
     }
 
@@ -1009,7 +1027,8 @@ export class ReportController {
     data: GroupedDonationReportData[],
     sortBy: string,
     sortDirection: 'asc' | 'desc',
-    hebrewYears: string[]
+    hebrewYears: string[],
+    conversionRates: { [currency: string]: number } = {}
   ): GroupedDonationReportData[] {
     const sortedData = [...data];
     const direction = sortDirection === 'asc' ? 1 : -1;
@@ -1036,18 +1055,20 @@ export class ReportController {
       } else if (sortBy.startsWith('year_')) {
         // Sorting by specific year total
         const yearKey = sortBy.replace('year_', '');
-        aValue = ReportController.calculateYearTotal(a, yearKey);
-        bValue = ReportController.calculateYearTotal(b, yearKey);
+        aValue = ReportController.calculateYearTotal(a, yearKey, conversionRates);
+        bValue = ReportController.calculateYearTotal(b, yearKey, conversionRates);
       } else if (sortBy === 'total') {
         // Sorting by total across all years
-        aValue = ReportController.calculateGrandTotal(a, hebrewYears);
-        bValue = ReportController.calculateGrandTotal(b, hebrewYears);
+        aValue = ReportController.calculateGrandTotal(a, hebrewYears, conversionRates);
+        bValue = ReportController.calculateGrandTotal(b, hebrewYears, conversionRates);
       } else if (sortBy === 'actualPayments') {
-        // "תשלומים בפועל" - the cell lists a figure per year, so the column is
-        // ordered by their sum, which is the number the reader is comparing
-        // rows on. Missing years count as zero.
+        // "תשלומים בפועל" - the cell lists a figure per year and currency, so
+        // the column is ordered by their sum. Different currencies cannot be
+        // compared raw, so the sum is in shekels (same rule as campaigns'
+        // "נאסף"). Missing years count as zero.
         const sumPayments = (row: GroupedDonationReportData) =>
-          Object.values(row.actualPayments || {}).reduce((t, v) => t + (v || 0), 0);
+          Object.values(row.actualPayments || {}).reduce((t, byCur) =>
+            t + Object.entries(byCur || {}).reduce((u, [cur, v]) => u + (v || 0) * (conversionRates[cur] || 1), 0), 0);
         aValue = sumPayments(a);
         bValue = sumPayments(b);
       } else {
@@ -1064,18 +1085,81 @@ export class ReportController {
     return sortedData;
   }
 
-  private static calculateYearTotal(data: GroupedDonationReportData, yearKey: string): number {
+  /** A year's total in shekels - currencies converted so rows compare (sorting). */
+  private static calculateYearTotal(data: GroupedDonationReportData, yearKey: string, rates: { [currency: string]: number } = {}): number {
     const yearData = data.yearlyTotals[yearKey];
     if (!yearData) return 0;
-    return Object.values(yearData).reduce((sum, amount) => sum + amount, 0);
+    return Object.entries(yearData).reduce((sum, [currency, amount]) => sum + amount * (rates[currency] || 1), 0);
   }
 
-  private static calculateGrandTotal(data: GroupedDonationReportData, hebrewYears: string[]): number {
+  private static calculateGrandTotal(data: GroupedDonationReportData, hebrewYears: string[], rates: { [currency: string]: number } = {}): number {
     let total = 0;
     for (const year of hebrewYears) {
-      total += ReportController.calculateYearTotal(data, year);
+      total += ReportController.calculateYearTotal(data, year, rates);
     }
     return total;
+  }
+
+  /**
+   * Per donor, the value a money column shows - computed over ALL filtered
+   * donations so the page can be chosen by it. Same rules as groupDonations:
+   * - total / year_X: effective amount (commitment / standing order = actual
+   *   payments of the matching type), by the donation's Hebrew year;
+   * - actualPayments: active payments of payment-based donations, all years.
+   * In shekels (conversionRates), because a column mixes currencies.
+   */
+  private static async donorMoneySortValues(
+    donations: Donation[],
+    sortBy: string,
+    hebrewYears: string[],
+    rates: { [currency: string]: number }
+  ): Promise<Map<string, number>> {
+    const values = new Map<string, number>();
+    const add = (donorId: string | undefined, v: number) => {
+      if (donorId) values.set(donorId, (values.get(donorId) || 0) + v);
+    };
+
+    // donationMethod is needed by isPaymentBased (standing orders).
+    const methodIds = [...new Set(donations.map(d => d.donationMethodId).filter((id): id is string => !!id))];
+    const methods = methodIds.length > 0
+      ? await remult.repo(DonationMethod).find({ where: { id: { $in: methodIds } } })
+      : [];
+    const methodMap = new Map(methods.map(m => [m.id!, m]));
+    for (const d of donations) {
+      if (d.donationMethodId && !(d as any).donationMethod) (d as any).donationMethod = methodMap.get(d.donationMethodId);
+    }
+
+    const paymentBased = donations.filter(d => isPaymentBased(d));
+    const pbIds = paymentBased.map(d => d.id!).filter(Boolean);
+    const payments = pbIds.length > 0
+      ? await remult.repo(Payment).find({ where: { donationId: { $in: pbIds }, isActive: true } })
+      : [];
+    const rate = (currency?: string) => rates[currency || 'ILS'] || 1;
+
+    if (sortBy === 'actualPayments') {
+      const byId = new Map(paymentBased.map(d => [d.id!, d]));
+      for (const p of payments) {
+        const d = byId.get(p.donationId);
+        if (d) add(d.donorId, p.amount * rate(d.currencyId));
+      }
+      return values;
+    }
+
+    const paymentTotals = calculatePaymentTotals(paymentBased, payments);
+    const wantedYear = sortBy.startsWith('year_') ? sortBy.replace('year_', '') : null;
+    const yearCache = new Map<string, string>();
+    for (const d of donations) {
+      if (!d.donationDate) continue;
+      const key = new Date(d.donationDate).toISOString().split('T')[0];
+      let year = yearCache.get(key);
+      if (!year) {
+        year = HebrewDateController.hebrewDateInfoSync(new Date(d.donationDate)).yearFormatted;
+        yearCache.set(key, year);
+      }
+      if (wantedYear ? year !== wantedYear : !hebrewYears.includes(year)) continue;
+      add(d.donorId, calculateEffectiveAmount(d, paymentTotals[d.id!]) * rate(d.currencyId));
+    }
+    return values;
   }
 
   /**

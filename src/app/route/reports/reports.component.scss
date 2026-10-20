@@ -55,6 +55,11 @@
     gap: 1rem;
     align-items: center;
 
+    // Item 19 - no hover "jump": a lifted button left the row's baseline.
+    .btn:hover {
+      transform: none;
+    }
+
     .export-buttons {
       display: flex;
       gap: 0.5rem;
@@ -616,8 +621,14 @@
 }
 
 .btn {
-  padding: 0.7rem 1.5rem;
-  border: none;
+  padding: 0 1.5rem;
+  // Item 19 - every button the same box: fixed height and a 2px border on all
+  // of them (transparent on the filled one), so the outline buttons are no
+  // longer 4px taller than "רענן נתונים" and all sit on one line.
+  box-sizing: border-box;
+  height: 42px;
+  line-height: 1;
+  border: 2px solid transparent;
   border-radius: 6px;
   font-size: 0.9rem;
   font-weight: 600;
@@ -668,9 +679,15 @@
   }
 
   &.btn-excel {
+    color: #217346;
+    border-color: #217346;
+
+    // The generic outline hover turned the text white on a light-green
+    // background - the label vanished. Keep it dark green.
     &:hover {
       background: #e0f2e8;
       border-color: #217346;
+      color: #185a34;
 
       .excel-x {
         color: #185a34;
@@ -694,6 +711,19 @@
 .reports-tabs-wrapper {
   display: flex;
   justify-content: space-between;
+
+  // The action buttons live here (not under .page-header) - so the
+  // .page-header .header-actions rules never reached them.
+  .header-actions {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+
+    // Item 19 - no hover "jump": a lifted button left the row's baseline.
+    .btn:hover {
+      transform: none;
+    }
+  }
 }
 
 // Reports tabs styling
@@ -2393,5 +2423,29 @@ td.year-col {
 
   &:hover {
     text-decoration: underline;
+  }
+}
+
+
+// Donations report (grouped): every column must fit on screen (20.10.2026).
+// Year columns were 92px each, and with the list widths (name 14%, address
+// 18%, email 14%...) on top, the row was wider than the screen - the last
+// column, "תשלומים בפועל", was pushed out of view. Here the year columns have
+// no width: with table-layout fixed they share what is left EQUALLY (Z7 -
+// symmetric), and the fixed columns are trimmed to leave them room for a
+// four-digit amount (Z24).
+.grouped-report .data-table {
+  th.w-name    { width: 13%; }
+  th.w-address { width: 13%; }
+  th.w-phone   { width: 8%; }
+  th.w-mobile  { width: 8%; }
+  th.w-email   { width: 12%; }
+  th.w-amount  { width: 9%; }
+
+  th.year-col,
+  td.year-col {
+    width: auto;
+    min-width: 0;
+    max-width: none;
   }
 }

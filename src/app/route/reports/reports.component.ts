@@ -158,8 +158,9 @@ interface GroupedDonationReport {
       [currency: string]: number;
     };
   };
+  /** Item 12 - per year, per currency (the donation's own currency). */
   actualPayments?: {
-    [hebrewYear: string]: number; // in shekel
+    [hebrewYear: string]: { [currency: string]: number };
   };
   donations?: DonationDetail[]; // Donation breakdown
   isExpanded?: boolean; // For UI toggle
@@ -1423,11 +1424,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
         });
 
         if (this.filters.showActualPayments && row.actualPayments) {
-          const payments = fullReportResponse.hebrewYears
-            .map(year => row.actualPayments![year] ? `${year}: ₪${row.actualPayments![year].toLocaleString()}` : '')
-            .filter(p => p)
-            .join('\n');
-          dataRow.push(payments || '-');
+          dataRow.push(this.actualPaymentsLines(row.actualPayments, fullReportResponse.hebrewYears).join('\n') || '-');
         }
 
         reportData.push(dataRow);
@@ -3079,12 +3076,26 @@ export class ReportsComponent implements OnInit, OnDestroy {
   }
 
   private formatActualPayments(actualPayments: any, hebrewYears: string[]): string {
-    if (!actualPayments) return '-';
-    const payments = hebrewYears
-      .map(year => actualPayments[year] ? `${year}: ₪${actualPayments[year].toLocaleString('he-IL')}` : '')
-      .filter(p => p)
-      .join('<br>');
-    return payments || '-';
+    return this.actualPaymentsLines(actualPayments, hebrewYears).join('<br>') || '-';
+  }
+
+  /**
+   * Item 12 - "תשלומים בפועל", one line per year, each currency with its own
+   * symbol ("תשפ״ו: $190 · £50"). The ONE formatter for screen, Excel and
+   * print - it used to be written three times, each with a hard-coded ₪.
+   */
+  actualPaymentsLines(actualPayments: GroupedDonationReport['actualPayments'] | undefined, hebrewYears: string[]): string[] {
+    if (!actualPayments) return [];
+    return hebrewYears
+      .map(year => {
+        const byCurrency = actualPayments[year];
+        if (!byCurrency) return '';
+        const parts = Object.entries(byCurrency)
+          .filter(([, amount]) => amount)
+          .map(([currency, amount]) => this.formatCurrencyWithSymbol(amount, currency));
+        return parts.length ? `${year}: ${parts.join(' · ')}` : '';
+      })
+      .filter(line => line);
   }
 
   private printHtml(html: string) {
