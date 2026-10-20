@@ -1,0 +1,14 @@
+fix(log): אזהרות "No such label" של console.timeEnd בלוג השרת
+
+console.time מחזיק טיימר אחד לכל label לכל התהליך. שתי קריאות במקביל
+לאותה BackendMethod (שתי רשימות נטענות, שני משתמשים) פתחו את אותו label
+פעמיים; ה-timeEnd הראשון צרך אותו והשני הדפיס
+"Warning: No such label '[GlobalFilter] ...' for console.timeEnd()".
+
+shared/utils/perf-log.ts (חדש): timeStart / timeEnd - מחסנית זמני התחלה
+לכל label, כך שקריאות חופפות לא מתנגשות; סיום בלי התחלה - בשקט. אותו
+פורמט פלט. הוחלף ב-global-filter, donor, donor-map controllers וב-donors-map.
+
+גרסה 2026.10.20.06.
+
+BizTechoff™ - התאמת העסק לעידן הדיגיטלי

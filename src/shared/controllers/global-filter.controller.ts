@@ -1,3 +1,4 @@
+import { timeStart, timeEnd } from '../utils/perf-log';
 import { Allow, BackendMethod, remult, SqlDatabase } from 'remult';
 import { GlobalFilters } from '../../app/services/global-filter.service';
 import { Campaign } from '../entity/campaign';
@@ -24,23 +25,23 @@ export class GlobalFilterController {
    */
   @BackendMethod({ allowed: Allow.authenticated })
   static async getDonorIdsFromUserSettings(): Promise<string[] | undefined> {
-    console.time('[GlobalFilter] getDonorIdsFromUserSettings TOTAL');
+    timeStart('[GlobalFilter] getDonorIdsFromUserSettings TOTAL');
     const currentUserId = remult.user?.id;
     let globalFilters: GlobalFilters = {};
     if (currentUserId) {
-      console.time('[GlobalFilter] User.findId (useCache:false)');
+      timeStart('[GlobalFilter] User.findId (useCache:false)');
       const { User } = await import('../entity/user');
       const user = await remult.repo(User).findId(currentUserId, {useCache: false});
-      console.timeEnd('[GlobalFilter] User.findId (useCache:false)');
+      timeEnd('[GlobalFilter] User.findId (useCache:false)');
       globalFilters = user?.settings?.globalFilters || {};
       console.log(`[GlobalFilter]   filters keys: [${Object.keys(globalFilters).join(',')}]`);
     }
 
-    console.time('[GlobalFilter] getDonorIds(filters)');
+    timeStart('[GlobalFilter] getDonorIds(filters)');
     const result = await GlobalFilterController.getDonorIds(globalFilters);
-    console.timeEnd('[GlobalFilter] getDonorIds(filters)');
+    timeEnd('[GlobalFilter] getDonorIds(filters)');
     console.log(`[GlobalFilter]   result: ${result === undefined ? 'undefined (no filter)' : result.length + ' donors'}`);
-    console.timeEnd('[GlobalFilter] getDonorIdsFromUserSettings TOTAL');
+    timeEnd('[GlobalFilter] getDonorIdsFromUserSettings TOTAL');
     return result;
   }
 
@@ -59,9 +60,9 @@ export class GlobalFilterController {
 
     let donorIds: string[] | undefined = undefined;
 
-    console.time('[GlobalFilter.getDonorIds] places');
+    timeStart('[GlobalFilter.getDonorIds] places');
     const placeFiltered = await GlobalFilterController.getDonorIdsFromPlaces(filters);
-    console.timeEnd('[GlobalFilter.getDonorIds] places');
+    timeEnd('[GlobalFilter.getDonorIds] places');
     if (placeFiltered !== undefined) {
       if (placeFiltered.length === 0) return [];
       donorIds = placeFiltered;
@@ -73,33 +74,33 @@ export class GlobalFilterController {
       return current.filter(id => nextSet.has(id));
     };
 
-    console.time('[GlobalFilter.getDonorIds] targetAudience');
+    timeStart('[GlobalFilter.getDonorIds] targetAudience');
     const audienceFiltered = await GlobalFilterController.getDonorIdsFromTargetAudience(filters);
-    console.timeEnd('[GlobalFilter.getDonorIds] targetAudience');
+    timeEnd('[GlobalFilter.getDonorIds] targetAudience');
     if (audienceFiltered !== undefined) {
       donorIds = intersectWithSet(donorIds, audienceFiltered);
       if (donorIds.length === 0) return [];
     }
 
-    console.time('[GlobalFilter.getDonorIds] campaigns');
+    timeStart('[GlobalFilter.getDonorIds] campaigns');
     const campaignFiltered = await GlobalFilterController.getDonorIdsFromCampaigns(filters);
-    console.timeEnd('[GlobalFilter.getDonorIds] campaigns');
+    timeEnd('[GlobalFilter.getDonorIds] campaigns');
     if (campaignFiltered !== undefined) {
       donorIds = intersectWithSet(donorIds, campaignFiltered);
       if (donorIds.length === 0) return [];
     }
 
-    console.time('[GlobalFilter.getDonorIds] amountRange');
+    timeStart('[GlobalFilter.getDonorIds] amountRange');
     const amountFiltered = await GlobalFilterController.getDonorIdsFromAmountRange(filters);
-    console.timeEnd('[GlobalFilter.getDonorIds] amountRange');
+    timeEnd('[GlobalFilter.getDonorIds] amountRange');
     if (amountFiltered !== undefined) {
       donorIds = intersectWithSet(donorIds, amountFiltered);
       if (donorIds.length === 0) return [];
     }
 
-    console.time('[GlobalFilter.getDonorIds] anashAlumni');
+    timeStart('[GlobalFilter.getDonorIds] anashAlumni');
     const anashAlumniFiltered = await GlobalFilterController.getDonorIdsFromAnashAlumni(filters);
-    console.timeEnd('[GlobalFilter.getDonorIds] anashAlumni');
+    timeEnd('[GlobalFilter.getDonorIds] anashAlumni');
     if (anashAlumniFiltered !== undefined) {
       donorIds = intersectWithSet(donorIds, anashAlumniFiltered);
       if (donorIds.length === 0) return [];
