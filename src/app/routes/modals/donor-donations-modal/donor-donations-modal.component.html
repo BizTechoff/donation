@@ -88,23 +88,23 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th [class.sortable]="table.isSortable('donationDate')" [class.sorted]="table.isSorted('donationDate')" (click)="table.toggleSort('donationDate', $event)">
+              <th class="w-date" [class.sortable]="table.isSortable('donationDate')" [class.sorted]="table.isSorted('donationDate')" (click)="table.toggleSort('donationDate', $event)">
                 תאריך
                 <span class="sort-icon" *ngIf="table.getSortIcon('donationDate')">{{ table.getSortIcon('donationDate') }}</span>
               </th>
-              <th [class.sortable]="table.isSortable('donationType')" [class.sorted]="table.isSorted('donationType')" (click)="table.toggleSort('donationType', $event)">
+              <th class="w-type" [class.sortable]="table.isSortable('donationType')" [class.sorted]="table.isSorted('donationType')" (click)="table.toggleSort('donationType', $event)">
                 סוג
                 <span class="sort-icon" *ngIf="table.getSortIcon('donationType')">{{ table.getSortIcon('donationType') }}</span>
               </th>
-              <th [class.sortable]="table.isSortable('method')" [class.sorted]="table.isSorted('method')" (click)="table.toggleSort('method', $event)">אופן תרומה<span class="sort-icon" *ngIf="table.getSortIcon('method')">{{ table.getSortIcon('method') }}</span></th>
-              <th [class.sortable]="table.isSortable('amount')" [class.sorted]="table.isSorted('amount')" (click)="table.toggleSort('amount', $event)">
+              <th class="w-method" [class.sortable]="table.isSortable('method')" [class.sorted]="table.isSorted('method')" (click)="table.toggleSort('method', $event)">אופן תרומה<span class="sort-icon" *ngIf="table.getSortIcon('method')">{{ table.getSortIcon('method') }}</span></th>
+              <th class="w-amount" [class.sortable]="table.isSortable('amount')" [class.sorted]="table.isSorted('amount')" (click)="table.toggleSort('amount', $event)">
                 סכום
                 <span class="sort-icon" *ngIf="table.getSortIcon('amount')">{{ table.getSortIcon('amount') }}</span>
               </th>
-              <th [class.sortable]="table.isSortable('currency')" [class.sorted]="table.isSorted('currency')" (click)="table.toggleSort('currency', $event)">מטבע<span class="sort-icon" *ngIf="table.getSortIcon('currency')">{{ table.getSortIcon('currency') }}</span></th>
-              <th [class.sortable]="table.isSortable('campaign')" [class.sorted]="table.isSorted('campaign')" (click)="table.toggleSort('campaign', $event)">קמפיין<span class="sort-icon" *ngIf="table.getSortIcon('campaign')">{{ table.getSortIcon('campaign') }}</span></th>
-              <th [class.sortable]="table.isSortable('reason')" [class.sorted]="table.isSorted('reason')" (click)="table.toggleSort('reason', $event)">סיבת התרומה<span class="sort-icon" *ngIf="table.getSortIcon('reason')">{{ table.getSortIcon('reason') }}</span></th>
-              <th>פעולות</th>
+              <th class="w-currency" [class.sortable]="table.isSortable('currency')" [class.sorted]="table.isSorted('currency')" (click)="table.toggleSort('currency', $event)">מטבע<span class="sort-icon" *ngIf="table.getSortIcon('currency')">{{ table.getSortIcon('currency') }}</span></th>
+              <th class="w-campaign" [class.sortable]="table.isSortable('campaign')" [class.sorted]="table.isSorted('campaign')" (click)="table.toggleSort('campaign', $event)">קמפיין<span class="sort-icon" *ngIf="table.getSortIcon('campaign')">{{ table.getSortIcon('campaign') }}</span></th>
+              <th class="w-reason w-flex" [class.sortable]="table.isSortable('reason')" [class.sorted]="table.isSorted('reason')" (click)="table.toggleSort('reason', $event)">סיבת התרומה<span class="sort-icon" *ngIf="table.getSortIcon('reason')">{{ table.getSortIcon('reason') }}</span></th>
+              <th class="w-actions">פעולות</th>
             </tr>
           </thead>
           <tbody>
@@ -189,16 +189,16 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th [class.sortable]="table.isSortable('deliveryDate')" [class.sorted]="table.isSorted('deliveryDate')" (click)="table.toggleSort('deliveryDate', $event)">
+              <th class="w-date" [class.sortable]="table.isSortable('deliveryDate')" [class.sorted]="table.isSorted('deliveryDate')" (click)="table.toggleSort('deliveryDate', $event)">
                 תאריך מסירה
                 <span class="sort-icon" *ngIf="table.getSortIcon('deliveryDate')">{{ table.getSortIcon('deliveryDate') }}</span>
               </th>
-              <th [class.sortable]="table.isSortable('giftName')" [class.sorted]="table.isSorted('giftName')" (click)="table.toggleSort('giftName', $event)">
+              <th class="w-gift w-flex" [class.sortable]="table.isSortable('giftName')" [class.sorted]="table.isSorted('giftName')" (click)="table.toggleSort('giftName', $event)">
                 שם המתנה
                 <span class="sort-icon" *ngIf="table.getSortIcon('giftName')">{{ table.getSortIcon('giftName') }}</span>
               </th>
-              <th [class.sortable]="table.isSortable('isDelivered')" [class.sorted]="table.isSorted('isDelivered')" (click)="table.toggleSort('isDelivered', $event)">סטטוס<span class="sort-icon" *ngIf="table.getSortIcon('isDelivered')">{{ table.getSortIcon('isDelivered') }}</span></th>
-              <th>פעולות</th>
+              <th class="w-status" [class.sortable]="table.isSortable('isDelivered')" [class.sorted]="table.isSorted('isDelivered')" (click)="table.toggleSort('isDelivered', $event)">סטטוס<span class="sort-icon" *ngIf="table.getSortIcon('isDelivered')">{{ table.getSortIcon('isDelivered') }}</span></th>
+              <th class="w-actions">פעולות</th>
             </tr>
           </thead>
           <tbody>

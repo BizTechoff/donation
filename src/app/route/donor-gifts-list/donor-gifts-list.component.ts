@@ -65,7 +65,7 @@ export class DonorGiftsListComponent implements OnInit, OnDestroy {
   readonly table = new TableState({
     pageSize: 50,
     settingsKey: 'donorGifts',
-    sortableFields: ['donor', 'gift', 'deliveryDate', 'isDelivered'],
+    sortableFields: ['donor', 'gift', 'deliveryDate', 'isDelivered', 'notes'],
     scrollContainer: () => this.scrollableTable?.nativeElement,
     load: req => this.loadDonorGifts(req)
   });

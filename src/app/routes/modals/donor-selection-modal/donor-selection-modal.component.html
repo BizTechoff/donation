@@ -27,16 +27,16 @@
       <table class="data-table">
         <thead>
           <tr>
-            <th *ngIf="args.multiSelect" class="checkbox-col">
+            <th *ngIf="args.multiSelect" class="w-check checkbox-col">
               <input type="checkbox" [checked]="areAllSelected()" (change)="toggleSelectAll()" title="בחר/בטל הכל - על פני כל הדפים">
             </th>
-            <th [class.sortable]="table.isSortable('fullName')" [class.sorted]="table.isSorted('fullName')" (click)="table.toggleSort('fullName', $event)">
+            <th class="w-name w-flex" [class.sortable]="table.isSortable('fullName')" [class.sorted]="table.isSorted('fullName')" (click)="table.toggleSort('fullName', $event)">
               {{ (i18n.terms$ | async)?.donorNameColumn }}
               <span class="sort-icon" *ngIf="table.getSortIcon('fullName')">{{ table.getSortIcon('fullName')}}</span>
             </th>
-            <th [class.sortable]="table.isSortable('phone')" [class.sorted]="table.isSorted('phone')" (click)="table.toggleSort('phone', $event)">{{ (i18n.terms$ | async)?.phoneColumn }}<span class="sort-icon" *ngIf="table.getSortIcon('phone')">{{ table.getSortIcon('phone') }}</span></th>
-            <th [class.sortable]="table.isSortable('email')" [class.sorted]="table.isSorted('email')" (click)="table.toggleSort('email', $event)">{{ (i18n.terms$ | async)?.emailColumn }}<span class="sort-icon" *ngIf="table.getSortIcon('email')">{{ table.getSortIcon('email') }}</span></th>
-            <th [class.sortable]="table.isSortable('address')" [class.sorted]="table.isSorted('address')" (click)="table.toggleSort('address', $event)">{{ (i18n.terms$ | async)?.addressColumn }}<span class="sort-icon" *ngIf="table.getSortIcon('address')">{{ table.getSortIcon('address') }}</span></th>
+            <th class="w-phone" [class.sortable]="table.isSortable('phone')" [class.sorted]="table.isSorted('phone')" (click)="table.toggleSort('phone', $event)">{{ (i18n.terms$ | async)?.phoneColumn }}<span class="sort-icon" *ngIf="table.getSortIcon('phone')">{{ table.getSortIcon('phone') }}</span></th>
+            <th class="w-email" [class.sortable]="table.isSortable('email')" [class.sorted]="table.isSorted('email')" (click)="table.toggleSort('email', $event)">{{ (i18n.terms$ | async)?.emailColumn }}<span class="sort-icon" *ngIf="table.getSortIcon('email')">{{ table.getSortIcon('email') }}</span></th>
+            <th class="w-address" [class.sortable]="table.isSortable('address')" [class.sorted]="table.isSorted('address')" (click)="table.toggleSort('address', $event)">{{ (i18n.terms$ | async)?.addressColumn }}<span class="sort-icon" *ngIf="table.getSortIcon('address')">{{ table.getSortIcon('address') }}</span></th>
           </tr>
         </thead>
         <tbody>

@@ -68,7 +68,7 @@
 
           <!-- Date Column -->
           <ng-container matColumnDef="paymentDate">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>תאריך תשלום</th>
+            <th class="w-date" mat-header-cell *matHeaderCellDef mat-sort-header>תאריך תשלום</th>
             <td mat-cell *matCellDef="let payment">
               <div class="date-cell">
                 <mat-icon class="cell-icon">event</mat-icon>
@@ -79,7 +79,7 @@
 
           <!-- Type Column -->
           <ng-container matColumnDef="type">
-            <th mat-header-cell *matHeaderCellDef>סוג</th>
+            <th class="w-type" mat-header-cell *matHeaderCellDef>סוג</th>
             <td mat-cell *matCellDef="let payment">
               {{payment.type}}
             </td>
@@ -87,7 +87,7 @@
 
           <!-- Amount Column -->
           <ng-container matColumnDef="amount">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>סכום</th>
+            <th class="w-amount" mat-header-cell *matHeaderCellDef mat-sort-header>סכום</th>
             <td mat-cell *matCellDef="let payment">
               <div class="amount-cell">
                 <span class="amount">{{payment.amount | amount}}</span>
@@ -97,7 +97,7 @@
 
           <!-- Currency Column -->
           <ng-container matColumnDef="currency">
-            <th mat-header-cell *matHeaderCellDef>מטבע</th>
+            <th class="w-currency" mat-header-cell *matHeaderCellDef>מטבע</th>
             <td mat-cell *matCellDef="let payment">
               <span class="currency-badge">{{currencyTypes[payment.currencyId].symbol || getCurrencySymbol()}}</span>
             </td>
@@ -105,7 +105,7 @@
 
           <!-- Reference Column -->
           <ng-container matColumnDef="reference">
-            <th mat-header-cell *matHeaderCellDef>אסמכתא</th>
+            <th class="w-ref" mat-header-cell *matHeaderCellDef>אסמכתא</th>
             <td mat-cell *matCellDef="let payment">
               <span *ngIf="payment.reference">{{payment.reference}}</span>
               <span *ngIf="!payment.reference" class="no-data">-</span>
@@ -114,7 +114,7 @@
 
           <!-- Payment Identifier Column -->
           <ng-container matColumnDef="paymentIdentifier">
-            <th mat-header-cell *matHeaderCellDef>מזהה תשלום</th>
+            <th class="w-ref" mat-header-cell *matHeaderCellDef>מזהה תשלום</th>
             <td mat-cell *matCellDef="let payment">
               <span *ngIf="payment.paymentIdentifier">{{payment.paymentIdentifier}}</span>
               <span *ngIf="!payment.paymentIdentifier" class="no-data">-</span>
@@ -123,7 +123,7 @@
 
           <!-- Notes Column -->
           <ng-container matColumnDef="notes">
-            <th mat-header-cell *matHeaderCellDef>הערות</th>
+            <th class="w-notes w-flex" mat-header-cell *matHeaderCellDef>הערות</th>
             <td mat-cell *matCellDef="let payment" [title]="payment.notes || ''">
               {{truncateNotes(payment.notes)}}
             </td>
@@ -131,7 +131,7 @@
 
           <!-- Actions Column -->
           <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef>פעולות</th>
+            <th class="w-actions" mat-header-cell *matHeaderCellDef>פעולות</th>
             <td mat-cell *matCellDef="let payment">
               <div class="actions-cell">
                 <button mat-icon-button

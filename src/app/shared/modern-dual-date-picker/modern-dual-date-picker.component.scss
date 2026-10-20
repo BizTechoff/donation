@@ -61,11 +61,15 @@
     margin-bottom: 4px;
   }
 
+  /* Item 6 (20.10.2026) - the clear X must stay on the dates' line. With
+     wrap, picking a date made the X appear, and in a narrow filter row it
+     dropped to a line of its own - the row seemed to open a new line above.
+     The mobile breakpoint below still stacks everything on purpose. */
   .date-inputs-container {
     display: flex;
     gap: 12px;
     align-items: center;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
   }
 
   .date-triggers-wrapper {
@@ -73,6 +77,7 @@
     gap: 0; // No gap - separator will handle spacing
     background: white;
     flex: 1;
+    min-width: 0;
     align-items: stretch;
   }
 
@@ -486,6 +491,7 @@
 
   // Clear button
   .clear-button {
+    flex-shrink: 0;
     background: none;
     border: 1px solid #ddd;
     border-radius: 4px;

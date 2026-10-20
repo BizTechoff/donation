@@ -102,26 +102,26 @@
       <table class="data-table">
       <thead>
         <tr>
-          <th [class.sortable]="table.isSortable('recipientName')" [class.sorted]="table.isSorted('recipientName')" (click)="table.toggleSort('recipientName', $event)">
+          <th class="w-name w-flex" [class.sortable]="table.isSortable('recipientName')" [class.sorted]="table.isSorted('recipientName')" (click)="table.toggleSort('recipientName', $event)">
             {{ (i18n.terms$ | async)?.donorRecipient }}
             <span class="sort-icon" *ngIf="table.getSortIcon('recipientName')">{{ table.getSortIcon('recipientName') }}</span>
           </th>
-          <th [class.sortable]="table.isSortable('type')" [class.sorted]="table.isSorted('type')" (click)="table.toggleSort('type', $event)">
+          <th class="w-type" [class.sortable]="table.isSortable('type')" [class.sorted]="table.isSorted('type')" (click)="table.toggleSort('type', $event)">
             {{ (i18n.terms$ | async)?.certificateTypeHeader }}
             <span class="sort-icon" *ngIf="table.getSortIcon('type')">{{ table.getSortIcon('type') }}</span>
           </th>
-          <th [class.sortable]="table.isSortable('eventDate')" [class.sorted]="table.isSorted('eventDate')" (click)="table.toggleSort('eventDate', $event)">
+          <th class="w-date" [class.sortable]="table.isSortable('eventDate')" [class.sorted]="table.isSorted('eventDate')" (click)="table.toggleSort('eventDate', $event)">
             {{ (i18n.terms$ | async)?.eventDate }}
             <span class="sort-icon" *ngIf="table.getSortIcon('eventDate')">{{ table.getSortIcon('eventDate') }}</span>
           </th>
-          <th [class.sortable]="table.isSortable('amount')" [class.sorted]="table.isSorted('amount')" (click)="table.toggleSort('amount', $event)">
+          <th class="w-amount" [class.sortable]="table.isSortable('amount')" [class.sorted]="table.isSorted('amount')" (click)="table.toggleSort('amount', $event)">
             {{ (i18n.terms$ | async)?.amountEvent }}
             <span class="sort-icon" *ngIf="table.getSortIcon('amount')">{{ table.getSortIcon('amount') }}</span>
           </th>
-          <th>{{ (i18n.terms$ | async)?.nextReminderColumn }}</th>
-          <th>{{ (i18n.terms$ | async)?.blessingsColumn }}</th>
-          <th>{{ (i18n.terms$ | async)?.mainText }}</th>
-          <th class="actions-header">
+          <th class="w-date">{{ (i18n.terms$ | async)?.nextReminderColumn }}</th>
+          <th class="w-count">{{ (i18n.terms$ | async)?.blessingsColumn }}</th>
+          <th class="w-text">{{ (i18n.terms$ | async)?.mainText }}</th>
+          <th class="w-actions actions-header">
             <div class="actions-header-content">
               <span>{{ (i18n.terms$ | async)?.actionsHeaderCert }}</span>
               <div class="header-buttons">

@@ -33,19 +33,19 @@
       <table class="data-table">
       <thead>
         <tr>
-          <th [class.sortable]="table.isSortable('fullName')" [class.sorted]="table.isSorted('fullName')" (click)="table.toggleSort('fullName', $event)">
+          <th class="w-name w-flex" [class.sortable]="table.isSortable('fullName')" [class.sorted]="table.isSorted('fullName')" (click)="table.toggleSort('fullName', $event)">
             {{ (i18n.terms$ | async)?.name }}
             <span class="sort-icon" *ngIf="table.getSortIcon('fullName')">{{ table.getSortIcon('fullName') }}</span>
           </th>
-          <th [class.sortable]="table.isSortable('address')" [class.sorted]="table.isSorted('address')" (click)="table.toggleSort('address', $event)">
+          <th class="w-address" [class.sortable]="table.isSortable('address')" [class.sorted]="table.isSorted('address')" (click)="table.toggleSort('address', $event)">
             {{ (i18n.terms$ | async)?.address }}
             <span class="sort-icon" *ngIf="table.getSortIcon('address')">{{ table.getSortIcon('address') }}</span>
           </th>
-          <th [class.sortable]="table.isSortable('phone')" [class.sorted]="table.isSorted('phone')" (click)="table.toggleSort('phone', $event)">
+          <th class="w-phone" [class.sortable]="table.isSortable('phone')" [class.sorted]="table.isSorted('phone')" (click)="table.toggleSort('phone', $event)">
             {{ (i18n.terms$ | async)?.phone }}
             <span class="sort-icon" *ngIf="table.getSortIcon('phone')">{{ table.getSortIcon('phone') }}</span>
           </th>
-          <th class="col-email" [class.sortable]="table.isSortable('email')" [class.sorted]="table.isSorted('email')" (click)="table.toggleSort('email', $event)">
+          <th class="w-email col-email" [class.sortable]="table.isSortable('email')" [class.sorted]="table.isSorted('email')" (click)="table.toggleSort('email', $event)">
             {{ (i18n.terms$ | async)?.email }}
             <span class="sort-icon" *ngIf="table.getSortIcon('email')">{{ table.getSortIcon('email') }}</span>
           </th>
@@ -66,7 +66,7 @@
             {{ (i18n.terms$ | async)?.anash }}
             <span class="sort-icon" *ngIf="table.getSortIcon('isAnash')">{{ table.getSortIcon('isAnash') }}</span>
           </th>
-          <th class="actions-header">
+          <th class="w-actions actions-header">
             <div class="actions-header-content">
               <span>{{ (i18n.terms$ | async)?.actions }}</span>
               <div class="header-buttons">

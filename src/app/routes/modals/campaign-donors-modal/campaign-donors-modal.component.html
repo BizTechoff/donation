@@ -43,12 +43,12 @@
         <table class="donors-table">
           <thead>
             <tr>
-              <th [class.sortable]="table.isSortable('name')" [class.sorted]="table.isSorted('name')" (click)="table.toggleSort('name', $event)">שם<span class="sort-icon" *ngIf="table.getSortIcon('name')">{{ table.getSortIcon('name') }}</span></th>
-              <th [class.sortable]="table.isSortable('phone')" [class.sorted]="table.isSorted('phone')" (click)="table.toggleSort('phone', $event)">טלפון<span class="sort-icon" *ngIf="table.getSortIcon('phone')">{{ table.getSortIcon('phone') }}</span></th>
-              <th [class.sortable]="table.isSortable('email')" [class.sorted]="table.isSorted('email')" (click)="table.toggleSort('email', $event)">אימייל<span class="sort-icon" *ngIf="table.getSortIcon('email')">{{ table.getSortIcon('email') }}</span></th>
-              <th [class.sortable]="table.isSortable('level')" [class.sorted]="table.isSorted('level')" (click)="table.toggleSort('level', $event)">רמה<span class="sort-icon" *ngIf="table.getSortIcon('level')">{{ table.getSortIcon('level') }}</span></th>
-              <th [class.sortable]="table.isSortable('city')" [class.sorted]="table.isSorted('city')" (click)="table.toggleSort('city', $event)">עיר<span class="sort-icon" *ngIf="table.getSortIcon('city')">{{ table.getSortIcon('city') }}</span></th>
-              <th>פעולות</th>
+              <th class="w-name w-flex" [class.sortable]="table.isSortable('name')" [class.sorted]="table.isSorted('name')" (click)="table.toggleSort('name', $event)">שם<span class="sort-icon" *ngIf="table.getSortIcon('name')">{{ table.getSortIcon('name') }}</span></th>
+              <th class="w-phone" [class.sortable]="table.isSortable('phone')" [class.sorted]="table.isSorted('phone')" (click)="table.toggleSort('phone', $event)">טלפון<span class="sort-icon" *ngIf="table.getSortIcon('phone')">{{ table.getSortIcon('phone') }}</span></th>
+              <th class="w-email" [class.sortable]="table.isSortable('email')" [class.sorted]="table.isSorted('email')" (click)="table.toggleSort('email', $event)">אימייל<span class="sort-icon" *ngIf="table.getSortIcon('email')">{{ table.getSortIcon('email') }}</span></th>
+              <th class="w-type" [class.sortable]="table.isSortable('level')" [class.sorted]="table.isSorted('level')" (click)="table.toggleSort('level', $event)">רמה<span class="sort-icon" *ngIf="table.getSortIcon('level')">{{ table.getSortIcon('level') }}</span></th>
+              <th class="w-city" [class.sortable]="table.isSortable('city')" [class.sorted]="table.isSorted('city')" (click)="table.toggleSort('city', $event)">עיר<span class="sort-icon" *ngIf="table.getSortIcon('city')">{{ table.getSortIcon('city') }}</span></th>
+              <th class="w-actions">פעולות</th>
             </tr>
           </thead>
           <tbody>

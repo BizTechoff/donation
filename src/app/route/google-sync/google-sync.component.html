@@ -144,29 +144,29 @@
       <mat-card-content>
         <table mat-table [dataSource]="syncLogs" class="logs-table">
           <ng-container matColumnDef="date">
-            <th mat-header-cell *matHeaderCellDef>תאריך</th>
+            <th class="w-date" mat-header-cell *matHeaderCellDef>תאריך</th>
             <td mat-cell *matCellDef="let log">{{ log.createdDate | date:'dd/MM/yyyy HH:mm' }}</td>
           </ng-container>
           <ng-container matColumnDef="type">
-            <th mat-header-cell *matHeaderCellDef>סוג</th>
+            <th class="w-type w-flex" mat-header-cell *matHeaderCellDef>סוג</th>
             <td mat-cell *matCellDef="let log">{{ log.syncType === 'manual' ? 'ידני' : log.syncType === 'scheduled' ? 'מתוזמן' : 'ראשוני' }}</td>
           </ng-container>
           <ng-container matColumnDef="status">
-            <th mat-header-cell *matHeaderCellDef>סטטוס</th>
+            <th class="w-status" mat-header-cell *matHeaderCellDef>סטטוס</th>
             <td mat-cell *matCellDef="let log">
               <mat-icon [class]="log.status">{{ log.status === 'completed' ? 'check_circle' : log.status === 'failed' ? 'error' : 'hourglass_empty' }}</mat-icon>
             </td>
           </ng-container>
           <ng-container matColumnDef="pushed">
-            <th mat-header-cell *matHeaderCellDef>נשלחו</th>
+            <th class="w-count" mat-header-cell *matHeaderCellDef>נשלחו</th>
             <td mat-cell *matCellDef="let log">{{ log.donorsPushed }}</td>
           </ng-container>
           <ng-container matColumnDef="pulled">
-            <th mat-header-cell *matHeaderCellDef>נמשכו</th>
+            <th class="w-count" mat-header-cell *matHeaderCellDef>נמשכו</th>
             <td mat-cell *matCellDef="let log">{{ log.contactsPulled }}</td>
           </ng-container>
           <ng-container matColumnDef="duration">
-            <th mat-header-cell *matHeaderCellDef>משך</th>
+            <th class="w-count" mat-header-cell *matHeaderCellDef>משך</th>
             <td mat-cell *matCellDef="let log">{{ (log.duration / 1000).toFixed(1) }}s</td>
           </ng-container>
           <tr mat-header-row *matHeaderRowDef="['date', 'type', 'status', 'pushed', 'pulled', 'duration']"></tr>

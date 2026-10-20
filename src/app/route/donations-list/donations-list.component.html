@@ -187,7 +187,7 @@
       <table class="data-table">
       <thead>
         <tr>
-          <th class="w-name" [class.sortable]="table.isSortable('donorName')" [class.sorted]="table.isSorted('donorName')" (click)="table.toggleSort('donorName', $event)">
+          <th class="w-name w-flex" [class.sortable]="table.isSortable('donorName')" [class.sorted]="table.isSorted('donorName')" (click)="table.toggleSort('donorName', $event)">
             {{ (i18n.terms$ | async)?.donorColumn }}
             <span class="sort-icon" *ngIf="table.getSortIcon('donorName')">{{ table.getSortIcon('donorName') }}</span>
           </th>

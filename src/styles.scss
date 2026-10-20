@@ -648,23 +648,48 @@ th {
  * a subset still gets stable, sensibly-weighted columns, because `fixed`
  * distributes whatever is left over in the same ratios every time.
  * ------------------------------------------------------------------------ */
-.data-table {
-  th.w-name       { width: 16% }
-  th.w-date       { width: 11% }
-  th.w-type       { width: 10% }
-  th.w-method     { width: 10% }
-  th.w-amount     { width:  8% }
-  th.w-currency   { width:  5% }
-  th.w-campaign   { width: 13% }
-  th.w-fundraiser { width: 11% }
-  th.w-reason     { width:  9% }
-  th.w-phone      { width: 10% }
-  th.w-mobile     { width: 10% }
-  th.w-email      { width: 14% }
-  th.w-address    { width: 18% }
-  th.w-status     { width:  9% }
-  th.w-actions    { width:  7% }
-}
+/* Any table whose headers use this vocabulary gets fixed layout - also the
+   modals and screens that do not use .data-table (reminders, payments,
+   campaign lists, google sync...). One rule, every table, no per-screen CSS. */
+table:has(> thead th[class^="w-"], > thead th[class*=" w-"]) { table-layout: fixed; }
+
+/* Not scoped to .data-table on purpose: a date column is a date column in
+   every table of the platform. */
+th.w-name       { width: 14% }
+th.w-date       { width: 11% }
+th.w-type       { width: 10% }
+th.w-method     { width: 10% }
+th.w-amount     { width:  8% }
+th.w-currency   { width:  7% }
+th.w-campaign   { width: 13% }
+th.w-fundraiser { width: 11% }
+th.w-reason     { width:  9% }
+th.w-phone      { width: 10% }
+th.w-mobile     { width: 10% }
+th.w-email      { width: 14% }
+th.w-address    { width: 18% }
+th.w-status     { width:  9% }
+/* Actions in percent like every other column (20.10.2026). A pixel width
+   took the surplus when the columns summed under 100% (it swelled), and a
+   pixel width plus an auto "flex" column starved the flex column to nothing
+   on a narrow screen (the donor column vanished under the sidebar). With
+   every column in percent the browser scales them all together - nothing
+   swells, nothing disappears. Screens with header buttons get more room, and
+   the header wraps its buttons under the label instead of spilling over. */
+th.w-actions    { width:  9% }
+th.w-actions.actions-header { width: 13% }
+th.w-actions .actions-header-content { flex-wrap: wrap !important; justify-content: center !important; row-gap: 4px; }
+th.w-gift       { width: 16% }
+th.w-notes      { width: 14% }
+th.w-text       { width: 18% }
+th.w-progress   { width:  8% }
+th.w-count      { width:  7% }
+th.w-check      { width:  4% }
+th.w-city       { width: 10% }
+th.w-ref        { width: 10% }
+
+/* w-flex (marks the main column of each table) is deliberately NOT auto any
+   more - see w-actions above. It keeps its own vocabulary width. */
 
 /* ---------------------------------------------------------------------------
  * Sortable table headers - table-class agnostic.

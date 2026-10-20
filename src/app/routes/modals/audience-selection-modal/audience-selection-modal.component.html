@@ -33,20 +33,20 @@
       <table class="audiences-table" *ngIf="getFilteredAudiences().length > 0">
         <thead>
           <tr>
-            <th *ngIf="args.multiSelect" class="col-checkbox"></th>
-            <th class="col-name" [class.sortable]="table.isSortable('name')" [class.sorted]="table.isSorted('name')" (click)="table.toggleSort('name', $event)">
+            <th class="w-check" *ngIf="args.multiSelect" class="col-checkbox"></th>
+            <th class="w-name w-flex col-name" [class.sortable]="table.isSortable('name')" [class.sorted]="table.isSorted('name')" (click)="table.toggleSort('name', $event)">
               {{ (i18n.terms$ | async)?.targetAudienceName }}
               <span class="sort-icon" *ngIf="table.getSortIcon('name')">{{ table.getSortIcon('name') }}</span>
             </th>
-            <th class="col-donors" [class.sortable]="table.isSortable('donorCount')" [class.sorted]="table.isSorted('donorCount')" (click)="table.toggleSort('donorCount', $event)">
+            <th class="w-count col-donors" [class.sortable]="table.isSortable('donorCount')" [class.sorted]="table.isSorted('donorCount')" (click)="table.toggleSort('donorCount', $event)">
               {{ (i18n.terms$ | async)?.donors }}
               <span class="sort-icon" *ngIf="table.getSortIcon('donorCount')">{{ table.getSortIcon('donorCount') }}</span>
             </th>
-            <th class="col-created" [class.sortable]="table.isSortable('createdDate')" [class.sorted]="table.isSorted('createdDate')" (click)="table.toggleSort('createdDate', $event)">
+            <th class="w-date col-created" [class.sortable]="table.isSortable('createdDate')" [class.sorted]="table.isSorted('createdDate')" (click)="table.toggleSort('createdDate', $event)">
               {{ (i18n.terms$ | async)?.createdDate }}
               <span class="sort-icon" *ngIf="table.getSortIcon('createdDate')">{{ table.getSortIcon('createdDate') }}</span>
             </th>
-            <th class="col-actions">{{ (i18n.terms$ | async)?.actions }}</th>
+            <th class="w-actions col-actions">{{ (i18n.terms$ | async)?.actions }}</th>
           </tr>
         </thead>
         <tbody>

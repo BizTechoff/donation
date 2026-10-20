@@ -63,20 +63,20 @@
         <table class="donors-table">
           <thead>
             <tr>
-              <th class="checkbox-column">
+              <th class="w-check checkbox-column">
                 <input type="checkbox"
                        [checked]="isAllSelected()"
                        (change)="toggleAllSelection()">
               </th>
-              <th class="sortable" (click)="sortBy('firstName')">
+              <th class="w-name w-flex sortable" (click)="sortBy('firstName')">
                 {{ (i18n.terms$ | async)?.name }}
                 <span class="sort-icon">{{getSortIcon('firstName')}}</span>
               </th>
-              <th class="sortable" (click)="sortBy('phone')">
+              <th class="w-phone sortable" (click)="sortBy('phone')">
                 {{ (i18n.terms$ | async)?.phone }}
                 <span class="sort-icon">{{getSortIcon('phone')}}</span>
               </th>
-              <th class="sortable" (click)="sortBy('email')">
+              <th class="w-email sortable" (click)="sortBy('email')">
                 {{ (i18n.terms$ | async)?.email }}
                 <span class="sort-icon">{{getSortIcon('email')}}</span>
               </th>
@@ -84,7 +84,7 @@
                 {{ (i18n.terms$ | async)?.level }}
                 <span class="sort-icon">{{getSortIcon('level')}}</span>
               </th> -->
-              <th class="sortable" (click)="sortBy('city')">
+              <th class="w-city sortable" (click)="sortBy('city')">
                 {{ (i18n.terms$ | async)?.city }}
                 <span class="sort-icon">{{getSortIcon('city')}}</span>
               </th>
