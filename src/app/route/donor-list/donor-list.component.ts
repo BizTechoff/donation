@@ -10,7 +10,7 @@ import { BusyService } from '../../common-ui-elements/src/angular/wait/busy-serv
 import { UIToolsService } from '../../common/UIToolsService';
 import { I18nService } from '../../i18n/i18n.service';
 import { DonorService } from '../../services/donor.service';
-import { ExcelExportService } from '../../services/excel-export.service';
+import { ExcelExportService, donorNameColumns } from '../../services/excel-export.service';
 import { GlobalFilterService } from '../../services/global-filter.service';
 import { HebrewDateService } from '../../services/hebrew-date.service';
 import { PrintService } from '../../services/print.service';
@@ -673,15 +673,8 @@ export class DonorListComponent implements OnInit, OnDestroy {
           data: exportData,
           columns: [
             // Donor fields - Hebrew
-            { header: this.i18n.currentTerms.title || 'תואר', mapper: (item) => item.donor.title || '', width: 15 },
-            { header: this.i18n.currentTerms.firstName || 'שם פרטי', mapper: (item) => item.donor.firstName || '', width: 15 },
-            { header: this.i18n.currentTerms.lastName || 'שם משפחה', mapper: (item) => item.donor.lastName || '', width: 15 },
-            { header: this.i18n.currentTerms.suffix || 'סיומת', mapper: (item) => item.donor.suffix || '', width: 10 },
-            // Donor fields - English
-            { header: this.i18n.currentTerms.titleEnglish || 'Title', mapper: (item) => item.donor.titleEnglish || '', width: 12 },
-            { header: this.i18n.currentTerms.firstNameEnglish || 'First Name', mapper: (item) => item.donor.firstNameEnglish || '', width: 15 },
-            { header: this.i18n.currentTerms.lastNameEnglish || 'Last Name', mapper: (item) => item.donor.lastNameEnglish || '', width: 15 },
-            { header: this.i18n.currentTerms.suffixEnglish || 'Suffix', mapper: (item) => item.donor.suffixEnglish || '', width: 10 },
+            // Item 32 - name columns from the one definition: last name before first.
+            ...donorNameColumns<any>((item: any) => item.donor, this.i18n.currentTerms),
             // Fundraiser & Contact Person
             { header: this.i18n.currentTerms.fundraiser || 'מתרים', mapper: (item) => fundraiserMap.get(item.donor.fundraiserId) || '', width: 15 },
             { header: this.i18n.currentTerms.contactPerson || 'איש קשר', mapper: (item) => contactPersonMap.get(item.donor.contactPersonId) || '', width: 15 },

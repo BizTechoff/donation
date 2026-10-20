@@ -14,7 +14,7 @@ import { GlobalFilterService } from '../../services/global-filter.service';
 import { HebrewDateService } from '../../services/hebrew-date.service';
 import { ReminderService } from '../../services/reminder.service';
 import { PrintService } from '../../services/print.service';
-import { ExcelExportService } from '../../services/excel-export.service';
+import { ExcelExportService, donorNameColumns } from '../../services/excel-export.service';
 import { BusyService } from '../../common-ui-elements/src/angular/wait/busy-service';
 import { DonorController } from '../../../shared/controllers/donor.controller';
 import { DonorMapController } from '../../../shared/controllers/donor-map.controller';
@@ -754,15 +754,8 @@ getTypeText(type: string): string {
           data: allReminders,
           columns: [
             // Donor fields - Hebrew
-            { header: this.i18n.currentTerms.title || 'תואר', mapper: (r) => r.donor?.title || '', width: 15 },
-            { header: this.i18n.currentTerms.firstName || 'שם פרטי', mapper: (r) => r.donor?.firstName || '', width: 15 },
-            { header: this.i18n.currentTerms.lastName || 'שם משפחה', mapper: (r) => r.donor?.lastName || '', width: 15 },
-            { header: this.i18n.currentTerms.suffix || 'סיומת', mapper: (r) => r.donor?.suffix || '', width: 10 },
-            // Donor fields - English
-            { header: this.i18n.currentTerms.titleEnglish || 'Title', mapper: (r) => r.donor?.titleEnglish || '', width: 12 },
-            { header: this.i18n.currentTerms.firstNameEnglish || 'First Name', mapper: (r) => r.donor?.firstNameEnglish || '', width: 15 },
-            { header: this.i18n.currentTerms.lastNameEnglish || 'Last Name', mapper: (r) => r.donor?.lastNameEnglish || '', width: 15 },
-            { header: this.i18n.currentTerms.suffixEnglish || 'Suffix', mapper: (r) => r.donor?.suffixEnglish || '', width: 10 },
+            // Item 32 - name columns from the one definition: last name before first.
+            ...donorNameColumns<any>((r: any) => r.donor, this.i18n.currentTerms),
             // Fundraiser & Contact Person + donor phone / mobile (item 18)
             { header: this.i18n.currentTerms.fundraiser || 'מתרים', mapper: (r) => r.donor?.fundraiserId ? fundraiserMap.get(r.donor.fundraiserId) || '' : '', width: 15 },
             { header: this.i18n.currentTerms.contactPerson || 'איש קשר', mapper: (r) => r.donor?.contactPersonId ? contactPersonMap.get(r.donor.contactPersonId) || '' : '', width: 15 },

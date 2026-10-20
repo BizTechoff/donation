@@ -18,7 +18,7 @@ import { ContactPerson } from '../../../shared/entity/contact-person';
 import { I18nService } from '../../i18n/i18n.service';
 import { CampaignSelectionModalComponent } from '../../routes/modals/campaign-selection-modal/campaign-selection-modal.component';
 import { DonorSelectionModalComponent } from '../../routes/modals/donor-selection-modal/donor-selection-modal.component';
-import { ExcelExportService } from '../../services/excel-export.service';
+import { ExcelExportService, donorNameColumns, DONOR_NAME_HEADERS, donorNameValues } from '../../services/excel-export.service';
 import { GlobalFilterService } from '../../services/global-filter.service';
 import { PrintService, PrintColumn } from '../../services/print.service';
 import { HebrewDateService } from '../../services/hebrew-date.service';
@@ -1278,15 +1278,8 @@ export class ReportsComponent implements OnInit, OnDestroy {
 
       const columns: import('../../services/excel-export.service').ExcelColumn<any>[] = [
         // Expanded donor fields (Hebrew)
-        { header: 'תואר', mapper: (row: any) => row.donorDetails?.title || '', width: 10 },
-        { header: 'שם פרטי', mapper: (row: any) => row.donorDetails?.firstName || '', width: 15 },
-        { header: 'שם משפחה', mapper: (row: any) => row.donorDetails?.lastName || '', width: 15 },
-        { header: 'סיומת', mapper: (row: any) => row.donorDetails?.suffix || '', width: 10 },
-        // Expanded donor fields (English)
-        { header: 'Title', mapper: (row: any) => row.donorDetails?.titleEnglish || '', width: 10 },
-        { header: 'First Name', mapper: (row: any) => row.donorDetails?.firstNameEnglish || '', width: 15 },
-        { header: 'Last Name', mapper: (row: any) => row.donorDetails?.lastNameEnglish || '', width: 15 },
-        { header: 'Suffix', mapper: (row: any) => row.donorDetails?.suffixEnglish || '', width: 10 },
+        // Item 32 - name columns from the one definition: last name before first.
+        ...donorNameColumns<any>((row: any) => row.donorDetails, undefined),
         // Donor type fields
         { header: 'מצב משפחתי', mapper: (row: any) => this.getMaritalStatusText(row.donorDetails?.maritalStatus || ''), width: 12 },
         { header: 'אנ"ש', mapper: (row: any) => row.donorDetails?.isAnash ? '✓' : '', width: 8 },
@@ -1368,9 +1361,8 @@ export class ReportsComponent implements OnInit, OnDestroy {
 
       if (isDonorGroupBy) {
         // Expanded donor headers (Hebrew)
-        headers.push('תואר', 'שם פרטי', 'שם משפחה', 'סיומת');
-        // Expanded donor headers (English)
-        headers.push('Title', 'First Name', 'Last Name', 'Suffix');
+        // Item 32 - same order as every export: last name before first (He + En).
+        headers.push(...DONOR_NAME_HEADERS);
         // Donor type fields
         headers.push('מצב משפחתי', 'אנ"ש', 'תלמידנו');
         // Fundraiser & Contact Person + donor phone / mobile (item 18)
@@ -1396,15 +1388,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
 
         if (isDonorGroupBy) {
           // Expanded donor fields (Hebrew)
-          dataRow.push(row.donorDetails?.title || '');
-          dataRow.push(row.donorDetails?.firstName || '');
-          dataRow.push(row.donorDetails?.lastName || '');
-          dataRow.push(row.donorDetails?.suffix || '');
-          // Expanded donor fields (English)
-          dataRow.push(row.donorDetails?.titleEnglish || '');
-          dataRow.push(row.donorDetails?.firstNameEnglish || '');
-          dataRow.push(row.donorDetails?.lastNameEnglish || '');
-          dataRow.push(row.donorDetails?.suffixEnglish || '');
+          dataRow.push(...donorNameValues(row.donorDetails));
           // Donor type fields
           dataRow.push(this.getMaritalStatusText(row.donorDetails?.maritalStatus || ''));
           dataRow.push(row.donorDetails?.isAnash ? '✓' : '');
@@ -1608,15 +1592,8 @@ export class ReportsComponent implements OnInit, OnDestroy {
         data: this.paymentReportData,
         columns: [
           // Expanded donor fields (Hebrew)
-          { header: 'תואר', mapper: (row) => row.title || '', width: 10 },
-          { header: 'שם פרטי', mapper: (row) => row.firstName || '', width: 15 },
-          { header: 'שם משפחה', mapper: (row) => row.lastName || '', width: 15 },
-          { header: 'סיומת', mapper: (row) => row.suffix || '', width: 10 },
-          // Expanded donor fields (English)
-          { header: 'Title', mapper: (row) => row.titleEnglish || '', width: 10 },
-          { header: 'First Name', mapper: (row) => row.firstNameEnglish || '', width: 15 },
-          { header: 'Last Name', mapper: (row) => row.lastNameEnglish || '', width: 15 },
-          { header: 'Suffix', mapper: (row) => row.suffixEnglish || '', width: 10 },
+          // Item 32 - name columns from the one definition: last name before first.
+          ...donorNameColumns<any>((row: any) => row, undefined),
           // Donor type fields
           { header: 'מצב משפחתי', mapper: (row) => this.getMaritalStatusText(row.maritalStatus || ''), width: 12 },
           { header: 'אנ"ש', mapper: (row) => row.isAnash ? '✓' : '', width: 8 },
@@ -1700,15 +1677,8 @@ export class ReportsComponent implements OnInit, OnDestroy {
         data: this.blessingReportData,
         columns: [
           // Expanded donor fields (Hebrew)
-          { header: 'תואר', mapper: (row) => row.title || '', width: 10 },
-          { header: 'שם פרטי', mapper: (row) => row.firstName || '', width: 15 },
-          { header: 'שם משפחה', mapper: (row) => row.lastName || '', width: 15 },
-          { header: 'סיומת', mapper: (row) => row.suffix || '', width: 10 },
-          // Expanded donor fields (English)
-          { header: 'Title', mapper: (row) => row.titleEnglish || '', width: 10 },
-          { header: 'First Name', mapper: (row) => row.firstNameEnglish || '', width: 15 },
-          { header: 'Last Name', mapper: (row) => row.lastNameEnglish || '', width: 15 },
-          { header: 'Suffix', mapper: (row) => row.suffixEnglish || '', width: 10 },
+          // Item 32 - name columns from the one definition: last name before first.
+          ...donorNameColumns<any>((row: any) => row, undefined),
           // Donor type fields
           { header: 'מצב משפחתי', mapper: (row) => this.getMaritalStatusText(row.maritalStatus || ''), width: 12 },
           { header: 'אנ"ש', mapper: (row) => row.isAnash ? '✓' : '', width: 8 },

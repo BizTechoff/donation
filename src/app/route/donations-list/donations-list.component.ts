@@ -10,7 +10,7 @@ import { ContactPerson } from '../../../shared/entity/contact-person';
 import { BusyService } from '../../common-ui-elements/src/angular/wait/busy-service';
 import { UIToolsService } from '../../common/UIToolsService';
 import { I18nService } from '../../i18n/i18n.service';
-import { ExcelExportService } from '../../services/excel-export.service';
+import { ExcelExportService, donorNameColumns } from '../../services/excel-export.service';
 import { GlobalFilterService } from '../../services/global-filter.service';
 import { isPaymentBased, isStandingOrder, calculatePeriodsElapsed } from '../../../shared/utils/donation-utils';
 import { HebrewDateService } from '../../services/hebrew-date.service';
@@ -966,15 +966,8 @@ export class DonationsListComponent implements OnInit, OnDestroy {
           data: exportData,
           columns: [
             // Donor fields - Hebrew
-            { header: this.i18n.currentTerms.title || 'תואר', mapper: (item) => item.donation.donor?.title || '', width: 15 },
-            { header: this.i18n.currentTerms.firstName || 'שם פרטי', mapper: (item) => item.donation.donor?.firstName || '', width: 15 },
-            { header: this.i18n.currentTerms.lastName || 'שם משפחה', mapper: (item) => item.donation.donor?.lastName || '', width: 15 },
-            { header: this.i18n.currentTerms.suffix || 'סיומת', mapper: (item) => item.donation.donor?.suffix || '', width: 10 },
-            // Donor fields - English
-            { header: this.i18n.currentTerms.titleEnglish || 'Title', mapper: (item) => item.donation.donor?.titleEnglish || '', width: 12 },
-            { header: this.i18n.currentTerms.firstNameEnglish || 'First Name', mapper: (item) => item.donation.donor?.firstNameEnglish || '', width: 15 },
-            { header: this.i18n.currentTerms.lastNameEnglish || 'Last Name', mapper: (item) => item.donation.donor?.lastNameEnglish || '', width: 15 },
-            { header: this.i18n.currentTerms.suffixEnglish || 'Suffix', mapper: (item) => item.donation.donor?.suffixEnglish || '', width: 10 },
+            // Item 32 - name columns from the one definition: last name before first.
+            ...donorNameColumns<any>((item: any) => item.donation.donor, this.i18n.currentTerms),
             // Fundraiser & Contact Person + donor phone / mobile (item 18)
             { header: this.i18n.currentTerms.fundraiser || 'מתרים', mapper: (item) => item.donation.donor?.fundraiserId ? fundraiserMap.get(item.donation.donor.fundraiserId) || '' : '', width: 15 },
             { header: this.i18n.currentTerms.contactPerson || 'איש קשר', mapper: (item) => item.donation.donor?.contactPersonId ? contactPersonMap.get(item.donation.donor.contactPersonId) || '' : '', width: 15 },

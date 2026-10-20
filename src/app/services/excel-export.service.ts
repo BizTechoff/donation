@@ -9,6 +9,52 @@ export interface ExcelColumn<T> {
   align?: 'left' | 'right' | 'center'; // יישור (LTR/RTL): שימושי לכתובות באנגלית
 }
 
+/** The name parts of a donor, as exports show them. */
+export interface DonorNameParts {
+  title?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  suffix?: string | null;
+  titleEnglish?: string | null;
+  firstNameEnglish?: string | null;
+  lastNameEnglish?: string | null;
+  suffixEnglish?: string | null;
+}
+
+/**
+ * The donor-name columns of every export - ONE definition (item 32).
+ *
+ * Israel: "שם משפחה יופיע לפני שם פרטי - גם בעברית וגם באנגלית". The same
+ * eight columns (title, first, last, suffix x Hebrew/English) were written out
+ * by hand in every list and report export; the order is now set here once:
+ * תואר, שם משפחה, שם פרטי, סיומת / Title, Last Name, First Name, Suffix.
+ *
+ * @param donor reads the donor (or the row's donor details) from a row
+ * @param terms i18n terms for the Hebrew headers (optional)
+ */
+export function donorNameColumns<T>(donor: (row: T) => DonorNameParts | null | undefined, terms?: any): ExcelColumn<T>[] {
+  const v = (row: T, key: keyof DonorNameParts) => donor(row)?.[key] || '';
+  return [
+    // Hebrew
+    { header: terms?.title || 'תואר', mapper: r => v(r, 'title'), width: 15 },
+    { header: terms?.lastName || 'שם משפחה', mapper: r => v(r, 'lastName'), width: 15 },
+    { header: terms?.firstName || 'שם פרטי', mapper: r => v(r, 'firstName'), width: 15 },
+    { header: terms?.suffix || 'סיומת', mapper: r => v(r, 'suffix'), width: 10 },
+    // English
+    { header: terms?.titleEnglish || 'Title', mapper: r => v(r, 'titleEnglish'), width: 12 },
+    { header: terms?.lastNameEnglish || 'Last Name', mapper: r => v(r, 'lastNameEnglish'), width: 15 },
+    { header: terms?.firstNameEnglish || 'First Name', mapper: r => v(r, 'firstNameEnglish'), width: 15 },
+    { header: terms?.suffixEnglish || 'Suffix', mapper: r => v(r, 'suffixEnglish'), width: 10 }
+  ];
+}
+
+/** Same order for exports that build rows positionally (headers + values). */
+export const DONOR_NAME_HEADERS = ['תואר', 'שם משפחה', 'שם פרטי', 'סיומת', 'Title', 'Last Name', 'First Name', 'Suffix'];
+export function donorNameValues(d: DonorNameParts | null | undefined): string[] {
+  const x = d || {};
+  return [x.title, x.lastName, x.firstName, x.suffix, x.titleEnglish, x.lastNameEnglish, x.firstNameEnglish, x.suffixEnglish].map(s => s || '');
+}
+
 export interface ExcelExportConfig<T> {
   data: T[];                         // הנתונים לייצוא
   columns: ExcelColumn<T>[];         // הגדרת העמודות

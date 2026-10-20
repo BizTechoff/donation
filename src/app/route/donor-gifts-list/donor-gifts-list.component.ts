@@ -14,7 +14,7 @@ import { openDialog } from 'common-ui-elements';
 import { DonorGiftDetailsModalComponent } from '../../routes/modals/donor-gift-details-modal/donor-gift-details-modal.component';
 import { GiftCatalogModalComponent } from '../../routes/modals/gift-catalog-modal/gift-catalog-modal.component';
 import { PrintService } from '../../services/print.service';
-import { ExcelExportService } from '../../services/excel-export.service';
+import { ExcelExportService, donorNameColumns } from '../../services/excel-export.service';
 import { DonorController } from '../../../shared/controllers/donor.controller';
 import { DonorMapController } from '../../../shared/controllers/donor-map.controller';
 import { TableState, TableLoadRequest } from '../../common/table/table-state';
@@ -554,15 +554,8 @@ export class DonorGiftsListComponent implements OnInit, OnDestroy {
           data: allDonorGifts,
           columns: [
             // Donor fields - Hebrew
-            { header: this.i18n.currentTerms.title || 'תואר', mapper: (g) => g.donor?.title || '', width: 15 },
-            { header: this.i18n.currentTerms.firstName || 'שם פרטי', mapper: (g) => g.donor?.firstName || '', width: 15 },
-            { header: this.i18n.currentTerms.lastName || 'שם משפחה', mapper: (g) => g.donor?.lastName || '', width: 15 },
-            { header: this.i18n.currentTerms.suffix || 'סיומת', mapper: (g) => g.donor?.suffix || '', width: 10 },
-            // Donor fields - English
-            { header: this.i18n.currentTerms.titleEnglish || 'Title', mapper: (g) => g.donor?.titleEnglish || '', width: 12 },
-            { header: this.i18n.currentTerms.firstNameEnglish || 'First Name', mapper: (g) => g.donor?.firstNameEnglish || '', width: 15 },
-            { header: this.i18n.currentTerms.lastNameEnglish || 'Last Name', mapper: (g) => g.donor?.lastNameEnglish || '', width: 15 },
-            { header: this.i18n.currentTerms.suffixEnglish || 'Suffix', mapper: (g) => g.donor?.suffixEnglish || '', width: 10 },
+            // Item 32 - name columns from the one definition: last name before first.
+            ...donorNameColumns<any>((g: any) => g.donor, this.i18n.currentTerms),
             // Fundraiser & Contact Person + donor phone / mobile (item 18)
             { header: this.i18n.currentTerms.fundraiser || 'מתרים', mapper: (g) => g.donor?.fundraiserId ? fundraiserMap.get(g.donor.fundraiserId) || '' : '', width: 15 },
             { header: this.i18n.currentTerms.contactPerson || 'איש קשר', mapper: (g) => g.donor?.contactPersonId ? contactPersonMap.get(g.donor.contactPersonId) || '' : '', width: 15 },

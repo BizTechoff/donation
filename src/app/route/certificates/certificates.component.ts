@@ -8,7 +8,7 @@ import { User } from '../../../shared/entity/user';
 import { ContactPerson } from '../../../shared/entity/contact-person';
 import { UIToolsService } from '../../common/UIToolsService';
 import { I18nService } from '../../i18n/i18n.service';
-import { ExcelExportService } from '../../services/excel-export.service';
+import { ExcelExportService, donorNameColumns } from '../../services/excel-export.service';
 import { GlobalFilterService } from '../../services/global-filter.service';
 import { HebrewDateService } from '../../services/hebrew-date.service';
 import { PrintService } from '../../services/print.service';
@@ -630,15 +630,8 @@ export class CertificatesComponent implements OnInit, OnDestroy {
           data: allCertificates,
           columns: [
             // Donor fields - Hebrew
-            { header: this.i18n.currentTerms.title || 'תואר', mapper: (c) => c.donor?.title || '', width: 15 },
-            { header: this.i18n.currentTerms.firstName || 'שם פרטי', mapper: (c) => c.donor?.firstName || '', width: 15 },
-            { header: this.i18n.currentTerms.lastName || 'שם משפחה', mapper: (c) => c.donor?.lastName || '', width: 15 },
-            { header: this.i18n.currentTerms.suffix || 'סיומת', mapper: (c) => c.donor?.suffix || '', width: 10 },
-            // Donor fields - English
-            { header: this.i18n.currentTerms.titleEnglish || 'Title', mapper: (c) => c.donor?.titleEnglish || '', width: 12 },
-            { header: this.i18n.currentTerms.firstNameEnglish || 'First Name', mapper: (c) => c.donor?.firstNameEnglish || '', width: 15 },
-            { header: this.i18n.currentTerms.lastNameEnglish || 'Last Name', mapper: (c) => c.donor?.lastNameEnglish || '', width: 15 },
-            { header: this.i18n.currentTerms.suffixEnglish || 'Suffix', mapper: (c) => c.donor?.suffixEnglish || '', width: 10 },
+            // Item 32 - name columns from the one definition: last name before first.
+            ...donorNameColumns<any>((c: any) => c.donor, this.i18n.currentTerms),
             // Fundraiser & Contact Person + donor phone / mobile (item 18)
             { header: this.i18n.currentTerms.fundraiser || 'מתרים', mapper: (c) => c.donor?.fundraiserId ? fundraiserMap.get(c.donor.fundraiserId) || '' : '', width: 15 },
             { header: this.i18n.currentTerms.contactPerson || 'איש קשר', mapper: (c) => c.donor?.contactPersonId ? contactPersonMap.get(c.donor.contactPersonId) || '' : '', width: 15 },
