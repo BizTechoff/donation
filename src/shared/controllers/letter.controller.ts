@@ -2,6 +2,8 @@ import { Allow, BackendMethod, Controller, remult } from 'remult';
 import { Donation, DonorPlace } from '../entity';
 import { Letter } from '../enum/letter';
 import { DocxContentControl, DocxCreateResponse } from '../type/letter.type';
+import { HebrewDateController } from './hebrew-date.controller'
+import { buildFileName } from '../utils/file-name-utils'
 
 @Controller('letter')
 export class LetterController {
@@ -34,12 +36,22 @@ export class LetterController {
     console.table(contents)
 
     // N1 - the client produces dozens of letters and the folder filled up with
-    // anonymous files named after the letter type (Zoom ב׳ ~2:01). Name the
-    // file after the donor instead, falling back to the type when there is no
-    // donor name. Sanitised for characters Windows rejects in a file name.
+    // anonymous files named after the letter type (Zoom ב׳ ~2:01), so the file
+    // is named after the donor.
+    //
+    // סעיף 11 מרחיב: שם התורם ואחריו סיבת התרומה, ובלי סיבה - תאריך ההפקה
+    // העברי. שני מכתבים לאותו תורם כבר לא נושאים את אותו שם ודורסים זה את זה
+    // בתיקיית ההורדות.
+    //
+    // הניקוי והקיצור ל-120 תווים עוברים ל-buildFileName המשותף
+    // (shared/utils/file-name-utils) - אותו מודול של שמות קבצי הדוחות. כאן
+    // היה עותק נוסף של הניקוי, כתוב בשורה.
     const donorName = (donation.donor?.fullName || '').trim()
+    const reason = (donation.reason || '').trim()
+    const hebrewDate = reason ? '' : HebrewDateController.hebrewDateInfoSync(new Date()).dateFormatted
+
     const fileName = donorName
-      ? `${donorName.replace(/[\\/:*?"<>|]/g, ' ').replace(/\s+/g, ' ').trim()}.docx`
+      ? buildFileName([donorName, reason || hebrewDate], { extension: 'docx' })
       : undefined
 
     return await LetterController.createLetterDelegate(type, contents, fileName)

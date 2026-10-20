@@ -18,8 +18,24 @@
 export const FILE_NAME_SEPARATOR = ' - '
 export const FILE_NAME_MAX_LENGTH = 120
 
-/** תווים שמערכות הקבצים אוסרות בשם קובץ. */
-const ILLEGAL_CHARS = /[\\/:*?"<>|]/g
+/**
+ * מפרידי נתיב. הופכים למקף ולא נמחקים, אחרת "אנ"ש / תלמידנו" היה הופך
+ * ל"אנ"ש תלמידנו" ושתי הקטגוריות נבלעות זו בזו.
+ */
+const PATH_SEPARATORS = /[\\/]/g
+
+/**
+ * גרשיים כפולים צמודים לאות עברית הם גרשיים של עברית - ציון שנה (תשפ"ו),
+ * ראשי תיבות (ע"ח), קיצור (אנ"ש) - ולא מירכאות. התו ASCII אסור בשם קובץ,
+ * אבל הגרשיים העבריים (U+05F4) מותרים, ולכן ההמרה משמרת את הטקסט.
+ * בלי זה "דינער תשפ"ו" היה הופך ל"דינער תשפ-ו".
+ */
+const HEBREW_GERSHAYIM = /(?<=[\u05D0-\u05EA])"(?=[\u05D0-\u05EA])/g
+/** גרש בודד צמוד לאות עברית - ר' , צ' . מותר בשם קובץ, אבל מאוחד לצורה העברית. */
+const HEBREW_GERESH = /(?<=[\u05D0-\u05EA])'/g
+
+/** שאר התווים שמערכות הקבצים אוסרות. נמחקים - מקף במקומם רק מרעיש. */
+const ILLEGAL_CHARS = /[:*?"<>|]/g
 /** תווי בקרה - לא נראים, ושוברים גם שמות קבצים וגם S3 keys. */
 const CONTROL_CHARS = /[\u0000-\u001f\u007f]/g
 
@@ -31,7 +47,10 @@ export function sanitizeFileNamePart(value: string | number | null | undefined):
   if (value === null || value === undefined) return ''
   return String(value)
     .replace(CONTROL_CHARS, ' ')
-    .replace(ILLEGAL_CHARS, '-')
+    .replace(HEBREW_GERSHAYIM, '\u05F4')
+    .replace(HEBREW_GERESH, '\u05F3')
+    .replace(PATH_SEPARATORS, '-')
+    .replace(ILLEGAL_CHARS, '')
     .replace(/\s+/g, ' ')
     // ווינדוס לא שומר שם שמסתיים בנקודה או ברווח.
     .replace(/^[\s.]+/, '')
