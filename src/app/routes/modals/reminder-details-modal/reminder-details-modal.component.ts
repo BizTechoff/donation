@@ -28,7 +28,9 @@ export interface ReminderDetailsModalArgs {
 
 @DialogConfig({
   hasBackdrop: true,
-  maxWidth: '80vw',
+  // 95vw: the modal's own width (scss) is 80vw on desktop, 95vw on small
+  // screens - this only caps it. 80vw here cut the small-screen layout.
+  maxWidth: '95vw',
   maxHeight: '80vh'
 })
 @Component({

@@ -4,7 +4,11 @@
   // so "עריכת תזכורת" sat on the left and the X on the right - reversed
   // compared to every other modal (Zoom ב׳ ~3:02).
   direction: rtl;
-  width: 100%;
+  // An explicit width: with container-type the modal can no longer take its
+  // width from its content (it collapsed to a narrow strip), so it is set
+  // here - 80% of the screen up to 1200px, 95% on small screens (below).
+  // DialogConfig.maxWidth (95vw) only caps it.
+  width: min(1200px, 80vw);
   max-width: 1200px;
   height: 90vh;
   max-height: 90vh;
@@ -18,6 +22,24 @@
   overflow: hidden;
   cursor: default;
   box-sizing: border-box;
+  // The dialog box is capped at 80vw (DialogConfig), so the layout must follow
+  // the MODAL's width, not the screen's: a viewport media query kept two
+  // columns while the modal was already too narrow, and a 95vw width on a
+  // smaller screen overflowed the 80vw box - the horizontal scrollbar and the
+  // cut-off form. Container queries below decide by the modal's own width.
+  container-type: inline-size;
+}
+
+// Two columns only when the modal itself has room for them.
+@container (max-width: 900px) {
+  .main-content-layout {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .right-column {
+    min-width: 0;
+  }
 }
 
 @keyframes fadeIn {
@@ -121,7 +143,13 @@
   flex: 1;
   padding: 24px;
   overflow-y: auto;
+  overflow-x: hidden; // fields shrink to the modal - no sideways scroll
   min-height: 0;
+}
+
+// Flex children may shrink below their content width (inputs, date picker).
+.form-row > * {
+  min-width: 0;
 }
 
 .info-section {
@@ -391,9 +419,9 @@
 @media (max-width: 768px) {
   .reminder-details-modal {
     width: 95vw;
-    min-width: 300px;
+    min-width: 0;
     max-width: 95vw;
-    margin: 10px;
+    margin: 0;
   }
 
   .main-content-layout {

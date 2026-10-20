@@ -266,6 +266,14 @@ export class RemindersComponent implements OnInit, OnDestroy {
     }
   }
 
+  /** Item 17 - open the donor card from the donor name. */
+  async openDonorDetails(reminder: Reminder) {
+    const donorId = reminder.donor?.id;
+    if (!donorId) return;
+    const changed = await this.ui.donorDetailsDialog(donorId);
+    if (changed) await this.refreshData();
+  }
+
   async editReminder(reminder: Reminder) {
     const reminderEdited = await this.ui.reminderDetailsDialog(reminder.id);
     if (reminderEdited) {

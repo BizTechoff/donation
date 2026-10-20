@@ -144,11 +144,18 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let donorGift of donorGifts">
-          <td class="donor-name cell-ellipsis" [title]="getDonorName(donorGift)">{{ getDonorName(donorGift) }}</td>
+        <!-- Like reminders (items 13/17): double click edits the row, the donor
+             name opens the donor card. -->
+        <tr *ngFor="let donorGift of donorGifts" (dblclick)="editDonorGift(donorGift)">
+          <td class="donor-name cell-ellipsis" [title]="getDonorName(donorGift)">
+            <a class="donor-link" *ngIf="donorGift.donorId; else noDonorLink"
+               (click)="openDonorDetails(donorGift); $event.stopPropagation()"
+               (dblclick)="$event.stopPropagation()">{{ getDonorName(donorGift) }}</a>
+            <ng-template #noDonorLink>{{ getDonorName(donorGift) }}</ng-template>
+          </td>
           <td>{{ donorGift.gift?.name || '-' }}</td>
           <td>{{ formatHebrewDate(donorGift.deliveryDate) }}</td>
-          <td (click)="$event.stopPropagation()">
+          <td (click)="$event.stopPropagation()" (dblclick)="$event.stopPropagation()">
             <!-- Israel 20.10: the status column IS the action - a click asks
                  first, then marks delivered / not delivered. -->
             <app-done-status
@@ -161,7 +168,7 @@
             </app-done-status>
           </td>
           <td>{{ donorGift.notes || '-' }}</td>
-          <td class="actions" (click)="$event.stopPropagation()">
+          <td class="actions" (click)="$event.stopPropagation()" (dblclick)="$event.stopPropagation()">
             <!-- The ✅/📦 delivery button moved to the status column (Israel 20.10). -->
             <button class="btn-icon btn-edit" (click)="editDonorGift(donorGift)" [title]="(i18n.terms$ | async)?.edit">✏</button>
             <button class="btn-icon btn-delete" (click)="deleteDonorGift(donorGift)" [title]="(i18n.terms$ | async)?.delete">🗑</button>

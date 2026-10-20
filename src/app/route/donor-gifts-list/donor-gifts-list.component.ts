@@ -279,6 +279,13 @@ export class DonorGiftsListComponent implements OnInit, OnDestroy {
     }
   }
 
+  /** Open the donor card from the donor name (as in reminders / donations). */
+  async openDonorDetails(donorGift: DonorGift) {
+    if (!donorGift.donorId) return;
+    const changed = await this.ui.donorDetailsDialog(donorGift.donorId);
+    if (changed) await this.refreshData();
+  }
+
   async editDonorGift(donorGift: DonorGift) {
     const result = await openDialog(DonorGiftDetailsModalComponent, (it) => {
       it.args = { donorGiftId: donorGift.id };
