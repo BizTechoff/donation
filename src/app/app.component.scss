@@ -39,6 +39,49 @@ mat-toolbar {
     gap: 12px;
     margin-left: auto;
 
+    /* One size and one center line for every top-bar button (20.10.2026).
+       Each button used to bring its own box - quick actions 36px with an end
+       margin, the bell and the filters at the Material default, and the active
+       bell/filters grew with scale(1.1) - so the icons sat on different lines.
+       The rule lives here once; the child components keep only their colors. */
+    app-quick-actions,
+    app-global-filters,
+    app-language-switcher {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    ::ng-deep .mat-mdc-icon-button {
+      display: inline-flex !important;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+      width: 40px !important;
+      height: 40px !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      vertical-align: middle;
+
+      mat-icon {
+        font-size: 22px !important;
+        width: 22px !important;
+        height: 22px !important;
+        line-height: 22px !important;
+      }
+    }
+
+    /* Active bell / filters keep their ring and color, but not the scale -
+       scale(1.1) is what pushed them off the line. */
+    ::ng-deep .reminders-active,
+    ::ng-deep .filters-active {
+      transform: none !important;
+    }
+
+    .toolbar-button {
+      height: 40px;
+    }
+
     .reminder-bell {
       // color: rgba(255, 255, 255, 0.7);
       position: relative;
