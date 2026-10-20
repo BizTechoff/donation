@@ -45,6 +45,7 @@
             <tr>
               <th class="w-name w-flex" [class.sortable]="table.isSortable('name')" [class.sorted]="table.isSorted('name')" (click)="table.toggleSort('name', $event)">שם<span class="sort-icon" *ngIf="table.getSortIcon('name')">{{ table.getSortIcon('name') }}</span></th>
               <th class="w-phone" [class.sortable]="table.isSortable('phone')" [class.sorted]="table.isSorted('phone')" (click)="table.toggleSort('phone', $event)">טלפון<span class="sort-icon" *ngIf="table.getSortIcon('phone')">{{ table.getSortIcon('phone') }}</span></th>
+              <th class="w-mobile" [class.sortable]="table.isSortable('mobile')" [class.sorted]="table.isSorted('mobile')" (click)="table.toggleSort('mobile', $event)">נייד<span class="sort-icon" *ngIf="table.getSortIcon('mobile')">{{ table.getSortIcon('mobile') }}</span></th>
               <th class="w-email" [class.sortable]="table.isSortable('email')" [class.sorted]="table.isSorted('email')" (click)="table.toggleSort('email', $event)">אימייל<span class="sort-icon" *ngIf="table.getSortIcon('email')">{{ table.getSortIcon('email') }}</span></th>
               <th class="w-type" [class.sortable]="table.isSortable('level')" [class.sorted]="table.isSorted('level')" (click)="table.toggleSort('level', $event)">רמה<span class="sort-icon" *ngIf="table.getSortIcon('level')">{{ table.getSortIcon('level') }}</span></th>
               <th class="w-city" [class.sortable]="table.isSortable('city')" [class.sorted]="table.isSorted('city')" (click)="table.toggleSort('city', $event)">עיר<span class="sort-icon" *ngIf="table.getSortIcon('city')">{{ table.getSortIcon('city') }}</span></th>
@@ -57,6 +58,7 @@
                 <strong>{{getDonorDisplayName(donor)}}</strong>
               </td>
               <td class="cell-ellipsis" [title]="getDonorPhone(donor)">{{getDonorPhone(donor)}}</td>
+              <td class="cell-ellipsis" [title]="getDonorMobile(donor)">{{getDonorMobile(donor)}}</td>
               <td class="cell-ellipsis" [title]="getDonorEmail(donor)"
                   [appMailto]="getDonorEmail(donor)">{{getDonorEmail(donor)}}</td>
               <td>

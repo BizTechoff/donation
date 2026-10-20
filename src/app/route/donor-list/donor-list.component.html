@@ -45,6 +45,8 @@
             {{ (i18n.terms$ | async)?.phone }}
             <span class="sort-icon" *ngIf="table.getSortIcon('phone')">{{ table.getSortIcon('phone') }}</span>
           </th>
+          <!-- item 18 - mobile column (not sortable) -->
+          <th class="w-mobile" [class.sortable]="table.isSortable('mobile')" [class.sorted]="table.isSorted('mobile')" (click)="table.toggleSort('mobile', $event)">{{ (i18n.terms$ | async)?.mobileColumn || 'נייד' }}<span class="sort-icon" *ngIf="table.getSortIcon('mobile')">{{ table.getSortIcon('mobile') }}</span></th>
           <th class="w-email col-email" [class.sortable]="table.isSortable('email')" [class.sorted]="table.isSorted('email')" (click)="table.toggleSort('email', $event)">
             {{ (i18n.terms$ | async)?.email }}
             <span class="sort-icon" *ngIf="table.getSortIcon('email')">{{ table.getSortIcon('email') }}</span>
@@ -97,6 +99,7 @@
           </td>
           <td class="donor-address cell-ellipsis" [title]="getDonorAddress(donor.id)">{{getDonorAddress(donor.id)}}</td>
           <td class="cell-ellipsis" [title]="getDonorPhone(donor.id)">{{getDonorPhone(donor.id)}}</td>
+          <td class="cell-ellipsis" [title]="getDonorMobile(donor.id)">{{getDonorMobile(donor.id)}}</td>
           <!-- C3 - a single click opens a new Gmail message to this address. -->
           <td class="cell-ellipsis col-email" [title]="getDonorEmail(donor.id)"
               [appMailto]="getDonorEmail(donor.id)">{{getDonorEmail(donor.id)}}</td>

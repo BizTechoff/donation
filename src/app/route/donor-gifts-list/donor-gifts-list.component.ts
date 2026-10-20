@@ -474,9 +474,18 @@ export class DonorGiftsListComponent implements OnInit, OnDestroy {
           this.table.sortColumns
         );
 
+        // item 18 - print carries the same phone columns as the Excel export
+        const printDonorIds = [...new Set(allDonorGifts.map(g => g.donor?.id).filter(id => id))] as string[];
+        const printContactData = printDonorIds.length > 0
+          ? await DonorMapController.loadDonorsForExport(printDonorIds)
+          : [];
+        const printContactsMap = new Map(printContactData.map(d => [d.id, d]));
+
         // Prepare data for print
         const printData = allDonorGifts.map(donorGift => ({
           donor: this.getDonorName(donorGift),
+          phone: printContactsMap.get(donorGift.donor?.id || '')?.phone || '-',
+          mobile: printContactsMap.get(donorGift.donor?.id || '')?.mobile || '-',
           gift: donorGift.gift?.name || '-',
           deliveryDate: this.formatHebrewDate(donorGift.deliveryDate),
           status: donorGift.isDelivered ? this.i18n.currentTerms.delivered : this.i18n.currentTerms.pending,
@@ -488,6 +497,8 @@ export class DonorGiftsListComponent implements OnInit, OnDestroy {
           subtitle: `${allDonorGifts.length} ${this.i18n.currentTerms.donorGifts || 'מתנות'}`,
           columns: [
             { header: this.i18n.currentTerms.donor || 'תורם', field: 'donor' },
+            { header: this.i18n.currentTerms.phone || 'טלפון', field: 'phone', align: 'left' },
+            { header: this.i18n.currentTerms.mobileColumn || 'נייד', field: 'mobile', align: 'left' },
             { header: this.i18n.currentTerms.gift || 'מתנה', field: 'gift' },
             { header: this.i18n.currentTerms.deliveryDate || 'תאריך מסירה', field: 'deliveryDate' },
             { header: this.i18n.currentTerms.status || 'סטטוס', field: 'status' },
@@ -552,10 +563,11 @@ export class DonorGiftsListComponent implements OnInit, OnDestroy {
             { header: this.i18n.currentTerms.firstNameEnglish || 'First Name', mapper: (g) => g.donor?.firstNameEnglish || '', width: 15 },
             { header: this.i18n.currentTerms.lastNameEnglish || 'Last Name', mapper: (g) => g.donor?.lastNameEnglish || '', width: 15 },
             { header: this.i18n.currentTerms.suffixEnglish || 'Suffix', mapper: (g) => g.donor?.suffixEnglish || '', width: 10 },
-            // Fundraiser & Contact Person + donor phone (mobiles preferred via shared helper)
+            // Fundraiser & Contact Person + donor phone / mobile (item 18)
             { header: this.i18n.currentTerms.fundraiser || 'מתרים', mapper: (g) => g.donor?.fundraiserId ? fundraiserMap.get(g.donor.fundraiserId) || '' : '', width: 15 },
             { header: this.i18n.currentTerms.contactPerson || 'איש קשר', mapper: (g) => g.donor?.contactPersonId ? contactPersonMap.get(g.donor.contactPersonId) || '' : '', width: 15 },
             { header: this.i18n.currentTerms.phone || 'טלפון', mapper: (g) => giftsContactsMap.get(g.donor?.id || '')?.phone || '-', width: 20, align: 'left' },
+            { header: this.i18n.currentTerms.mobileColumn || 'נייד', mapper: (g) => giftsContactsMap.get(g.donor?.id || '')?.mobile || '-', width: 20, align: 'left' },
             // Donor characteristics
             { header: this.i18n.currentTerms.maritalStatus || 'מצב משפחתי', mapper: (g) => this.getMaritalStatusText(g.donor?.maritalStatus || ''), width: 12 },
             { header: this.i18n.currentTerms.anash || 'אנ"ש', mapper: (g) => g.donor?.isAnash ? '✓' : '', width: 8 },

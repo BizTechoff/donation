@@ -76,6 +76,10 @@
                 {{ (i18n.terms$ | async)?.phone }}
                 <span class="sort-icon">{{getSortIcon('phone')}}</span>
               </th>
+              <th class="w-mobile sortable" (click)="sortBy('mobile')">
+                {{ (i18n.terms$ | async)?.mobileColumn }}
+                <span class="sort-icon">{{getSortIcon('mobile')}}</span>
+              </th>
               <th class="w-email sortable" (click)="sortBy('email')">
                 {{ (i18n.terms$ | async)?.email }}
                 <span class="sort-icon">{{getSortIcon('email')}}</span>
@@ -102,6 +106,7 @@
                 <strong>{{getDonorDisplayName(donor)}}</strong>
               </td>
               <td class="cell-ellipsis" [title]="getDonorPhone(donor)">{{getDonorPhone(donor)}}</td>
+              <td class="cell-ellipsis" [title]="getDonorMobile(donor)">{{getDonorMobile(donor)}}</td>
               <td class="cell-ellipsis" [title]="getDonorEmail(donor)"
                   [appMailto]="getDonorEmail(donor)">{{getDonorEmail(donor)}}</td>
               <!-- <td>

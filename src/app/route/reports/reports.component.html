@@ -481,6 +481,11 @@
                 {{ (i18n.terms$ | async)?.phonesColumn }} <mat-icon
                   class="sort-icon">{{getSortIcon('phones')}}</mat-icon>
               </th>
+              <th *ngIf="filters.showDonorPhone && filters.groupBy === 'donor'" class="w-mobile sortable-header"
+                (click)="onSortChange('mobiles')">
+                {{ (i18n.terms$ | async)?.mobileColumn }} <mat-icon
+                  class="sort-icon">{{getSortIcon('mobiles')}}</mat-icon>
+              </th>
               <th *ngIf="filters.showDonorEmail && filters.groupBy === 'donor'" class="w-email sortable-header"
                 (click)="onSortChange('emails')">
                 {{ (i18n.terms$ | async)?.emailsColumn }} <mat-icon
@@ -525,6 +530,13 @@
                   <span
                     *ngIf="!row.donorDetails || !row.donorDetails.phones || row.donorDetails.phones.length === 0">-</span>
                 </td>
+                <td *ngIf="filters.showDonorPhone && filters.groupBy === 'donor'">
+                  <div *ngIf="row.donorDetails && row.donorDetails.mobiles && row.donorDetails.mobiles.length > 0">
+                    <div *ngFor="let mobile of row.donorDetails.mobiles">{{mobile}}</div>
+                  </div>
+                  <span
+                    *ngIf="!row.donorDetails || !row.donorDetails.mobiles || row.donorDetails.mobiles.length === 0">-</span>
+                </td>
                 <td *ngIf="filters.showDonorEmail && filters.groupBy === 'donor'">
                   <div *ngIf="row.donorDetails && row.donorDetails.emails && row.donorDetails.emails.length > 0">
                     <div *ngFor="let email of row.donorDetails.emails">{{email}}</div>
@@ -548,6 +560,7 @@
                 <!-- Empty cells for name and donor details columns -->
                 <td class="details-spacer"></td>
                 <td class="details-spacer" *ngIf="filters.showDonorAddress && filters.groupBy === 'donor'"></td>
+                <td class="details-spacer" *ngIf="filters.showDonorPhone && filters.groupBy === 'donor'"></td>
                 <td class="details-spacer" *ngIf="filters.showDonorPhone && filters.groupBy === 'donor'"></td>
                 <td class="details-spacer" *ngIf="filters.showDonorEmail && filters.groupBy === 'donor'"></td>
                 <!-- Donation details under each year column -->
@@ -915,6 +928,7 @@
                   }}</span>
               </th>
               <th class="w-phone">{{ (i18n.terms$ | async)?.phoneColumn }}</th>
+              <th class="w-mobile">{{ (i18n.terms$ | async)?.mobileColumn }}</th>
               <th class="w-email">{{ (i18n.terms$ | async)?.emailColumn }}</th>
             </tr>
           </thead>
@@ -934,6 +948,7 @@
                 </span>
               </td>
               <td style="text-align: left; direction: ltr; white-space: pre-line;">{{blessing.phone}}</td>
+              <td style="text-align: left; direction: ltr; white-space: pre-line;">{{blessing.mobile}}</td>
               <td class="cell-ellipsis" [title]="blessing.email || ''" style="text-align: left; direction: ltr;">{{blessing.email}}</td>
             </tr>
           </tbody>

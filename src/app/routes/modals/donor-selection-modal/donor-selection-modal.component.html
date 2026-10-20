@@ -35,6 +35,8 @@
               <span class="sort-icon" *ngIf="table.getSortIcon('fullName')">{{ table.getSortIcon('fullName')}}</span>
             </th>
             <th class="w-phone" [class.sortable]="table.isSortable('phone')" [class.sorted]="table.isSorted('phone')" (click)="table.toggleSort('phone', $event)">{{ (i18n.terms$ | async)?.phoneColumn }}<span class="sort-icon" *ngIf="table.getSortIcon('phone')">{{ table.getSortIcon('phone') }}</span></th>
+            <!-- item 18 - mobile column (not sortable) -->
+            <th class="w-mobile" [class.sortable]="table.isSortable('mobile')" [class.sorted]="table.isSorted('mobile')" (click)="table.toggleSort('mobile', $event)">{{ (i18n.terms$ | async)?.mobileColumn || 'נייד' }}<span class="sort-icon" *ngIf="table.getSortIcon('mobile')">{{ table.getSortIcon('mobile') }}</span></th>
             <th class="w-email" [class.sortable]="table.isSortable('email')" [class.sorted]="table.isSorted('email')" (click)="table.toggleSort('email', $event)">{{ (i18n.terms$ | async)?.emailColumn }}<span class="sort-icon" *ngIf="table.getSortIcon('email')">{{ table.getSortIcon('email') }}</span></th>
             <th class="w-address" [class.sortable]="table.isSortable('address')" [class.sorted]="table.isSorted('address')" (click)="table.toggleSort('address', $event)">{{ (i18n.terms$ | async)?.addressColumn }}<span class="sort-icon" *ngIf="table.getSortIcon('address')">{{ table.getSortIcon('address') }}</span></th>
           </tr>
@@ -46,12 +48,13 @@
             </td>
             <td class="donor-name-cell cell-ellipsis" [title]="donor.lastAndFirstName">{{ donor.lastAndFirstName }}</td>
             <td class="cell-ellipsis" [title]="getDonorPhone(donor.id)">{{ getDonorPhone(donor.id) }}</td>
+            <td class="cell-ellipsis" [title]="getDonorMobile(donor.id)">{{ getDonorMobile(donor.id) }}</td>
             <td class="cell-ellipsis" [title]="getDonorEmail(donor.id)"
                 [appMailto]="getDonorEmail(donor.id)">{{ getDonorEmail(donor.id) }}</td>
             <td class="donor-address-cell cell-ellipsis" [title]="getDonorPlace(donor.id)?.fullAddress || '-'">{{ getDonorPlace(donor.id)?.fullAddress || '-' }}</td>
           </tr>
           <tr *ngIf="paginatedDonors.length === 0">
-            <td [attr.colspan]="args.multiSelect ? 5 : 4" class="no-data">{{ (i18n.terms$ | async)?.noDonorsFound }}</td>
+            <td [attr.colspan]="args.multiSelect ? 6 : 5" class="no-data">{{ (i18n.terms$ | async)?.noDonorsFound }}</td>
           </tr>
         </tbody>
       </table>

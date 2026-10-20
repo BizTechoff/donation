@@ -147,6 +147,18 @@
             </td>
           </ng-container>
 
+          <!-- Mobile Column (item 18) -->
+          <ng-container matColumnDef="mobile">
+            <th class="w-mobile" mat-header-cell *matHeaderCellDef>{{ (i18n.terms$ | async)?.mobileColumn }}</th>
+            <td mat-cell *matCellDef="let donorBlessing">
+              <div class="contact-cell clickable" *ngIf="donorBlessing.mobile" (click)="callPhone(donorBlessing.mobile)">
+                <mat-icon class="cell-icon">smartphone</mat-icon>
+                {{donorBlessing.mobile}}
+              </div>
+              <span *ngIf="!donorBlessing.mobile" class="no-data">-</span>
+            </td>
+          </ng-container>
+
           <!-- Email Column -->
           <ng-container matColumnDef="email">
             <th class="w-email" mat-header-cell *matHeaderCellDef>{{ (i18n.terms$ | async)?.email }}</th>
