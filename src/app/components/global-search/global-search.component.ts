@@ -1,4 +1,5 @@
-import { Component, ElementRef, HostListener, OnDestroy, OnInit } from '@angular/core';
+import { inject, Component, ElementRef, HostListener, OnDestroy, OnInit } from '@angular/core';
+import { UserSettingsService } from '../../services/user-settings.service'
 import { openDialog } from 'common-ui-elements';
 import { remult } from 'remult';
 import { Subject, Subscription } from 'rxjs';
@@ -41,6 +42,9 @@ interface SearchResult {
   styleUrls: ['./global-search.component.scss']
 })
 export class GlobalSearchComponent implements OnInit, OnDestroy {
+  /** Item 33 - the one writer of user.settings. */
+  private userSettings = inject(UserSettingsService)
+
   isVisible = false;
   isMinimized = false;
   searchTerm = '';
@@ -605,31 +609,19 @@ export class GlobalSearchComponent implements OnInit, OnDestroy {
       const userId = remult.user?.id;
       if (!userId) return;
 
-      const user = await this.userRepo.findId(userId);
-      if (!user) return;
-
       // Get current dimensions from the element
       const element = this.elementRef.nativeElement.querySelector('.search-window');
       const width = element ? element.offsetWidth : 480;
       const height = element ? element.offsetHeight : undefined;
 
-      if (!user.settings) {
-        user.settings = {
-          openModal: 'dialog',
-          calendar_heb_holidays_jews_enabled: true,
-          calendar_open_heb_and_eng_parallel: false
-        };
-      }
-
-      user.settings.globalSearch = {
+      // Item 33 - this window's key only, merged on the server.
+      await this.userSettings.set('globalSearch', {
         x: this.position.x,
         y: this.position.y,
         width: width,
         height: height,
         minimized: this.isMinimized
-      };
-
-      await this.userRepo.save(user);
+      });
     } catch (error) {
       console.error('Failed to save global search settings:', error);
     }

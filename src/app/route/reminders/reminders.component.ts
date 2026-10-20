@@ -1,4 +1,5 @@
-import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { inject, Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { UserSettingsService } from '../../services/user-settings.service';
 import { remult } from 'remult';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
@@ -29,6 +30,9 @@ import { REMINDER_TYPE_LABELS, REMINDER_SOURCE_LABELS, REMINDER_SOURCE_MANUAL } 
   styleUrls: ['./reminders.component.scss']
 })
 export class RemindersComponent implements OnInit, OnDestroy {
+  /** Item 33 - the one writer of user.settings. */
+  private userSettings = inject(UserSettingsService);
+
 
   // P1 - the summary block is hidden per client request. Flip to true to restore.
 
@@ -617,7 +621,8 @@ getTypeText(type: string): string {
       const settings: any = this.currentUser?.settings;
       if (!settings?.[key] || settings[key].searchTerm === undefined) return;
       delete settings[key].searchTerm;
-      await remult.repo(User).save(this.currentUser!);
+      // Item 33 - remove this one field on the server, not save the whole row.
+      await this.userSettings.merge(key, { searchTerm: null });
     } catch (error) {
       console.error('clearStoredSearchTerm', error);
     }

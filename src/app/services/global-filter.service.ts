@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { remult } from 'remult';
 import { User } from '../../shared/entity/user';
+import { UserSettingsController } from '../../shared/controllers/user-settings.controller';
 import { TriStateFilter } from '../../shared/enum/tri-state-filter';
 
 export interface GlobalFilters {
@@ -106,8 +107,7 @@ console.log(`updateFilter: { key: ${key}, value: ${value} }`)
 
     // ⚠️ Save to DB first, THEN notify subscribers
     // This ensures the backend has the updated filters before reports refresh
-    await this.saveFiltersToUserSettings(updatedFilters);
-    this.filtersSubject.next(updatedFilters);
+    if (await this.saveFiltersToUserSettings(updatedFilters)) this.filtersSubject.next(updatedFilters);
   }
 
   async updateFilters(filters: Partial<GlobalFilters>) {
@@ -122,29 +122,26 @@ console.log(`updateFilter: { key: ${key}, value: ${value} }`)
 
     // ⚠️ Save to DB first, THEN notify subscribers
     // This ensures the backend has the updated filters before reports refresh
-    await this.saveFiltersToUserSettings(updatedFilters);
-    this.filtersSubject.next(updatedFilters);
+    if (await this.saveFiltersToUserSettings(updatedFilters)) this.filtersSubject.next(updatedFilters);
   }
 
   async clearFilters() {
     // ⚠️ Save to DB first, THEN notify subscribers
-    await this.saveFiltersToUserSettings(DEFAULT_FILTERS);
-    this.filtersSubject.next(DEFAULT_FILTERS);
+    if (await this.saveFiltersToUserSettings(DEFAULT_FILTERS)) this.filtersSubject.next(DEFAULT_FILTERS);
   }
 
   async clearFilter(key: keyof GlobalFilters) {
     const currentFilters = this.filtersSubject.value;
     const { [key]: _, ...updatedFilters } = currentFilters;
     // ⚠️ Save to DB first, THEN notify subscribers
-    await this.saveFiltersToUserSettings(updatedFilters);
-    this.filtersSubject.next(updatedFilters);
+    if (await this.saveFiltersToUserSettings(updatedFilters)) this.filtersSubject.next(updatedFilters);
   }
 
   private async loadFiltersFromUserSettings() {
     try {
       const currentUser = remult.user;
       if (currentUser?.id) {
-        const user = await this.userRepo.findId(currentUser.id);
+        const user = await this.userRepo.findId(currentUser.id, { useCache: false });
         if (user && user.settings?.globalFilters) {
           const filters = user.settings.globalFilters;
           // Convert date strings back to Date objects
@@ -158,25 +155,46 @@ console.log(`updateFilter: { key: ${key}, value: ${value} }`)
     }
   }
 
-  private async saveFiltersToUserSettings(filters: GlobalFilters) {
-    try {
-      const currentUser = remult.user;
-      if (currentUser?.id) {
-        const user = await this.userRepo.findId(currentUser.id);
-        if (user) {
-          if (!user.settings) {
-            user.settings = {
-              openModal: 'dialog',
-              calendar_heb_holidays_jews_enabled: false,
-              calendar_open_heb_and_eng_parallel: false
-            };
-          }
-          user.settings.globalFilters = filters;
-          await this.userRepo.save(user);
-        }
+  /**
+   * Item 33 - the filters live on the server (user.settings.globalFilters) and
+   * the bar is only a mirror of them. Three rules keep the two equal:
+   *  1. One key only - UserSettingsController.set reads the row fresh on the
+   *     server and replaces globalFilters alone, so no other screen's copy of
+   *     the settings can be written back over it (and vice versa).
+   *  2. One save at a time - quick changes (remove a chip, then clear) are
+   *     queued, so the server cannot end on an older state than the bar.
+   *  3. The bar moves only after the server said yes. On failure the bar is
+   *     reloaded from the server instead of showing a state that is not real.
+   * Returns true when saved; callers notify subscribers only then.
+   */
+  private saveChain: Promise<unknown> = Promise.resolve();
+
+  private async saveFiltersToUserSettings(filters: GlobalFilters): Promise<boolean> {
+    if (!remult.user?.id) return false;
+    const run = this.saveChain.then(async () => {
+      try {
+        await UserSettingsController.set('globalFilters', filters);
+        return true;
+      } catch (error) {
+        console.error('Error saving filters to user settings:', error);
+        await this.reloadFromServer();
+        return false;
       }
+    });
+    this.saveChain = run.catch(() => undefined);
+    return run;
+  }
+
+  /** After a failed save - show what the server actually filters by. */
+  private async reloadFromServer() {
+    try {
+      const user = await this.userRepo.findId(remult.user!.id, { useCache: false });
+      const filters = user?.settings?.globalFilters;
+      if (filters?.dateFrom) filters.dateFrom = new Date(filters.dateFrom);
+      if (filters?.dateTo) filters.dateTo = new Date(filters.dateTo);
+      this.filtersSubject.next(filters || DEFAULT_FILTERS);
     } catch (error) {
-      console.error('Error saving filters to user settings:', error);
+      console.error('Error reloading filters from user settings:', error);
     }
   }
 

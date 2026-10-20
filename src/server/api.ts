@@ -41,6 +41,7 @@ import { checkAndSendReminders } from './scheduler'
 import { AppSettingsController } from '../shared/controllers/app-settings.controller'
 import { GlobalFilterController } from '../shared/controllers/global-filter.controller'
 import { GoogleContactsController } from '../shared/controllers/google-contacts.controller'
+import { UserSettingsController } from '../shared/controllers/user-settings.controller'
 import { geocodeMissingPlaces } from './geocode-places'
 import { SqlDatabase } from 'remult'
 import { scheduleGoogleContactsSync } from './google-contacts-cron'
@@ -63,7 +64,7 @@ export const api = remultExpress({
     DonorMapController, ReminderController, HebrewDateController, TargetAudienceController,
     CertificateController, EmailController, ReportController, CountryController, PlaceController,
     CampaignController, DonorGiftController, PayerController, GlobalFilterController,
-    GoogleContactsController, AppSettingsController],
+    GoogleContactsController, AppSettingsController, UserSettingsController],
   entities,
   getUser,
   dataProvider: async () => {

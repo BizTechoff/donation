@@ -1,4 +1,5 @@
-import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { inject, Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { UserSettingsService } from '../../services/user-settings.service';
 import { remult } from 'remult';
 import { Subscription } from 'rxjs';
 import { DonorExportData, DonorMapController, DonorMapData } from '../../../shared/controllers/donor-map.controller';
@@ -23,6 +24,9 @@ import { EntityChangedService } from '../../services/entity-changed.service';
   styleUrls: ['./donor-list.component.scss']
 })
 export class DonorListComponent implements OnInit, OnDestroy {
+  /** Item 33 - the one writer of user.settings. */
+  private userSettings = inject(UserSettingsService);
+
 
   donors: Donor[] = [];
   loading = false;
@@ -479,7 +483,8 @@ export class DonorListComponent implements OnInit, OnDestroy {
       const settings: any = this.currentUser?.settings;
       if (!settings?.[key] || settings[key].searchTerm === undefined) return;
       delete settings[key].searchTerm;
-      await remult.repo(User).save(this.currentUser!);
+      // Item 33 - remove this one field on the server, not save the whole row.
+      await this.userSettings.merge(key, { searchTerm: null });
     } catch (error) {
       console.error('clearStoredSearchTerm', error);
     }

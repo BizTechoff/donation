@@ -1,4 +1,5 @@
-import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { inject, Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { UserSettingsService } from '../../services/user-settings.service';
 import { BusyService, openDialog } from 'common-ui-elements';
 import { remult } from 'remult';
 import { Subscription } from 'rxjs';
@@ -183,6 +184,9 @@ type GroupByOption = 'donor' | 'campaign' | 'paymentMethod' | 'fundraiser';
   styleUrls: ['./reports.component.scss']
 })
 export class ReportsComponent implements OnInit, OnDestroy {
+  /** Item 33 - the one writer of user.settings. */
+  private userSettings = inject(UserSettingsService);
+
   toggleIsPrintAndProduceOnce() {
     // this.isPrintAndProduceOnce = !this.isPrintAndProduceOnce
   }
@@ -748,26 +752,9 @@ export class ReportsComponent implements OnInit, OnDestroy {
     if (!remult.user?.id) return;
 
     try {
-      const userRepo = remult.repo(User);
-      const user = await userRepo.findId(remult.user.id);
-
-      if (user) {
-        if (!user.settings) {
-          user.settings = {
-            openModal: 'dialog',
-            calendar_heb_holidays_jews_enabled: true,
-            calendar_open_heb_and_eng_parallel: true
-          };
-        }
-
-        if (!user.settings.reports) {
-          user.settings.reports = {};
-        }
-
-        user.settings.reports.lastSelectedTab = this.activeReport;
-        user.settings.reports.filtersExpanded = this.filtersExpanded;
-        user.settings.reports.pageSize = this.pageSize;
-        user.settings.reports.donationFilters = {
+      // Item 33 - the reports key only, merged on the server.
+      {
+        const donationFilters = {
           groupBy: this.filters.groupBy,
           showDonorAddress: this.filters.showDonorAddress,
           showDonorPhone: this.filters.showDonorPhone,
@@ -776,9 +763,14 @@ export class ReportsComponent implements OnInit, OnDestroy {
           showCurrencySummary: this.filters.showCurrencySummary,
           showDonationDetails: this.filters.showDonationDetails,
         };
-        await userRepo.save(user);
+        await this.userSettings.merge('reports', {
+          lastSelectedTab: this.activeReport,
+          filtersExpanded: this.filtersExpanded,
+          pageSize: this.pageSize,
+          donationFilters
+        });
 
-        console.log('Saved report settings:', this.activeReport, 'donationFilters:', user.settings.reports.donationFilters);
+        console.log('Saved report settings:', this.activeReport, 'donationFilters:', donationFilters);
       }
     } catch (error) {
       console.error('Error saving last report selection:', error);

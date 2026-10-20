@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core'
+import { Component, OnInit, ViewChild, inject } from '@angular/core'
 import { Router, Route, ActivatedRoute } from '@angular/router'
 import { MatSidenav } from '@angular/material/sidenav'
 import { Observable, map, combineLatest, switchMap } from 'rxjs'
@@ -20,6 +20,7 @@ import { ReminderService } from './services/reminder.service'
 import { DonorController } from '../shared/controllers/donor.controller'
 import { HebrewDateService } from './services/hebrew-date.service'
 import { AppVersionService } from './services/app-version.service'
+import { UserSettingsService } from './services/user-settings.service'
  
 @Component({
   selector: 'app-root',
@@ -27,6 +28,9 @@ import { AppVersionService } from './services/app-version.service'
   styleUrls: ['./app.component.scss'],
 })
 export class AppComponent implements OnInit {
+  /** Item 33 - the one writer of user.settings. */
+  private userSettings = inject(UserSettingsService)
+
   version = '2026.10.20.01' // environment.production ? '2025.08.05' : '2025.07.31'
   currentHebrewDate = this.hebrewDate.convertGregorianToHebrew(new Date())?.formatted
 
@@ -358,22 +362,9 @@ export class AppComponent implements OnInit {
   async setSidebarMode(mode: 'open' | 'close') {
     if (!remult.user?.id) return;
 
-    const userRepo = remult.repo(User);
-    const user = await userRepo.findId(remult.user.id);
-    if (user) {
-      if (!user.settings) {
-        user.settings = {
-          openModal: 'dialog',
-          calendar_heb_holidays_jews_enabled: true,
-          calendar_open_heb_and_eng_parallel: true
-        };
-      }
-      user.settings.sidebarMode = mode;
-      await userRepo.save(user);
-
-      // Update current user object
-      remult.user = user;
-    }
+    // Item 33 - one key, merged on the server; the service caches the result
+    // on remult.user, where getSidebarMode() reads it.
+    await this.userSettings.set('sidebarMode', mode);
   }
 
   async toggleSidebar() {

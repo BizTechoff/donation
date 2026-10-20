@@ -1,4 +1,5 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit, NgZone } from '@angular/core'
+import { inject, Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit, NgZone } from '@angular/core'
+import { UserSettingsService } from '../../services/user-settings.service'
 import { Router, ActivatedRoute } from '@angular/router'
 import { remult } from 'remult'
 import { TargetAudience } from '../../../shared/entity/target-audience'
@@ -38,6 +39,9 @@ interface RouteStop {
   styleUrls: ['./route-planner.component.scss']
 })
 export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
+  /** Item 33 - the one writer of user.settings. */
+  private userSettings = inject(UserSettingsService)
+
   @ViewChild('mapContainer') mapContainer!: ElementRef
   @ViewChild('mapListContainer') mapListContainer!: ElementRef
 
@@ -212,29 +216,19 @@ export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
   private async doSaveSettings(capturedZoom?: number, capturedLat?: number, capturedLng?: number) {
     if (!remult.user?.id) return
     try {
-      const userRepo = remult.repo(User)
-      const user = await userRepo.findId(remult.user.id)
-      if (!user) return
-
-      if (!user.settings) {
-        user.settings = {} as any
-      }
       // Use captured values (from ngOnDestroy) or read from map
       const zoom = capturedZoom ?? this.map?.getZoom()
       const center = (capturedLat != null && capturedLng != null)
         ? { lat: capturedLat, lng: capturedLng }
         : { lat: this.map?.getCenter()?.lat(), lng: this.map?.getCenter()?.lng() }
 
-      user.settings!.routePlanner = {
+      // Item 33 - this key only; the service caches the result on remult.user.
+      await this.userSettings.set('routePlanner', {
         selectedAudienceId: this.selectedAudienceId || undefined,
         zoom: zoom || undefined,
         centerLat: center.lat || undefined,
         centerLng: center.lng || undefined
-      }
-      await userRepo.save(user)
-      if (remult.user) {
-        (remult.user as any).settings = user.settings
-      }
+      })
     } catch (err) {
       console.error('Error saving route planner settings:', err)
     }

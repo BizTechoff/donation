@@ -1,5 +1,6 @@
 import { remult } from 'remult'
 import { User } from '../../../shared/entity'
+import { UserSettingsService } from '../../services/user-settings.service'
 
 /**
  * table-state.ts
@@ -251,16 +252,17 @@ export class TableState {
     }
   }
 
+  /**
+   * Item 33 - only this list's sort is sent; the server merges it into the
+   * current row. Saving the copy loaded in loadSettings() used to write back
+   * every other setting as it was when the list opened - including a global
+   * filter the user had since cleared.
+   */
   async saveSettings(): Promise<void> {
     const key = this.opts.settingsKey
-    const user = this.settingsUser
-    if (!key || !user) return
+    if (!key || !remult.user?.id) return
     try {
-      if (!user.settings) (user as any).settings = {}
-      const settings = user.settings as any
-      if (!settings[key]) settings[key] = {}
-      settings[key].sort = this.sortColumns
-      await remult.repo(User).save(user)
+      await new UserSettingsService().merge(key as any, { sort: this.sortColumns })
     } catch (error) {
       console.error('TableState.saveSettings', error)
     }

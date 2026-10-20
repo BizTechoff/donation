@@ -16,6 +16,7 @@ import { googleContactsRouter } from './google-contacts-routes'
 import { checkAndSendReminders } from './scheduler'
 import { remult } from 'remult'
 import { User } from '../shared/entity/user'
+import { UserSettingsController } from '../shared/controllers/user-settings.controller'
 
 async function startup() {
   const app = express()
@@ -60,10 +61,10 @@ async function startup() {
       // (req, res, next) and would swallow this callback as `next`, running it
       // outside a remult context with nothing awaiting it or catching its errors.
       await api.withRemultAsync(req, async () => {
-        const user = await remult.repo(User).findId(sessionUser.id)
+        // Item 33 - the same single read-modify-write every screen uses.
+        const user = await remult.repo(User).findId(sessionUser.id, { useCache: false })
         if (user?.settings?.globalFilters) {
-          user.settings = { ...user.settings, globalFilters: undefined }
-          await remult.repo(User).save(user)
+          await UserSettingsController.patch(sessionUser.id, 'globalFilters', 'set', null)
         }
       })
     } catch (err) {

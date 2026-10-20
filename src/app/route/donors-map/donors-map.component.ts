@@ -1,4 +1,5 @@
-import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { inject, AfterViewInit, ChangeDetectorRef, Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { UserSettingsService } from '../../services/user-settings.service';
 import { Router } from '@angular/router';
 import { remult } from 'remult';
 import { Subject, Subscription } from 'rxjs';
@@ -43,6 +44,9 @@ export interface MapFilters {
   styleUrls: ['./donors-map.component.scss']
 })
 export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
+  /** Item 33 - the one writer of user.settings. */
+  private userSettings = inject(UserSettingsService);
+
   @ViewChild('mapElement', { static: true }) mapElement!: ElementRef;
   @ViewChild('searchInput') searchInput?: ElementRef<HTMLInputElement>;
 
@@ -307,17 +311,7 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!remult.user?.id) return;
 
     try {
-      const userRepo = remult.repo(User);
-      const user = await userRepo.findId(remult.user.id);
-
-      if (user) {
-        if (!user.settings) {
-          user.settings = {
-            openModal: 'dialog',
-            calendar_heb_holidays_jews_enabled: true,
-            calendar_open_heb_and_eng_parallel: true
-          };
-        }
+      {
 
         // The map FILTERS are not persisted at all any more - not the search
         // text, not the minimum/maximum donation amounts, not the status or
@@ -328,17 +322,11 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
         //
         // (The global filter bar is the deliberate exception - it is visible,
         // it is explicit, and it clears itself on sign-out and on tab close.)
-        user.settings.mapSettings = {
+        // Item 33 - this key only, merged on the server; the service caches
+        // the result on remult.user.settings (never the whole user object).
+        await this.userSettings.set('mapSettings', {
           fullscreen: this.isFullscreen
-        };
-
-        await userRepo.save(user);
-
-        // Update only the settings property of remult.user, not the entire user object
-        // to avoid breaking remult's permission system
-        if (remult.user) {
-          (remult.user as any).settings = user.settings;
-        }
+        });
 
         console.log('Map settings saved successfully');
       }
