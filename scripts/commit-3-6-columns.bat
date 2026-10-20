@@ -1,5 +1,5 @@
 @echo off
-REM commit-3-6-columns.bat - three commits. Run from anywhere. No push.
+REM commit-3-6-columns.bat - five commits. Run from anywhere. No push.
 
 setlocal
 set "SCRIPTDIR=%~dp0"
@@ -57,14 +57,51 @@ git add src/app/common/done-status/done-status.component.ts ^
   src/app/route/donor-gifts-list/donor-gifts-list.component.html ^
   src/app/route/reminders/reminders.component.html ^
   src/app/route/reminders/reminders.component.ts ^
-  src/app/app.component.ts ^
   scripts/msg-done-status.txt
 if errorlevel 1 goto :err
 git commit -F "%SCRIPTDIR%msg-done-status.txt" || goto :err
 echo.
 
+REM === [4] feat(phones): mobile column + version ===
+echo [4] feat(phones): mobile column + version
+git add src/app/mobile/quick-donation/steps/donor-select-step/donor-select-step.component.html ^
+  src/app/mobile/quick-donation/steps/donor-select-step/donor-select-step.component.ts ^
+  src/app/route/certificates/certificates.component.ts ^
+  src/app/route/donations-list/donations-list.component.ts ^
+  src/app/route/donor-list/donor-list.component.ts ^
+  src/app/route/donors-map/donors-map.component.ts ^
+  src/app/route/reports/reports.component.ts ^
+  src/app/routes/modals/campaign-blessing-book-modal/campaign-blessing-book-modal.component.ts ^
+  src/app/routes/modals/campaign-donors-modal/campaign-donors-modal.component.ts ^
+  src/app/routes/modals/campaign-invited-list-modal/campaign-invited-list-modal.component.ts ^
+  src/app/routes/modals/donor-selection-modal/donor-selection-modal.component.ts ^
+  src/app/routes/modals/map-selected-donors-modal/map-selected-donors-modal.component.html ^
+  src/app/routes/modals/reminder-details-modal/reminder-details-modal.component.ts ^
+  src/app/services/donor.service.ts ^
+  src/server/api.ts ^
+  src/shared/controllers/donor-map.controller.ts ^
+  src/shared/controllers/donor.controller.ts ^
+  src/shared/controllers/report.controller.ts ^
+  src/shared/entity/donor.ts ^
+  src/shared/utils/phone-utils.ts ^
+  src/shared/controllers/donor-phone.controller.ts ^
+  scripts/msg-18-mobile-column.txt
+if errorlevel 1 goto :err
+git commit -F "%SCRIPTDIR%msg-18-mobile-column.txt" || goto :err
+echo.
+
+REM === [5] fix(log): concurrent console.time + version ===
+echo [5] fix(log): concurrent console.time + version
+git add src/app/app.component.ts ^
+  src/shared/controllers/global-filter.controller.ts ^
+  src/shared/utils/perf-log.ts ^
+  scripts/msg-perf-log.txt
+if errorlevel 1 goto :err
+git commit -F "%SCRIPTDIR%msg-perf-log.txt" || goto :err
+echo.
+
 git status --short
-git log --oneline -5
+git log --oneline -7
 echo === Done. Push manually. ===
 goto :eof
 

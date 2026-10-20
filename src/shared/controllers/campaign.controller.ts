@@ -2,7 +2,7 @@ import { Allow, BackendMethod, Controller } from 'remult';
 import { remult } from 'remult';
 import { Campaign } from '../entity';
 import { GlobalFilters } from '../../app/services/global-filter.service';
-import { formatDisplayPhones } from '../utils/phone-utils';
+import { DonorPhoneController } from './donor-phone.controller';
 
 export interface CampaignSelectionData {
   campaigns: Campaign[];
@@ -76,6 +76,7 @@ export interface BlessingBookEntryDto {
     contactPersonId: string;
   };
   phone: string;
+  mobile: string;
   email: string;
   blessing?: BlessingBookBlessingDto;
   donation?: BlessingBookDonationDto;
@@ -472,11 +473,13 @@ export class CampaignController {
     const donorIds = await CampaignController.resolveBlessingBookDonorIds(campaign);
     if (donorIds.length === 0) return { blessingTypes: blessingTypesDtos, entries: [] };
 
-    const [donors, blessings, contacts, campaignDonations] = await Promise.all([
+    const [donors, blessings, contacts, campaignDonations, phoneMap] = await Promise.all([
       remult.repo(Donor).find({ where: { id: { $in: donorIds }, isActive: true } }),
       remult.repo(Blessing).find({ where: { campaignId, donorId: { $in: donorIds } } }),
       remult.repo(DonorContact).find({ where: { donorId: { $in: donorIds }, isPrimary: true, isActive: true } }),
-      remult.repo(Donation).find({ where: { campaignId, donorId: { $in: donorIds } }, orderBy: { donationDate: 'desc' } })
+      remult.repo(Donation).find({ where: { campaignId, donorId: { $in: donorIds } }, orderBy: { donationDate: 'desc' } }),
+      // Item 18 - phones from the one loader, split into טלפון / נייד.
+      DonorPhoneController.loadDisplay(donorIds)
     ]);
 
     // Build blessing map (one per donor, blessingBookType attached from already-loaded types)
@@ -491,25 +494,10 @@ export class CampaignController {
       });
     }
 
-    // Build contact maps. Phones go through shared phone-utils.formatDisplayPhones
-    // so campaign blessings/reports show mobiles when they exist (falling back
-    // to landlines) - same rule as the donor list, reports and exports.
-    const phoneMap = new Map<string, string>();
     const emailMap = new Map<string, string>();
-    const allPhonesByDonor = new Map<string, string[]>();
     for (const c of contacts) {
       if (!c.donorId) continue;
-      if (c.type === 'phone' && c.phoneNumber) {
-        const list = allPhonesByDonor.get(c.donorId) || [];
-        list.push(c.phoneNumber);
-        allPhonesByDonor.set(c.donorId, list);
-      } else if (c.type === 'email' && c.email && !emailMap.has(c.donorId)) {
-        emailMap.set(c.donorId, c.email);
-      }
-    }
-    for (const [donorId, list] of allPhonesByDonor) {
-      const value = formatDisplayPhones(list);
-      if (value) phoneMap.set(donorId, value);
+      if (c.type === 'email' && c.email && !emailMap.has(c.donorId)) emailMap.set(c.donorId, c.email);
     }
 
     // Group donations by donor
@@ -548,7 +536,8 @@ export class CampaignController {
           id: donor.id, fullName: donor.fullName || '', lastAndFirstName: donor.lastAndFirstName || '',
           level: donor.level || '', fundraiserId: donor.fundraiserId || '', contactPersonId: donor.contactPersonId || ''
         },
-        phone: phoneMap.get(donor.id) || '',
+        phone: phoneMap.get(donor.id)?.phone || '',
+        mobile: phoneMap.get(donor.id)?.mobile || '',
         email: emailMap.get(donor.id) || '',
         blessing, donation: firstDonation,
         totalDonated, matchingDonationsCount,
