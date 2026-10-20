@@ -1,0 +1,23 @@
+.done-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  white-space: nowrap;
+  cursor: default;
+  background: none;
+
+  &.done    { background: #d5f4e6; color: #27ae60; }
+  &.pending { background: #fef5e7; color: #e67e22; }
+
+  &.clickable { cursor: pointer; }
+  &.clickable:hover { border-color: currentColor; }
+  &:disabled { opacity: 1; } // read-only, not greyed out
+
+  .mark { font-size: 13px; line-height: 1; }
+}

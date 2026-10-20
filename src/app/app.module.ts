@@ -128,10 +128,12 @@ import { ReasonSelectionModalComponent } from './routes/modals/reason-selection-
 import { PrintOptionsModalComponent } from './routes/modals/print-options-modal/print-options-modal.component'
 import { AutoYearDirective } from './shared/directives/auto-year.directive'
 import { DateFastInputComponent } from './components/date-fast-input/date-fast-input.component'
+import { DoneStatusComponent } from './common/done-status/done-status.component'
 import { A11yModule } from "@angular/cdk/a11y";
 
 @NgModule({
   declarations: [
+    DoneStatusComponent,
     FormFieldDirective,
     MailtoDirective,
     AmountPipe,

@@ -105,24 +105,27 @@
       <table class="data-table">
       <thead>
         <tr>
-          <th [class.sortable]="table.isSortable('donor')" [class.sorted]="table.isSorted('donor')" (click)="table.toggleSort('donor', $event)">
+          <th class="w-name w-flex" [class.sortable]="table.isSortable('donor')" [class.sorted]="table.isSorted('donor')" (click)="table.toggleSort('donor', $event)">
             {{ (i18n.terms$ | async)?.donor }}
             <span class="sort-icon" *ngIf="table.getSortIcon('donor')">{{ table.getSortIcon('donor') }}</span>
           </th>
-          <th [class.sortable]="table.isSortable('gift')" [class.sorted]="table.isSorted('gift')" (click)="table.toggleSort('gift', $event)">
+          <th class="w-gift" [class.sortable]="table.isSortable('gift')" [class.sorted]="table.isSorted('gift')" (click)="table.toggleSort('gift', $event)">
             {{ (i18n.terms$ | async)?.gift }}
             <span class="sort-icon" *ngIf="table.getSortIcon('gift')">{{ table.getSortIcon('gift') }}</span>
           </th>
-          <th [class.sortable]="table.isSortable('deliveryDate')" [class.sorted]="table.isSorted('deliveryDate')" (click)="table.toggleSort('deliveryDate', $event)">
+          <th class="w-date" [class.sortable]="table.isSortable('deliveryDate')" [class.sorted]="table.isSorted('deliveryDate')" (click)="table.toggleSort('deliveryDate', $event)">
             {{ (i18n.terms$ | async)?.deliveryDate }}
             <span class="sort-icon" *ngIf="table.getSortIcon('deliveryDate')">{{ table.getSortIcon('deliveryDate') }}</span>
           </th>
-          <th [class.sortable]="table.isSortable('isDelivered')" [class.sorted]="table.isSorted('isDelivered')" (click)="table.toggleSort('isDelivered', $event)">
+          <th class="w-status" [class.sortable]="table.isSortable('isDelivered')" [class.sorted]="table.isSorted('isDelivered')" (click)="table.toggleSort('isDelivered', $event)">
             {{ (i18n.terms$ | async)?.status }}
             <span class="sort-icon" *ngIf="table.getSortIcon('isDelivered')">{{ table.getSortIcon('isDelivered') }}</span>
           </th>
-          <th>{{ (i18n.terms$ | async)?.notes }}</th>
-          <th class="actions-header">
+          <th class="w-notes" [class.sortable]="table.isSortable('notes')" [class.sorted]="table.isSorted('notes')" (click)="table.toggleSort('notes', $event)">
+            {{ (i18n.terms$ | async)?.notes }}
+            <span class="sort-icon" *ngIf="table.getSortIcon('notes')">{{ table.getSortIcon('notes') }}</span>
+          </th>
+          <th class="w-actions actions-header">
             <div class="actions-header-content">
               <span>{{ (i18n.terms$ | async)?.actions }}</span>
               <div class="header-buttons">
@@ -145,19 +148,21 @@
           <td class="donor-name cell-ellipsis" [title]="getDonorName(donorGift)">{{ getDonorName(donorGift) }}</td>
           <td>{{ donorGift.gift?.name || '-' }}</td>
           <td>{{ formatHebrewDate(donorGift.deliveryDate) }}</td>
-          <td>
-            <span class="status-badge" [class.delivered]="donorGift.isDelivered" [class.pending]="!donorGift.isDelivered">
-              {{ donorGift.isDelivered ? (i18n.terms$ | async)?.delivered : (i18n.terms$ | async)?.pending }}
-            </span>
+          <td (click)="$event.stopPropagation()">
+            <!-- Israel 20.10: the status column IS the action - a click asks
+                 first, then marks delivered / not delivered. -->
+            <app-done-status
+              [done]="donorGift.isDelivered"
+              [doneLabel]="(i18n.terms$ | async)?.delivered || 'נמסר'"
+              [pendingLabel]="(i18n.terms$ | async)?.pending || 'ממתין למסירה'"
+              confirmText="לסמן את המתנה כנמסרה?"
+              undoConfirmText="לבטל את הסימון כנמסרה?"
+              (toggle)="toggleDeliveryStatus(donorGift)">
+            </app-done-status>
           </td>
           <td>{{ donorGift.notes || '-' }}</td>
           <td class="actions" (click)="$event.stopPropagation()">
-            <button class="btn-icon btn-delivery"
-                    [class.delivered]="donorGift.isDelivered"
-                    (click)="toggleDeliveryStatus(donorGift)"
-                    [title]="donorGift.isDelivered ? (i18n.terms$ | async)?.markAsNotDelivered : (i18n.terms$ | async)?.markAsDelivered">
-              {{ donorGift.isDelivered ? '✅' : '📦' }}
-            </button>
+            <!-- The ✅/📦 delivery button moved to the status column (Israel 20.10). -->
             <button class="btn-icon btn-edit" (click)="editDonorGift(donorGift)" [title]="(i18n.terms$ | async)?.edit">✏</button>
             <button class="btn-icon btn-delete" (click)="deleteDonorGift(donorGift)" [title]="(i18n.terms$ | async)?.delete">🗑</button>
           </td>

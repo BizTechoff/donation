@@ -70,7 +70,7 @@ export class RemindersComponent implements OnInit, OnDestroy {
   readonly table = new TableState({
     pageSize: 50,
     settingsKey: 'reminderList',
-    sortableFields: ['dueDate', 'type', 'source', 'donor', 'title', 'priority'],
+    sortableFields: ['dueDate', 'type', 'source', 'donor', 'title', 'priority', 'isCompleted'],
     scrollContainer: () => this.scrollableTable?.nativeElement,
     load: req => this.loadReminders(req)
   });
@@ -670,7 +670,8 @@ getTypeText(type: string): string {
           source: this.getSourceText(reminder),
           donor: this.getDonorName(reminder),
           title: reminder.title || '-',
-          priority: this.getPriorityText(reminder.priority)
+          priority: this.getPriorityText(reminder.priority),
+          status: reminder.isCompleted ? 'בוצעה' : 'לא בוצעה'
         }));
 
         this.printService.print({
@@ -682,7 +683,9 @@ getTypeText(type: string): string {
             { header: 'מקור', field: 'source' },
             { header: this.i18n.currentTerms.donorHeader || 'תורם', field: 'donor' },
             { header: this.i18n.currentTerms.subjectHeader || 'נושא', field: 'title' },
-            { header: this.i18n.currentTerms.priorityHeader || 'עדיפות', field: 'priority' }
+            { header: this.i18n.currentTerms.priorityHeader || 'עדיפות', field: 'priority' },
+            // Visible = exportable: the new status column prints too.
+            { header: this.i18n.currentTerms.statusHeaderReminder || 'סטטוס', field: 'status' }
           ],
           data: printData,
           direction: 'rtl'
@@ -756,7 +759,8 @@ getTypeText(type: string): string {
             { header: this.i18n.currentTerms.typeHeader || 'סוג', mapper: (r) => this.getTypeText(r.type), width: 15 },
             { header: 'מקור', mapper: (r) => this.getSourceText(r), width: 12 },
             { header: this.i18n.currentTerms.subjectHeader || 'נושא', mapper: (r) => r.title || '-', width: 25 },
-            { header: this.i18n.currentTerms.priorityHeader || 'עדיפות', mapper: (r) => this.getPriorityText(r.priority), width: 12 }
+            { header: this.i18n.currentTerms.priorityHeader || 'עדיפות', mapper: (r) => this.getPriorityText(r.priority), width: 12 },
+            { header: this.i18n.currentTerms.statusHeaderReminder || 'סטטוס', mapper: (r) => r.isCompleted ? 'בוצעה' : 'לא בוצעה', width: 12 }
           ],
           sheetName: this.i18n.currentTerms.reminders || 'תזכורות',
           fileName: this.excelExportService.generateFileName(this.i18n.currentTerms.reminders || 'תזכורות')

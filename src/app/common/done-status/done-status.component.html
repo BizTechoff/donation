@@ -1,0 +1,6 @@
+<button type="button" class="done-status"
+        [class.done]="done" [class.pending]="!done" [class.clickable]="clickable"
+        [disabled]="!clickable" (click)="onClick($event)">
+  <span class="mark">{{ done ? '✓' : '○' }}</span>
+  <span class="label">{{ done ? doneLabel : pendingLabel }}</span>
+</button>
