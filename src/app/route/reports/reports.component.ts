@@ -25,6 +25,8 @@ import { HebrewDateService } from '../../services/hebrew-date.service';
 import { PayerService } from '../../services/payer.service';
 import { ReportService } from '../../services/report.service';
 import { UIToolsService } from '../../common/UIToolsService';
+import { TriStateFilter } from '../../../shared/enum/tri-state-filter';
+import { buildFileName } from '../../../shared/utils/file-name-utils';
 
 interface ChartData {
   label: string;
@@ -1562,6 +1564,69 @@ export class ReportsComponent implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * סעיף 27 - שם הקובץ של דוח מופק: סוג הדוח, ואחריו כל מאפיין סינון פעיל.
+   * המתודה האחת של ארבעת הדוחות - אף דוח לא בונה שם בעצמו. הניקוי, המפריד
+   * והקיצור ל-120 תווים יושבים ב-shared/utils/file-name-utils.
+   */
+  private reportFileName(reportTitle: string, extension?: string): string {
+    return buildFileName([reportTitle, ...this.reportFilterParts()], { extension });
+  }
+
+  /** מאפייני הסינון של מסך הדוחות, בסדר קבוע. פילטר שאינו פעיל לא מופיע כלל. */
+  private reportFilterParts(): string[] {
+    const f = this.filters;
+    const parts: string[] = [];
+
+    parts.push(f.selectedYear === 'last4' ? '4 שנים אחרונות' : `שנת ${f.selectedYear}`);
+
+    if (f.selectedDonorIds.length === 1) {
+      parts.push(this.availableDonors.find(d => d.id === f.selectedDonorIds[0])?.lastAndFirstName || 'תורם');
+    } else if (f.selectedDonorIds.length > 1) {
+      parts.push(`${f.selectedDonorIds.length} תורמים`);
+    }
+    if (f.selectedCampaign) {
+      parts.push(this.availableCampaigns.find(c => c.id === f.selectedCampaign)?.name || 'קמפיין');
+    }
+    if (f.selectedDonorType) parts.push(f.selectedDonorType);
+    if (f.selectedCurrency && f.selectedCurrency !== 'all') {
+      parts.push(this.currencyTypes[f.selectedCurrency]?.label || f.selectedCurrency);
+    }
+    if (f.showActualPayments) parts.push('תשלומים בפועל');
+
+    parts.push(...this.globalFilterParts());
+    parts.push(`הופק ${new Date().toLocaleDateString('he-IL')}`);
+    return parts;
+  }
+
+  /**
+   * הסינון הגלובלי חל על הדוח בדיוק כמו הסינון המקומי, ולכן הוא חלק משם הקובץ.
+   * רשימות ארוכות נרשמות כמניין ("3 ערים") - שם קובץ לא יכול לשאת אותן במלואן.
+   */
+  private globalFilterParts(): string[] {
+    const g = this.globalFilterService.currentFilters;
+    const parts: string[] = [];
+    const asDate = (d?: Date) => d ? new Date(d).toLocaleDateString('he-IL') : '';
+
+    if (g.dateFrom || g.dateTo) parts.push(`${asDate(g.dateFrom) || 'מההתחלה'} עד ${asDate(g.dateTo) || 'היום'}`);
+    if (g.amountMin !== undefined || g.amountMax !== undefined) {
+      parts.push(`סכום ${g.amountMin ?? 'ללא מינימום'} עד ${g.amountMax ?? 'ללא מקסימום'}`);
+    }
+    if (g.searchTerm) parts.push(`חיפוש ${g.searchTerm}`);
+    if (g.minDonationCount) parts.push(`לפחות ${g.minDonationCount} תרומות`);
+    if (g.isAnash === TriStateFilter.Yes) parts.push('אנ"ש');
+    if (g.isAnash === TriStateFilter.No) parts.push('לא אנ"ש');
+    if (g.isAlumni === TriStateFilter.Yes) parts.push('תלמידנו');
+    if (g.isAlumni === TriStateFilter.No) parts.push('לא תלמידנו');
+    if (g.campaignIds?.length) parts.push(`${g.campaignIds.length} קמפיינים`);
+    if (g.donorTypeIds?.length) parts.push(`${g.donorTypeIds.length} סוגי תורם`);
+    if (g.countryIds?.length) parts.push(`${g.countryIds.length} מדינות`);
+    if (g.cityIds?.length) parts.push(`${g.cityIds.length} ערים`);
+    if (g.neighborhoodIds?.length) parts.push(`${g.neighborhoodIds.length} שכונות`);
+    if (g.targetAudienceIds?.length) parts.push(`${g.targetAudienceIds.length} קהלים`);
+    return parts;
+  }
+
   private getGroupByLabel(): string {
     switch (this.filters.groupBy) {
       case 'donor': return 'תורם';
@@ -2950,7 +3015,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
 <html dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <title>דוח תרומות מקובץ</title>
+  <title>${this.reportFileName(`דוח תרומות מקובץ לפי ${this.getGroupByLabel().replace(/_/g, ' ')}`)}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Segoe UI', Tahoma, Arial, sans-serif; font-size: 11px; padding: 15px; direction: rtl; }
@@ -3172,6 +3237,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
 
     this.printService.print({
       title: 'דוח סיכום שנים',
+      fileName: this.reportFileName('דוח סיכום שנים'),
       filters,
       columns,
       data: this.yearlySummaryData,
@@ -3210,6 +3276,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
     const summary = this.getPaymentStatusSummary();
     this.printService.print({
       title: 'דוח מצב תשלומים',
+      fileName: this.reportFileName('דוח מצב תשלומים'),
       columns,
       data: this.paymentReportData, // Already contains all data (pagination is client-side only)
       totals: [
@@ -3237,6 +3304,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
     const summary = this.getBlessingSummary();
     this.printService.print({
       title: 'דוח ברכות',
+      fileName: this.reportFileName('דוח ברכות'),
       columns,
       data: this.blessingReportData,
       totals: [

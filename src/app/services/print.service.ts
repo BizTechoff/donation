@@ -18,6 +18,12 @@ export interface SubRowConfig {
 
 export interface PrintConfig {
   title: string;
+  /**
+   * סעיף 27 - שם הקובץ שהדפדפן יציע ב"שמור כ-PDF", נלקח מה-<title> של מסמך
+   * ההדפסה. נפרד מ-title בכוונה: הכותרת על הדף נשארת קצרה, ושם הקובץ נושא את
+   * כל מאפייני הסינון. בלי הערך הזה - ההתנהגות הקודמת, כלומר title.
+   */
+  fileName?: string;
   subtitle?: string;
   filters?: { label: string; value: string }[];
   columns: PrintColumn[];
@@ -140,7 +146,7 @@ export class PrintService {
 <html dir="${direction}">
 <head>
   <meta charset="UTF-8">
-  <title>${config.title}</title>
+  <title>${config.fileName || config.title}</title>
   <style>
     * {
       box-sizing: border-box;
