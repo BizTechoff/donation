@@ -98,7 +98,10 @@ export class FileUploadService {
 
       await firstValueFrom(uploadRequest);
 
-      const fileS3Link = urlResponse.url.split('?')[0]
+      // סעיף 7 - ה-key מגיע מהשרת, מאותו ערך שנחתם. קודם הוא נגזר מה-URL
+      // החתום (url.split('?')[0]), כלומר נשמר URL מלא ומקודד באחוזים, וצד
+      // ההורדה פירק אותו כאילו הוא נתיב יחסי. נשמר fallback לשרת ישן.
+      const fileS3Link = urlResponse.key || urlResponse.url.split('?')[0]
 
       // Create file metadata in database
       const fileRepo = remult.repo(DonationFile);

@@ -1,0 +1,21 @@
+fix(files): סעיף 7 - AccessDenied בפתיחת קובץ מצורף
+
+שרשרת השבר: ההעלאה חתמה PUT על Key = donations/<id>/<timestamp>_<שם>, והקובץ
+אכן נחת שם. אבל הקליינט שמר ב-filePath את ה-URL החתום בלי ה-query
+(url.split('?')[0]), ו-getDownloadUrl פירק אותו ב-split('/') כאילו הוא נתיב
+יחסי - כך ש-bucketKey קיבל את הפרוטוקול והדומיין, ו-fileName נשאר מקודד
+באחוזים. ה-GET נחתם על מפתח שלא מצביע על שום אובייקט, ובבאקט פרטי בלי
+ListBucket זה חוזר כ-AccessDenied ולא כ-NoSuchKey. שם עברי עם פסיק ורווחים
+("עצמי - 3 ,ף.jpeg") רק הפך את זה לגלוי.
+
+התיקון, בצד אחד בלבד: UploadUrlResponse.key מחזיר את המפתח שנחתם, והקליינט
+שומר אותו כמות שהוא. רק השרת בונה מפתח, ושני הצדדים קוראים את אותו ערך.
+parseS3FilePath קוראת גם את הפורמט הנוכחי וגם URL מלא שנשמר בעבר (pathname
+מפוענח), כך שרשומות קיימות נפתחות בלי מיגרציה. שם הקובץ עובר נרמול לפני
+שהוא הופך למפתח.
+
+shared/utils/file-name-utils.ts - המודול היחיד שיודע מה זה שם קובץ חוקי:
+sanitizeFileNamePart, buildFileName, sanitizeS3FileName, parseS3FilePath.
+פונקציות טהורות, בלי Angular ובלי רימלט, משרתות קליינט ושרת.
+
+BizTechoff™ - התאמת העסק לעידן הדיגיטלי

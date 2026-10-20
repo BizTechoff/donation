@@ -1,5 +1,6 @@
 import { Allow, BackendMethod, remult } from 'remult';
 import { DonationFile } from '../entity/file';
+import { parseS3FilePath, sanitizeS3FileName } from '../utils/file-name-utils';
 
 export interface UploadUrlResponse {
   success: boolean;
@@ -7,6 +8,12 @@ export interface UploadUrlResponse {
   error?: string;
   fileId?: string;
   contentType?: string;
+  /**
+   * סעיף 7 - ה-S3 key שנחתם. הקליינט שומר אותו כמות שהוא ב-filePath במקום
+   * להסיק אותו מה-URL החתום: רק הצד הזה בונה מפתח, ושני הצדדים קוראים את
+   * אותו ערך. ההסקה מה-URL היא שהחזירה AccessDenied בפתיחת קובץ.
+   */
+  key?: string;
 }
 
 export interface FileUploadData {
@@ -33,8 +40,10 @@ export class FileController {
       const { fileName, fileType, fileSize, donationId, certificateId, description } = fileData;
 
       // Generate unique filename to avoid collisions
+      // סעיף 7 - השם עובר נרמול לפני שהוא הופך ל-S3 key (הפונקציה האחת של
+      // הפלטפורמה לשמות קבצים). "/" במיוחד - הוא מפריד תיקיות במפתח.
       const timestamp = Date.now();
-      const uniqueFileName = `${timestamp}_${fileName}`;
+      const uniqueFileName = `${timestamp}_${sanitizeS3FileName(fileName)}`;
 
       // Determine bucket key based on whether it's for a donation or certificate
       let bucketKey: string;
@@ -65,7 +74,8 @@ export class FileController {
         success: true,
         url: s3Result.url,
         fileId: timestamp + '',
-        contentType: fileType
+        contentType: fileType,
+        key: `${bucketKey}/${uniqueFileName}`
       };
     } catch (error) {
       console.error('Error in getUploadUrl:', error);
@@ -94,11 +104,13 @@ export class FileController {
         };
       }
 
-      // Extract fileName and bucketKey from filePath
-      // filePath format: "donations/{donationId}/{uniqueFileName}"
-      const pathParts = file.filePath.split('/');
-      const uniqueFileName = pathParts[pathParts.length - 1];
-      const bucketKey = pathParts.slice(0, -1).join('/');
+      // סעיף 7 - פירוק filePath דרך הפונקציה המשותפת, שקוראת גם את הפורמט
+      // הנוכחי ("donations/{donationId}/{uniqueFileName}") וגם URL מלא שנשמר
+      // בעבר. הפירוק הקודם היה split('/') ישיר, ולכן bucketKey כלל את
+      // הפרוטוקול והדומיין ו-fileName נשאר מקודד באחוזים - המפתח שנחתם להורדה
+      // לא הצביע על שום אובייקט, ובבאקט פרטי בלי ListBucket זה חוזר כ-
+      // AccessDenied ולא כ-NoSuchKey.
+      const { bucketKey, fileName: uniqueFileName } = parseS3FilePath(file.filePath);
 
 
       // Get signed URL from S3
