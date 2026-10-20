@@ -1,6 +1,7 @@
 import { BackendMethod, remult, Allow, SqlDatabase } from 'remult'
 import { Place } from '../entity/place'
 import { DonorPlace } from '../entity/donor-place'
+import { CityDuplicateGroup, CityVariant, groupDuplicateCities } from '../utils/city-matching'
 
 export interface CityData {
   city: string;
@@ -189,5 +190,114 @@ export class PlaceController {
     );
 
     return { neighborhoods };
+  }
+}
+
+/* ===========================================================================
+ * סעיף 2 (E1) - ערים כפולות.
+ *
+ * שלב א׳: קריאה בלבד. המתודות כאן רק מדווחות מה המצב - הן לא כותבות דבר
+ * ולא מוחקות דבר. האיחוד והמחיקה נכנסים אחרי שמוטי יראה את הקבוצות האמיתיות
+ * ויאשר אותן.
+ * ======================================================================== */
+
+export interface CityDuplicatesReport {
+  /** סך הערים השונות שנמצאו בטבלת places. */
+  distinctCities: number
+  groups: CityDuplicateGroup[]
+  /** places שאף גורם לא מצביע עליהן - מועמדות למחיקה בשלב ב׳. */
+  orphanPlaceCount: number
+}
+
+export class CityDuplicatesController {
+
+  /**
+   * דוח הערים הכפולות. אינו כותב דבר.
+   *
+   * ספירת התורמים היא של תורמים ייחודיים דרך donor_places פעילות - אותו
+   * מקור שממנו נבנית רשימת הערים בסינון הגלובלי, כך שמה שמוצג כאן הוא מה
+   * שהמשתמש באמת רואה שם.
+   */
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async getDuplicatesReport(): Promise<CityDuplicatesReport> {
+    const places = await remult.repo(Place).find({ limit: 100000 })
+    const donorPlaces = await remult.repo(DonorPlace).find({ where: { isActive: true }, limit: 100000 })
+
+    const donorsByPlace = new Map<string, Set<string>>()
+    for (const dp of donorPlaces) {
+      if (!dp.placeId || !dp.donorId) continue
+      const set = donorsByPlace.get(dp.placeId)
+      if (set) set.add(dp.donorId)
+      else donorsByPlace.set(dp.placeId, new Set([dp.donorId]))
+    }
+
+    const byCity = new Map<string, {
+      placeCount: number
+      donors: Set<string>
+      latSum: number
+      lngSum: number
+      geoCount: number
+    }>()
+    for (const place of places) {
+      const city = place.city?.trim()
+      if (!city) continue
+      let entry = byCity.get(city)
+      if (!entry) {
+        entry = { placeCount: 0, donors: new Set<string>(), latSum: 0, lngSum: 0, geoCount: 0 }
+        byCity.set(city, entry)
+      }
+      entry.placeCount++
+      for (const donorId of donorsByPlace.get(place.id!) || []) entry.donors.add(donorId)
+
+      // מרכז הכובד של הכתובות שעברו גיאוקודינג. כתובת בלי קואורדינטות פשוט
+      // לא נספרת - היא לא מזיזה את המרכז ולא פוסלת את הגרסה.
+      if (typeof place.latitude === 'number' && typeof place.longitude === 'number') {
+        entry.latSum += place.latitude
+        entry.lngSum += place.longitude
+        entry.geoCount++
+      }
+    }
+
+    const variants: CityVariant[] = [...byCity.entries()].map(([name, entry]) => ({
+      name,
+      placeCount: entry.placeCount,
+      donorCount: entry.donors.size,
+      geoCount: entry.geoCount,
+      lat: entry.geoCount > 0 ? entry.latSum / entry.geoCount : undefined,
+      lng: entry.geoCount > 0 ? entry.lngSum / entry.geoCount : undefined
+    }))
+
+    return {
+      distinctCities: variants.length,
+      groups: groupDuplicateCities(variants),
+      orphanPlaceCount: await CityDuplicatesController.countOrphanPlaces()
+    }
+  }
+
+  /**
+   * places שאף רשומה לא מצביעה עליהן.
+   *
+   * חמישה גורמים, ולא ארבעה: donor_places, banks, companies, organizations -
+   * וגם campaigns, שמצביע דרך "eventLocationId" ולא "placeId". סריקה לפי שם
+   * העמודה לבדה מפספסת אותו, ואז כל מיקום אירוע נראה כיתום.
+   *
+   * אינו מוחק דבר.
+   */
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async countOrphanPlaces(): Promise<number> {
+    // אותו דפוס שבשימוש ב-donor-map.controller.
+    const sqlDb = remult.dataProvider as SqlDatabase
+    const { rows } = await sqlDb.execute(`
+      select count(*)::int as count
+      from "places" p
+      where not exists (select 1 from "donor_places"  dp where dp."placeId" = p."id")
+        and not exists (select 1 from "banks"          b where  b."placeId" = p."id")
+        and not exists (select 1 from "companies"      c where  c."placeId" = p."id")
+        and not exists (select 1 from "organizations"  o where  o."placeId" = p."id")
+        -- campaigns מצביע דרך eventLocationId ולא placeId (מיקום אירוע הדינער).
+        -- בלי השורה הזו כל מיקום אירוע נספר כיתום, ומחיקה היתה מוחקת אותו.
+        and not exists (select 1 from "campaigns"      ca where ca."eventLocationId" = p."id")
+    `)
+    return rows[0]?.count || 0
   }
 }
