@@ -78,6 +78,32 @@ async function startup() {
   app.use('/api/geo/maps-api-key', getGoogleMapsApiKey)
   app.use('/api/google-contacts', googleContactsRouter)
 
+  /**
+   * Build identity, for the running-version check in the browser.
+   *
+   * Correct cache headers (below) only help when the browser RELOADS. The
+   * client leaves the tab open for days, so a deploy simply never reaches it -
+   * which is how we ended up arguing over which fixes were delivered. The app
+   * therefore asks this endpoint who it is talking to: it records the answer
+   * once on load as its baseline, then re-asks on an interval and whenever the
+   * tab regains focus. A different value means the server was redeployed.
+   *
+   * Nothing is stamped at build time on purpose - the baseline is whatever the
+   * server said when the tab opened, so this works with no build changes.
+   * On Railway the commit sha is injected automatically; the process start
+   * time is the fallback, which is just as good a "did the server change" key.
+   */
+  const BUILD_ID =
+    process.env['RAILWAY_GIT_COMMIT_SHA'] ||
+    process.env['BUILD_ID'] ||
+    String(Date.now())
+  console.log('[Server] BUILD_ID:', BUILD_ID)
+
+  app.get('/api/app-version', (_req, res) => {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
+    res.json({ buildId: BUILD_ID })
+  })
+
 
   console.log(`HI FROM YYG SERVER. CURRENT TIME: ${new Date()}. __dirname: ${__dirname}. process.cwd(): ${process.cwd()}`)
 

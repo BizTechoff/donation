@@ -7,6 +7,16 @@
 <ng-template #desktopLayout>
 <div style="height: 100%; display: flex; flex-direction: column">
 
+  <!-- A deploy cannot reach a tab that is never reloaded. The banner appears
+       only when the server reports a build different from the one this tab
+       loaded with; reloading stays the user's choice so a half-filled form is
+       never thrown away. -->
+  <div class="new-version-bar" *ngIf="appVersion.newVersionAvailable">
+    <mat-icon>system_update_alt</mat-icon>
+    <span>גרסה חדשה של המערכת זמינה</span>
+    <button type="button" (click)="appVersion.reload()">רענן עכשיו</button>
+  </div>
+
   <mat-toolbar color="primary" style="flex-shrink: 0">
     <button mat-button class="sidenav-toggle" (click)="sidenav.toggle()">
       <mat-icon>menu</mat-icon>

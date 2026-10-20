@@ -387,3 +387,43 @@ mat-toolbar {
     }
   }
 }
+/* ---------------------------------------------------------------------------
+ * New-version banner.
+ *
+ * Deliberately a thin strip above the toolbar rather than a dialog: it must be
+ * impossible to miss and equally impossible to be blocked by - the user may be
+ * in the middle of entering a donation, and nothing here may interrupt that.
+ * ------------------------------------------------------------------------ */
+.new-version-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 16px;
+  background: #FFF4D6;
+  border-bottom: 1px solid #E8D08A;
+  color: #6B4E00;
+  font-size: 14px;
+  font-weight: 600;
+
+  mat-icon {
+    font-size: 19px;
+    width: 19px;
+    height: 19px;
+  }
+
+  button {
+    margin-inline-start: auto;
+    border: none;
+    border-radius: 5px;
+    padding: 5px 14px;
+    background: #6B4E00;
+    color: #fff;
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 700;
+    cursor: pointer;
+
+    &:hover { background: #513B00; }
+  }
+}

@@ -19,6 +19,7 @@ import { GlobalFilterService } from './services/global-filter.service'
 import { ReminderService } from './services/reminder.service'
 import { DonorController } from '../shared/controllers/donor.controller'
 import { HebrewDateService } from './services/hebrew-date.service'
+import { AppVersionService } from './services/app-version.service'
  
 @Component({
   selector: 'app-root',
@@ -26,7 +27,7 @@ import { HebrewDateService } from './services/hebrew-date.service'
   styleUrls: ['./app.component.scss'],
 })
 export class AppComponent implements OnInit {
-  version = '2026.09.18' // environment.production ? '2025.08.05' : '2025.07.31'
+  version = '2026.10.20' // environment.production ? '2025.08.05' : '2025.07.31'
   currentHebrewDate = this.hebrewDate.convertGregorianToHebrew(new Date())?.formatted
 
   // Active reminders count - will be updated in ngOnInit
@@ -44,7 +45,8 @@ export class AppComponent implements OnInit {
     private sidebarService: SidebarService,
     private globalFilterService: GlobalFilterService,
     private reminderService: ReminderService,
-    private hebrewDate: HebrewDateService
+    private hebrewDate: HebrewDateService,
+    public appVersion: AppVersionService
   ) {}
   remult = remult
   terms=terms
@@ -72,6 +74,11 @@ export class AppComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    // Notice a redeploy while the tab stays open. The client works for days in
+    // one tab and never reloads, so fixes simply did not reach him - this is
+    // what the CTRL+SHIFT+R requests were papering over.
+    this.appVersion.start();
+
     // A1 - the global filters must not outlive the session. signOut() clears
     // them, but closing the tab with the X never reaches signOut, so the next
     // visit used to open behind a filter nobody set.
