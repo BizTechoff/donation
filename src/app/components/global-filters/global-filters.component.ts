@@ -147,11 +147,18 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
     return JSON.stringify(this.pendingFilters) !== JSON.stringify(this.appliedFilters);
   }
 
-  // החלת השינויים - שליחה ל-subscribers ושמירה ב-DB
+  /**
+   * החלת השינויים - שליחה ל-subscribers ושמירה ב-DB.
+   *
+   * Z1 - the panel must NOT close here. Removing the "סיים בחירה" gate made
+   * every change call applyFilters, and applyFilters used to close the menu -
+   * so picking one filter, or clearing one, shut the panel and the user could
+   * not add a second filter without reopening it. The client reported exactly
+   * that. Applying stays immediate; closing is the user's action.
+   */
   async applyFilters() {
     await this.filterService.updateFilters(this.pendingFilters);
     this.appliedFilters = { ...this.pendingFilters };
-    this.menuTrigger?.closeMenu();
   }
 
   // ביטול השינויים - חזרה לפילטרים שהוחלו
