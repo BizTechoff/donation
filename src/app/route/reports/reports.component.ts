@@ -1311,7 +1311,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
         data: fullReportResponse.reportData,
         columns,
         sheetName: 'תורמים',
-        fileName: this.excelService.generateFileName('תורמים')
+        fileName: this.reportFileName('רשימת תורמים', 'xlsx')
       });
     } catch (error) {
       console.error('Error exporting donors to Excel:', error);
@@ -1555,7 +1555,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
       }
 
       // Save file
-      const fileName = this.excelService.generateFileName(`דוח_תרומות_${this.getGroupByLabel()}`);
+      const fileName = this.reportFileName(this.donationsReportTitle, 'xlsx');
       XLSX.writeFile(wb, fileName);
 
     } catch (error) {
@@ -1566,8 +1566,11 @@ export class ReportsComponent implements OnInit, OnDestroy {
 
   /**
    * סעיף 27 - שם הקובץ של דוח מופק: סוג הדוח, ואחריו כל מאפיין סינון פעיל.
-   * המתודה האחת של ארבעת הדוחות - אף דוח לא בונה שם בעצמו. הניקוי, המפריד
-   * והקיצור ל-120 תווים יושבים ב-shared/utils/file-name-utils.
+   * המתודה האחת של כל הפקה ממסך הדוחות - הדפסה / PDF וגם ייצוא לאקסל, בכל
+   * חמשת הייצואים (תרומות מקובץ, רשימת תורמים, מצב תשלומים, סיכום שנים,
+   * ברכות). אף דוח לא בונה שם בעצמו, וקובץ שנשמר משני המסלולים נושא את אותו
+   * שם פרט לסיומת. הניקוי, המפריד והקיצור ל-120 תווים יושבים ב-
+   * shared/utils/file-name-utils.
    */
   private reportFileName(reportTitle: string, extension?: string): string {
     return buildFileName([reportTitle, ...this.reportFilterParts()], { extension });
@@ -1625,6 +1628,16 @@ export class ReportsComponent implements OnInit, OnDestroy {
     if (g.neighborhoodIds?.length) parts.push(`${g.neighborhoodIds.length} שכונות`);
     if (g.targetAudienceIds?.length) parts.push(`${g.targetAudienceIds.length} קהלים`);
     return parts;
+  }
+
+  /**
+   * כותרת דוח התרומות המקובץ - הגדרה אחת לשלושת המקומות שמציגים אותה: הכותרת
+   * על דף ההדפסה, שם קובץ ה-PDF ושם קובץ האקסל. getGroupByLabel מחזיר
+   * "אמצעי_תשלום" עם קו תחתון (הפורמט ההיסטורי של שם קובץ האקסל), ולכן כאן
+   * הוא נקרא לתצוגה.
+   */
+  private get donationsReportTitle(): string {
+    return `דוח תרומות מקובץ לפי ${this.getGroupByLabel().replace(/_/g, ' ')}`;
   }
 
   private getGroupByLabel(): string {
@@ -1685,7 +1698,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
           { header: 'חוב נותר', mapper: (row) => this.formatCurrency(row.remainingDebt), width: 15 }
         ],
         sheetName: 'דוח תשלומים',
-        fileName: this.excelService.generateFileName('דוח_תשלומים')
+        fileName: this.reportFileName('דוח מצב תשלומים', 'xlsx')
       });
     } catch (error) {
       console.error('Error exporting payments to Excel:', error);
@@ -1720,7 +1733,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
           ...currencyColumns
         ],
         sheetName: 'סיכום שנתי',
-        fileName: this.excelService.generateFileName('סיכום_שנתי')
+        fileName: this.reportFileName('דוח סיכום שנים', 'xlsx')
       });
     } catch (error) {
       console.error('Error exporting yearly summary to Excel:', error);
@@ -1758,7 +1771,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
           { header: 'אימייל', mapper: (row) => row.email || '-', width: 25, align: 'left' }
         ],
         sheetName: 'דוח ברכות',
-        fileName: this.excelService.generateFileName('דוח_ברכות')
+        fileName: this.reportFileName('דוח ברכות', 'xlsx')
       });
     } catch (error) {
       console.error('Error exporting blessings to Excel:', error);
@@ -2978,11 +2991,14 @@ export class ReportsComponent implements OnInit, OnDestroy {
     });
 
     // Generate custom HTML that matches the display exactly
-    const html = this.generateDonationsReportHtml(fullReportResponse);
-    this.printHtml(html);
+    // סעיף 27 - השם מחושב פעם אחת ועובר גם ל-<title> של המסמך וגם לשירות
+    // ההדפסה, ששם אותו זמנית ב-document.title - משם Chrome לוקח את שם ה-PDF.
+    const fileName = this.reportFileName(this.donationsReportTitle);
+    const html = this.generateDonationsReportHtml(fullReportResponse, fileName);
+    this.printService.printDocument(html, fileName);
   }
 
-  private generateDonationsReportHtml(reportData: any): string {
+  private generateDonationsReportHtml(reportData: any, fileName: string): string {
     const hebrewYears = reportData.hebrewYears;
     const data = reportData.reportData;
     const isDonorGroupBy = this.filters.groupBy === 'donor';
@@ -3015,7 +3031,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
 <html dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <title>${this.reportFileName(`דוח תרומות מקובץ לפי ${this.getGroupByLabel().replace(/_/g, ' ')}`)}</title>
+  <title>${fileName}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Segoe UI', Tahoma, Arial, sans-serif; font-size: 11px; padding: 15px; direction: rtl; }
@@ -3161,41 +3177,6 @@ export class ReportsComponent implements OnInit, OnDestroy {
         return parts.length ? `${year}: ${parts.join(' · ')}` : '';
       })
       .filter(line => line);
-  }
-
-  private printHtml(html: string) {
-    // Use hidden iframe like printService does
-    let printFrame = document.getElementById('donations-print-frame') as HTMLIFrameElement;
-    if (printFrame) {
-      document.body.removeChild(printFrame);
-    }
-
-    printFrame = document.createElement('iframe');
-    printFrame.id = 'donations-print-frame';
-    printFrame.style.position = 'absolute';
-    printFrame.style.top = '-10000px';
-    printFrame.style.left = '-10000px';
-    printFrame.style.width = '0';
-    printFrame.style.height = '0';
-    printFrame.style.border = 'none';
-
-    document.body.appendChild(printFrame);
-
-    const frameDoc = printFrame.contentDocument || printFrame.contentWindow?.document;
-    if (!frameDoc) {
-      alert('שגיאה ביצירת חלון הדפסה');
-      return;
-    }
-
-    frameDoc.open();
-    frameDoc.write(html);
-    frameDoc.close();
-
-    printFrame.onload = () => {
-      setTimeout(() => {
-        printFrame.contentWindow?.print();
-      }, 100);
-    };
   }
 
   private printYearlySummaryReport() {

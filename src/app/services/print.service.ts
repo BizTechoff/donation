@@ -59,7 +59,7 @@ export class PrintService {
   private printFrame: HTMLIFrameElement | null = null;
 
   print(config: PrintConfig) {
-    this.printHtml(this.generatePrintHtml(config));
+    this.printHtml(this.generatePrintHtml(config), config.fileName);
   }
 
   printLabels(donors: LabelData[]) {
@@ -86,7 +86,43 @@ export class PrintService {
     this.printHtml(this.generateEnvelopesHtml(donors));
   }
 
-  private printHtml(html: string) {
+  /**
+   * הדפסת HTML מוכן, למסך שבונה את הדף בעצמו ולא דרך generatePrintHtml.
+   * קיים כדי שלא ייכתב iframe הדפסה שני בפלטפורמה - מסך הדוחות החזיק עותק
+   * משלו, בלי ההמתנה לטעינת תמונות שיש כאן.
+   */
+  printDocument(html: string, fileName?: string) {
+    this.printHtml(html, fileName);
+  }
+
+  /**
+   * סעיף 27 - Chrome לוקח את שם הקובץ שהוא מציע ב"שמור כ-PDF" מ-document.title
+   * של המסמך הראשי, ולא מה-<title> של ה-iframe שממנו הודפס. לכן הכותרת של
+   * האפליקציה מוחלפת לרגע בשם הקובץ ומוחזרת מיד: ב-afterprint של ה-iframe,
+   * ובחזרת הפוקוס לחלון הראשי - שתיהן ב-once, והראשונה שמגיעה מנצחת.
+   */
+  private withPrintTitle(fileName: string | undefined, frameWindow: Window | null | undefined, print: () => void) {
+    if (!fileName) {
+      print();
+      return;
+    }
+
+    const originalTitle = document.title;
+    let restored = false;
+    const restore = () => {
+      if (restored) return;
+      restored = true;
+      document.title = originalTitle;
+    };
+
+    document.title = fileName;
+    frameWindow?.addEventListener('afterprint', restore, { once: true });
+    window.addEventListener('focus', restore, { once: true });
+
+    print();
+  }
+
+  private printHtml(html: string, fileName?: string) {
     // Remove existing iframe if any
     if (this.printFrame) {
       document.body.removeChild(this.printFrame);
@@ -120,14 +156,14 @@ export class PrintService {
       const iDoc = iframe.contentDocument || iframe.contentWindow?.document;
       const images = iDoc?.querySelectorAll('img') || [];
       if (images.length === 0) {
-        setTimeout(() => iframe.contentWindow?.print(), 100);
+        setTimeout(() => this.withPrintTitle(fileName, iframe.contentWindow, () => iframe.contentWindow?.print()), 100);
         return;
       }
       let loaded = 0;
       const tryPrint = () => {
         loaded++;
         if (loaded >= images.length) {
-          setTimeout(() => iframe.contentWindow?.print(), 300);
+          setTimeout(() => this.withPrintTitle(fileName, iframe.contentWindow, () => iframe.contentWindow?.print()), 300);
         }
       };
       images.forEach(img => {
