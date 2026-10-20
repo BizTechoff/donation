@@ -730,7 +730,7 @@
 
             <div class="type-option" [class.active]="donor.isAlumni">
               <label class="type-card">
-                <input type="checkbox" [(ngModel)]="donor.isAlumni" class="type-checkbox">
+                <input type="checkbox" [(ngModel)]="donor.isAlumni" (ngModelChange)="onAlumniChange()" class="type-checkbox">
                 <div class="type-content">
                   <mat-icon class="type-icon">school</mat-icon>
                   <span class="type-label">{{ (i18n.terms$ | async)?.alumni }}</span>

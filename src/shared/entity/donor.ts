@@ -14,6 +14,7 @@ import { sqlIsMobile } from '../utils/phone-utils'
 import { Donation } from './donation'
 import { User } from './user'
 import { ContactPerson } from './contact-person'
+import { DONOR_TITLES } from '../constants/donor-titles'
 
 @Entity<Donor>('donors', {
   allowApiCrud: Allow.authenticated,
@@ -50,16 +51,9 @@ export class Donor extends IdEntity {
     caption: 'תואר',
     allowNull: true,
     includeInApi: true,
-    valueList: [
-      // Hebrew titles
-      '', 'גב\'', 'הבחור המופלג בתויר"ש כמר', 'הגאון החסיד ר\'', 'הגאון הרב', 'הגאון רבי',
-      'הגה"ח ר\'', 'החתן המופלג בתויר"ש כמר', 'המשגיח הרה"ח ר\'', 'הנגיד הרה"ח ר\'', 'הר"ר',
-      'הרב', 'הרבנית', 'הרה"ג ר\'', 'הרה"ח ר\'', 'הרה"צ ר\'', 'כ"ק אדמו"ר רבי', 'כ"ק מרן',
-      'כמר', 'מג"ש בישיבתנו הרב', 'מוהרה"ח ר\'', 'מורינו הרה"ח ר\'', 'מר', 'מרן', 'מרת',
-      'משפחת', 'ראש הישיבה', 'תלמידנו הרה"ח ר\'',
-      // English titles
-      'Family', 'Mr.', 'Mrs.', 'Mr. & Mrs.', 'Rabbi', 'Rabbi & Mrs.', 'Dr.', 'Dr. & Mrs.'
-    ]
+    // סעיף 36 - הרשימה היתה כתובה גם כאן וגם ב-getTitleOptions של כרטיס
+    // התורם. מקור אחד: shared/constants/donor-titles.
+    valueList: DONOR_TITLES
   })
   title = ''
 

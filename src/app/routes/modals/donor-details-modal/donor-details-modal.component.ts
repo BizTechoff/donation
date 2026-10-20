@@ -20,6 +20,7 @@ import { FamilyRelationDetailsModalComponent } from '../family-relation-details-
 import { NotesSelectionModalArgs, NotesSelectionModalComponent } from '../notes-selection-modal/notes-selection-modal.component';
 import { calculateEffectiveAmount } from '../../../../shared/utils/donation-utils';
 import { getReverseRelationship } from '../../../../shared/utils/relationship-utils';
+import { ALUMNI_TITLE, DONOR_TITLES_EN, DONOR_TITLES_HE } from '../../../../shared/constants/donor-titles';
 
 export interface DonorDetailsModalArgs {
   donorId: string; // Can be 'new' for new donor or donor ID
@@ -1371,50 +1372,38 @@ export class DonorDetailsModalComponent implements OnInit {
     return addressComponents;
   }
 
-  // Title options based on platform language
+  /**
+   * סעיף 36 - הרשימה היתה כתובה כאן במלואה וגם ב-valueList של Donor.title.
+   * מקור אחד: shared/constants/donor-titles.
+   */
   getTitleOptions(): string[] {
-    if (this.i18n.lang.language === 'en') {
-      return [
-        'Family',
-        'Mr.',
-        'Mrs.',
-        'Mr. & Mrs.',
-        'Rabbi',
-        'Rabbi & Mrs.',
-        'Dr.',
-        'Dr. & Mrs.'
-      ];
-    } else {
-      // Hebrew titles
-      return [
-        'גב\'',
-        'הבחור המופלג בתויר"ש כמר',
-        'הגאון החסיד ר\'',
-        'הגאון הרב',
-        'הגאון רבי',
-        'הגה"ח ר\'',
-        'החתן המופלג בתויר"ש כמר',
-        'המשגיח הרה"ח ר\'',
-        'הנגיד הרה"ח ר\'',
-        'הר"ר',
-        'הרב',
-        'הרבנית',
-        'הרה"ג ר\'',
-        'הרה"ח ר\'',
-        'הרה"צ ר\'',
-        'כ"ק אדמו"ר רבי',
-        'כ"ק מרן',
-        'כמר',
-        'מג"ש בישיבתנו הרב',
-        'מוהרה"ח ר\'',
-        'מורינו הרה"ח ר\'',
-        'מר',
-        'מרן',
-        'מרת',
-        'משפחת',
-        'ראש הישיבה',
-        'תלמידנו הרה"ח ר\''
-      ];
+    return this.i18n.lang.language === 'en' ? DONOR_TITLES_EN : DONOR_TITLES_HE;
+  }
+
+  /**
+   * סעיף 36 - הסימון "תלמידנו" והתואר הולכים ביחד, בשני הכיוונים, בלי לדרוס
+   * שום דבר שהמשתמש קבע (סוכם עם יעקב, שיחה 20.10; הניקוי - מוטי, 20.10):
+   *
+   *   סימון   + תואר ריק            -> התואר נקבע ל"תלמידנו הרה"ח ר'"
+   *   סימון   + תואר אחר כלשהו      -> לא נוגעים. התואר של המשתמש.
+   *   הסרה    + התואר הוא "תלמידנו" -> מתנקה, כי הוא נקבע על ידי הסימון
+   *   הסרה    + תואר אחר כלשהו      -> לא נוגעים.
+   *
+   * התואר בעברית גם כשהממשק באנגלית, כי הוא מקור הנוסח למכתבים - ולכן במצב
+   * אנגלית הוא לא יופיע ברשימה הנפתחת (שמציגה תוארים אנגליים בלבד), אף
+   * שהערך תקף ביישות.
+   */
+  onAlumniChange() {
+    if (!this.donor) return;
+
+    const title = this.donor.title?.trim() || '';
+
+    if (this.donor.isAlumni && !title) {
+      this.donor.title = ALUMNI_TITLE;
+      this.changed = true;
+    } else if (!this.donor.isAlumni && title === ALUMNI_TITLE) {
+      this.donor.title = '';
+      this.changed = true;
     }
   }
 
