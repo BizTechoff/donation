@@ -1,0 +1,3 @@
+chore: gitstatus.bat וקבצי הודעות קומיט לסבב
+
+BizTechoff™ - התאמת העסק לעידן הדיגיטלי
