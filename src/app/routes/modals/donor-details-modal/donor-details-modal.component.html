@@ -365,15 +365,9 @@
                   <button class="remove-contact-btn" (click)="removeDonorContact(donorContact)" title="הסר">
                     <mat-icon>close</mat-icon>
                   </button>
-                  <div class="form-group email-address">
-                    <div class="field-title">
-                      <mat-icon class="field-icon">email</mat-icon>
-                      <label>כתובת אימייל</label>
-                    </div>
-                    <!-- (ngModelChange)="onContactChange(donorContact)"  -->
-                    <input type="email" class="form-control" [(ngModel)]="donorContact.email"
-                      placeholder="example@email.com">
-                  </div>
+                  <!-- סעיף 10 (H1) - אותו סדר כמו בטלפונים: תיאור בימין ואחריו
+                       הערך. קודם האימייל היה ראשון והתיאור אחריו, כך ששתי
+                       הרשימות באותו מסך נקראו הפוך זו מזו. -->
                   <div class="form-group email-description">
                     <div class="field-title">
                       <mat-icon class="field-icon">description</mat-icon>
@@ -382,6 +376,15 @@
                     <!-- (ngModelChange)="onContactChange(donorContact)" -->
                     <input type="text" class="form-control" [(ngModel)]="donorContact.description"
                       placeholder="למשל: אישי, עבודה...">
+                  </div>
+                  <div class="form-group email-address">
+                    <div class="field-title">
+                      <mat-icon class="field-icon">email</mat-icon>
+                      <label>כתובת אימייל</label>
+                    </div>
+                    <!-- (ngModelChange)="onContactChange(donorContact)"  -->
+                    <input type="email" class="form-control" [(ngModel)]="donorContact.email"
+                      placeholder="example@email.com">
                   </div>
                 </div>
               </div>
