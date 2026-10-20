@@ -1,37 +1,120 @@
-// פונקציה להיפוך קשרים משפחתיים
-export function getReverseRelationship(relationshipType: string, gender?: 'male' | 'female'): string {
-  const isFemale = gender === 'female';
+/**
+ * קשרי משפחה - אוצר המילים וההיפוך, במקום אחד.
+ *
+ * סעיף 8 (W13). שלוש תקלות שהיו כאן, וכולן נובעות מאותו שורש - שתי רשימות
+ * שחיו בנפרד:
+ *
+ * 1. טבלת ההיפוך היתה כתובה פעמיים, כאן וב-donor-details-modal (מתודה
+ *    getReverseRelationshipType), 23 שורות זהות שנבדלו רק ב-fallback.
+ *
+ * 2. הרשימה שהמשתמש בוחר ממנה (family-relation-details-modal) והמפה דיברו
+ *    שפות שונות: הרשימה הציעה "אבא" והמפה הכירה "אב" - כלומר כל קשר "אבא"
+ *    שנשמר אי פעם לא עבר היפוך והוצג בצד השני כ"אחר". אותו דבר ל"חבר",
+ *    "חמו" ו"אחר". ולהפך - גיס, אחיין, חתן, כלה, בעל, אישה היו במפה ולא
+ *    ניתנים לבחירה כלל, ו"אמא" חסר היה משניהם.
+ *
+ * 3. סוג שאין לו מיפוי החזיר מחרוזת ריקה (בעל / אישה), והקורא מדלג על קשר
+ *    עם סוג ריק - כלומר הקשר נעלם מהמסך.
+ *
+ * מכאן: RELATIONSHIP_TYPES היא גם מקור הרשימה בתבנית (ngFor) וגם מפתחות
+ * המפה. השתיים לא יכולות להיפרד יותר. ערך חדש נוסף פה, בשורה אחת, ומופיע
+ * בשני המקומות.
+ *
+ * ההחלטות (מוטי, 20.10.2026): "אבא"/"אמא" ולא "אב"/"אם" - זה מה שכבר שמור
+ * במסד; "חמו" נשאר כמות שהוא עד החלטה (הוא צורת שייכות, והתפקיד הוא "חם" -
+ * הורי הבעל - שאינו אותו תפקיד כמו "חותן", הורי האישה).
+ */
 
-  const relationshipMap: { [key: string]: { male: string; female: string } } = {
-    'בן': { male: 'אב', female: 'אם' },
-    'בת': { male: 'אב', female: 'אם' },
-    'אב': { male: 'בן', female: 'בת' },
-    'אם': { male: 'בן', female: 'בת' },
-    'נכד': { male: 'סבא', female: 'סבתא' },
-    'נכדה': { male: 'סבא', female: 'סבתא' },
-    'סבא': { male: 'נכד', female: 'נכדה' },
-    'סבתא': { male: 'נכד', female: 'נכדה' },
-    'אח': { male: 'אח', female: 'אחות' },
-    'אחות': { male: 'אח', female: 'אחות' },
-    'דוד': { male: 'אחיין', female: 'אחיינית' },
-    'דודה': { male: 'אחיין', female: 'אחיינית' },
-    'אחיין': { male: 'דוד', female: 'דודה' },
-    'אחיינית': { male: 'דוד', female: 'דודה' },
-    'חתן': { male: 'חותן', female: 'חותנת' },
-    'כלה': { male: 'חותן', female: 'חותנת' },
-    'חותן': { male: 'חתן', female: 'כלה' },
-    'חותנת': { male: 'חתן', female: 'כלה' },
-    'בעל': { male: '', female: 'אישה' },
-    'אישה': { male: 'בעל', female: '' },
-    'גיס': { male: 'גיס', female: 'גיסה' },
-    'גיסה': { male: 'גיס', female: 'גיסה' },
-  };
+export interface RelationshipTypeOption {
+  /** הערך שנשמר ב-DonorRelation.relationshipType1 */
+  value: string
+  /** מה שמוצג למשתמש. זהה לערך היום, ונפרד ממנו כדי שאפשר יהיה לשנות ניסוח בלי לגעת בנתונים. */
+  label: string
+}
 
-  const mapping = relationshipMap[relationshipType];
-  if (!mapping) {
-    // אם אין מיפוי - החזר את הקשר המקורי
-    return relationshipType;
-  }
+/**
+ * הרשימה שהמשתמש בוחר ממנה, בסדר אלפביתי - הסדר שבו היא כבר מוצגת.
+ * סעיף 8 הוסיף: גיס, אחיין, חתן, כלה, בעל, אישה, אמא.
+ */
+export const RELATIONSHIP_TYPES: RelationshipTypeOption[] = [
+  { value: 'אבא', label: 'אבא' },
+  { value: 'אח', label: 'אח' },
+  { value: 'אחות', label: 'אחות' },
+  { value: 'אחיין', label: 'אחיין' },
+  { value: 'אחר', label: 'אחר' },
+  { value: 'אישה', label: 'אישה' },
+  { value: 'אמא', label: 'אמא' },
+  { value: 'בן', label: 'בן' },
+  { value: 'בעל', label: 'בעל' },
+  { value: 'בת', label: 'בת' },
+  { value: 'גיס', label: 'גיס' },
+  { value: 'דוד', label: 'דוד' },
+  { value: 'דודה', label: 'דודה' },
+  { value: 'חבר', label: 'חבר' },
+  { value: 'חותן', label: 'חותן' },
+  { value: 'חמו', label: 'חמו' },
+  { value: 'חתן', label: 'חתן' },
+  { value: 'כלה', label: 'כלה' },
+  { value: 'נכד', label: 'נכד' },
+  { value: 'נכדה', label: 'נכדה' },
+  { value: 'סבא', label: 'סבא' },
+  { value: 'סבתא', label: 'סבתא' },
+]
 
-  return isFemale ? mapping.female : mapping.male;
+/**
+ * לכל סוג - מה התורם שבצד השני מבחינת התורם הנוכחי, לפי מגדר.
+ *
+ * כולל ערכים שאינם ברשימת הבחירה: 'אב', 'אם' (הניסוח הישן שאולי שמור במסד),
+ * ו-'גיסה' / 'אחיינית' / 'חותנת' (צורות נקביות שמוצגות כתוצאת היפוך).
+ * מפתח שקיים כאן ולא ברשימה - נקרא ולא נכתב.
+ */
+const RELATIONSHIP_REVERSE: { [key: string]: { male: string; female: string } } = {
+  'אבא': { male: 'בן', female: 'בת' },
+  'אמא': { male: 'בן', female: 'בת' },
+  'אב': { male: 'בן', female: 'בת' },
+  'אם': { male: 'בן', female: 'בת' },
+  'בן': { male: 'אבא', female: 'אמא' },
+  'בת': { male: 'אבא', female: 'אמא' },
+  'נכד': { male: 'סבא', female: 'סבתא' },
+  'נכדה': { male: 'סבא', female: 'סבתא' },
+  'סבא': { male: 'נכד', female: 'נכדה' },
+  'סבתא': { male: 'נכד', female: 'נכדה' },
+  'אח': { male: 'אח', female: 'אחות' },
+  'אחות': { male: 'אח', female: 'אחות' },
+  'דוד': { male: 'אחיין', female: 'אחיינית' },
+  'דודה': { male: 'אחיין', female: 'אחיינית' },
+  'אחיין': { male: 'דוד', female: 'דודה' },
+  'אחיינית': { male: 'דוד', female: 'דודה' },
+  'חתן': { male: 'חותן', female: 'חותנת' },
+  'כלה': { male: 'חותן', female: 'חותנת' },
+  'חותן': { male: 'חתן', female: 'כלה' },
+  'חותנת': { male: 'חתן', female: 'כלה' },
+  // 'חמו' - אותו היפוך כמו חותן. ראה ההערה בראש הקובץ.
+  'חמו': { male: 'חתן', female: 'כלה' },
+  'גיס': { male: 'גיס', female: 'גיסה' },
+  'גיסה': { male: 'גיס', female: 'גיסה' },
+  // בעל / אישה החזירו קודם מחרוזת ריקה לכיוון אחד, והקשר נעלם מהמסך.
+  'בעל': { male: 'בעל', female: 'אישה' },
+  'אישה': { male: 'בעל', female: 'אישה' },
+  // סימטריים - אין להם צורה הפוכה.
+  'חבר': { male: 'חבר', female: 'חבר' },
+  'אחר': { male: 'אחר', female: 'אחר' },
+}
+
+/**
+ * הקשר ההפוך: אם ב׳ הוא <relationshipType> של א׳, מה א׳ של ב׳.
+ *
+ * @param relationshipType הסוג כפי שהוא שמור ב-relationshipType1
+ * @param gender מגדר התורם שהתווית המוחזרת מתארת
+ *
+ * סוג שאינו במפה מוחזר כמות שהוא, ולא כ-'אחר': ערך ישן או לא מוכר עדיף
+ * שיוצג כמו שהוא מאשר שייבלע. לעולם לא מוחזרת מחרוזת ריקה - קשר עם סוג ריק
+ * מסונן על ידי הקוראים ונעלם מהמסך.
+ */
+export function getReverseRelationship(relationshipType: string, gender?: 'male' | 'female' | ''): string {
+  const mapping = RELATIONSHIP_REVERSE[relationshipType]
+  if (!mapping) return relationshipType
+
+  const reverse = gender === 'female' ? mapping.female : mapping.male
+  return reverse || relationshipType
 }

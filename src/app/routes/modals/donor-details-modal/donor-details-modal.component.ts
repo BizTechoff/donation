@@ -19,6 +19,7 @@ import { DonorDonationsModalArgs, DonorDonationsModalComponent } from '../donor-
 import { FamilyRelationDetailsModalComponent } from '../family-relation-details-modal/family-relation-details-modal.component';
 import { NotesSelectionModalArgs, NotesSelectionModalComponent } from '../notes-selection-modal/notes-selection-modal.component';
 import { calculateEffectiveAmount } from '../../../../shared/utils/donation-utils';
+import { getReverseRelationship } from '../../../../shared/utils/relationship-utils';
 
 export interface DonorDetailsModalArgs {
   donorId: string; // Can be 'new' for new donor or donor ID
@@ -1857,7 +1858,7 @@ export class DonorDetailsModalComponent implements OnInit {
       else if (relation.donor2Id === this.donor.id) {
         donor = relation.donor1;
         // חישוב דינמי של הקשר ההופכי לפי מגדר donor1
-        relationshipType = this.getReverseRelationshipType(relation.relationshipType1, relation.donor1?.gender || '');
+        relationshipType = getReverseRelationship(relation.relationshipType1, relation.donor1?.gender || '');
         isReverse = true;
       }
 
@@ -1875,38 +1876,6 @@ export class DonorDetailsModalComponent implements OnInit {
     console.log('Built selected family relationships from data:', this.selectedFamilyRelationships);
   }
 
-  private getReverseRelationshipType(relationshipType: string, donorGender: 'male' | 'female' | ''): string {
-
-    const reverseMap: { [key: string]: { male: string; female: string } } = {
-      'בן': { male: 'אב', female: 'אם' },
-      'בת': { male: 'אב', female: 'אם' },
-      'אב': { male: 'בן', female: 'בת' },
-      'אם': { male: 'בן', female: 'בת' },
-      'נכד': { male: 'סבא', female: 'סבתא' },
-      'נכדה': { male: 'סבא', female: 'סבתא' },
-      'סבא': { male: 'נכד', female: 'נכדה' },
-      'סבתא': { male: 'נכד', female: 'נכדה' },
-      'אח': { male: 'אח', female: 'אחות' },
-      'אחות': { male: 'אח', female: 'אחות' },
-      'דוד': { male: 'אחיין', female: 'אחיינית' },
-      'דודה': { male: 'אחיין', female: 'אחיינית' },
-      'אחיין': { male: 'דוד', female: 'דודה' },
-      'אחיינית': { male: 'דוד', female: 'דודה' },
-      'חתן': { male: 'חותן', female: 'חותנת' },
-      'כלה': { male: 'חותן', female: 'חותנת' },
-      'חותן': { male: 'חתן', female: 'כלה' },
-      'חותנת': { male: 'חתן', female: 'כלה' },
-      'בעל': { male: '', female: 'אישה' },
-      'אישה': { male: 'בעל', female: '' },
-      'גיס': { male: 'גיס', female: 'גיסה' },
-      'גיסה': { male: 'גיס', female: 'גיסה' },
-    };
-
-    const mapping = reverseMap[relationshipType];
-    if (!mapping) return 'אחר';
-
-    return donorGender === 'female' ? mapping.female : mapping.male;
-  }
 
   async onFamilyMemberSelect(event: any) {
     const donorId = event.target.value;

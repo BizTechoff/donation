@@ -21,124 +21,19 @@
     <div class="relationship-type-selection">
       <label class="relationship-selection-label">{{ (i18n.terms$ | async)?.selectRelationshipLabel || 'בחר סוג קשר:' }}</label>
       <div class="relationship-types-grid">
-        <div class="relationship-type-option" [class.active]="newRelationshipType === 'אבא'">
+        <!-- סעיף 8 - הרשימה נבנית מ-RELATIONSHIP_TYPES, מקור אחד עם טבלת
+             ההיפוך. קודם היו כאן 15 בלוקים זהים שנכתבו ביד, ולכן הרשימה
+             והמפה נפרדו: "אבא" נבחר ולא היה לו היפוך, וגיס / אחיין / חתן /
+             כלה / בעל / אישה היו במפה ולא ניתנים לבחירה. -->
+        <div class="relationship-type-option" *ngFor="let type of relationshipTypes"
+             [class.active]="newRelationshipType === type.value">
           <label class="relationship-card">
-            <input type="radio" name="relationshipType" value="אבא" [(ngModel)]="newRelationshipType" class="relationship-radio">
+            <input type="radio" name="relationshipType" [value]="type.value" [(ngModel)]="newRelationshipType" class="relationship-radio">
             <div class="relationship-content">
-              <span class="relationship-label">אבא</span>
+              <span class="relationship-label">{{ type.label }}</span>
             </div>
           </label>
         </div>
-        <div class="relationship-type-option" [class.active]="newRelationshipType === 'אח'">
-          <label class="relationship-card">
-            <input type="radio" name="relationshipType" value="אח" [(ngModel)]="newRelationshipType" class="relationship-radio">
-            <div class="relationship-content">
-              <span class="relationship-label">אח</span>
-            </div>
-          </label>
-        </div>
-        <div class="relationship-type-option" [class.active]="newRelationshipType === 'אחות'">
-          <label class="relationship-card">
-            <input type="radio" name="relationshipType" value="אחות" [(ngModel)]="newRelationshipType" class="relationship-radio">
-            <div class="relationship-content">
-              <span class="relationship-label">אחות</span>
-            </div>
-          </label>
-        </div>
-        <div class="relationship-type-option" [class.active]="newRelationshipType === 'אחר'">
-          <label class="relationship-card">
-            <input type="radio" name="relationshipType" value="אחר" [(ngModel)]="newRelationshipType" class="relationship-radio">
-            <div class="relationship-content">
-              <span class="relationship-label">אחר</span>
-            </div>
-          </label>
-        </div>
-        <div class="relationship-type-option" [class.active]="newRelationshipType === 'בן'">
-          <label class="relationship-card">
-            <input type="radio" name="relationshipType" value="בן" [(ngModel)]="newRelationshipType" class="relationship-radio">
-            <div class="relationship-content">
-              <span class="relationship-label">בן</span>
-            </div>
-          </label>
-        </div>
-        <div class="relationship-type-option" [class.active]="newRelationshipType === 'בת'">
-          <label class="relationship-card">
-            <input type="radio" name="relationshipType" value="בת" [(ngModel)]="newRelationshipType" class="relationship-radio">
-            <div class="relationship-content">
-              <span class="relationship-label">בת</span>
-            </div>
-          </label>
-        </div>
-        <div class="relationship-type-option" [class.active]="newRelationshipType === 'דוד'">
-          <label class="relationship-card">
-            <input type="radio" name="relationshipType" value="דוד" [(ngModel)]="newRelationshipType" class="relationship-radio">
-            <div class="relationship-content">
-              <span class="relationship-label">דוד</span>
-            </div>
-          </label>
-        </div>
-        <div class="relationship-type-option" [class.active]="newRelationshipType === 'דודה'">
-          <label class="relationship-card">
-            <input type="radio" name="relationshipType" value="דודה" [(ngModel)]="newRelationshipType" class="relationship-radio">
-            <div class="relationship-content">
-              <span class="relationship-label">דודה</span>
-            </div>
-          </label>
-        </div>
-        <div class="relationship-type-option" [class.active]="newRelationshipType === 'חבר'">
-          <label class="relationship-card">
-            <input type="radio" name="relationshipType" value="חבר" [(ngModel)]="newRelationshipType" class="relationship-radio">
-            <div class="relationship-content">
-              <span class="relationship-label">חבר</span>
-            </div>
-          </label>
-        </div>
-        <div class="relationship-type-option" [class.active]="newRelationshipType === 'חותן'">
-          <label class="relationship-card">
-            <input type="radio" name="relationshipType" value="חותן" [(ngModel)]="newRelationshipType" class="relationship-radio">
-            <div class="relationship-content">
-              <span class="relationship-label">חותן</span>
-            </div>
-          </label>
-        </div>
-        <div class="relationship-type-option" [class.active]="newRelationshipType === 'חמו'">
-          <label class="relationship-card">
-            <input type="radio" name="relationshipType" value="חמו" [(ngModel)]="newRelationshipType" class="relationship-radio">
-            <div class="relationship-content">
-              <span class="relationship-label">חמו</span>
-            </div>
-          </label>
-        </div>
-        <div class="relationship-type-option" [class.active]="newRelationshipType === 'נכד'">
-          <label class="relationship-card">
-            <input type="radio" name="relationshipType" value="נכד" [(ngModel)]="newRelationshipType" class="relationship-radio">
-            <div class="relationship-content">
-              <span class="relationship-label">נכד</span>
-            </div>
-          </label>
-        </div>
-        <div class="relationship-type-option" [class.active]="newRelationshipType === 'נכדה'">
-          <label class="relationship-card">
-            <input type="radio" name="relationshipType" value="נכדה" [(ngModel)]="newRelationshipType" class="relationship-radio">
-            <div class="relationship-content">
-              <span class="relationship-label">נכדה</span>
-            </div>
-          </label>
-        </div>
-        <div class="relationship-type-option" [class.active]="newRelationshipType === 'סבא'">
-          <label class="relationship-card">
-            <input type="radio" name="relationshipType" value="סבא" [(ngModel)]="newRelationshipType" class="relationship-radio">
-            <div class="relationship-content">
-              <span class="relationship-label">סבא</span>
-            </div>
-          </label>
-        </div>
-        <div class="relationship-type-option" [class.active]="newRelationshipType === 'סבתא'">
-          <label class="relationship-card">
-            <input type="radio" name="relationshipType" value="סבתא" [(ngModel)]="newRelationshipType" class="relationship-radio">
-            <div class="relationship-content">
-              <span class="relationship-label">סבתא</span>
-            </div>
           </label>
         </div>
       </div>

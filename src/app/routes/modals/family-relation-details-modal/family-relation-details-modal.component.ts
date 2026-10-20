@@ -5,6 +5,7 @@ import { remult } from 'remult';
 import { Donor, DonorRelation } from '../../../../shared/entity';
 import { I18nService } from '../../../i18n/i18n.service';
 import { DonorSelectionModalComponent } from '../donor-selection-modal/donor-selection-modal.component';
+import { RELATIONSHIP_TYPES, getReverseRelationship } from '../../../../shared/utils/relationship-utils';
 
 export interface FamilyRelationDetailsModalArgs {
   relationId?: string; // Can be undefined for new relation
@@ -41,6 +42,9 @@ export class FamilyRelationDetailsModalComponent implements OnInit {
     public dialogRef: MatDialogRef<any>
   ) { }
 
+  /** סעיף 8 - הרשימה לתבנית, מאותו מקור של טבלת ההיפוך. */
+  readonly relationshipTypes = RELATIONSHIP_TYPES;
+
   async ngOnInit() {
     if (!this.args) return;
 
@@ -60,11 +64,19 @@ export class FamilyRelationDetailsModalComponent implements OnInit {
             this.selectedDonor = this.relation.donor2;
             this.newRelationshipType = this.relation.relationshipType1;
           } else {
-            // Current donor is donor2, need to calculate reverse relationship
-            // Note: In edit mode, we always swap to make current donor as donor1
+            // סעיף 8 - התורם הנוכחי הוא donor2, כלומר relationshipType1 מתאר
+            // את הכיוון ההפוך. קודם הוא נטען כמות שהוא, והשמירה (שכופה
+            // donor1Id = currentDonorId) הפכה את משמעות הקשר: שורה
+            // "יצחק הוא בן של אברהם" הפכה, בעריכה מכרטיס יצחק בלי לגעת
+            // בכלום, ל"אברהם הוא בן של יצחק".
+            // עם ההיפוך בטעינה, ההחלפה בשמירה נכונה ועקבית - הסוג שנבחר תמיד
+            // מתאר את התורם השני מנקודת מבט הנוכחי.
             this.selectedDonorId = this.relation.donor1Id;
             this.selectedDonor = this.relation.donor1;
-            this.newRelationshipType = this.relation.relationshipType1;
+            this.newRelationshipType = getReverseRelationship(
+              this.relation.relationshipType1,
+              this.relation.donor1?.gender || ''
+            );
           }
         }
       } catch (error) {
