@@ -187,22 +187,22 @@
       <table class="data-table">
       <thead>
         <tr>
-          <th [class.sortable]="table.isSortable('donorName')" [class.sorted]="table.isSorted('donorName')" (click)="table.toggleSort('donorName', $event)">
+          <th class="w-name" [class.sortable]="table.isSortable('donorName')" [class.sorted]="table.isSorted('donorName')" (click)="table.toggleSort('donorName', $event)">
             {{ (i18n.terms$ | async)?.donorColumn }}
             <span class="sort-icon" *ngIf="table.getSortIcon('donorName')">{{ table.getSortIcon('donorName') }}</span>
           </th>
 <!-- Z15 - the address column is gone; the father's name now appears under
                the donor's name, and only for donors whose name is shared. The
                address was only ever there to tell two same-named donors apart. -->
-          <th [class.sortable]="table.isSortable('donationDate')" [class.sorted]="table.isSorted('donationDate')" (click)="table.toggleSort('donationDate', $event)">
+          <th class="w-date" [class.sortable]="table.isSortable('donationDate')" [class.sorted]="table.isSorted('donationDate')" (click)="table.toggleSort('donationDate', $event)">
             {{ (i18n.terms$ | async)?.dateColumn }}
             <span class="sort-icon" *ngIf="table.getSortIcon('donationDate')">{{ table.getSortIcon('donationDate') }}</span>
           </th>
-          <th [class.sortable]="table.isSortable('donationType')" [class.sorted]="table.isSorted('donationType')" (click)="table.toggleSort('donationType', $event)">
+          <th class="w-type" [class.sortable]="table.isSortable('donationType')" [class.sorted]="table.isSorted('donationType')" (click)="table.toggleSort('donationType', $event)">
             {{ (i18n.terms$ | async)?.donationType }}
             <span class="sort-icon" *ngIf="table.getSortIcon('donationType')">{{ table.getSortIcon('donationType') }}</span>
           </th>
-          <th [class.sortable]="table.isSortable('method')" [class.sorted]="table.isSorted('method')" (click)="table.toggleSort('method', $event)">
+          <th class="w-method" [class.sortable]="table.isSortable('method')" [class.sorted]="table.isSorted('method')" (click)="table.toggleSort('method', $event)">
             {{ (i18n.terms$ | async)?.methodColumn }}
             <span class="sort-icon" *ngIf="table.getSortIcon('method')">{{ table.getSortIcon('method') }}</span>
           </th>
@@ -210,27 +210,27 @@
             {{ (i18n.terms$ | async)?.amountInShekelColumn }}
             <span class="sort-icon" *ngIf="table.getSortIcon('amountInShekel')">{{ table.getSortIcon('amountInShekel') }}</span>
           </th> -->
-          <th [class.sortable]="table.isSortable('amount')" [class.sorted]="table.isSorted('amount')" (click)="table.toggleSort('amount', $event)">
+          <th class="w-amount" [class.sortable]="table.isSortable('amount')" [class.sorted]="table.isSorted('amount')" (click)="table.toggleSort('amount', $event)">
             {{ (i18n.terms$ | async)?.amountColumn }}
             <span class="sort-icon" *ngIf="table.getSortIcon('amount')">{{ table.getSortIcon('amount') }}</span>
           </th>
-          <th [class.sortable]="table.isSortable('currency')" [class.sorted]="table.isSorted('currency')" (click)="table.toggleSort('currency', $event)">
+          <th class="w-currency" [class.sortable]="table.isSortable('currency')" [class.sorted]="table.isSorted('currency')" (click)="table.toggleSort('currency', $event)">
             {{ (i18n.terms$ | async)?.currencyColumn }}
             <span class="sort-icon" *ngIf="table.getSortIcon('currency')">{{ table.getSortIcon('currency') }}</span>
           </th>
-          <th [class.sortable]="table.isSortable('campaign')" [class.sorted]="table.isSorted('campaign')" (click)="table.toggleSort('campaign', $event)">
+          <th class="w-campaign" [class.sortable]="table.isSortable('campaign')" [class.sorted]="table.isSorted('campaign')" (click)="table.toggleSort('campaign', $event)">
             {{ (i18n.terms$ | async)?.campaign }}
             <span class="sort-icon" *ngIf="table.getSortIcon('campaign')">{{ table.getSortIcon('campaign') }}</span>
           </th>
-          <th [class.sortable]="table.isSortable('fundraiser')" [class.sorted]="table.isSorted('fundraiser')" (click)="table.toggleSort('fundraiser', $event)">
+          <th class="w-fundraiser" [class.sortable]="table.isSortable('fundraiser')" [class.sorted]="table.isSorted('fundraiser')" (click)="table.toggleSort('fundraiser', $event)">
             {{ (i18n.terms$ | async)?.fundraiserColumn }}
             <span class="sort-icon" *ngIf="table.getSortIcon('fundraiser')">{{ table.getSortIcon('fundraiser') }}</span>
           </th>
-          <th [class.sortable]="table.isSortable('reason')" [class.sorted]="table.isSorted('reason')" (click)="table.toggleSort('reason', $event)">
+          <th class="w-reason" [class.sortable]="table.isSortable('reason')" [class.sorted]="table.isSorted('reason')" (click)="table.toggleSort('reason', $event)">
             {{ (i18n.terms$ | async)?.reason }}
             <span class="sort-icon" *ngIf="table.getSortIcon('reason')">{{ table.getSortIcon('reason') }}</span>
           </th>
-          <th class="actions-header">
+          <th class="actions-header w-actions">
             <div class="actions-header-content">
               <span>{{ (i18n.terms$ | async)?.actionsColumn }}</span>
               <div class="header-buttons">
@@ -269,7 +269,7 @@
                       [title]="'תרומה חדשה ל' + getDonorName(donation)">💰<span class="plus-badge">+</span></button>
             </div>
           </td>
-          <td>{{ formatHebrewDate(donation.donationDate) }}</td>
+          <td class="cell-ellipsis" [title]="formatHebrewDate(donation.donationDate)">{{ formatHebrewDate(donation.donationDate) }}</td>
           <td>
             <span [class.commitment-highlight]="donation.donationType === 'commitment'">
               {{ getDonationTypeDisplay(donation) }}
@@ -283,8 +283,8 @@
             <div>{{ getAmountDisplay(donation) }}</div>
           </td>
           <td>{{ currencyTypes[donation.currencyId].symbol || '' }}</td>
-          <td>{{ getCampaignName(donation) }}</td>
-          <td>{{ donation.donor?.fundraiser?.name || '-' }}</td>
+          <td class="cell-ellipsis" [title]="getCampaignName(donation)">{{ getCampaignName(donation) }}</td>
+          <td class="cell-ellipsis" [title]="donation.donor?.fundraiser?.name || ''">{{ donation.donor?.fundraiser?.name || '-' }}</td>
           <td class="reason-cell" [title]="donation.reason || ''">{{ truncateReason(donation.reason) }}</td>
           <td class="actions">
             <button class="btn-icon btn-letter" (click)="printLetter(donation)"

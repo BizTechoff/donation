@@ -115,6 +115,16 @@ a:hover {
 .data-table {
   width: 100%;
   border-collapse: collapse;
+
+  /* W5 - the column widths must not depend on the rows that happen to be on
+     the current page. With the browser default (table-layout: auto) every sort
+     re-measures the content, the longest value changes, and the whole table
+     shifts sideways - which is what the client reported as "התצוגה זזה",
+     in every list and on every column. `fixed` makes the widths come from the
+     header cells alone, so they stay put no matter what is sorted or paged in.
+     The two screens that already felt stable (reminders, campaign-invited)
+     were the only two that set this locally; it belongs here, once. */
+  table-layout: fixed;
   text-align: center;
   font-family: 'Segoe UI', Arial, sans-serif;
 
@@ -615,10 +625,45 @@ th {
  * behaviour. Explicit opt-in per cell keeps the change safe.
  * ========================================================================= */
 .cell-ellipsis {
+  /* max-width is only needed where the table still auto-sizes. Inside a
+     .data-table the column width is already fixed, and a 250px cap would
+     fight it - so it applies only outside. */
   max-width: 250px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.data-table .cell-ellipsis { max-width: none; }
+
+/* ---------------------------------------------------------------------------
+ * Column width vocabulary - W5.
+ *
+ * Widths are declared by what the column MEANS, not by which table it sits in:
+ * a date column is the same width in donations, reminders and gifts. Change a
+ * value here and every list follows. Attach to the <th>; with
+ * table-layout: fixed the header width governs the whole column.
+ *
+ * The numbers are proportions, not a contract to sum to 100. A table that uses
+ * a subset still gets stable, sensibly-weighted columns, because `fixed`
+ * distributes whatever is left over in the same ratios every time.
+ * ------------------------------------------------------------------------ */
+.data-table {
+  th.w-name       { width: 16% }
+  th.w-date       { width: 11% }
+  th.w-type       { width: 10% }
+  th.w-method     { width: 10% }
+  th.w-amount     { width:  8% }
+  th.w-currency   { width:  5% }
+  th.w-campaign   { width: 13% }
+  th.w-fundraiser { width: 11% }
+  th.w-reason     { width:  9% }
+  th.w-phone      { width: 10% }
+  th.w-mobile     { width: 10% }
+  th.w-email      { width: 14% }
+  th.w-address    { width: 18% }
+  th.w-status     { width:  9% }
+  th.w-actions    { width:  7% }
 }
 
 /* ---------------------------------------------------------------------------
