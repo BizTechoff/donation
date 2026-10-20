@@ -1,0 +1,16 @@
+fix(family): תגיות סגירה עודפות בתבנית בחירת סוג הקשר
+
+רגרסיה מ-46d6c37 (סעיף 8). החלפת 15 בלוקי הרדיו שנכתבו ביד ב-ngFor אחד
+השאירה שתי תגיות סגירה של שני הבלוקים האחרונים, ו-NG5002 הפיל את הבנייה:
+"Unexpected closing tag label" ואחריו "Unexpected closing tag div".
+
+לא נתפס כי אימתי עם tsc --noEmit, שאינו מקמפל תבניות Angular, ו-npm run build
+לא רץ אצלי בגלל שתי חסימות סביבה (fonts.googleapis.com מוחזר 403 דרך הפרוקסי,
+ומחיקת dist נכשלת ב-EPERM). מכאן ואילך - בדיקת איזון תגיות על כל תבנית.
+
+גרסה: 2026.10.20.11
+
+ארבע התבניות שנגעתי בהן בסבב נבדקו: donor-details-modal, campaigns-list,
+donor-details-step ו-family-relation-details-modal - כולן מאוזנות.
+
+BizTechoff™ - התאמת העסק לעידן הדיגיטלי
