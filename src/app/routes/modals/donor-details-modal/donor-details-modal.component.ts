@@ -1236,12 +1236,35 @@ export class DonorDetailsModalComponent implements OnInit {
   }
 
   // Convert Place to AddressComponents for the address input component
-  /** F1 - the one line shown under the donor name in the card header. */
+  /**
+   * F1 - the one line shown under the donor name in the card header.
+   *
+   * סעיף 9: השורה הזו נבנתה כאן ביד - [street, houseNumber, city] -
+   * ולכן כתובת באנגליה יצאה "Downing Street 10" במקום "10 Downing Street".
+   * הפורמט יושב ב-Place (getStreetLine מחזיק את isHouseNumberFirst), וכל שאר
+   * המסכים כבר עוברים דרכו. כאן נבחרו רחוב + עיר ולא getDisplayAddress
+   * המלאה, כדי לשמר את אורך השורה הקיים בכותרת.
+   *
+   * בנוסף - נבחר ה-place הראשי ולא הראשון שנמצא, באותו סדר עדיפות שכבר קיים
+   * ב-primaryCityStreet: isPrimary, ואחריו כתובת מסוג "בית".
+   *
+   * ה-guard על typeof הוא הדפוס שכבר בשימוש בקומפוננטה (שורות 1264, 1296):
+   * place לא תמיד מגיע כמופע ישות מהודר.
+   */
   getHeaderAddress(): string {
-    const place = this.donorPlaces?.find(dp => dp.place)?.place;
+    const withPlace = (this.donorPlaces || []).filter(dp => dp.place);
+    const place = (
+      withPlace.find(dp => dp.isPrimary) ||
+      withPlace.find(dp => dp.addressType?.name === 'בית') ||
+      withPlace[0]
+    )?.place;
     if (!place) return '';
-    const parts = [place.street, place.houseNumber, place.city].filter(p => !!p);
-    return parts.join(' ');
+
+    if (typeof place.getStreetLine !== 'function') {
+      return [place.street, place.houseNumber, place.city].filter(p => !!p).join(' ');
+    }
+
+    return [place.getStreetLine(), place.getCityLine()].filter(line => line).join(', ');
   }
 
   getHomeAddressComponents(): AddressComponents | undefined {

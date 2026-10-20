@@ -1,0 +1,22 @@
+fix(address): סעיף 9 - הכתובת מתחת לשם התורם דרך המתודה המרכזית
+
+שני מקומות בנו כתובת ביד במקום לקרוא ל-Place, ולכן כתובת באנגליה הוצגה הפוך -
+"Downing Street 10" במקום "10 Downing Street". getStreetLine מחזיק את הכלל
+(isHouseNumberFirst), ו-getCityLine את המחוז והמיקוד.
+
+- כרטיס התורם (getHeaderAddress): היה [street, houseNumber, city].join(' ').
+  עכשיו getStreetLine + getCityLine - רחוב ועיר ולא getDisplayAddress המלאה,
+  כדי לשמר את אורך השורה בכותרת. בנוסף נבחר ה-place הראשי ולא הראשון שנמצא,
+  באותו סדר עדיפות שכבר קיים ב-primaryCityStreet: isPrimary, ואז "בית".
+- quick-donation בנייד: שורת הרחוב הגיעה מ-"{{ street }} {{ houseNumber }}"
+  בתבנית. עברה ל-streetLine() בקומפוננטה.
+
+בשניהם נשמר ה-guard typeof === 'function' - הדפוס הקיים בכרטיס התורם, כי
+place לא תמיד מגיע כמופע ישות מהודר.
+
+נבדק שאין מקומות נוספים: הייצואים לאקסל מוציאים שדות נפרדים עם כותרות,
+ו-donor-map.controller מהדרת Place וקוראת למתודה המרכזית.
+
+שם האב נשאר מתחת לשם ברשימת התרומות (Z15) - לא נגענו בו.
+
+BizTechoff™ - התאמת העסק לעידן הדיגיטלי

@@ -103,7 +103,7 @@
                 @if (dp.place.street) {
                   <div class="info-row">
                     <span class="info-label">רחוב</span>
-                    <span class="info-value">{{ dp.place.street }} {{ dp.place.houseNumber }}</span>
+                    <span class="info-value">{{ streetLine(dp.place) }}</span>
                   </div>
                 }
                 @if (dp.place.apartment) {

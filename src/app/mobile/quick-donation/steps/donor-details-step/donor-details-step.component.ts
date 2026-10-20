@@ -3,6 +3,7 @@ import { remult } from 'remult'
 import { Donor, DonorContact, DonorPlace, DonorEvent, DonorNote, Circle, DonorRelation } from '../../../../../shared/entity'
 import { DonorReceptionHour } from '../../../../../shared/entity/donor-reception-hour'
 import { DonorController } from '../../../../../shared/controllers/donor.controller'
+import { Place } from '../../../../../shared/entity/place'
 
 @Component({
   selector: 'app-donor-details-step',
@@ -19,6 +20,19 @@ export class DonorDetailsStepComponent implements OnInit {
 
   contacts: DonorContact[] = []
   places: DonorPlace[] = []
+
+  /**
+   * סעיף 9 - שורת הרחוב הגיעה מ-"{{ street }} {{ houseNumber }}" בתבנית, ולכן
+   * כתובת באנגליה הוצגה הפוך. getStreetLine מחזיק את הכלל (isHouseNumberFirst).
+   * ה-guard על typeof - place לא תמיד מגיע כמופע ישות מהודר, כדפוס הקיים
+   * בכרטיס התורם.
+   */
+  streetLine(place: Place | undefined): string {
+    if (!place) return ''
+    return typeof place.getStreetLine === 'function'
+      ? place.getStreetLine()
+      : [place.street, place.houseNumber].filter(p => !!p).join(' ')
+  }
   events: DonorEvent[] = []
   notes: DonorNote[] = []
   circles: Circle[] = []
