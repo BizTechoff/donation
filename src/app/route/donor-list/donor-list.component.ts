@@ -64,7 +64,7 @@ export class DonorListComponent implements OnInit, OnDestroy {
     // All five are ordered in SQL: fullName maps to lastName+firstName, the
     // rest map to sqlExpression fields on Donor. lastDonationDate matches the
     // displayed value: commitments excluded, partner donations included.
-    sortableFields: ['fullName', 'address', 'phone', 'email', 'lastDonationDate', 'isAnash'],
+    sortableFields: ['fullName', 'address', 'phone', 'mobile', 'email', 'lastDonationDate', 'isAnash'],
     scrollContainer: () => this.scrollableTable?.nativeElement,
     load: req => this.loadDonors(req)
   });
@@ -297,6 +297,11 @@ export class DonorListComponent implements OnInit, OnDestroy {
 
   getDonorPhone(donorId: string): string {
     return this.donorDataMap.get(donorId)?.phone || '-';
+  }
+
+  // item 18 - mobiles shown separately from landlines
+  getDonorMobile(donorId: string): string {
+    return this.donorDataMap.get(donorId)?.mobile || '-';
   }
 
   getDonorAddress(donorId: string): string {
@@ -562,6 +567,7 @@ export class DonorListComponent implements OnInit, OnDestroy {
             fullName: donor.lastAndFirstName || donor.fullName || '',
             address: data?.fullAddress || '-',
             phone: data?.phone || '-',
+            mobile: data?.mobile || '-',
             email: data?.email || '-',
             lastDonation: lastDonationDisplay,
             // B2 - the אנ"ש tick is on screen, so it is on the printout too
@@ -576,9 +582,10 @@ export class DonorListComponent implements OnInit, OnDestroy {
           columns: [
             { header: this.i18n.currentTerms.name || 'שם', field: 'fullName' },
             // Latin-script content: align LEFT (LTR) - same as address.
-            // phone column already prefers mobile via shared helper.
+            // item 18 - landlines and mobiles in separate columns.
             { header: this.i18n.currentTerms.address || 'כתובת', field: 'address', align: 'left' },
             { header: this.i18n.currentTerms.phone || 'טלפון', field: 'phone', align: 'left' },
+            { header: this.i18n.currentTerms.mobileColumn || 'נייד', field: 'mobile', align: 'left' },
             { header: this.i18n.currentTerms.email || 'דוא"ל', field: 'email', align: 'left' },
             { header: this.i18n.currentTerms.lastDonation || 'תרומה אחרונה', field: 'lastDonation' },
             { header: this.i18n.currentTerms.anash || 'אנ"ש', field: 'anash' }
@@ -656,6 +663,7 @@ export class DonorListComponent implements OnInit, OnDestroy {
             // Full formatted address (matches the on-screen table via getDisplayAddress)
             fullAddress: data?.fullAddress || '-',
             phone: data?.phone || '-',
+            mobile: data?.mobile || '-',
             email: data?.email || '-',
             lastDonation: lastDonationDisplay
           };
@@ -696,9 +704,9 @@ export class DonorListComponent implements OnInit, OnDestroy {
             { header: this.i18n.currentTerms.postcode || 'מיקוד', mapper: (item) => item.place?.postcode || '', width: 10 },
             { header: this.i18n.currentTerms.placeName || 'שם מקום', mapper: (item) => item.place?.placeName || '', width: 15 },
             // Contact & other
-            // "phone" already prefers mobiles via shared phone-utils.selectDisplayPhones;
-            // returns newline-separated string when multiple numbers exist.
+            // item 18 - landlines / mobiles in separate columns (newline-separated).
             { header: this.i18n.currentTerms.phone || 'טלפון', mapper: (item) => item.phone || '-', width: 20, align: 'left' },
+            { header: this.i18n.currentTerms.mobileColumn || 'נייד', mapper: (item) => item.mobile || '-', width: 20, align: 'left' },
             { header: this.i18n.currentTerms.email || 'דוא"ל', mapper: (item) => item.email, width: 25, align: 'left' },
             { header: this.i18n.currentTerms.lastDonation || 'תרומה אחרונה', mapper: (item) => item.lastDonation, width: 25 }
           ],

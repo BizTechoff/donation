@@ -32,7 +32,7 @@ export class CampaignDonorsModalComponent implements OnInit {
   // through a helper rather than a plain property, so the accessors below tell
   // sortRows what the column actually displays.
   readonly table = new TableState({
-    sortableFields: ['name', 'phone', 'email', 'level', 'city'],
+    sortableFields: ['name', 'phone', 'mobile', 'email', 'level', 'city'],
     load: async () => { }
   });
 
@@ -41,6 +41,7 @@ export class CampaignDonorsModalComponent implements OnInit {
     return sortRows(this.invitedDonors, this.table.sortColumns, {
       name: d => this.getDonorDisplayName(d),
       phone: d => this.getDonorPhone(d),
+      mobile: d => this.getDonorMobile(d),
       email: d => this.getDonorEmail(d),
       level: d => this.getDonorLevel(d),
       city: d => this.getDonorCity(d)
@@ -55,6 +56,7 @@ export class CampaignDonorsModalComponent implements OnInit {
   donorPlaceMap = new Map<string, Place>();
   donorEmailMap = new Map<string, string>();
   donorPhoneMap = new Map<string, string>();
+  donorMobileMap = new Map<string, string>(); // item 18
   donorBirthDateMap = new Map<string, Date>();
 
   // Filter stats
@@ -130,6 +132,7 @@ export class CampaignDonorsModalComponent implements OnInit {
       this.donorPlaceMap = relatedData.donorPlaceMap;
       this.donorEmailMap = relatedData.donorEmailMap;
       this.donorPhoneMap = relatedData.donorPhoneMap;
+      this.donorMobileMap = relatedData.donorMobileMap;
       this.donorBirthDateMap = relatedData.donorBirthDateMap;
 
       let donors = baseDonors;
@@ -224,6 +227,11 @@ export class CampaignDonorsModalComponent implements OnInit {
 
   getDonorPhone(donor: Donor): string {
     return this.donorPhoneMap.get(donor.id) || '-';
+  }
+
+  // item 18 - mobile shown separately from landline
+  getDonorMobile(donor: Donor): string {
+    return this.donorMobileMap.get(donor.id) || '-';
   }
 
   getDonorEmail(donor: Donor): string {

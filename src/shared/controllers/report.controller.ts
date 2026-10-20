@@ -12,7 +12,7 @@ import { Report } from '../enum/report';
 import { DocxCreateResponse } from '../type/letter.type';
 import { GeneralCurrencyStat, GeneralMonthlyStat, GeneralChartItem, GeneralTopDonor, GeneralTopCampaign, GeneralRecentActivity, GeneralStatsResponse } from '../type/report.res';
 import { calculateEffectiveAmount, calculatePaymentTotals, calculatePeriodsElapsed, isPaymentBased, isStandingOrder } from '../utils/donation-utils';
-import { selectDisplayPhones } from '../utils/phone-utils';
+import { DonorPhoneController } from './donor-phone.controller';
 import { HebrewDateController } from './hebrew-date.controller';
 import { GlobalFilterController } from './global-filter.controller';
 
@@ -37,9 +37,10 @@ export interface DonationDetailData {
 export interface DonorExportDetails {
   // Address fields
   address?: string;
-  /** Display phones selected by phone-utils.selectDisplayPhones - mobiles when any
-   *  exist, else landlines. Joined newline-separated when stringified for cells. */
+  /** Landlines (item 18) - from DonorPhoneController. Joined for cells. */
   phones?: string[];
+  /** Mobiles (item 18) - from DonorPhoneController. Joined for cells. */
+  mobiles?: string[];
   emails?: string[];
   // Expanded address fields
   country?: string;
@@ -547,7 +548,7 @@ export class ReportController {
     const currencyYearTotals = new Map<string, { [year: string]: number }>();
 
     // ✅ OPTIMIZATION 1: Pre-load all donor details in batch (if needed)
-    let donorDetailsMap = new Map<string, { address?: string; phones?: string[]; emails?: string[] }>();
+    let donorDetailsMap = new Map<string, { address?: string; phones?: string[]; mobiles?: string[]; emails?: string[] }>();
     if (filters.showDonorDetails && filters.groupBy === 'donor') {
       const donorIds = [...new Set(donations.map(d => d.donorId).filter(Boolean))];
       if (donorIds.length > 0) {
@@ -786,34 +787,26 @@ export class ReportController {
       const fundraiserMap = new Map(fundraisers.map(f => [f.id, f.name]));
       const contactPersonMap = new Map(contactPersons.map(cp => [cp.id, cp.name]));
 
-      // Load all contacts for the given donors in one query
-      const allContacts = await remult.repo(DonorContact).find({
-        where: {
-          donorId: { $in: donorIds },
-          isActive: true
-        }
-      });
+      // Load all contacts for the given donors in one query (emails), and the
+      // phones from the one loader - split into טלפון / נייד (item 18).
+      const [allContacts, phonesByDonor] = await Promise.all([
+        remult.repo(DonorContact).find({
+          where: {
+            donorId: { $in: donorIds },
+            isActive: true
+          }
+        }),
+        DonorPhoneController.load(donorIds)
+      ]);
 
-      // ── pre-group contacts ב-Map לפי donorId (O(n) פעם אחת).
-      // Display phones via shared phone-utils.selectDisplayPhones (mobiles if any,
-      // else landlines). Single source of truth across the app.
-      const allPhonesByDonor = new Map<string, string[]>();
       const emailsByDonor = new Map<string, string[]>();
       for (const c of allContacts) {
         if (!c.donorId) continue;
-        if (c.type === 'phone' && c.phoneNumber) {
-          const list = allPhonesByDonor.get(c.donorId) || [];
-          list.push(c.phoneNumber);
-          allPhonesByDonor.set(c.donorId, list);
-        } else if (c.type === 'email' && c.email) {
+        if (c.type === 'email' && c.email) {
           const arr = emailsByDonor.get(c.donorId) || [];
           arr.push(c.email);
           emailsByDonor.set(c.donorId, arr);
         }
-      }
-      const phonesByDonor = new Map<string, string[]>();
-      for (const [donorId, list] of allPhonesByDonor) {
-        phonesByDonor.set(donorId, selectDisplayPhones(list));
       }
 
       // Group data by donorId
@@ -825,13 +818,15 @@ export class ReportController {
         // שימוש בפונקציה המרכזית לתצוגת כתובת
         const address = place?.getDisplayAddress() || undefined;
 
-        const phones = phonesByDonor.get(donorId) || [];
+        const phones = phonesByDonor.get(donorId)?.landlines || [];
+        const mobiles = phonesByDonor.get(donorId)?.mobiles || [];
         const emails = emailsByDonor.get(donorId) || [];
 
         detailsMap.set(donorId, {
           // Legacy fields
           address,
           phones,
+          mobiles,
           emails,
           // Expanded address fields
           country: place?.country?.name || '',
@@ -1032,6 +1027,9 @@ export class ReportController {
       } else if (sortBy === 'phones') {
         aValue = a.donorDetails?.phones?.[0] || '';
         bValue = b.donorDetails?.phones?.[0] || '';
+      } else if (sortBy === 'mobiles') {
+        aValue = a.donorDetails?.mobiles?.[0] || '';
+        bValue = b.donorDetails?.mobiles?.[0] || '';
       } else if (sortBy === 'emails') {
         aValue = a.donorDetails?.emails?.[0] || '';
         bValue = b.donorDetails?.emails?.[0] || '';
@@ -1251,6 +1249,7 @@ export class ReportController {
             address: details.address || '',
             city: details.city || '',
             phones: details.phones || [],
+            mobiles: details.mobiles || [],
             emails: details.emails || [],
             lastDonationDate: data.lastDonationDate,
             title: details.title || '',
@@ -1944,8 +1943,9 @@ export interface PaymentReportData {
   currency: string;
   address?: string;
   city?: string;
-  /** Display phones - mobiles when any exist, else landlines (selectDisplayPhones). */
+  /** Landlines / mobiles (item 18). */
   phones?: string[];
+  mobiles?: string[];
   emails?: string[];
   lastDonationDate?: Date;
   // Expanded donor fields

@@ -10,6 +10,7 @@ import {
   remult
 } from 'remult'
 import { Roles } from '../enum/roles'
+import { sqlIsMobile } from '../utils/phone-utils'
 import { Donation } from './donation'
 import { User } from './user'
 import { ContactPerson } from './contact-person'
@@ -185,6 +186,31 @@ export class Donor extends IdEntity {
       order by dc."isPrimary" desc, dc."createdDate" limit 1)`
   })
   primaryPhone?: string
+
+  // Item 18 - the two phone columns sort by what each one shows: the first
+  // landline / the first mobile (primary first, then oldest), classified by
+  // phone-utils.sqlIsMobile - the same rule as the screen (isMobilePhone).
+  @Fields.string<Donor>({
+    caption: 'טלפון (נייח)',
+    allowNull: true,
+    sqlExpression: () => `(
+      select dc."phoneNumber" from "donor_contacts" dc
+      where dc."donorId" = "donors"."id" and dc."type" = 'phone' and dc."isActive" = true
+        and not ${sqlIsMobile('dc."phoneNumber"', 'dc."description"')}
+      order by dc."isPrimary" desc, dc."createdDate" limit 1)`
+  })
+  primaryLandline?: string
+
+  @Fields.string<Donor>({
+    caption: 'נייד',
+    allowNull: true,
+    sqlExpression: () => `(
+      select dc."phoneNumber" from "donor_contacts" dc
+      where dc."donorId" = "donors"."id" and dc."type" = 'phone' and dc."isActive" = true
+        and ${sqlIsMobile('dc."phoneNumber"', 'dc."description"')}
+      order by dc."isPrimary" desc, dc."createdDate" limit 1)`
+  })
+  primaryMobile?: string
 
   @Fields.string<Donor>({
     caption: 'אימייל ראשי',

@@ -52,6 +52,7 @@ export class DonorSelectionModalComponent implements OnInit, OnDestroy {
 
   donorEmailMap = new Map<string, string>();
   donorPhoneMap = new Map<string, string>();
+  donorMobileMap = new Map<string, string>(); // item 18
   donorPlaceMap = new Map<string, Place>();
 
   filterText = '';
@@ -62,7 +63,7 @@ export class DonorSelectionModalComponent implements OnInit, OnDestroy {
   // PAGE only is gone.
   readonly table = new TableState({
     pageSize: 50,
-    sortableFields: ['fullName', 'phone', 'email', 'address'],
+    sortableFields: ['fullName', 'phone', 'mobile', 'email', 'address'],
     scrollContainer: () => this.scrollableTable?.nativeElement,
     load: req => this.loadDonorsPage(req)
   });
@@ -138,6 +139,7 @@ export class DonorSelectionModalComponent implements OnInit, OnDestroy {
 
         this.donorEmailMap = new Map(Object.entries(data.donorEmailMap));
         this.donorPhoneMap = new Map(Object.entries(data.donorPhoneMap));
+        this.donorMobileMap = new Map(Object.entries(data.donorMobileMap || {}));
         this.donorPlaceMap = new Map(Object.entries(data.donorPlaceMap));
 
         // Merge any newly-seen pre-selected donors into selectedDonors
@@ -177,6 +179,10 @@ export class DonorSelectionModalComponent implements OnInit, OnDestroy {
 
   getDonorPhone(donorId: string): string {
     return this.donorPhoneMap.get(donorId) || '';
+  }
+
+  getDonorMobile(donorId: string): string {
+    return this.donorMobileMap.get(donorId) || '';
   }
 
   getDonorPlace(donorId: string): Place | undefined {

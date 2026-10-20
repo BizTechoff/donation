@@ -61,6 +61,7 @@ export class ReminderDetailsModalComponent implements OnInit {
   // Maps for donor-related data
   donorEmailMap = new Map<string, string>();
   donorPhoneMap = new Map<string, string>();
+  donorMobileMap = new Map<string, string>(); // item 18
   donorCountryIdMap = new Map<string, string>();
   donorPlaceMap = new Map<string, Place>();
 
@@ -215,6 +216,7 @@ export class ReminderDetailsModalComponent implements OnInit {
         const relatedData = await this.donorService.loadDonorRelatedData([loadedDonor.id]);
         this.donorEmailMap = relatedData.donorEmailMap;
         this.donorPhoneMap = relatedData.donorPhoneMap;
+        this.donorMobileMap = relatedData.donorMobileMap;
 
         this.reminder!.donorId = loadedDonor.id;
         this.reminder!.donor = loadedDonor;
@@ -264,10 +266,15 @@ export class ReminderDetailsModalComponent implements OnInit {
           const descriptionParts: string[] = [];
 
           const phone = this.donorPhoneMap.get(loadedDonor.id);
+          const mobile = this.donorMobileMap.get(loadedDonor.id);
           const email = this.donorEmailMap.get(loadedDonor.id);
 
           if (phone) {
             descriptionParts.push(`טלפון: ${phone}`);
+          }
+          // item 18 - mobiles listed separately
+          if (mobile) {
+            descriptionParts.push(`נייד: ${mobile}`);
           }
           if (email) {
             descriptionParts.push(`דוא"ל: ${email}`);

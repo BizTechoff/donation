@@ -22,6 +22,7 @@ export class DonorSelectStepComponent implements OnInit, OnDestroy {
   filteredDonors: Donor[] = []
   recentDonors: Donor[] = []
   donorPhoneMap: Record<string, string> = {}
+  donorMobileMap: Record<string, string> = {} // item 18
   donorPlaceMap: Record<string, Place> = {}
 
   private searchSubject = new Subject<void>()
@@ -75,6 +76,7 @@ export class DonorSelectStepComponent implements OnInit, OnDestroy {
 
     for (const d of exportData) {
       if (d.phone) this.donorPhoneMap[d.id] = d.phone
+      if (d.mobile) this.donorMobileMap[d.id] = d.mobile
       if (d.place?.city) {
         this.donorPlaceMap[d.id] = { city: d.place.city, fullAddress: d.fullAddress } as any as Place
       }
@@ -109,6 +111,9 @@ export class DonorSelectStepComponent implements OnInit, OnDestroy {
       for (const [id, phone] of Object.entries(data.donorPhoneMap)) {
         this.donorPhoneMap[id] = phone
       }
+      for (const [id, mobile] of Object.entries(data.donorMobileMap || {})) {
+        this.donorMobileMap[id] = mobile
+      }
       for (const [id, place] of Object.entries(data.donorPlaceMap)) {
         this.donorPlaceMap[id] = place
       }
@@ -119,6 +124,10 @@ export class DonorSelectStepComponent implements OnInit, OnDestroy {
 
   getDonorPhone(donor: Donor): string {
     return this.donorPhoneMap[donor.id] || ''
+  }
+
+  getDonorMobile(donor: Donor): string {
+    return this.donorMobileMap[donor.id] || ''
   }
 
   getDonorCity(donor: Donor): string {

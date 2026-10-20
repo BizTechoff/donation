@@ -34,6 +34,7 @@ export interface DonorBlessing {
   matchingDonationsCount: number;
   email?: string;
   phone?: string;
+  mobile?: string; // item 18
 }
 
 @DialogConfig({
@@ -63,7 +64,7 @@ export class CampaignBlessingBookModalComponent implements OnInit {
   filterBlessingType = '';
 
   // Table configuration
-  displayedColumns: string[] = ['donorName', 'phone', 'email', 'blessingType', 'totalAmount', 'blessingStatus', 'blessingText'];
+  displayedColumns: string[] = ['donorName', 'phone', 'mobile', 'email', 'blessingType', 'totalAmount', 'blessingStatus', 'blessingText'];
 
   // Statistics
   totalDonors = 0;
@@ -103,7 +104,8 @@ export class CampaignBlessingBookModalComponent implements OnInit {
         totalDonated: e.totalDonated,
         matchingDonationsCount: e.matchingDonationsCount,
         email: e.email || undefined,
-        phone: e.phone || undefined
+        phone: e.phone || undefined,
+        mobile: e.mobile || undefined
       }));
       this.calculateStatistics();
     } catch (error) {
@@ -133,6 +135,7 @@ export class CampaignBlessingBookModalComponent implements OnInit {
       const matchesText = !this.filterText ||
         db.donor.fullName?.toLowerCase().includes(this.filterText.toLowerCase()) ||
         (db.phone || '').includes(this.filterText) ||
+        (db.mobile || '').includes(this.filterText) ||
         (db.email || '').toLowerCase().includes(this.filterText.toLowerCase()) ||
         db.blessing?.blessingContent?.toLowerCase().includes(this.filterText.toLowerCase());
 
@@ -394,6 +397,7 @@ export class CampaignBlessingBookModalComponent implements OnInit {
     const columns: ExcelColumn<DonorBlessing>[] = [
       { header: 'שם תורם', mapper: (db) => db.donor.fullName || '-', width: 20 },
       { header: 'טלפון', mapper: (db) => db.phone || '-', width: 15 },
+      { header: 'נייד', mapper: (db) => db.mobile || '-', width: 15 }, // item 18
       { header: 'אימייל', mapper: (db) => db.email || '-', width: 25 },
       { header: 'מתרים', mapper: (db) => db.donor.fundraiserId ? fundraiserMap.get(db.donor.fundraiserId) || '' : '', width: 15 },
       { header: 'איש קשר', mapper: (db) => db.donor.contactPersonId ? contactPersonMap.get(db.donor.contactPersonId) || '' : '', width: 15 },

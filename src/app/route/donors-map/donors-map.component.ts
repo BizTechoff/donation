@@ -1,3 +1,4 @@
+import { timeStart, timeEnd } from '../../../shared/utils/perf-log';
 import { inject, AfterViewInit, ChangeDetectorRef, Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { UserSettingsService } from '../../services/user-settings.service';
 import { Router } from '@angular/router';
@@ -228,7 +229,7 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
           this.mapSettingsLoaded = true;
         }
 
-        console.time('Total map load time');
+        timeStart('Total map load time');
 
         // Build map filters for backend - send all filters to server
         const backendFilters: BackendMapFilters = {
@@ -258,7 +259,7 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
         console.log('DonorsMap: Loaded markers:', this.markersData.length);
         console.log('DonorsMap: Statistics:', mapData.statistics);
 
-        console.timeEnd('Total map load time');
+        timeEnd('Total map load time');
 
         // Update map markers if map is initialized
         if (this.map) {
@@ -739,7 +740,7 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
     console.log(`[map] addMarkersToMap start - existing=${this.markers.length}, new=${this.markersData.length}`);
-    console.time('[map] addMarkersToMap TOTAL');
+    timeStart('[map] addMarkersToMap TOTAL');
 
     // Clear active route if present
     if (this.isRouteActive) {
@@ -748,7 +749,7 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
     // Clear existing markers via clusterer (O(n) bulk operation; was O(n^2)
     // when calling marker.setMap(null) per marker - 88s for 3,216 markers).
-    console.time('[map] 1.clearMarkers (clusterer bulk)');
+    timeStart('[map] 1.clearMarkers (clusterer bulk)');
     if (this.markerClusterer) {
       this.markerClusterer.clearMarkers();
     } else {
@@ -756,14 +757,14 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
       this.markers.forEach(marker => marker.setMap(null));
     }
     this.markers = [];
-    console.timeEnd('[map] 1.clearMarkers (clusterer bulk)');
+    timeEnd('[map] 1.clearMarkers (clusterer bulk)');
 
     console.log('Adding markers:', this.markersData.length);
 
     const bounds = new google.maps.LatLngBounds();
     const newMarkers: google.maps.Marker[] = [];
 
-    console.time('[map] 2.createMarkers (new google.maps.Marker x N, no map assignment)');
+    timeStart('[map] 2.createMarkers (new google.maps.Marker x N, no map assignment)');
     this.markersData.forEach((markerData) => {
       try {
         const marker = this.createGoogleMarker(markerData);
@@ -773,20 +774,20 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
         console.error('Error creating marker for donor:', markerData.donorName, error);
       }
     });
-    console.timeEnd('[map] 2.createMarkers (new google.maps.Marker x N, no map assignment)');
+    timeEnd('[map] 2.createMarkers (new google.maps.Marker x N, no map assignment)');
 
     // Bulk add to clusterer - one operation, O(n).
-    console.time('[map] 2b.addToClusterer (bulk)');
+    timeStart('[map] 2b.addToClusterer (bulk)');
     this.markers = newMarkers;
     if (this.markerClusterer && newMarkers.length > 0) {
       this.markerClusterer.addMarkers(newMarkers);
     }
-    console.timeEnd('[map] 2b.addToClusterer (bulk)');
+    timeEnd('[map] 2b.addToClusterer (bulk)');
     console.log('Total markers added:', newMarkers.length);
 
     // Fit map to markers bounds if there are any markers (skip if preserving view)
     if (newMarkers.length > 0 && !this.preserveMapView) {
-      console.time('[map] 3.fitBounds');
+      timeStart('[map] 3.fitBounds');
       this.map.fitBounds(bounds);
 
       // Don't zoom in too much if there's only one marker
@@ -796,10 +797,10 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
         }
         google.maps.event.removeListener(listener);
       });
-      console.timeEnd('[map] 3.fitBounds');
+      timeEnd('[map] 3.fitBounds');
     }
     this.preserveMapView = false;
-    console.timeEnd('[map] addMarkersToMap TOTAL');
+    timeEnd('[map] addMarkersToMap TOTAL');
   }
 
   /**
@@ -981,6 +982,9 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
         <div style="margin-bottom: 8px;">
           <strong>📞 ${this.i18n.terms.phoneLabel}:</strong> ${donorData.phone || this.i18n.terms.mapNotSpecified}
         </div>
+        ${donorData.mobile ? `<div style="margin-bottom: 8px;">
+          <strong>📱 ${this.i18n.terms.mobileColumn || 'נייד'}:</strong> ${donorData.mobile}
+        </div>` : ''}
         <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin-top: 10px;">
           <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
             <span><strong>💰 <a href="javascript:void(0)" onclick="window.openDonorDonations('${donorData.donor.id}', '${donorData.donor.lastAndFirstName.replace(/'/g, "\\'")}')" style="color: #3498db; text-decoration: underline; cursor: pointer;">${this.i18n.terms.totalDonationsLabel}</a>:</strong></span>

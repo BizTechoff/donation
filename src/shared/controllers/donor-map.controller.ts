@@ -1,3 +1,4 @@
+import { timeStart, timeEnd } from '../utils/perf-log';
 import { Allow, BackendMethod, remult, SqlDatabase } from 'remult';
 import { GlobalFilters } from '../../app/services/global-filter.service';
 import { Country } from '../entity/country';
@@ -7,7 +8,7 @@ import { DonorContact } from '../entity/donor-contact';
 import { DonorPlace } from '../entity/donor-place';
 import { Place } from '../entity/place';
 import { calculateEffectiveAmount, calculatePaymentTotals, calculatePeriodsElapsed, isPaymentBased, isStandingOrder } from '../utils/donation-utils';
-import { formatDisplayPhones, isMobilePhone, selectDisplayPhones } from '../utils/phone-utils';
+import { DonorPhoneController } from './donor-phone.controller';
 
 // ממשק לפילטרים מקומיים של המפה
 export interface MapFilters {
@@ -94,7 +95,10 @@ export interface DonorMapData {
   donor: Donor;
   donorPlace: DonorPlace | null;
   email: string | null;
+  /** Landlines (item 18) - newline-separated, null when none. */
   phone: string | null;
+  /** Mobiles (item 18) - newline-separated, null when none. */
+  mobile: string | null;
   fullAddress: string | null;
   stats: DonorMapStats;
 }
@@ -102,9 +106,10 @@ export interface DonorMapData {
 export interface DonorExportData {
   id: string;
   fullAddress: string;
-  /** Display phones - newline-separated list selected by phone-utils.selectDisplayPhones:
-   *  prefers all mobiles when any exist, falls back to all landlines, empty otherwise. */
+  /** Landlines / mobiles (item 18) - newline-separated, '' when none.
+   *  From DonorPhoneController - the one phone loader. */
   phone: string;
+  mobile: string;
   email: string;
   place: {
     city: string;
@@ -219,36 +224,36 @@ export class DonorMapController {
   }
 
   private static async getIntersectedIds(mapFilters: MapFilters): Promise<string[]> {
-    console.time('[intersect] TOTAL');
+    timeStart('[intersect] TOTAL');
     const { GlobalFilterController } = await import('./global-filter.controller');
-    console.time('[intersect] global filter');
+    timeStart('[intersect] global filter');
     const globalDonorIds = await GlobalFilterController.getDonorIdsFromUserSettings();
-    console.timeEnd('[intersect] global filter');
+    timeEnd('[intersect] global filter');
     console.log(`[intersect]   global=${globalDonorIds === undefined ? 'no-restriction' : globalDonorIds.length}`);
-    console.time('[intersect] local filter');
+    timeStart('[intersect] local filter');
     const localDonorIds = await DonorMapController.getDonorIds(mapFilters);
-    console.timeEnd('[intersect] local filter');
+    timeEnd('[intersect] local filter');
     console.log(`[intersect]   local=${localDonorIds.length}`);
     if (globalDonorIds === undefined) {
-      console.timeEnd('[intersect] TOTAL');
+      timeEnd('[intersect] TOTAL');
       return localDonorIds;
     }
     const globalSet = new Set(globalDonorIds);
     const result = localDonorIds.filter(id => globalSet.has(id));
     console.log(`[intersect]   intersected=${result.length}`);
-    console.timeEnd('[intersect] TOTAL');
+    timeEnd('[intersect] TOTAL');
     return result;
   }
 
   private static async buildMarkersFromIds(intersectedIds: string[], mapFilters: MapFilters): Promise<MarkerData[]> {
     if (intersectedIds.length === 0) return [];
     console.log(`[buildMarkers] start - intersectedIds=${intersectedIds.length}`);
-    console.time('[buildMarkers] TOTAL');
+    timeStart('[buildMarkers] TOTAL');
 
     const sqlDb = remult.dataProvider as SqlDatabase;
     const idsLit = intersectedIds.map(id => `'${String(id).replace(/'/g, "''")}'`).join(',');
 
-    console.time('[buildMarkers] 1.SELECT places+locations');
+    timeStart('[buildMarkers] 1.SELECT places+locations');
     const { rows: placeRows } = await sqlDb.execute(
       `SELECT DISTINCT ON (dp."donorId") dp."donorId", p."latitude", p."longitude"
        FROM "donor_places" dp
@@ -258,7 +263,7 @@ export class DonorMapController {
          AND p."latitude" IS NOT NULL
          AND p."longitude" IS NOT NULL`
     );
-    console.timeEnd('[buildMarkers] 1.SELECT places+locations');
+    timeEnd('[buildMarkers] 1.SELECT places+locations');
     console.log(`[buildMarkers]   placeRows=${(placeRows as any[]).length}`);
 
     const locationMap = new Map<string, { lat: number; lng: number }>();
@@ -273,24 +278,24 @@ export class DonorMapController {
     const donorIdsWithLocation = Array.from(locationMap.keys());
     console.log(`[buildMarkers]   donorIdsWithLocation=${donorIdsWithLocation.length}`);
     if (donorIdsWithLocation.length === 0) {
-      console.timeEnd('[buildMarkers] TOTAL');
+      timeEnd('[buildMarkers] TOTAL');
       return [];
     }
 
     const locIdsLit = donorIdsWithLocation.map(id => `'${String(id).replace(/'/g, "''")}'`).join(',');
-    console.time('[buildMarkers] 2.SELECT donors');
+    timeStart('[buildMarkers] 2.SELECT donors');
     const { rows: donorRows } = await sqlDb.execute(
       `SELECT "id", "isActive", "lastName", "firstName"
        FROM "donors" WHERE "id" IN (${locIdsLit})`
     );
-    console.timeEnd('[buildMarkers] 2.SELECT donors');
+    timeEnd('[buildMarkers] 2.SELECT donors');
     const donors = (donorRows as any[]).map(r => ({
       id: r.id,
       isActive: r.isActive,
       lastAndFirstName: `${r.lastName || ''} ${r.firstName || ''}`.trim()
     }));
 
-    console.time('[buildMarkers] 3.groupBy donations (sum amount + max date)');
+    timeStart('[buildMarkers] 3.groupBy donations (sum amount + max date)');
     const donationRepo = remult.repo(Donation);
     const donationStatsByDonor = new Map<string, { total: number; lastDate: Date | null }>();
     const statsRows = await donationRepo.groupBy({
@@ -306,15 +311,15 @@ export class DonorMapController {
         lastDate: maxDate ? new Date(maxDate) : null
       });
     }
-    console.timeEnd('[buildMarkers] 3.groupBy donations (sum amount + max date)');
+    timeEnd('[buildMarkers] 3.groupBy donations (sum amount + max date)');
     console.log(`[buildMarkers]   stats rows=${statsRows.length}`);
 
-    console.time('[buildMarkers] 4.getThresholds');
+    timeStart('[buildMarkers] 4.getThresholds');
     const thresholds = await DonorMapController.getThresholds();
-    console.timeEnd('[buildMarkers] 4.getThresholds');
+    timeEnd('[buildMarkers] 4.getThresholds');
     console.log(`[buildMarkers]   thresholds: highDonor>${thresholds.highDonorAmount}, recent<${thresholds.recentDonorMonths}mo`);
 
-    console.time('[buildMarkers] 5.build markers + status calc');
+    timeStart('[buildMarkers] 5.build markers + status calc');
     const markers: MarkerData[] = donors
       .filter(d => locationMap.has(d.id))
       .map(d => {
@@ -343,11 +348,11 @@ export class DonorMapController {
           statuses
         };
       });
-    console.timeEnd('[buildMarkers] 5.build markers + status calc');
+    timeEnd('[buildMarkers] 5.build markers + status calc');
     const highDonorCount = markers.filter(m => m.statuses.includes('high-donor')).length;
     console.log(`[buildMarkers]   total markers=${markers.length}, high-donor=${highDonorCount}`);
 
-    console.time('[buildMarkers] 6.apply statusFilter + hasRecentDonation');
+    timeStart('[buildMarkers] 6.apply statusFilter + hasRecentDonation');
     let filteredMarkers = markers;
     if (mapFilters.statusFilter && mapFilters.statusFilter.length > 0) {
       filteredMarkers = filteredMarkers.filter(m =>
@@ -360,9 +365,9 @@ export class DonorMapController {
         ? filteredMarkers.filter(m => m.statuses.includes('recent-donor'))
         : filteredMarkers.filter(m => !m.statuses.includes('recent-donor'));
     }
-    console.timeEnd('[buildMarkers] 6.apply statusFilter + hasRecentDonation');
+    timeEnd('[buildMarkers] 6.apply statusFilter + hasRecentDonation');
 
-    console.timeEnd('[buildMarkers] TOTAL');
+    timeEnd('[buildMarkers] TOTAL');
     return filteredMarkers;
   }
 
@@ -370,21 +375,21 @@ export class DonorMapController {
     if (intersectedIds.length === 0) {
       return { totalDonors: 0, activeDonors: 0, donorsOnMap: 0, averageDonation: 0 };
     }
-    console.time('[buildStats] TOTAL');
+    timeStart('[buildStats] TOTAL');
 
     const sqlDb = remult.dataProvider as SqlDatabase;
     const idsLit = intersectedIds.map(id => `'${String(id).replace(/'/g, "''")}'`).join(',');
 
-    console.time('[buildStats] 1.count donors (total+active)');
+    timeStart('[buildStats] 1.count donors (total+active)');
     const { rows: countRows } = await sqlDb.execute(
       `SELECT COUNT(*)::int AS total, COUNT(*) FILTER (WHERE "isActive") ::int AS active
        FROM "donors" WHERE "id" IN (${idsLit})`
     );
-    console.timeEnd('[buildStats] 1.count donors (total+active)');
+    timeEnd('[buildStats] 1.count donors (total+active)');
     const totalDonors = (countRows[0] as any)?.total || 0;
     const activeDonors = (countRows[0] as any)?.active || 0;
 
-    console.time('[buildStats] 2.donors with coords');
+    timeStart('[buildStats] 2.donors with coords');
     const { rows: coordRows } = await sqlDb.execute(
       `SELECT DISTINCT dp."donorId"
        FROM "donor_places" dp
@@ -394,33 +399,33 @@ export class DonorMapController {
          AND p."latitude" IS NOT NULL
          AND p."longitude" IS NOT NULL`
     );
-    console.timeEnd('[buildStats] 2.donors with coords');
+    timeEnd('[buildStats] 2.donors with coords');
     const donorsOnMap = (coordRows as any[]).length;
 
     const donationRepo = remult.repo(Donation);
-    console.time('[buildStats] 3.PayerService + currencyTypes');
+    timeStart('[buildStats] 3.PayerService + currencyTypes');
     const { PayerService } = await import('../../app/services/payer.service');
     const payerService = new PayerService();
     const currencyTypes = await payerService.getCurrencyTypesRecord();
-    console.timeEnd('[buildStats] 3.PayerService + currencyTypes');
+    timeEnd('[buildStats] 3.PayerService + currencyTypes');
 
-    console.time('[buildStats] 4.groupBy donations sum/currency');
+    timeStart('[buildStats] 4.groupBy donations sum/currency');
     const sumsByCurrency = await donationRepo.groupBy({
       group: ['currencyId'],
       sum: ['amount'],
       where: { donorId: { $in: intersectedIds } }
     });
-    console.timeEnd('[buildStats] 4.groupBy donations sum/currency');
+    timeEnd('[buildStats] 4.groupBy donations sum/currency');
     const totalAmount = sumsByCurrency.reduce((sum, row) => {
       const rate = currencyTypes[row.currencyId]?.rateInShekel || 1;
       return sum + ((row.amount?.sum || 0) * rate);
     }, 0);
-    console.time('[buildStats] 5.count donations');
+    timeStart('[buildStats] 5.count donations');
     const totalCount = await donationRepo.count({ donorId: { $in: intersectedIds } });
-    console.timeEnd('[buildStats] 5.count donations');
+    timeEnd('[buildStats] 5.count donations');
     const averageDonation = totalCount > 0 ? totalAmount / totalCount : 0;
 
-    console.timeEnd('[buildStats] TOTAL');
+    timeEnd('[buildStats] TOTAL');
     return { totalDonors, activeDonors, donorsOnMap, averageDonation };
   }
 
@@ -429,14 +434,14 @@ export class DonorMapController {
    */
   @BackendMethod({ allowed: Allow.authenticated })
   static async getMapData(mapFilters: MapFilters): Promise<MapData> {
-    console.time('DonorMapController.getMapData - Total');
+    timeStart('DonorMapController.getMapData - Total');
     const intersectedIds = await DonorMapController.getIntersectedIds(mapFilters);
     console.log(`getMapData: ${intersectedIds.length} donors after intersection`);
     const [markers, statistics] = await Promise.all([
       DonorMapController.buildMarkersFromIds(intersectedIds, mapFilters),
       DonorMapController.buildStatisticsFromIds(intersectedIds)
     ]);
-    console.timeEnd('DonorMapController.getMapData - Total');
+    timeEnd('DonorMapController.getMapData - Total');
     return { markers, statistics };
   }
 
@@ -489,7 +494,7 @@ export class DonorMapController {
     // קרא ספים מ-AppSettings
     const settingsThresholds = await DonorMapController.getThresholds();
 
-    console.time('DonorMapController.loadDonorsMapData');
+    timeStart('DonorMapController.loadDonorsMapData');
 
     // If donorIds is explicitly provided as empty array, return empty result
     if (donorIds && donorIds.length === 0) {
@@ -514,7 +519,7 @@ export class DonorMapController {
 
     const donorIdsList = donors.map(d => d.id);
 
-    console.time('Load related data (places & contacts)');
+    timeStart('Load related data (places & contacts)');
     // טען את כל הנתונים הקשורים במקביל
     const [donorPlaceMap, contacts] = await Promise.all([
       // טען מקומות ראשיים (בית קודם, אחרת הראשון שנמצא)
@@ -529,29 +534,18 @@ export class DonorMapController {
       })
     ]);
 
-    console.timeEnd('Load related data (places & contacts)');
+    timeEnd('Load related data (places & contacts)');
     const emailMap = new Map<string, string>();
-    // Gather ALL phones per donor; canonical display value via shared helper -
-    // prefers mobiles when any exist, else falls back to landlines.
-    const allPhonesByDonor = new Map<string, string[]>();
     contacts.forEach(contact => {
       if (!contact.donorId) return;
       if (contact.type === 'email' && contact.email && !emailMap.has(contact.donorId)) {
         emailMap.set(contact.donorId, contact.email);
       }
-      if (contact.type === 'phone' && contact.phoneNumber) {
-        const list = allPhonesByDonor.get(contact.donorId) || [];
-        list.push(contact.phoneNumber);
-        allPhonesByDonor.set(contact.donorId, list);
-      }
     });
-    const phoneMap = new Map<string, string>();
-    for (const [donorId, list] of allPhonesByDonor) {
-      const value = formatDisplayPhones(list);
-      if (value) phoneMap.set(donorId, value);
-    }
+    // Item 18 - phones from the one loader, split into טלפון / נייד.
+    const phoneMap = await DonorPhoneController.loadDisplay(donorIdsList);
 
-    console.time('Load donations');
+    timeStart('Load donations');
     // טען תרומות - גם כתורם ראשי וגם כשותף
     // בנפרד: תרומות רגילות והתחייבויות
     const [donationsAsPrimary, donationsAsPartner, commitments] = await Promise.all([
@@ -592,7 +586,7 @@ export class DonorMapController {
         }
       })
     ]);
-    console.timeEnd('Load donations');
+    timeEnd('Load donations');
     console.log(`Loaded ${donationsAsPrimary.length} primary donations, ${donationsAsPartner.length} partner donations, ${commitments.length} commitments`);
 
     // טען סכומי תשלומים בפועל עבור התחייבויות והו"ק עם סינון לפי סוג
@@ -608,7 +602,7 @@ export class DonorMapController {
       paymentTotalsForMap = calculatePaymentTotals(paymentBasedDonationsForMap, payments);
     }
 
-    console.time('Calculate donation stats');
+    timeStart('Calculate donation stats');
     // טען שערי המרה של מטבעות
     const { PayerService } = await import('../../app/services/payer.service');
     const payerService = new PayerService();
@@ -844,9 +838,9 @@ export class DonorMapController {
       return { total: totalInTarget, currencyId: targetCurrencyId };
     };
 
-    console.timeEnd('Calculate donation stats');
+    timeEnd('Calculate donation stats');
 
-    console.time('Build result objects');
+    timeStart('Build result objects');
     // בנה את התוצאה עם כל הנתונים והסטטיסטיקות
     const result: DonorMapData[] = donors.map(donor => {
       const stats = donorStatsMap.get(donor.id);
@@ -934,7 +928,8 @@ export class DonorMapController {
         donor,
         donorPlace,
         email: emailMap.get(donor.id) || null,
-        phone: phoneMap.get(donor.id) || null,
+        phone: phoneMap.get(donor.id)?.phone || null,
+        mobile: phoneMap.get(donor.id)?.mobile || null,
         fullAddress: fullAddress || null,
         stats: {
           donorId: donor.id,
@@ -971,9 +966,9 @@ export class DonorMapController {
         }
       };
     });
-    console.timeEnd('Build result objects');
+    timeEnd('Build result objects');
 
-    console.timeEnd('DonorMapController.loadDonorsMapData');
+    timeEnd('DonorMapController.loadDonorsMapData');
     console.log(`DonorMapController: Returning ${result.length} donors with complete data`);
 
     return result;
@@ -1027,27 +1022,13 @@ export class DonorMapController {
       )
     ]);
 
-    // Gather ALL phones per donor (mobile + landline together) and emails.
-    // The canonical display value is computed via phone-utils.formatDisplayPhones
-    // which picks mobiles when any exist (else landlines) - single source of truth.
-    const allPhonesByDonor = new Map<string, string[]>();
     const emailMap = new Map<string, string>();
-
     for (const r of contactRows.rows as any[]) {
-      if (r.type === 'phone' && r.phoneNumber) {
-        const list = allPhonesByDonor.get(r.donorId) || [];
-        list.push(r.phoneNumber);
-        allPhonesByDonor.set(r.donorId, list);
-      }
       if (r.type === 'email' && r.email && !emailMap.has(r.donorId))
         emailMap.set(r.donorId, r.email);
     }
-
-    const phoneMap = new Map<string, string>();
-    for (const [donorId, list] of allPhonesByDonor) {
-      const value = formatDisplayPhones(list); // newline-separated
-      if (value) phoneMap.set(donorId, value);
-    }
+    // Item 18 - phones from the one loader, split into טלפון / נייד.
+    const phoneMap = await DonorPhoneController.loadDisplay(donorIds);
 
     const placeMap = new Map<string, any>();
     for (const r of placeRows.rows as any[])
@@ -1090,7 +1071,8 @@ export class DonorMapController {
       return {
         id,
         fullAddress: buildDisplayAddress(p),
-        phone: phoneMap.get(id) || '',
+        phone: phoneMap.get(id)?.phone || '',
+        mobile: phoneMap.get(id)?.mobile || '',
         email: emailMap.get(id) || '',
         place: p ? {
           city: p.city || '',

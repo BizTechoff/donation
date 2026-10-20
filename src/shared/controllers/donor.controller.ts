@@ -1,6 +1,8 @@
+import { timeStart, timeEnd } from '../utils/perf-log';
 import { Allow, BackendMethod, Controller, remult, SqlDatabase } from 'remult';
 import { GlobalFilters } from '../../app/services/global-filter.service';
-import { formatDisplayPhones } from '../utils/phone-utils';
+import { DonorPhoneDisplay } from '../utils/phone-utils';
+import { DonorPhoneController } from './donor-phone.controller';
 import { Circle } from '../entity/circle';
 import { Company } from '../entity/company';
 import { Country } from '../entity/country';
@@ -40,7 +42,10 @@ export interface DonorDetailsData {
 export interface DonorSelectionData {
   donors: Donor[];
   donorEmailMap: Record<string, string>;
+  /** Landlines (item 18) - newline-separated. */
   donorPhoneMap: Record<string, string>;
+  /** Mobiles (item 18) - newline-separated. */
+  donorMobileMap: Record<string, string>;
   donorPlaceMap: Record<string, Place>;
 }
 
@@ -72,6 +77,7 @@ export interface InvitedDonorRow {
   fundraiserId?: string;
   contactPersonId?: string;
   phone: string;
+  mobile: string;
   email: string;
   city: string;
   neighborhood: string;
@@ -230,39 +236,33 @@ export class DonorController {
 
     const donorIds = filteredDonors.map(d => d.id);
 
-    const [donorContacts, primaryPlacesMap] = await Promise.all([
+    const [donorContacts, primaryPlacesMap, phones] = await Promise.all([
       remult.repo(DonorContact).find({ where: { donorId: { $in: donorIds } } }),
-      DonorPlace.getPrimaryForDonors(donorIds)
+      DonorPlace.getPrimaryForDonors(donorIds),
+      DonorPhoneController.loadDisplay(donorIds)
     ]);
 
     const donorEmailMap: Record<string, string> = {};
     const donorPhoneMap: Record<string, string> = {};
+    const donorMobileMap: Record<string, string> = {};
     const donorPlaceMap: Record<string, Place> = {};
 
-    // Gather ALL phones per donor first; canonical display value is derived
-    // via the shared phone-utils.formatDisplayPhones - mobiles first, else
-    // landlines - so the selection modal shows the same phone the donor list,
-    // reports and exports show. First-email-wins is fine for the email field.
-    const allPhonesByDonor = new Map<string, string[]>();
+    // First-email-wins for the email field.
     donorContacts.forEach(contact => {
       if (!contact.donorId) return;
       if (contact.email && !donorEmailMap[contact.donorId]) donorEmailMap[contact.donorId] = contact.email;
-      if (contact.phoneNumber) {
-        const list = allPhonesByDonor.get(contact.donorId) || [];
-        list.push(contact.phoneNumber);
-        allPhonesByDonor.set(contact.donorId, list);
-      }
     });
-    for (const [donorId, list] of allPhonesByDonor) {
-      const value = formatDisplayPhones(list);
-      if (value) donorPhoneMap[donorId] = value;
+    // Item 18 - phones from the one loader, split into טלפון / נייד.
+    for (const [donorId, p] of phones) {
+      if (p.phone) donorPhoneMap[donorId] = p.phone;
+      if (p.mobile) donorMobileMap[donorId] = p.mobile;
     }
 
     primaryPlacesMap.forEach((donorPlace, donorId) => {
       if (donorPlace.place) donorPlaceMap[donorId] = donorPlace.place;
     });
 
-    return { donors: filteredDonors, totalCount, donorEmailMap, donorPhoneMap, donorPlaceMap };
+    return { donors: filteredDonors, totalCount, donorEmailMap, donorPhoneMap, donorMobileMap, donorPlaceMap };
   }
 
   /**
@@ -324,12 +324,12 @@ export class DonorController {
     excludeIds?: string[]
   ): Promise<Donor[]> {
     console.log(`[findFilteredDonors] start - searchTerm="${searchTerm}", page=${page}, excludeIds=${excludeIds?.length ?? 0}`);
-    console.time('[findFilteredDonors] TOTAL');
+    timeStart('[findFilteredDonors] TOTAL');
     const { GlobalFilterController } = await import('./global-filter.controller');
 
-    console.time('[findFilteredDonors] 1.GlobalFilter.getDonorIds');
+    timeStart('[findFilteredDonors] 1.GlobalFilter.getDonorIds');
     const donorIds = await GlobalFilterController.getDonorIdsFromUserSettings();
-    console.timeEnd('[findFilteredDonors] 1.GlobalFilter.getDonorIds');
+    timeEnd('[findFilteredDonors] 1.GlobalFilter.getDonorIds');
 
     console.log('DonorController.findFilteredDonors - donorIds from GlobalFilter:', donorIds?.length ?? 'all');
 
@@ -352,7 +352,8 @@ export class DonorController {
       { lastName: 'asc', firstName: 'asc' },
       {
         fullName: ['lastName', 'firstName'],
-        phone: 'primaryPhone',
+        phone: 'primaryLandline',
+        mobile: 'primaryMobile',
         email: 'primaryEmail',
         address: 'primaryCityStreet'
       }
@@ -367,12 +368,12 @@ export class DonorController {
     // Apply search term filter - cross-field search (name, phone, email, address)
     // Each word must match at least one field, AND between words
     if (searchTerm && searchTerm.trim()) {
-      console.time('[findFilteredDonors] 2.searchAcrossAllFields');
+      timeStart('[findFilteredDonors] 2.searchAcrossAllFields');
       const matchingIds = await DonorController.searchDonorIdsAcrossAllFields(searchTerm, donorIds);
-      console.timeEnd('[findFilteredDonors] 2.searchAcrossAllFields');
+      timeEnd('[findFilteredDonors] 2.searchAcrossAllFields');
       console.log(`[findFilteredDonors]   matchingIds=${matchingIds.length}`);
       if (matchingIds.length === 0) {
-        console.timeEnd('[findFilteredDonors] TOTAL');
+        timeEnd('[findFilteredDonors] TOTAL');
         return [];
       }
       whereClause.id = { $in: matchingIds };
@@ -380,19 +381,19 @@ export class DonorController {
 
     // Apply excludeIds at SQL level so counts, paging and select-all all agree.
     if (!DonorController.applyExcludeIdsToWhere(whereClause, excludeIds)) {
-      console.timeEnd('[findFilteredDonors] TOTAL');
+      timeEnd('[findFilteredDonors] TOTAL');
       return [];
     }
 
-    console.time('[findFilteredDonors] 3.repo.find (final page query)');
+    timeStart('[findFilteredDonors] 3.repo.find (final page query)');
     const result = await remult.repo(Donor).find({
       where: whereClause,
       orderBy,
       ...(page && pageSize ? { page, limit: pageSize } : {})
     });
-    console.timeEnd('[findFilteredDonors] 3.repo.find (final page query)');
+    timeEnd('[findFilteredDonors] 3.repo.find (final page query)');
     console.log(`[findFilteredDonors]   donors returned=${result.length}`);
-    console.timeEnd('[findFilteredDonors] TOTAL');
+    timeEnd('[findFilteredDonors] TOTAL');
     return result;
   }
 
@@ -419,15 +420,15 @@ export class DonorController {
     excludeIds?: string[]
   ): Promise<number> {
     console.log(`[countFilteredDonors] start - searchTerm="${searchTerm}", excludeIds=${excludeIds?.length ?? 0}`);
-    console.time('[countFilteredDonors] TOTAL');
+    timeStart('[countFilteredDonors] TOTAL');
     const { GlobalFilterController } = await import('./global-filter.controller');
 
-    console.time('[countFilteredDonors] 1.GlobalFilter.getDonorIds');
+    timeStart('[countFilteredDonors] 1.GlobalFilter.getDonorIds');
     const donorIds = await GlobalFilterController.getDonorIdsFromUserSettings();
-    console.timeEnd('[countFilteredDonors] 1.GlobalFilter.getDonorIds');
+    timeEnd('[countFilteredDonors] 1.GlobalFilter.getDonorIds');
 
     if (donorIds !== undefined && donorIds.length === 0) {
-      console.timeEnd('[countFilteredDonors] TOTAL');
+      timeEnd('[countFilteredDonors] TOTAL');
       return 0;
     }
 
@@ -437,12 +438,12 @@ export class DonorController {
     }
 
     if (searchTerm && searchTerm.trim()) {
-      console.time('[countFilteredDonors] 2.searchAcrossAllFields');
+      timeStart('[countFilteredDonors] 2.searchAcrossAllFields');
       const matchingIds = await DonorController.searchDonorIdsAcrossAllFields(searchTerm, donorIds);
-      console.timeEnd('[countFilteredDonors] 2.searchAcrossAllFields');
+      timeEnd('[countFilteredDonors] 2.searchAcrossAllFields');
       console.log(`[countFilteredDonors]   matchingIds=${matchingIds.length}`);
       if (matchingIds.length === 0) {
-        console.timeEnd('[countFilteredDonors] TOTAL');
+        timeEnd('[countFilteredDonors] TOTAL');
         return 0;
       }
       whereClause.id = { $in: matchingIds };
@@ -450,15 +451,15 @@ export class DonorController {
 
     // Apply excludeIds at SQL level - keeps count in sync with paged data & select-all.
     if (!DonorController.applyExcludeIdsToWhere(whereClause, excludeIds)) {
-      console.timeEnd('[countFilteredDonors] TOTAL');
+      timeEnd('[countFilteredDonors] TOTAL');
       return 0;
     }
 
-    console.time('[countFilteredDonors] 3.repo.count');
+    timeStart('[countFilteredDonors] 3.repo.count');
     const c = await remult.repo(Donor).count(whereClause);
-    console.timeEnd('[countFilteredDonors] 3.repo.count');
+    timeEnd('[countFilteredDonors] 3.repo.count');
     console.log(`[countFilteredDonors]   count=${c}`);
-    console.timeEnd('[countFilteredDonors] TOTAL');
+    timeEnd('[countFilteredDonors] TOTAL');
     return c;
   }
 
@@ -583,7 +584,8 @@ export class DonorController {
         : Promise.resolve(new Map<string, DonorPlace>())
     ]);
 
-    const rows = DonorController.buildInvitedRows(donors, donorContacts, primaryPlacesMap);
+    const phones = await DonorPhoneController.loadDisplay(donors.map(d => d.id));
+    const rows = DonorController.buildInvitedRows(donors, donorContacts, primaryPlacesMap, phones);
     const filterOptions = isFirstLoad
       ? await DonorController.loadInvitedFilterOptions()
       : { countries: [], cities: [], neighborhoods: [] };
@@ -689,26 +691,13 @@ export class DonorController {
   private static buildInvitedRows(
     donors: Donor[],
     contacts: DonorContact[],
-    primaryPlacesMap: Map<string, DonorPlace>
+    primaryPlacesMap: Map<string, DonorPlace>,
+    phones: Map<string, DonorPhoneDisplay>
   ): InvitedDonorRow[] {
-    const phoneMap = new Map<string, string>();
     const emailMap = new Map<string, string>();
-    // Gather ALL phones per donor first, then derive the canonical display
-    // value via shared phone-utils.formatDisplayPhones (mobiles preferred over
-    // landlines) so campaign invited lists match the donor list / reports.
-    const allPhonesByDonor = new Map<string, string[]>();
     for (const c of contacts) {
       if (!c.donorId) continue;
       if (c.email && !emailMap.has(c.donorId)) emailMap.set(c.donorId, c.email);
-      if (c.phoneNumber) {
-        const list = allPhonesByDonor.get(c.donorId) || [];
-        list.push(c.phoneNumber);
-        allPhonesByDonor.set(c.donorId, list);
-      }
-    }
-    for (const [donorId, list] of allPhonesByDonor) {
-      const value = formatDisplayPhones(list);
-      if (value) phoneMap.set(donorId, value);
     }
     return donors.map(d => {
       const dp = primaryPlacesMap.get(d.id);
@@ -723,7 +712,8 @@ export class DonorController {
         circleIds: d.circleIds || [],
         fundraiserId: d.fundraiserId || undefined,
         contactPersonId: d.contactPersonId || undefined,
-        phone: phoneMap.get(d.id) || '',
+        phone: phones.get(d.id)?.phone || '',
+        mobile: phones.get(d.id)?.mobile || '',
         email: emailMap.get(d.id) || '',
         city: place?.city || '',
         neighborhood: place?.neighborhood || '',

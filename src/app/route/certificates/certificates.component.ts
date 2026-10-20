@@ -526,6 +526,13 @@ export class CertificatesComponent implements OnInit, OnDestroy {
           this.table.sortColumns
         );
 
+        // item 18 - print carries the same phone columns as the Excel export
+        const printDonorIds = [...new Set(allCertificates.map(c => c.donor?.id).filter(id => id))] as string[];
+        const printContactData = printDonorIds.length > 0
+          ? await DonorMapController.loadDonorsForExport(printDonorIds)
+          : [];
+        const printContactsMap = new Map(printContactData.map(d => [d.id, d]));
+
         // Prepare data for print
         const printData = allCertificates.map(cert => {
           // Build amountEvent display like the table shows
@@ -540,6 +547,8 @@ export class CertificatesComponent implements OnInit, OnDestroy {
 
           return {
             recipientName: cert.recipientName || '-',
+            phone: printContactsMap.get(cert.donor?.id || '')?.phone || '-',
+            mobile: printContactsMap.get(cert.donor?.id || '')?.mobile || '-',
             type: cert.type === 'memorial' ? this.i18n.currentTerms.memorialCertificate : this.i18n.currentTerms.memorialDayType,
             eventDate: this.formatHebrewDate(cert.eventDate),
             amountEvent: amountEventDisplay,
@@ -554,6 +563,8 @@ export class CertificatesComponent implements OnInit, OnDestroy {
           subtitle: `${allCertificates.length} ${this.i18n.currentTerms.certificates || 'תעודות'}`,
           columns: [
             { header: this.i18n.currentTerms.donorRecipient || 'תורם/נהנה', field: 'recipientName' },
+            { header: this.i18n.currentTerms.phone || 'טלפון', field: 'phone', align: 'left' },
+            { header: this.i18n.currentTerms.mobileColumn || 'נייד', field: 'mobile', align: 'left' },
             { header: this.i18n.currentTerms.certificateType || 'סוג', field: 'type' },
             { header: this.i18n.currentTerms.eventDate || 'תאריך אירוע', field: 'eventDate' },
             { header: this.i18n.currentTerms.amountEvent || 'אירוע/סיבה', field: 'amountEvent' },
@@ -628,10 +639,11 @@ export class CertificatesComponent implements OnInit, OnDestroy {
             { header: this.i18n.currentTerms.firstNameEnglish || 'First Name', mapper: (c) => c.donor?.firstNameEnglish || '', width: 15 },
             { header: this.i18n.currentTerms.lastNameEnglish || 'Last Name', mapper: (c) => c.donor?.lastNameEnglish || '', width: 15 },
             { header: this.i18n.currentTerms.suffixEnglish || 'Suffix', mapper: (c) => c.donor?.suffixEnglish || '', width: 10 },
-            // Fundraiser & Contact Person + donor phone (mobiles preferred via shared helper)
+            // Fundraiser & Contact Person + donor phone / mobile (item 18)
             { header: this.i18n.currentTerms.fundraiser || 'מתרים', mapper: (c) => c.donor?.fundraiserId ? fundraiserMap.get(c.donor.fundraiserId) || '' : '', width: 15 },
             { header: this.i18n.currentTerms.contactPerson || 'איש קשר', mapper: (c) => c.donor?.contactPersonId ? contactPersonMap.get(c.donor.contactPersonId) || '' : '', width: 15 },
             { header: this.i18n.currentTerms.phone || 'טלפון', mapper: (c) => certContactsMap.get(c.donor?.id || '')?.phone || '-', width: 20, align: 'left' },
+            { header: this.i18n.currentTerms.mobileColumn || 'נייד', mapper: (c) => certContactsMap.get(c.donor?.id || '')?.mobile || '-', width: 20, align: 'left' },
             // Donor characteristics
             { header: this.i18n.currentTerms.maritalStatus || 'מצב משפחתי', mapper: (c) => this.getMaritalStatusText(c.donor?.maritalStatus || ''), width: 12 },
             { header: this.i18n.currentTerms.anash || 'אנ"ש', mapper: (c) => c.donor?.isAnash ? '✓' : '', width: 8 },

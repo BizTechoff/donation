@@ -6,7 +6,7 @@ import { Subscription } from 'rxjs';
 import { CurrencyTotal } from '../../../shared/controllers/campaign.controller';
 import { HebrewDateController } from '../../../shared/controllers/hebrew-date.controller';
 import { PersonalDonorReportData, ReportController } from '../../../shared/controllers/report.controller';
-import { formatDisplayPhones } from '../../../shared/utils/phone-utils';
+import { DonorPhoneController } from '../../../shared/controllers/donor-phone.controller';
 import { Blessing } from '../../../shared/entity/blessing';
 import { Campaign } from '../../../shared/entity/campaign';
 import { Donation } from '../../../shared/entity/donation';
@@ -59,8 +59,9 @@ interface PaymentReportData {
   currency: string;
   address?: string;
   city?: string;
-  /** Display phones - mobiles when any exist, else landlines (selectDisplayPhones). */
+  /** Landlines / mobiles (item 18). */
   phones?: string[];
+  mobiles?: string[];
   emails?: string[];
   lastDonationDate?: Date;
   // Expanded donor fields
@@ -103,8 +104,9 @@ interface BlessingReportData {
   blessingBookType: string;
   notes: string;
   status: string;
-  /** Display phones via shared phone-utils - mobiles when any exist, else landlines. */
+  /** Landlines / mobiles (item 18) - newline-separated. */
   phone: string;
+  mobile: string;
   email: string;
   campaignName: string;
   // Expanded donor fields
@@ -145,8 +147,9 @@ interface GroupedDonationReport {
   donorName: string;
   donorDetails?: {
     address?: string;
-    /** Display phones - mobiles when any exist, else landlines (selectDisplayPhones). */
+    /** Landlines / mobiles (item 18). */
     phones?: string[];
+    mobiles?: string[];
     emails?: string[];
     [key: string]: any; // tolerate extra server fields without strict typing
   };
@@ -452,7 +455,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
     let count = 1; // Name column
     if (this.filters.groupBy === 'donor') {
       if (this.filters.showDonorAddress) count++;
-      if (this.filters.showDonorPhone) count++;
+      if (this.filters.showDonorPhone) count += 2; // phone + mobile (item 18)
       if (this.filters.showDonorEmail) count++;
     }
     count += this.hebrewYears.length; // Year columns
@@ -1088,11 +1091,13 @@ export class ReportsComponent implements OnInit, OnDestroy {
       }
     });
 
-    // Load donor contacts for filtered invitees only
+    // Load donor contacts for filtered invitees only (emails), and the phones
+    // from the one server loader - split into טלפון / נייד (item 18).
     const donorContactRepo = remult.repo(DonorContact);
-    const donorContacts = await donorContactRepo.find({
-      where: { donorId: { $in: filteredInvitedDonorIds } }
-    });
+    const [donorContacts, phonesByDonor] = await Promise.all([
+      donorContactRepo.find({ where: { donorId: { $in: filteredInvitedDonorIds } } }),
+      DonorPhoneController.getDonorPhones(filteredInvitedDonorIds)
+    ]);
 
     // Create map of contacts by donor ID
     const contactsMap = new Map<string, DonorContact[]>();
@@ -1126,13 +1131,10 @@ export class ReportsComponent implements OnInit, OnDestroy {
       const displayName = donor.fullName || `${donor.firstName} ${donor.lastName}`;
       const nameParts = displayName.trim().split(' ');
 
-      // Display phones via shared phone-utils helper - mobiles first, else landlines.
       // Newline-separated so each number renders on its own line (Excel + Print).
       const donorContactsList = contactsMap.get(donor.id) || [];
-      const allPhones = donorContactsList
-        .filter(c => c.type === 'phone' && c.phoneNumber)
-        .map(c => c.phoneNumber as string);
-      const phone = formatDisplayPhones(allPhones);
+      const phone = phonesByDonor[donor.id]?.phone || '';
+      const mobile = phonesByDonor[donor.id]?.mobile || '';
       let email = '';
       for (const contact of donorContactsList) {
         if (contact.type === 'email' && contact.email && !email) {
@@ -1153,6 +1155,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
         notes: (blessing?.notes && blessing.notes.trim() !== '') ? blessing.notes : '-',
         status: (blessing && blessing.status) ? blessing.status : 'לא הגיב',
         phone: phone || '-',
+        mobile: mobile || '-',
         email: email || '-',
         campaignName: campaign.name,
         // Expanded donor fields
@@ -1288,10 +1291,11 @@ export class ReportsComponent implements OnInit, OnDestroy {
         { header: 'מצב משפחתי', mapper: (row: any) => this.getMaritalStatusText(row.donorDetails?.maritalStatus || ''), width: 12 },
         { header: 'אנ"ש', mapper: (row: any) => row.donorDetails?.isAnash ? '✓' : '', width: 8 },
         { header: 'תלמידנו', mapper: (row: any) => row.donorDetails?.isAlumni ? '✓' : '', width: 8 },
-        // Fundraiser & Contact Person + donor phone (mobiles preferred via shared helper)
+        // Fundraiser & Contact Person + donor phone / mobile (item 18)
         { header: 'מתרים', mapper: (row: any) => row.donorDetails?.fundraiserName || '', width: 15 },
         { header: 'איש קשר', mapper: (row: any) => row.donorDetails?.contactPersonName || '', width: 15 },
         { header: 'טלפון', mapper: (row: any) => (row.donorDetails?.phones || []).join('\n') || '-', width: 20, align: 'left' },
+        { header: 'נייד', mapper: (row: any) => (row.donorDetails?.mobiles || []).join('\n') || '-', width: 20, align: 'left' },
         // Expanded address fields
         { header: 'מדינה', mapper: (row: any) => row.donorDetails?.country || '', width: 12 },
         { header: 'עיר', mapper: (row: any) => row.donorDetails?.city || '', width: 15 },
@@ -1304,7 +1308,6 @@ export class ReportsComponent implements OnInit, OnDestroy {
         { header: 'מיקוד', mapper: (row: any) => row.donorDetails?.postcode || '', width: 10 },
         { header: 'שם מקום', mapper: (row: any) => row.donorDetails?.placeName || '', width: 15 },
         // Contact fields
-        { header: 'טלפון', mapper: (row: any) => row.donorDetails?.phones?.join(', ') || '', width: 20 },
         { header: 'אימייל', mapper: (row: any) => row.donorDetails?.emails?.join(', ') || '', width: 30 }
       ];
 
@@ -1370,13 +1373,12 @@ export class ReportsComponent implements OnInit, OnDestroy {
         headers.push('Title', 'First Name', 'Last Name', 'Suffix');
         // Donor type fields
         headers.push('מצב משפחתי', 'אנ"ש', 'תלמידנו');
-        // Fundraiser & Contact Person + donor phone (mobiles preferred via shared helper)
-        headers.push('מתרים', 'איש קשר', 'טלפון');
+        // Fundraiser & Contact Person + donor phone / mobile (item 18)
+        headers.push('מתרים', 'איש קשר', 'טלפון', 'נייד');
         // Expanded address fields (if showDonorAddress)
         if (this.filters.showDonorAddress) {
           headers.push('מדינה', 'עיר', 'מחוז', 'שכונה', 'רחוב', 'מספר', 'בניין', 'דירה', 'מיקוד', 'שם מקום');
         }
-        if (this.filters.showDonorPhone) headers.push('טלפונים');
         if (this.filters.showDonorEmail) headers.push('אימיילים');
       } else {
         headers.push('שם');
@@ -1407,10 +1409,11 @@ export class ReportsComponent implements OnInit, OnDestroy {
           dataRow.push(this.getMaritalStatusText(row.donorDetails?.maritalStatus || ''));
           dataRow.push(row.donorDetails?.isAnash ? '✓' : '');
           dataRow.push(row.donorDetails?.isAlumni ? '✓' : '');
-          // Fundraiser & Contact Person + donor phone (mobiles preferred via shared helper)
+          // Fundraiser & Contact Person + donor phone / mobile (item 18)
           dataRow.push(row.donorDetails?.fundraiserName || '');
           dataRow.push(row.donorDetails?.contactPersonName || '');
           dataRow.push((row.donorDetails?.phones || []).join('\n') || '-');
+          dataRow.push((row.donorDetails?.mobiles || []).join('\n') || '-');
           // Expanded address fields (if showDonorAddress)
           if (this.filters.showDonorAddress) {
             dataRow.push(row.donorDetails?.country || '');
@@ -1423,9 +1426,6 @@ export class ReportsComponent implements OnInit, OnDestroy {
             dataRow.push(row.donorDetails?.apartment || '');
             dataRow.push(row.donorDetails?.postcode || '');
             dataRow.push(row.donorDetails?.placeName || '');
-          }
-          if (this.filters.showDonorPhone) {
-            dataRow.push(row.donorDetails?.phones?.join(', ') || '');
           }
           if (this.filters.showDonorEmail) {
             dataRow.push(row.donorDetails?.emails?.join(', ') || '');
@@ -1454,9 +1454,9 @@ export class ReportsComponent implements OnInit, OnDestroy {
           // Calculate number of columns before years
           let preYearCols = 1; // Name column (for non-donor groupBy)
           if (isDonorGroupBy) {
-            preYearCols = 11; // 4 Hebrew name + 4 English name + 3 type fields
+            // 4 Hebrew name + 4 English name + 3 type + fundraiser, contact, phone, mobile (item 18)
+            preYearCols = 15;
             if (this.filters.showDonorAddress) preYearCols += 10; // 10 address fields
-            if (this.filters.showDonorPhone) preYearCols++;
             if (this.filters.showDonorEmail) preYearCols++;
           }
 
@@ -1502,12 +1502,13 @@ export class ReportsComponent implements OnInit, OnDestroy {
         colWidths.push({ wch: 10 }, { wch: 15 }, { wch: 15 }, { wch: 10 });
         // Donor type fields: מצב משפחתי, אנ"ש, תלמידנו
         colWidths.push({ wch: 12 }, { wch: 8 }, { wch: 8 });
+        // Fundraiser, contact person, phone, mobile (item 18)
+        colWidths.push({ wch: 15 }, { wch: 15 }, { wch: 20 }, { wch: 20 });
         // Expanded address fields
         if (this.filters.showDonorAddress) {
           colWidths.push({ wch: 12 }, { wch: 15 }, { wch: 12 }, { wch: 15 }, { wch: 20 });
           colWidths.push({ wch: 8 }, { wch: 10 }, { wch: 8 }, { wch: 10 }, { wch: 15 });
         }
-        if (this.filters.showDonorPhone) colWidths.push({ wch: 20 });
         if (this.filters.showDonorEmail) colWidths.push({ wch: 30 });
       } else {
         colWidths.push({ wch: 25 }); // Name column
@@ -1620,10 +1621,11 @@ export class ReportsComponent implements OnInit, OnDestroy {
           { header: 'מצב משפחתי', mapper: (row) => this.getMaritalStatusText(row.maritalStatus || ''), width: 12 },
           { header: 'אנ"ש', mapper: (row) => row.isAnash ? '✓' : '', width: 8 },
           { header: 'תלמידנו', mapper: (row) => row.isAlumni ? '✓' : '', width: 8 },
-          // Fundraiser & Contact Person + donor phone (mobiles preferred via shared helper)
+          // Fundraiser & Contact Person + donor phone / mobile (item 18)
           { header: 'מתרים', mapper: (row) => row.fundraiserName || '', width: 15 },
           { header: 'איש קשר', mapper: (row) => row.contactPersonName || '', width: 15 },
           { header: 'טלפון', mapper: (row) => (row.phones || []).join('\n') || '-', width: 20, align: 'left' },
+          { header: 'נייד', mapper: (row) => (row.mobiles || []).join('\n') || '-', width: 20, align: 'left' },
           // Expanded address fields
           { header: 'מדינה', mapper: (row) => row.country || '', width: 12 },
           { header: 'עיר', mapper: (row) => row.city || '', width: 15 },
@@ -1636,7 +1638,6 @@ export class ReportsComponent implements OnInit, OnDestroy {
           { header: 'מיקוד', mapper: (row) => row.postcode || '', width: 10 },
           { header: 'שם מקום', mapper: (row) => row.placeName || '', width: 15 },
           // Contact fields
-          { header: 'טלפון', mapper: (row) => row.phones?.join(', ') || '', width: 20 },
           { header: 'אימייל', mapper: (row) => row.emails?.join(', ') || '', width: 30 },
           // Report fields
           { header: 'תאריך אחרון', mapper: (row) => this.formatHebrewDate(row.lastDonationDate), width: 15 },
@@ -1719,8 +1720,9 @@ export class ReportsComponent implements OnInit, OnDestroy {
           { header: 'סוג ברכה', mapper: (row) => row.blessingBookType || '-', width: 15 },
           { header: 'הערות', mapper: (row) => row.notes || '-', width: 30 },
           { header: 'סטטוס', mapper: (row) => row.status || '-', width: 12 },
-          // Contact fields - phone column already prefers mobile via shared helper
+          // Contact fields - landline / mobile (item 18)
           { header: 'טלפון', mapper: (row) => row.phone || '-', width: 20, align: 'left' },
+          { header: 'נייד', mapper: (row) => row.mobile || '-', width: 20, align: 'left' },
           { header: 'אימייל', mapper: (row) => row.email || '-', width: 25, align: 'left' }
         ],
         sheetName: 'דוח ברכות',
@@ -2973,7 +2975,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
     // Calculate column count for details row
     let detailsColSpan = 1; // name column
     if (showAddress) detailsColSpan++;
-    if (showPhone) detailsColSpan++;
+    if (showPhone) detailsColSpan += 2; // phone + mobile (item 18)
     if (showEmail) detailsColSpan++;
 
     return `
@@ -3028,7 +3030,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
       <tr>
         <th>שם</th>
         ${showAddress ? '<th>כתובת</th>' : ''}
-        ${showPhone ? '<th>טלפונים</th>' : ''}
+        ${showPhone ? '<th>טלפונים</th><th>נייד</th>' : ''}
         ${showEmail ? '<th>אימיילים</th>' : ''}
         ${hebrewYears.map((year: string) => `<th>${year}</th>`).join('')}
         ${showActualPayments ? '<th>תשלומים בפועל</th>' : ''}
@@ -3053,6 +3055,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
       <td><strong>${row.donorName}</strong></td>
       ${showAddress ? `<td class="donor-address-cell" style="text-align: left; direction: ltr;">${row.donorDetails?.address || '-'}</td>` : ''}
       ${showPhone ? `<td style="text-align: left; direction: ltr;">${row.donorDetails?.phones?.join('<br>') || '-'}</td>` : ''}
+      ${showPhone ? `<td style="text-align: left; direction: ltr;">${row.donorDetails?.mobiles?.join('<br>') || '-'}</td>` : ''}
       ${showEmail ? `<td style="text-align: left; direction: ltr;">${row.donorDetails?.emails?.join('<br>') || '-'}</td>` : ''}
       ${hebrewYears.map((year: string) => `<td>${this.formatYearTotal(row.yearlyTotals || {}, year)}</td>`).join('')}
       ${showActualPayments ? `<td>${this.formatActualPayments(row.actualPayments, hebrewYears)}</td>` : ''}
@@ -3063,7 +3066,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
       html += `<tr class="details-row">
         <td></td>
         ${showAddress ? '<td></td>' : ''}
-        ${showPhone ? '<td></td>' : ''}
+        ${showPhone ? '<td></td><td></td>' : ''}
         ${showEmail ? '<td></td>' : ''}
         ${hebrewYears.map((year: string) => {
           const yearDonations = this.getDonationsForYear(row.donations, year);
@@ -3209,6 +3212,9 @@ export class ReportsComponent implements OnInit, OnDestroy {
         field: 'city',
         customFormatter: (val, row) => row.city || '-'
       },
+      // Phone / mobile - same as the Excel export (item 18)
+      { header: 'טלפון', field: 'phones', align: 'left', customFormatter: (val, row) => (row.phones || []).join('\n') || '-' },
+      { header: 'נייד', field: 'mobiles', align: 'left', customFormatter: (val, row) => (row.mobiles || []).join('\n') || '-' },
       {
         header: 'תאריך אחרון',
         field: 'lastDonationDate',
@@ -3241,8 +3247,9 @@ export class ReportsComponent implements OnInit, OnDestroy {
       { header: 'סוג ספר ברכות', field: 'blessingBookType' },
       { header: 'הערות', field: 'notes', customFormatter: (val) => val || '-' },
       { header: 'סטטוס', field: 'status' },
-      // Contact fields - phone already prefers mobile via shared phone-utils
+      // Contact fields - landline / mobile (item 18)
       { header: 'טלפון', field: 'phone', align: 'left', customFormatter: (val) => val || '-' },
+      { header: 'נייד', field: 'mobile', align: 'left', customFormatter: (val) => val || '-' },
       { header: 'אימייל', field: 'email', align: 'left', customFormatter: (val) => val || '-' }
     ];
 

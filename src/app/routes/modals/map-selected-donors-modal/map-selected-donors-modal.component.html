@@ -80,10 +80,15 @@
                   </span>
                 </div>
 
-                <div class="donor-details" *ngIf="donorData.email || donorData.phone">
+                <div class="donor-details" *ngIf="donorData.email || donorData.phone || donorData.mobile">
                   <span *ngIf="donorData.phone">
                     <mat-icon class="detail-icon">phone</mat-icon>
                     {{ donorData.phone }}
+                  </span>
+                  <!-- item 18 - mobile shown separately -->
+                  <span *ngIf="donorData.mobile" [style.margin-right.px]="donorData.phone ? 12 : 0">
+                    <mat-icon class="detail-icon">smartphone</mat-icon>
+                    {{ donorData.mobile }}
                   </span>
                   <span *ngIf="donorData.email" style="margin-right: 12px;">
                     <mat-icon class="detail-icon">email</mat-icon>

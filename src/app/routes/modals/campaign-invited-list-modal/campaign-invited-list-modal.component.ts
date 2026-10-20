@@ -169,7 +169,7 @@ export class CampaignInvitedListModalComponent implements OnInit {
 
       let rows = result.rows;
 
-      if (['phone', 'email', 'city'].includes(this.sortField)) {
+      if (['phone', 'mobile', 'email', 'city'].includes(this.sortField)) {
         rows = this.sortRowsByField(rows, this.sortField, this.sortDirection);
       }
 
@@ -197,6 +197,7 @@ export class CampaignInvitedListModalComponent implements OnInit {
       let aVal: string, bVal: string;
       switch (field) {
         case 'phone': aVal = a.phone; bVal = b.phone; break;
+        case 'mobile': aVal = a.mobile; bVal = b.mobile; break;
         case 'email': aVal = a.email; bVal = b.email; break;
         case 'city': aVal = a.city; bVal = b.city; break;
         default: aVal = a.firstName; bVal = b.firstName;
@@ -320,6 +321,7 @@ export class CampaignInvitedListModalComponent implements OnInit {
     const columns: ExcelColumn<InvitedDonorRow>[] = [
       { header: 'שם מלא', mapper: (d) => this.getDonorDisplayName(d), width: 20 },
       { header: 'טלפון', mapper: (d) => this.getDonorPhone(d), width: 15 },
+      { header: 'נייד', mapper: (d) => this.getDonorMobile(d), width: 15 }, // item 18
       { header: 'אימייל', mapper: (d) => this.getDonorEmail(d), width: 25 },
       { header: 'רמה', mapper: (d) => this.getDonorLevel(d), width: 12 },
       { header: 'עיר', mapper: (d) => this.getDonorCity(d), width: 15 },
@@ -479,6 +481,11 @@ export class CampaignInvitedListModalComponent implements OnInit {
     return row.phone || '-';
   }
 
+  // item 18 - mobile shown separately from landline
+  getDonorMobile(row: InvitedDonorRow): string {
+    return row.mobile || '-';
+  }
+
   getDonorEmail(row: InvitedDonorRow): string {
     return row.email || '-';
   }
@@ -633,7 +640,7 @@ export class CampaignInvitedListModalComponent implements OnInit {
 
     if (['firstName', 'lastName'].includes(field)) {
       this.loadPage();
-    } else if (['phone', 'email', 'city'].includes(field)) {
+    } else if (['phone', 'mobile', 'email', 'city'].includes(field)) {
       this.invitedDonors = this.sortRowsByField(this.invitedDonors, field, this.sortDirection);
     }
   }

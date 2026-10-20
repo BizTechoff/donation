@@ -3,7 +3,8 @@ import { remult } from 'remult';
 import { DonorMapController, DonorMapData } from '../../shared/controllers/donor-map.controller';
 import { DonorController } from '../../shared/controllers/donor.controller';
 import { Donation, Donor, DonorContact, DonorEvent, DonorPlace, Event, Place } from '../../shared/entity';
-import { formatDisplayPhones } from '../../shared/utils/phone-utils';
+import { DonorPhoneDisplay } from '../../shared/utils/phone-utils';
+import { DonorPhoneController } from '../../shared/controllers/donor-phone.controller';
 import { GlobalFilters, GlobalFilterService } from './global-filter.service';
 
 @Injectable({
@@ -112,8 +113,11 @@ export class DonorService {
       include: { donor: true }
     });
 
+    // Item 18 - phones from the one server loader, split into טלפון / נייד.
+    const phones = await DonorPhoneController.getDonorPhones(donorIds);
+
     // Build maps
-    return this.buildMaps(allPlaces, allContacts, allBirthEvents, allDonations);
+    return this.buildMaps(allPlaces, allContacts, allBirthEvents, allDonations, phones);
   }
 
   /**
@@ -196,11 +200,13 @@ export class DonorService {
     allPlaces: DonorPlace[],
     allContacts: DonorContact[],
     allBirthEvents: DonorEvent[],
-    allDonations: Donation[]
+    allDonations: Donation[],
+    phones: Record<string, DonorPhoneDisplay>
   ) {
     const donorPlaceMap = new Map<string, Place>();
     const donorEmailMap = new Map<string, string>();
     const donorPhoneMap = new Map<string, string>();
+    const donorMobileMap = new Map<string, string>();
     const donorFullAddressMap = new Map<string, string>();
     const donorBirthDateMap = new Map<string, Date>();
     const donorCountryIdMap = new Map<string, string>();
@@ -227,25 +233,16 @@ export class DonorService {
       }
     });
 
-    // Process contacts. Gather ALL phones per donor first, then derive the
-    // canonical display value via shared phone-utils.formatDisplayPhones -
-    // mobiles preferred over landlines. Same rule the donor list, reports and
-    // exports already use, so the reminders/notes UI that consumes this map
-    // shows the same phone the rest of the platform shows.
-    const allPhonesByDonor = new Map<string, string[]>();
+    // Emails from the contacts; phones from the server loader (item 18).
     allContacts.forEach(contact => {
       if (!contact.donorId) return;
       if (contact.type === 'email' && contact.email) {
         donorEmailMap.set(contact.donorId, contact.email);
-      } else if (contact.type === 'phone' && contact.phoneNumber) {
-        const list = allPhonesByDonor.get(contact.donorId) || [];
-        list.push(contact.phoneNumber);
-        allPhonesByDonor.set(contact.donorId, list);
       }
     });
-    for (const [donorId, list] of allPhonesByDonor) {
-      const value = formatDisplayPhones(list);
-      if (value) donorPhoneMap.set(donorId, value);
+    for (const [donorId, p] of Object.entries(phones || {})) {
+      if (p.phone) donorPhoneMap.set(donorId, p.phone);
+      if (p.mobile) donorMobileMap.set(donorId, p.mobile);
     }
 
     // Process birth dates
@@ -304,6 +301,7 @@ export class DonorService {
       donorPlaceMap,
       donorEmailMap,
       donorPhoneMap,
+      donorMobileMap,
       donorFullAddressMap,
       donorBirthDateMap,
       donorCountryIdMap,
@@ -324,6 +322,7 @@ export class DonorService {
       donorPlaceMap: new Map<string, Place>(),
       donorEmailMap: new Map<string, string>(),
       donorPhoneMap: new Map<string, string>(),
+      donorMobileMap: new Map<string, string>(),
       donorFullAddressMap: new Map<string, string>(),
       donorBirthDateMap: new Map<string, Date>(),
       donorCountryIdMap: new Map<string, string>(),

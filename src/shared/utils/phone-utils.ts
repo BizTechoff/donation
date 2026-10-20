@@ -131,3 +131,65 @@ export function selectDisplayPhones(allPhones: (string | null | undefined)[]): s
 export function formatDisplayPhones(allPhones: (string | null | undefined)[], separator: string = '\n'): string {
   return selectDisplayPhones(allPhones).join(separator)
 }
+
+// ── Separate phone / mobile columns (item 18 / B1, 20.10.2026) ────────────
+//
+// Israel: "עמודת נייד - במסך, בייצוא ובהדפסה, בכל המקומות". The single
+// "טלפון" column above (mobiles if any, else landlines) becomes TWO columns:
+// טלפון = landlines, נייד = mobiles. Same classifier (isMobilePhone - the
+// number pattern OR a mobile word in the description), one place.
+
+export interface PhoneContactLike {
+  phoneNumber?: string | null
+  description?: string | null
+  isPrimary?: boolean | null
+}
+
+/** Display strings per donor - each joined with '\n', '' when none. */
+export interface DonorPhoneDisplay {
+  phone: string
+  mobile: string
+}
+
+/**
+ * Splits a donor's phone contacts into landlines and mobiles, primary first,
+ * de-duplicated by digits (so '050-1234567' and '0501234567' count once).
+ */
+export function splitPhones(contacts: PhoneContactLike[]): { landlines: string[]; mobiles: string[] } {
+  const sorted = [...(contacts || [])].sort((a, b) => (b.isPrimary ? 1 : 0) - (a.isPrimary ? 1 : 0))
+  const seen = new Set<string>()
+  const landlines: string[] = []
+  const mobiles: string[] = []
+  for (const c of sorted) {
+    const value = String(c.phoneNumber || '').trim()
+    if (!value) continue
+    const key = value.replace(/\D/g, '') || value
+    if (seen.has(key)) continue
+    seen.add(key)
+    if (isMobilePhone(value, c.description)) mobiles.push(value)
+    else landlines.push(value)
+  }
+  return { landlines, mobiles }
+}
+
+/** splitPhones joined for display. */
+export function toPhoneDisplay(split: { landlines: string[]; mobiles: string[] } | undefined, separator: string = '\n'): DonorPhoneDisplay {
+  return {
+    phone: (split?.landlines || []).join(separator),
+    mobile: (split?.mobiles || []).join(separator)
+  }
+}
+
+/**
+ * The same classifier as isMobilePhone, as a SQL boolean expression - for
+ * sqlExpression sort fields (Donor.primaryLandline / primaryMobile), so the
+ * DB sorts by exactly the value each column shows. Built from MOBILE_PATTERNS
+ * and MOBILE_DESCRIPTION_HINTS - the rule still lives only in this file.
+ * Inputs are column references written by the platform, never user input.
+ */
+export function sqlIsMobile(numberCol: string, descriptionCol: string): string {
+  const digits = `regexp_replace(coalesce(${numberCol}, ''), '\\D', '', 'g')`
+  const patterns = MOBILE_PATTERNS.map(p => `${digits} ~ '${p.replace(/\\\\/g, '\\\\').replace(/'/g, "''")}'`)
+  const hints = MOBILE_DESCRIPTION_HINTS.map(h => `lower(coalesce(${descriptionCol}, '')) like '%${h.toLowerCase().replace(/'/g, "''")}%'`)
+  return `(${[...patterns, ...hints].join(' or ')})`
+}
