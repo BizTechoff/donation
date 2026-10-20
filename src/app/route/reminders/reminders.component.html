@@ -217,10 +217,12 @@
               </span>
             </td>
 
-            <td class="donor-col cell-ellipsis" [title]="getDonorName(reminder) + (getReminderDonorPhone(reminder) ? ' — ' + getReminderDonorPhone(reminder) : '')">
+            <td class="donor-col cell-ellipsis" [title]="getDonorName(reminder) + (getReminderDonorPhone(reminder) ? ' — ' + getReminderDonorPhone(reminder) : '') + (getReminderDonorMobile(reminder) ? ' — ' + getReminderDonorMobile(reminder) : '')">
               <div class="donor-info">
                 <strong>{{getDonorName(reminder)}}</strong>
                 <small *ngIf="getReminderDonorPhone(reminder)">{{getReminderDonorPhone(reminder)}}</small>
+                <!-- item 18 - mobile on its own line -->
+                <small *ngIf="getReminderDonorMobile(reminder)">{{getReminderDonorMobile(reminder)}}</small>
               </div>
             </td>
 

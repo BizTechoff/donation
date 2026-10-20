@@ -49,6 +49,7 @@ export class RemindersComponent implements OnInit, OnDestroy {
 
   // Maps for donor-related data
   donorPhoneMap = new Map<string, string>();
+  donorMobileMap = new Map<string, string>(); // item 18
   donorCountryIdMap = new Map<string, string>();
 
   // Local filter properties
@@ -215,6 +216,7 @@ export class RemindersComponent implements OnInit, OnDestroy {
       if (donorIds.length > 0) {
         const relatedData = await this.donorService.loadDonorRelatedData(donorIds);
         this.donorPhoneMap = relatedData.donorPhoneMap;
+        this.donorMobileMap = relatedData.donorMobileMap;
         this.donorCountryIdMap = relatedData.donorCountryIdMap;
       }
 
@@ -329,6 +331,10 @@ export class RemindersComponent implements OnInit, OnDestroy {
 
   getReminderDonorPhone(reminder: Reminder): string {
     return reminder.donor?.id ? this.donorPhoneMap.get(reminder.donor.id) || '' : '';
+  }
+
+  getReminderDonorMobile(reminder: Reminder): string {
+    return reminder.donor?.id ? this.donorMobileMap.get(reminder.donor.id) || '' : '';
   }
   
 getTypeText(type: string): string {
@@ -663,12 +669,21 @@ getTypeText(type: string): string {
           this.table.sortColumns
         );
 
+        // item 18 - print carries the same phone columns as the Excel export
+        const printDonorIds = [...new Set(allReminders.map(r => r.donor?.id).filter(id => id))] as string[];
+        const printContactData = printDonorIds.length > 0
+          ? await DonorMapController.loadDonorsForExport(printDonorIds)
+          : [];
+        const printContactsMap = new Map(printContactData.map(d => [d.id, d]));
+
         // Prepare data for print
         const printData = allReminders.map(reminder => ({
           date: this.formatHebrewDate(reminder.nextReminderDate),
           type: this.getTypeText(reminder.type),
           source: this.getSourceText(reminder),
           donor: this.getDonorName(reminder),
+          phone: printContactsMap.get(reminder.donor?.id || '')?.phone || '-',
+          mobile: printContactsMap.get(reminder.donor?.id || '')?.mobile || '-',
           title: reminder.title || '-',
           priority: this.getPriorityText(reminder.priority),
           status: reminder.isCompleted ? 'בוצעה' : 'לא בוצעה'
@@ -682,6 +697,8 @@ getTypeText(type: string): string {
             { header: this.i18n.currentTerms.typeHeader || 'סוג', field: 'type' },
             { header: 'מקור', field: 'source' },
             { header: this.i18n.currentTerms.donorHeader || 'תורם', field: 'donor' },
+            { header: this.i18n.currentTerms.phone || 'טלפון', field: 'phone', align: 'left' },
+            { header: this.i18n.currentTerms.mobileColumn || 'נייד', field: 'mobile', align: 'left' },
             { header: this.i18n.currentTerms.subjectHeader || 'נושא', field: 'title' },
             { header: this.i18n.currentTerms.priorityHeader || 'עדיפות', field: 'priority' },
             // Visible = exportable: the new status column prints too.
@@ -746,10 +763,11 @@ getTypeText(type: string): string {
             { header: this.i18n.currentTerms.firstNameEnglish || 'First Name', mapper: (r) => r.donor?.firstNameEnglish || '', width: 15 },
             { header: this.i18n.currentTerms.lastNameEnglish || 'Last Name', mapper: (r) => r.donor?.lastNameEnglish || '', width: 15 },
             { header: this.i18n.currentTerms.suffixEnglish || 'Suffix', mapper: (r) => r.donor?.suffixEnglish || '', width: 10 },
-            // Fundraiser & Contact Person + donor phone (mobiles preferred via shared helper)
+            // Fundraiser & Contact Person + donor phone / mobile (item 18)
             { header: this.i18n.currentTerms.fundraiser || 'מתרים', mapper: (r) => r.donor?.fundraiserId ? fundraiserMap.get(r.donor.fundraiserId) || '' : '', width: 15 },
             { header: this.i18n.currentTerms.contactPerson || 'איש קשר', mapper: (r) => r.donor?.contactPersonId ? contactPersonMap.get(r.donor.contactPersonId) || '' : '', width: 15 },
             { header: this.i18n.currentTerms.phone || 'טלפון', mapper: (r) => remContactsMap.get(r.donor?.id || '')?.phone || '-', width: 20, align: 'left' },
+            { header: this.i18n.currentTerms.mobileColumn || 'נייד', mapper: (r) => remContactsMap.get(r.donor?.id || '')?.mobile || '-', width: 20, align: 'left' },
             // Donor characteristics
             { header: this.i18n.currentTerms.maritalStatus || 'מצב משפחתי', mapper: (r) => this.getMaritalStatusText(r.donor?.maritalStatus || ''), width: 12 },
             { header: this.i18n.currentTerms.anash || 'אנ"ש', mapper: (r) => r.donor?.isAnash ? '✓' : '', width: 8 },
