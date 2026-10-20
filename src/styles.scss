@@ -678,6 +678,11 @@ th.w-status     { width:  9% }
    the header wraps its buttons under the label instead of spilling over. */
 th.w-actions    { width:  9% }
 th.w-actions.actions-header { width: 13% }
+/* טבלה עם הרבה כפתורי שורה (הקמפיינים - חמישה, היחידה בפלטפורמה; לכל השאר
+   אחד עד ארבעה) מצהירה על כך בעצמה, במקום CSS פרטי למסך. ב-13% הכפתור החמישי
+   חרג אל מחוץ לטבלה - הרוחב קבוע ב-fixed והתא לא הגביל את התוכן. 20.10.2026 */
+th.w-actions.actions-wide,
+th.w-actions.actions-header.actions-wide { width: 17% }
 th.w-actions .actions-header-content { flex-wrap: wrap !important; justify-content: center !important; row-gap: 4px; }
 th.w-gift       { width: 16% }
 th.w-notes      { width: 14% }
