@@ -190,6 +190,27 @@ export class Place {
    * (היה UK/GB בלבד; הורחב כדי שגם כתובות ישראל/USA/וכו' יציגו את שדות
    *  building ו-apartment בטבלה, בהדפסה ובייצוא לאקסל - אחיד בכל המקומות.)
    */
+  /**
+   * מופע Place מאובייקט רגיל.
+   *
+   * BackendMethod מחזיר JSON, ולכן place שמגיע ממנו הוא אובייקט בלי מתודות -
+   * getStreetLine, getCityLine ו-getDisplayAddress אינן קיימות עליו. עד היום
+   * כל קורא התגונן בבדיקת `typeof place.getX === 'function'` ונפל ל-fallback
+   * שכתב את הכתובת ביד - וה-fallback הזה תמיד היה שגוי לארה"ב ולבריטניה,
+   * כי הוא לא ידע על הכלל של מספר הבית לפני הרחוב.
+   *
+   * במקום fallback שקט - הידרציה. country נשמר כ-relation, ולכן הוא מועתק
+   * כמות שהוא; בלעדיו isHouseNumberFirst לא יודעת להכריע.
+   */
+  static from(raw: any): Place | undefined {
+    if (!raw) return undefined
+    if (typeof raw.getDisplayAddress === 'function') return raw as Place
+
+    const place = new Place()
+    Object.assign(place, raw)
+    return place
+  }
+
   getApartmentLine(): string | null {
     const parts = [];
     if (this.apartment) parts.push(this.apartment);
@@ -289,7 +310,13 @@ export class Place {
     if (streetLine) parts.push(streetLine);
 
     // Neighborhood
-    if (this.neighborhood) parts.push(this.neighborhood);
+    // שכונה שזהה לעיר לא מתווספת: הגיאוקודינג של גוגל ממלא לעיתים את שדה
+    // השכונה בשם העיר, והכתובת יצאה "Lakewood, Lakewood, NJ". נוקו 13 רשומות
+    // כאלה בפרודקשן (20.10), וההגנה כאן כדי שלא ייווצרו מחדש.
+    const neighborhood = (this.neighborhood || '').trim();
+    if (neighborhood && neighborhood.toLowerCase() !== (this.city || '').trim().toLowerCase()) {
+      parts.push(neighborhood);
+    }
 
     // City line (includes state for AU/CA/US)
     const cityLine = this.getCityLine();

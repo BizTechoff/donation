@@ -145,7 +145,7 @@ export class OrganizationDetailsModalComponent implements OnInit {
     const place = this.organization.place;
 
     return {
-      fullAddress: typeof place.getDisplayAddress === 'function' ? place.getDisplayAddress() : place.fullAddress || '',
+      fullAddress: Place.from(place)?.getDisplayAddress() || place.fullAddress || '',
       street: this.organization.place.street || '',
       houseNumber: this.organization.place.houseNumber || '',
       city: this.organization.place.city || '',

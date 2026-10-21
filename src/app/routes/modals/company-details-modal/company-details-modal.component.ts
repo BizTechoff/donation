@@ -142,7 +142,7 @@ export class CompanyDetailsModalComponent implements OnInit {
     const place = this.company.place;
 
     return {
-      fullAddress: typeof place.getDisplayAddress === 'function' ? place.getDisplayAddress() : place.fullAddress || '',
+      fullAddress: Place.from(place)?.getDisplayAddress() || place.fullAddress || '',
       street: this.company.place.street || '',
       houseNumber: this.company.place.houseNumber || '',
       city: this.company.place.city || '',

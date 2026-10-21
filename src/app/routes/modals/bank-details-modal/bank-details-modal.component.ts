@@ -146,7 +146,7 @@ export class BankDetailsModalComponent implements OnInit {
     const place = this.bank.place;
 
     return {
-      fullAddress: typeof place.getDisplayAddress === 'function' ? place.getDisplayAddress() : place.fullAddress || '',
+      fullAddress: Place.from(place)?.getDisplayAddress() || place.fullAddress || '',
       street: this.bank.place.street || '',
       houseNumber: this.bank.place.houseNumber || '',
       city: this.bank.place.city || '',

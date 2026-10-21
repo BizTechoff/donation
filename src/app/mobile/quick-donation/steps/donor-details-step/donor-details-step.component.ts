@@ -28,10 +28,9 @@ export class DonorDetailsStepComponent implements OnInit {
    * בכרטיס התורם.
    */
   streetLine(place: Place | undefined): string {
-    if (!place) return ''
-    return typeof place.getStreetLine === 'function'
-      ? place.getStreetLine()
-      : [place.street, place.houseNumber].filter(p => !!p).join(' ')
+    // Place.from - ראה ההערה שם. place שמגיע מ-BackendMethod הוא JSON בלי
+    // מתודות, ו-fallback שכותב ביד תמיד טועה בפורמט של ארה"ב ובריטניה.
+    return Place.from(place)?.getStreetLine() || ''
   }
   events: DonorEvent[] = []
   notes: DonorNote[] = []
