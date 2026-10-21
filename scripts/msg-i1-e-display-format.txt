@@ -1,0 +1,30 @@
+feat(phone): סעיפים 1, 31 - פורמט תצוגה אחד לכל מספר בפלטפורמה
+
+כל מספר שנראה בעין - ברשימה, בדוח, בהדפסה ובייצוא - עובר דרך
+formatPhoneForDisplay, אותה פונקציה שהקונטרול והמיגרציה משתמשים בה. עד היום
+כל מסך הציג את המחרוזת כפי שהוזנה, ובאותה עמודה הופיעו זו לצד זו
+"7188518962", "596-3284 845" ו-"052-652-6063".
+
+העיצוב ירד אל splitPhones, הפתח היחיד שדרכו טלפון של תורם מגיע למסך. זה
+התיקון המהותי כאן: קודם רק toPhoneDisplay עיצב, ומי שקרא ל-
+DonorPhoneController.load ישירות - דוח התרומות - קיבל ערכים גולמיים והציג
+אותם. עכשיו כל צרכן מקבל פורמט אחיד בהכרח ולא מכוח זה שזכר לקרוא לפונקציה
+הנכונה. הסיווג נייד/נייח נשאר על הערך הגולמי, לפני העיצוב, כדי שלא ישתנה
+בגללו.
+
+הוצלבו כל הצרכנים: donor-list, reminders, certificates, donations-list,
+donor-gifts, campaign, map, target-audience, blessing-book ו-reports -
+כולם מגיעים ל-splitPhones.
+
+שתי דליפות נוספות שנסגרו:
+  report.controller.getDonorDetails - החזיר את המחרוזת כפי שהוזנה.
+  donorService.getPrimaryPhoneForDonor - אותו דבר, והערך שלו מוצג.
+
+PhonePipe ב-common/pipes, באותו דפוס של amount.pipe: עטיפה לתבניות בלבד,
+בלי לוגיקה משלה. היא נדרשת למי שקורא שדה ישות גולמי ולא עובר דרך
+DonorPhoneController - כרגע ContactPerson.mobile בלבד.
+
+חריג מתועד שנשאר: sqlIsMobile מסווג נייד בתוך פוסטגרס, שם אי אפשר להריץ
+libphonenumber. לכן הסיווג נכתב אל description, ושני הצדדים קוראים משם.
+
+BizTechoff™ - התאמת העסק לעידן הדיגיטלי
