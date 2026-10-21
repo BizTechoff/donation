@@ -331,6 +331,7 @@
                       [(ngModel)]="donorContact.phoneNumber"
                       [ngModelOptions]="{ standalone: true }"
                       [countries]="phoneCountryOptions"
+                      [defaultCountry]="$any(donorPhoneCountry)"
                       placeholder="מספר טלפון"
                       (lineTypeDetected)="onPhoneLineTypeDetected(donorContact, $event)">
                     </app-phone-input>

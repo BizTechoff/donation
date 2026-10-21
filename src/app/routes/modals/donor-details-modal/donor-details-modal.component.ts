@@ -22,7 +22,7 @@ import { calculateEffectiveAmount } from '../../../../shared/utils/donation-util
 import { getReverseRelationship } from '../../../../shared/utils/relationship-utils';
 import { ALUMNI_TITLE, DONOR_TITLES_EN, DONOR_TITLES_HE } from '../../../../shared/constants/donor-titles';
 import { PhoneCountryOption } from '../../../common/phone-input/phone-input.component';
-import { hasUnknownCallingCode } from '../../../../shared/utils/phone-format';
+import { DEFAULT_PHONE_COUNTRY, hasUnknownCallingCode } from '../../../../shared/utils/phone-format';
 
 export interface DonorDetailsModalArgs {
   donorId: string; // Can be 'new' for new donor or donor ID
@@ -1412,6 +1412,23 @@ export class DonorDetailsModalComponent implements OnInit {
   }
 
   /**
+   * סעיפים 1, 31 - מדינת ברירת המחדל לפענוח טלפון: מדינת הכתובת הראשית של
+   * התורם. זה נתון אמיתי ולא ניחוש, ועדיף על ברירת מחדל גלובלית - תורם
+   * בלונדון מקליד "07977932665" ומצפה שזה יזוהה כבריטי.
+   * בלי כתובת, נופל ל-DEFAULT_PHONE_COUNTRY.
+   */
+  get donorPhoneCountry(): string {
+    const withPlace = (this.donorPlaces || []).filter(dp => dp.place);
+    const place = (
+      withPlace.find(dp => dp.isPrimary) ||
+      withPlace.find(dp => dp.addressType?.name === 'בית') ||
+      withPlace[0]
+    )?.place;
+    const code = (place?.country?.code || '').trim().toUpperCase();
+    return code.length === 2 ? code : DEFAULT_PHONE_COUNTRY;
+  }
+
+  /**
    * סעיפים 1, 31 - חסימת שמירה על קידומת שאינה של אף מדינה.
    *
    * חריג מכוון לכלל "ולידציה = סימון בלבד": מספר לא תקין נשמר, כי בנתונים
@@ -1441,11 +1458,13 @@ export class DonorDetailsModalComponent implements OnInit {
   onPhoneLineTypeDetected(contact: DonorContact, lineType: 'mobile' | 'landline' | 'unknown') {
     if (lineType === 'unknown') return;
 
-    const written = ['נייד', 'נייח'];
+    // הערכים שהקונטרול עצמו כותב, ורק אותם מותר לו לדרוס. "טלפון נוסף"
+    // ושאר תיאורים שהמשתמש כתב נשארים.
+    const written = ['נייד', 'טלפון', 'נייח'];
     const current = (contact.description || '').trim();
     if (current && !written.includes(current)) return;
 
-    const label = lineType === 'mobile' ? 'נייד' : 'נייח';
+    const label = lineType === 'mobile' ? 'נייד' : 'טלפון';
     if (current !== label) {
       contact.description = label;
       this.changed = true;
