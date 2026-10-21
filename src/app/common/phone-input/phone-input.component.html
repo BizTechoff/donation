@@ -40,14 +40,21 @@
     <span class="fi phone-flag" *ngIf="!countries.length && flagClass" [ngClass]="flagClass"
           [title]="shownCountryName"></span>
 
+    <!-- inputmode="tel" מעלה מקלדת ספרות בנייד. החסימה עצמה אינה נשענת
+         עליה - היא ב-onKeyDown ובניקוי הערך ב-onUserInput, כי מקלדת היא
+         הצעה ולא מגבלה. -->
     <input
+      #numberInput
       type="tel"
+      inputmode="tel"
+      autocomplete="tel"
       dir="ltr"
       class="form-control phone-number"
       [value]="display"
       [placeholder]="placeholder"
       [disabled]="disabled"
-      (input)="onInput($any($event.target).value)"
+      (keydown)="onKeyDown($event)"
+      (input)="onUserInput($event)"
       (blur)="onBlur()">
   </div>
 

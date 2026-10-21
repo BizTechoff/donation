@@ -19,8 +19,16 @@
 import { AsYouType, CountryCode, getCountryCallingCode, parsePhoneNumberFromString } from 'libphonenumber-js/max'
 import metadata from 'libphonenumber-js/metadata.max.json'
 
-/** ברירת המחדל כשאין קידומת בינלאומית ואי אפשר להסיק מדינה. */
-export const DEFAULT_PHONE_COUNTRY: CountryCode = 'IL'
+/**
+ * ברירת המחדל כשאין קידומת בינלאומית ואי אפשר להסיק מדינה.
+ *
+ * GB ולא IL: בדיקת הנתונים בפרודקשן (21.10) הראתה שבסיס התורמים הוא בעיקר
+ * בריטניה, ארה"ב ובלגיה. ברירת מחדל ישראלית פסלה אלפי מספרים בריטיים תקינים
+ * ("07977932665" נפסל כישראלי, ותקין לגמרי כבריטי).
+ *
+ * זו רק נקודת פתיחה: כשידועה מדינת הכתובת של התורם היא גוברת עליה.
+ */
+export const DEFAULT_PHONE_COUNTRY: CountryCode = 'GB'
 
 export type PhoneLineType = 'mobile' | 'landline' | 'unknown'
 
@@ -221,6 +229,32 @@ export function withCountry(raw: string | null | undefined, country: CountryCode
   if (!newCode) return value
 
   return national ? `+${newCode}${national}` : `+${newCode}`
+}
+
+/**
+ * מה שמותר להקליד בשדה טלפון: ספרות, ופלוס אחד בלבד בתחילת המחרוזת.
+ *
+ * כאן ולא בתוך הקומפוננטה כי זו לוגיקה טהורה על מחרוזת, בדיוק כמו שאר
+ * הקובץ - וכך גם הדבקה, גרירה והקלדה עוברות דרך אותה פונקציה אחת במקום
+ * שלוש בדיקות שמתפצלות.
+ *
+ * אותיות וסימנים אינם נחסמים ברמת המקש אלא מנוקים מהערך: חסימה לפי מקש
+ * לבדה משאירה פתח להדבקה, ל-IME ולגרירה, והמשתמש היה רואה אותיות נכנסות
+ * לשדה. ניקוי הערך תופס את כל הדרכים.
+ *
+ * הפלוס נשמר רק בראש: "+44 20" הוא מספר, "44+20" הוא שגיאת הקלדה, ו-
+ * libphonenumber היה מתעלם ממנו בשקט ומשאיר את המשתמש עם תו שאינו עושה דבר.
+ */
+export function sanitizePhoneInput(raw: string | null | undefined): string {
+  const value = (raw || '')
+  const digits = value.replace(/[^\d+]/g, '')
+  const plus = digits.startsWith('+')
+  return (plus ? '+' : '') + digits.replace(/\+/g, '')
+}
+
+/** האם התו מותר להקלדה ישירה בשדה. הפלוס נבדק מול מיקומו בנפרד. */
+export function isAllowedPhoneChar(ch: string): boolean {
+  return /[\d+]/.test(ch)
 }
 
 /** דגל המדינה כאמוג׳י, מקוד דו-אותי. IL -> 🇮🇱 */

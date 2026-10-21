@@ -1,4 +1,4 @@
-import { Component, ElementRef, EventEmitter, HostListener, Input, Output, forwardRef } from '@angular/core'
+import { Component, ElementRef, EventEmitter, HostListener, Input, Output, ViewChild, forwardRef } from '@angular/core'
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms'
 import { CountryCode } from 'libphonenumber-js/max'
 import {
@@ -8,7 +8,9 @@ import {
   callingCodeForCountry,
   countryForCallingCode,
   formatAsYouType,
+  isAllowedPhoneChar,
   parsePhone,
+  sanitizePhoneInput,
   partialCallingCode,
   toE164,
   withCountry
@@ -125,6 +127,74 @@ export class PhoneInputComponent implements ControlValueAccessor {
   setDisabledState(isDisabled: boolean): void { this.disabled = isDisabled }
 
   // ── קלט
+
+  /** הקלט עצמו. נדרש כדי לכתוב אליו חזרה ולהחזיר את הסמן למקומו. */
+  @ViewChild('numberInput') numberInput?: ElementRef<HTMLInputElement>
+
+  /**
+   * חסימת תו שאינו ספרה או פלוס, ברמת המקש.
+   *
+   * זו שכבה שנייה ולא היחידה: הדבקה, גרירה ו-IME אינם מגיעים לכאן בכלל,
+   * ואותם תופס onUserInput שמנקה את הערך עצמו. התועלת כאן היא שהתו פשוט
+   * לא נכנס, בלי הבהוב של אות שנכנסת ומיד נעלמת.
+   */
+  onKeyDown(event: KeyboardEvent) {
+    // צירופי מקשים - העתקה, הדבקה, ביטול, בחירת הכל - עוברים כמות שהם.
+    if (event.ctrlKey || event.metaKey || event.altKey) return
+
+    // כל מקש שאינו תו בודד הוא מקש עריכה או ניווט: Backspace, Delete, Tab,
+    // החיצים, Home ו-End. שמם ארוך מתו אחד, וזה כל התנאי שנדרש - אין צורך
+    // ברשימה שתצטרך תחזוקה.
+    if (event.key.length !== 1) return
+
+    if (!isAllowedPhoneChar(event.key)) {
+      event.preventDefault()
+      return
+    }
+
+    // פלוס מותר פעם אחת, ורק בתחילת המספר. "44+20" אינו מספר, ו-
+    // libphonenumber היה מתעלם ממנו בשקט ומשאיר תו שאינו עושה דבר.
+    // הבדיקה היא על מה שיישאר אחרי שהבחירה הנוכחית תידרס - אחרת הקלדת
+    // פלוס על מספר מסומן כולו נחסמה, אף שהיא מחליפה את הפלוס הקיים.
+    if (event.key === '+') {
+      const input = event.target as HTMLInputElement
+      const start = input.selectionStart ?? 0
+      const end = input.selectionEnd ?? start
+      const remaining = input.value.slice(0, start) + input.value.slice(end)
+      if (start !== 0 || remaining.includes('+')) event.preventDefault()
+    }
+  }
+
+  /**
+   * הקלט מהשדה - כולל הדבקה וגרירה.
+   *
+   * שני דברים קורים כאן שאי אפשר להשאיר ל-Angular:
+   *
+   * 1. הערך נכתב חזרה אל ה-DOM במפורש. ה-binding [value] מתעדכן רק כש-
+   *    display משתנה, ואות שהוקלדה מנוקה בניקוי - כלומר display נשאר כפי
+   *    שהיה, Angular לא כותב דבר, והאות נשארת על המסך. זה היה הבאג.
+   * 2. הסמן מוחזר למקומו לפי מספר הספרות שלפניו ולא לפי מספר התווים.
+   *    העיצוב מוסיף ומסיר רווחים תוך כדי הקלדה, ובלי החישוב הזה הסמן קופץ
+   *    לסוף בכל תו - מה שהופך עריכה באמצע המספר לבלתי אפשרית.
+   */
+  onUserInput(event: Event) {
+    const input = event.target as HTMLInputElement
+    const caret = input.selectionStart ?? input.value.length
+    const clean = sanitizePhoneInput(input.value)
+    const kept = sanitizePhoneInput(input.value.slice(0, caret)).length
+
+    this.onInput(clean)
+
+    // הכתיבה חייבת לקרות גם כשהערך לא השתנה - זה בדיוק המקרה של אות שנוקתה.
+    input.value = this.display
+    let position = 0
+    let seen = 0
+    while (position < this.display.length && seen < kept) {
+      if (isAllowedPhoneChar(this.display[position])) seen++
+      position++
+    }
+    input.setSelectionRange(position, position)
+  }
 
   onInput(raw: string) {
     this.display = formatAsYouType(raw, this.activeCountry)
@@ -280,7 +350,9 @@ export class PhoneInputComponent implements ControlValueAccessor {
   get lineTypeLabel(): string {
     switch (this.parsed?.lineType) {
       case 'mobile': return 'נייד'
-      case 'landline': return 'נייח'
+      // "טלפון" ולא "נייח": זה הניסוח שכבר בשימוש בנתונים (טלפון / נייד /
+      // טלפון נוסף), והקונטרול מיישר אליו ולא מכניס מונח שלישי.
+      case 'landline': return 'טלפון'
       default: return ''
     }
   }
