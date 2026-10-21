@@ -73,6 +73,7 @@ Thumbs.db
 .vscode/settings.json
 
 /meeting
+/db
 
 # כלי בדיקה מקומיים וגיבויי קבצים - לא נכנסים למקור
 tools/_chk/
