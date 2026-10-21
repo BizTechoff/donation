@@ -6,6 +6,7 @@ import { Donation, Donor, DonorContact, DonorEvent, DonorPlace, Event, Place } f
 import { DonorPhoneDisplay } from '../../shared/utils/phone-utils';
 import { DonorPhoneController } from '../../shared/controllers/donor-phone.controller';
 import { GlobalFilters, GlobalFilterService } from './global-filter.service';
+import { formatPhoneForDisplay } from '../../shared/utils/phone-format';
 
 @Injectable({
   providedIn: 'root'
@@ -170,7 +171,10 @@ export class DonorService {
       isActive: true
     });
 
-    return primaryPhone?.phoneNumber || undefined;
+    // סעיפים 1, 31 - הפורמט האחד של הפלטפורמה, גם כאן. מי שמקבל מספר
+    // מהשירות הזה מציג אותו, ולכן הוא חייב להיראות כמו בכל שאר המסכים.
+    const value = formatPhoneForDisplay(primaryPhone?.phoneNumber);
+    return value || undefined;
   }
 
   /**

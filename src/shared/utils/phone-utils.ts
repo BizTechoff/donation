@@ -155,6 +155,13 @@ export interface DonorPhoneDisplay {
 /**
  * Splits a donor's phone contacts into landlines and mobiles, primary first,
  * de-duplicated by digits (so '050-1234567' and '0501234567' count once).
+ *
+ * סעיפים 1, 31 - הערכים חוזרים מכאן כבר מעוצבים ב-formatPhoneForDisplay.
+ * זה הפתח היחיד שדרכו טלפון של תורם מגיע לכל מסך בפלטפורמה, ולכן זה המקום
+ * לעצב בו. קודם רק toPhoneDisplay עיצב, ומי שקרא ל-DonorPhoneController.load
+ * ישירות - דוח התרומות - קיבל את המחרוזת כפי שהוזנה והציג אותה כך.
+ *
+ * הסיווג נייד/נייח נעשה על הערך הגולמי, לפני העיצוב, כדי שלא ישתנה בגללו.
  */
 export function splitPhones(contacts: PhoneContactLike[]): { landlines: string[]; mobiles: string[] } {
   const sorted = [...(contacts || [])].sort((a, b) => (b.isPrimary ? 1 : 0) - (a.isPrimary ? 1 : 0))
@@ -167,8 +174,9 @@ export function splitPhones(contacts: PhoneContactLike[]): { landlines: string[]
     const key = value.replace(/\D/g, '') || value
     if (seen.has(key)) continue
     seen.add(key)
-    if (isMobilePhone(value, c.description)) mobiles.push(value)
-    else landlines.push(value)
+    const display = formatPhoneForDisplay(value)
+    if (isMobilePhone(value, c.description)) mobiles.push(display)
+    else landlines.push(display)
   }
   return { landlines, mobiles }
 }

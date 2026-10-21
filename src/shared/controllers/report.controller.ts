@@ -15,6 +15,7 @@ import { calculateEffectiveAmount, calculatePaymentTotals, calculatePeriodsElaps
 import { DonorPhoneController } from './donor-phone.controller';
 import { HebrewDateController } from './hebrew-date.controller';
 import { GlobalFilterController } from './global-filter.controller';
+import { formatPhoneForDisplay } from '../utils/phone-format'
 
 export interface DonationDetailData {
   donationId?: string; // ID of the donation for opening details modal
@@ -902,7 +903,9 @@ export class ReportController {
       const phoneContacts = allContacts.filter(c =>
         c.donorId === donorId && c.type === 'phone' && c.isActive
       );
-      const phones = phoneContacts.map(c => c.phoneNumber || '').filter(p => p);
+      // סעיפים 1, 31 - דרך הפורמט האחד של הפלטפורמה, כמו בכל רשימה ודוח.
+      // בלעדיו הדוח הזה היה היחיד שמציג את המחרוזת כפי שהוזנה.
+      const phones = phoneContacts.map(c => formatPhoneForDisplay(c.phoneNumber)).filter(p => p);
 
       const emailContacts = allContacts.filter(c =>
         c.donorId === donorId && c.type === 'email' && c.isActive

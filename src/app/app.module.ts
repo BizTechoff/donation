@@ -4,6 +4,7 @@ import { CommonModule, registerLocaleData } from '@angular/common'
 import { FormFieldDirective } from './common/directives/form-field.directive'
 import { MailtoDirective } from './common/directives/mailto.directive'
 import { AmountPipe } from './common/pipes/amount.pipe'
+import { PhonePipe } from './common/pipes/phone.pipe'
 import localeHe from '@angular/common/locales/he'
 import { AppRoutingModule } from './app-routing.module'
 import { AppComponent } from './app.component'
@@ -137,6 +138,7 @@ import { A11yModule } from "@angular/cdk/a11y";
     FormFieldDirective,
     MailtoDirective,
     AmountPipe,
+    PhonePipe,
     AutoYearDirective,
     DateFastInputComponent,
     AppComponent,
