@@ -6,6 +6,8 @@ import { Company, Place } from '../../../../shared/entity';
 import { AddressComponents } from '../../../common/osm-address-input/osm-address-input.component';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
+import { PhoneCountryOption } from '../../../common/phone-input/phone-input.component';
+import { loadPhoneCountryOptions } from '../../../common/phone-input/phone-country-options';
 
 export interface CompanyDetailsModalArgs {
   companyId?: string; // undefined for new company, or company ID for edit
@@ -41,7 +43,14 @@ export class CompanyDetailsModalComponent implements OnInit {
     public dialogRef: MatDialogRef<CompanyDetailsModalComponent>
   ) { }
 
+  /** סעיפים 1, 31 - רשימת המדינות לבוחר של app-phone-input. */
+
+  phoneCountryOptions: PhoneCountryOption[] = [];
+
+
   async ngOnInit() {
+
+    this.phoneCountryOptions = await loadPhoneCountryOptions();
     await this.initializeCompany();
 
     // Prevent accidental close for new company

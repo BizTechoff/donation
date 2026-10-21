@@ -8,6 +8,8 @@ import { I18nService } from '../../../i18n/i18n.service';
 import { AddressComponents } from '../../../common/osm-address-input/osm-address-input.component';
 import { PayerService } from '../../../services/payer.service';
 import { CurrencyType } from '../../../../shared/type/currency.type';
+import { PhoneCountryOption } from '../../../common/phone-input/phone-input.component';
+import { loadPhoneCountryOptions } from '../../../common/phone-input/phone-country-options';
 
 export interface OrganizationDetailsModalArgs {
   organizationId?: string; // undefined for new organization, or organization ID for edit
@@ -48,7 +50,14 @@ export class OrganizationDetailsModalComponent implements OnInit {
     public dialogRef: MatDialogRef<OrganizationDetailsModalComponent>
   ) {}
 
+  /** סעיפים 1, 31 - רשימת המדינות לבוחר של app-phone-input. */
+
+  phoneCountryOptions: PhoneCountryOption[] = [];
+
+
   async ngOnInit() {
+
+    this.phoneCountryOptions = await loadPhoneCountryOptions();
     await this.initializeOrganization();
 
     // Prevent accidental close for new organization

@@ -3665,3 +3665,10 @@
   position: relative;
   z-index: 3000;
 }
+
+/* סעיפים 1, 31 - app-phone-input מיישר לגובה ה-.form-control של הטופס הזה
+   (12px/16px), ולא לברירת המחדל של הקונטרול. */
+app-phone-input {
+  --phone-pad-y: 12px;
+  --phone-pad-x: 16px;
+}

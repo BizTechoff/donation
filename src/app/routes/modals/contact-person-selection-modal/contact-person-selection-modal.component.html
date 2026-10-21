@@ -39,8 +39,18 @@
             <input type="email" class="form-control" [(ngModel)]="newEmail" placeholder="אימייל">
           </div>
           <div class="form-group">
-            <label>{{ (i18n.terms$ | async)?.contactPersonMobile }}</label>
-            <input type="tel" class="form-control" [(ngModel)]="newMobile" placeholder="נייד">
+            <!-- סעיפים 1, 31 - הכותרת עוברת ל-[label] של הקונטרול ולא נשארת
+                 כ-label של הטופס: כך שורת הכותרת שלו היא אותה שורה שבה יושבות
+                 "שם איש קשר" ו"אימייל", ושלוש התיבות מתיישרות. labelIcon ריק
+                 כי לשכנותיה אין אייקון, והסגנון מגיע מהמשתנים ב-scss. -->
+            <app-phone-input
+              [label]="(i18n.terms$ | async)?.contactPersonMobile || 'נייד'"
+              labelIcon=""
+              [(ngModel)]="newMobile"
+              [ngModelOptions]="{ standalone: true }"
+              [countries]="phoneCountryOptions"
+              placeholder="נייד">
+            </app-phone-input>
           </div>
         </div>
         <div class="form-actions">
@@ -66,7 +76,7 @@
                 <div class="contact-person-name">{{ cp.name }}</div>
                 <div class="contact-person-details" *ngIf="cp.email || cp.mobile">
                   <span *ngIf="cp.email"><mat-icon>email</mat-icon> {{ cp.email }}</span>
-                  <span *ngIf="cp.mobile"><mat-icon>phone</mat-icon> {{ cp.mobile }}</span>
+                  <span *ngIf="cp.mobile"><mat-icon>phone</mat-icon> <span dir="ltr">{{ cp.mobile | phone }}</span></span>
                 </div>
               </div>
             </div>

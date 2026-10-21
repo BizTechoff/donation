@@ -20,7 +20,9 @@
 
 .modal-content {
   width: 90vw;
-  max-width: 700px;
+  /* 860 ולא 700: שורת ההוספה מחזיקה שלושה שדות, ומאז ש-app-phone-input נכנס
+     שדה הנייד נושא גם דגל וגם שורת סטטוס. ב-700 שלושתם נדחסו. */
+  max-width: 860px;
   max-height: 80vh;
   background: white;
   border-radius: 16px;
@@ -236,6 +238,11 @@
     }
 
     .form-control {
+      // אותו באג של Z11 בשדה החיפוש שלמעלה, כאן בשדות הטופס: בלי border-box
+      // 24px ה-padding ו-4px המסגרת נוספים ל-100% הרוחב, והתיבה גולשת מחוץ
+      // לעמודה שלה. זה מה שגרם לשדות להיראות לא מיושרים זה מול זה, ובלט
+      // במיוחד ליד app-phone-input שכן מחושב נכון.
+      box-sizing: border-box;
       width: 100%;
       padding: 10px 12px;
       border: 2px solid #e1e8ed;
@@ -496,4 +503,13 @@
       }
     }
   }
+}
+
+/* סעיפים 1, 31 - app-phone-input מיישר לכותרות ולגובה השדות של הטופס הזה. */
+app-phone-input {
+  --phone-pad-y: 10px;
+  --phone-pad-x: 12px;
+  --phone-label-size: 13px;
+  --phone-label-weight: 500;
+  --phone-label-color: #6c757d;
 }

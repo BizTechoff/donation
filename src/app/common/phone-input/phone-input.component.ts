@@ -80,6 +80,15 @@ export class PhoneInputComponent implements ControlValueAccessor {
    * לגובה הטופס ולא מזיזה את השדות שלידה.
    */
   @Input() label = ''
+
+  /**
+   * האייקון שליד הכותרת. ריק = בלי אייקון.
+   *
+   * בטפסים שבהם לשדות השכנים אין אייקון ליד הכותרת (מודאל איש הקשר), אייקון
+   * רק לטלפון נראה כמו חריגה ולא כמו הדגשה.
+   */
+  @Input() labelIcon = 'phone'
+
   @Input() disabled = false
 
   /** מציג את שורת הסטטוס מתחת לשדה - דגל, מדינה, סוג קו וסימון תקינות. */
@@ -344,8 +353,23 @@ export class PhoneInputComponent implements ControlValueAccessor {
 
   // ── תצוגה
 
-  get callingCode(): string { return this.parsed?.callingCode ? `+${this.parsed.callingCode}` : '' }
+  get callingCode(): string {
+    if (this.parsed?.callingCode) return `+${this.parsed.callingCode}`
+    // בזמן ההקלדה parsePhone עדיין מחזיר undefined, אבל הקידומת כבר ידועה.
+    const typed = partialCallingCode(this.display)
+    return typed ? `+${typed}` : ''
+  }
+
   get isInvalid(): boolean { return !!this.display.trim() && !!this.parsed && !this.parsed.isValid }
+
+  /**
+   * המספר שלם ונבדק. רק אז מותר לומר עליו משהו.
+   *
+   * בלי ההבחנה הזו "+41" לבדו הציג "בשווייץ זה מספר תקין" - הקידומת זוהתה,
+   * המספר כלל לא נבדק, ו-parsePhone מחזיר undefined עד שהוא שלם. המשתמש קיבל
+   * אישור על מספר שעדיין לא הקליד.
+   */
+  get isComplete(): boolean { return !!this.parsed?.isValid }
 
   get lineTypeLabel(): string {
     switch (this.parsed?.lineType) {

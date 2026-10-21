@@ -6,21 +6,33 @@
 
   <!-- הכותרת והסטטוס באותה שורה: הקידומת וסוג הקו הם מידע על השדה, ומקומם
        ליד שמו ולא מתחתיו, שם הם הוסיפו שורה והקפיצו את הטופס. -->
-  <div class="phone-header" *ngIf="label">
-    <mat-icon class="field-icon">phone</mat-icon>
-    <label>{{ label }}</label>
+  <!-- שורת הסטטוס תמיד מעל השדה, גם כשהכותרת מגיעה מהטופס המארח ולא מ-
+       [label]. קודם היא ירדה מתחת לשדה במקרה הזה, וליד שדות שכנים היא
+       נראתה כשייכת למה שמתחתיה - ובטופס צפוף היא גם הגביהה את השורה. -->
+  <div class="phone-header">
+    <ng-container *ngIf="label">
+      <mat-icon class="field-icon" *ngIf="labelIcon">{{ labelIcon }}</mat-icon>
+      <label>{{ label }}</label>
+    </ng-container>
     <ng-container *ngTemplateOutlet="status"></ng-container>
   </div>
 
   <div class="phone-field">
 
     <!-- בוחר המדינה. מוצג רק כשהועברה רשימה - אחרת זיהוי אוטומטי בלבד. -->
-    <div class="phone-country" *ngIf="countries.length">
-      <button type="button" class="phone-country-btn" [disabled]="disabled"
+    <!-- תיבת הדגל מצוירת תמיד, גם בלי רשימת מדינות.
+         קודם היה כאן מסלול שני - span חשוף עם הדגל - והוא דרש עיצוב משלו,
+         נשבר מול flag-icons, ונצמד לקצה העליון של השורה. מסלול אחד שמוכח
+         עובד עדיף: בלי רשימה הכפתור פשוט מושבת ואין חץ, והדגל עדיין מזוהה
+         מהמספר. -->
+    <div class="phone-country">
+      <button type="button" class="phone-country-btn"
+              [class.no-picker]="!countries.length"
+              [disabled]="disabled || !countries.length"
               (click)="togglePicker()" [title]="shownCountryName">
         <span class="fi" *ngIf="flagClass" [ngClass]="flagClass"></span>
         <span class="phone-no-flag" *ngIf="hasUnknownPrefix" title="הקידומת אינה של מדינה מוכרת">?</span>
-        <mat-icon class="phone-country-caret">{{ pickerOpen ? 'arrow_drop_up' : 'arrow_drop_down' }}</mat-icon>
+        <mat-icon class="phone-country-caret" *ngIf="countries.length">{{ pickerOpen ? 'arrow_drop_up' : 'arrow_drop_down' }}</mat-icon>
       </button>
 
       <div class="phone-country-list" *ngIf="pickerOpen" (click)="$event.stopPropagation()">
@@ -35,10 +47,6 @@
         </button>
       </div>
     </div>
-
-    <!-- בלי בוחר - הדגל בלבד, כתצוגה. -->
-    <span class="fi phone-flag" *ngIf="!countries.length && flagClass" [ngClass]="flagClass"
-          [title]="shownCountryName"></span>
 
     <!-- inputmode="tel" מעלה מקלדת ספרות בנייד. החסימה עצמה אינה נשענת
          עליה - היא ב-onKeyDown ובניקוי הערך ב-onUserInput, כי מקלדת היא
@@ -58,10 +66,6 @@
       (blur)="onBlur()">
   </div>
 
-  <div class="phone-status-below" *ngIf="!label">
-    <ng-container *ngTemplateOutlet="status"></ng-container>
-  </div>
-
 </div>
 
 <!-- שורת הסטטוס - קידומת וסוג קו, או ההודעה כשהמספר אינו קיים במדינה
@@ -74,14 +78,21 @@
          שלושה מצבים, כי לא תמיד יש סוג קו: בכל ה-NANP (ארה"ב, קנדה,
          הקריביים) אותם אזורי חיוג משרתים נייד ונייח, ו-getType מחזיר
          FIXED_LINE_OR_MOBILE - שם מוצגת המדינה בלבד. -->
-    <ng-container *ngIf="!isInvalid && shownCountryName && lineTypeLabel">
-      ב<strong>{{ shownCountryName }}</strong> זה מספר <strong>{{ lineTypeLabel }}</strong>
+    <ng-container *ngIf="isComplete && !isInvalid">
+      <ng-container *ngIf="shownCountryName && lineTypeLabel">
+        ב<strong>{{ shownCountryName }}</strong> זה מספר <strong>{{ lineTypeLabel }}</strong>
+      </ng-container>
+      <ng-container *ngIf="shownCountryName && !lineTypeLabel">
+        ב<strong>{{ shownCountryName }}</strong> זה מספר תקין
+      </ng-container>
     </ng-container>
-    <ng-container *ngIf="!isInvalid && shownCountryName && !lineTypeLabel">
-      ב<strong>{{ shownCountryName }}</strong> זה מספר תקין
-    </ng-container>
-    <ng-container *ngIf="!isInvalid && !shownCountryName">
-      <span class="phone-code" *ngIf="callingCode">{{ callingCode }}</span>
+
+    <!-- מספר שעדיין לא שלם: רק מה שידוע בוודאות - המדינה שהקידומת מצביעה
+         עליה, או הקידומת עצמה. אמירה על תקינות כאן היא אישור על מספר שלא
+         הוקלד. -->
+    <ng-container *ngIf="!isComplete && !isInvalid">
+      <strong *ngIf="shownCountryName">{{ shownCountryName }}</strong>
+      <span class="phone-code" *ngIf="!shownCountryName && callingCode">{{ callingCode }}</span>
     </ng-container>
     <span class="phone-invalid" *ngIf="isInvalid" title="המספר נשמר, אך אינו קיים במדינה שנבחרה">
       <ng-container *ngIf="shownCountryName">ב<strong>{{ shownCountryName }}</strong> אין מספר כזה</ng-container>

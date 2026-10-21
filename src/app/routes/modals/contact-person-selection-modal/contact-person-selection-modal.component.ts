@@ -4,6 +4,8 @@ import { DialogConfig } from 'common-ui-elements';
 import { ContactPerson } from '../../../../shared/entity/contact-person';
 import { remult } from 'remult';
 import { I18nService } from '../../../i18n/i18n.service';
+import { PhoneCountryOption } from '../../../common/phone-input/phone-input.component';
+import { loadPhoneCountryOptions } from '../../../common/phone-input/phone-country-options';
 
 export interface ContactPersonSelectionModalArgs {
   availableContactPersons?: ContactPerson[];
@@ -41,7 +43,14 @@ export class ContactPersonSelectionModalComponent implements OnInit {
     public dialogRef: MatDialogRef<any>
   ) {}
 
+  /** סעיפים 1, 31 - רשימת המדינות לבוחר של app-phone-input. */
+
+  phoneCountryOptions: PhoneCountryOption[] = [];
+
+
   async ngOnInit() {
+
+    this.phoneCountryOptions = await loadPhoneCountryOptions();
     if (this.args.availableContactPersons) {
       this.availableContactPersons = this.args.availableContactPersons;
     } else {

@@ -22,7 +22,9 @@ import { calculateEffectiveAmount } from '../../../../shared/utils/donation-util
 import { getReverseRelationship } from '../../../../shared/utils/relationship-utils';
 import { ALUMNI_TITLE, DONOR_TITLES_EN, DONOR_TITLES_HE } from '../../../../shared/constants/donor-titles';
 import { PhoneCountryOption } from '../../../common/phone-input/phone-input.component';
-import { DEFAULT_PHONE_COUNTRY, hasUnknownCallingCode } from '../../../../shared/utils/phone-format';
+import { CountryCode } from 'libphonenumber-js/max';
+import { DEFAULT_PHONE_COUNTRY, callingCodeForCountry, hasUnknownCallingCode } from '../../../../shared/utils/phone-format';
+import { toPhoneCountryOptions } from '../../../common/phone-input/phone-country-options';
 
 export interface DonorDetailsModalArgs {
   donorId: string; // Can be 'new' for new donor or donor ID
@@ -312,11 +314,15 @@ export class DonorDetailsModalComponent implements OnInit {
 
   private createDefaultContacts() {
     // Create default empty phone contact
+    // סעיפים 1, 31 - הקידומת של מדינת התורם, לא '+972' קבוע. רשומה חדשה
+    // נפתחת עם הקידומת כבר בפנים, כך שהדגל נכון מהרגע הראשון ומי שמקליד
+    // ממשיך מהמספר המקומי ולא מתחיל מהקידומת.
+    const defaultPrefix = callingCodeForCountry(this.donorPhoneCountry as CountryCode);
     const phoneContact = this.donorContactRepo.create({
       donorId: '', // Will be set when donor is saved
       type: 'phone',
-      phoneNumber: '',
-      prefix: '+972',
+      phoneNumber: defaultPrefix,
+      prefix: defaultPrefix,
       description: 'נייד',
       isPrimary: true,
       isActive: true
@@ -809,13 +815,16 @@ export class DonorDetailsModalComponent implements OnInit {
         }
       }
 
+      // סעיפים 1, 31 - אותה קידומת של מדינת התורם גם כאן.
+      const defaultPrefix = callingCodeForCountry(this.donorPhoneCountry as CountryCode);
+
       const newContact = this.donorContactRepo.create({
         id: '',
         donorId: this.donor?.id || '',
         type: type,
-        phoneNumber: type === 'phone' ? '' : undefined,
+        phoneNumber: type === 'phone' ? defaultPrefix : undefined,
         email: type === 'email' ? '' : undefined,
-        prefix: type === 'phone' ? '+972' : undefined,
+        prefix: type === 'phone' ? defaultPrefix : undefined,
         isPrimary: this.donorContacts.filter(c => c.type === type).length === 0,
         description: description,
         isActive: true
@@ -1405,10 +1414,7 @@ export class DonorDetailsModalComponent implements OnInit {
       label: `${c.phonePrefix}`
     }));
 
-    this.phoneCountryOptions = this.countries
-      .filter(c => (c.code || '').trim().length === 2)
-      .map(c => ({ code: c.code, name: c.name, phonePrefix: c.phonePrefix }))
-      .sort((a, b) => a.name.localeCompare(b.name, 'he'));
+    this.phoneCountryOptions = toPhoneCountryOptions(this.countries);
   }
 
   /**

@@ -7,6 +7,8 @@ import { AddressComponents } from '../../../common/osm-address-input/osm-address
 import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
 import { PayerService } from '../../../services/payer.service';
+import { PhoneCountryOption } from '../../../common/phone-input/phone-input.component';
+import { loadPhoneCountryOptions } from '../../../common/phone-input/phone-country-options';
 
 export interface BankDetailsModalArgs {
   bankId?: string; // undefined for new bank, or bank ID for edit
@@ -44,7 +46,14 @@ export class BankDetailsModalComponent implements OnInit {
     public dialogRef: MatDialogRef<BankDetailsModalComponent>
   ) { }
 
+  /** סעיפים 1, 31 - רשימת המדינות לבוחר של app-phone-input. */
+
+  phoneCountryOptions: PhoneCountryOption[] = [];
+
+
   async ngOnInit() {
+
+    this.phoneCountryOptions = await loadPhoneCountryOptions();
     await this.initializeBank();
 
     // Prevent accidental close for new bank
