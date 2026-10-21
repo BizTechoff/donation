@@ -1,0 +1,84 @@
+<!--
+  app-phone-input - ראה את ההערה בראש הקומפוננטה.
+  dir="ltr" על השדה הוא מכוון ומתקן את B3 (הפלוס בצד הלא נכון).
+-->
+<div class="phone-input" [class.invalid]="isInvalid" [class.disabled]="disabled" [class.picker-open]="pickerOpen">
+
+  <!-- הכותרת והסטטוס באותה שורה: הקידומת וסוג הקו הם מידע על השדה, ומקומם
+       ליד שמו ולא מתחתיו, שם הם הוסיפו שורה והקפיצו את הטופס. -->
+  <div class="phone-header" *ngIf="label">
+    <mat-icon class="field-icon">phone</mat-icon>
+    <label>{{ label }}</label>
+    <ng-container *ngTemplateOutlet="status"></ng-container>
+  </div>
+
+  <div class="phone-field">
+
+    <!-- בוחר המדינה. מוצג רק כשהועברה רשימה - אחרת זיהוי אוטומטי בלבד. -->
+    <div class="phone-country" *ngIf="countries.length">
+      <button type="button" class="phone-country-btn" [disabled]="disabled"
+              (click)="togglePicker()" [title]="shownCountryName">
+        <span class="fi" *ngIf="flagClass" [ngClass]="flagClass"></span>
+        <span class="phone-no-flag" *ngIf="hasUnknownPrefix" title="הקידומת אינה של מדינה מוכרת">?</span>
+        <mat-icon class="phone-country-caret">{{ pickerOpen ? 'arrow_drop_up' : 'arrow_drop_down' }}</mat-icon>
+      </button>
+
+      <div class="phone-country-list" *ngIf="pickerOpen" (click)="$event.stopPropagation()">
+        <input type="text" class="phone-country-search" [(ngModel)]="countrySearch"
+               [ngModelOptions]="{ standalone: true }" placeholder="חיפוש מדינה או קידומת" autofocus>
+        <button type="button" class="phone-country-item" *ngFor="let option of filteredCountries"
+                [class.selected]="isSelected(option)"
+                (click)="selectCountry(option)">
+          <span class="fi" [ngClass]="'fi-' + option.code.toLowerCase()"></span>
+          <span class="phone-country-name">{{ option.name }}</span>
+          <span class="phone-country-prefix">{{ option.phonePrefix }}</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- בלי בוחר - הדגל בלבד, כתצוגה. -->
+    <span class="fi phone-flag" *ngIf="!countries.length && flagClass" [ngClass]="flagClass"
+          [title]="shownCountryName"></span>
+
+    <input
+      type="tel"
+      dir="ltr"
+      class="form-control phone-number"
+      [value]="display"
+      [placeholder]="placeholder"
+      [disabled]="disabled"
+      (input)="onInput($any($event.target).value)"
+      (blur)="onBlur()">
+  </div>
+
+  <div class="phone-status-below" *ngIf="!label">
+    <ng-container *ngTemplateOutlet="status"></ng-container>
+  </div>
+
+</div>
+
+<!-- שורת הסטטוס - קידומת וסוג קו, או ההודעה כשהמספר אינו קיים במדינה
+     שנבחרה. תבנית אחת לשני המיקומים (ליד הכותרת, ובלעדיה מתחת לשדה);
+     קודם היא היתה כתובה פעמיים, וכל תיקון חל רק על אחת מהן. -->
+<ng-template #status>
+  <span class="phone-status" *ngIf="showStatus && display.trim()">
+    <!-- משפט אחד במקום תוויות נפרדות: המשתמש קורא מה המספר ואיפה, ושם
+         המדינה וסוג הקו מודגשים כי הם המידע שמשנה.
+         שלושה מצבים, כי לא תמיד יש סוג קו: בכל ה-NANP (ארה"ב, קנדה,
+         הקריביים) אותם אזורי חיוג משרתים נייד ונייח, ו-getType מחזיר
+         FIXED_LINE_OR_MOBILE - שם מוצגת המדינה בלבד. -->
+    <ng-container *ngIf="!isInvalid && shownCountryName && lineTypeLabel">
+      ב<strong>{{ shownCountryName }}</strong> זה מספר <strong>{{ lineTypeLabel }}</strong>
+    </ng-container>
+    <ng-container *ngIf="!isInvalid && shownCountryName && !lineTypeLabel">
+      ב<strong>{{ shownCountryName }}</strong> זה מספר תקין
+    </ng-container>
+    <ng-container *ngIf="!isInvalid && !shownCountryName">
+      <span class="phone-code" *ngIf="callingCode">{{ callingCode }}</span>
+    </ng-container>
+    <span class="phone-invalid" *ngIf="isInvalid" title="המספר נשמר, אך אינו קיים במדינה שנבחרה">
+      <ng-container *ngIf="shownCountryName">ב<strong>{{ shownCountryName }}</strong> אין מספר כזה</ng-container>
+      <ng-container *ngIf="!shownCountryName">מספר לא תקין</ng-container>
+    </span>
+  </span>
+</ng-template>

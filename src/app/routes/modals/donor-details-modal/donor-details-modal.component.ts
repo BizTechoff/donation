@@ -21,6 +21,8 @@ import { NotesSelectionModalArgs, NotesSelectionModalComponent } from '../notes-
 import { calculateEffectiveAmount } from '../../../../shared/utils/donation-utils';
 import { getReverseRelationship } from '../../../../shared/utils/relationship-utils';
 import { ALUMNI_TITLE, DONOR_TITLES_EN, DONOR_TITLES_HE } from '../../../../shared/constants/donor-titles';
+import { PhoneCountryOption } from '../../../common/phone-input/phone-input.component';
+import { hasUnknownCallingCode } from '../../../../shared/utils/phone-format';
 
 export interface DonorDetailsModalArgs {
   donorId: string; // Can be 'new' for new donor or donor ID
@@ -100,6 +102,13 @@ export class DonorDetailsModalComponent implements OnInit {
   // Phone prefix options (built once after loading countries)
   phonePrefixOptions: { value: string; label: string }[] = [];
 
+  /**
+   * סעיפים 1, 31 - רשימת המדינות לבוחר שב-app-phone-input. נבנית מיישות
+   * Country, שכבר מחזיקה שם בעברית, קוד וקידומת. מדינה בלי קוד דו-אותי
+   * מסוננת - בלעדיו אין דגל ואין פענוח.
+   */
+  phoneCountryOptions: PhoneCountryOption[] = [];
+
   // Note types (loaded from database)
   noteTypes: NoteType[] = [];
 
@@ -139,10 +148,7 @@ export class DonorDetailsModalComponent implements OnInit {
       this.noteTypes = data.noteTypes;
 
       // Build phone prefix options from countries
-      this.phonePrefixOptions = this.countries.map(c => ({
-        value: c.phonePrefix,
-        label: `${c.phonePrefix}`
-      }));
+      this.buildCountryOptions();
 
       // Set donor data
       if (this.args.donorId === 'new') {
@@ -212,10 +218,7 @@ export class DonorDetailsModalComponent implements OnInit {
     this.companies = data.companies;
     this.circles = data.circles;
     this.noteTypes = data.noteTypes;
-    this.phonePrefixOptions = this.countries.map(c => ({
-      value: c.phonePrefix,
-      label: `${c.phonePrefix}`
-    }));
+    this.buildCountryOptions();
 
     this.isNewDonor = false;
     // A BackendMethod returns JSON, not a tracked entity - `data.donor` arrived
@@ -415,6 +418,14 @@ export class DonorDetailsModalComponent implements OnInit {
    * that was hidden behind isNewDonor appears - no reopen needed.
    */
   private async saveDonorCore(): Promise<boolean> {
+    // סעיפים 1, 31 - ראה firstUnknownPhonePrefix. קידומת שלא קיימת בעולם
+    // נחסמת בשמירה, להבדיל ממספר שאינו תקין שנשמר ומסומן בלבד.
+    const badPrefix = this.firstUnknownPhonePrefix();
+    if (badPrefix) {
+      this.ui.error(`הקידומת במספר "${badPrefix}" אינה של מדינה מוכרת. יש לתקן לפני שמירה.`);
+      return false;
+    }
+
     if (!this.donor) return false;
 
     try {
@@ -1240,11 +1251,13 @@ export class DonorDetailsModalComponent implements OnInit {
   /**
    * F1 - the one line shown under the donor name in the card header.
    *
-   * סעיף 9: השורה הזו נבנתה כאן ביד - [street, houseNumber, city] -
-   * ולכן כתובת באנגליה יצאה "Downing Street 10" במקום "10 Downing Street".
-   * הפורמט יושב ב-Place (getStreetLine מחזיק את isHouseNumberFirst), וכל שאר
-   * המסכים כבר עוברים דרכו. כאן נבחרו רחוב + עיר ולא getDisplayAddress
-   * המלאה, כדי לשמר את אורך השורה הקיים בכותרת.
+   * סעיף 9: השורה הזו נבנתה כאן ביד - [street, houseNumber, city] - ולכן
+   * כתובת באנגליה יצאה "Downing Street 10" במקום "10 Downing Street".
+   *
+   * קוראת ל-getDisplayAddress() המלאה, כמו כל 17 הקריאות האחרות בפלטפורמה.
+   * בגרסה ראשונה הרכבתי כאן getStreetLine + getCityLine כדי לקצר את השורה,
+   * והתוצאה היתה שהכותרת והרשימה הציגו כתובות שונות לאותו תורם. הרכבה
+   * מקוצרת שמורה למי שיבקש אותה במפורש - לא לכותרת בודדת.
    *
    * בנוסף - נבחר ה-place הראשי ולא הראשון שנמצא, באותו סדר עדיפות שכבר קיים
    * ב-primaryCityStreet: isPrimary, ואחריו כתובת מסוג "בית".
@@ -1254,18 +1267,19 @@ export class DonorDetailsModalComponent implements OnInit {
    */
   getHeaderAddress(): string {
     const withPlace = (this.donorPlaces || []).filter(dp => dp.place);
-    const place = (
+    const raw = (
       withPlace.find(dp => dp.isPrimary) ||
       withPlace.find(dp => dp.addressType?.name === 'בית') ||
       withPlace[0]
     )?.place;
+
+    // Place.from - ה-place מגיע מ-BackendMethod כאובייקט JSON בלי מתודות.
+    // קודם היה כאן fallback שכתב את הכתובת ביד, והוא תמיד הציג "רחוב מספר"
+    // גם בארה"ב ובבריטניה - בדיוק מה שסעיף 9 בא לתקן.
+    const place = Place.from(raw);
     if (!place) return '';
 
-    if (typeof place.getStreetLine !== 'function') {
-      return [place.street, place.houseNumber, place.city].filter(p => !!p).join(' ');
-    }
-
-    return [place.getStreetLine(), place.getCityLine()].filter(line => line).join(', ');
+    return place.getDisplayAddress();
   }
 
   getHomeAddressComponents(): AddressComponents | undefined {
@@ -1285,7 +1299,7 @@ export class DonorDetailsModalComponent implements OnInit {
 
     const place = homeDonorPlace.place;
     const addressComponents = {
-      fullAddress: (typeof place.getDisplayAddress === 'function' ? place.getDisplayAddress() : place.fullAddress) || '',
+      fullAddress: Place.from(place)?.getDisplayAddress() || place.fullAddress || '',
       placeId: place.placeId || '',
       placeRecordId: place.id, // החשוב - המזהה שלנו ב-DB
       street: place.street || '',
@@ -1317,7 +1331,7 @@ export class DonorDetailsModalComponent implements OnInit {
 
     const place = vacationDonorPlace.place;
     return {
-      fullAddress: (typeof place.getDisplayAddress === 'function' ? place.getDisplayAddress() : place.fullAddress) || '',
+      fullAddress: Place.from(place)?.getDisplayAddress() || place.fullAddress || '',
       placeId: place.placeId || '',
       placeRecordId: place.id, // החשוב - המזהה שלנו ב-DB
       street: place.street || '',
@@ -1378,6 +1392,64 @@ export class DonorDetailsModalComponent implements OnInit {
    */
   getTitleOptions(): string[] {
     return this.i18n.lang.language === 'en' ? DONOR_TITLES_EN : DONOR_TITLES_HE;
+  }
+
+  /**
+   * סעיפים 1, 31 - רשימות המדינות, במקום אחד. קודם הן נבנו בשני מקומות
+   * בקומפוננטה (טעינה ראשונה וטעינה חוזרת), וכל תוספת היתה צריכה להיכתב
+   * פעמיים. מדינה בלי קוד דו-אותי מסוננת מהבוחר - בלעדיו אין דגל ואין פענוח.
+   */
+  private buildCountryOptions() {
+    this.phonePrefixOptions = this.countries.map(c => ({
+      value: c.phonePrefix,
+      label: `${c.phonePrefix}`
+    }));
+
+    this.phoneCountryOptions = this.countries
+      .filter(c => (c.code || '').trim().length === 2)
+      .map(c => ({ code: c.code, name: c.name, phonePrefix: c.phonePrefix }))
+      .sort((a, b) => a.name.localeCompare(b.name, 'he'));
+  }
+
+  /**
+   * סעיפים 1, 31 - חסימת שמירה על קידומת שאינה של אף מדינה.
+   *
+   * חריג מכוון לכלל "ולידציה = סימון בלבד": מספר לא תקין נשמר, כי בנתונים
+   * ההיסטוריים יש הרבה כאלה וחסימה היתה מונעת שמירת תורם שלם. אבל קידומת
+   * שלא קיימת בעולם היא טעות הקלדה ודאית שנוצרת עכשיו, ואין סיבה לקלוט
+   * אותה. זה גם מה שהמשתמש כבר רואה - ה-? האדום במקום הדגל.
+   *
+   * @returns שם השדה הבעייתי, או '' כשהכל תקין.
+   */
+  private firstUnknownPhonePrefix(): string {
+    const bad = (this.donorContacts || []).find(c =>
+      c.type === 'phone' && hasUnknownCallingCode(c.phoneNumber));
+    return bad?.phoneNumber || '';
+  }
+
+  /**
+   * סעיפים 1, 31 - סוג הקו שהקונטרול זיהה נכתב אל שדה התיאור.
+   *
+   * למה לתיאור ולא לשדה חדש: phone-utils/sqlIsMobile מסווג נייד בתוך פוסטגרס,
+   * שם אי אפשר להריץ libphonenumber, והתיאור הוא השדה היחיד ששני הצדדים
+   * קוראים. סעיף 18 כבר קבע "נייד = התיאור מכיל נייד".
+   *
+   * תיאור שהמשתמש כתב בעצמו לא נדרס - רק תיאור ריק, או תיאור שהקונטרול עצמו
+   * כתב בפעם קודמת (נייד / נייח). 'unknown' לא כותב דבר: בארה"ב ובקנדה
+   * הספרות לא נושאות את התשובה, והסיווג שם ידני.
+   */
+  onPhoneLineTypeDetected(contact: DonorContact, lineType: 'mobile' | 'landline' | 'unknown') {
+    if (lineType === 'unknown') return;
+
+    const written = ['נייד', 'נייח'];
+    const current = (contact.description || '').trim();
+    if (current && !written.includes(current)) return;
+
+    const label = lineType === 'mobile' ? 'נייד' : 'נייח';
+    if (current !== label) {
+      contact.description = label;
+      this.changed = true;
+    }
   }
 
   /**

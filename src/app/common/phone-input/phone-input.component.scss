@@ -1,0 +1,272 @@
+/* app-phone-input - סעיפים 1, 31 */
+
+.phone-input {
+  display: flex;
+
+  /* בזמן שהרשימה פתוחה הקונטרול כולו מתרומם מעל שאר הטופס. z-index על
+     הרשימה לבדה לא הספיק: לכל מקטע בטופס יש הקשר ערימה משלו, ולכן השבבים
+     של "מצב משפחתי" צוירו מעליה. */
+  &.picker-open {
+    position: relative;
+    z-index: 3000;
+  }
+
+
+  /* אותם ערכים של .field-title בטופס, כדי ש"מספר" ייראה כמו "תיאור"
+     ו"כתובת אימייל" שלידו. */
+  /* min-width: 0 על הכותרת: בלעדיו הודעה ארוכה ("בהרפובליקה הדמוקרטית של
+     קונגו אין מספר כזה") מרחיבה את הקונטרול וגולשת אל השדה שלידו. */
+  .phone-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    min-width: 0;
+
+    .field-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      color: #667eea;
+    }
+
+    label {
+      margin: 0;
+      font-weight: 500;
+      color: #333;
+      font-size: 14px;
+    }
+
+    /* ממורכז מעל השדה ולא נדחק לקצה: ההודעה מתייחסת למספר שמתחתיה, וכשהיא
+       צמודה לשוליים היא נראית שייכת לשדה השכן. */
+    .phone-status {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      flex: 1;
+      min-width: 0;
+      font-size: 11px;
+      color: #7f8c8d;
+      /* ההודעה נשברת לשורות בתוך רוחב השדה במקום לדחוף אותו. */
+      white-space: normal;
+      overflow-wrap: anywhere;
+      text-align: center;
+      line-height: 1.3;
+    }
+  }
+
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+
+  /* stretch ולא center: השדה צריך לקבל את אותו גובה כמו שאר ה-form-control
+     בטופס. ב-center הוא הצטמק לגובה התוכן ונראה נמוך מהשכנים שלו. */
+  .phone-field {
+    display: flex;
+    align-items: stretch;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .phone-flag {
+    font-size: 18px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  /* השדה עצמו LTR תמיד, גם בממשק עברי - ראה ההערה בקומפוננטה. */
+  /* אותו padding של .form-control בטופס (10px 12px), כדי שהשדה יישב בדיוק
+     בגובה של שכניו. בלי זה הוא נראה נמוך מהם. */
+  /* אותו עיצוב של .form-control בטופס - padding, מסגרת וצבע. בלי זה השדה
+     נראה נמוך מהשכנים ועם מסגרת שחורה במקום הכחלחלה שלהם. */
+  .phone-number {
+    direction: ltr;
+    text-align: left;
+    min-width: 0;
+    flex: 1;
+    height: auto;
+    padding: 12px 16px;
+    border: 2px solid #e1e8ed;
+    border-radius: 8px;
+
+    &:focus {
+      border-color: #667eea;
+      outline: none;
+    }
+  }
+
+  .phone-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: #7f8c8d;
+    min-height: 14px;
+  }
+
+  .phone-code {
+    direction: ltr;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .phone-line-type {
+    padding: 0 5px;
+    border-radius: 3px;
+    background: #ecf0f1;
+  }
+
+  /* אזהרה ולא שגיאה: המספר נשמר. */
+  .phone-invalid {
+    color: #c0392b;
+  }
+
+  .phone-status strong {
+    font-weight: 600;
+    color: #2c3e50;
+  }
+
+  .phone-invalid strong {
+    color: #c0392b;
+  }
+
+  &.invalid .phone-number {
+    border-color: #e74c3c;
+  }
+
+  &.disabled {
+    opacity: 0.6;
+  }
+}
+
+/* ── בוחר המדינה (סעיפים 1, 31) */
+
+.phone-input {
+
+  /* display:flex + align-self:stretch - בלי זה העוטף לא מתמתח, והכפתור
+     יוצא נמוך מהשדה שלידו. */
+  .phone-country {
+    position: relative;
+    flex-shrink: 0;
+    display: flex;
+    align-self: stretch;
+  }
+
+  /* אותה מסגרת ואותו רדיוס של השדה שלידו, כדי שהשניים ייראו חלק אחד. */
+  .phone-country-btn {
+    display: flex;
+    align-items: center;
+    align-self: stretch;
+    gap: 2px;
+    padding: 4px 8px;
+    background: #fff;
+    border: 2px solid #e1e8ed;
+    border-radius: 8px;
+    cursor: pointer;
+
+    &:hover:not(:disabled) { background: #f5f5f5; }
+    &:disabled { cursor: default; opacity: 0.6; }
+
+    .fi { width: 24px; height: 18px; }
+  }
+
+  .phone-country-caret {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    color: #7f8c8d;
+  }
+
+  /* הרשימה צפה מעל הטופס, ולכן position: absolute ולא זרימה רגילה. */
+  .phone-country-list {
+    position: absolute;
+    z-index: 3000;
+    top: calc(100% + 2px);
+    inset-inline-start: 0;
+    width: 280px;
+    max-width: min(280px, 90vw);
+    max-height: 300px;
+    overflow-y: auto;
+    /* בלי גלילה אופקית - שם ארוך נחתך ב-ellipsis ולא מרחיב את הרשימה. */
+    overflow-x: hidden;
+
+    /* ביטול הנפשות בתוך הרשימה. הטופס שמסביב מגדיר transition: all, וכל
+       ריחוף עכבר הנפיש רקע וגבול והרשימה ריצדה. */
+    &, * {
+      transition: none !important;
+    }
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  }
+
+  .phone-country-search {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    /* border-box - בלעדיו ה-padding נוסף ל-100% ונוצר פס גלילה אופקי. */
+    box-sizing: border-box;
+    width: 100%;
+    padding: 8px 10px;
+    border: none;
+    border-bottom: 1px solid #e1e8ed;
+    outline: none;
+    font-size: 13px;
+  }
+
+  .phone-country-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 7px 10px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: start;
+    font-size: 13px;
+
+    &:hover { background: #f0f4f8; }
+
+    /* המדינה המוצגת כרגע - מסומנת, והרשימה נגללת אליה בפתיחה. */
+    &.selected {
+      background: #eef2ff;
+      font-weight: 600;
+    }
+
+    .fi { width: 20px; height: 15px; flex-shrink: 0; }
+  }
+
+  .phone-country-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .phone-country-prefix {
+    direction: ltr;
+    color: #7f8c8d;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .phone-flag { width: 20px; height: 15px; flex-shrink: 0; }
+
+  /* קידומת שאינה של אף מדינה - סימן שאלה במקום דגל. */
+  .phone-no-flag {
+    width: 24px;
+    text-align: center;
+    color: #c0392b;
+    font-weight: 700;
+  }
+}
+
+.phone-input .phone-country-more {
+  padding: 6px 10px;
+  font-size: 11px;
+  color: #7f8c8d;
+  text-align: center;
+  border-top: 1px solid #f0f0f0;
+}

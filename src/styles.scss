@@ -3,6 +3,15 @@
 @use '@angular/material' as mat;
 // Plus imports for other components in your app.
 @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700&display=swap');
+/* סעיפים 1, 31 - דגלי מדינה כ-SVG. אמוג׳י דגל אינו נרנדר בווינדוס (אין גופן),
+   וכרום מציג במקומו את קוד האותיות. flag-icons הוא CSS+SVG ועובד בכל מערכת.
+
+   מיובא דרך ה-sass ולא דרך flag-icons.min.css, ועם $flag-icons-use-square:
+   false. ה-CSS המוכן מפנה גם ל-flags/1x1/il.svg וגם ל-flags/4x3/il.svg, ובנדלר
+   של Angular משטח את שניהם ל-media/il.svg - "Two output files share the same
+   path but have different contents" על כל מדינה. אנחנו משתמשים רק במלבניים. */
+$flag-icons-use-square: false;
+@import "flag-icons/sass/flag-icons";
 
 // Include the common styles for Angular Material. We include this here so that you only
 // have to load a single css file for Angular Material in your app.
@@ -795,4 +804,18 @@ a.donor-link {
     color: #764ba2;
     text-decoration: underline;
   }
+}
+
+/* ---------------------------------------------------------------------------
+ * סעיפים 1, 31 - תצוגת מספר טלפון.
+ *
+ * מספר טלפון הוא רצף לטיני שנקרא משמאל לימין, ובתא RTL הביידי מעיף את הפלוס
+ * הפותח אל סוף המחרוזת ("9727188518962+"). הכלל כאן הוא המקום האחד שקובע
+ * את הכיוון, כמו ש-formatPhoneForDisplay הוא המקום האחד שקובע את הפורמט.
+ * מסומן על התא, ולא על הטבלה, כדי שהכותרת והשאר יישארו RTL.
+ * ------------------------------------------------------------------------ */
+.cell-phone {
+  direction: ltr;
+  text-align: right;
+  unicode-bidi: isolate;
 }

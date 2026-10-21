@@ -1,3 +1,4 @@
+import { formatPhoneForDisplay } from './phone-format'
 /**
  * phone-utils.ts
  *
@@ -129,7 +130,7 @@ export function selectDisplayPhones(allPhones: (string | null | undefined)[]): s
  * numbers. Stacking them vertically keeps the column narrow and readable.
  */
 export function formatDisplayPhones(allPhones: (string | null | undefined)[], separator: string = '\n'): string {
-  return selectDisplayPhones(allPhones).join(separator)
+  return selectDisplayPhones(allPhones).map(p => formatPhoneForDisplay(p)).join(separator)
 }
 
 // ── Separate phone / mobile columns (item 18 / B1, 20.10.2026) ────────────
@@ -172,11 +173,19 @@ export function splitPhones(contacts: PhoneContactLike[]): { landlines: string[]
   return { landlines, mobiles }
 }
 
-/** splitPhones joined for display. */
+/**
+ * splitPhones joined for display.
+ *
+ * סעיפים 1, 31 - כל מספר עובר דרך formatPhoneForDisplay, הפורמט האחד של
+ * הפלטפורמה (E.164), מקביל ל-Place.getDisplayAddress() של הכתובות. עד כה
+ * הרשימות הציגו את המחרוזת הגולמית כפי שהוזנה, ולכן "7188518962",
+ * "596-3284 845" ו-"052-652-6063" הופיעו זו לצד זו באותה עמודה.
+ */
 export function toPhoneDisplay(split: { landlines: string[]; mobiles: string[] } | undefined, separator: string = '\n'): DonorPhoneDisplay {
+  const format = (list: string[]) => list.map(p => formatPhoneForDisplay(p)).join(separator)
   return {
-    phone: (split?.landlines || []).join(separator),
-    mobile: (split?.mobiles || []).join(separator)
+    phone: format(split?.landlines || []),
+    mobile: format(split?.mobiles || [])
   }
 }
 

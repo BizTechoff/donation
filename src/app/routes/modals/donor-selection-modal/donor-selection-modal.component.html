@@ -47,8 +47,8 @@
               <input type="checkbox" [checked]="isDonorSelected(donor)" (click)="toggleDonorSelection(donor); $event.stopPropagation()">
             </td>
             <td class="donor-name-cell cell-ellipsis" [title]="donor.lastAndFirstName">{{ donor.lastAndFirstName }}</td>
-            <td class="cell-ellipsis" [title]="getDonorPhone(donor.id)">{{ getDonorPhone(donor.id) }}</td>
-            <td class="cell-ellipsis" [title]="getDonorMobile(donor.id)">{{ getDonorMobile(donor.id) }}</td>
+            <td class="cell-ellipsis cell-phone" [title]="getDonorPhone(donor.id)">{{ getDonorPhone(donor.id) }}</td>
+            <td class="cell-ellipsis cell-phone" [title]="getDonorMobile(donor.id)">{{ getDonorMobile(donor.id) }}</td>
             <td class="cell-ellipsis" [title]="getDonorEmail(donor.id)"
                 [appMailto]="getDonorEmail(donor.id)">{{ getDonorEmail(donor.id) }}</td>
             <td class="donor-address-cell cell-ellipsis" [title]="getDonorPlace(donor.id)?.fullAddress || '-'">{{ getDonorPlace(donor.id)?.fullAddress || '-' }}</td>

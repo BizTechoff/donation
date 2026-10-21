@@ -98,8 +98,8 @@
             </div>
           </td>
           <td class="donor-address cell-ellipsis" [title]="getDonorAddress(donor.id)">{{getDonorAddress(donor.id)}}</td>
-          <td class="cell-ellipsis" [title]="getDonorPhone(donor.id)">{{getDonorPhone(donor.id)}}</td>
-          <td class="cell-ellipsis" [title]="getDonorMobile(donor.id)">{{getDonorMobile(donor.id)}}</td>
+          <td class="cell-ellipsis cell-phone" [title]="getDonorPhone(donor.id)">{{getDonorPhone(donor.id)}}</td>
+          <td class="cell-ellipsis cell-phone" [title]="getDonorMobile(donor.id)">{{getDonorMobile(donor.id)}}</td>
           <!-- C3 - a single click opens a new Gmail message to this address. -->
           <td class="cell-ellipsis col-email" [title]="getDonorEmail(donor.id)"
               [appMailto]="getDonorEmail(donor.id)">{{getDonorEmail(donor.id)}}</td>

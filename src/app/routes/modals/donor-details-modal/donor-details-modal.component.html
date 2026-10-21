@@ -13,7 +13,11 @@
           <span class="header-donor-name" *ngIf="!isNewDonor && donor">{{donor.fullName}}</span>
           <span class="header-label">{{isNewDonor ? ((i18n.terms$ | async)?.addNewDonor) : ((i18n.terms$ | async)?.donorDetails)}}</span>
         </h2>
-        <p class="header-subtitle" *ngIf="!isNewDonor && donor">
+        <!-- F1 / סעיף 9 - dir="ltr" על שורת הכתובת: היא לטינית, ובמיכל RTL
+             הביידי מעיף את מספר הבית הפותח אל סוף השורה
+             ("Wispering Pines Lane, Lakewood, NJ, 08701 45"). היישור נשאר
+             לימין, כך שהשורה ממשיכה לשבת מתחת לכותרת. -->
+        <p class="header-subtitle" dir="ltr" *ngIf="!isNewDonor && donor">
           {{getHeaderAddress()}}
         </p>
       </div>
@@ -317,26 +321,19 @@
                     <input type="text" class="form-control" [(ngModel)]="donorContact.description"
                       placeholder="למשל: בית, עבודה...">
                   </div>
+                  <!-- סעיפים 1, 31 - app-phone-input מחליף את צמד המספר והקידומת:
+                       הדגל והקידומת מזוהים מהמספר עצמו, אין מה לבחור ידנית.
+                       הקונטרול פולט את סוג הקו המזוהה, והקומפוננטה כותבת אותו
+                       לתיאור - משם phone-utils ו-sqlIsMobile קוראים אותו. -->
                   <div class="form-group phone-number">
-                    <div class="field-title">
-                      <mat-icon class="field-icon">phone</mat-icon>
-                      <label>מספר</label>
-                    </div>
-                    <!-- (ngModelChange)="onContactChange(donorContact)" -->
-                    <input type="tel" class="form-control" [(ngModel)]="donorContact.phoneNumber"
-                      placeholder="מספר טלפון">
-                  </div>
-                  <div class="form-group phone-prefix">
-                    <div class="field-title">
-                      <mat-icon class="field-icon">flag</mat-icon>
-                      <label>קידומת</label>
-                    </div>
-                    <select class="form-control" [(ngModel)]="donorContact.prefix">
-                      <option [value]="null">---</option>
-                      <option *ngFor="let prefix of phonePrefixOptions" [value]="prefix.value">
-                        {{ prefix.label }}
-                      </option>
-                    </select>
+                    <app-phone-input
+                      label="מספר"
+                      [(ngModel)]="donorContact.phoneNumber"
+                      [ngModelOptions]="{ standalone: true }"
+                      [countries]="phoneCountryOptions"
+                      placeholder="מספר טלפון"
+                      (lineTypeDetected)="onPhoneLineTypeDetected(donorContact, $event)">
+                    </app-phone-input>
                   </div>
                 </div>
               </div>
