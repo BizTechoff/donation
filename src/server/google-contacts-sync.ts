@@ -29,6 +29,7 @@ import {
   googlePersonToDonorFields,
   isSyncCancelled
 } from './google-contacts'
+import { toE164 } from '../shared/utils/phone-format'
 
 const PERSON_FIELDS = 'names,emailAddresses,phoneNumbers,addresses,birthdays,events,userDefined,relations,organizations,biographies,memberships,metadata'
 const BATCH_SIZE = 200
@@ -896,17 +897,35 @@ async function syncContacts(
   existing: DonorContact[],
   contactType: 'phone' | 'email'
 ) {
-  const existingValues = new Set(existing.map(c => contactType === 'phone' ? c.phoneNumber : c.email))
+  // Phones are compared on their E.164 form, not on the raw string.
+  //
+  // This is what keeps the I1 normalisation from being undone on the next
+  // sync. The platform now stores '+447977932665'; Google returns the same
+  // number as '07977932665'. Comparing the strings makes them two different
+  // contacts, and every donor would grow a duplicate phone on every pull.
+  // Emails are compared case-insensitively for the same reason.
+  const key = (value: string) =>
+    contactType === 'phone' ? toE164(value) : value.trim().toLowerCase()
+
+  const existingValues = new Set(existing
+    .map(c => (contactType === 'phone' ? c.phoneNumber : c.email) || '')
+    .filter(v => v)
+    .map(key))
 
   for (const item of incoming) {
-    const value = contactType === 'phone' ? item.phoneNumber : item.email
-    if (!value || existingValues.has(value)) continue
+    const raw = contactType === 'phone' ? item.phoneNumber : item.email
+    if (!raw) continue
+    const value = key(raw)
+    if (existingValues.has(value)) continue
+    existingValues.add(value)
 
     const dc = remult.repo(DonorContact).create()
     dc.donorId = donorId
     dc.type = contactType
+    // The normalised form is what is stored, so a number arriving from
+    // Google is held exactly as one typed into the platform's control.
     if (contactType === 'phone') dc.phoneNumber = value
-    else dc.email = value
+    else dc.email = raw.trim()
     dc.isPrimary = item.isPrimary
     if (item.description) dc.description = item.description
     await remult.repo(DonorContact).save(dc)

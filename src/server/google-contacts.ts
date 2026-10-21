@@ -16,6 +16,8 @@ import { Place } from '../shared/entity/place'
 import { GoogleAuthStatus, SyncOptions, SyncProgress, SyncResult, SyncStartResult, SyncType } from '../shared/type/google-contacts.type'
 import { rootDataProvider } from './api'
 import { runSync } from './google-contacts-sync'
+import { CountryCode } from 'libphonenumber-js/max'
+import { DEFAULT_PHONE_COUNTRY, toE164 } from '../shared/utils/phone-format'
 
 config()
 
@@ -141,18 +143,22 @@ export async function getOrCreateContactGroup(peopleService: people_v1.People): 
 }
 
 // ============ Phone formatting ============
-function toInternationalPhone(phone: string, prefix: string): string {
-  if (!phone) return phone
-  // Already international format
-  if (phone.startsWith('+')) return phone
-  // Strip non-digits
-  const digits = phone.replace(/\D/g, '')
-  // Israeli number: 0XX → +972XX
-  if (prefix === '+972' && digits.startsWith('0')) {
-    return '+972' + digits.substring(1)
-  }
-  // Other countries: prepend prefix
-  return prefix + digits
+/**
+ * E.164 for Google. Delegates to the platform's shared phone-format - the
+ * same function the phone control and the I1 normalisation use.
+ *
+ * This used to be a hand-rolled converter defaulting to '+972': an Israeli
+ * country code applied to a London charity's data, which turned British
+ * numbers into Israeli ones that do not exist. It also meant the platform
+ * had two definitions of "international format", and the one Google saw was
+ * the weaker of the two.
+ *
+ * After the I1 normalisation the stored value is already E.164, so for most
+ * records this is a pass-through. It stays because a record created before
+ * the normalisation, or imported since, may still hold a local format.
+ */
+function toInternationalPhone(phone: string, fallbackCountry: CountryCode = DEFAULT_PHONE_COUNTRY): string {
+  return toE164(phone, fallbackCountry)
 }
 
 // ============ Event type detection ============
@@ -212,7 +218,7 @@ export function donorToGooglePerson(
   const phones = contacts.filter(c => c.type === 'phone' && c.isActive && c.phoneNumber)
   if (phones.length) {
     person.phoneNumbers = phones.map(p => ({
-      value: toInternationalPhone(p.phoneNumber!, p.prefix || '+972'),
+      value: toInternationalPhone(p.phoneNumber!),
       type: HEBREW_PHONE_TYPE_TO_GOOGLE[(p.description || '').trim()] || (p.isPrimary ? 'main' : 'other')
     }))
   }
@@ -410,7 +416,10 @@ export function computePlatformHash(
 export function computeGoogleHash(person: people_v1.Schema$Person): string {
   const data = JSON.stringify({
     fn: person.names?.[0]?.givenName, ln: person.names?.[0]?.familyName,
-    ph: (person.phoneNumbers || []).map(p => p.value).sort(),
+    // Normalised, so that the same number coming back from Google in a
+    // different formatting does not register as a change and trigger a
+    // pointless sync round.
+    ph: (person.phoneNumbers || []).map(p => toE164(p.value || '')).sort(),
     em: (person.emailAddresses || []).map(e => e.value).sort(),
     addr: person.addresses?.[0] ? `${person.addresses[0].streetAddress}|${person.addresses[0].city}|${person.addresses[0].region}|${person.addresses[0].postalCode}|${person.addresses[0].extendedAddress}` : '',
     bd: person.birthdays?.[0]?.date ? `${person.birthdays[0].date.year}-${person.birthdays[0].date.month}-${person.birthdays[0].date.day}` : '',
