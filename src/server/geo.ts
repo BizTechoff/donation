@@ -5,11 +5,19 @@ import { placeDto } from "../shared/type/place.type";
 config()
 const fetch = require('node-fetch')
 
-// Helper function to get language parameter based on user preference
-const getLanguageParam = (lang?: string): string => {
-    // Default to Hebrew if not specified
-    const language = lang === 'en' ? 'en' : 'he';
-    return `&language=${language}`;
+/**
+ * שפת התשובה מגוגל - אנגלית תמיד, ללא תלות בשפת הממשק.
+ *
+ * קודם זה נגזר משפת המשתמש, וברירת המחדל הייתה עברית. התוצאה: מי שעבד בממשק
+ * עברי שמר "לונדון, הממלכה המאוחדת" ומי שעבד באנגלית שמר "London, GB" - ואותה
+ * עיר נשמרה בשני כתיבים, שאינם מזוהים זה עם זה באף סינון.
+ *
+ * אנגלית ולא "לפי מדינת היעד": כתובת דואר נכתבת בשפת ארץ היעד, והעמותה
+ * לונדונית - כתובת בעברית על מעטפה לאנגליה אינה שמישה. הפרמטר נשאר בחתימה כדי
+ * לא לשבור את הקוראים, ומתועלם בכוונה.
+ */
+const getLanguageParam = (_lang?: string): string => {
+    return `&language=en`;
 }
 
 export const getPlace = async (req: Request, res: Response, next: NextFunction) => {
@@ -88,6 +96,14 @@ export const doGetPlace = async (place_id = '', lang = '') => {
                             if (component.types.includes('locality')) {
                                 result.cityname = component.long_name; // City Name
                             }
+                            // בבריטניה גוגל אינו מחזיר locality כלל, ולכן שדה העיר
+                            // נשאר ריק. השדה הנכון שם הוא postal_town - "London",
+                            // "Manchester" - והוא מה שהדואר המלכותי מכיר.
+                            // נקרא רק כשאין locality, כך שבשאר העולם דבר לא משתנה.
+                            if (!result.cityname && component.types.includes('postal_town')) {
+                                result.cityname = component.long_name;
+                                console.log(`    -> Found city from postal_town: ${component.long_name}`);
+                            }
                             // מיקוד - חיפוש מורחב
                             if (component.types.includes('postal_code') ||
                                 component.types.includes('postal_code_prefix') ||
@@ -109,11 +125,12 @@ export const doGetPlace = async (place_id = '', lang = '') => {
                                     console.log(`    -> Found neighborhood: ${component.long_name}`);
                                 }
                             }
-                            // שמירת administrative_area_level_2 כשכונה אם עדיין אין
-                            if (!result.neighborhood && component.types.includes('administrative_area_level_2')) {
-                                result.neighborhood = component.long_name;
-                                console.log(`    -> Using admin_area_2 as neighborhood: ${component.long_name}`);
-                            }
+                            // administrative_area_level_2 אינו נלקח כשכונה.
+                            //
+                            // הוא היה כאן כ-fallback, והוא המקור ל-"Greater London"
+                            // שהופיע בשדה השכונה של כתובות לונדוניות: זהו המחוז, לא
+                            // שכונה. שכונה ריקה עדיפה על שכונה שגויה - את הריקה
+                            // אפשר להשלים, את השגויה צריך קודם לזהות.
                             // מחוז/מדינה
                             if (component.types.includes('administrative_area_level_1')) {
                                 result.state = component.long_name; // State/Province name

@@ -211,10 +211,23 @@ export class Place {
     return place
   }
 
+  /**
+   * רכיב כתובת אחרי ניקוי: מחרוזת גזומה, או ריק.
+   *
+   * שדה שמחזיק רווח בלבד הוא truthy ב-JavaScript, ולכן עבר את כל הבדיקות
+   * `if (this.x)` והתווסף לכתובת כרכיב ריק. בצירוף ב-", " הוא יוצא כפסיק
+   * מוביל - "‏, 35 Clapton Common" - וזה מה שנראה בשורת הכתובת אצל תורמים
+   * שגרים בבניין. גזימה אחת כאן, במקום שש בדיקות מפוזרות.
+   */
+  private static part(value: string | null | undefined): string {
+    return (value || '').trim();
+  }
+
   getApartmentLine(): string | null {
-    const parts = [];
-    if (this.apartment) parts.push(this.apartment);
-    if (this.building) parts.push(this.building);
+    const parts = [
+      Place.part(this.apartment),
+      Place.part(this.building)
+    ].filter(p => p);
 
     return parts.length > 0 ? parts.join(', ') : null;
   }
@@ -227,12 +240,15 @@ export class Place {
   getStreetLine(): string {
     const parts = [];
 
+    const houseNumber = Place.part(this.houseNumber);
+    const street = Place.part(this.street);
+
     if (this.isHouseNumberFirst()) {
-      if (this.houseNumber) parts.push(this.houseNumber);
-      if (this.street) parts.push(this.street);
+      if (houseNumber) parts.push(houseNumber);
+      if (street) parts.push(street);
     } else {
-      if (this.street) parts.push(this.street);
-      if (this.houseNumber) parts.push(this.houseNumber);
+      if (street) parts.push(street);
+      if (houseNumber) parts.push(houseNumber);
     }
 
     return parts.join(' ').trim();
@@ -246,9 +262,13 @@ export class Place {
   getCityLine(): string {
     const parts = [];
 
-    if (this.city) parts.push(this.city);
-    if (this.includeState() && this.state) parts.push(this.state);
-    if (this.postcode) parts.push(this.postcode);
+    const city = Place.part(this.city);
+    const state = Place.part(this.state);
+    const postcode = Place.part(this.postcode);
+
+    if (city) parts.push(city);
+    if (this.includeState() && state) parts.push(state);
+    if (postcode) parts.push(postcode);
 
     return parts.join(', ').trim();
   }
@@ -313,8 +333,8 @@ export class Place {
     // שכונה שזהה לעיר לא מתווספת: הגיאוקודינג של גוגל ממלא לעיתים את שדה
     // השכונה בשם העיר, והכתובת יצאה "Lakewood, Lakewood, NJ". נוקו 13 רשומות
     // כאלה בפרודקשן (20.10), וההגנה כאן כדי שלא ייווצרו מחדש.
-    const neighborhood = (this.neighborhood || '').trim();
-    if (neighborhood && neighborhood.toLowerCase() !== (this.city || '').trim().toLowerCase()) {
+    const neighborhood = Place.part(this.neighborhood);
+    if (neighborhood && neighborhood.toLowerCase() !== Place.part(this.city).toLowerCase()) {
       parts.push(neighborhood);
     }
 
@@ -326,7 +346,9 @@ export class Place {
     const countryLine = this.getCountryLine();
     if (countryLine) parts.push(countryLine);
 
-    return parts.filter(p => p).join(', ');
+    // גזימה גם כאן: רכיב שהגיע כרווח בלבד היה שורד את filter(p => p) ומוסיף
+    // פסיק לכלום.
+    return parts.map(p => Place.part(p)).filter(p => p).join(', ');
   }
 
   @BackendMethod({ allowed: Allow.authenticated })
