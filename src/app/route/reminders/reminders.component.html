@@ -226,9 +226,9 @@
                    (click)="openDonorDetails(reminder); $event.stopPropagation()"
                    (dblclick)="$event.stopPropagation()"><strong>{{getDonorName(reminder)}}</strong></a>
                 <ng-template #noDonorLink><strong>{{getDonorName(reminder)}}</strong></ng-template>
-                <small *ngIf="getReminderDonorPhone(reminder)">{{getReminderDonorPhone(reminder)}}</small>
+                <small class="cell-phone" *ngIf="getReminderDonorPhone(reminder)">{{getReminderDonorPhone(reminder)}}</small>
                 <!-- item 18 - mobile on its own line -->
-                <small *ngIf="getReminderDonorMobile(reminder)">{{getReminderDonorMobile(reminder)}}</small>
+                <small class="cell-phone" *ngIf="getReminderDonorMobile(reminder)">{{getReminderDonorMobile(reminder)}}</small>
               </div>
             </td>
 

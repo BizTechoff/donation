@@ -116,7 +116,7 @@
                       <div class="donor-details" *ngIf="donorData.email || donorData.phone">
                         <span *ngIf="donorData.phone">
                           <mat-icon class="detail-icon">phone</mat-icon>
-                          {{ donorData.phone }}
+                          <span class="cell-phone">{{ donorData.phone }}</span>
                         </span>
                         <span *ngIf="donorData.email" style="margin-right: 12px;">
                           <mat-icon class="detail-icon">email</mat-icon>

@@ -523,14 +523,17 @@
                 </td>
                 <td class="donor-address cell-ellipsis" [title]="row.donorDetails?.address || ''" *ngIf="filters.showDonorAddress && filters.groupBy === 'donor'">{{row.donorDetails?.address || '-'}}
                 </td>
-                <td *ngIf="filters.showDonorPhone && filters.groupBy === 'donor'">
+                <!-- סעיפים 1, 31 - cell-phone הוא הכלל האחד שקובע את כיוון המספר.
+                     בלעדיו הביידי מעיף את הפלוס הפותח אל סוף המחרוזת, וזה מה
+                     שישראל ראה בדוח הזה. -->
+                <td class="cell-phone" *ngIf="filters.showDonorPhone && filters.groupBy === 'donor'">
                   <div *ngIf="row.donorDetails && row.donorDetails.phones && row.donorDetails.phones.length > 0">
                     <div *ngFor="let phone of row.donorDetails.phones">{{phone}}</div>
                   </div>
                   <span
                     *ngIf="!row.donorDetails || !row.donorDetails.phones || row.donorDetails.phones.length === 0">-</span>
                 </td>
-                <td *ngIf="filters.showDonorPhone && filters.groupBy === 'donor'">
+                <td class="cell-phone" *ngIf="filters.showDonorPhone && filters.groupBy === 'donor'">
                   <div *ngIf="row.donorDetails && row.donorDetails.mobiles && row.donorDetails.mobiles.length > 0">
                     <div *ngFor="let mobile of row.donorDetails.mobiles">{{mobile}}</div>
                   </div>
@@ -944,8 +947,8 @@
                   {{blessing.status}}
                 </span>
               </td>
-              <td style="text-align: left; direction: ltr; white-space: pre-line;">{{blessing.phone}}</td>
-              <td style="text-align: left; direction: ltr; white-space: pre-line;">{{blessing.mobile}}</td>
+              <td class="cell-phone" style="white-space: pre-line;">{{blessing.phone}}</td>
+              <td class="cell-phone" style="white-space: pre-line;">{{blessing.mobile}}</td>
               <td class="cell-ellipsis" [title]="blessing.email || ''" style="text-align: left; direction: ltr;">{{blessing.email}}</td>
             </tr>
           </tbody>
