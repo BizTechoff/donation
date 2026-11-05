@@ -223,6 +223,24 @@ export class Place {
     return (value || '').trim();
   }
 
+  /**
+   * האם שני רכיבי כתובת הם אותו שם בפועל.
+   *
+   * ההשוואה מתעלמת מרישיות, מרווחים ומפיסוק: "Stamford Hill" מול
+   * "stamford-hill" הם אותו מקום, והגיאוקודינג מחזיר את שניהם. בלי זה
+   * השכונה נדחפת לכתובת פעם שנייה והיא יוצאת "Antwerpen, Antwerpen".
+   *
+   * מה שההשוואה הזו לא תופסת: אותו מקום בשני כתיבים שונים או בשתי שפות
+   * ("Antwerp" מול "אנטוורפן"). זו בעיית נתונים, והפתרון לה הוא עיר כישות -
+   * סעיף נפרד.
+   */
+  private static sameName(a: string | null | undefined, b: string | null | undefined): boolean {
+    const norm = (v: string | null | undefined) =>
+      Place.part(v).toLowerCase().replace(/[\s\-'".,]/g, '');
+    const left = norm(a);
+    return !!left && left === norm(b);
+  }
+
   getApartmentLine(): string | null {
     const parts = [
       Place.part(this.apartment),
@@ -334,7 +352,7 @@ export class Place {
     // השכונה בשם העיר, והכתובת יצאה "Lakewood, Lakewood, NJ". נוקו 13 רשומות
     // כאלה בפרודקשן (20.10), וההגנה כאן כדי שלא ייווצרו מחדש.
     const neighborhood = Place.part(this.neighborhood);
-    if (neighborhood && neighborhood.toLowerCase() !== Place.part(this.city).toLowerCase()) {
+    if (neighborhood && !Place.sameName(neighborhood, this.city)) {
       parts.push(neighborhood);
     }
 
@@ -342,9 +360,14 @@ export class Place {
     const cityLine = this.getCityLine();
     if (cityLine) parts.push(cityLine);
 
-    // Country - שימוש בפונקציה המרכזית (לפי includeCountryInLetter)
-    const countryLine = this.getCountryLine();
-    if (countryLine) parts.push(countryLine);
+    // המדינה אינה מוצגת כאן.
+    //
+    // ישראל, 03.11: "וכן בכל מצב לא להציג את המדינה". הכתובת הזו מוצגת
+    // ברשימות, בכרטיס התורם, בהדפסה ובייצוא - כולם פנימיים, וכולם של ארגון
+    // שיודע היכן תורמיו יושבים. ה-"GB" בסוף כל שורה היה רעש.
+    //
+    // המכתב היוצא אינו עובר כאן אלא ב-getAddressForLetter(), שממשיכה לקרוא
+    // ל-getCountryLine('letter') - שם המדינה נחוצה לדואר ונשארת.
 
     // גזימה גם כאן: רכיב שהגיע כרווח בלבד היה שורד את filter(p => p) ומוסיף
     // פסיק לכלום.
