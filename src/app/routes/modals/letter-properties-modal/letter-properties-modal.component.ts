@@ -11,6 +11,7 @@ import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
 import { LetterService } from '../../../services/letter.service';
 import { LetterTitleSelectionModalComponent } from '../letter-title-selection-modal/letter-title-selection-modal.component';
+import { titleForLetter } from '../../../../shared/constants/donor-titles';
 
 export interface LetterPropertiesModalArgs {
   donationId: string;
@@ -522,12 +523,13 @@ export class LetterPropertiesModalComponent implements OnInit {
       }
 
       // ===== Hebrew Common Fields =====
+      // סעיף 36 - "תלמידנו" מתווסף כאן, בהפקה, ולא בשדה התואר.
       case 'תואר_עברית': {
-        result = `${this.donation.donor?.title || ''}`
+        result = titleForLetter(this.donation.donor?.title, !!this.donation.donor?.isAlumni)
         break
       }
       case 'תואר  מלא': { // Handle typo in some templates
-        result = `${this.donation.donor?.title || ''}`
+        result = titleForLetter(this.donation.donor?.title, !!this.donation.donor?.isAlumni)
         break
       }
       case 'תואר_מלא': {

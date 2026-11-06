@@ -20,7 +20,7 @@ import { FamilyRelationDetailsModalComponent } from '../family-relation-details-
 import { NotesSelectionModalArgs, NotesSelectionModalComponent } from '../notes-selection-modal/notes-selection-modal.component';
 import { calculateEffectiveAmount } from '../../../../shared/utils/donation-utils';
 import { getReverseRelationship } from '../../../../shared/utils/relationship-utils';
-import { ALUMNI_TITLE, DONOR_TITLES_EN, DONOR_TITLES_HE } from '../../../../shared/constants/donor-titles';
+import { DONOR_TITLES_EN, DONOR_TITLES_HE } from '../../../../shared/constants/donor-titles';
 import { PhoneCountryOption } from '../../../common/phone-input/phone-input.component';
 import { CountryCode } from 'libphonenumber-js/max';
 import { DEFAULT_PHONE_COUNTRY, callingCodeForCountry, hasUnknownCallingCode } from '../../../../shared/utils/phone-format';
@@ -1491,17 +1491,17 @@ export class DonorDetailsModalComponent implements OnInit {
    * שהערך תקף ביישות.
    */
   onAlumniChange() {
+    // הסימון אינו נוגע בשדה התואר.
+    //
+    // עד 03.11 הוא מילא את התואר כשהיה ריק, וניקה אותו בהסרה. ישראל הסביר
+    // בזום שזו לא הדרישה: "כשאני מגדיר תלמידנו, הוא לא נוגע בכלל בשורת
+    // התואר, הוא מתווסף לפני שורת התואר". התואר שהמשתמש בחר הוא שלו,
+    // והקידומת מולבשת עליו בהפקת המכתב בלבד - titleForLetter().
+    //
+    // המתודה נשארת מחוברת לתיבה כדי שלא לשנות את התבנית, ומסמנת שינוי כדי
+    // שהסימון עצמו יישמר.
     if (!this.donor) return;
-
-    const title = this.donor.title?.trim() || '';
-
-    if (this.donor.isAlumni && !title) {
-      this.donor.title = ALUMNI_TITLE;
-      this.changed = true;
-    } else if (!this.donor.isAlumni && title === ALUMNI_TITLE) {
-      this.donor.title = '';
-      this.changed = true;
-    }
+    this.changed = true;
   }
 
   getTitlePlaceholder(): string {
