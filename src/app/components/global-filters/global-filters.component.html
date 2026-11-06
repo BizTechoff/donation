@@ -29,6 +29,11 @@
                 [matTooltip]="(i18n.terms$ | async)?.clearAll || ''">
           <mat-icon>clear_all</mat-icon>
         </button>
+        <!-- סגירת החלונית. X ולא V - הסינון חל מיד, ולכן "אישור" היה מטעה. -->
+        <button mat-icon-button class="close-btn" (click)="closePanel()"
+                [matTooltip]="(i18n.terms$ | async)?.close || 'סגור'">
+          <mat-icon>close</mat-icon>
+        </button>
       </div>
     </div>
 

@@ -170,6 +170,20 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
   async clearFilters() {
     await this.filterService.clearFilters();
     // ה-subscription ב-ngOnInit יעדכן אוטומטית את appliedFilters ו-pendingFilters
+    //
+    // ישראל, 03.11: "אני רוצה לעשות בחירה חדשה, אני מנקה את כולם בלחיצה אחת,
+    // ואז זה נסגר לי, למה?". מי שמנקה סינון מתכוון לסנן מחדש, לא לצאת.
+    // הסגירה שהיתה כאן הוסרה; מי שרוצה לצאת לוחץ על ה-X שבכותרת.
+  }
+
+  /**
+   * סגירה מפורשת של החלונית.
+   *
+   * X ולא V: הסינון חל מיד בכל בחירה, ולכן לחצן "אישור" היה מבטיח פעולה שלא
+   * קיימת - המשתמש היה חושב שעד שלא לחץ עליו שום דבר לא קרה, בזמן שהתוצאות
+   * כבר התעדכנו. סוכם כך עם ישראל ב-03.11.
+   */
+  closePanel() {
     this.menuTrigger?.closeMenu();
   }
 
