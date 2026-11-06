@@ -375,6 +375,14 @@
       font-size: 15px;
     }
 
+    /* סעיף 17 - שם התורם שהוא קישור נשאר בכחול של a.donor-link.
+       ה-strong שלמעלה קבע צבע משלו וגבר על הירושה מהקישור, ולכן הקישור
+       נראה כמו טקסט רגיל ואיש לא ידע שאפשר ללחוץ עליו. inherit ולא צבע
+       חדש - הצבע נשאר מוגדר במקום אחד, ב-styles.scss. */
+    a.donor-link strong {
+      color: inherit;
+    }
+
     small {
       color: #7f8c8d;
       font-size: 12px;
@@ -996,6 +1004,11 @@
 
                 strong {
                   color: #2c3e50;
+                }
+
+                /* גם במובייל - ראה ההערה למעלה. */
+                a.donor-link strong {
+                  color: inherit;
                 }
               }
             }
