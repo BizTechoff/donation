@@ -224,13 +224,14 @@ export class DonorController {
     pageSize: number;
     excludeIds?: string[];
     sortColumns?: Array<{ field: string; direction: 'asc' | 'desc' }>;
+    ignoreGlobalFilters?: boolean;
   }): Promise<DonorSelectionPageData> {
-    const { search, page, pageSize, excludeIds, sortColumns } = params;
+    const { search, page, pageSize, excludeIds, sortColumns, ignoreGlobalFilters } = params;
 
     // excludeIds are applied at the SQL level in both queries below, so page
     // size, totalCount and select-all all agree. No in-memory post-filter.
-    const donors = await DonorController.findFilteredDonors(search, undefined, page, pageSize, sortColumns, excludeIds);
-    const totalCount = await DonorController.countFilteredDonors(search, undefined, excludeIds);
+    const donors = await DonorController.findFilteredDonors(search, undefined, page, pageSize, sortColumns, excludeIds, ignoreGlobalFilters);
+    const totalCount = await DonorController.countFilteredDonors(search, undefined, excludeIds, ignoreGlobalFilters);
 
     const filteredDonors = donors;
 
@@ -281,9 +282,10 @@ export class DonorController {
   static async getAllDonorsForSelection(params: {
     search?: string;
     excludeIds?: string[];
+    ignoreGlobalFilters?: boolean;
   }): Promise<Donor[]> {
-    const { search, excludeIds } = params;
-    return await DonorController.findFilteredDonors(search, undefined, undefined, undefined, undefined, excludeIds);
+    const { search, excludeIds, ignoreGlobalFilters } = params;
+    return await DonorController.findFilteredDonors(search, undefined, undefined, undefined, undefined, excludeIds, ignoreGlobalFilters);
   }
 
   /**
@@ -321,14 +323,16 @@ export class DonorController {
     page?: number,
     pageSize?: number,
     sortColumns?: Array<{ field: string; direction: 'asc' | 'desc' }>,
-    excludeIds?: string[]
+    excludeIds?: string[],
+    /** true - הסינון הגלובלי של המשתמש לא חל (למשל בחירת תורם לקשר משפחתי). */
+    ignoreGlobalFilters = false
   ): Promise<Donor[]> {
     console.log(`[findFilteredDonors] start - searchTerm="${searchTerm}", page=${page}, excludeIds=${excludeIds?.length ?? 0}`);
     timeStart('[findFilteredDonors] TOTAL');
     const { GlobalFilterController } = await import('./global-filter.controller');
 
     timeStart('[findFilteredDonors] 1.GlobalFilter.getDonorIds');
-    const donorIds = await GlobalFilterController.getDonorIdsFromUserSettings();
+    const donorIds = ignoreGlobalFilters ? undefined : await GlobalFilterController.getDonorIdsFromUserSettings();
     timeEnd('[findFilteredDonors] 1.GlobalFilter.getDonorIds');
 
     console.log('DonorController.findFilteredDonors - donorIds from GlobalFilter:', donorIds?.length ?? 'all');
@@ -417,14 +421,15 @@ export class DonorController {
   static async countFilteredDonors(
     searchTerm?: string,
     additionalFilters?: Partial<GlobalFilters>,
-    excludeIds?: string[]
+    excludeIds?: string[],
+    ignoreGlobalFilters = false
   ): Promise<number> {
     console.log(`[countFilteredDonors] start - searchTerm="${searchTerm}", excludeIds=${excludeIds?.length ?? 0}`);
     timeStart('[countFilteredDonors] TOTAL');
     const { GlobalFilterController } = await import('./global-filter.controller');
 
     timeStart('[countFilteredDonors] 1.GlobalFilter.getDonorIds');
-    const donorIds = await GlobalFilterController.getDonorIdsFromUserSettings();
+    const donorIds = ignoreGlobalFilters ? undefined : await GlobalFilterController.getDonorIdsFromUserSettings();
     timeEnd('[countFilteredDonors] 1.GlobalFilter.getDonorIds');
 
     if (donorIds !== undefined && donorIds.length === 0) {

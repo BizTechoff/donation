@@ -18,6 +18,9 @@ export interface DonorSelectionModalArgs {
   /** Z5 - set false when the picker is used for filtering, where creating a
    *  new donor is meaningless. Defaults to allowed for every existing caller. */
   allowCreate?: boolean;
+  /** true - הרשימה מציגה את כל התורמים, בלי הסינון הגלובלי של המשתמש.
+   *  ישראל, 03.11: בבחירת קשר משפחתי בלבד ("רק פה"). ברירת מחדל - מסונן. */
+  ignoreGlobalFilters?: boolean;
 }
 
 @DialogConfig({
@@ -131,6 +134,7 @@ export class DonorSelectionModalComponent implements OnInit, OnDestroy {
           page: req.page,
           pageSize: req.pageSize,
           excludeIds: this.args?.excludeIds,
+          ignoreGlobalFilters: this.args?.ignoreGlobalFilters,
           sortColumns: req.sort
         });
 
@@ -249,7 +253,8 @@ export class DonorSelectionModalComponent implements OnInit, OnDestroy {
     await this.busy.doWhileShowingBusy(async () => {
       const allDonors = await DonorController.getAllDonorsForSelection({
         search: this.filterText?.trim() || undefined,
-        excludeIds: this.args?.excludeIds
+        excludeIds: this.args?.excludeIds,
+        ignoreGlobalFilters: this.args?.ignoreGlobalFilters
       });
 
       for (const donor of allDonors) {

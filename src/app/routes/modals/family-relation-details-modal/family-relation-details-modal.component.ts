@@ -131,6 +131,7 @@ export class FamilyRelationDetailsModalComponent implements OnInit {
           modal.args = {
             title: 'בחירת תורם לקשר משפחתי',
             multiSelect: false,
+            ignoreGlobalFilters: true,
             excludeIds: [
               this.args.currentDonorId,
               ...(this.args.existingRelationDonorIds || [])

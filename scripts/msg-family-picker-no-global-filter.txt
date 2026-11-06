@@ -1,0 +1,15 @@
+fix(family-relations): בחירת תורם לקשר משפחתי מציגה את כל התורמים
+
+ישראל, 03.11: הסינון הגלובלי לא אמור לחול בבחירת קשר משפחתי - "רק פה".
+קרוב משפחה יכול לגור בעיר אחרת או להיות מחוץ לחוג שהמשתמש סינן, ולכן
+נעלם מהרשימה.
+
+- donor.controller: findFilteredDonors / countFilteredDonors קיבלו פרמטר
+  אחרון ignoreGlobalFilters (ברירת מחדל false), ו-getDonorsForSelectionPage /
+  getAllDonorsForSelection מעבירים אותו. excludeIds והחיפוש ממשיכים לחול.
+- donor-selection-modal: ארגומנט אופציונלי ignoreGlobalFilters, מועבר לשתי
+  הקריאות - הדף ו"בחר הכל" - כך שהספירה והבחירה מתיישרות.
+- family-relation-details-modal: היחיד שמעביר true. כל שאר הקוראים לא
+  השתנו וממשיכים להיות מסוננים.
+
+BizTechoff™ - התאמת העסק לעידן הדיגיטלי
