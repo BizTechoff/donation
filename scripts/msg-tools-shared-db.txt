@@ -1,0 +1,14 @@
+refactor(tools): חיבור למסד וכתיבת SQL במקום אחד לכל כלי הדוחות
+
+שלושה כלים העתיקו לעצמם את אותו קוד חיבור - דגלי --prod / --url, סדר
+מחרוזות החיבור, זיהוי פרודקשן, SSL - ושניים מהם את אותה בריחת SQL.
+
+- tools/lib/db.ts (חדש): connectDb() ו-say(). סדר: --url, --prod
+  (DATABASE_URL_PROD), DATABASE_URL_REPORT, DATABASE_URL.
+- tools/lib/sql.ts (חדש): lit() לליטרל SQL ו-sqlHeader() לכותרת אחידה.
+- phone-normalize-report, alumni-title-report: עוברים ל-lib. ההתנהגות לא
+  השתנתה, מלבד ש-alumni-title-report קורא עכשיו גם DATABASE_URL_REPORT.
+- tools/phone-description-report.ts (חדש): אילו ערכים כתובים בתיאור של
+  מספרי הטלפון - הבסיס להחלטה בסעיף 6.
+
+BizTechoff™ - התאמת העסק לעידן הדיגיטלי

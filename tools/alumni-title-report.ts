@@ -16,8 +16,8 @@
  * ישראל אישר בזום את מחיקת הערך מרשימת התוארים: "אם יש הצלבה בין התלמידנו
  * שם לתואר הזה של תלמידנו, אז צריך למחוק אותו".
  */
-import 'dotenv/config'
-import { Client } from 'pg'
+import { connectDb, say } from './lib/db'
+import { lit, sqlHeader } from './lib/sql'
 import { ALUMNI_TITLE, ALUMNI_LETTER_PREFIX } from '../src/shared/constants/donor-titles'
 
 /** מה שנשאר מהתואר אחרי הפרדת המילה "תלמידנו". */
@@ -31,31 +31,7 @@ interface Row {
 }
 
 async function main() {
-  const urlArg = process.argv.find(a => a.startsWith('--url='))?.slice('--url='.length)
-  const wantsProd = process.argv.includes('--prod')
-
-  if (wantsProd && !process.env['DATABASE_URL_PROD']) {
-    console.error('--prod הועבר אבל DATABASE_URL_PROD אינו מוגדר ב-.env.')
-    process.exit(1)
-  }
-
-  const connectionString = urlArg
-    || (wantsProd ? process.env['DATABASE_URL_PROD'] : '')
-    || process.env['DATABASE_URL']
-  if (!connectionString) {
-    console.error('אין מחרוזת חיבור. הגדר DATABASE_URL ב-.env, או העבר --url=...')
-    process.exit(1)
-  }
-
-  let host = 'לא ידוע'
-  try { host = new URL(connectionString).host } catch { /* פורמט אחר */ }
-  const isProd = /rlwy\.net|railway/.test(host)
-  const say = (text = '') => process.stderr.write(text + '\n')
-  say(`\n  מסד: ${host}${isProd ? '  ← פרודקשן' : ''}\n`)
-
-  const isLocal = /localhost|127\.0\.0\.1/.test(connectionString)
-  const client = new Client({ connectionString, ssl: isLocal ? undefined : { rejectUnauthorized: false } })
-  await client.connect()
+  const { client } = await connectDb()
 
   const { rows } = await client.query<Row>(`
     select "id",
@@ -92,14 +68,10 @@ async function main() {
     return
   }
 
-  const esc = (s: string) => s.replace(/'/g, "''")
   const exact = carriesPrefix.filter(r => r.title === ALUMNI_TITLE)
   const other = carriesPrefix.filter(r => r.title !== ALUMNI_TITLE)
 
-  console.log('-- =================================================================')
-  console.log('-- סעיף 36 - הפרדת המילה "תלמידנו" מהתואר אל הסימון.')
-  console.log('-- מודפס בלבד, לא הורץ.')
-  console.log('-- =================================================================')
+  console.log(sqlHeader('סעיף 36 - הפרדת המילה "תלמידנו" מהתואר אל הסימון.'))
   console.log('')
   console.log('create table if not exists "donors_title_backup" (')
   console.log('  "donorId"      text        not null,')
@@ -114,13 +86,13 @@ async function main() {
   console.log(`-- ${exact.length} תורמים עם התואר המדויק שהסימון קבע.`)
   for (const r of exact) {
     console.log(`insert into "donors_title_backup" ("donorId","titleBefore","titleAfter","isAlumniBefore")`)
-    console.log(`  values ('${esc(r.id)}', '${esc(r.title)}', '${esc(STRIPPED_TITLE)}', ${r.isAlumni});`)
-    console.log(`update "donors" set "title" = '${esc(STRIPPED_TITLE)}', "isAlumni" = true`)
-    console.log(`  where "id" = '${esc(r.id)}' and btrim("title") = '${esc(r.title)}';  -- ${r.donorName}`)
+    console.log(`  values (${lit(r.id)}, ${lit(r.title)}, ${lit(STRIPPED_TITLE)}, ${r.isAlumni});`)
+    console.log(`update "donors" set "title" = ${lit(STRIPPED_TITLE)}, "isAlumni" = true`)
+    console.log(`  where "id" = ${lit(r.id)} and btrim("title") = ${lit(r.title)};  -- ${r.donorName}`)
   }
   console.log('')
   console.log('-- בדיקה לפני commit: אמור להחזיר 0.')
-  console.log(`select count(*) from "donors" where btrim(coalesce("title",'')) = '${esc(ALUMNI_TITLE)}';`)
+  console.log(`select count(*) from "donors" where btrim(coalesce("title",'')) = ${lit(ALUMNI_TITLE)};`)
   console.log('')
   console.log('commit;')
   console.log('')

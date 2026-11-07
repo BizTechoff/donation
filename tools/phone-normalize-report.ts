@@ -14,8 +14,7 @@
  * הפענוח עצמו נעשה דרך shared/utils/phone-format - אותה לוגיקה של הקונטרול,
  * בלי עותק שני. מה שהדוח אומר הוא מה שהמסך יציג.
  */
-import 'dotenv/config'
-import { Client } from 'pg'
+import { connectDb, say } from './lib/db'
 import { writeFileSync } from 'fs'
 import { Classification, Confidence, classifyPhone } from './phone-classify'
 
@@ -24,7 +23,6 @@ import { Classification, Confidence, classifyPhone } from './phone-classify'
  * בלי ההפרדה הזו "--sql > file.sql" מכניס את כותרות הדוח לתוך הקובץ,
  * ו-psql נופל על השורה הראשונה.
  */
-const say = (text = '') => process.stderr.write(text + '\n')
 
 interface Row {
   id: string
@@ -48,36 +46,7 @@ const COLOR: Record<Confidence, string> = {
 }
 
 async function main() {
-  const urlArg = process.argv.find(a => a.startsWith('--url='))?.slice('--url='.length)
-  const wantsProd = process.argv.includes('--prod')
-
-  if (wantsProd && !process.env['DATABASE_URL_PROD']) {
-    console.error('--prod הועבר אבל DATABASE_URL_PROD אינו מוגדר ב-.env.')
-    process.exit(1)
-  }
-
-  const connectionString = urlArg
-    || (wantsProd ? process.env['DATABASE_URL_PROD'] : '')
-    || process.env['DATABASE_URL_REPORT']
-    || process.env['DATABASE_URL']
-  if (!connectionString) {
-    console.error('אין מחרוזת חיבור. הגדר DATABASE_URL ב-.env, או העבר --url=...')
-    process.exit(1)
-  }
-
-  let host = 'לא ידוע'
-  try { host = new URL(connectionString).host } catch { /* פורמט אחר */ }
-
-  // רלוויי מגישה את הפרודקשן דרך פרוקסי ציבורי, ולכן שם המארח הוא הסימן
-  // היחיד שמבדיל אותו מהמקומי. הוא נכתב גם למסך וגם לראש הדוח - דוח ישן
-  // שנשמר בלי לדעת מול מה רץ הוא דוח חסר ערך.
-  const isProd = /rlwy\.net|railway/.test(host)
-  const label = isProd ? `${host}  ← פרודקשן` : host
-  say(`\n  מסד: ${label}\n`)
-
-  const isLocal = /localhost|127\.0\.0\.1/.test(connectionString)
-  const client = new Client({ connectionString, ssl: isLocal ? undefined : { rejectUnauthorized: false } })
-  await client.connect()
+  const { client, label } = await connectDb()
 
   const { rows } = await client.query<Row>(`
     select c."id",
