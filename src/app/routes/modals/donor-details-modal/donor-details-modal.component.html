@@ -315,11 +315,14 @@
                   <div class="form-group phone-description">
                     <div class="field-title">
                       <mat-icon class="field-icon">description</mat-icon>
-                      <label>תיאור</label>
+                      <label>סוג</label>
                     </div>
-                    <!-- (ngModelChange)="onContactChange(donorContact)" -->
-                    <input type="text" class="form-control" [(ngModel)]="donorContact.description"
-                      placeholder="למשל: בית, עבודה...">
+                    <!-- סעיף 6 - רשימה סגורה (shared/enum/phone-type.ts). -->
+                    <select class="form-control" [(ngModel)]="donorContact.description"
+                      (ngModelChange)="onPhoneTypeSelected(donorContact)">
+                      <option value=""></option>
+                      <option *ngFor="let type of phoneTypeOptions(donorContact)" [value]="type">{{ type }}</option>
+                    </select>
                   </div>
                   <!-- סעיפים 1, 31 - app-phone-input מחליף את צמד המספר והקידומת:
                        הדגל והקידומת מזוהים מהמספר עצמו, אין מה לבחור ידנית.

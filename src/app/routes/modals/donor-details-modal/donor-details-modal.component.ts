@@ -21,6 +21,7 @@ import { NotesSelectionModalArgs, NotesSelectionModalComponent } from '../notes-
 import { calculateEffectiveAmount } from '../../../../shared/utils/donation-utils';
 import { getReverseRelationship } from '../../../../shared/utils/relationship-utils';
 import { DONOR_TITLES_EN, DONOR_TITLES_HE } from '../../../../shared/constants/donor-titles';
+import { PhoneType } from '../../../../shared/enum/phone-type';
 import { PhoneCountryOption } from '../../../common/phone-input/phone-input.component';
 import { CountryCode } from 'libphonenumber-js/max';
 import { DEFAULT_PHONE_COUNTRY, callingCodeForCountry, hasUnknownCallingCode } from '../../../../shared/utils/phone-format';
@@ -323,10 +324,12 @@ export class DonorDetailsModalComponent implements OnInit {
       type: 'phone',
       phoneNumber: defaultPrefix,
       prefix: defaultPrefix,
-      description: 'נייד',
+      description: PhoneType.mobile.id,
       isPrimary: true,
       isActive: true
     });
+    // ברירת המחדל - הסוג יתוקן אוטומטית לפי המספר שיוקלד.
+    this.autoTypedContacts.add(phoneContact);
     this.donorContacts.push(phoneContact);
 
     // Create default empty email contact
@@ -806,7 +809,7 @@ export class DonorDetailsModalComponent implements OnInit {
       var description = ''
       if (type === 'phone') {
         if (this.donorContacts.filter(c => c.type === type).length === 0) {
-          description = 'נייד'
+          description = PhoneType.mobile.id
         }
       }
       else if (type === 'email') {
@@ -830,6 +833,8 @@ export class DonorDetailsModalComponent implements OnInit {
         isActive: true
       });
 
+      // סעיף 6 - סוג ברירת מחדל, לא בחירה של המשתמש: יתוקן לפי המספר שיוקלד.
+      if (type === 'phone') this.autoTypedContacts.add(newContact);
       // Add to local array - will be saved when donor is saved
       this.donorContacts.push(newContact);
       this.changed = true;
@@ -1464,18 +1469,36 @@ export class DonorDetailsModalComponent implements OnInit {
   onPhoneLineTypeDetected(contact: DonorContact, lineType: 'mobile' | 'landline' | 'unknown') {
     if (lineType === 'unknown') return;
 
-    // הערכים שהקונטרול עצמו כותב, ורק אותם מותר לו לדרוס. "טלפון נוסף"
-    // ושאר תיאורים שהמשתמש כתב נשארים.
-    const written = ['נייד', 'טלפון', 'נייח'];
+    // סעיף 6 - הסוג הוא רשימה סגורה שהמשתמש בוחר, ובחירה שלו לא נדרסת.
+    // הקונטרול ממלא רק סוג ריק, ערך ישן שהוא עצמו כתב ("נייח"), או סוג שהוא
+    // עצמו מילא קודם באותה עריכה (המשתמש עדיין מקליד את המספר).
     const current = (contact.description || '').trim();
-    if (current && !written.includes(current)) return;
+    if (current && current !== 'נייח' && !this.autoTypedContacts.has(contact)) return;
 
-    const label = lineType === 'mobile' ? 'נייד' : 'טלפון';
+    const label = (lineType === 'mobile' ? PhoneType.mobile : PhoneType.phone).id;
+    this.autoTypedContacts.add(contact);
     if (current !== label) {
       contact.description = label;
       this.changed = true;
     }
   }
+
+  /** סעיף 6 - מספרים שהסוג שלהם מולא אוטומטית בעריכה הנוכחית. */
+  private autoTypedContacts = new WeakSet<DonorContact>();
+
+  /** סעיף 6 - בחירה ידנית של סוג מהרשימה עוצרת את המילוי האוטומטי. */
+  onPhoneTypeSelected(contact: DonorContact) {
+    this.autoTypedContacts.delete(contact);
+    this.changed = true;
+  }
+
+  /** סעיף 6 - הרשימה הסגורה, ועוד ערך ישן שעדיין לא הומר, כדי שלא ייעלם מהתצוגה. */
+  phoneTypeOptions(contact: DonorContact): string[] {
+    const ids = PhoneType.all().map(t => t.id);
+    const current = (contact.description || '').trim();
+    return current && !ids.includes(current) ? [...ids, current] : ids;
+  }
+
 
   /**
    * סעיף 36 - הסימון "תלמידנו" והתואר הולכים ביחד, בשני הכיוונים, בלי לדרוס

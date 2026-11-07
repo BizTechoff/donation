@@ -8,6 +8,7 @@ import { GoogleContactMapping } from '../shared/entity/google-contact-mapping'
 import { GoogleSyncLog } from '../shared/entity/google-sync-log'
 import { Donor } from '../shared/entity/donor'
 import { DonorContact } from '../shared/entity/donor-contact'
+import { PhoneType } from '../shared/enum/phone-type'
 import { DonorPlace } from '../shared/entity/donor-place'
 import { DonorEvent } from '../shared/entity/donor-event'
 import { DonorReceptionHour } from '../shared/entity/donor-reception-hour'
@@ -211,15 +212,15 @@ export function donorToGooglePerson(
   }
 
   // Phone numbers - send in international format so Google recognizes the country.
-  // The type is derived from the Hebrew description through the SAME map the
-  // import uses (reversed), so 'נייד' goes out as 'mobile' and comes back as
-  // 'נייד'. Before this, every phone was exported as main/other and a single
+  // The type is derived from the description through GOOGLE_PHONE_TYPES - the
+  // same table the import uses - so 'נייד' goes out as 'mobile' and comes back
+  // as 'נייד'. Before this, every phone was exported as main/other and a single
   // export→import round trip silently erased the mobile/home classification.
   const phones = contacts.filter(c => c.type === 'phone' && c.isActive && c.phoneNumber)
   if (phones.length) {
     person.phoneNumbers = phones.map(p => ({
       value: toInternationalPhone(p.phoneNumber!),
-      type: HEBREW_PHONE_TYPE_TO_GOOGLE[(p.description || '').trim()] || (p.isPrimary ? 'main' : 'other')
+      type: phoneTypeToGoogle(p.description) || (p.isPrimary ? 'main' : 'other')
     }))
   }
 
@@ -322,9 +323,29 @@ export function donorToGooglePerson(
 }
 
 // ============ Phone/Email type mapping (Google → Hebrew) ============
-const GOOGLE_PHONE_TYPE_MAP: { [key: string]: string } = {
-  'main': 'ראשי', 'mobile': 'נייד', 'home': 'בית', 'work': 'עבודה',
-  'homeFax': 'פקס בית', 'workFax': 'פקס עבודה', 'pager': 'זימונית', 'other': 'אחר'
+/**
+ * סעיף 6 - סוגי הטלפון של גוגל מול הרשימה הסגורה (shared/enum/phone-type.ts).
+ * טבלה אחת לשני הכיוונים: בייבוא כל סוג גוגל מתורגם לסוג מהרשימה; בייצוא
+ * כל סוג יוצא כסוג הגוגל הראשון שלו בטבלה. main / other / pager אינם אומרים
+ * מה הקו - הם לא בטבלה, התיאור נשאר ריק, והסיווג נעשה לפי המספר.
+ */
+const GOOGLE_PHONE_TYPES: [string, PhoneType][] = [
+  ['mobile', PhoneType.mobile],
+  ['home', PhoneType.phone],
+  ['work', PhoneType.work],
+  ['homeFax', PhoneType.fax],
+  ['workFax', PhoneType.fax],
+  ['otherFax', PhoneType.fax]
+]
+/** תיאור שמור -> סוג גוגל. גם ערך ישן ("בית", "פקס עבודה") עובר דרך הרשימה. */
+function phoneTypeToGoogle(description: string | null | undefined): string | undefined {
+  const type = PhoneType.fromDescription(description)
+  return type ? GOOGLE_PHONE_TYPES.find(([, t]) => t === type)?.[0] : undefined
+}
+/** סוג גוגל (או תווית חופשית שלו) -> תיאור מהרשימה. ריק כשאין הכרעה. */
+function phoneTypeFromGoogle(googleType?: string | null, formattedType?: string | null): string {
+  const type = GOOGLE_PHONE_TYPES.find(([g]) => g === googleType)?.[1] || PhoneType.fromDescription(formattedType)
+  return type?.id || ''
 }
 const GOOGLE_EMAIL_TYPE_MAP: { [key: string]: string } = {
   'home': 'בית', 'work': 'עבודה', 'other': 'אחר'
@@ -333,7 +354,6 @@ const GOOGLE_EMAIL_TYPE_MAP: { [key: string]: string } = {
 // one place that knows how Google types and Hebrew descriptions correspond.
 const reverse = (m: { [key: string]: string }) =>
   Object.fromEntries(Object.entries(m).map(([g, he]) => [he, g])) as { [key: string]: string }
-const HEBREW_PHONE_TYPE_TO_GOOGLE = reverse(GOOGLE_PHONE_TYPE_MAP)
 const HEBREW_EMAIL_TYPE_TO_GOOGLE = reverse(GOOGLE_EMAIL_TYPE_MAP)
 
 // ============ Field Mapping: Google Person → Donor fields ============
@@ -345,7 +365,7 @@ export function googlePersonToDonorFields(person: people_v1.Schema$Person) {
     phones: (person.phoneNumbers || []).map(p => ({
       phoneNumber: p.value || '',
       isPrimary: p.type === 'main',
-      description: GOOGLE_PHONE_TYPE_MAP[p.type || ''] || p.formattedType || '',
+      description: phoneTypeFromGoogle(p.type, p.formattedType),
       type: 'phone' as const
     })),
     emails: (person.emailAddresses || []).map(e => ({

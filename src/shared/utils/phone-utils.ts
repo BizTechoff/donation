@@ -1,4 +1,5 @@
 import { formatPhoneForDisplay } from './phone-format'
+import { LEGACY_EXACT, LEGACY_HINTS, PhoneLine, PhoneType } from '../enum/phone-type'
 /**
  * phone-utils.ts
  *
@@ -23,9 +24,8 @@ import { formatPhoneForDisplay } from './phone-format'
  *
  * Note on the US/Canada (+1): there is NO mobile pattern. American numbers use
  * the same area codes for mobile, landline and office, so the digits cannot
- * tell them apart - those fall back to the contact's description (see
- * MOBILE_DESCRIPTION_HINTS). This is why Z8 needs the "numbers to classify"
- * list, and why H2 (a closed description list) is the real fix.
+ * tell them apart - those take their type from the description, which since
+ * item 6 is a closed list (shared/enum/phone-type.ts).
  *
  * Switzerland has no local pattern here on purpose. Its mobile range 075-079
  * is ten digits starting 07 - exactly the Israeli VoIP/landline range
@@ -45,45 +45,39 @@ export const MOBILE_PATTERNS: string[] = [
   '^417[5-9]\\d{7}$' // Switzerland intl +41 7X    (no local form - see RULE)
 ]
 
-/** Descriptions that mark a contact as a mobile when the digits cannot. */
-export const MOBILE_DESCRIPTION_HINTS = ['נייד', 'סלולרי', 'mobile', 'cell', 'cellular']
-
-/**
- * Returns true if the given phone number matches a mobile pattern.
- * `description` is consulted when the digits are inconclusive - the only
- * signal available for US/Canada numbers.
- */
-export function isMobilePhone(raw: string | null | undefined, description?: string | null): boolean {
+/** True when the digits alone match a mobile pattern - without the description. */
+export function isMobileNumber(raw: string | null | undefined): boolean {
   if (!raw) return false
   const digits = String(raw).replace(/\D/g, '')
-  if (MOBILE_PATTERNS.some(p => new RegExp(p).test(digits))) return true
-
-  const desc = (description || '').trim().toLowerCase()
-  if (desc && MOBILE_DESCRIPTION_HINTS.some(h => desc.includes(h.toLowerCase()))) return true
-
-  return false
+  return MOBILE_PATTERNS.some(p => new RegExp(p).test(digits))
 }
 
 /**
- * True when the number genuinely cannot be classified: no pattern matched and
- * the description gives no hint. In practice this is US/Canada, where the same
- * area codes serve mobile, landline and office - the digits simply do not carry
- * the answer, and no rule here will ever recover it.
- *
- * NOT CALLED ANYWHERE TODAY, and kept on purpose. Z8 was closed by adding the
- * Belgian and Swiss patterns; the American remainder falls back to the contact
- * description. The real fix is H2 - a CLOSED list of contact descriptions
- * (נייד / בית / משרד) instead of free text - after which this predicate becomes
- * the way to find the rows that still need a human to say which they are.
- * Delete it only if H2 is dropped for good.
+ * סעיף 6 - הכלל האחד: לאיזו עמודה המספר שייך.
+ * הסוג שנבחר בכרטיס קובע (PhoneType, דרך התיאור). רק כשאין סוג מוכר - לפי
+ * המספר. sqlPhoneLine הוא אותו כלל בדיוק, לפוסטגרס.
+ */
+export function phoneLineOf(raw: string | null | undefined, description?: string | null): PhoneLine {
+  const type = PhoneType.fromDescription(description)
+  if (type) return type.line
+  return isMobileNumber(raw) ? 'mobile' : 'landline'
+}
+
+/** True when the number belongs in the נייד column - see phoneLineOf. */
+export function isMobilePhone(raw: string | null | undefined, description?: string | null): boolean {
+  if (!raw) return false
+  return phoneLineOf(raw, description) === 'mobile'
+}
+
+/**
+ * True when the number genuinely cannot be classified: no type in the
+ * description and no mobile pattern. In practice US/Canada, where the digits do
+ * not carry the answer. סעיף 6 - זו הדרך למצוא את המספרים שעוד צריכים אדם
+ * שיבחר להם סוג מהרשימה.
  */
 export function isMobileUnknown(raw: string | null | undefined, description?: string | null): boolean {
   if (!raw) return false
-  if (isMobilePhone(raw, description)) return false
-  const desc = (description || '').trim().toLowerCase()
-  const saysLandline = ['בית', 'משרד', 'עבודה', 'פקס', 'home', 'work', 'office', 'fax']
-    .some(h => desc.includes(h))
-  return !saysLandline
+  return !PhoneType.fromDescription(description) && !isMobileNumber(raw)
 }
 
 /**
@@ -144,6 +138,8 @@ export interface PhoneContactLike {
   phoneNumber?: string | null
   description?: string | null
   isPrimary?: boolean | null
+  /** סדר ההזנה - שובר שוויון אחרי isPrimary. */
+  createdDate?: Date | string | null
 }
 
 /** Display strings per donor - each joined with '\n', '' when none. */
@@ -164,19 +160,21 @@ export interface DonorPhoneDisplay {
  * הסיווג נייד/נייח נעשה על הערך הגולמי, לפני העיצוב, כדי שלא ישתנה בגללו.
  */
 export function splitPhones(contacts: PhoneContactLike[]): { landlines: string[]; mobiles: string[] } {
-  const sorted = [...(contacts || [])].sort((a, b) => (b.isPrimary ? 1 : 0) - (a.isPrimary ? 1 : 0))
-  const seen = new Set<string>()
+  // סעיף 6 - "הראשון קובע": ראשי, ואחריו סדר ההזנה. אותו סדר כמו
+  // Donor.primaryLandline / primaryMobile, כך שהמיון והתצוגה מסכימים.
+  const time = (d?: Date | string | null) => d ? new Date(d).getTime() : 0
+  const sorted = [...(contacts || [])].sort((a, b) =>
+    ((b.isPrimary ? 1 : 0) - (a.isPrimary ? 1 : 0)) || (time(a.createdDate) - time(b.createdDate)))
   const landlines: string[] = []
   const mobiles: string[] = []
   for (const c of sorted) {
     const value = String(c.phoneNumber || '').trim()
     if (!value) continue
-    const key = value.replace(/\D/g, '') || value
-    if (seen.has(key)) continue
-    seen.add(key)
-    const display = formatPhoneForDisplay(value)
-    if (isMobilePhone(value, c.description)) mobiles.push(display)
-    else landlines.push(display)
+    const line = phoneLineOf(value, c.description)
+    // סעיף 6 - טלפון אחד ונייד אחד בלבד, במסך, בייצוא ובהדפסה. פקס לא מופיע
+    // ברשימות כלל - הוא נשאר בכרטיס התורם.
+    if (line === 'mobile' && mobiles.length === 0) mobiles.push(formatPhoneForDisplay(value))
+    if (line === 'landline' && landlines.length === 0) landlines.push(formatPhoneForDisplay(value))
   }
   return { landlines, mobiles }
 }
@@ -198,15 +196,34 @@ export function toPhoneDisplay(split: { landlines: string[]; mobiles: string[] }
 }
 
 /**
- * The same classifier as isMobilePhone, as a SQL boolean expression - for
- * sqlExpression sort fields (Donor.primaryLandline / primaryMobile), so the
- * DB sorts by exactly the value each column shows. Built from MOBILE_PATTERNS
- * and MOBILE_DESCRIPTION_HINTS - the rule still lives only in this file.
- * Inputs are column references written by the platform, never user input.
+ * phoneLineOf כביטוי SQL - לשדות המיון (Donor.primaryLandline / primaryMobile),
+ * כך שפוסטגרס ממיין בדיוק לפי מה שכל עמודה מציגה. נבנה מאותן טבלאות -
+ * PhoneType, LEGACY_EXACT, LEGACY_HINTS, MOBILE_PATTERNS - ובאותו סדר: סוג
+ * מדויק, מילת רמז, ורק אז המספר. הכלל עדיין חי רק כאן.
+ * הקלטים הם שמות עמודות שהפלטפורמה כותבת, אף פעם לא קלט משתמש.
  */
-export function sqlIsMobile(numberCol: string, descriptionCol: string): string {
+export function sqlPhoneLine(numberCol: string, descriptionCol: string): string {
+  const lit = (v: string) => `'${v.replace(/'/g, "''")}'`
+  const desc = `btrim(coalesce(${descriptionCol}, ''))`
+  const exact: [string, PhoneType][] = [
+    ...PhoneType.all().map(t => [t.id, t] as [string, PhoneType]),
+    ...Object.entries(LEGACY_EXACT)
+  ]
   const digits = `regexp_replace(coalesce(${numberCol}, ''), '\\D', '', 'g')`
   const patterns = MOBILE_PATTERNS.map(p => `${digits} ~ '${p.replace(/\\\\/g, '\\\\').replace(/'/g, "''")}'`)
-  const hints = MOBILE_DESCRIPTION_HINTS.map(h => `lower(coalesce(${descriptionCol}, '')) like '%${h.toLowerCase().replace(/'/g, "''")}%'`)
-  return `(${[...patterns, ...hints].join(' or ')})`
+  return `(case
+    ${exact.map(([v, t]) => `when ${desc} = ${lit(v)} then ${lit(t.line)}`).join('\n    ')}
+    ${LEGACY_HINTS.map(([w, t]) => `when lower(${desc}) like ${lit('%' + w.toLowerCase() + '%')} then ${lit(t.line)}`).join('\n    ')}
+    when ${patterns.join(' or ')} then 'mobile'
+    else 'landline' end)`
+}
+
+/** עמודת נייד - sqlPhoneLine. */
+export function sqlIsMobile(numberCol: string, descriptionCol: string): string {
+  return `(${sqlPhoneLine(numberCol, descriptionCol)} = 'mobile')`
+}
+
+/** עמודת טלפון - sqlPhoneLine. פקס אינו טלפון ואינו נייד. */
+export function sqlIsLandline(numberCol: string, descriptionCol: string): string {
+  return `(${sqlPhoneLine(numberCol, descriptionCol)} = 'landline')`
 }
