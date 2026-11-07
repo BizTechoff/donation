@@ -18,6 +18,7 @@ import { ExcelExportService, donorNameColumns } from '../../services/excel-expor
 import { DonorController } from '../../../shared/controllers/donor.controller';
 import { DonorMapController } from '../../../shared/controllers/donor-map.controller';
 import { TableState, TableLoadRequest } from '../../common/table/table-state';
+import { amountRangeLabel, dateRangeLabel, namesLabel, searchLabel } from '../../../shared/utils/filter-label-utils';
 
 @Component({
   selector: 'app-donor-gifts-list',
@@ -468,6 +469,15 @@ export class DonorGiftsListComponent implements OnInit, OnDestroy {
     }
   }
 
+  /** סעיף 27 - הסינון של המסך בשמו, לשם קובץ הייצוא וההדפסה. הגלובלי נוסף בשירות. */
+  private exportFilterParts(): string[] {
+    return [
+      searchLabel(this.searchDonorName),
+      namesLabel([this.gifts.find(g => g.id === this.selectedGiftId)?.name]),
+      this.selectedYear ? (this.hebrewYearLabels[+this.selectedYear] || `שנת ${this.selectedYear}`) : ''
+    ];
+  }
+
   async onPrint() {
     await this.busy.doWhileShowingBusy(async () => {
       try {
@@ -501,6 +511,7 @@ export class DonorGiftsListComponent implements OnInit, OnDestroy {
 
         this.printService.print({
           title: this.i18n.currentTerms.donorGifts || 'מתנות לתורמים',
+          fileName: await this.globalFilterService.exportFileName(this.i18n.currentTerms.donorGifts || 'מתנות לתורמים', this.exportFilterParts()),
           subtitle: `${allDonorGifts.length} ${this.i18n.currentTerms.donorGifts || 'מתנות'}`,
           columns: [
             { header: this.i18n.currentTerms.donor || 'תורם', field: 'donor' },
@@ -579,7 +590,7 @@ export class DonorGiftsListComponent implements OnInit, OnDestroy {
             { header: this.i18n.currentTerms.notes || 'הערות', mapper: (g) => g.notes || '-', width: 30 }
           ],
           sheetName: this.i18n.currentTerms.donorGifts || 'מתנות לתורמים',
-          fileName: this.excelExportService.generateFileName(this.i18n.currentTerms.donorGifts || 'מתנות לתורמים')
+          fileName: await this.globalFilterService.exportFileName(this.i18n.currentTerms.donorGifts || 'מתנות לתורמים', this.exportFilterParts(), 'xlsx')
         });
       } catch (error) {
         console.error('Error exporting donor gifts:', error);

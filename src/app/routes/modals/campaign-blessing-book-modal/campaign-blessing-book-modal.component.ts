@@ -12,6 +12,8 @@ import { BlessingTextEditModalComponent } from '../blessing-text-edit-modal/bles
 import { ExcelExportService, ExcelColumn } from '../../../services/excel-export.service';
 import { DonorController } from '../../../../shared/controllers/donor.controller';
 import { BlessingBookDataDto, BlessingBookTypeDto, CampaignController } from '../../../../shared/controllers/campaign.controller';
+import { namesLabel, searchLabel } from '../../../../shared/utils/filter-label-utils';
+import { GlobalFilterService } from '../../../services/global-filter.service';
 
 export interface CampaignBlessingBookModalArgs {
   campaignId: string;
@@ -78,8 +80,26 @@ export class CampaignBlessingBookModalComponent implements OnInit {
     private snackBar: MatSnackBar,
     private cdr: ChangeDetectorRef,
     public dialogRef: MatDialogRef<CampaignBlessingBookModalComponent>,
-    private excelService: ExcelExportService
+    private excelService: ExcelExportService,
+    private globalFilterService: GlobalFilterService
   ) {}
+
+  /**
+   * סעיף 27 - הסינון של ספר הברכות בשמו. גם הנתונים כאן עוברים את הסינון
+   * הגלובלי (resolveBlessingBookDonorIds), ולכן השירות מוסיף אותו לשם.
+   */
+  private blessingBookFilterParts(): string[] {
+    const t = this.i18n.currentTerms;
+    const statuses: Record<string, string | undefined> = {
+      pending: t.statusPending, received: t.statusReceived, sent: t.statusSent, none: t.statusNone
+    };
+    return [
+      this.campaignName || '',
+      searchLabel(this.filterText),
+      this.filterStatus ? (statuses[this.filterStatus] || this.filterStatus) : '',
+      namesLabel([this.blessingTypes.find(bt => bt.id === this.filterBlessingType)?.type])
+    ];
+  }
 
   async ngOnInit() {
     await this.loadData();
@@ -366,7 +386,7 @@ export class CampaignBlessingBookModalComponent implements OnInit {
       data: summaryData,
       columns: columns,
       sheetName: 'סיכום ספר ברכות',
-      fileName: this.excelService.generateFileName(`סיכום_ספר_ברכות_${this.campaignName}`),
+      fileName: await this.globalFilterService.exportFileName('סיכום ספר ברכות', this.blessingBookFilterParts(), 'xlsx'),
       includeStats: true,
       stats: [
         { label: 'שם קמפיין', value: this.campaignName || '' },
@@ -414,7 +434,7 @@ export class CampaignBlessingBookModalComponent implements OnInit {
       data: dataToExport,
       columns: columns,
       sheetName: 'ספר ברכות',
-      fileName: this.excelService.generateFileName(`ספר_ברכות_${this.campaignName}`),
+      fileName: await this.globalFilterService.exportFileName('ספר ברכות', this.blessingBookFilterParts(), 'xlsx'),
       includeStats: true,
       stats: [
         { label: 'שם קמפיין', value: this.campaignName || '' },

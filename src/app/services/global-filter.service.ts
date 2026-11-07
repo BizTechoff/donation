@@ -4,6 +4,11 @@ import { remult } from 'remult';
 import { User } from '../../shared/entity/user';
 import { UserSettingsController } from '../../shared/controllers/user-settings.controller';
 import { TriStateFilter } from '../../shared/enum/tri-state-filter';
+import { Campaign } from '../../shared/entity/campaign';
+import { Country } from '../../shared/entity/country';
+import { TargetAudience } from '../../shared/entity/target-audience';
+import { buildFileName } from '../../shared/utils/file-name-utils';
+import { amountRangeLabel, dateLabel, dateRangeLabel, namesLabel, searchLabel } from '../../shared/utils/filter-label-utils';
 
 export interface GlobalFilters {
   campaignIds?: string[];
@@ -274,5 +279,47 @@ console.log(`updateFilter: { key: ${key}, value: ${value} }`)
       }
     }
     return filters;
+  }
+
+  /* ===========================================================================
+   * סעיף 27 - שם קובץ ייצוא. המקום האחד שמתרגם את הסינון הגלובלי לשמות,
+   * ומרכיב שם קובץ: <כותרת> - <סינון המסך> - <סינון גלובלי> - הופק <תאריך>.
+   * ישראל, 03.11: כל נקודות הסינון, בשמן - לא "1 מדינות".
+   * ======================================================================== */
+
+  /**
+   * שם קובץ ייצוא/הדפסה. localParts - הסינון של המסך עצמו, בסדר שלו; חלקים
+   * ריקים נזרקים, כך שמסך יכול להעביר תווית לכל פילטר בלי לבדוק אם הוא פעיל.
+   */
+  async exportFileName(title: string, localParts: string[] = [], extension?: string): Promise<string> {
+    return buildFileName(
+      [title, ...localParts, ...(await this.describeActive()), `הופק ${dateLabel(new Date())}`],
+      { extension }
+    );
+  }
+
+  /** הסינון הגלובלי הפעיל כשמות תצוגה, בסדר קבוע. פילטר לא פעיל - לא מופיע. */
+  async describeActive(): Promise<string[]> {
+    const g = this.currentFilters;
+    const namesOf = async <T extends { id: string }>(entity: new () => T, ids: string[] | undefined, name: (e: T) => string) =>
+      ids?.length ? namesLabel((await remult.repo(entity).find({ where: { id: { $in: ids } } as any })).map(name)) : '';
+    const audiences = await namesOf(TargetAudience, g.targetAudienceIds, t => t.name);
+
+    return [
+      dateRangeLabel(g.dateFrom, g.dateTo),
+      amountRangeLabel(g.amountMin, g.amountMax),
+      searchLabel(g.searchTerm),
+      g.minDonationCount ? `לפחות ${g.minDonationCount} תרומות` : '',
+      g.isAnash === TriStateFilter.Yes ? 'אנ"ש' : g.isAnash === TriStateFilter.No ? 'לא אנ"ש' : '',
+      g.isAlumni === TriStateFilter.Yes ? 'תלמידנו' : g.isAlumni === TriStateFilter.No ? 'לא תלמידנו' : '',
+      await namesOf(Campaign, g.campaignIds, c => c.name),
+      // לסוגי תורם אין בחירה במסך הסינון ואין ישות לשם - נשאר מניין.
+      g.donorTypeIds?.length ? `${g.donorTypeIds.length} סוגי תורם` : '',
+      await namesOf(Country, g.countryIds, c => c.name || c.nameEn || c.code),
+      // ערים ושכונות נשמרות כשמות, לא כמזהים.
+      namesLabel(g.cityIds || []),
+      namesLabel(g.neighborhoodIds || []),
+      audiences ? `קהל ${audiences}` : ''
+    ].filter(p => !!p);
   }
 }

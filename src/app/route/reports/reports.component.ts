@@ -25,8 +25,8 @@ import { HebrewDateService } from '../../services/hebrew-date.service';
 import { PayerService } from '../../services/payer.service';
 import { ReportService } from '../../services/report.service';
 import { UIToolsService } from '../../common/UIToolsService';
-import { TriStateFilter } from '../../../shared/enum/tri-state-filter';
 import { buildFileName } from '../../../shared/utils/file-name-utils';
+import { dateRangeLabel } from '../../../shared/utils/filter-label-utils';
 
 interface ChartData {
   label: string;
@@ -1215,13 +1215,13 @@ export class ReportsComponent implements OnInit, OnDestroy {
         await this.printDonationsReport();
         break;
       case 'yearly':
-        this.printYearlySummaryReport();
+        await this.printYearlySummaryReport();
         break;
       case 'payments':
-        this.printPaymentsReport();
+        await this.printPaymentsReport();
         break;
       case 'blessings':
-        this.printBlessingsReport();
+        await this.printBlessingsReport();
         break;
       default:
         alert('הדפסה לדוח זה עדיין לא נתמכת');
@@ -1311,7 +1311,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
         data: fullReportResponse.reportData,
         columns,
         sheetName: 'תורמים',
-        fileName: this.reportFileName('רשימת תורמים', 'xlsx')
+        fileName: await this.reportFileName('רשימת תורמים', 'xlsx')
       });
     } catch (error) {
       console.error('Error exporting donors to Excel:', error);
@@ -1555,7 +1555,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
       }
 
       // Save file
-      const fileName = this.reportFileName(this.donationsReportTitle, 'xlsx');
+      const fileName = await this.reportFileName(this.donationsReportTitle, 'xlsx');
       XLSX.writeFile(wb, fileName);
 
     } catch (error) {
@@ -1572,21 +1572,27 @@ export class ReportsComponent implements OnInit, OnDestroy {
    * שם פרט לסיומת. הניקוי, המפריד והקיצור ל-120 תווים יושבים ב-
    * shared/utils/file-name-utils.
    */
-  private reportFileName(reportTitle: string, extension?: string): string {
-    return buildFileName([reportTitle, ...this.reportFilterParts()], { extension });
+  /** סעיף 27 - שם הקובץ נבנה בשירות הסינון הגלובלי; כאן רק הסינון של מסך הדוחות. */
+  private async reportFileName(reportTitle: string, extension?: string): Promise<string> {
+    return this.globalFilterService.exportFileName(reportTitle, this.reportFilterParts(), extension);
   }
 
-  /** מאפייני הסינון של מסך הדוחות, בסדר קבוע. פילטר שאינו פעיל לא מופיע כלל. */
+  /** מאפייני הסינון של מסך הדוחות, בשמם ובסדר קבוע. פילטר שאינו פעיל לא מופיע כלל. */
   private reportFilterParts(): string[] {
     const f = this.filters;
     const parts: string[] = [];
 
-    parts.push(f.selectedYear === 'last4' ? '4 שנים אחרונות' : `שנת ${f.selectedYear}`);
+    // ארבע השנים בשמן ("תשפ״ג עד תשפ״ו"), לא "4 שנים אחרונות".
+    const years = this.hebrewYears;
+    parts.push(f.selectedYear === 'last4'
+      ? (years.length ? `${years[0]} עד ${years[years.length - 1]}` : '4 שנים אחרונות')
+      : `שנת ${f.selectedYear}`);
 
-    if (f.selectedDonorIds.length === 1) {
-      parts.push(this.availableDonors.find(d => d.id === f.selectedDonorIds[0])?.lastAndFirstName || 'תורם');
-    } else if (f.selectedDonorIds.length > 1) {
-      parts.push(`${f.selectedDonorIds.length} תורמים`);
+    if (f.selectedDonorIds.length) {
+      parts.push(f.selectedDonorIds
+        .map(id => this.availableDonors.find(d => d.id === id)?.lastAndFirstName || '')
+        .filter(n => !!n)
+        .join(', ') || 'תורם');
     }
     if (f.selectedCampaign) {
       parts.push(this.availableCampaigns.find(c => c.id === f.selectedCampaign)?.name || 'קמפיין');
@@ -1596,37 +1602,6 @@ export class ReportsComponent implements OnInit, OnDestroy {
       parts.push(this.currencyTypes[f.selectedCurrency]?.label || f.selectedCurrency);
     }
     if (f.showActualPayments) parts.push('תשלומים בפועל');
-
-    parts.push(...this.globalFilterParts());
-    parts.push(`הופק ${new Date().toLocaleDateString('he-IL')}`);
-    return parts;
-  }
-
-  /**
-   * הסינון הגלובלי חל על הדוח בדיוק כמו הסינון המקומי, ולכן הוא חלק משם הקובץ.
-   * רשימות ארוכות נרשמות כמניין ("3 ערים") - שם קובץ לא יכול לשאת אותן במלואן.
-   */
-  private globalFilterParts(): string[] {
-    const g = this.globalFilterService.currentFilters;
-    const parts: string[] = [];
-    const asDate = (d?: Date) => d ? new Date(d).toLocaleDateString('he-IL') : '';
-
-    if (g.dateFrom || g.dateTo) parts.push(`${asDate(g.dateFrom) || 'מההתחלה'} עד ${asDate(g.dateTo) || 'היום'}`);
-    if (g.amountMin !== undefined || g.amountMax !== undefined) {
-      parts.push(`סכום ${g.amountMin ?? 'ללא מינימום'} עד ${g.amountMax ?? 'ללא מקסימום'}`);
-    }
-    if (g.searchTerm) parts.push(`חיפוש ${g.searchTerm}`);
-    if (g.minDonationCount) parts.push(`לפחות ${g.minDonationCount} תרומות`);
-    if (g.isAnash === TriStateFilter.Yes) parts.push('אנ"ש');
-    if (g.isAnash === TriStateFilter.No) parts.push('לא אנ"ש');
-    if (g.isAlumni === TriStateFilter.Yes) parts.push('תלמידנו');
-    if (g.isAlumni === TriStateFilter.No) parts.push('לא תלמידנו');
-    if (g.campaignIds?.length) parts.push(`${g.campaignIds.length} קמפיינים`);
-    if (g.donorTypeIds?.length) parts.push(`${g.donorTypeIds.length} סוגי תורם`);
-    if (g.countryIds?.length) parts.push(`${g.countryIds.length} מדינות`);
-    if (g.cityIds?.length) parts.push(`${g.cityIds.length} ערים`);
-    if (g.neighborhoodIds?.length) parts.push(`${g.neighborhoodIds.length} שכונות`);
-    if (g.targetAudienceIds?.length) parts.push(`${g.targetAudienceIds.length} קהלים`);
     return parts;
   }
 
@@ -1698,7 +1673,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
           { header: 'חוב נותר', mapper: (row) => this.formatCurrency(row.remainingDebt), width: 15 }
         ],
         sheetName: 'דוח תשלומים',
-        fileName: this.reportFileName('דוח מצב תשלומים', 'xlsx')
+        fileName: await this.reportFileName('דוח מצב תשלומים', 'xlsx')
       });
     } catch (error) {
       console.error('Error exporting payments to Excel:', error);
@@ -1733,7 +1708,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
           ...currencyColumns
         ],
         sheetName: 'סיכום שנתי',
-        fileName: this.reportFileName('דוח סיכום שנים', 'xlsx')
+        fileName: await this.reportFileName('דוח סיכום שנים', 'xlsx')
       });
     } catch (error) {
       console.error('Error exporting yearly summary to Excel:', error);
@@ -1771,7 +1746,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
           { header: 'אימייל', mapper: (row) => row.email || '-', width: 25, align: 'left' }
         ],
         sheetName: 'דוח ברכות',
-        fileName: this.reportFileName('דוח ברכות', 'xlsx')
+        fileName: await this.reportFileName('דוח ברכות', 'xlsx')
       });
     } catch (error) {
       console.error('Error exporting blessings to Excel:', error);
@@ -2707,6 +2682,17 @@ export class ReportsComponent implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * סעיף 27 - "דוח אישי לתורם - <שם> - <מתאריך> עד <עד תאריך>" (זום 03.11).
+   * דוח של תורם אחד - הסינון הגלובלי לא חל עליו, ולכן גם לא בשם.
+   */
+  private personalReportFileName(donorName?: string): string {
+    return buildFileName(
+      ['דוח אישי לתורם', donorName, dateRangeLabel(this.personalReportFromDate, this.personalReportToDate || new Date())],
+      { extension: 'docx' }
+    );
+  }
+
   private base64ToBlob(base64: string, mimeType: string): Blob {
     const byteCharacters = atob(base64);
     const byteNumbers = new Array(byteCharacters.length);
@@ -2735,7 +2721,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
         // יצירת לינק להורדה
         const link = document.createElement('a');
         link.href = result.url;
-        link.download = `דוח אישי לתורם.docx` // result.fileName!;
+        link.download = this.personalReportFileName(this.selectedDonorForPersonalReport?.lastAndFirstName);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -2801,7 +2787,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
               // Create download link
               const link = document.createElement('a');
               link.href = url;
-              link.download = `דוח_אישי_${donor.lastAndFirstName || donor.id}.docx`;
+              link.download = this.personalReportFileName(donor.lastAndFirstName || donor.id);
               document.body.appendChild(link);
               link.click();
               document.body.removeChild(link);
@@ -2993,7 +2979,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
     // Generate custom HTML that matches the display exactly
     // סעיף 27 - השם מחושב פעם אחת ועובר גם ל-<title> של המסמך וגם לשירות
     // ההדפסה, ששם אותו זמנית ב-document.title - משם Chrome לוקח את שם ה-PDF.
-    const fileName = this.reportFileName(this.donationsReportTitle);
+    const fileName = await this.reportFileName(this.donationsReportTitle);
     const html = this.generateDonationsReportHtml(fullReportResponse, fileName);
     this.printService.printDocument(html, fileName);
   }
@@ -3179,7 +3165,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
       .filter(line => line);
   }
 
-  private printYearlySummaryReport() {
+  private async printYearlySummaryReport() {
     // Dynamic columns + totals: use ALL platform currencies (PayerService) -
     // matches the on-screen yearly summary report (no longer hardcoded
     // ILS/USD/EUR only). Coherent across screen + print.
@@ -3218,7 +3204,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
 
     this.printService.print({
       title: 'דוח סיכום שנים',
-      fileName: this.reportFileName('דוח סיכום שנים'),
+      fileName: await this.reportFileName('דוח סיכום שנים'),
       filters,
       columns,
       data: this.yearlySummaryData,
@@ -3226,7 +3212,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
     });
   }
 
-  private printPaymentsReport() {
+  private async printPaymentsReport() {
     const columns: PrintColumn[] = [
       { header: 'שם תורם', field: 'donorName' },
       {
@@ -3257,7 +3243,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
     const summary = this.getPaymentStatusSummary();
     this.printService.print({
       title: 'דוח מצב תשלומים',
-      fileName: this.reportFileName('דוח מצב תשלומים'),
+      fileName: await this.reportFileName('דוח מצב תשלומים'),
       columns,
       data: this.paymentReportData, // Already contains all data (pagination is client-side only)
       totals: [
@@ -3269,7 +3255,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
     });
   }
 
-  private printBlessingsReport() {
+  private async printBlessingsReport() {
     const columns: PrintColumn[] = [
       { header: 'שם משפחה', field: 'lastName' },
       { header: 'שם פרטי', field: 'firstName' },
@@ -3285,7 +3271,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
     const summary = this.getBlessingSummary();
     this.printService.print({
       title: 'דוח ברכות',
-      fileName: this.reportFileName('דוח ברכות'),
+      fileName: await this.reportFileName('דוח ברכות'),
       columns,
       data: this.blessingReportData,
       totals: [

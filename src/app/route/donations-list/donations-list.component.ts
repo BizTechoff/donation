@@ -19,6 +19,7 @@ import { PrintService, LabelData, DonationPrintData } from '../../services/print
 import { PrintType, DonationPrintOptions } from '../../routes/modals/print-options-modal/print-options-modal.component';
 import { FileUploadService } from '../../services/file-upload.service';
 import { TableState, TableLoadRequest } from '../../common/table/table-state';
+import { amountRangeLabel, dateRangeLabel, namesLabel, searchLabel } from '../../../shared/utils/filter-label-utils';
 
 @Component({
   selector: 'app-donations-list',
@@ -763,6 +764,19 @@ export class DonationsListComponent implements OnInit, OnDestroy {
     });
   }
 
+  /** סעיף 27 - הסינון של המסך בשמו, לשם קובץ הייצוא וההדפסה. הגלובלי נוסף בשירות. */
+  private exportFilterParts(): string[] {
+    return [
+      searchLabel(this.searchTerm),
+      dateRangeLabel(this.dateFrom, this.dateTo),
+      namesLabel([this.donationMethods.find(m => m.id === this.selectedMethodId)?.name]),
+      amountRangeLabel(this.amountFrom, this.amountTo),
+      namesLabel([this.campaigns.find(c => c.id === this.selectedCampaignId)?.name]),
+      this.selectedDonationType === 'full' ? this.i18n.currentTerms.fullDonation
+        : this.selectedDonationType === 'commitment' ? this.i18n.currentTerms.commitment : ''
+    ];
+  }
+
   private async executePrint(printType: PrintType, donationOptions?: DonationPrintOptions) {
     await this.busy.doWhileShowingBusy(async () => {
       try {
@@ -876,6 +890,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
 
           this.printService.print({
             title: this.i18n.currentTerms.donations || 'תרומות',
+            fileName: await this.globalFilterService.exportFileName(this.i18n.currentTerms.donations || 'תרומות', this.exportFilterParts()),
             subtitle: `${allDonations.length} ${this.i18n.currentTerms.donations || 'תרומות'}`,
             columns: [
               { header: this.i18n.currentTerms.donor || 'תורם', field: 'donorName' },
@@ -1005,7 +1020,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
             { header: this.i18n.currentTerms.reason || 'הקדשה', mapper: (item) => item.donation.reason || '-', width: 20 }
           ],
           sheetName: this.i18n.currentTerms.donations || 'תרומות',
-          fileName: this.excelExportService.generateFileName(this.i18n.currentTerms.donations || 'תרומות')
+          fileName: await this.globalFilterService.exportFileName(this.i18n.currentTerms.donations || 'תרומות', this.exportFilterParts(), 'xlsx')
         });
       } catch (error) {
         console.error('Error exporting donations:', error);

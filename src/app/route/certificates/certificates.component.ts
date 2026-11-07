@@ -18,6 +18,7 @@ import { BusyService } from '../../common-ui-elements/src/angular/wait/busy-serv
 import { DonorController } from '../../../shared/controllers/donor.controller';
 import { DonorMapController } from '../../../shared/controllers/donor-map.controller';
 import { TableState, TableLoadRequest } from '../../common/table/table-state';
+import { amountRangeLabel, dateRangeLabel, namesLabel, searchLabel } from '../../../shared/utils/filter-label-utils';
 
 @Component({
   selector: 'app-certificates',
@@ -505,6 +506,18 @@ export class CertificatesComponent implements OnInit, OnDestroy {
   // Print & Export Methods
   // ===================================
 
+  /** סעיף 27 - הסינון של המסך בשמו, לשם קובץ הייצוא וההדפסה. הגלובלי נוסף בשירות. */
+  private exportFilterParts(): string[] {
+    return [
+      searchLabel(this.donorSearchText),
+      this.filterCertificateType === 'memorial' ? this.i18n.currentTerms.memorialCertificate
+        : this.filterCertificateType === 'memorialDay' ? this.i18n.currentTerms.memorialDay : '',
+      dateRangeLabel(this.filterDateFrom, this.filterDateTo),
+      this.filterFromParasha || this.filterToParasha
+        ? `פרשת ${this.filterFromParasha || 'מההתחלה'} עד ${this.filterToParasha || 'הסוף'}` : ''
+    ];
+  }
+
   async onPrint() {
     await this.busy.doWhileShowingBusy(async () => {
       try {
@@ -560,6 +573,7 @@ export class CertificatesComponent implements OnInit, OnDestroy {
 
         this.printService.print({
           title: this.i18n.currentTerms.certificates || 'תעודות',
+          fileName: await this.globalFilterService.exportFileName(this.i18n.currentTerms.certificates || 'תעודות', this.exportFilterParts()),
           subtitle: `${allCertificates.length} ${this.i18n.currentTerms.certificates || 'תעודות'}`,
           columns: [
             { header: this.i18n.currentTerms.donorRecipient || 'תורם/נהנה', field: 'recipientName' },
@@ -659,7 +673,7 @@ export class CertificatesComponent implements OnInit, OnDestroy {
             { header: this.i18n.currentTerms.mainText || 'טקסט ראשי', mapper: (c) => c.mainText || '-', width: 30 }
           ],
           sheetName: this.i18n.currentTerms.certificates || 'תעודות',
-          fileName: this.excelExportService.generateFileName(this.i18n.currentTerms.certificates || 'תעודות')
+          fileName: await this.globalFilterService.exportFileName(this.i18n.currentTerms.certificates || 'תעודות', this.exportFilterParts(), 'xlsx')
         });
       } catch (error) {
         console.error('Error exporting certificates:', error);

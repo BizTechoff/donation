@@ -16,6 +16,7 @@ import { PayerService } from '../../services/payer.service';
 import { PrintService } from '../../services/print.service';
 import { ExcelExportService } from '../../services/excel-export.service';
 import { DonorController } from '../../../shared/controllers/donor.controller';
+import { amountRangeLabel, dateRangeLabel, namesLabel, searchLabel } from '../../../shared/utils/filter-label-utils';
 
 @Component({
   selector: 'app-campaigns-list',
@@ -453,6 +454,14 @@ export class CampaignsListComponent implements OnInit, OnDestroy {
     await this.refreshData();
   }
 
+  /** סעיף 27 - הסינון של המסך בשמו, לשם קובץ הייצוא וההדפסה. הגלובלי נוסף בשירות. */
+  private exportFilterParts(): string[] {
+    return [
+      searchLabel(this.filterName || this.searchTerm),
+      this.filterActive === 'true' ? this.i18n.currentTerms.activeStatus : this.filterActive === 'false' ? this.i18n.currentTerms.inactiveStatus : ''
+    ];
+  }
+
   async onPrint() {
     await this.busy.doWhileShowingBusy(async () => {
       try {
@@ -499,6 +508,7 @@ export class CampaignsListComponent implements OnInit, OnDestroy {
 
         this.printService.print({
           title: this.i18n.currentTerms.campaigns || 'קמפיינים',
+          fileName: await this.globalFilterService.exportFileName(this.i18n.currentTerms.campaigns || 'קמפיינים', this.exportFilterParts()),
           subtitle: `${allCampaigns.length} ${this.i18n.currentTerms.campaigns || 'קמפיינים'}`,
           columns: [
             { header: this.i18n.currentTerms.campaignName || 'שם קמפיין', field: 'name' },
@@ -563,7 +573,7 @@ export class CampaignsListComponent implements OnInit, OnDestroy {
             { header: this.i18n.currentTerms.endDate || 'תאריך סיום', mapper: (c) => this.formatHebrewDate(c.endDate), width: 15 }
           ],
           sheetName: this.i18n.currentTerms.campaigns || 'קמפיינים',
-          fileName: this.excelExportService.generateFileName(this.i18n.currentTerms.campaigns || 'קמפיינים')
+          fileName: await this.globalFilterService.exportFileName(this.i18n.currentTerms.campaigns || 'קמפיינים', this.exportFilterParts(), 'xlsx')
         });
       } catch (error) {
         console.error('Error exporting campaigns:', error);

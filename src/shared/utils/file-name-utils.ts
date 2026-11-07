@@ -86,11 +86,11 @@ export function buildFileName(
     if (value && value !== clean[clean.length - 1]) clean.push(value)
   }
 
-  // קיצור: זורקים חלקים שלמים מהסוף, כי החלקים הראשונים הם המזהים - סוג הדוח
-  // ואחריו הסינון העיקרי. אם גם החלק הראשון לבדו ארוך מדי, חותכים אותו.
-  while (clean.length > 1 && clean.join(separator).length > maxLength) clean.pop()
+  // קיצור בסוף, בתווים ולא בחלקים שלמים - ישראל, 03.11: "לקצץ בסוף, לא לוותר
+  // על שמות". זריקת חלק שלם הייתה מעלימה את כל רשימת הערים בגלל עיר אחת.
+  // החלקים הראשונים הם המזהים (סוג הדוח, הסינון העיקרי) ולכן נשמרים תמיד.
   let name = clean.join(separator)
-  if (name.length > maxLength) name = sanitizeFileNamePart(name.slice(0, maxLength))
+  if (name.length > maxLength) name = sanitizeFileNamePart(name.slice(0, maxLength - 1)) + '\u2026'
 
   if (!name) name = 'ללא שם'
   return extension ? `${name}.${extension}` : name

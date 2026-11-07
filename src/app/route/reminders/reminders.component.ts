@@ -20,6 +20,7 @@ import { DonorController } from '../../../shared/controllers/donor.controller';
 import { DonorMapController } from '../../../shared/controllers/donor-map.controller';
 import { TableState, TableLoadRequest } from '../../common/table/table-state';
 import { REMINDER_TYPE_LABELS, REMINDER_SOURCE_LABELS, REMINDER_SOURCE_MANUAL } from '../../../shared/enum/reminder-type';
+import { amountRangeLabel, dateRangeLabel, namesLabel, searchLabel } from '../../../shared/utils/filter-label-utils';
 
 @DialogConfig({
   hasBackdrop: true
@@ -345,6 +346,20 @@ export class RemindersComponent implements OnInit, OnDestroy {
     return reminder.donor?.id ? this.donorMobileMap.get(reminder.donor.id) || '' : '';
   }
   
+/** סעיף 27 - תווית סוג התזכורת שנבחר בסינון, כפי שמופיעה ברשימה הנפתחת. */
+private reminderFilterTypeLabel(): string {
+  const t = this.i18n.currentTerms;
+  const labels: Record<string, string | undefined> = {
+    'donation': t.donationReminder,
+    'contact': t.contactReminder,
+    'birthday': t.birthdayReminder,
+    'memorial': t.memorialReminder,
+    'meeting': t.meetingReminder,
+    'follow-up': t.followUpReminder
+  };
+  return this.filterReminderType ? (labels[this.filterReminderType] || this.filterReminderType) : '';
+}
+
 getTypeText(type: string): string {
   // The Hebrew label falls back to shared/enum/reminder-type.ts, which is the
   // SAME map the typeLabel sqlExpression sorts by - so what is displayed and
@@ -664,6 +679,16 @@ getTypeText(type: string): string {
     }
   }
 
+  /** סעיף 27 - הסינון של המסך בשמו, לשם קובץ הייצוא וההדפסה. הגלובלי נוסף בשירות. */
+  private exportFilterParts(): string[] {
+    return [
+      searchLabel(this.searchTerm),
+      dateRangeLabel(this.filterDateFrom, this.filterDateTo),
+      this.reminderFilterTypeLabel(),
+      searchLabel(this.filterDonorSearch)
+    ];
+  }
+
   async onPrint() {
     await this.busy.doWhileShowingBusy(async () => {
       try {
@@ -699,6 +724,7 @@ getTypeText(type: string): string {
 
         this.printService.print({
           title: this.i18n.currentTerms.reminders || 'תזכורות',
+          fileName: await this.globalFilterService.exportFileName(this.i18n.currentTerms.reminders || 'תזכורות', this.exportFilterParts()),
           subtitle: `${allReminders.length} ${this.i18n.currentTerms.reminders || 'תזכורות'}`,
           columns: [
             { header: this.i18n.currentTerms.reminderDateHeader || 'תאריך תזכורת', field: 'date' },
@@ -782,7 +808,7 @@ getTypeText(type: string): string {
             { header: this.i18n.currentTerms.statusHeaderReminder || 'סטטוס', mapper: (r) => r.isCompleted ? 'בוצעה' : 'לא בוצעה', width: 12 }
           ],
           sheetName: this.i18n.currentTerms.reminders || 'תזכורות',
-          fileName: this.excelExportService.generateFileName(this.i18n.currentTerms.reminders || 'תזכורות')
+          fileName: await this.globalFilterService.exportFileName(this.i18n.currentTerms.reminders || 'תזכורות', this.exportFilterParts(), 'xlsx')
         });
       } catch (error) {
         console.error('Error exporting reminders:', error);

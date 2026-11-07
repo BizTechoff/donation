@@ -17,6 +17,7 @@ import { PrintService } from '../../services/print.service';
 import { ActiveFilter, FilterOption, NavigationRecord } from '../../shared/modal-navigation-header/modal-navigation-header.component';
 import { TableLoadRequest, TableState } from '../../common/table/table-state';
 import { EntityChangedService } from '../../services/entity-changed.service';
+import { searchLabel } from '../../../shared/utils/filter-label-utils';
 
 @Component({
   selector: 'app-donor-list',
@@ -526,6 +527,13 @@ export class DonorListComponent implements OnInit, OnDestroy {
   // Print & Export Methods
   // ===================================
 
+  /** סעיף 27 - הסינון של המסך בשמו, לשם קובץ הייצוא וההדפסה. הגלובלי נוסף בשירות. */
+  private exportFilterParts(): string[] {
+    return [
+      searchLabel(this.searchTerm)
+    ];
+  }
+
   async onPrint() {
     await this.busy.doWhileShowingBusy(async () => {
       try {
@@ -578,6 +586,7 @@ export class DonorListComponent implements OnInit, OnDestroy {
 
         this.printService.print({
           title: this.i18n.currentTerms.donors || 'תורמים',
+          fileName: await this.globalFilterService.exportFileName(this.i18n.currentTerms.donors || 'תורמים', this.exportFilterParts()),
           subtitle: `${allDonors.length} ${this.i18n.currentTerms.donors || 'תורמים'}`,
           columns: [
             { header: this.i18n.currentTerms.name || 'שם', field: 'fullName' },
@@ -704,7 +713,7 @@ export class DonorListComponent implements OnInit, OnDestroy {
             { header: this.i18n.currentTerms.lastDonation || 'תרומה אחרונה', mapper: (item) => item.lastDonation, width: 25 }
           ],
           sheetName: this.i18n.currentTerms.donors || 'תורמים',
-          fileName: this.excelExportService.generateFileName(this.i18n.currentTerms.donors || 'תורמים')
+          fileName: await this.globalFilterService.exportFileName(this.i18n.currentTerms.donors || 'תורמים', this.exportFilterParts(), 'xlsx')
         });
       } catch (error) {
         console.error('Error exporting donors:', error);

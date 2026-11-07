@@ -14,6 +14,8 @@ import {
   DonorSelectionFilters,
   InvitedDonorRow,
 } from '../../../../shared/controllers/donor.controller';
+import { GlobalFilterService } from '../../../services/global-filter.service';
+import { namesLabel } from '../../../../shared/utils/filter-label-utils';
 
 export interface CampaignInvitedListModalArgs {
   campaignId: string;
@@ -93,8 +95,28 @@ export class CampaignInvitedListModalComponent implements OnInit {
     private cdr: ChangeDetectorRef,
     public dialogRef: MatDialogRef<CampaignInvitedListModalComponent>,
     private excelService: ExcelExportService,
-    private busy: BusyService
+    private busy: BusyService,
+    private globalFilterService: GlobalFilterService
   ) {}
+
+  /**
+   * סעיף 27 - הסינון של רשימת המוזמנים בשמו. הנתונים עוברים גם את הסינון
+   * הגלובלי (resolveGlobalCandidateIds), ולכן השירות מוסיף אותו לשם.
+   */
+  private invitedFilterParts(): string[] {
+    const f = this.campaign?.invitedDonorFilters;
+    const age = f?.minAge || f?.maxAge ? `גיל ${f?.minAge || 'ללא מינימום'} עד ${f?.maxAge || 'ללא מקסימום'}` : '';
+    return [
+      this.campaign?.name || '',
+      f?.isAnash ? 'אנ"ש' : f?.excludeAnash ? 'ללא אנ"ש' : '',
+      this.includeAlumni ? 'תלמידנו' : this.excludeAlumni ? 'ללא תלמידנו' : '',
+      this.selectedCountry,
+      this.selectedCity,
+      this.selectedNeighborhood,
+      namesLabel([this.circles.find(c => c.id === this.selectedCircleId)?.name]),
+      age
+    ];
+  }
 
   async ngOnInit() {
     await this.refreshData();
@@ -338,7 +360,7 @@ export class CampaignInvitedListModalComponent implements OnInit {
       data: donorsToExport,
       columns,
       sheetName: 'מוזמנים',
-      fileName: this.excelService.generateFileName(`מוזמנים_${this.campaign.name}`),
+      fileName: await this.globalFilterService.exportFileName('מוזמנים', this.invitedFilterParts(), 'xlsx'),
       includeStats: true,
       stats: [
         { label: 'שם קמפיין', value: this.campaign.name },
