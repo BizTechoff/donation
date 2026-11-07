@@ -1765,22 +1765,22 @@ export class ReportController {
 
       // console.log(`   Found ${donorDonations.length} direct donations`);
 
-      // Load donations where this donor is a partner
+      // Load donations where this donor is a partner.
+      // בלי include של התורם: הסריקה עוברת על כל התרומות בטווח (מ-2000 - כמעט
+      // כולן), ו-include היה טוען את התורם של כל אחת, עם כל שדות ה-sqlExpression
+      // שלו - שאילתת משנה לכל תורם. השמות שהדוח צריך נטענים פעם אחת למטה.
       const allDonationsInRange = await remult.repo(Donation).find({
         where: {
           donationDate: {
             $gte: fromDate,
             $lte: toDate
           }
-        },
-        include: { donor: true, donationMethod: true }
+        }
       });
 
       const partnerDonations = allDonationsInRange.filter(d =>
         d.partnerIds && d.partnerIds.includes(donorId) && d.donorId !== donorId
       );
-
-      // console.log(`   Found ${partnerDonations.length} partner donations`);
 
       // Load payments for all these donations with type filtering
       const allDonations = [...donorDonations, ...partnerDonations];
@@ -1796,50 +1796,22 @@ export class ReportController {
       const paymentTotals = calculatePaymentTotals(allDonations, payments);
       const paymentMap = new Map<string, number>(Object.entries(paymentTotals));
 
-      // Build donations array
+      // שותפות מוצגת בשני צדדיה: אצל השותף - "שותף בתרומה עם <התורם>", ואצל
+      // התורם - "שותפים בתרומה: <השותפים>". השמות נטענים בשאילתה אחת.
+      const nameIds = new Set<string>()
+      for (const d of donorDonations) for (const id of d.partnerIds || []) nameIds.add(id)
+      for (const d of partnerDonations) if (d.donorId) nameIds.add(d.donorId)
+      const names = await ReportController.donorNames([...nameIds])
+
       const donationsData: PersonalDonorReportData['donations'] = [];
-
-      // Process direct donations
       for (const donation of donorDonations) {
-        const hebrewDate = await HebrewDateController.convertGregorianToHebrew(donation.donationDate);
-        // commitment column: only for commitment donations, shows the pledged amount
-        const commitmentAmount = donation.donationType === 'commitment' ? donation.amount : 0;
-        // amount column: what was actually paid (effective amount)
-        const paidAmount = calculateEffectiveAmount(donation, paymentMap.get(donation.id!));
-
-        donationsData.push({
-          date: donation.donationDate,
-          dateHebrew: hebrewDate.formatted,
-          commitment: commitmentAmount,
-          amount: paidAmount,
-          currencyId: donation.currencyId,
-          notes: donation.reason || ''
-        });
+        const partners = (donation.partnerIds || []).filter(id => id !== donorId).map(id => names.get(id) || 'תורם לא ידוע')
+        donationsData.push(await ReportController.personalReportRow(donation, paymentMap, false,
+          partners.length ? `שותפים בתרומה: ${partners.join(', ')}` : ''))
       }
-
-      //   { id: 'ILS', label: 'שקל', labelEnglish: 'Shekel', symbol: '₪', rateInShekel: 1 },
-      //   { id: 'USD', label: 'דולר', labelEnglish: 'Dollar', symbol: '$', rateInShekel: 3.2 },
-      //   { id: 'EUR', label: 'יורו', labelEnglish: 'Euro', symbol: '€', rateInShekel: 3.73 },
-      //   { id: 'GBP', label: 'ליש"ט', labelEnglish: 'Pound', symbol: '£', rateInShekel: 4.58 }
-      // ];
-
-      // Process partner donations
       for (const donation of partnerDonations) {
-        const hebrewDate = await HebrewDateController.convertGregorianToHebrew(donation.donationDate);
-        const mainDonorName = donation.donor?.lastAndFirstName || 'תורם לא ידוע';
-        // commitment column: only for commitment donations
-        const commitmentAmount = donation.donationType === 'commitment' ? donation.amount : 0;
-        // amount column: what was actually paid (effective amount)
-        const paidAmount = calculateEffectiveAmount(donation, paymentMap.get(donation.id!));
-
-        donationsData.push({
-          date: donation.donationDate,
-          dateHebrew: hebrewDate.formatted,
-          commitment: commitmentAmount,
-          amount: paidAmount,
-          currencyId: donation.currencyId,
-          notes: `שותף בתרומה עם ${mainDonorName}`
-        });
+        donationsData.push(await ReportController.personalReportRow(donation, paymentMap, true,
+          `שותף בתרומה עם ${names.get(donation.donorId!) || 'תורם לא ידוע'}`))
       }
 
       // Sort by date
@@ -1880,6 +1852,37 @@ export class ReportController {
     }
   }
 
+  /**
+   * שורה אחת בדוח האישי - אותו מבנה לתרומה של התורם ולתרומה שהוא שותף בה.
+   * partnerNote מצטרף לסיבת התרומה, כך שאף אחד מהשניים לא נבלע.
+   */
+  private static async personalReportRow(
+    donation: Donation,
+    paymentMap: Map<string, number>,
+    isPartner: boolean,
+    partnerNote: string
+  ): Promise<PersonalDonorReportData['donations'][number]> {
+    const hebrewDate = await HebrewDateController.convertGregorianToHebrew(donation.donationDate);
+    return {
+      date: donation.donationDate,
+      dateHebrew: hebrewDate.formatted,
+      // commitment column: only for commitment donations, shows the pledged amount
+      commitment: donation.donationType === 'commitment' ? donation.amount : 0,
+      // amount column: what was actually paid (effective amount)
+      amount: calculateEffectiveAmount(donation, paymentMap.get(donation.id!)),
+      currencyId: donation.currencyId,
+      notes: [donation.reason, partnerNote].filter(n => !!n && n.trim()).join(' - '),
+      isPartner
+    };
+  }
+
+  /** id -> "משפחה פרטי", בשאילתה אחת. */
+  private static async donorNames(ids: string[]): Promise<Map<string, string>> {
+    if (!ids.length) return new Map();
+    const donors = await remult.repo(Donor).find({ where: { id: { $in: ids } } });
+    return new Map(donors.map(d => [d.id, d.lastAndFirstName]));
+  }
+
   static createReportDelegate: (type: Report, contents: Record<string, any>) => Promise<DocxCreateResponse>
   static createReportPdfDelegate: (type: Report, contents: Record<string, any>) => Promise<DocxCreateResponse>
   // static createReportRecordsDelegate: (type: Report, contents: Record<string, any>) => Promise<DocxCreateResponse>
@@ -1918,7 +1921,8 @@ export class ReportController {
           'תאריך': ReportController.formatDateForFilter(d.date),
           'תאריך_עברי': d.dateHebrew,
           'התחייבות': d.commitment || '',
-          'סכום': d.notes.startsWith('שותף בתרומה') ? `(${'$'}${d.amount})` : `${'$'}${d.amount}`,
+          // סכום של תרומה שהתורם רק שותף בה - בסוגריים. לפי הדגל, לא לפי נוסח ההערה.
+          'סכום': d.isPartner ? `(${'$'}${d.amount})` : `${'$'}${d.amount}`,
           'הערות': d.notes
         };
       })
@@ -2095,5 +2099,7 @@ export interface PersonalDonorReportData {
     amount: number;
     currencyId: string;
     notes: string;
+    /** התורם שותף בתרומה ואינו התורם הראשי שלה. */
+    isPartner: boolean;
   }[];
 }

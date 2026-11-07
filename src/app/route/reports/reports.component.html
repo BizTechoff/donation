@@ -206,10 +206,16 @@
         <!-- כפתורים -->
         <div class="filter-actions-wrapper">
           <div class="filter-actions">
-            <button class="btn btn-primary" (click)="printAndProduceOnce()"
+            <!-- זום 03.11 - שני כפתורים: הצג (בלי הורדה) והורד (בלי צורך בהצג). -->
+            <button class="btn btn-primary" (click)="loadPersonalDonorReport()"
               [disabled]="selectedDonorsForPersonalReport.length === 0 || !personalReportFromDate">
-              <mat-icon>description</mat-icon>
-              הפק דוח
+              <mat-icon>visibility</mat-icon>
+              הצג
+            </button>
+            <button class="btn btn-secondary" (click)="downloadPersonalDonorReport()"
+              [disabled]="selectedDonorsForPersonalReport.length === 0 || !personalReportFromDate">
+              <mat-icon>file_download</mat-icon>
+              הורד
             </button>
             <button *ngIf="!isPrintAndProduceOnce" class="btn btn-secondary" (click)="printPersonalDonorReport()"
               [disabled]="!personalDonorReportData">
@@ -220,7 +226,7 @@
               (click)="exportAllDonorsToWord()"
               [disabled]="!personalReportFromDate">
               <mat-icon>file_download</mat-icon>
-              הפק דוח לכולם ({{ selectedDonorsForPersonalReport.length }})
+              הורד לכולם ({{ selectedDonorsForPersonalReport.length }})
             </button>
             <button class="btn btn-outline" (click)="clearPersonalDonorReport()">
               <mat-icon>refresh</mat-icon>
@@ -1043,7 +1049,8 @@
                   <td>{{donation.dateHebrew}}</td>
                   <td>{{donation.commitment > 0 ? donation.commitment + ' ' + getCurrencySymbol(donation.currencyId)
                     : '' }}</td>
-                  <td>{{donation.amount}} {{getCurrencySymbol(donation.currencyId)}}</td>
+                  <!-- כמו בקובץ ה-Word: סכום של תרומה שהתורם רק שותף בה - בסוגריים. -->
+                  <td>{{donation.isPartner ? '(' : ''}}{{donation.amount}} {{getCurrencySymbol(donation.currencyId)}}{{donation.isPartner ? ')' : ''}}</td>
                   <td>{{donation.notes}}</td>
                 </tr>
               </tbody>

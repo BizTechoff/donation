@@ -2437,11 +2437,10 @@ export class ReportsComponent implements OnInit, OnDestroy {
     if (index >= 0 && index < this.selectedDonorsForPersonalReport.length) {
       this.currentPersonalReportDonorIndex = index;
       this.selectedDonorForPersonalReport = this.selectedDonorsForPersonalReport[index];
-      // Auto-load report for this donor if dates are set
-      if (this.personalReportFromDate) {
+      // ישראל, 03.11: לחיצה על שם הציגה דוח בלי "הצג" - "זה עקיפה". עכשיו היא
+      // מחליפה את הדוח המוצג רק אם כבר לחצו "הצג"; אחרת היא רק בוחרת תורם.
+      if (this.personalDonorReportData && this.personalReportFromDate) {
         await this.loadPersonalDonorReport();
-      } else {
-        this.personalDonorReportData = null;
       }
     }
   }
@@ -2704,40 +2703,53 @@ export class ReportsComponent implements OnInit, OnDestroy {
   }
 
   async printPersonalDonorReport1() {
+    // מסלול ישן - מוריד דרך אותו מקום כמו "הורד".
+    await this.downloadPersonalDonorReport();
+  }
+
+
+  /**
+   * זום 03.11 - "הצג" ו"הורד", שני כפתורים ("גם וגם"). "הורד" זמין בלי "הצג":
+   * יעקב ביקש לחיצה אחת שמורידה, ישראל לא רוצה לנפח הורדות כשהוא רק בודק.
+   */
+  async downloadPersonalDonorReport() {
+    if (!this.selectedDonorForPersonalReport) { alert('יש לבחור תורם'); return; }
+    if (!this.personalReportFromDate) { alert('יש לבחור תאריך התחלה'); return; }
+    const donor = this.selectedDonorForPersonalReport;
+    let ok = false;
+    await this.busy.doWhileShowingBusy(async () => { ok = await this.downloadPersonalReportFor(donor); });
+    if (!ok) alert('שגיאה בהפקת הדוח');
+  }
+
+  /**
+   * הפקת דוח Word לתורם אחד והורדתו - המקום האחד. "הורד" ו"הורד לכולם" שניהם
+   * עוברים כאן, עם אותו שם קובץ (personalReportFileName) ואותו טיפול בשגיאה.
+   */
+  private async downloadPersonalReportFor(donor: Donor): Promise<boolean> {
     try {
-      // Convert dates to ISO string format (YYYY-MM-DD) to avoid timezone issues
-      const fromDateStr = this.formatDateToISOString(this.personalReportFromDate!);
-      const toDateStr = this.formatDateToISOString(this.personalReportToDate || new Date());
-
       const result = await ReportController.createPersonalDonorReport(
-        this.selectedDonorForPersonalReport!.id,
-        fromDateStr,
-        toDateStr
+        donor.id,
+        this.formatDateToISOString(this.personalReportFromDate!),
+        this.formatDateToISOString(this.personalReportToDate || new Date())
       );
-      console.log('printPersonalDonorReport:', JSON.stringify(result));
-
-
-      if (result.success) {
-        // יצירת לינק להורדה
-        const link = document.createElement('a');
-        link.href = result.url;
-        link.download = this.personalReportFileName(this.selectedDonorForPersonalReport?.lastAndFirstName);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      } else {
-        console.error('Error:', result.error);
+      const match = result.success ? result.url.match(/^data:([^;]+);base64,(.+)$/) : null;
+      if (!match) {
+        console.error('Error creating report for donor:', donor.id, result.error || 'invalid data URL');
+        return false;
       }
-
+      const url = URL.createObjectURL(this.base64ToBlob(match[2], match[1]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = this.personalReportFileName(donor.lastAndFirstName || donor.id);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      return true;
     } catch (error) {
-      console.error('Error loading personal donor report:', error);
-      alert('שגיאה בהדפסת הדוח');
+      console.error('Error exporting report for donor:', donor.id, error);
+      return false;
     }
-    // this.isPersonalReportPrintMode = true;
-    // setTimeout(() => {
-    //   window.print();
-    //   this.isPersonalReportPrintMode = false;
-    // }, 100);
   }
 
   // Export Word documents for all selected donors
@@ -2758,59 +2770,16 @@ export class ReportsComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const fromDateStr = this.formatDateToISOString(this.personalReportFromDate);
-    const toDateStr = this.formatDateToISOString(this.personalReportToDate || new Date());
-
     let successCount = 0;
     let errorCount = 0;
 
     await this.busy.doWhileShowingBusy(async () => {
       for (let i = 0; i < this.selectedDonorsForPersonalReport.length; i++) {
-        const donor = this.selectedDonorsForPersonalReport[i];
-        try {
-          const result = await ReportController.createPersonalDonorReport(
-            donor.id,
-            fromDateStr,
-            toDateStr
-          );
-
-          if (result.success) {
-            // Extract base64 and mimeType from data URL
-            const dataUrlMatch = result.url.match(/^data:([^;]+);base64,(.+)$/);
-            if (dataUrlMatch) {
-              const mimeType = dataUrlMatch[1];
-              const base64 = dataUrlMatch[2];
-
-              const blob = this.base64ToBlob(base64, mimeType);
-              const url = URL.createObjectURL(blob);
-
-              // Create download link
-              const link = document.createElement('a');
-              link.href = url;
-              link.download = this.personalReportFileName(donor.lastAndFirstName || donor.id);
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-
-              // Clean up
-              URL.revokeObjectURL(url);
-              successCount++;
-
-              // Small delay between downloads to prevent browser blocking
-              if (i < this.selectedDonorsForPersonalReport.length - 1) {
-                await new Promise(resolve => setTimeout(resolve, 500));
-              }
-            } else {
-              console.error('Invalid data URL format for donor:', donor.id);
-              errorCount++;
-            }
-          } else {
-            console.error('Error creating report for donor:', donor.id, result.error);
-            errorCount++;
-          }
-        } catch (error) {
-          console.error('Error exporting report for donor:', donor.id, error);
-          errorCount++;
+        if (await this.downloadPersonalReportFor(this.selectedDonorsForPersonalReport[i])) successCount++;
+        else errorCount++;
+        // Small delay between downloads to prevent browser blocking
+        if (i < this.selectedDonorsForPersonalReport.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 500));
         }
       }
     });
