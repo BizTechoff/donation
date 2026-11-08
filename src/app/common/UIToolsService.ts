@@ -209,10 +209,10 @@ export class UIToolsService implements UITools {
     )
   }
 
-  async donorDonationsDialog(donorId: string, donationType: 'donations' | 'gifts' | 'receipts', donorName?: string): Promise<void> {
+  async donorDonationsDialog(donorId: string, donationType: 'donations' | 'gifts' | 'receipts', donorName?: string, commitmentId?: string): Promise<void> {
     return await openDialog(
       (await import('../routes/modals/donor-donations-modal/donor-donations-modal.component')).DonorDonationsModalComponent,
-      (dlg) => dlg.args = { donorId, donationType, donorName }
+      (dlg) => dlg.args = { donorId, donationType, donorName, commitmentId }
     )
   }
 

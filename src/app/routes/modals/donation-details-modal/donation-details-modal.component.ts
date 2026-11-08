@@ -445,10 +445,15 @@ export class DonationDetailsModalComponent implements OnInit {
     return success;
   }
 
+  /** מספר התרומות שנזקפו להתחייבות הזו (מ-app-commitment-donations-button). */
+  commitmentLinkedCount = 0;
+
   async deleteDonation() {
     if (!this.donation) return;
 
-    const confirmMessage = this.i18n.currentTerms.confirmDeleteDonation?.replace('{amount}', this.donation.amount.toString()) || '';
+    // הנוסח מכיל {donor}, לא {amount} - לכן הוצג "{donor}" כמו שהוא.
+    const donorName = this.selectedDonor?.lastAndFirstName || this.donation.donor?.lastAndFirstName || '';
+    const confirmMessage = this.i18n.currentTerms.confirmDeleteDonation?.replace('{donor}', donorName) || '';
     const yes = await this.ui.yesNoQuestion(confirmMessage);
     if (yes) {
       try {

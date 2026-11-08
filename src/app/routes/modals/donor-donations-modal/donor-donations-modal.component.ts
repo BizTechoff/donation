@@ -20,6 +20,8 @@ export interface DonorDonationsModalArgs {
   donorId: string;
   donationType: 'donations' | 'gifts' | 'receipts';
   donorName?: string;
+  /** שלב ג׳ 4 - רק התרומות שנזקפו להתחייבות הזו ("תרומות קשורות"). */
+  commitmentId?: string;
 }
 
 @DialogConfig({
@@ -122,7 +124,9 @@ currencyTypes = this.payer.getCurrencyTypesRecord()
     const donorName = this.donor?.lastAndFirstName || '';
     switch (this.args.donationType) {
       case 'donations':
-        return `תרומות של ${donorName}`;
+        return this.args.commitmentId
+          ? `תרומות על חשבון התחייבות - ${donorName}`
+          : `תרומות של ${donorName}`;
       case 'gifts':
         return `מתנות של ${donorName}`;
       case 'receipts':
@@ -184,6 +188,7 @@ currencyTypes = this.payer.getCurrencyTypesRecord()
         whereClause.receiptIssued = true;
         break;
     }
+    if (this.args.commitmentId) whereClause.commitmentId = this.args.commitmentId;
 
     this.donations = await this.donationRepo.find({
       where: whereClause,

@@ -646,6 +646,11 @@
         close & reopen the modal to attach payments. Standing-order flow is
         unchanged - it still needs an existing (saved) donation record.
       -->
+      <!-- "תרומות קשורות" - מה שנזקף להתחייבות הזו. מופיע רק כשיש. -->
+      <app-commitment-donations-button *ngIf="donation && !isNewDonation && donation.donationType === 'commitment'"
+        [commitmentId]="donation.id" [donorId]="donation.donorId"
+        (linkedCount)="commitmentLinkedCount = $event">
+      </app-commitment-donations-button>
       <!-- שלב ג׳ 4.1 - טופס התנועות הוסתר בהתחייבות ("כל תרומה = תנועה"). התנועות
            שכבר נרשמו נשארו במסד ונספרות. בהו"ק הוא נשאר. -->
       <button *ngIf="donation && !isNewDonation && isStandingOrderPayment && donation.donationType !== 'commitment'"
@@ -658,7 +663,10 @@
       <div class="footer-divider"></div>
 
       <!-- Admin Actions -->
-      <button mat-stroked-button color="warn" *ngIf="!isNewDonation" (click)="deleteDonation()" class="action-button">
+      <!-- התחייבות שנזקפו לה תרומות - לא נמחקת מכאן (מוטי, 08.11): המחיקה דרך
+           "תרומות קשורות", תרומה-תרומה. אחרת התרומות היו מצביעות על התחייבות
+           שאינה קיימת. -->
+      <button mat-stroked-button color="warn" *ngIf="!isNewDonation && !(donation?.donationType === 'commitment' && commitmentLinkedCount > 0)" (click)="deleteDonation()" class="action-button">
         <mat-icon>delete</mat-icon>
         {{i18n.terms.deleteDonation}}
       </button>

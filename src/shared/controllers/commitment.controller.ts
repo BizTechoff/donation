@@ -96,10 +96,11 @@ export class CommitmentController {
       })
     ])
     const legacy = calculatePaymentTotals(commitments, payments)
-    const linkedById = new Map(linked.map(r => [r.commitmentId, r.amount?.sum || 0]))
+    const linkedById = new Map(linked.map(r => [r.commitmentId, r]))
     const out: Record<string, CommitmentProgress> = {}
     for (const c of commitments) {
-      out[c.id] = commitmentProgress(c.amount, legacy[c.id] || 0, linkedById.get(c.id) || 0)
+      const row = linkedById.get(c.id)
+      out[c.id] = commitmentProgress(c.amount, legacy[c.id] || 0, row?.amount?.sum || 0, row?.$count || 0)
     }
     return out
   }

@@ -19,12 +19,14 @@ export interface CommitmentProgress {
   /** לא שלילי - בחריגה היתרה אפס. */
   remaining: number
   isClosed: boolean
+  /** כמה תרומות נזקפו להתחייבות (בלי התנועות הישנות). */
+  linkedCount: number
 }
 
-export function commitmentProgress(total: number, legacyPaid: number, linkedPaid: number): CommitmentProgress {
+export function commitmentProgress(total: number, legacyPaid: number, linkedPaid: number, linkedCount = 0): CommitmentProgress {
   const paid = (legacyPaid || 0) + (linkedPaid || 0)
   const t = total || 0
-  return { total: t, paid, remaining: Math.max(0, t - paid), isClosed: t > 0 && paid >= t }
+  return { total: t, paid, remaining: Math.max(0, t - paid), isClosed: t > 0 && paid >= t, linkedCount }
 }
 
 /**
