@@ -95,12 +95,32 @@ export class TableState {
   // ── loading ─────────────────────────────────────────────────────────────
 
   async reload(): Promise<void> {
+    await this.fetch()
+    this.scrollToTop()
+  }
+
+  /**
+   * שלב ג׳ 3.7 - "חזרה מכרטיס תורם משמרת את מקום הגלילה ברשימה".
+   * אותו עמוד, אותו מקום: לרענון אחרי שרשומה נערכה בכרטיס. reload קופץ
+   * לראש - נכון לדפדוף ולמיון, אבל אחרי סגירת כרטיס הוא הוריד את המשתמש
+   * מהשורה שבה עבד.
+   */
+  async refresh(): Promise<void> {
+    const top = this.opts.scrollContainer?.()?.scrollTop ?? 0
+    await this.fetch()
+    // השורות נבנות מחדש רק בסבב הבא של זיהוי השינויים.
+    setTimeout(() => {
+      const el = this.opts.scrollContainer?.()
+      if (el) el.scrollTop = top
+    })
+  }
+
+  private async fetch(): Promise<void> {
     await this.opts.load({
       page: this.currentPage,
       pageSize: this.pageSize,
       sort: this.sortColumns.map(s => ({ ...s }))
     })
-    this.scrollToTop()
   }
 
   /** Any change that alters the result set (filter, search) starts at page 1. */

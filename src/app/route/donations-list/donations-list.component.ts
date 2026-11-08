@@ -335,10 +335,11 @@ export class DonationsListComponent implements OnInit, OnDestroy {
     }
   }
 
+  // שלב ג׳ 3.7 - חזרה מהכרטיס: אותו עמוד ואותו מקום גלילה (table.refresh).
   async editDonation(donation: Donation) {
     const changed = await this.ui.donationDetailsDialog(donation.id);
     if (changed) {
-      await this.refreshData();
+      await this.table.refresh();
     }
   }
 
@@ -367,11 +368,12 @@ export class DonationsListComponent implements OnInit, OnDestroy {
     }
   }
 
+  // שלב ג׳ 3.7 - חזרה מהכרטיס: אותו עמוד ואותו מקום גלילה (table.refresh).
   async openDonorDetails(donation: Donation) {
     if (!donation.donorId) return;
     const changed = await this.ui.donorDetailsDialog(donation.donorId);
     if (changed) {
-      await this.refreshData();
+      await this.table.refresh();
     }
   }
 

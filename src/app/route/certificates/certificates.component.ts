@@ -320,9 +320,10 @@ export class CertificatesComponent implements OnInit, OnDestroy {
     }
   }
 
+  // שלב ג׳ 3.7 - חזרה מהכרטיס: אותו עמוד ואותו מקום גלילה (table.refresh).
   async openEditModal(certificate: Certificate) {
     if (await this.ui.certificateDetailsDialog(certificate.id)) {
-      await this.refreshData();
+      await this.table.refresh();
     }
   }
 

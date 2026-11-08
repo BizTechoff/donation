@@ -281,19 +281,21 @@ export class DonorGiftsListComponent implements OnInit, OnDestroy {
   }
 
   /** Open the donor card from the donor name (as in reminders / donations). */
+  // שלב ג׳ 3.7 - חזרה מהכרטיס: אותו עמוד ואותו מקום גלילה (table.refresh).
   async openDonorDetails(donorGift: DonorGift) {
     if (!donorGift.donorId) return;
     const changed = await this.ui.donorDetailsDialog(donorGift.donorId);
-    if (changed) await this.refreshData();
+    if (changed) await this.table.refresh();
   }
 
+  // שלב ג׳ 3.7 - חזרה מהכרטיס: אותו עמוד ואותו מקום גלילה (table.refresh).
   async editDonorGift(donorGift: DonorGift) {
     const result = await openDialog(DonorGiftDetailsModalComponent, (it) => {
       it.args = { donorGiftId: donorGift.id };
     });
 
     if (result) {
-      await this.refreshData();
+      await this.table.refresh();
     }
   }
 

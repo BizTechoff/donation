@@ -370,10 +370,11 @@ export class CampaignsListComponent implements OnInit, OnDestroy {
     }
   }
 
+  // שלב ג׳ 3.7 - חזרה מהכרטיס: אותו עמוד ואותו מקום גלילה (table.refresh).
   async editCampaign(campaign: Campaign) {
     const changed = await this.ui.campaignDetailsDialog(campaign.id);
     if (changed) {
-      await this.refreshData();
+      await this.table.refresh();
     }
   }
 

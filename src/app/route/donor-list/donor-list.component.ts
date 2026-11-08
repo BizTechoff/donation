@@ -97,7 +97,7 @@ export class DonorListComponent implements OnInit, OnDestroy {
     // card no longer has to close for the list to learn about it.
     this.subscription.add(
       this.entityChanged.on('donor').subscribe(() => {
-        this.table.reload();
+        this.table.refresh();
       })
     );
 
@@ -240,17 +240,19 @@ export class DonorListComponent implements OnInit, OnDestroy {
     }
   }
 
+  // שלב ג׳ 3.7 - חזרה מהכרטיס: אותו עמוד ואותו מקום גלילה (table.refresh).
   async viewDonor(donor: Donor) {
     const changed = await this.ui.donorDetailsDialog(donor.id);
     if (changed) {
-      await this.refreshData();
+      await this.table.refresh();
     }
   }
 
+  // שלב ג׳ 3.7 - חזרה מהכרטיס: אותו עמוד ואותו מקום גלילה (table.refresh).
   async editDonor(donor: Donor) {
     const changed = await this.ui.donorDetailsDialog(donor.id);
     if (changed) {
-      await this.refreshData();
+      await this.table.refresh();
     }
   }
 
@@ -269,10 +271,11 @@ export class DonorListComponent implements OnInit, OnDestroy {
     }
   }
 
+  // שלב ג׳ 3.7 - חזרה מהכרטיס: אותו עמוד ואותו מקום גלילה (table.refresh).
   async deactivateDonor(donor: Donor) {
     try {
       await donor.deactivate();
-      await this.refreshData();
+      await this.table.refresh();
     } catch (error) {
       console.error('Error deactivating donor:', error);
     }
