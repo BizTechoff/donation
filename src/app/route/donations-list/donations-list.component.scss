@@ -344,12 +344,13 @@
       }
 
       .form-control {
+        height: var(--filter-field-height); // גובה אחיד בשורת הסינון - styles.scss
+        box-sizing: border-box;
         padding: 8px 10px;
         border: 2px solid #e0e0e0;
         border-radius: 6px;
         font-size: 13px;
         transition: border-color 0.3s ease;
-        height: 36px; // גובה אחיד לכל השדות
         box-sizing: border-box;
 
         &:focus {

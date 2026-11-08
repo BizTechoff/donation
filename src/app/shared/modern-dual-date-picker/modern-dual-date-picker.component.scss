@@ -33,7 +33,7 @@
     }
     
     .date-input {
-      min-height: 32px;
+      min-height: var(--date-input-height, 32px);
       padding: 6px 8px;
       font-size: 12px;
       
@@ -129,7 +129,10 @@
     background: white;
     cursor: pointer;
     transition: all 0.2s ease;
-    min-height: 38px;
+    // בשורת סינון הגובה נקבע מבחוץ (--date-input-height, styles.scss), כדי
+    // שהתאריך יתיישר עם שאר השדות. בטפסים - ברירת המחדל הקודמת.
+    min-height: var(--date-input-height, 38px);
+    box-sizing: border-box;
 
     &:hover:not(.disabled):not(.has-popup-open) {
       border-color: #007bff;

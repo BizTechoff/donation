@@ -145,7 +145,20 @@
         font-size: 13px;
       }
 
+      // שדה "תורם": השדה והכפתורים בשורה אחת. בלי זה הכפתור (48px) הגביה את
+      // השורה, והשדה ירד וצר מהשאר.
+      .donor-filter-field {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+
+        .form-control { flex: 1 1 auto; min-width: 0; cursor: pointer; }
+        button { flex: none; }
+      }
+
       .form-control {
+        height: var(--filter-field-height); // גובה אחיד בשורת הסינון - styles.scss
+        box-sizing: border-box;
         padding: 10px 12px;
         border: 2px solid #e0e0e0;
         border-radius: 6px;

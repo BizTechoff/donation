@@ -66,6 +66,16 @@ $green-theme: mat.define-theme((color: (theme-type: light,
   --mat-card-subtitle-text-weight: 400;
   --mat-toolbar-container-background-color: var(--sys-primary);
   --mat-toolbar-container-text-color: var(--sys-on-primary);
+
+  /* גובה אחיד לכל שדה בשורות הסינון - שדה טקסט, רשימה, תאריך, חיפוש דו-לשוני.
+     המקום האחד; כל מסך ורכיב קוראים מכאן, כך שהשדות בשורה מתיישרים. */
+  --filter-field-height: 42px;
+}
+
+/* שורת סינון: גם רכיב התאריך מקבל את הגובה האחיד. משתנה CSS עובר דרך
+   גבולות הקומפוננטות, בלי ng-deep. */
+.filter-row {
+  --date-input-height: var(--filter-field-height);
 }
 
 .mdc-text-field__input::-webkit-calendar-picker-indicator {
