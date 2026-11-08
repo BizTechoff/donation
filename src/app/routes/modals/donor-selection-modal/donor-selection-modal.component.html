@@ -12,7 +12,8 @@
       <div class="filter-row">
         <div class="filter-group">
           <label>{{ (i18n.terms$ | async)?.searchLabel }}</label>
-          <input #searchInput type="text" [(ngModel)]="filterText" (ngModelChange)="onSearchChange()" [placeholder]="(i18n.terms$ | async)?.searchDonorPlaceholder || ''" autofocus cdkFocusInitial>
+          <!-- שלב ג׳ 2.3 - חיפוש מפוצל: עברית מימין, אנגלית משמאל. -->
+          <app-bilingual-search #searchInput [(ngModel)]="filterText" (ngModelChange)="onSearchChange()" [placeholderHe]="(i18n.terms$ | async)?.searchDonorPlaceholder || ''"></app-bilingual-search>
         </div>
         <!-- Z5 - creating a donor makes no sense when the picker is used to
              choose whom to FILTER by (Zoom א׳ 65:18-66:13). Callers that do

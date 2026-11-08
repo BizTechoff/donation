@@ -19,6 +19,8 @@ import { capitalizeWords, isWordStart } from '../../../shared/utils/text-case'
 })
 export class FieldLangDirective implements OnInit {
   @Input('appFieldLang') lang: FieldLang = 'he'
+  /** 2.2 - אות ראשונה גדולה בשדה אנגלי. כבוי בשדות חיפוש, שם אין לזה משמעות. */
+  @Input() capitalize = true
 
   constructor(private el: ElementRef<HTMLInputElement | HTMLTextAreaElement>) { }
 
@@ -42,7 +44,7 @@ export class FieldLangDirective implements OnInit {
     const mapped = charForKey(event.code, caps ? !event.shiftKey : event.shiftKey, this.lang)
     const typed = mapped ?? (event.key.length === 1 ? event.key : null)
     if (!typed) return
-    const toInsert = this.lang === 'en' && this.atWordStart() ? typed.toLocaleUpperCase('en') : typed
+    const toInsert = this.lang === 'en' && this.capitalize && this.atWordStart() ? typed.toLocaleUpperCase('en') : typed
     if (toInsert === event.key) return
     event.preventDefault()
     this.insert(toInsert)
@@ -54,7 +56,7 @@ export class FieldLangDirective implements OnInit {
    */
   @HostListener('blur')
   onBlur() {
-    if (this.lang !== 'en') return
+    if (this.lang !== 'en' || !this.capitalize) return
     const node = this.el.nativeElement
     const fixed = capitalizeWords(node.value)
     if (fixed === node.value) return

@@ -9,6 +9,7 @@ import { I18nService } from '../../../i18n/i18n.service';
 import { DonorDetailsModalComponent } from '../donor-details-modal/donor-details-modal.component';
 import { DonorController } from '../../../../shared/controllers/donor.controller';
 import { TableState, TableLoadRequest } from '../../../common/table/table-state';
+import { BilingualSearchComponent } from '../../../common/bilingual-search/bilingual-search.component';
 
 export interface DonorSelectionModalArgs {
   title?: string;
@@ -40,7 +41,7 @@ export interface DonorSelectionModalArgs {
   styleUrls: ['./donor-selection-modal.component.scss']
 })
 export class DonorSelectionModalComponent implements OnInit, OnDestroy {
-  @ViewChild('searchInput') searchInput!: ElementRef<HTMLInputElement>;
+  @ViewChild('searchInput') searchInput!: BilingualSearchComponent;
   // Handle to the scrollable table body so paging can reset scroll to the top
   // (per client Israel Glikson, 1.7.2026 - user was ending up mid-page on the
   // next page's data and having to scroll up manually).
@@ -118,7 +119,7 @@ export class DonorSelectionModalComponent implements OnInit, OnDestroy {
 
   private setFocusOnSearch() {
     setTimeout(() => {
-      this.searchInput?.nativeElement?.focus();
+      this.searchInput?.focus();
     }, 100);
   }
 

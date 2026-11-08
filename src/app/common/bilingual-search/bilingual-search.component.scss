@@ -1,0 +1,37 @@
+// הרכיב מחזיק את מראה השדה בעצמו: עיצוב .form-control של כל מסך מוגבל
+// לקומפוננטה שלו (encapsulation) ואינו מגיע לשדות שבתוך הרכיב. הערכים - אלה
+// של שדות הסינון בפלטפורמה (רשימת תורמים, רשימת תרומות).
+:host {
+  display: block;
+  width: 100%;
+}
+
+.bilingual-search {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+
+  input {
+    flex: 1 1 0;
+    min-width: 0;
+    height: 38px;
+    padding: 8px 10px;
+    border: 2px solid #e0e0e0;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+    background: #fff;
+    box-sizing: border-box;
+    transition: border-color 0.3s ease;
+
+    &::placeholder { color: #9aa0a6; }
+
+    &:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    &:disabled { background: #f5f5f5; }
+  }
+}

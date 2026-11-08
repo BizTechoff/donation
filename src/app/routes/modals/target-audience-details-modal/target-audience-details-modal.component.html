@@ -60,11 +60,12 @@
             <div class="search-section">
               <div class="search-input-group">
                 <mat-icon class="search-icon">search</mat-icon>
-                <input
-                  type="text"
-                  class="form-control search-input"
+                <!-- שלב ג׳ 2.3 - חיפוש מפוצל: עברית מימין, אנגלית משמאל. -->
+                <app-bilingual-search
+                  class="search-input"
                   [(ngModel)]="searchTerm"
-                  placeholder="חפש תורם...">
+                  placeholderHe="חפש תורם...">
+                </app-bilingual-search>
                 <button *ngIf="searchTerm" class="clear-search-btn" (click)="clearSearch()">
                   <mat-icon>clear</mat-icon>
                 </button>

@@ -20,6 +20,7 @@ import { PrintType, DonationPrintOptions } from '../../routes/modals/print-optio
 import { FileUploadService } from '../../services/file-upload.service';
 import { TableState, TableLoadRequest } from '../../common/table/table-state';
 import { amountRangeLabel, dateRangeLabel, namesLabel, searchLabel } from '../../../shared/utils/filter-label-utils';
+import { BilingualSearchComponent } from '../../common/bilingual-search/bilingual-search.component';
 
 @Component({
   selector: 'app-donations-list',
@@ -81,7 +82,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
 
   // Filter variables
   searchTerm = '';
-  @ViewChild('searchInput') searchInput?: ElementRef<HTMLInputElement>;
+  @ViewChild('searchInput') searchInput?: BilingualSearchComponent;
   // Scrollable table body handle - reset to top on each data refresh so paging
   // does not leave the user mid-page (Israel Glikson, 1.7.2026).
   @ViewChild('scrollableTable') scrollableTable?: ElementRef<HTMLElement>;
@@ -309,18 +310,8 @@ export class DonationsListComponent implements OnInit, OnDestroy {
 
   private restoreSearchFocus() {
     setTimeout(() => {
-      const native = this.searchInput?.nativeElement;
-      if (!native) return;
-      const active = document.activeElement;
-      const isInputAlready = active === native;
-      const isOtherInteractive = active && (
-        active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT'
-      ) && active !== native;
-      if (!isInputAlready && !isOtherInteractive) {
-        native.focus();
-        const len = native.value?.length ?? 0;
-        try { native.setSelectionRange(len, len); } catch {}
-      }
+      // שלב ג׳ 2.3 - הכלל (לא לגנוב פוקוס משדה אחר) עבר לרכיב החיפוש.
+      this.searchInput?.restoreFocus();
     }, 150);
   }
 

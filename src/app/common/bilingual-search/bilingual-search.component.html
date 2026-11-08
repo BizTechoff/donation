@@ -1,0 +1,11 @@
+<!-- RTL: הראשון בימין - עברית; השני בשמאל - אנגלית. -->
+<div class="bilingual-search">
+  <input #heInput type="text" class="form-control" appFieldLang="he"
+    [placeholder]="placeholderHe" [disabled]="disabled"
+    [(ngModel)]="he" [ngModelOptions]="{ standalone: true }"
+    (ngModelChange)="emit()" (focus)="touched('he')">
+  <input #enInput type="text" class="form-control" appFieldLang="en" [capitalize]="false"
+    [placeholder]="placeholderEn" [disabled]="disabled"
+    [(ngModel)]="en" [ngModelOptions]="{ standalone: true }"
+    (ngModelChange)="emit()" (focus)="touched('en')">
+</div>

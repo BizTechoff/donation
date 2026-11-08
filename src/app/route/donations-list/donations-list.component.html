@@ -78,13 +78,13 @@
     <div class="filters-section">
       <div class="filter-row">
         <div class="filter-group search-group">
-          <input
+          <!-- שלב ג׳ 2.3 - חיפוש מפוצל: עברית מימין, אנגלית משמאל. -->
+          <app-bilingual-search
             #searchInput
-            type="text"
-            class="form-control"
             [(ngModel)]="searchTerm"
             (ngModelChange)="onFilterChange()"
-            [placeholder]="(i18n.terms$ | async)?.searchNameAddressPhone">
+            [placeholderHe]="(i18n.terms$ | async)?.searchNameAddressPhone || ''">
+          </app-bilingual-search>
         </div>
 
         <div class="filter-group">

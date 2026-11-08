@@ -18,6 +18,7 @@ import { ActiveFilter, FilterOption, NavigationRecord } from '../../shared/modal
 import { TableLoadRequest, TableState } from '../../common/table/table-state';
 import { EntityChangedService } from '../../services/entity-changed.service';
 import { searchLabel } from '../../../shared/utils/filter-label-utils';
+import { BilingualSearchComponent } from '../../common/bilingual-search/bilingual-search.component';
 
 @Component({
   selector: 'app-donor-list',
@@ -50,7 +51,7 @@ export class DonorListComponent implements OnInit, OnDestroy {
 
   // Local filter properties
   searchTerm = '';
-  @ViewChild('searchInput') searchInput?: ElementRef<HTMLInputElement>;
+  @ViewChild('searchInput') searchInput?: BilingualSearchComponent;
   // Handle to the scrollable table body so page changes can reset scroll to
   // the top (per client Israel Glikson, 1.7.2026 - navigating to a next page
   // used to leave the user mid-page instead of at the top).
@@ -227,18 +228,8 @@ export class DonorListComponent implements OnInit, OnDestroy {
     // still the active element on slower connections, so the focus restore
     // condition was never met.
     setTimeout(() => {
-      const native = this.searchInput?.nativeElement;
-      if (!native) return;
-      const active = document.activeElement;
-      const isInputAlready = active === native;
-      const isOtherInteractive = active && (
-        active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT'
-      ) && active !== native;
-      if (!isInputAlready && !isOtherInteractive) {
-        native.focus();
-        const len = native.value?.length ?? 0;
-        try { native.setSelectionRange(len, len); } catch {}
-      }
+      // שלב ג׳ 2.3 - הכלל (לא לגנוב פוקוס משדה אחר) עבר לרכיב החיפוש.
+      this.searchInput?.restoreFocus();
     }, 150);
   }
 

@@ -6,13 +6,13 @@
       <div class="filter-row">
         <div class="filter-group search-group">
           <!-- <label>{{ (i18n.terms$ | async)?.generalSearch }}</label> -->
-          <input
+          <!-- שלב ג׳ 2.3 - חיפוש מפוצל: עברית מימין, אנגלית משמאל. -->
+          <app-bilingual-search
             #searchInput
-            type="text"
-            class="form-control"
-            [placeholder]="(i18n.terms$ | async)?.searchNameAddressPhone"
+            [placeholderHe]="(i18n.terms$ | async)?.searchNameAddressPhone || ''"
             [(ngModel)]="searchTerm"
             (ngModelChange)="onLocalFilterChange()">
+          </app-bilingual-search>
         </div>
         <button class="btn btn-primary add-donor-btn" (click)="createDonor()">
           {{ (i18n.terms$ | async)?.addNewDonor }}
