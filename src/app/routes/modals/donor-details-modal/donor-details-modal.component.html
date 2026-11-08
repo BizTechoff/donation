@@ -100,7 +100,7 @@
                 <mat-icon class="field-icon">person</mat-icon>
                 <label>{{ (i18n.terms$ | async)?.firstName }}</label>
               </div>
-              <input type="text" class="form-control" [(ngModel)]="donor.firstName" appFieldLang="he"
+              <input type="text" class="form-control" [(ngModel)]="donor.firstName" appFieldLang="he" (blur)="fillEnglishName('firstName')"
                 [placeholder]="(i18n.terms$ | async)?.firstName">
             </div>
             <div class="form-group">
@@ -108,7 +108,7 @@
                 <mat-icon class="field-icon">badge</mat-icon>
                 <label>{{ (i18n.terms$ | async)?.lastName }} *</label>
               </div>
-              <input type="text" class="form-control" [(ngModel)]="donor.lastName" appFieldLang="he"
+              <input type="text" class="form-control" [(ngModel)]="donor.lastName" appFieldLang="he" (blur)="fillEnglishName('lastName')"
                 [placeholder]="(i18n.terms$ | async)?.lastName">
             </div>
             <div class="form-group">

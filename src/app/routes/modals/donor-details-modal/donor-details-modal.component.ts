@@ -2,7 +2,7 @@ import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
 import { BusyService, DialogConfig, openDialog } from 'common-ui-elements';
 import { remult } from 'remult';
-import { DonorController, DonorDetailsData } from '../../../../shared/controllers/donor.controller';
+import { DonorController, DonorDetailsData, ENGLISH_NAME_PAIRS, HebrewNameField } from '../../../../shared/controllers/donor.controller';
 import { Circle, Company, Country, Donation, Donor, DonorAddressType, DonorContact, DonorEvent, DonorNote, DonorPlace, DonorReceptionHour, DonorRelation, Event, NoteType, Place, Reminder, User } from '../../../../shared/entity';
 import { ContactPerson } from '../../../../shared/entity/contact-person';
 import { AddressComponents } from '../../../common/osm-address-input/osm-address-input.component';
@@ -1513,6 +1513,21 @@ export class DonorDetailsModalComponent implements OnInit {
    * אנגלית הוא לא יופיע ברשימה הנפתחת (שמציגה תוארים אנגליים בלבד), אף
    * שהערך תקף ביישות.
    */
+  /**
+   * שלב ג׳ 2.4 - ביציאה משם עברי, אם השם באנגלית עדיין ריק, הוא מושלם מתוך
+   * המאגר. שם באנגלית שכבר קיים - של המשתמש או שהושלם קודם - לא נדרס.
+   */
+  async fillEnglishName(field: HebrewNameField) {
+    if (!this.donor) return;
+    const englishField = ENGLISH_NAME_PAIRS[field];
+    if ((this.donor[englishField] || '').trim()) return;
+    const suggestion = await DonorController.suggestEnglishName(field, this.donor[field] || '');
+    if (suggestion && !(this.donor[englishField] || '').trim()) {
+      this.donor[englishField] = suggestion;
+      this.changed = true;
+    }
+  }
+
   onAlumniChange() {
     // הסימון אינו נוגע בשדה התואר.
     //

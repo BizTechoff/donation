@@ -103,6 +103,16 @@ export interface InvitedDonorsPageResult {
   };
 }
 
+/**
+ * שלב ג׳ 2.4 - צמדי שם עברי / שם אנגלי שהמערכת יודעת להשלים מתוך המאגר.
+ * המקום האחד שמגדיר אותם - גם השרת וגם כרטיס התורם קוראים מכאן.
+ */
+export const ENGLISH_NAME_PAIRS = {
+  firstName: 'firstNameEnglish',
+  lastName: 'lastNameEnglish'
+} as const
+export type HebrewNameField = keyof typeof ENGLISH_NAME_PAIRS
+
 @Controller('donor')
 export class DonorController {
 
@@ -215,6 +225,26 @@ export class DonorController {
       secretaries: secretaryUsers.map(toItem),
       contactPersons: contactPersons.map(toItem)
     };
+  }
+
+  /**
+   * שלב ג׳ 2.4 - מילוי אוטומטי של שם באנגלית מתוך המאגר.
+   * לשם העברי שהוקלד - הכתיב האנגלי השכיח ביותר אצל תורמים קיימים עם אותו
+   * שם בדיוק. ריק כשאין אף אחד. הכרעה לפי רוב, כי לאותו שם יש לפעמים כמה
+   * כתיבים (Yosef / Joseph) - נבחר זה שהעמותה עצמה השתמשה בו הכי הרבה.
+   */
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async suggestEnglishName(field: HebrewNameField, hebrew: string): Promise<string> {
+    const value = (hebrew || '').trim()
+    const englishField = ENGLISH_NAME_PAIRS[field]
+    if (!value || !englishField) return ''
+    const rows = await remult.repo(Donor).groupBy({
+      group: [englishField],
+      where: { [field]: value, [englishField]: { '!=': '' } } as any,
+      orderBy: { $count: 'desc' } as any,
+      limit: 1
+    })
+    return String((rows[0] as any)?.[englishField] || '').trim()
   }
 
   @BackendMethod({ allowed: Allow.authenticated })
