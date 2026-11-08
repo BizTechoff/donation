@@ -1,5 +1,6 @@
 import { Directive, ElementRef, HostListener, Input, OnInit } from '@angular/core'
 import { FieldLang, charForKey } from '../../../shared/utils/keyboard-layout'
+import { capitalizeWords, isWordStart } from '../../../shared/utils/text-case'
 
 /**
  * field-lang.directive.ts - שלב ג׳, קבוצה 2: שדה עברי / שדה אנגלי.
@@ -38,10 +39,32 @@ export class FieldLangDirective implements OnInit {
     // Caps Lock הופך אותיות לטיניות בלבד, כמו במקלדת עצמה - Shift ו-Caps
     // מבטלים זה את זה. על מקשי פיסוק Caps לא משפיע.
     const caps = event.getModifierState?.('CapsLock') && /^Key[A-Z]$/.test(event.code)
-    const wanted = charForKey(event.code, caps ? !event.shiftKey : event.shiftKey, this.lang)
-    if (!wanted || wanted === event.key) return
+    const mapped = charForKey(event.code, caps ? !event.shiftKey : event.shiftKey, this.lang)
+    const typed = mapped ?? (event.key.length === 1 ? event.key : null)
+    if (!typed) return
+    const toInsert = this.lang === 'en' && this.atWordStart() ? typed.toLocaleUpperCase('en') : typed
+    if (toInsert === event.key) return
     event.preventDefault()
-    this.insert(wanted)
+    this.insert(toInsert)
+  }
+
+  /**
+   * 2.2 - אות ראשונה גדולה בכל מילה בשדה אנגלי. בהקלדה - לפי מיקום הסמן;
+   * ביציאה מהשדה - על כל הערך, כדי לתפוס גם הדבקה ומילוי אוטומטי.
+   */
+  @HostListener('blur')
+  onBlur() {
+    if (this.lang !== 'en') return
+    const node = this.el.nativeElement
+    const fixed = capitalizeWords(node.value)
+    if (fixed === node.value) return
+    node.value = fixed
+    node.dispatchEvent(new Event('input', { bubbles: true }))
+  }
+
+  private atWordStart(): boolean {
+    const node = this.el.nativeElement
+    return isWordStart(node.value, node.selectionStart ?? node.value.length)
   }
 
   /** הכנסת טקסט במקום הסמן, ועדכון ngModel דרך אירוע input רגיל. */
