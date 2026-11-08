@@ -61,7 +61,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   // Map of donationId -> total paid amount for commitments
   commitmentPaymentTotals: Record<string, number> = {};
   /** שלב ג׳ 4.1 - שולם מתוך התחייבות: תנועות ישנות + תרומות שנזקפו. */
-  commitmentProgressMap: Record<string, CommitmentProgress> = {};
+  commitmentProgressMap: Partial<Record<string, CommitmentProgress>> = {};
 
   // Pagination
   // P6 / W1 - sorting and paging come from the shared TableState. The five

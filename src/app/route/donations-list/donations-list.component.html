@@ -254,6 +254,7 @@
              single, so it does not fight the name link or the money-bag button
              that live inside the row. -->
         <tr *ngFor="let donation of donations" class="clickable-row"
+          [class.commitment-closed]="commitmentProgressMap[donation.id]?.isClosed"
             (dblclick)="openDonorDonationsFromRow(donation)">
           <td class="donor-name cell-ellipsis" [title]="getDonorName(donation)">
             <!-- Z13 - new donation for THIS donor straight from the row, the

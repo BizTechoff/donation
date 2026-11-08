@@ -54,7 +54,7 @@ export class DonorDonationsModalComponent implements OnInit {
   // Payment totals for commitment donations (donationId -> total paid)
   paymentTotals: Record<string, number> = {};
   /** שלב ג׳ 4.1 - שולם מתוך התחייבות: תנועות ישנות + תרומות שנזקפו. */
-  commitmentProgressMap: Record<string, CommitmentProgress> = {};
+  commitmentProgressMap: Partial<Record<string, CommitmentProgress>> = {};
 
   // Filters
   filterText = '';
@@ -314,20 +314,27 @@ currencyTypes = this.payer.getCurrencyTypesRecord()
     return this.filteredDonations.filter(d => d.donationType === 'commitment').length;
   }
 
+  // שלב ג׳ 4.4 - "שולם" על ההתחייבויות כאן הוא ההתקדמות (תנועות ישנות + תרומות
+  // שנזקפו), כמו בכותרת הכתומה ובשורה עצמה. זו שורת תצוגה; סך התרומות
+  // (getFilteredTotal) לא נוגע בזה, ולכן אין ספירה כפולה.
+  private commitmentPaid(d: Donation): number {
+    return this.commitmentProgressMap[d.id]?.paid ?? 0;
+  }
+
   get commitmentDonationsTotal(): number {
     return this.filteredDonations
       .filter(d => d.donationType === 'commitment')
-      .reduce((sum, d) => sum + calculateEffectiveAmount(d, this.paymentTotals[d.id]), 0);
+      .reduce((sum, d) => sum + this.commitmentPaid(d), 0);
   }
 
-  // סכומי התחייבויות מקובצים לפי מטבע (סכום בפועל ששולם)
+  // סכומי התחייבויות מקובצים לפי מטבע (סכום ששולם על חשבונן)
   get commitmentDonationsByCurrency(): Array<{ symbol: string; total: number }> {
     const map = new Map<string, number>();
     this.filteredDonations
       .filter(d => d.donationType === 'commitment')
       .forEach(d => {
         const current = map.get(d.currencyId) || 0;
-        map.set(d.currencyId, current + calculateEffectiveAmount(d, this.paymentTotals[d.id]));
+        map.set(d.currencyId, current + this.commitmentPaid(d));
       });
     return Array.from(map.entries()).map(([currencyId, total]) => ({
       symbol: this.currencyTypes[currencyId]?.symbol || currencyId,

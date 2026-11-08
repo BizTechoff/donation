@@ -72,6 +72,13 @@ $green-theme: mat.define-theme((color: (theme-type: light,
   --filter-field-height: 42px;
 }
 
+/* שלב ג׳ 4.5 - "בסיום תשלום התחייבות שורת ההתחייבות תתחלף לירוק" (L6). מחלקה
+   אחת לכל הרשימות. !important: הרשימות צובעות שורות (zebra, hover) בעיצוב
+   המוגבל לקומפוננטה, שגובר על כלל גלובלי - והמצב הזה צריך לגבור עליהן. */
+tr.commitment-closed > td {
+  background-color: #e6f4ea !important;
+}
+
 /* שורת סינון: גם רכיב התאריך מקבל את הגובה האחיד. משתנה CSS עובר דרך
    גבולות הקומפוננטות, בלי ng-deep. */
 .filter-row {

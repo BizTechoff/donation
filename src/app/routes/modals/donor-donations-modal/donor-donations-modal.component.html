@@ -110,7 +110,8 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let donation of paginatedDonations">
+            <tr *ngFor="let donation of paginatedDonations"
+              [class.commitment-closed]="commitmentProgressMap[donation.id]?.isClosed">
               <td>
                 <div class="date-cell">
                   {{formatHebrewDate(donation.donationDate)}}
