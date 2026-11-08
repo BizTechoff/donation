@@ -13,6 +13,13 @@
   font-size: 14px;
 
   .commitment-icon { font-size: 20px; width: 20px; height: 20px; }
+  .commitment-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    input { width: 16px; height: 16px; margin: 0; cursor: pointer; }
+  }
   .commitment-label { font-weight: 600; }
   .commitment-progress { unicode-bidi: isolate; }
 }

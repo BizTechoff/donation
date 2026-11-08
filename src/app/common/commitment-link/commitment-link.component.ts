@@ -60,7 +60,18 @@ export class CommitmentLinkComponent implements OnChanges {
     if (this.isNew && !this.touched && !this.commitmentId && options.length) this.set(options[0].id)
   }
 
+  /**
+   * 4.2 - "סימון לניתוק תרומה מההתחייבות, למקרה שאינה על חשבונה". ה-V מסומן
+   * כברירת מחדל (L2); הורדתו מנתקת, וסימון מחדש מחזיר לאחרונה שנבחרה.
+   */
+  onLinkedToggle(linked: boolean) {
+    this.touched = true
+    this.set(linked ? (this.lastChosen || this.options[0]?.id || '') : '')
+  }
+  private lastChosen = ''
+
   protected set(id: string) {
+    if (id) this.lastChosen = id
     if (id === (this.commitmentId || '')) return
     this.commitmentId = id
     this.commitmentIdChange.emit(id)

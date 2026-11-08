@@ -1,5 +1,9 @@
-<div class="commitment-link" *ngIf="selected as c">
+<div class="commitment-link" *ngIf="options.length">
   <mat-icon class="commitment-icon">handshake</mat-icon>
-  <span class="commitment-label">על חשבון התחייבות</span>
-  <span class="commitment-progress" dir="ltr">{{ progressText(c) }}</span>
+  <!-- 4.2 - V מסומן כברירת מחדל; הורדה מנתקת את התרומה מההתחייבות. -->
+  <label class="commitment-check">
+    <input type="checkbox" [checked]="!!commitmentId" (change)="onLinkedToggle($any($event.target).checked)">
+    <span class="commitment-label">על חשבון התחייבות</span>
+  </label>
+  <span class="commitment-progress" dir="ltr" *ngIf="selected as c">{{ progressText(c) }}</span>
 </div>
