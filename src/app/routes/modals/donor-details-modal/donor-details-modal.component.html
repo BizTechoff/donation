@@ -100,7 +100,7 @@
                 <mat-icon class="field-icon">person</mat-icon>
                 <label>{{ (i18n.terms$ | async)?.firstName }}</label>
               </div>
-              <input type="text" class="form-control" [(ngModel)]="donor.firstName"
+              <input type="text" class="form-control" [(ngModel)]="donor.firstName" appFieldLang="he"
                 [placeholder]="(i18n.terms$ | async)?.firstName">
             </div>
             <div class="form-group">
@@ -108,7 +108,7 @@
                 <mat-icon class="field-icon">badge</mat-icon>
                 <label>{{ (i18n.terms$ | async)?.lastName }} *</label>
               </div>
-              <input type="text" class="form-control" [(ngModel)]="donor.lastName"
+              <input type="text" class="form-control" [(ngModel)]="donor.lastName" appFieldLang="he"
                 [placeholder]="(i18n.terms$ | async)?.lastName">
             </div>
             <div class="form-group">
@@ -146,21 +146,21 @@
               <mat-icon class="field-icon">language</mat-icon>
               <label>{{ (i18n.terms$ | async)?.firstNameEnglish }}</label>
             </div>
-            <input dir="ltr" type="text" class="form-control" [(ngModel)]="donor.firstNameEnglish" placeholder="First Name">
+            <input dir="ltr" type="text" class="form-control" [(ngModel)]="donor.firstNameEnglish" appFieldLang="en" placeholder="First Name">
           </div>
           <div class="form-group">
             <div class="field-title">
               <mat-icon class="field-icon">translate</mat-icon>
               <label>{{ (i18n.terms$ | async)?.lastNameEnglish }}</label>
             </div>
-            <input dir="ltr" type="text" class="form-control" [(ngModel)]="donor.lastNameEnglish" placeholder="Last Name">
+            <input dir="ltr" type="text" class="form-control" [(ngModel)]="donor.lastNameEnglish" appFieldLang="en" placeholder="Last Name">
           </div>
           <div class="form-group">
             <div class="field-title">
               <mat-icon class="field-icon">title</mat-icon>
               <label>{{ (i18n.terms$ | async)?.suffixEnglish }}</label>
             </div>
-            <input dir="ltr" type="text" class="form-control" [(ngModel)]="donor.suffixEnglish" placeholder="Suffix">
+            <input dir="ltr" type="text" class="form-control" [(ngModel)]="donor.suffixEnglish" appFieldLang="en" placeholder="Suffix">
           </div>
 
           <!-- <div class="form-group">
@@ -502,14 +502,14 @@
                         <mat-icon class="field-icon">people</mat-icon>
                         <label>שם בן/בת הזוג</label>
                       </div>
-                      <input type="text" class="form-control" [(ngModel)]="donor.wifeName" placeholder="שם מלא">
+                      <input type="text" class="form-control" [(ngModel)]="donor.wifeName" appFieldLang="he" placeholder="שם מלא">
                     </div>
                     <div class="form-group">
                       <div class="field-title">
                         <mat-icon class="field-icon">people</mat-icon>
                         <label>שם באנגלית בן/בת זוג</label>
                       </div>
-                      <input type="text" class="form-control" [(ngModel)]="donor.wifeNameEnglish"
+                      <input type="text" class="form-control" [(ngModel)]="donor.wifeNameEnglish" appFieldLang="en"
                         placeholder="Full Name">
                     </div>
                   </div>
