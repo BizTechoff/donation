@@ -10,6 +10,8 @@
         </div>
         <div class="header-text">
           <h2>{{modalTitle}}</h2>
+          <!-- שלב ג׳ 4.4 - שולם מתוך סה"כ ההתחייבויות הפתוחות, בכתום. -->
+          <app-commitment-banner *ngIf="!isGiftsMode" [donorId]="args.donorId" [refreshKey]="donations"></app-commitment-banner>
           <p class="header-subtitle" *ngIf="!loading && !isGiftsMode">
             תרומות: {{fullDonationsCount}} <ng-container *ngFor="let c of fullDonationsByCurrency; let i = index">{{i > 0 ? ' + ' : ''}}{{c.symbol}}{{c.total | amount}}</ng-container><ng-container *ngIf="commitmentDonationsCount > 0"> <span class="subtitle-divider">|</span> <span class="commitment-text">התחייבויות: {{commitmentDonationsCount}} <ng-container *ngFor="let c of commitmentDonationsByCurrency; let i = index">{{i > 0 ? ' + ' : ''}}{{c.symbol}}{{c.total | amount}}</ng-container></span></ng-container>
           </p>

@@ -1,0 +1,4 @@
+<div class="commitment-banner" *ngIf="rows.length">
+  <span class="banner-label">התחייבות:</span>
+  <span class="banner-amount" dir="ltr" *ngFor="let row of rows; let last = last">{{ text(row) }}<ng-container *ngIf="!last">,</ng-container></span>
+</div>

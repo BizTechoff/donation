@@ -1,0 +1,15 @@
+// בגודל של "תרומות של..." (h2 בכותרת) ובכתום - L1.
+:host { display: block; }
+
+.commitment-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  color: #ffb347;
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.3;
+
+  .banner-amount { unicode-bidi: isolate; }
+}
