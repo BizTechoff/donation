@@ -23,6 +23,7 @@ import { amountRangeLabel, dateRangeLabel, namesLabel, searchLabel } from '../..
 import { BilingualSearchComponent } from '../../common/bilingual-search/bilingual-search.component';
 import { CommitmentController } from '../../../shared/controllers/commitment.controller';
 import { CommitmentProgress, formatCommitmentProgress } from '../../../shared/utils/commitment-utils';
+import { deleteDonationQuestion } from '../../common/donation-confirm';
 
 @Component({
   selector: 'app-donations-list',
@@ -403,7 +404,8 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   }
 
   async deleteDonation(donation: Donation) {
-    const confirmMessage = this.i18n.currentTerms.confirmDeleteDonation?.replace('{donor}', donation.donor?.fullName || '') || '';
+    const confirmMessage = deleteDonationQuestion(this.i18n.currentTerms.confirmDeleteDonation,
+      donation.donor?.lastAndFirstName, donation.amount, this.currencyTypes[donation.currencyId]?.symbol);
     const yes = await this.ui.yesNoQuestion(confirmMessage);
     if (yes) {
       try {

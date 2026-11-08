@@ -11,6 +11,7 @@ import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
 import { HebrewDateService } from '../../../services/hebrew-date.service';
 import { PayerService } from '../../../services/payer.service';
+import { deleteDonationQuestion } from '../../../common/donation-confirm';
 
 export interface CampaignDonationsModalArgs {
   campaignId: string;
@@ -322,7 +323,8 @@ export class CampaignDonationsModalComponent implements OnInit {
   }
 
   async deleteDonation(donation: CampaignDonationRow) {
-    const confirmMessage = `האם אתה בטוח שברצונך למחוק את התרומה של ${this.getDonorName(donation)}?`;
+    const confirmMessage = deleteDonationQuestion(this.i18n.currentTerms.confirmDeleteDonation,
+      this.getDonorName(donation), donation.amount, this.currencyTypes[donation.currencyId]?.symbol);
     if (!confirm(confirmMessage)) return;
 
     try {

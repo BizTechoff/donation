@@ -15,6 +15,7 @@ import { TableState } from '../../../common/table/table-state';
 import { sortRows } from '../../../common/table/table-sort';
 import { CommitmentController } from '../../../../shared/controllers/commitment.controller';
 import { CommitmentProgress } from '../../../../shared/utils/commitment-utils';
+import { deleteDonationQuestion } from '../../../common/donation-confirm';
 
 export interface DonorDonationsModalArgs {
   donorId: string;
@@ -417,7 +418,8 @@ currencyTypes = this.payer.getCurrencyTypesRecord()
   }
 
   async deleteDonation(donation: Donation) {
-    if (await this.ui.yesNoQuestion(`האם אתה בטוח שברצונך למחוק את התרומה של ${donation.donor?.lastAndFirstName} (${donation.amount} ${this.currencyTypes[donation.currencyId]?.symbol || donation.currencyId})?`)) {
+    if (await this.ui.yesNoQuestion(deleteDonationQuestion(this.i18n.currentTerms.confirmDeleteDonation,
+      this.donor?.lastAndFirstName, donation.amount, this.currencyTypes[donation.currencyId]?.symbol))) {
       try {
         await this.donationRepo.delete(donation);
         await this.loadDonations();

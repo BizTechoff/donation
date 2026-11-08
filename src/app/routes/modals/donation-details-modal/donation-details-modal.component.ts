@@ -17,6 +17,7 @@ import { DonorDetailsModalComponent } from '../donor-details-modal/donor-details
 import { DonorSelectionModalComponent } from '../donor-selection-modal/donor-selection-modal.component';
 import { OrganizationSelectionModalComponent } from '../organization-selection-modal/organization-selection-modal.component';
 import { ReasonSelectionModalComponent } from '../reason-selection-modal/reason-selection-modal.component';
+import { deleteDonationQuestion } from '../../../common/donation-confirm';
 
 export interface DonationDetailsModalArgs {
   donationId: string; // Can be 'new' for new donation or donation ID
@@ -451,9 +452,9 @@ export class DonationDetailsModalComponent implements OnInit {
   async deleteDonation() {
     if (!this.donation) return;
 
-    // הנוסח מכיל {donor}, לא {amount} - לכן הוצג "{donor}" כמו שהוא.
-    const donorName = this.selectedDonor?.lastAndFirstName || this.donation.donor?.lastAndFirstName || '';
-    const confirmMessage = this.i18n.currentTerms.confirmDeleteDonation?.replace('{donor}', donorName) || '';
+    const confirmMessage = deleteDonationQuestion(this.i18n.currentTerms.confirmDeleteDonation,
+      this.selectedDonor?.lastAndFirstName || this.donation.donor?.lastAndFirstName,
+      this.donation.amount, this.currencyTypes[this.donation.currencyId]?.symbol);
     const yes = await this.ui.yesNoQuestion(confirmMessage);
     if (yes) {
       try {
