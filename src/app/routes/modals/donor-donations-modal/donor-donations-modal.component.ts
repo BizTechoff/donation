@@ -13,6 +13,8 @@ import { DonationController } from '../../../../shared/controllers/donation.cont
 import { calculateEffectiveAmount, isPaymentBased, isStandingOrder, calculatePeriodsElapsed } from '../../../../shared/utils/donation-utils';
 import { TableState } from '../../../common/table/table-state';
 import { sortRows } from '../../../common/table/table-sort';
+import { CommitmentController } from '../../../../shared/controllers/commitment.controller';
+import { CommitmentProgress } from '../../../../shared/utils/commitment-utils';
 
 export interface DonorDonationsModalArgs {
   donorId: string;
@@ -51,6 +53,8 @@ export class DonorDonationsModalComponent implements OnInit {
 
   // Payment totals for commitment donations (donationId -> total paid)
   paymentTotals: Record<string, number> = {};
+  /** שלב ג׳ 4.1 - שולם מתוך התחייבות: תנועות ישנות + תרומות שנזקפו. */
+  commitmentProgressMap: Record<string, CommitmentProgress> = {};
 
   // Filters
   filterText = '';
@@ -199,6 +203,8 @@ currencyTypes = this.payer.getCurrencyTypesRecord()
     } else {
       this.paymentTotals = {};
     }
+    this.commitmentProgressMap = await CommitmentController.getProgress(
+      this.donations.filter(d => d.donationType === 'commitment').map(d => d.id));
   }
 
   async loadDonorGifts() {
@@ -364,8 +370,8 @@ currencyTypes = this.payer.getCurrencyTypesRecord()
     // Item 16 - no '.00' on whole amounts: the shared amount rule (Z16).
     const fmt = (n: number) => formatAmount(n);
     if (donation.donationType === 'commitment') {
-      const paid = this.paymentTotals[donation.id] || 0;
-      return `(${fmt(paid)} / ${fmt(donation.amount)})`;
+      const p = this.commitmentProgressMap[donation.id];
+      return `(${fmt(p?.paid || 0)} / ${fmt(donation.amount)})`;
     }
     if (isStandingOrder(donation)) {
       const paid = this.paymentTotals[donation.id] || 0;

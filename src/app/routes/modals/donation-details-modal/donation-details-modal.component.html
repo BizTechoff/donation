@@ -237,6 +237,14 @@
 
 <!-- {{donation.donationMethodId}} -->
 <!-- TO-DELETE-TO -->
+      <!-- שלב ג׳ קבוצה 4 - זקיפה על חשבון התחייבות. כל הלוגיקה ברכיב. -->
+      <!-- בלי ngIf בכוונה: כשהסוג משתנה להתחייבות או התורם מתרוקן, הרכיב
+           עצמו מנקה את השיוך. -->
+      <app-commitment-link
+        [donorId]="donation.donorId" [currencyId]="donation.currencyId"
+        [donationType]="donation.donationType" [isNew]="isNewDonation"
+        [(commitmentId)]="donation.commitmentId">
+      </app-commitment-link>
       <!-- אמצעי תשלום -->
       <div id="section-payment-method" class="section payment-method-section"
         *ngIf="donation.donationType !== 'commitment'">
@@ -638,7 +646,9 @@
         close & reopen the modal to attach payments. Standing-order flow is
         unchanged - it still needs an existing (saved) donation record.
       -->
-      <button *ngIf="donation && (donation.donationType === 'commitment' || (!isNewDonation && isStandingOrderPayment))"
+      <!-- שלב ג׳ 4.1 - טופס התנועות הוסתר בהתחייבות ("כל תרומה = תנועה"). התנועות
+           שכבר נרשמו נשארו במסד ונספרות. בהו"ק הוא נשאר. -->
+      <button *ngIf="donation && !isNewDonation && isStandingOrderPayment && donation.donationType !== 'commitment'"
         mat-stroked-button class="action-button payment-list-btn" (click)="openPaymentList()" title="תנועות">
         <mat-icon>payment</mat-icon>
         תנועות

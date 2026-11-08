@@ -280,7 +280,8 @@
           </td>
           <!-- <td class="amount">{{ formatAmountInShekel(donation) }}</td> -->
           <td class="amount" [class.commitment-highlight]="donation.donationType === 'commitment'">
-            <div>{{ getAmountDisplay(donation) }}</div>
+            <!-- L4 - "שולם / סה"כ" תמיד משמאל לימין, גם בתוך שורה עברית. -->
+            <div><span dir="ltr">{{ getAmountDisplay(donation) }}</span></div>
           </td>
           <td>{{ currencyTypes[donation.currencyId].symbol || '' }}</td>
           <td class="cell-ellipsis" [title]="getCampaignName(donation)">{{ getCampaignName(donation) }}</td>

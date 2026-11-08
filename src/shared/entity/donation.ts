@@ -240,6 +240,21 @@ export class Donation extends IdEntity {
   })
   donationType: 'full' | 'commitment' = 'full'
 
+  // שלב ג׳ 4.1 - "ביטול טופס התנועות - כל תרומה נזקפת אוטומטית על חשבון
+  // ההתחייבות" (זום 24.08 ב׳ ~1:06-1:22). תרומה רגילה מצביעה על ההתחייבות
+  // שהיא משלמת. ריק - תרומה שאינה על חשבון התחייבות. ההתקדמות עצמה מחושבת
+  // במקום אחד: CommitmentController.getProgress.
+  @Fields.string({
+    caption: 'ע"ח התחייבות',
+  })
+  commitmentId = ''
+
+  @Relations.toOne<Donation, Donation>(() => Donation, {
+    field: 'commitmentId',
+    caption: 'ע"ח התחייבות',
+  })
+  commitment?: Donation
+
   @Fields.string({
     caption: 'סוג הוראת קבע',
   })

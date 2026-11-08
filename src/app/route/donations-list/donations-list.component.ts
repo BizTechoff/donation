@@ -21,6 +21,8 @@ import { FileUploadService } from '../../services/file-upload.service';
 import { TableState, TableLoadRequest } from '../../common/table/table-state';
 import { amountRangeLabel, dateRangeLabel, namesLabel, searchLabel } from '../../../shared/utils/filter-label-utils';
 import { BilingualSearchComponent } from '../../common/bilingual-search/bilingual-search.component';
+import { CommitmentController } from '../../../shared/controllers/commitment.controller';
+import { CommitmentProgress, formatCommitmentProgress } from '../../../shared/utils/commitment-utils';
 
 @Component({
   selector: 'app-donations-list',
@@ -58,6 +60,8 @@ export class DonationsListComponent implements OnInit, OnDestroy {
 
   // Map of donationId -> total paid amount for commitments
   commitmentPaymentTotals: Record<string, number> = {};
+  /** שלב ג׳ 4.1 - שולם מתוך התחייבות: תנועות ישנות + תרומות שנזקפו. */
+  commitmentProgressMap: Record<string, CommitmentProgress> = {};
 
   // Pagination
   // P6 / W1 - sorting and paging come from the shared TableState. The five
@@ -225,6 +229,8 @@ export class DonationsListComponent implements OnInit, OnDestroy {
         } else {
           this.commitmentPaymentTotals = {};
         }
+        this.commitmentProgressMap = await CommitmentController.getProgress(
+          this.donations.filter(d => d.donationType === 'commitment').map(d => d.id));
       } catch (error) {
         console.error('Error refreshing donations:', error);
         this.donations = [];
@@ -705,8 +711,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
    */
   getAmountDisplay(donation: Donation): string {
     if (donation.donationType === 'commitment') {
-      const paidAmount = this.commitmentPaymentTotals[donation.id] || 0;
-      return `${paidAmount.toLocaleString()} / ${donation.amount.toLocaleString()}`;
+      return formatCommitmentProgress(this.commitmentProgressMap[donation.id] || { paid: 0, total: donation.amount });
     }
     if (isStandingOrder(donation)) {
       const paidAmount = this.commitmentPaymentTotals[donation.id] || 0;

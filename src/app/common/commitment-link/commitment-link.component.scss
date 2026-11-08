@@ -1,0 +1,18 @@
+:host { display: block; }
+
+.commitment-link {
+  margin: 0 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: #fff4e5;
+  border: 1px solid #ffd8a8;
+  color: #8a4b00;
+  font-size: 14px;
+
+  .commitment-icon { font-size: 20px; width: 20px; height: 20px; }
+  .commitment-label { font-weight: 600; }
+  .commitment-progress { unicode-bidi: isolate; }
+}

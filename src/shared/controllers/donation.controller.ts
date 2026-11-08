@@ -702,9 +702,12 @@ export class DonationController {
     });
 
     const donationIds = commitments.map(d => d.id).filter(Boolean);
-    const paymentTotals = donationIds.length > 0
-      ? await DonationController.getPaymentTotalsForCommitments(donationIds)
-      : {};
+    // שלב ג׳ 4.1 - "שולם" בכרטיס הסיכום הוא התקדמות ההתחייבות: תנועות ישנות +
+    // תרומות שנזקפו. זו תצוגה בלבד; סכומי התרומות לא נוגעים בזה.
+    const { CommitmentController } = await import('./commitment.controller');
+    const progress = await CommitmentController.getProgress(donationIds);
+    const paymentTotals: Record<string, number> = {};
+    for (const id of donationIds) paymentTotals[id] = progress[id]?.paid || 0;
 
     // בונים את התוצאה: total ממחובר מ-groupBy, paid ממוצע על ההתחייבויות
     const byCurrency: Record<string, { total: number; paid: number }> = {};

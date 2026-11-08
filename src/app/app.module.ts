@@ -5,6 +5,7 @@ import { FormFieldDirective } from './common/directives/form-field.directive'
 import { MailtoDirective } from './common/directives/mailto.directive'
 import { FieldLangDirective } from './common/directives/field-lang.directive'
 import { BilingualSearchComponent } from './common/bilingual-search/bilingual-search.component'
+import { CommitmentLinkComponent } from './common/commitment-link/commitment-link.component'
 import { AmountPipe } from './common/pipes/amount.pipe'
 import { PhonePipe } from './common/pipes/phone.pipe'
 import localeHe from '@angular/common/locales/he'
@@ -141,6 +142,7 @@ import { A11yModule } from "@angular/cdk/a11y";
     MailtoDirective,
     FieldLangDirective,
     BilingualSearchComponent,
+    CommitmentLinkComponent,
     AmountPipe,
     PhonePipe,
     AutoYearDirective,

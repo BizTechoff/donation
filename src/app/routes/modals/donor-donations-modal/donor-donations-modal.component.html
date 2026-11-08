@@ -127,7 +127,7 @@
               </td>
               <td>
                 <div class="amount-cell">
-                  <span class="amount" [class.commitment-highlight]="donation.donationType === 'commitment'">
+                  <span class="amount" dir="ltr" [class.commitment-highlight]="donation.donationType === 'commitment'">
                     {{ getAmountDisplay(donation) }}
                   </span>
                 </div>

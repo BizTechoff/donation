@@ -1,0 +1,5 @@
+<div class="commitment-link" *ngIf="selected as c">
+  <mat-icon class="commitment-icon">handshake</mat-icon>
+  <span class="commitment-label">על חשבון התחייבות</span>
+  <span class="commitment-progress" dir="ltr">{{ progressText(c) }}</span>
+</div>
