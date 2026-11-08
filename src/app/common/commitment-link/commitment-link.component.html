@@ -5,5 +5,10 @@
     <input type="checkbox" [checked]="!!commitmentId" (change)="onLinkedToggle($any($event.target).checked)">
     <span class="commitment-label">על חשבון התחייבות</span>
   </label>
+  <!-- 4.3 - כשיש יותר מהתחייבות פתוחה אחת: בחירה. ברירת המחדל - האחרונה. -->
+  <select class="commitment-select" *ngIf="commitmentId && options.length > 1"
+    [ngModel]="commitmentId" [ngModelOptions]="{ standalone: true }" (ngModelChange)="onChoose($event)">
+    <option *ngFor="let o of options" [value]="o.id">{{ optionLabel(o) }} {{ ltr('(' + progressText(o) + ')') }}</option>
+  </select>
   <span class="commitment-progress" dir="ltr" *ngIf="selected as c">{{ progressText(c) }}</span>
 </div>

@@ -46,6 +46,11 @@ export class CommitmentLinkComponent implements OnChanges {
 
   private async load() {
     const seq = ++this.loadSeq
+    // ngOnChanges רץ בתוך בדיקת השינויים של הכרטיס. עדכון commitmentId באותו
+    // סבב (למשל ניקוי כשהסוג עובר ל"התחייבות") משנה ערך שכבר נבדק - NG0100.
+    // דחייה לסבב הבא.
+    await Promise.resolve()
+    if (seq !== this.loadSeq) return
     if (this.donationType !== 'full' || !this.donorId) {
       this.options = []
       this.set('')
@@ -69,6 +74,28 @@ export class CommitmentLinkComponent implements OnChanges {
     this.set(linked ? (this.lastChosen || this.options[0]?.id || '') : '')
   }
   private lastChosen = ''
+
+  /**
+   * 4.3 - "בחירת ההתחייבות כשקיימת יותר מאחת פתוחה" (L3: ברירת המחדל היא
+   * האחרונה, "ניתן לבחירה"). זיהוי התחייבות ברשימה: תאריך, סיבה והתקדמות.
+   */
+  onChoose(id: string) {
+    this.touched = true
+    this.set(id)
+  }
+
+  /**
+   * בתוך <option> אין dir - הטקסט כולו בכיוון הרשימה (RTL), ו"40 / 100" יוצא
+   * הפוך. עטיפה בתווי בידוד LTR (LRI ... PDI) שומרת על הסדר.
+   */
+  ltr(text: string): string {
+    return '\u2066' + text + '\u2069'
+  }
+
+  optionLabel(o: OpenCommitment): string {
+    const date = new Date(o.donationDate).toLocaleDateString('he-IL')
+    return [date, o.reason].filter(Boolean).join(' - ')
+  }
 
   protected set(id: string) {
     if (id) this.lastChosen = id
