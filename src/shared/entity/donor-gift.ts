@@ -10,6 +10,7 @@ import {
 import { Roles } from '../enum/roles'
 import { Donor } from './donor'
 import { Gift } from './gift'
+import { DEFAULT_CURRENCY } from '../enum/currency'
 import { Reminder } from './reminder'
 
 @Entity<DonorGift>('donor_gifts', {
@@ -92,6 +93,19 @@ export class DonorGift extends IdEntity {
     caption: 'נמסר',
   })
   isDelivered = false
+
+  // שלב ג׳ 6.3 - העלות בפועל של המתנה הזו. ישראל, 24.08: "המחיר משתנה בין
+  // אחד לשני, ואני רוצה לציין לבד כמה שילמתי עבור כל אחד". ברירת המחדל
+  // נלקחת מהערך המשוער בקטלוג, וניתנת לשינוי.
+  @Fields.number({
+    caption: 'עלות',
+  })
+  cost = 0
+
+  @Fields.string({
+    caption: 'מטבע העלות',
+  })
+  costCurrencyId = DEFAULT_CURRENCY
 
   @Fields.date({
     allowApiUpdate: false,

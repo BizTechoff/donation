@@ -113,6 +113,10 @@
             {{ (i18n.terms$ | async)?.gift }}
             <span class="sort-icon" *ngIf="table.getSortIcon('gift')">{{ table.getSortIcon('gift') }}</span>
           </th>
+          <th class="w-amount" [class.sortable]="table.isSortable('cost')" [class.sorted]="table.isSorted('cost')" (click)="table.toggleSort('cost', $event)">
+            עלות
+            <span class="sort-icon" *ngIf="table.getSortIcon('cost')">{{ table.getSortIcon('cost') }}</span>
+          </th>
           <th class="w-date" [class.sortable]="table.isSortable('deliveryDate')" [class.sorted]="table.isSorted('deliveryDate')" (click)="table.toggleSort('deliveryDate', $event)">
             {{ (i18n.terms$ | async)?.deliveryDate }}
             <span class="sort-icon" *ngIf="table.getSortIcon('deliveryDate')">{{ table.getSortIcon('deliveryDate') }}</span>
@@ -154,6 +158,7 @@
             <ng-template #noDonorLink>{{ getDonorName(donorGift) }}</ng-template>
           </td>
           <td>{{ donorGift.gift?.name || '-' }}</td>
+          <td><bdi>{{ costText(donorGift) }}</bdi></td>
           <td>{{ formatHebrewDate(donorGift.deliveryDate) }}</td>
           <td (click)="$event.stopPropagation()" (dblclick)="$event.stopPropagation()">
             <!-- Israel 20.10: the status column IS the action - a click asks
@@ -175,7 +180,7 @@
           </td>
         </tr>
         <tr *ngIf="!loading && donorGifts.length === 0">
-          <td colspan="6" class="no-data">
+          <td colspan="7" class="no-data">
             <p>{{ (i18n.terms$ | async)?.noGiftsFound }}</p>
           </td>
         </tr>

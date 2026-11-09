@@ -8,6 +8,7 @@ import { I18nService } from '../../../i18n/i18n.service';
 import { HebrewDateService } from '../../../services/hebrew-date.service';
 import { DonorSelectionModalComponent } from '../donor-selection-modal/donor-selection-modal.component';
 import { DonorGiftController } from '../../../../shared/controllers/donor-gift.controller';
+import { PayerService } from '../../../services/payer.service';
 
 export interface DonorGiftDetailsModalArgs {
   donorGiftId: string; // Can be 'new' for new donor gift or donor gift ID
@@ -37,6 +38,7 @@ export class DonorGiftDetailsModalComponent implements OnInit {
   giftRepo = remult.repo(Gift);
 
   loading = false;
+  currencyTypes = this.payerService.getCurrencyTypesRecord();
   isNew = false;
   selectedDonor?: Donor;
   /** שלב ג׳ 6.1 - במתנה חדשה: כל התורמים שיקבלו אותה. */
@@ -47,6 +49,7 @@ export class DonorGiftDetailsModalComponent implements OnInit {
     public i18n: I18nService,
     private ui: UIToolsService,
     private hebrewDateService: HebrewDateService,
+    private payerService: PayerService,
     public dialogRef: MatDialogRef<DonorGiftDetailsModalComponent>
   ) {}
 
@@ -178,6 +181,11 @@ export class DonorGiftDetailsModalComponent implements OnInit {
     this.selectedGift = this.gifts.find(g => g.id === giftId);
     if (this.selectedGift) {
       this.donorGift.gift = this.selectedGift;
+      // שלב ג׳ 6.3 - העלות מתמלאת מהקטלוג כל עוד לא הוזנה ידנית.
+      if (!this.donorGift.cost) {
+        this.donorGift.cost = this.selectedGift.estimatedValue || 0;
+        this.donorGift.costCurrencyId = this.selectedGift.currencyId || this.donorGift.costCurrencyId;
+      }
     }
   }
 
@@ -229,7 +237,9 @@ export class DonorGiftDetailsModalComponent implements OnInit {
             giftId: this.donorGift.giftId,
             deliveryDate: this.donorGift.deliveryDate,
             isDelivered: this.donorGift.isDelivered,
-            notes: this.donorGift.notes
+            notes: this.donorGift.notes,
+            cost: this.donorGift.cost,
+            costCurrencyId: this.donorGift.costCurrencyId
           });
         message = count > 1 ? `המתנה שויכה ל-${count} תורמים` : 'המתנה נוספה בהצלחה';
       } else {

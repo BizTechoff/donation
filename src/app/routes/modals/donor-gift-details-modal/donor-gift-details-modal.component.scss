@@ -521,3 +521,12 @@
     margin-bottom: 4px;
   }
 }
+
+// שלב ג׳ 6.3 - סכום ומטבע בשורה אחת
+.cost-row {
+  display: flex;
+  gap: 8px;
+
+  .cost-amount { flex: 3; }
+  .cost-currency { flex: 2; }
+}

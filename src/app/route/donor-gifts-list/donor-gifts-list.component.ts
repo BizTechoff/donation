@@ -18,6 +18,8 @@ import { ExcelExportService, donorNameColumns } from '../../services/excel-expor
 import { DonorController } from '../../../shared/controllers/donor.controller';
 import { DonorMapController } from '../../../shared/controllers/donor-map.controller';
 import { TableState, TableLoadRequest } from '../../common/table/table-state';
+import { PayerService } from '../../services/payer.service';
+import { formatAmount } from '../../common/pipes/amount.pipe';
 import { amountRangeLabel, dateRangeLabel, namesLabel, searchLabel } from '../../../shared/utils/filter-label-utils';
 
 @Component({
@@ -66,7 +68,7 @@ export class DonorGiftsListComponent implements OnInit, OnDestroy {
   readonly table = new TableState({
     pageSize: 50,
     settingsKey: 'donorGifts',
-    sortableFields: ['donor', 'gift', 'deliveryDate', 'isDelivered', 'notes'],
+    sortableFields: ['donor', 'gift', 'cost', 'deliveryDate', 'isDelivered', 'notes'],
     scrollContainer: () => this.scrollableTable?.nativeElement,
     load: req => this.loadDonorGifts(req)
   });
@@ -82,8 +84,17 @@ export class DonorGiftsListComponent implements OnInit, OnDestroy {
     private busy: BusyService,
     private hebrewDateService: HebrewDateService,
     private printService: PrintService,
-    private excelExportService: ExcelExportService
+    private excelExportService: ExcelExportService,
+    private payerService: PayerService
   ) {}
+
+  private currencyTypes = this.payerService.getCurrencyTypesRecord();
+
+  /** שלב ג׳ 6.3 - העלות כפי שמוצגת: בטבלה, בהדפסה ובייצוא - מקום אחד. */
+  costText(g: DonorGift): string {
+    if (!g.cost) return '-';
+    return `${this.currencyTypes[g.costCurrencyId]?.symbol || g.costCurrencyId || ''}${formatAmount(g.cost)}`;
+  }
 
   async ngOnInit() {
     await this.loadBase();
@@ -506,6 +517,7 @@ export class DonorGiftsListComponent implements OnInit, OnDestroy {
           phone: printContactsMap.get(donorGift.donor?.id || '')?.phone || '-',
           mobile: printContactsMap.get(donorGift.donor?.id || '')?.mobile || '-',
           gift: donorGift.gift?.name || '-',
+          cost: this.costText(donorGift),
           deliveryDate: this.formatHebrewDate(donorGift.deliveryDate),
           status: donorGift.isDelivered ? this.i18n.currentTerms.delivered : this.i18n.currentTerms.pending,
           notes: donorGift.notes || '-'
@@ -520,6 +532,7 @@ export class DonorGiftsListComponent implements OnInit, OnDestroy {
             { header: this.i18n.currentTerms.phone || 'טלפון', field: 'phone', align: 'left' },
             { header: this.i18n.currentTerms.mobileColumn || 'נייד', field: 'mobile', align: 'left' },
             { header: this.i18n.currentTerms.gift || 'מתנה', field: 'gift' },
+            { header: 'עלות', field: 'cost', align: 'left' },
             { header: this.i18n.currentTerms.deliveryDate || 'תאריך מסירה', field: 'deliveryDate' },
             { header: this.i18n.currentTerms.status || 'סטטוס', field: 'status' },
             { header: this.i18n.currentTerms.notes || 'הערות', field: 'notes' }
@@ -587,6 +600,7 @@ export class DonorGiftsListComponent implements OnInit, OnDestroy {
             { header: this.i18n.currentTerms.alumni || 'תלמידנו', mapper: (g) => g.donor?.isAlumni ? '✓' : '', width: 8 },
             // Gift fields
             { header: this.i18n.currentTerms.gift || 'מתנה', mapper: (g) => g.gift?.name || '-', width: 20 },
+            { header: 'עלות', mapper: (g) => this.costText(g), width: 12, align: 'left' },
             { header: this.i18n.currentTerms.deliveryDate || 'תאריך מסירה', mapper: (g) => this.formatHebrewDate(g.deliveryDate), width: 15 },
             { header: this.i18n.currentTerms.status || 'סטטוס', mapper: (g) => g.isDelivered ? this.i18n.currentTerms.delivered : this.i18n.currentTerms.pending, width: 12 },
             { header: this.i18n.currentTerms.notes || 'הערות', mapper: (g) => g.notes || '-', width: 30 }

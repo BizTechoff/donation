@@ -1,0 +1,11 @@
+feat(gifts): שלב ג׳ 6.3 - שדה עלות בכרטיס המתנה
+
+- DonorGift: cost, costCurrencyId - העלות בפועל של כל מתנה לתורם.
+- כרטיס המתנה: סכום ומטבע; ברירת המחדל מהערך המשוער בקטלוג כל עוד לא
+  הוזן ידנית. בשיוך מרובה - אותה עלות לכל תורם.
+- רשימת המתנות: עמודת "עלות" ממוינת, וגם בהדפסה ובייצוא - costText אחד.
+
+BizTechoff™ - התאמת העסק לעידן הדיגיטלי
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_014QF1xL15Q485gc5E3d7Hsd
