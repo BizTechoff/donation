@@ -166,6 +166,11 @@ export class Place {
     return code === 'US' || code === 'USA';
   }
 
+  /** שלב ג׳ 5.2 - בחירת מכתב "אמריקה". אותו כלל שקובע את פורמט הכתובת. */
+  get isUS(): boolean {
+    return this.isUSAddress();
+  }
+
   private isCAAddress(): boolean {
     return this.country?.code?.toUpperCase() === 'CA';
   }

@@ -3,6 +3,7 @@ import { MatDialogRef } from '@angular/material/dialog';
 import { DialogConfig, openDialog } from 'common-ui-elements';
 import { remult } from 'remult';
 import { Company, Donation, DonorPlace, LetterTitle, LetterTitleDefault } from '../../../../shared/entity';
+import { pickDonationLetter } from '../../../../shared/utils/letter-rules';
 import { Letter } from '../../../../shared/enum/letter';
 import { DonationController } from '../../../../shared/controllers/donation.controller';
 import { PaymentController } from '../../../../shared/controllers/payment.controller';
@@ -132,6 +133,7 @@ export class LetterPropertiesModalComponent implements OnInit {
       this.donation = await donationRepo.findId(this.args.donationId, {
         include: {
           donor: true,
+          donationMethod: true,
           campaign: true,
           organization: { include: { place: { include: { country: true } } } }
         }
@@ -139,6 +141,7 @@ export class LetterPropertiesModalComponent implements OnInit {
 
       if (this.donation) {
         await this.updateFieldValues();
+        await this.autoSelectLetter();
       }
     } catch (error) {
       console.error('Error loading donation:', error);
@@ -151,6 +154,35 @@ export class LetterPropertiesModalComponent implements OnInit {
   loadLetterTypes() {
     this.letterTypes = Letter.getFields();
     this.buildCategoryHierarchy();
+  }
+
+  /**
+   * שלב ג׳ 5.2 - המכתב נבחר לבד לפי עץ ההחלטה (letter-rules.ts): מדינת התורם,
+   * סיבת התרומה, אמצעי התשלום ואנ"ש. זו ברירת מחדל - אפשר לחזור ולבחור אחר.
+   */
+  private async autoSelectLetter() {
+    if (!this.donation || this.selectedLetterType) return;
+    const place = (await DonorPlace.getPrimaryForDonor(this.donation.donorId))?.place;
+    const letter = pickDonationLetter({
+      isUSA: !!place?.isUS,
+      isAnash: !!this.donation.donor?.isAnash,
+      methodType: this.donation.donationMethod?.type,
+      reason: this.donation.reason
+    });
+    await this.selectByLetter(letter);
+  }
+
+  /** בחירת מכתב מבחוץ, כולל הקטגוריה ותת-הקטגוריה שלו - לניווט במסך. */
+  private async selectByLetter(letter: Letter) {
+    for (const category of this.categories) {
+      const subcategory = category.subcategories.find(s => s.letters.includes(letter));
+      if (subcategory) {
+        this.selectedCategory = category;
+        this.selectedSubcategory = subcategory;
+        await this.selectLetterType(letter);
+        return;
+      }
+    }
   }
 
   buildCategoryHierarchy() {
