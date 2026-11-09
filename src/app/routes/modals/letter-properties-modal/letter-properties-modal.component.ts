@@ -12,6 +12,8 @@ import { I18nService } from '../../../i18n/i18n.service';
 import { LetterService } from '../../../services/letter.service';
 import { LetterTitleSelectionModalComponent } from '../letter-title-selection-modal/letter-title-selection-modal.component';
 import { titleForLetter } from '../../../../shared/constants/donor-titles';
+import { CommitmentController } from '../../../../shared/controllers/commitment.controller';
+import { formatOnAccountOfCommitment } from '../../../../shared/utils/commitment-utils';
 
 export interface LetterPropertiesModalArgs {
   donationId: string;
@@ -573,6 +575,14 @@ export class LetterPropertiesModalComponent implements OnInit {
           const payments = await PaymentController.getPaymentsByDonation(this.donation.id, 'התחייבות');
           const summary = getPledgeSummary(this.donation, payments);
           result = formatPledgeAmount(summary, { currency });
+        } else if (this.donation.commitmentId) {
+          // שלב ג׳ 5.1 - תרומה שנזקפה להתחייבות: "£500 על חשבון נדבת לבכם הטוב
+          // בסך £1,800". סכום ההתחייבות - מאותו מקור של שאר המסכים.
+          const progress = await CommitmentController.getProgress([this.donation.commitmentId]);
+          const total = progress[this.donation.commitmentId]?.total;
+          result = total
+            ? formatOnAccountOfCommitment(this.donation.amount, total, currency)
+            : `${currency}${this.donation.amount.toLocaleString()}`;
         } else {
           result = `${currency}${this.donation.amount.toLocaleString()}`;
         }

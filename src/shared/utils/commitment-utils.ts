@@ -30,6 +30,23 @@ export function commitmentProgress(total: number, legacyPaid: number, linkedPaid
 }
 
 /**
+ * שלב ג׳ 5.1 - מכתב תודה על תרומה על חשבון התחייבות.
+ *
+ * הנוסח שסוכם (מייל ישראל 24.08): "תודה... על תרומתך בסך £500 על חשבון נדבת
+ * ליבך בסך £1800 לכבוד התורה ולומדיה". U3 (זום ב׳ ~1:45-1:52): המכתב מופק על
+ * התרומה, לא על שורת ההתחייבות.
+ *
+ * המחרוזת נכנסת לשדה {תרומה} שבתבנית הקיימת - "בהרימכם תרומת ה' בסך
+ * {תרומה} {סיבה_תרומה}, לכבוד התורה ולומדיה" - כך שלא נדרשת תבנית חדשה.
+ * "לבכם" ברבים, כמו בשאר נוסח המכתב.
+ */
+export const ON_ACCOUNT_PHRASE = 'על חשבון נדבת לבכם הטוב בסך'
+
+export function formatOnAccountOfCommitment(amount: number, commitmentTotal: number, currency = ''): string {
+  return `${currency}${(amount || 0).toLocaleString()} ${ON_ACCOUNT_PHRASE} ${currency}${(commitmentTotal || 0).toLocaleString()}`
+}
+
+/**
  * "שולם / סה"כ" - הסדר והרווח כפי שסוכמו (זום ב׳ ~1:03-1:04: יעקב חשב שהמספר
  * כתוב הפוך כשלא היה רווח בין שני הנתונים). להצגה בכיוון LTR.
  */
