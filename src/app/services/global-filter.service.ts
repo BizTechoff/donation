@@ -7,6 +7,8 @@ import { TriStateFilter } from '../../shared/enum/tri-state-filter';
 import { Campaign } from '../../shared/entity/campaign';
 import { Country } from '../../shared/entity/country';
 import { TargetAudience } from '../../shared/entity/target-audience';
+import { Circle } from '../../shared/entity/circle';
+import { donorLevelLabel } from '../../shared/enum/donor-levels';
 import { buildFileName } from '../../shared/utils/file-name-utils';
 import { amountRangeLabel, dateLabel, dateRangeLabel, namesLabel, searchLabel } from '../../shared/utils/filter-label-utils';
 
@@ -25,6 +27,23 @@ export interface GlobalFilters {
   minDonationCount?: number;  // מספר מינימלי של תרומות (לא סכום!)
   isAnash?: TriStateFilter;  // סינון לפי אנ"ש (ברירת מחדל: All)
   isAlumni?: TriStateFilter;  // סינון לפי תלמידנו (ברירת מחדל: All)
+  circleIds?: string[];       // שלב ג׳ 6.2 - חוגי התורם (אחד מהם)
+  donorLevels?: string[];     // שלב ג׳ 6.2 - דרגת התורם (אחת מהן), ערכי DonorLevels
+}
+
+/**
+ * האם יש סינון גלובלי פעיל - המקום האחד. פילטר חדש מתווסף כאן בלבד,
+ * וכל מי ששואל (חלונית הסינון, מונה התזכורות) מקבל אותו.
+ */
+export function hasGlobalFilters(f: GlobalFilters | null | undefined): boolean {
+  if (!f) return false;
+  const any = (a?: unknown[]) => !!a && a.length > 0;
+  const set = (v: unknown) => v !== undefined && v !== null;
+  return any(f.campaignIds) || any(f.countryIds) || any(f.cityIds) || any(f.neighborhoodIds) ||
+    any(f.targetAudienceIds) || any(f.circleIds) || any(f.donorLevels) ||
+    set(f.dateFrom) || set(f.dateTo) || set(f.amountMin) || set(f.amountMax) ||
+    (!!f.isAnash && f.isAnash !== TriStateFilter.All) ||
+    (!!f.isAlumni && f.isAlumni !== TriStateFilter.All);
 }
 
 const DEFAULT_FILTERS: GlobalFilters = { isAnash: TriStateFilter.All, isAlumni: TriStateFilter.All };
@@ -319,7 +338,9 @@ console.log(`updateFilter: { key: ${key}, value: ${value} }`)
       // ערים ושכונות נשמרות כשמות, לא כמזהים.
       namesLabel(g.cityIds || []),
       namesLabel(g.neighborhoodIds || []),
-      audiences ? `קהל ${audiences}` : ''
+      audiences ? `קהל ${audiences}` : '',
+      await namesOf(Circle, g.circleIds, c => c.name),
+      namesLabel((g.donorLevels || []).map(donorLevelLabel))
     ].filter(p => !!p);
   }
 }

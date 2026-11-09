@@ -4,7 +4,9 @@ import { remult } from 'remult';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime } from 'rxjs/operators';
 import { openDialog } from 'common-ui-elements';
-import { GlobalFilterService, GlobalFilters } from '../../services/global-filter.service';
+import { GlobalFilterService, GlobalFilters, hasGlobalFilters } from '../../services/global-filter.service';
+import { Circle } from '../../../shared/entity/circle';
+import { DONOR_LEVELS_ARRAY, donorLevelLabel } from '../../../shared/enum/donor-levels';
 import { Campaign } from '../../../shared/entity/campaign';
 import { Country } from '../../../shared/entity/country';
 import { TargetAudience } from '../../../shared/entity/target-audience';
@@ -41,6 +43,7 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
   campaignRepo = remult.repo(Campaign);
   countryRepo = remult.repo(Country);
   targetAudienceRepo = remult.repo(TargetAudience);
+  circles: Circle[] = [];
 
   private subscription = new Subscription();
 
@@ -116,6 +119,8 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
       this.targetAudiences = await this.targetAudienceRepo.find({
         orderBy: { name: 'asc' as 'asc' }
       });
+
+      this.circles = await remult.repo(Circle).find({ orderBy: { sortOrder: 'asc', name: 'asc' } });
     } catch (error) {
       console.error('Error loading filter data:', error);
     }
@@ -204,19 +209,7 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
   }
 
   private hasFiltersInObject(filters: GlobalFilters): boolean {
-    return !!(
-      (filters.campaignIds && filters.campaignIds.length > 0) ||
-      (filters.countryIds && filters.countryIds.length > 0) ||
-      (filters.cityIds && filters.cityIds.length > 0) ||
-      (filters.neighborhoodIds && filters.neighborhoodIds.length > 0) ||
-      (filters.targetAudienceIds && filters.targetAudienceIds.length > 0) ||
-      (filters.dateFrom !== undefined && filters.dateFrom !== null) ||
-      (filters.dateTo !== undefined && filters.dateTo !== null) ||
-      (filters.amountMin !== undefined && filters.amountMin !== null) ||
-      (filters.amountMax !== undefined && filters.amountMax !== null) ||
-      (filters.isAnash && filters.isAnash !== TriStateFilter.All) ||
-      (filters.isAlumni && filters.isAlumni !== TriStateFilter.All)
-    );
+    return hasGlobalFilters(filters);
   }
 
   // סופר פילטרים ב-pending (לתצוגה בתוך הדיאלוג)
@@ -236,6 +229,7 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
     if (filters.cityIds && filters.cityIds.length > 0) count += filters.cityIds.length;
     if (filters.neighborhoodIds && filters.neighborhoodIds.length > 0) count += filters.neighborhoodIds.length;
     if (filters.targetAudienceIds && filters.targetAudienceIds.length > 0) count += filters.targetAudienceIds.length;
+    count += (filters.circleIds?.length || 0) + (filters.donorLevels?.length || 0);
     if (filters.dateFrom) count++;
     if (filters.dateTo) count++;
     if (filters.amountMin !== undefined) count++;
@@ -258,6 +252,49 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
   getTargetAudienceName(targetAudienceId: string): string {
     const targetAudience = this.targetAudiences.find(ta => ta.id === targetAudienceId);
     return targetAudience?.name || this.i18n.terms.targetAudienceNotFound;
+  }
+
+  getCircleName(circleId: string): string {
+    return this.circles.find(c => c.id === circleId)?.name || circleId;
+  }
+
+  levelLabel = donorLevelLabel;
+
+  /** הסרת ערך אחד מפילטר מרובה-ערכים; האחרון שהוסר מבטל את הפילטר. */
+  async removeFromFilter(key: 'circleIds' | 'donorLevels', value: string) {
+    const rest = (this.currentFilters[key] || []).filter(v => v !== value);
+    await this.updateFilter(key, rest.length ? rest : undefined);
+  }
+
+  /**
+   * שלב ג׳ 6.2 - בחירה מרובה מרשימה קבועה (חוגים, דרגות) בדיאלוג הכללי.
+   * החלונית נסגרת בזמן הבחירה ונפתחת אחריה, כמו בשאר הפילטרים.
+   */
+  private async pickMany<T>(key: 'circleIds' | 'donorLevels', title: string, values: T[],
+                            idOf: (v: T) => string, caption: (v: T) => string) {
+    this.menuTrigger?.closeMenu();
+    const current = new Set(this.currentFilters[key] || []);
+    await this.ui.multiSelectValueDialog<T>({
+      title,
+      values,
+      selected: values.filter(v => current.has(idOf(v))),
+      getCaption: caption,
+      onSelect: selected => {
+        const ids = selected.map(idOf);
+        void this.updateFilter(key, ids.length ? ids : undefined);
+      }
+    });
+    setTimeout(() => this.menuTrigger?.openMenu(), 100);
+  }
+
+  async openCircleSelection(event: Event) {
+    event.stopPropagation();
+    await this.pickMany('circleIds', this.i18n.terms.byCircle, this.circles, c => c.id, c => c.name);
+  }
+
+  async openDonorLevelSelection(event: Event) {
+    event.stopPropagation();
+    await this.pickMany('donorLevels', this.i18n.terms.byDonorLevel, [...DONOR_LEVELS_ARRAY], l => l.value, l => l.label);
   }
 
   async removeCampaignFilter(campaignId: string) {

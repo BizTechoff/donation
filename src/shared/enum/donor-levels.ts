@@ -17,3 +17,8 @@ export type DonorLevelKey = keyof typeof DonorLevels;
 export type DonorLevel = typeof DonorLevels[DonorLevelKey];
 
 export const DONOR_LEVELS_ARRAY = Object.values(DonorLevels);
+
+/** שם הדרגה לתצוגה ('gold_pillars' -> 'עמודי זהב'). ערך לא מוכר - כמו שהוא. */
+export function donorLevelLabel(value: string | null | undefined): string {
+  return DONOR_LEVELS_ARRAY.find(l => l.value === value)?.label || value || '';
+}

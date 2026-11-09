@@ -15,7 +15,7 @@ import { User } from '../shared/entity/user'
 import { Reminder } from '../shared/entity/reminder'
 import { terms } from './terms'
 import { SidebarService } from './services/sidebar.service'
-import { GlobalFilterService } from './services/global-filter.service'
+import { GlobalFilterService, hasGlobalFilters } from './services/global-filter.service'
 import { ReminderService } from './services/reminder.service'
 import { DonorController } from '../shared/controllers/donor.controller'
 import { HebrewDateService } from './services/hebrew-date.service'
@@ -154,9 +154,7 @@ export class AppComponent implements OnInit {
       ]).pipe(
         switchMap(async ([reminders, filters]: [Reminder[], any]) => {
           // If no global filters are active, return all reminders count
-          if (!filters || (!filters.countryIds?.length && !filters.cityIds?.length &&
-              !filters.neighborhoodIds?.length && !filters.campaignIds?.length &&
-              !filters.targetAudienceIds?.length)) {
+          if (!hasGlobalFilters(filters)) {
             return reminders.length
           }
 

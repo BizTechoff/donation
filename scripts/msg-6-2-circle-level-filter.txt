@@ -1,0 +1,16 @@
+feat(filters): שלב ג׳ 6.2 - סינון גלובלי לפי חוג ולפי דרגת תורם
+
+- GlobalFilters: circleIds, donorLevels. בתוך כל סוג - אחד מהנבחרים;
+  בין חוג לדרגה ושאר הפילטרים - כולם.
+- GlobalFilterController: getDonorIdsFromCirclesAndLevels - שאילתה אחת,
+  ובזכותה הסינון חל בכל המסכים (תורמים, תרומות, דוחות, בחירת תורם במתנות).
+- חלונית הסינון: "+ לפי חוג", "+ לפי דרגה" בדיאלוג הבחירה המרובה הקיים,
+  צ'יפים להסרה, ומניין הפילטרים.
+- hasGlobalFilters - בדיקת "יש סינון פעיל" במקום אחד; חלונית הסינון ומונה
+  התזכורות משתמשים בה (המונה לא ראה עד היום אנ"ש, תלמידנו, סכום ותאריך).
+- donorLevelLabel - שם הדרגה לתצוגה, משותף. שם קובץ הייצוא כולל חוגים ודרגות.
+
+BizTechoff™ - התאמת העסק לעידן הדיגיטלי
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_014QF1xL15Q485gc5E3d7Hsd

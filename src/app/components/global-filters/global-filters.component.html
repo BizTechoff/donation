@@ -54,6 +54,12 @@
       <button mat-stroked-button class="filter-btn" (click)="openAudienceSelectionModal($event)">
         + {{ (i18n.terms$ | async)?.byTargetAudience }}
       </button>
+      <button mat-stroked-button class="filter-btn" (click)="openCircleSelection($event)">
+        + {{ (i18n.terms$ | async)?.byCircle }}
+      </button>
+      <button mat-stroked-button class="filter-btn" (click)="openDonorLevelSelection($event)">
+        + {{ (i18n.terms$ | async)?.byDonorLevel }}
+      </button>
     </div>
 
     <!-- Donor Type Filters (Anash / Alumni) -->
@@ -169,6 +175,32 @@
                     [removable]="true"
                     (removed)="removeTargetAudienceFilter(targetAudienceId)">
             {{ getTargetAudienceName(targetAudienceId) }}
+            <mat-icon matChipRemove>cancel</mat-icon>
+          </mat-chip>
+        </mat-chip-set>
+      </div>
+
+      <!-- Circles Group (שלב ג׳ 6.2) -->
+      <div *ngIf="currentFilters.circleIds?.length" class="filter-group">
+        <span class="group-label">{{ (i18n.terms$ | async)?.circles }}:</span>
+        <mat-chip-set>
+          <mat-chip *ngFor="let circleId of currentFilters.circleIds"
+                    [removable]="true"
+                    (removed)="removeFromFilter('circleIds', circleId)">
+            {{ getCircleName(circleId) }}
+            <mat-icon matChipRemove>cancel</mat-icon>
+          </mat-chip>
+        </mat-chip-set>
+      </div>
+
+      <!-- Donor Levels Group (שלב ג׳ 6.2) -->
+      <div *ngIf="currentFilters.donorLevels?.length" class="filter-group">
+        <span class="group-label">{{ (i18n.terms$ | async)?.donorLevels }}:</span>
+        <mat-chip-set>
+          <mat-chip *ngFor="let level of currentFilters.donorLevels"
+                    [removable]="true"
+                    (removed)="removeFromFilter('donorLevels', level)">
+            {{ levelLabel(level) }}
             <mat-icon matChipRemove>cancel</mat-icon>
           </mat-chip>
         </mat-chip-set>

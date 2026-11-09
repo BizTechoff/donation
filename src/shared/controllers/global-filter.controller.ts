@@ -106,7 +106,44 @@ export class GlobalFilterController {
       if (donorIds.length === 0) return [];
     }
 
+    timeStart('[GlobalFilter.getDonorIds] circlesLevels');
+    const circlesLevelsFiltered = await GlobalFilterController.getDonorIdsFromCirclesAndLevels(filters);
+    timeEnd('[GlobalFilter.getDonorIds] circlesLevels');
+    if (circlesLevelsFiltered !== undefined) {
+      donorIds = intersectWithSet(donorIds, circlesLevelsFiltered);
+      if (donorIds.length === 0) return [];
+    }
+
     return donorIds;
+  }
+
+  /**
+   * שלב ג׳ 6.2 - donorIds לפי חוג ולפי דרגה. בתוך כל סוג - אחד מהנבחרים;
+   * בין חוג לדרגה - שניהם (כמו בין כל שני פילטרים גלובליים).
+   * circleIds נשמר כמערך JSON; ההשוואה על הטקסט שלו עובדת גם ל-json וגם
+   * ל-text, והמזהים (cuid) לא מכילים תווים מיוחדים.
+   */
+  private static async getDonorIdsFromCirclesAndLevels(filters: GlobalFilters): Promise<string[] | undefined> {
+    if (!filters.circleIds?.length && !filters.donorLevels?.length) {
+      return undefined;
+    }
+
+    const sqlDb = remult.dataProvider as SqlDatabase;
+    const escape = (s: string) => `'${String(s).replace(/'/g, "''")}'`;
+    const wheres: string[] = [];
+
+    if (filters.circleIds?.length) {
+      const anyCircle = filters.circleIds
+        .map(id => `d."circleIds"::text LIKE ${escape(`%"${id}"%`)}`)
+        .join(' OR ');
+      wheres.push(`(${anyCircle})`);
+    }
+    if (filters.donorLevels?.length) {
+      wheres.push(`d."level" IN (${filters.donorLevels.map(escape).join(',')})`);
+    }
+
+    const { rows } = await sqlDb.execute(`SELECT d."id" FROM "donors" d WHERE ${wheres.join(' AND ')}`);
+    return (rows as any[]).map(r => r.id).filter(Boolean);
   }
 
   /**
