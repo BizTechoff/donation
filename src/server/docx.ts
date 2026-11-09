@@ -10,6 +10,17 @@ import { Report } from '../shared/enum/report';
 import { DocxContentControl, DocxCreateResponse } from "../shared/type/letter.type";
 import { createPersonalDonorReportPdf } from "./pdf.make";
 
+/**
+ * אפשרויות docxtemplater - מקום אחד לכל הפקת מסמך מתבנית.
+ * nullGetter: שדה שלא נשלח (למשל תואר מלא או סיומת מכתב שלא נבחרו) יוצא ריק.
+ * ברירת המחדל של הספרייה כותבת במקומו את המילה "undefined" בתוך המכתב.
+ */
+const DOCX_TEMPLATE_OPTIONS = {
+    paragraphLoop: true,
+    linebreaks: true,
+    nullGetter: () => '',
+}
+
 config()
 
 const isProduction = process.env['NODE_ENV'] === "production";
@@ -62,10 +73,7 @@ export const createLetterDocX = async (type: Letter, contents = [] as DocxConten
      * This function throws an error if the template is invalid,
      * for example, if the template is "Hello {user" (missing closing tag)
      */
-    const doc = new Docxtemplater(zip, {
-        paragraphLoop: true,
-        linebreaks: true,
-    });
+    const doc = new Docxtemplater(zip, DOCX_TEMPLATE_OPTIONS);
 
     /*
      * Render the document : Replaces :
@@ -180,10 +188,7 @@ export const createReportDocX = async (report: Report, contents: Record<string, 
      * This function throws an error if the template is invalid,
      * for example, if the template is "Hello {user" (missing closing tag)
      */
-    const doc = new Docxtemplater(zip, {
-        paragraphLoop: true,
-        linebreaks: true,
-    });
+    const doc = new Docxtemplater(zip, DOCX_TEMPLATE_OPTIONS);
 
     /*
      * Render the document : Replaces :

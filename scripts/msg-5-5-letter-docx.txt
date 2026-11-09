@@ -1,0 +1,12 @@
+שלב ג׳ 5.5 - מכתב: בלי "undefined", והורדה דרך מודול קבצים משותף
+
+- server/docx.ts: אפשרויות docxtemplater משותפות לשתי נקודות ההפקה;
+  שדה שלא נשלח (תואר מלא / סיומת מכתב) יוצא ריק ולא "undefined".
+- common/file-utils.ts (חדש): dataUrlToBlob, downloadBlob - מקום אחד
+  להורדת קובץ שנוצר בשרת. LetterService משתמש בו.
+- פתיחת המכתב אחרי ההורדה: הגדרת דפדפן "תמיד לפתוח קבצים מסוג זה".
+
+BizTechoff™ - התאמת העסק לעידן הדיגיטלי
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_014QF1xL15Q485gc5E3d7Hsd
