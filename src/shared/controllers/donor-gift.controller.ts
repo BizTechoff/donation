@@ -13,8 +13,36 @@ export interface DonorGiftFilters {
   selectedYear?: string;
 }
 
+/** שלב ג׳ 6.1 - פרטי המתנה המשותפים לכל התורמים בשיוך מרובה. */
+export interface DonorGiftAssignment {
+  giftId: string;
+  deliveryDate?: Date;
+  isDelivered?: boolean;
+  notes?: string;
+}
+
 @Controller('donor-gift')
 export class DonorGiftController {
+
+  /**
+   * שלב ג׳ 6.1 - שיוך מתנה לכמה תורמים בבת אחת: שורה לכל תורם, באותם פרטים.
+   * גם שיוך לתורם יחיד עובר כאן, כך שיש מסלול יצירה אחד. מחזיר כמה נוצרו.
+   */
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async assignGiftToDonors(donorIds: string[], data: DonorGiftAssignment): Promise<number> {
+    const ids = [...new Set((donorIds || []).filter(Boolean))];
+    if (!ids.length) throw new Error('נא לבחור תורם');
+    if (!data?.giftId) throw new Error('נא לבחור מתנה');
+
+    const repo = remult.repo(DonorGift);
+    const rows = ids.map(donorId => {
+      const row = repo.create({ donorId, giftId: data.giftId, isDelivered: !!data.isDelivered, notes: data.notes || '' });
+      if (data.deliveryDate) row.deliveryDate = data.deliveryDate; // אחרת - ברירת המחדל של הישות
+      return row;
+    });
+    await repo.insert(rows);
+    return rows.length;
+  }
 
   /**
    * The WHERE clause for donor gifts, built in ONE place.

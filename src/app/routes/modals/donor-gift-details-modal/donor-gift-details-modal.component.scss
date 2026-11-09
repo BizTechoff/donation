@@ -509,3 +509,15 @@
     }
   }
 }
+
+// שלב ג׳ 6.1 - רשימת התורמים שנבחרו במתנה חדשה
+.selected-donors {
+  margin-top: 8px;
+  max-height: 160px;
+  overflow-y: auto;
+
+  .selected-donors-count {
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+}

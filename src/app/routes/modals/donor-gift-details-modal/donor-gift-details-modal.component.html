@@ -21,7 +21,7 @@
           <div class="input-with-icon">
             <mat-icon class="input-icon">account_circle</mat-icon>
             <input type="text" class="form-control"
-                   [value]="selectedDonor ? getDonorName(selectedDonor) : ''"
+                   [value]="donorFieldText"
                    [placeholder]="(i18n.terms$ | async)?.selectDonorPlaceholder || 'בחר תורם'"
                    readonly
                    [disabled]="!isNew"
@@ -35,6 +35,16 @@
                   [title]="(i18n.terms$ | async)?.searchDonor || 'חפש תורם'">
             <mat-icon>search</mat-icon>
           </button>
+        </div>
+        <!-- שלב ג׳ 6.1 - התורמים שנבחרו; המספר הוא גם כמה מתנות לקנות -->
+        <div class="selected-donors" *ngIf="isNew && selectedDonors.length > 1">
+          <div class="selected-donors-count">{{ selectedDonors.length }} מתנות</div>
+          <mat-chip-set>
+            <mat-chip *ngFor="let d of selectedDonors" [removable]="true" (removed)="removeSelectedDonor(d)">
+              {{ getDonorName(d) }}
+              <mat-icon matChipRemove>cancel</mat-icon>
+            </mat-chip>
+          </mat-chip-set>
         </div>
       </div>
 

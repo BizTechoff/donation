@@ -7,6 +7,7 @@ import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
 import { HebrewDateService } from '../../../services/hebrew-date.service';
 import { DonorSelectionModalComponent } from '../donor-selection-modal/donor-selection-modal.component';
+import { DonorGiftController } from '../../../../shared/controllers/donor-gift.controller';
 
 export interface DonorGiftDetailsModalArgs {
   donorGiftId: string; // Can be 'new' for new donor gift or donor gift ID
@@ -38,6 +39,8 @@ export class DonorGiftDetailsModalComponent implements OnInit {
   loading = false;
   isNew = false;
   selectedDonor?: Donor;
+  /** שלב ג׳ 6.1 - במתנה חדשה: כל התורמים שיקבלו אותה. */
+  selectedDonors: Donor[] = [];
   selectedGift?: Gift;
 
   constructor(
@@ -64,6 +67,7 @@ export class DonorGiftDetailsModalComponent implements OnInit {
           if (donor) {
             this.selectedDonor = donor;
             this.donorGift.donor = donor;
+            this.selectedDonors = [donor];
           }
         }
       } else {
@@ -122,6 +126,20 @@ export class DonorGiftDetailsModalComponent implements OnInit {
 
   async openDonorSelectionModal() {
     try {
+      // שלב ג׳ 6.1 - מתנה חדשה: בחירה מרובה (כולל "בחר הכל" לפי הסינון
+      // הגלובלי, למשל חוג או דרגה). עריכה נשארת לתורם אחד.
+      if (this.isNew) {
+        const result = await openDialog(DonorSelectionModalComponent, (it) => {
+          it.args = {
+            title: 'בחירת תורמים',
+            multiSelect: true,
+            selectedIds: this.selectedDonors.map(d => d.id)
+          };
+        }) as Donor[] | null;
+        if (result) this.setSelectedDonors(result);
+        return;
+      }
+
       const result = await openDialog(DonorSelectionModalComponent, (it) => {
         it.args = {
           title: 'בחירת תורם',
@@ -138,6 +156,22 @@ export class DonorGiftDetailsModalComponent implements OnInit {
       console.error('Error opening donor selection modal:', error);
       this.ui.error('שגיאה בפתיחת חלון בחירת תורם');
     }
+  }
+
+  private setSelectedDonors(donors: Donor[]) {
+    this.selectedDonors = donors;
+    this.selectedDonor = donors[0];
+    this.donorGift.donorId = donors[0]?.id || '';
+  }
+
+  removeSelectedDonor(donor: Donor) {
+    this.setSelectedDonors(this.selectedDonors.filter(d => d.id !== donor.id));
+  }
+
+  /** שדה התורם: שם, או "N תורמים" כשנבחרו כמה. */
+  get donorFieldText(): string {
+    if (this.isNew && this.selectedDonors.length > 1) return `${this.selectedDonors.length} תורמים`;
+    return this.selectedDonor ? this.getDonorName(this.selectedDonor) : '';
   }
 
   onGiftChange(giftId: string) {
@@ -187,14 +221,23 @@ export class DonorGiftDetailsModalComponent implements OnInit {
 
       this.loading = true;
 
+      let message = 'המתנה עודכנה בהצלחה';
       if (this.isNew) {
-        await this.donorGiftRepo.insert(this.donorGift);
+        const count = await DonorGiftController.assignGiftToDonors(
+          this.selectedDonors.map(d => d.id),
+          {
+            giftId: this.donorGift.giftId,
+            deliveryDate: this.donorGift.deliveryDate,
+            isDelivered: this.donorGift.isDelivered,
+            notes: this.donorGift.notes
+          });
+        message = count > 1 ? `המתנה שויכה ל-${count} תורמים` : 'המתנה נוספה בהצלחה';
       } else {
         await this.donorGiftRepo.save(this.donorGift);
       }
 
       this.changed = true;
-      this.ui.info(this.isNew ? 'המתנה נוספה בהצלחה' : 'המתנה עודכנה בהצלחה');
+      this.ui.info(message);
       this.dialogRef.close(true);
     } catch (error) {
       console.error('Error saving donor gift:', error);
