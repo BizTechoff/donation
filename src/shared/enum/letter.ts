@@ -752,6 +752,26 @@ export class Letter {
     return result
   }
 
+  /**
+   * שלב ג׳ 5.3 - "הפרדת מכתבי התרומות ממכתבי האירועים". יעקב, זום 24.08
+   * (B0504-B0513): "השניים היחידים שנוגעים לתרומה זה תרומות ואמריקה";
+   * ניחום אבלים ושמחות הם אירועים - "לא קשור לתרומות". הקטגוריה היא הקטע
+   * הראשון בכיתוב ("תרומות / ...").
+   */
+  static readonly DONATION_CATEGORIES = ['תרומות', 'אמריקה']
+
+  static category(letter: Letter): string {
+    return letter.caption.split(' / ')[0].trim()
+  }
+
+  static donationLetters(): Letter[] {
+    return Letter.getFields().filter(l => Letter.DONATION_CATEGORIES.includes(Letter.category(l)))
+  }
+
+  static eventLetters(): Letter[] {
+    return Letter.getFields().filter(l => !Letter.DONATION_CATEGORIES.includes(Letter.category(l)))
+  }
+
   static fromString(typeId = '') {
     var result = Letter.letter_america_tynoreceipt
     if (typeId?.trim().length) {

@@ -152,7 +152,9 @@ export class LetterPropertiesModalComponent implements OnInit {
   }
 
   loadLetterTypes() {
-    this.letterTypes = Letter.getFields();
+    // שלב ג׳ 5.3 - מתוך תרומה: רק מכתבי תרומות ואמריקה. מכתבי אירועים (שמחות,
+    // ניחום אבלים) אינם קשורים לתרומה.
+    this.letterTypes = this.args?.donationId ? Letter.donationLetters() : Letter.getFields();
     this.buildCategoryHierarchy();
   }
 
