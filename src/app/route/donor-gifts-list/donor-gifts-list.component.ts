@@ -68,7 +68,7 @@ export class DonorGiftsListComponent implements OnInit, OnDestroy {
   readonly table = new TableState({
     pageSize: 50,
     settingsKey: 'donorGifts',
-    sortableFields: ['donor', 'gift', 'cost', 'deliveryDate', 'isDelivered', 'notes'],
+    sortableFields: ['donor', 'gift', 'cost', 'reason', 'deliveryDate', 'isDelivered', 'notes'],
     scrollContainer: () => this.scrollableTable?.nativeElement,
     load: req => this.loadDonorGifts(req)
   });
@@ -518,6 +518,7 @@ export class DonorGiftsListComponent implements OnInit, OnDestroy {
           mobile: printContactsMap.get(donorGift.donor?.id || '')?.mobile || '-',
           gift: donorGift.gift?.name || '-',
           cost: this.costText(donorGift),
+          reason: donorGift.reason || '-',
           deliveryDate: this.formatHebrewDate(donorGift.deliveryDate),
           status: donorGift.isDelivered ? this.i18n.currentTerms.delivered : this.i18n.currentTerms.pending,
           notes: donorGift.notes || '-'
@@ -533,6 +534,7 @@ export class DonorGiftsListComponent implements OnInit, OnDestroy {
             { header: this.i18n.currentTerms.mobileColumn || 'נייד', field: 'mobile', align: 'left' },
             { header: this.i18n.currentTerms.gift || 'מתנה', field: 'gift' },
             { header: 'עלות', field: 'cost', align: 'left' },
+            { header: 'סיבת שליחה', field: 'reason' },
             { header: this.i18n.currentTerms.deliveryDate || 'תאריך מסירה', field: 'deliveryDate' },
             { header: this.i18n.currentTerms.status || 'סטטוס', field: 'status' },
             { header: this.i18n.currentTerms.notes || 'הערות', field: 'notes' }
@@ -601,6 +603,7 @@ export class DonorGiftsListComponent implements OnInit, OnDestroy {
             // Gift fields
             { header: this.i18n.currentTerms.gift || 'מתנה', mapper: (g) => g.gift?.name || '-', width: 20 },
             { header: 'עלות', mapper: (g) => this.costText(g), width: 12, align: 'left' },
+            { header: 'סיבת שליחה', mapper: (g) => g.reason || '-', width: 20 },
             { header: this.i18n.currentTerms.deliveryDate || 'תאריך מסירה', mapper: (g) => this.formatHebrewDate(g.deliveryDate), width: 15 },
             { header: this.i18n.currentTerms.status || 'סטטוס', mapper: (g) => g.isDelivered ? this.i18n.currentTerms.delivered : this.i18n.currentTerms.pending, width: 12 },
             { header: this.i18n.currentTerms.notes || 'הערות', mapper: (g) => g.notes || '-', width: 30 }

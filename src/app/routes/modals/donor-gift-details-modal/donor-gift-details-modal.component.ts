@@ -9,6 +9,7 @@ import { HebrewDateService } from '../../../services/hebrew-date.service';
 import { DonorSelectionModalComponent } from '../donor-selection-modal/donor-selection-modal.component';
 import { DonorGiftController } from '../../../../shared/controllers/donor-gift.controller';
 import { PayerService } from '../../../services/payer.service';
+import { pickReason } from '../reason-selection-modal/reason-selection-modal.component';
 
 export interface DonorGiftDetailsModalArgs {
   donorGiftId: string; // Can be 'new' for new donor gift or donor gift ID
@@ -239,7 +240,8 @@ export class DonorGiftDetailsModalComponent implements OnInit {
             isDelivered: this.donorGift.isDelivered,
             notes: this.donorGift.notes,
             cost: this.donorGift.cost,
-            costCurrencyId: this.donorGift.costCurrencyId
+            costCurrencyId: this.donorGift.costCurrencyId,
+            reason: this.donorGift.reason
           });
         message = count > 1 ? `המתנה שויכה ל-${count} תורמים` : 'המתנה נוספה בהצלחה';
       } else {
@@ -259,6 +261,11 @@ export class DonorGiftDetailsModalComponent implements OnInit {
 
   close() {
     this.dialogRef.close(this.changed);
+  }
+
+  async openReasonSelection() {
+    const reason = await pickReason();
+    if (reason !== undefined) this.donorGift.reason = reason;
   }
 
   async addReminder() {

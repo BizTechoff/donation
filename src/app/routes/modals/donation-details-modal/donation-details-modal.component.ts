@@ -16,7 +16,7 @@ import { BankSelectionModalComponent } from '../bank-selection-modal/bank-select
 import { DonorDetailsModalComponent } from '../donor-details-modal/donor-details-modal.component';
 import { DonorSelectionModalComponent } from '../donor-selection-modal/donor-selection-modal.component';
 import { OrganizationSelectionModalComponent } from '../organization-selection-modal/organization-selection-modal.component';
-import { ReasonSelectionModalComponent } from '../reason-selection-modal/reason-selection-modal.component';
+import { pickReason } from '../reason-selection-modal/reason-selection-modal.component';
 import { deleteDonationQuestion } from '../../../common/donation-confirm';
 
 export interface DonationDetailsModalArgs {
@@ -1543,19 +1543,8 @@ export class DonationDetailsModalComponent implements OnInit {
    */
   async openReasonSelectionModal() {
     try {
-      const result = await openDialog(
-        ReasonSelectionModalComponent,
-        (modal: ReasonSelectionModalComponent) => { }
-      ) as string | undefined;
-
-      if (result !== undefined) {
-        if (result) {
-          this.donation.reason = 'לרגל ' + result;
-        }
-        else {
-          this.donation.reason = result;
-        }
-      }
+      const reason = await pickReason();
+      if (reason !== undefined) this.donation.reason = reason;
     } catch (error) {
       console.error('Error opening reason selection modal:', error);
     }

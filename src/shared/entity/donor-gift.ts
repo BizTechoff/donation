@@ -107,6 +107,13 @@ export class DonorGift extends IdEntity {
   })
   costCurrencyId = DEFAULT_CURRENCY
 
+  // שלב ג׳ 6.4 - סיבת שליחת המתנה (ישראל, 24.08). אותו עוזר בחירה כמו
+  // בסיבת תרומה - "לרגל ...", או הקלדה חופשית.
+  @Fields.string({
+    caption: 'סיבת שליחה',
+  })
+  reason = ''
+
   @Fields.date({
     allowApiUpdate: false,
     caption: 'תאריך יצירה',

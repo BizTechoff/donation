@@ -21,6 +21,7 @@ export interface DonorGiftAssignment {
   notes?: string;
   cost?: number;
   costCurrencyId?: string;
+  reason?: string;
 }
 
 @Controller('donor-gift')
@@ -38,7 +39,7 @@ export class DonorGiftController {
 
     const repo = remult.repo(DonorGift);
     const rows = ids.map(donorId => {
-      const row = repo.create({ donorId, giftId: data.giftId, isDelivered: !!data.isDelivered, notes: data.notes || '', cost: data.cost || 0 });
+      const row = repo.create({ donorId, giftId: data.giftId, isDelivered: !!data.isDelivered, notes: data.notes || '', cost: data.cost || 0, reason: data.reason || '' });
       if (data.costCurrencyId) row.costCurrencyId = data.costCurrencyId;
       if (data.deliveryDate) row.deliveryDate = data.deliveryDate; // אחרת - ברירת המחדל של הישות
       return row;

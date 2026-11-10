@@ -117,6 +117,10 @@
             עלות
             <span class="sort-icon" *ngIf="table.getSortIcon('cost')">{{ table.getSortIcon('cost') }}</span>
           </th>
+          <th class="w-reason" [class.sortable]="table.isSortable('reason')" [class.sorted]="table.isSorted('reason')" (click)="table.toggleSort('reason', $event)">
+            סיבת שליחה
+            <span class="sort-icon" *ngIf="table.getSortIcon('reason')">{{ table.getSortIcon('reason') }}</span>
+          </th>
           <th class="w-date" [class.sortable]="table.isSortable('deliveryDate')" [class.sorted]="table.isSorted('deliveryDate')" (click)="table.toggleSort('deliveryDate', $event)">
             {{ (i18n.terms$ | async)?.deliveryDate }}
             <span class="sort-icon" *ngIf="table.getSortIcon('deliveryDate')">{{ table.getSortIcon('deliveryDate') }}</span>
@@ -159,6 +163,7 @@
           </td>
           <td>{{ donorGift.gift?.name || '-' }}</td>
           <td><bdi>{{ costText(donorGift) }}</bdi></td>
+          <td class="cell-ellipsis" [title]="donorGift.reason || ''">{{ donorGift.reason || '-' }}</td>
           <td>{{ formatHebrewDate(donorGift.deliveryDate) }}</td>
           <td (click)="$event.stopPropagation()" (dblclick)="$event.stopPropagation()">
             <!-- Israel 20.10: the status column IS the action - a click asks
@@ -180,7 +185,7 @@
           </td>
         </tr>
         <tr *ngIf="!loading && donorGifts.length === 0">
-          <td colspan="7" class="no-data">
+          <td colspan="8" class="no-data">
             <p>{{ (i18n.terms$ | async)?.noGiftsFound }}</p>
           </td>
         </tr>

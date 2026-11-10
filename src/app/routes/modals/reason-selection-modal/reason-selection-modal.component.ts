@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
-import { DialogConfig } from 'common-ui-elements';
+import { DialogConfig, openDialog } from 'common-ui-elements';
 import { I18nService } from '../../../i18n/i18n.service';
 
 export interface ReasonOption {
@@ -12,6 +12,16 @@ export interface ReasonOption {
 export interface SubOption {
   key: string;
   label: string;
+}
+
+/**
+ * בחירת סיבה ("לרגל נישואי בנכם") - המקום האחד, לתרומה ולמתנה (שלב ג׳ 6.4).
+ * מחזיר את הטקסט המלא, '' ל"אחר" (הקלדה חופשית), או undefined בביטול.
+ */
+export async function pickReason(): Promise<string | undefined> {
+  const result = await openDialog(ReasonSelectionModalComponent, () => { }) as string | undefined;
+  if (result === undefined || result === null) return undefined;
+  return result ? 'לרגל ' + result : '';
 }
 
 @DialogConfig({

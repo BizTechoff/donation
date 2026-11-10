@@ -90,6 +90,21 @@
         </div>
       </div>
 
+      <!-- Reason (שלב ג׳ 6.4) - הקלדה חופשית או בחירה כמו בסיבת תרומה -->
+      <div class="form-card">
+        <div class="form-card-header">
+          <mat-icon class="card-icon">help</mat-icon>
+          <label>סיבת שליחה</label>
+        </div>
+        <div class="input-with-icon">
+          <mat-icon class="input-icon">celebration</mat-icon>
+          <input type="text" class="form-control" [(ngModel)]="donorGift.reason" placeholder="לדוגמה: לרגל נישואי בנכם">
+          <button mat-icon-button type="button" (click)="openReasonSelection()" title="בחר סיבה">
+            <mat-icon>search</mat-icon>
+          </button>
+        </div>
+      </div>
+
       <!-- Delivery Date -->
       <div class="form-card">
         <div class="form-card-header">

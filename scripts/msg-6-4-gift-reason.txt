@@ -1,0 +1,12 @@
+feat(gifts): שלב ג׳ 6.4 - סיבת שליחה בכרטיס המתנה
+
+- DonorGift.reason - סיבת שליחת המתנה.
+- pickReason (reason-selection-modal): בחירת "לרגל ..." במקום אחד - לתרומה
+  ולמתנה. כרטיס התרומה עבר להשתמש בה, בלי שינוי התנהגות.
+- כרטיס המתנה: שדה סיבה עם הקלדה חופשית וכפתור בחירה, גם בשיוך מרובה.
+- רשימת המתנות: עמודת "סיבת שליחה" ממוינת, וגם בהדפסה ובייצוא.
+
+BizTechoff™ - התאמת העסק לעידן הדיגיטלי
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_014QF1xL15Q485gc5E3d7Hsd
