@@ -8,7 +8,9 @@
  * שלב ג׳ 4.1 קבע "כל תרומה = תנועה": תשלום על התחייבות הוא תרומה עם
  * commitmentId. התנועות הישנות (payments) הן השיטה הקודמת. כאן כל תנועה
  * פעילה של התחייבות הופכת לתרומה: אותו תורם, סכום ומטבע, תאריך התנועה,
- * הקמפיין ואמצעי התשלום של ההתחייבות; האסמכתא וההערה - להערות. התנועה
+ * הקמפיין של ההתחייבות; האסמכתא וההערה - להערות. אמצעי התשלום נשאר ריק:
+ * להתחייבות אין אמצעי תשלום (הוא נקבע בתרומה עצמה), ומה שרשום בהתחייבויות
+ * הישנות הוא ברירת המחדל של הטופס. התנועה
  * מסומנת לא פעילה (לא נמחקת) ובהערה שלה מזהה התרומה החדשה.
  * הסכומים לא משתנים: מה שנספר דרך התנועה נספר מעתה דרך התרומה.
  *
@@ -89,7 +91,7 @@ async function main() {
     console.log(`insert into "donations" ("id","donorId","amount","currencyId","donationDate","donationType","commitmentId",`)
     console.log(`  "donationMethodId","campaignId","notes","createdById","partnerIds","attachments","createdDate","updatedDate")`)
     console.log(`  values (${lit(id)}, ${lit(r.donorId)}, ${Number(r.amount)}, ${lit(r.currencyId)}, ${lit(d10(r.paymentDate))}, 'full', ${lit(r.commitmentId)},`)
-    console.log(`  ${lit(r.donationMethodId)}, ${lit(r.campaignId)}, ${lit(notes)}, ${lit(r.createdById)}, '[]', '[]', now(), now());`)
+    console.log(`  '', ${lit(r.campaignId)}, ${lit(notes)}, ${lit(r.createdById)}, '[]', '[]', now(), now());`)
     console.log(`update "payments" set "isActive" = false, "notes" = trim(coalesce("notes",'') || ' [הוסב לתרומה ${id}]') where "id" = ${lit(r.id)};`)
   }
   if (orphans.length) {
