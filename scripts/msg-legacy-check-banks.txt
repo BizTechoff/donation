@@ -1,0 +1,12 @@
+chore(tools): legacy-check-fix - בנקים חסרים, שמות בהתנגשויות, תיקון אמצעי תשלום
+
+- בנק מהתוכנה הישנה שאין במערכת נוסף בשם אחיד; BANK_ALIASES מאחד כתיב
+  ושגיאות הקלדה (Chase / J P Morgan Chase Babk -> JPMorgan Chase, CitiBank /
+  Citi Bank -> Citibank וכו'). מזהה קבוע - ריצה חוזרת לא תכפיל.
+- ערך קיים שלא נדרס מוצג בשם הבנק / העמותה, לא במזהה.
+- --fix-method: צ'ק מבנק שיובא כ"תשלום עמותה" עובר לצ'ק, עם גיבוי. רק בדגל.
+
+BizTechoff™ - התאמת העסק לעידן הדיגיטלי
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_014QF1xL15Q485gc5E3d7Hsd

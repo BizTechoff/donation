@@ -17,12 +17,16 @@
  * עמותה מטבלת העזר שאין במערכת - נוספת (ב-SQL, לפני העדכונים), עם מספרה
  * בתוכנה הישנה בהערות. טבלת העזר: TbEzerCharity.xlsx של יעקב, אם נשמר
  * ב-docs/migration; אחרת הטבלה הישנה שבריפו.
+ * בנק שאין במערכת - נוסף בשמו האחיד (BANK_ALIASES מאחד כתיב ושגיאות הקלדה).
+ *
+ * --fix-method: תרומת צ'ק מבנק (לא דרך עמותה) שיובאה כ"תשלום עמותה" עוברת
+ * לאמצעי התשלום צ'ק - אחרת מספר הצ'ק לא מוצג בכרטיס התרומה. רק בדגל.
  */
 import * as fs from 'fs'
 import { connectDb, say } from './lib/db'
 import { lit, sqlHeader } from './lib/sql'
 import { cell, readSheet } from './lib/excel'
-import { findByName } from './lib/match'
+import { findByName, normalizeName } from './lib/match'
 
 const DONATION_FILES = ['docs/migration/TbTromotUSA.xlsx', 'docs/migration/TbTromot.xlsx']
 const CHARITY_FILES = ['docs/migration/TbEzerCharity.xlsx', 'docs/migration/טבלת שמות ארגוני צדקה.xlsx']
@@ -35,6 +39,19 @@ interface DbDonation {
 type Field = 'accountNumber' | 'checkNumber' | 'voucherNumber' | 'bankId' | 'organizationId'
 interface Change { donation: DbDonation; set: Partial<Record<Field, string>> }
 interface Charity { legacyId: string; name: string; address: string }
+
+/**
+ * השם האחיד לכל כתיב של אותו בנק בתוכנה הישנה (אחרי normalizeName).
+ * JPMorgan Chase הוא בנק אחד - Chase הוא המותג הקמעונאי שלו.
+ */
+const BANK_ALIASES: Record<string, string> = {
+  chase: 'JPMorgan Chase', jpmorgan: 'JPMorgan Chase', jpmorganchase: 'JPMorgan Chase',
+  jpmorganchasebabk: 'JPMorgan Chase', jpmorganchasebankk: 'JPMorgan Chase',
+  citi: 'Citibank', santander: 'Santander Bank',
+  firstcitizans: 'First Citizens Bank', keybanknationalasspciation: 'KeyBank',
+  colombia: 'Columbia Bank', capitalone: 'Capital One', valley: 'Valley Bank'
+}
+const canonicalBank = (name: string) => BANK_ALIASES[normalizeName(name)] || name.trim()
 
 function loadCharities(): Map<string, Charity> {
   const file = CHARITY_FILES.find(f => fs.existsSync(f))
@@ -69,6 +86,7 @@ async function main() {
       left join "donors" n on n."id" = d."donorId"
      where d."excelDonationId" = any($1)`, [ids])
   const banks = (await client.query<Named>(`select "id", "name" from "banks"`)).rows
+  const checkMethodId = (await client.query<{ id: string }>(`select "id" from "donation_methods" where "type" = 'check' order by "name" limit 1`)).rows[0]?.id || ''
   const orgs = (await client.query<Named>(`select "id", "name" from "organizations"`)).rows
   await client.end()
 
@@ -83,6 +101,23 @@ async function main() {
     }
   }
 
+  // בנקים שאין במערכת - בשם האחיד, מזהה קבוע.
+  const newBanks: Named[] = []
+  for (const r of rows) {
+    if (cell(r, 'Voucher_Co', 'Voucher co')) continue
+    const raw = cell(r, 'Sort Code', 'Sort_Code')
+    if (!raw) continue
+    const name = canonicalBank(raw)
+    if (!findByName(banks, name, b => b.name) && !findByName(banks, raw, b => b.name)) {
+      const bank = { id: `legacy-bank-${normalizeName(name)}`, name }
+      newBanks.push(bank)
+      banks.push(bank)
+    }
+  }
+  const nameOf = (list: Named[], id: string) => list.find(x => x.id === id)?.name || id
+  const fixMethod = process.argv.includes('--fix-method')
+  const methodFixes: DbDonation[] = []
+
   const byExcelId = new Map(dbRows.map(d => [d.excelDonationId, d]))
   const notFound: string[] = []
   const missingBanks = new Map<string, number>()
@@ -96,7 +131,11 @@ async function main() {
     const set: Change['set'] = {}
     const want = (field: Field, value: string, overwrite = false) => {
       if (!value || d[field] === value) return
-      if (d[field] && !overwrite) { kept.push(`${d.donorName} (${d.excelDonationId}) ${field}: קיים "${d[field]}", באקסל "${value}"`); return }
+      if (d[field] && !overwrite) {
+        const show = (v: string) => field === 'bankId' ? nameOf(banks, v) : field === 'organizationId' ? nameOf(orgs, v) : v
+        kept.push(`${d.donorName} (${d.excelDonationId}) ${field}: קיים "${show(d[field])}", באקסל "${show(value)}"`)
+        return
+      }
       set[field] = value
     }
 
@@ -116,11 +155,13 @@ async function main() {
       want('checkNumber', checkNo)
       const bankName = cell(r, 'Sort Code', 'Sort_Code')
       if (bankName) {
-        const bank = findByName(banks, bankName, b => b.name)
+        const bank = findByName(banks, bankName, b => b.name) || findByName(banks, canonicalBank(bankName), b => b.name)
         if (bank) want('bankId', bank.id)
         else missingBanks.set(bankName, (missingBanks.get(bankName) || 0) + 1)
       }
     }
+    // צ'ק מבנק שיובא כ"תשלום עמותה" - בדגל בלבד.
+    if (!voucherCo && checkNo && d.method === 'תשלום עמותה' && checkMethodId) methodFixes.push(d)
     if (Object.keys(set).length) changes.push({ donation: d, set })
   }
 
@@ -130,11 +171,13 @@ async function main() {
   say('==================================================================')
   say(`  שורות באקסל עם פרטים: ${rows.length}, נמצאו במערכת: ${rows.length - notFound.length}, לא נמצאו: ${notFound.length}`)
   say(`  עמותות בטבלת העזר: ${charities.size}, חדשות שיתווספו: ${newOrgs.length}${newOrgs.length ? ' - ' + newOrgs.map(o => `${o.legacyId} ${o.name}`).join(', ') : ''}`)
+  say(`  בנקים חדשים שיתווספו: ${newBanks.length}${newBanks.length ? ' - ' + newBanks.map(b => b.name).join(', ') : ''}`)
   say(`  תרומות לעדכון: ${changes.length}`)
   say(`    מספר חשבון ${count('accountNumber')} · מספר צ'ק ${count('checkNumber')} · מספר שובר ${count('voucherNumber')} · בנק ${count('bankId')} · עמותה ${count('organizationId')}`)
   const methods = new Map<string, number>()
   for (const c of changes) methods.set(c.donation.method || '(ללא)', (methods.get(c.donation.method || '(ללא)') || 0) + 1)
   say(`  אמצעי התשלום בתרומות האלה: ${[...methods].map(([m, n]) => `${m} ${n}`).join(' · ')}`)
+  say(`  צ'קים מבנק שיובאו כ"תשלום עמותה": ${methodFixes.length} - ${fixMethod ? 'יעברו לצ\'ק (--fix-method)' : 'לא ישתנו (להעברה לצ\'ק: --fix-method)'}`)
   if (missingBanks.size) say(`\n  בנקים שאין במערכת (${missingBanks.size}) - לא יקושרו:\n${[...missingBanks].map(([b, n]) => `    ${String(n).padStart(3)}  ${b}`).join('\n')}`)
   if (missingOrgs.size) say(`\n  עמותות שאין במערכת (${missingOrgs.size}) - לא יקושרו:\n${[...missingOrgs].map(([o, n]) => `    ${String(n).padStart(3)}  ${o}`).join('\n')}`)
   if (kept.length) say(`\n  ערך קיים שונה - לא נדרס (${kept.length}):\n${kept.slice(0, 20).map(k => '    ' + k).join('\n')}`)
@@ -158,6 +201,14 @@ async function main() {
   console.log('')
   console.log('begin;')
   console.log('')
+  if (newBanks.length) {
+    console.log('-- בנקים מהתוכנה הישנה שאין במערכת.')
+    for (const b of newBanks) {
+      console.log(`insert into "banks" ("id","name","currencyId","notes","isActive","createdDate","updatedDate")`)
+      console.log(`  values (${lit(b.id)}, ${lit(b.name)}, 'USD', 'מהתוכנה הישנה', true, now(), now());`)
+    }
+    console.log('')
+  }
   if (newOrgs.length) {
     console.log('-- עמותות מטבלת העזר שאין במערכת.')
     for (const o of newOrgs) {
@@ -172,6 +223,14 @@ async function main() {
     console.log(`insert into "donations_legacy_check_backup" ("donationId","before")`)
     console.log(`  select "id", jsonb_build_object(${fields.map(f => `${lit(f)}, "${f}"`).join(', ')}) from "donations" where "id" = ${lit(d.id)};`)
     console.log(`update "donations" set ${fields.map(f => `"${f}" = ${lit(set[f])}`).join(', ')} where "id" = ${lit(d.id)};  -- ${d.donorName} #${d.excelDonationId}`)
+  }
+  if (fixMethod && methodFixes.length) {
+    console.log('')
+    console.log(`-- --fix-method: ${methodFixes.length} צ'קים מבנק שיובאו כ"תשלום עמותה" -> צ'ק.`)
+    console.log(`create table if not exists "donations_legacy_method_backup" ("donationId" text not null, "methodBefore" text not null, "takenAt" timestamptz not null default now());`)
+    console.log(`insert into "donations_legacy_method_backup" ("donationId","methodBefore")`)
+    console.log(`  select "id", "donationMethodId" from "donations" where "id" in (${methodFixes.map(d => lit(d.id)).join(', ')});`)
+    console.log(`update "donations" set "donationMethodId" = ${lit(checkMethodId)} where "id" in (${methodFixes.map(d => lit(d.id)).join(', ')});`)
   }
   console.log('')
   console.log(`-- בדיקה לפני commit: אמור להחזיר ${changes.length}.`)
