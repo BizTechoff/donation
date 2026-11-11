@@ -1,0 +1,11 @@
+fix(audit): שלב ג׳ 9.1 - החתימה מופיעה גם ברשומות שנשמרו לפני הגרסה
+
+- UserNameService.stampText: רשומה בלי "ע"י" (נשמרה לפני 9.1) מציגה את
+  התאריכים בלבד - "הוזן · תאריך | עודכן · תאריך" - במקום להסתיר את השורה.
+- רשומה חדשה שעוד לא נשמרה - בלי שורה (התאריכים שלה הם רק ברירת מחדל).
+- גרסה 2026.11.11.11.
+
+BizTechoff™ - התאמת העסק לעידן הדיגיטלי
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_012J7BEmVq166Wu9fYdKdxE3

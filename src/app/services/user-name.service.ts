@@ -1,6 +1,6 @@
 import { formatDate } from '@angular/common';
 import { Injectable } from '@angular/core';
-import { remult } from 'remult';
+import { getEntityRef, remult } from 'remult';
 import { User } from '../../shared/entity/user';
 import { AuditedRow } from '../../shared/utils/audit-fields';
 
@@ -28,15 +28,21 @@ export class UserNameService {
     return (id && this.names.get(id)) || '';
   }
 
-  /** "הוזן ע"י X · תאריך | עודכן ע"י Y · תאריך". רשומה בלי שמות - ''. */
+  /**
+   * "הוזן ע"י X · תאריך | עודכן ע"י Y · תאריך".
+   * רשומה ישנה (לפני 9.1) - בלי שם, רק התאריכים: "הוזן · תאריך | עודכן · תאריך".
+   * רשומה חדשה שעוד לא נשמרה - ''.
+   */
   stampText(row: AuditedRow | null | undefined): string {
-    if (!row) return '';
+    if (!row || getEntityRef(row as any, false)?.isNew()) return '';
     const when = (d?: Date) => d ? ` · ${formatDate(d, 'dd/MM/yyyy HH:mm', 'en-US')}` : '';
-    const created = this.name(row.createdById);
-    const updated = this.name(row.updatedById);
+    const part = (label: string, id?: string, date?: Date) => {
+      const who = this.name(id);
+      return who || date ? `${label}${who ? ` ע"י ${who}` : ''}${when(date)}` : '';
+    };
     return [
-      created ? `הוזן ע"י ${created}${when(row.createdDate || row.createdAt)}` : '',
-      updated ? `עודכן ע"י ${updated}${when(row.updatedDate || row.updatedAt)}` : ''
+      part('הוזן', row.createdById, row.createdDate || row.createdAt),
+      part('עודכן', row.updatedById, row.updatedDate || row.updatedAt)
     ].filter(Boolean).join(' | ');
   }
 }

@@ -5,7 +5,7 @@ import { UserNameService } from '../../services/user-name.service';
 /**
  * שלב ג׳ 9.1 - חתימה קטנה בכרטיס: "הוזן ע"י X · תאריך | עודכן ע"י Y · תאריך".
  * קומפוננטה אחת לכל הכרטיסים; הנוסח ב-UserNameService.stampText.
- * רשומה שנשמרה לפני 9.1 - בלי שם, ולכן בלי שורה.
+ * רשומה שנשמרה לפני 9.1 - התאריכים בלבד; רשומה חדשה שלא נשמרה - בלי שורה.
  */
 @Component({
   selector: 'app-audit-stamp',
