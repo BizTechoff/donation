@@ -73,6 +73,8 @@ export class DonationDetailsModalComponent implements OnInit {
   selectedCampaign?: Campaign;
   selectedPaymentMethod?: DonationMethod;
   selectedOrganization?: Organization;
+  /** כפתור "תנועות" - כבוי (11.11.2026). יחזור להו"ק בלבד, מנותק מכל השאר. */
+  readonly transactionsEnabled = false;
   selectedBank?: Bank;
   currencyTypes = this.payerService.getCurrencyTypesRecord();
 

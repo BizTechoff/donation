@@ -3,8 +3,9 @@ import { Payment } from '../entity/payment'
 
 /**
  * מחשב סכום תשלומים לכל תרומה, עם סינון לפי סוג התשלום המתאים
- * - התחייבות: רק תשלומים עם type = 'התחייבות'
  * - הו"ק: רק תשלומים עם type שמתחיל ב-'הו"ק'
+ * - התחייבות: לא מכאן. התנועות של התחייבויות הוסבו לתרומות מקושרות
+ *   (11.11.2026); "שולם" שלה - CommitmentController.paidTotalsFor.
  *
  * @param donations - רשימת התרומות (חייב לכלול donationMethod)
  * @param payments - רשימת התשלומים
@@ -21,9 +22,7 @@ export function calculatePaymentTotals(
   // בנה מפה של donationId לסוג התשלום הצפוי
   const donationTypeMap = new Map<string, string>()
   for (const d of donations) {
-    if (d.donationType === 'commitment') {
-      donationTypeMap.set(d.id, 'התחייבות')
-    } else if (d.donationMethod?.type === 'standing_order') {
+    if (d.donationType !== 'commitment' && d.donationMethod?.type === 'standing_order') {
       donationTypeMap.set(d.id, 'הו"ק') // התחלה משותפת לכל סוגי ההו"ק
     }
   }
@@ -47,16 +46,17 @@ export function calculatePaymentTotals(
  * מחשב את הסכום האפקטיבי של תרומה לפי סוגה:
  * - תרומה חד-פעמית: מחזיר donation.amount
  * - הו"ק (donationMethod.type === 'standing_order'): מחזיר סכום התשלומים בפועל (paymentsTotal)
- * - התחייבות: מחזיר סכום התשלומים בפועל (paymentsTotal)
+ * - התחייבות: 0. התחייבות היא הבטחה, לא כסף - הכסף נספר בתרומות שנזקפו לה
+ *   (commitmentId), שהן תרומות רגילות. כך כל שקל נספר פעם אחת.
  */
 export function calculateEffectiveAmount(
   donation: Donation,
   paymentsTotal?: number,
   asOfDate?: Date
 ): number {
-  // התחייבות: רק תשלומים בפועל נספרים
+  // התחייבות: נספרת דרך התרומות שנזקפו לה, לא בעצמה.
   if (donation.donationType === 'commitment') {
-    return paymentsTotal || 0
+    return 0
   }
 
   // הו"ק: רק תשלומים בפועל נספרים (כמו התחייבות)

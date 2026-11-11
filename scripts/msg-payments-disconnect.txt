@@ -1,0 +1,19 @@
+refactor(commitments): התנועות מנותקות מההתחייבויות - "שולם" ממקור אחד
+
+אחרי הסבת 27 התנועות של ההתחייבויות לתרומות מקושרות (11.11.2026):
+- CommitmentController.paidEntriesFor / paidTotalsFor - המקום האחד של "שולם
+  בפועל": הו"ק מהתנועות שלו, התחייבות מהתרומות שנזקפו לה (commitmentId).
+  progressFor (getProgress) כבר לא קורא תנועות.
+- donation-utils: calculateEffectiveAmount - התחייבות = 0 (הכסף נספר בתרומות
+  שנזקפו); calculatePaymentTotals - הו"ק בלבד.
+- עוברים למקור האחד: רשימות ("שולם" להו"ק/התחייבות), חלון תרומות הקמפיין,
+  הדוחות (פירוט, "תשלומים בפועל", מיון, דוח התחייבויות, דוח אישי), המפה
+  (שולם בהתחייבויות), ומכתב על התחייבות (Amount, "מתוך סך") - שהציגו 0.
+- כרטיס התרומה: כפתור "תנועות" כבוי גם בהו"ק (transactionsEnabled), עד
+  שיחזור להו"ק בלבד, מנותק מכל השאר.
+- הסכומים לא משתנים: אין יותר תנועות פעילות של התחייבויות.
+
+BizTechoff™ - התאמת העסק לעידן הדיגיטלי
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_014QF1xL15Q485gc5E3d7Hsd

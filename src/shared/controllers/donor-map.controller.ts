@@ -595,11 +595,9 @@ export class DonorMapController {
     const paymentBasedIdsForMap = paymentBasedDonationsForMap.map(d => d.id).filter(Boolean);
     let paymentTotalsForMap: Record<string, number> = {};
     if (paymentBasedIdsForMap.length > 0) {
-      const { Payment } = await import('../entity/payment');
-      const payments = await remult.repo(Payment).find({
-        where: { donationId: { $in: paymentBasedIdsForMap }, isActive: true }
-      });
-      paymentTotalsForMap = calculatePaymentTotals(paymentBasedDonationsForMap, payments);
+      // "שולם בפועל" - המקום האחד (הו"ק מהתנועות, התחייבות מהתרומות שנזקפו).
+      const { CommitmentController } = await import('./commitment.controller');
+      paymentTotalsForMap = await CommitmentController.paidTotalsFor(paymentBasedDonationsForMap);
     }
 
     timeStart('Calculate donation stats');
@@ -769,8 +767,9 @@ export class DonorMapController {
       }
 
       // עדכון סה"כ התחייבויות - שמור לפי מטבע (ללא המרה)
-      // בפועל (מה ששולם)
-      const paidAmount = calculateEffectiveAmount(donation, paymentTotalsForMap[donation.id]);
+      // בפועל (מה ששולם) - התרומות שנזקפו להתחייבות. לא calculateEffectiveAmount:
+      // שם התחייבות היא 0, כי בסכומי התרומות הכסף נספר בתרומות עצמן.
+      const paidAmount = paymentTotalsForMap[donation.id] || 0;
       const currentPaid = stats.commitmentPaidByCurrency.get(donation.currencyId) || 0;
       stats.commitmentPaidByCurrency.set(donation.currencyId, currentPaid + paidAmount);
 

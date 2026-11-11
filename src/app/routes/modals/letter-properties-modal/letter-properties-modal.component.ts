@@ -6,8 +6,7 @@ import { Company, Donation, DonorPlace, LetterTitle, LetterTitleDefault } from '
 import { pickDonationLetter } from '../../../../shared/utils/letter-rules';
 import { Letter } from '../../../../shared/enum/letter';
 import { DonationController } from '../../../../shared/controllers/donation.controller';
-import { PaymentController } from '../../../../shared/controllers/payment.controller';
-import { getPledgeSummary, formatPledgeAmount } from '../../../../shared/utils/donation-utils';
+import { formatPledgeAmount, PledgeSummary } from '../../../../shared/utils/donation-utils';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { I18nService } from '../../../i18n/i18n.service';
 import { LetterService } from '../../../services/letter.service';
@@ -457,6 +456,19 @@ export class LetterPropertiesModalComponent implements OnInit {
     return str.replace(/_([a-z])/g, (match, char) => char.toUpperCase());
   }
 
+  /**
+   * מכתב על התחייבות - "שולם מתוך סך". "שולם" מהמקום האחד של הפלטפורמה
+   * (CommitmentController.getProgress - התרומות שנזקפו להתחייבות), כמו בכרטיס
+   * התרומה וברשימות. התנועות הישנות הוסבו לתרומות (11.11.2026).
+   */
+  private async commitmentSummary(): Promise<PledgeSummary> {
+    const id = this.donation?.id || '';
+    const p = id ? (await CommitmentController.getProgress([id]))[id] : undefined;
+    const pledgeTotal = p?.total ?? (this.donation?.amount || 0);
+    const paidTotal = p?.paid || 0;
+    return { pledgeTotal, paidTotal, remaining: pledgeTotal - paidTotal };
+  }
+
   async getFieldValue(field: string): Promise<string> {
     if (!this.donation) return '';
     var result = ''
@@ -470,8 +482,7 @@ export class LetterPropertiesModalComponent implements OnInit {
         // request (Israel Glikson, 30.6.2026 #4). Regular one-off donations
         // keep the previous behavior of showing just the amount.
         if (this.donation.donationType === 'commitment') {
-          const payments = await PaymentController.getPaymentsByDonation(this.donation.id, 'התחייבות');
-          const summary = getPledgeSummary(this.donation, payments);
+          const summary = await this.commitmentSummary();
           result = `${summary.pledgeTotal.toLocaleString()} / ${summary.paidTotal.toLocaleString()}`;
         } else {
           result = this.donation.amount.toString();
@@ -606,8 +617,7 @@ export class LetterPropertiesModalComponent implements OnInit {
         // שמציג את הצמד הזה משתנה יחד. תרומה רגילה - ללא שינוי, המשפט הזה
         // כולו לא מופיע.
         if (this.donation.donationType === 'commitment') {
-          const payments = await PaymentController.getPaymentsByDonation(this.donation.id, 'התחייבות');
-          const summary = getPledgeSummary(this.donation, payments);
+          const summary = await this.commitmentSummary();
           result = formatPledgeAmount(summary, { currency });
         } else if (this.donation.commitmentId) {
           // שלב ג׳ 5.1 - תרומה שנזקפה להתחייבות: "£500 על חשבון נדבת לבכם הטוב

@@ -663,9 +663,10 @@
         [commitmentId]="donation.id" [donorId]="donation.donorId"
         (linkedCount)="commitmentLinkedCount = $event">
       </app-commitment-donations-button>
-      <!-- שלב ג׳ 4.1 - טופס התנועות הוסתר בהתחייבות ("כל תרומה = תנועה"). התנועות
-           שכבר נרשמו נשארו במסד ונספרות. בהו"ק הוא נשאר. -->
-      <button *ngIf="donation && !isNewDonation && isStandingOrderPayment && donation.donationType !== 'commitment'"
+      <!-- שלב ג׳ 4.1 - טופס התנועות הוסתר בהתחייבות ("כל תרומה = תנועה").
+           11.11.2026 - מוסתר גם בהו"ק, עד שיחזור להו"ק בלבד, מנותק מכל השאר
+           (התאמה לטופס בנק סרוק). התנועות של ההתחייבויות הוסבו לתרומות. -->
+      <button *ngIf="transactionsEnabled && donation && !isNewDonation && isStandingOrderPayment && donation.donationType !== 'commitment'"
         mat-stroked-button class="action-button payment-list-btn" (click)="openPaymentList()" title="תנועות">
         <mat-icon>payment</mat-icon>
         תנועות

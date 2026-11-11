@@ -727,14 +727,9 @@ export class DonationController {
       include: { donationMethod: true }
     });
 
-    const payments = await remult.repo(Payment).find({
-      where: {
-        donationId: { $in: donationIds },
-        isActive: true
-      }
-    });
-
-    return calculatePaymentTotals(donations, payments);
+    // "שולם בפועל" - המקום האחד: הו"ק מהתנועות, התחייבות מהתרומות שנזקפו.
+    const { CommitmentController } = await import('./commitment.controller');
+    return CommitmentController.paidTotalsFor(donations);
   }
 
   private static async buildWhereClause(filters: DonationFilters): Promise<any | null> {
@@ -1077,18 +1072,8 @@ export class DonationController {
       .filter(r => r.donationType === 'commitment' || r.donationMethodType === 'standing_order')
       .map(r => r.id);
     if (paymentBasedIds.length > 0) {
-      const payments = await remult.repo(Payment).find({
-        where: { donationId: { $in: paymentBasedIds }, isActive: true }
-      });
-      for (const payment of payments) {
-        if (!payment.donationId) continue;
-        const row = rows.find(r => r.id === payment.donationId);
-        if (!row) continue;
-        const expectedType = row.donationType === 'commitment' ? 'התחייבות' : 'הו"ק';
-        if (payment.type?.startsWith(expectedType)) {
-          paymentTotals[payment.donationId] = (paymentTotals[payment.donationId] || 0) + payment.amount;
-        }
-      }
+      // "שולם בפועל" - המקום האחד (הו"ק מהתנועות, התחייבות מהתרומות שנזקפו).
+      Object.assign(paymentTotals, await DonationController.getPaymentTotalsForCommitments(paymentBasedIds));
     }
 
     const dropdownDonors = donors

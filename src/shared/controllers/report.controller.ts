@@ -4,14 +4,14 @@ import { DonationMethod } from '../entity/donation-method';
 import { Donor } from '../entity/donor';
 import { DonorContact } from '../entity/donor-contact';
 import { DonorPlace } from '../entity/donor-place';
-import { Payment } from '../entity/payment';
 import { User } from '../entity/user';
 import { ContactPerson } from '../entity/contact-person';
 import { Campaign } from '../entity/campaign';
 import { Report } from '../enum/report';
 import { DocxCreateResponse } from '../type/letter.type';
 import { GeneralCurrencyStat, GeneralMonthlyStat, GeneralChartItem, GeneralTopDonor, GeneralTopCampaign, GeneralRecentActivity, GeneralStatsResponse } from '../type/report.res';
-import { calculateEffectiveAmount, calculatePaymentTotals, calculatePeriodsElapsed, isPaymentBased, isStandingOrder } from '../utils/donation-utils';
+import { CommitmentController, PaidEntry } from './commitment.controller';
+import { calculateEffectiveAmount, calculatePeriodsElapsed, isPaymentBased, isStandingOrder } from '../utils/donation-utils';
 import { DonorPhoneController } from './donor-phone.controller';
 import { HebrewDateController } from './hebrew-date.controller';
 import { GlobalFilterController } from './global-filter.controller';
@@ -330,23 +330,15 @@ export class ReportController {
         const pagePaymentBased = pageDonations.filter(d => isPaymentBased(d));
         const pagePaymentBasedIds = pagePaymentBased.map(d => d.id!).filter(Boolean);
         if (pagePaymentBasedIds.length > 0) {
-          const pagePaymentsForTotals = await remult.repo(Payment).find({
-            where: { donationId: { $in: pagePaymentBasedIds }, isActive: true }
-          });
-          paymentTotalsMap = calculatePaymentTotals(pagePaymentBased, pagePaymentsForTotals);
+          paymentTotalsMap = await CommitmentController.paidTotalsFor(pagePaymentBased);
         }
       }
 
-      // Step 4: Actual payments for page's donations only (if requested)
-      const pageActualPayments: Payment[] = [];
+      // Step 4: Actual payments for page's donations only (if requested) -
+      // הו"ק מהתנועות, התחייבות מהתרומות שנזקפו (CommitmentController).
+      const pageActualPayments: PaidEntry[] = [];
       if (filters.showActualPayments && pageDonations.length > 0) {
-        const pagePaymentBasedIds = pageDonations.filter(d => isPaymentBased(d)).map(d => d.id!).filter(Boolean);
-        if (pagePaymentBasedIds.length > 0) {
-          const payments = await remult.repo(Payment).find({
-            where: { donationId: { $in: pagePaymentBasedIds }, isActive: true }
-          });
-          pageActualPayments.push(...payments);
-        }
+        pageActualPayments.push(...await CommitmentController.paidEntriesFor(pageDonations.filter(d => isPaymentBased(d))));
       }
 
       // Step 5: Group only page donations (fast — page data only)
@@ -560,7 +552,7 @@ export class ReportController {
 
   private static async groupDonations(
     donations: Donation[],
-    payments: Payment[],
+    payments: PaidEntry[],
     filters: ReportFilters,
     paymentTotalsMap: Record<string, number> = {},
     hebrewYears: string[] = [],
@@ -1133,10 +1125,7 @@ export class ReportController {
     }
 
     const paymentBased = donations.filter(d => isPaymentBased(d));
-    const pbIds = paymentBased.map(d => d.id!).filter(Boolean);
-    const payments = pbIds.length > 0
-      ? await remult.repo(Payment).find({ where: { donationId: { $in: pbIds }, isActive: true } })
-      : [];
+    const payments = await CommitmentController.paidEntriesFor(paymentBased);
     const rate = (currency?: string) => rates[currency || 'ILS'] || 1;
 
     if (sortBy === 'actualPayments') {
@@ -1148,7 +1137,8 @@ export class ReportController {
       return values;
     }
 
-    const paymentTotals = calculatePaymentTotals(paymentBased, payments);
+    const paymentTotals: Record<string, number> = {};
+    for (const p of payments) paymentTotals[p.donationId] = (paymentTotals[p.donationId] || 0) + p.amount;
     const wantedYear = sortBy.startsWith('year_') ? sortBy.replace('year_', '') : null;
     const yearCache = new Map<string, string>();
     for (const d of donations) {
@@ -1268,11 +1258,7 @@ export class ReportController {
 
       console.log(`📊 Loaded ${donations.length} commitment donations for payments report`);
 
-      const donationIds = donations.map(d => d.id!).filter(Boolean);
-      const payments = donationIds.length > 0
-        ? await remult.repo(Payment).find({ where: { donationId: { $in: donationIds }, isActive: true } })
-        : [];
-      const paymentTotalsMap = calculatePaymentTotals(donations, payments);
+      const paymentTotalsMap = await CommitmentController.paidTotalsFor(donations);
 
       const uniqueDonorIds = [...new Set(donations.map(d => d.donorId).filter(Boolean))];
       const preloadedDonors = donations.map(d => d.donor).filter((d): d is Donor => d !== undefined);
@@ -1786,14 +1772,8 @@ export class ReportController {
       const allDonations = [...donorDonations, ...partnerDonations];
       const allDonationIds = allDonations.map(d => d.id!).filter(Boolean);
 
-      const payments = allDonationIds.length > 0
-        ? await remult.repo(Payment).find({
-          where: { donationId: { $in: allDonationIds }, isActive: true }
-        })
-        : [];
-
-      // Create payment map with type filtering
-      const paymentTotals = calculatePaymentTotals(allDonations, payments);
+      // "שולם בפועל" - המקום האחד (הו"ק מהתנועות, התחייבות מהתרומות שנזקפו).
+      const paymentTotals = allDonationIds.length > 0 ? await CommitmentController.paidTotalsFor(allDonations) : {};
       const paymentMap = new Map<string, number>(Object.entries(paymentTotals));
 
       // שותפות מוצגת בשני צדדיה: אצל השותף - "שותף בתרומה עם <התורם>", ואצל
