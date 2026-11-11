@@ -19,6 +19,7 @@ import { TableLoadRequest, TableState } from '../../common/table/table-state';
 import { EntityChangedService } from '../../services/entity-changed.service';
 import { searchLabel } from '../../../shared/utils/filter-label-utils';
 import { BilingualSearchComponent } from '../../common/bilingual-search/bilingual-search.component';
+import { Donation, Payment, DonorContact } from '../../../shared/entity';
 
 @Component({
   selector: 'app-donor-list',
@@ -63,6 +64,7 @@ export class DonorListComponent implements OnInit, OnDestroy {
   readonly table = new TableState({
     pageSize: 50,
     settingsKey: 'donorList',
+    refreshOn: [Donation, Payment, DonorContact, DonorPlace], // שלב ג׳ 9.4 - רענון אוטומטי אחרי עדכון בכל מסך
     // All five are ordered in SQL: fullName maps to lastName+firstName, the
     // rest map to sqlExpression fields on Donor. lastDonationDate matches the
     // displayed value: commitments excluded, partner donations included.
@@ -190,6 +192,7 @@ export class DonorListComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    this.table.destroy(); // שלב ג׳ 9.4
     this.subscription.unsubscribe();
     if (this.searchTermTimeout) {
       clearTimeout(this.searchTermTimeout);

@@ -25,6 +25,7 @@ import { loadDonorNames, partnershipNameIds, partnershipNote } from '../../../sh
 import { CommitmentController } from '../../../shared/controllers/commitment.controller';
 import { CommitmentProgress, formatCommitmentProgress } from '../../../shared/utils/commitment-utils';
 import { deleteDonationQuestion } from '../../common/donation-confirm';
+import { Donor, Payment, DonorContact } from '../../../shared/entity';
 
 @Component({
   selector: 'app-donations-list',
@@ -73,6 +74,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   readonly table = new TableState({
     pageSize: 50,
     settingsKey: 'donationsList',
+    refreshOn: [Donation, Donor, Payment, Campaign, DonorContact], // שלב ג׳ 9.4 - רענון אוטומטי אחרי עדכון בכל מסך
     sortableFields: ['donorName', 'donationDate', 'donationType',
                      'method', 'amount', 'currency', 'campaign', 'fundraiser', 'reason'],
     scrollContainer: () => this.scrollableTable?.nativeElement,
@@ -284,6 +286,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    this.table.destroy(); // שלב ג׳ 9.4
     this.subscriptions.unsubscribe();
     if (this.filterTimeout) {
       clearTimeout(this.filterTimeout);

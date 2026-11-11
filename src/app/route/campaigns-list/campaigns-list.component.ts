@@ -17,6 +17,7 @@ import { PrintService } from '../../services/print.service';
 import { ExcelExportService } from '../../services/excel-export.service';
 import { DonorController } from '../../../shared/controllers/donor.controller';
 import { amountRangeLabel, dateRangeLabel, namesLabel, searchLabel } from '../../../shared/utils/filter-label-utils';
+import { Donation, Payment } from '../../../shared/entity';
 
 @Component({
   selector: 'app-campaigns-list',
@@ -68,6 +69,7 @@ export class CampaignsListComponent implements OnInit, OnDestroy {
   readonly table = new TableState({
     pageSize: 50,
     settingsKey: 'campaignList',
+    refreshOn: [Campaign, Donation, Payment], // שלב ג׳ 9.4 - רענון אוטומטי אחרי עדכון בכל מסך
     sortableFields: ['name', 'targetAmount', 'collected', 'progress', 'invitees', 'blessings', 'startDate', 'endDate'],
     scrollContainer: () => this.scrollableTable?.nativeElement,
     load: req => this.loadPage(req)
@@ -109,6 +111,7 @@ export class CampaignsListComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    this.table.destroy(); // שלב ג׳ 9.4
     this.subscriptions.unsubscribe();
     if (this.filterTimeout) {
       clearTimeout(this.filterTimeout);

@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { TableState, TableLoadRequest } from '../../../common/table/table-state';
 import { MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -12,6 +12,7 @@ import { I18nService } from '../../../i18n/i18n.service';
 import { HebrewDateService } from '../../../services/hebrew-date.service';
 import { PayerService } from '../../../services/payer.service';
 import { deleteDonationQuestion } from '../../../common/donation-confirm';
+import { Payment } from '../../../../shared/entity';
 
 export interface CampaignDonationsModalArgs {
   campaignId: string;
@@ -26,7 +27,7 @@ export interface CampaignDonationsModalArgs {
   templateUrl: './campaign-donations-modal.component.html',
   styleUrls: ['./campaign-donations-modal.component.scss']
 })
-export class CampaignDonationsModalComponent implements OnInit {
+export class CampaignDonationsModalComponent implements OnInit, OnDestroy {
   args!: CampaignDonationsModalArgs;
 
   campaign?: Campaign;
@@ -52,7 +53,8 @@ export class CampaignDonationsModalComponent implements OnInit {
     pageSize: 50,
     sortableFields: ['donor', 'donationDate', 'donationType', 'amount'],
     scrollContainer: () => this.scrollableTable?.nativeElement,
-    load: req => this.loadPage(req)
+    load: req => this.loadPage(req),
+    refreshOn: [Donation, Payment] // שלב ג׳ 9.4
   });
 
   // Pagination
@@ -83,6 +85,10 @@ export class CampaignDonationsModalComponent implements OnInit {
     public dialogRef: MatDialogRef<CampaignDonationsModalComponent>,
     private payer: PayerService
   ) { }
+
+  ngOnDestroy() {
+    this.table.destroy(); // שלב ג׳ 9.4
+  }
 
   async ngOnInit() {
     await this.loadCampaign();

@@ -1,4 +1,4 @@
-import { Component, ElementRef, OnInit, ChangeDetectorRef, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnInit, OnDestroy, ChangeDetectorRef, ViewChild } from '@angular/core';
 import { formatAmount } from '../../../common/pipes/amount.pipe';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialogRef } from '@angular/material/dialog';
@@ -16,7 +16,9 @@ import { sortRows } from '../../../common/table/table-sort';
 import { CommitmentController } from '../../../../shared/controllers/commitment.controller';
 import { CommitmentProgress } from '../../../../shared/utils/commitment-utils';
 import { deleteDonationQuestion } from '../../../common/donation-confirm';
+import { entityChanges } from '../../../common/entity-changes';
 import { isPartnerView, loadDonorNames, partnershipNameIds, partnershipNote } from '../../../../shared/utils/donation-partners';
+import { Payment } from '../../../../shared/entity';
 
 export interface DonorDonationsModalArgs {
   donorId: string;
@@ -34,7 +36,7 @@ export interface DonorDonationsModalArgs {
   templateUrl: './donor-donations-modal.component.html',
   styleUrls: ['./donor-donations-modal.component.scss']
 })
-export class DonorDonationsModalComponent implements OnInit {
+export class DonorDonationsModalComponent implements OnInit, OnDestroy {
   args!: DonorDonationsModalArgs;
 
   donor?: Donor;
@@ -117,6 +119,13 @@ currencyTypes = this.payer.getCurrencyTypesRecord()
     private hebrewDateService: HebrewDateService,
     private payer: PayerService
   ) {}
+
+  /** שלב ג׳ 9.4 - עדכון תרומה / תשלום / מתנה מכל מקום - החלון מתרענן. */
+  private readonly changes = entityChanges([Donation, Payment, DonorGift]).subscribe(() => void this.loadData());
+
+  ngOnDestroy() {
+    this.changes.unsubscribe();
+  }
 
   async ngOnInit() {
     await this.loadData();

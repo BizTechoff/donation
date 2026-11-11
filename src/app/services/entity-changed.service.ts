@@ -1,6 +1,8 @@
 import { Injectable } from '@angular/core';
-import { Observable, Subject } from 'rxjs';
-import { filter } from 'rxjs/operators';
+import { ClassType } from 'remult';
+import { Observable } from 'rxjs';
+import { Campaign, Certificate, Donation, Donor, DonorGift, Reminder } from '../../shared/entity';
+import { announceEntityChange, entityChanges, entityKeyOf } from '../common/entity-changes';
 
 /**
  * entity-changed.service.ts
@@ -24,17 +26,25 @@ export interface EntityChange {
   id?: string;
 }
 
+/** השמות הישנים של השירות -> היישות. שלב ג׳ 9.4: הכול עובר בערוץ האחד (common/entity-changes). */
+const ENTITY_OF: Record<ChangedEntity, ClassType<any>> = {
+  donor: Donor,
+  donation: Donation,
+  reminder: Reminder,
+  gift: DonorGift,
+  campaign: Campaign,
+  certificate: Certificate
+};
+
 @Injectable({ providedIn: 'root' })
 export class EntityChangedService {
-  private readonly changes = new Subject<EntityChange>();
-
   /** Announce that an entity was created/updated/deleted. */
-  notify(entity: ChangedEntity, id?: string): void {
-    this.changes.next({ entity, id });
+  notify(entity: ChangedEntity, _id?: string): void {
+    announceEntityChange(entityKeyOf(ENTITY_OF[entity]));
   }
 
   /** Stream of changes for one entity kind - subscribe in the list component. */
-  on(entity: ChangedEntity): Observable<EntityChange> {
-    return this.changes.asObservable().pipe(filter(c => c.entity === entity));
+  on(entity: ChangedEntity): Observable<void> {
+    return entityChanges([ENTITY_OF[entity]]);
   }
 }

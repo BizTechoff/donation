@@ -1,4 +1,6 @@
-import { remult } from 'remult'
+import { ClassType, remult } from 'remult'
+import { Subscription } from 'rxjs'
+import { entityChanges } from '../entity-changes'
 import { User } from '../../../shared/entity'
 import { UserSettingsService } from '../../services/user-settings.service'
 
@@ -53,6 +55,12 @@ export interface TableStateOptions {
   scrollContainer?: () => HTMLElement | null | undefined
   /** How many page numbers to render. Default 5. */
   pageWindow?: number
+  /**
+   * שלב ג׳ 9.4 - היישויות שהרשימה מציגה. כתיבה באחת מהן, מכל מסך או כרטיס,
+   * מרעננת את הרשימה במקום (refresh - אותו עמוד ואותו מקום גלילה).
+   * הקומפוננטה קוראת ל-table.destroy() ב-ngOnDestroy.
+   */
+  refreshOn?: ClassType<any>[]
 }
 
 export class TableState {
@@ -63,10 +71,19 @@ export class TableState {
 
   private readonly opts: TableStateOptions
   private settingsUser?: User
+  private readonly changes?: Subscription
 
   constructor(opts: TableStateOptions) {
     this.opts = opts
     this.pageSize = opts.pageSize ?? 50
+    if (opts.refreshOn?.length) {
+      this.changes = entityChanges(opts.refreshOn).subscribe(() => void this.refresh())
+    }
+  }
+
+  /** שלב ג׳ 9.4 - הפסקת ההאזנה לשינויים. נקרא מ-ngOnDestroy של הקומפוננטה. */
+  destroy(): void {
+    this.changes?.unsubscribe()
   }
 
   // ── paging state ────────────────────────────────────────────────────────

@@ -19,6 +19,7 @@ import { DonorController } from '../../../shared/controllers/donor.controller';
 import { DonorMapController } from '../../../shared/controllers/donor-map.controller';
 import { TableState, TableLoadRequest } from '../../common/table/table-state';
 import { amountRangeLabel, dateRangeLabel, namesLabel, searchLabel } from '../../../shared/utils/filter-label-utils';
+import { Donor } from '../../../shared/entity';
 
 @Component({
   selector: 'app-certificates',
@@ -61,6 +62,7 @@ export class CertificatesComponent implements OnInit, OnDestroy {
   readonly table = new TableState({
     pageSize: 50,
     settingsKey: 'certificateList',
+    refreshOn: [Certificate, Donor], // שלב ג׳ 9.4 - רענון אוטומטי אחרי עדכון בכל מסך
     sortableFields: ['recipientName', 'type', 'eventDate', 'amount'],
     scrollContainer: () => this.scrollableTable?.nativeElement,
     load: req => this.loadCertificates(req)
@@ -214,6 +216,7 @@ export class CertificatesComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    this.table.destroy(); // שלב ג׳ 9.4
     this.donorSearchSubject.complete();
     this.subscriptions.unsubscribe();
   }

@@ -22,6 +22,7 @@ import { TableState, TableLoadRequest } from '../../common/table/table-state';
 import { REMINDER_SOURCE_LABELS, REMINDER_SOURCE_MANUAL } from '../../../shared/enum/reminder-type';
 import { ReminderTypeService } from '../../services/reminder-type.service';
 import { amountRangeLabel, dateRangeLabel, namesLabel, searchLabel } from '../../../shared/utils/filter-label-utils';
+import { ReminderType } from '../../../shared/entity';
 
 @DialogConfig({
   hasBackdrop: true
@@ -77,6 +78,7 @@ export class RemindersComponent implements OnInit, OnDestroy {
   readonly table = new TableState({
     pageSize: 50,
     settingsKey: 'reminderList',
+    refreshOn: [Reminder, ReminderType, Donor], // שלב ג׳ 9.4 - רענון אוטומטי אחרי עדכון בכל מסך
     sortableFields: ['dueDate', 'type', 'source', 'donor', 'title', 'priority', 'isCompleted'],
     scrollContainer: () => this.scrollableTable?.nativeElement,
     load: req => this.loadReminders(req)
@@ -240,6 +242,7 @@ export class RemindersComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    this.table.destroy(); // שלב ג׳ 9.4
     if (this.filterSubscription) {
       this.filterSubscription.unsubscribe();
     }

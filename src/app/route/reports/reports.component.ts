@@ -27,6 +27,8 @@ import { ReportService } from '../../services/report.service';
 import { UIToolsService } from '../../common/UIToolsService';
 import { buildFileName } from '../../../shared/utils/file-name-utils';
 import { dateRangeLabel } from '../../../shared/utils/filter-label-utils';
+import { Payment } from '../../../shared/entity';
+import { entityChanges } from '../../common/entity-changes';
 
 interface ChartData {
   label: string;
@@ -356,6 +358,11 @@ export class ReportsComponent implements OnInit, OnDestroy {
   ) { }
 
   async ngOnInit() {
+    // שלב ג׳ 9.4 - עדכון תרומה / תשלום / תורם מכל מקום - הדוח המוצג נטען מחדש
+    this.subscription.add(
+      entityChanges([Donation, Payment, Donor]).subscribe(() => void this.loadActiveReport())
+    );
+
     // Subscribe to global filter changes
     this.subscription.add(
       this.globalFilterService.filters$.subscribe(() => {
