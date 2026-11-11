@@ -6,8 +6,9 @@
       <h1>{{ (i18n.terms$ | async)?.letters }}</h1>
     </div>
     <div class="filters-section">
-      <input type="text" class="form-control search-input" [(ngModel)]="search" (ngModelChange)="applySearch()"
-        placeholder="חיפוש מכתב...">
+      <!-- אותו שדה חיפוש של שאר המסכים (שלב ג׳ 2.3) - עברית מימין, אנגלית משמאל -->
+      <app-bilingual-search class="search-input" [(ngModel)]="search" (ngModelChange)="applySearch()"
+        placeholderHe="חפש מכתב..." placeholderEn="Search letter..."></app-bilingual-search>
       <span class="hint">עריכת נוסח: הורד, ערוך ב-Word (השדות בסוגריים מסולסלים, למשל {{ '{' }}Amount{{ '}' }}), והעלה.</span>
     </div>
     <div class="error-banner" *ngIf="error">{{ error }}</div>

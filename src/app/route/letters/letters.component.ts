@@ -62,10 +62,12 @@ export class LettersComponent implements OnInit, OnDestroy {
   }
 
   applySearch() {
-    const term = this.search.trim().toLowerCase();
+    // החיפוש הדו-לשוני מחזיר "עברית אנגלית" - כל מילה צריכה להופיע בשם.
+    const words = this.search.trim().toLowerCase().split(/\s+/).filter(Boolean);
     const map = new Map<string, Letter[]>();
     for (const l of this.letters) {
-      if (term && !l.caption.toLowerCase().includes(term)) continue;
+      const caption = l.caption.toLowerCase();
+      if (!words.every(w => caption.includes(w))) continue;
       const category = Letter.category(l);
       map.set(category, [...(map.get(category) || []), l]);
     }

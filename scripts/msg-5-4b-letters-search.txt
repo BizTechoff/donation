@@ -1,0 +1,11 @@
+fix(letters): שלב ג׳ 5.4 - שדה החיפוש במסך המכתבים כמו בשאר המסכים
+
+- app-bilingual-search (שלב ג׳ 2.3) במקום input רגיל - אותו שדה ועיצוב של
+  רשימת התורמים: עברית מימין, אנגלית משמאל.
+- החיפוש: כל מילה שהוקלדה צריכה להופיע בשם המכתב.
+- גרסה 2026.11.11.13.
+
+BizTechoff™ - התאמת העסק לעידן הדיגיטלי
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_012J7BEmVq166Wu9fYdKdxE3
