@@ -191,6 +191,8 @@
             {{ (i18n.terms$ | async)?.donorColumn }}
             <span class="sort-icon" *ngIf="table.getSortIcon('donorName')">{{ table.getSortIcon('donorName') }}</span>
           </th>
+          <!-- שלב ג׳ 3.1 - עמודת נייד (לא ממוינת), כמו בהדפסה ובייצוא -->
+          <th class="w-mobile">{{ (i18n.terms$ | async)?.mobileColumn || 'נייד' }}</th>
 <!-- Z15 - the address column is gone; the father's name now appears under
                the donor's name, and only for donors whose name is shared. The
                address was only ever there to tell two same-named donors apart. -->
@@ -272,6 +274,7 @@
                       [title]="'תרומה חדשה ל' + getDonorName(donation)">💰<span class="plus-badge">+</span></button>
             </div>
           </td>
+          <td class="cell-ellipsis cell-phone" [title]="getDonorMobile(donation)">{{ getDonorMobile(donation) }}</td>
           <td class="cell-ellipsis" [title]="formatHebrewDate(donation.donationDate)">{{ formatHebrewDate(donation.donationDate) }}</td>
           <td>
             <span [class.commitment-highlight]="donation.donationType === 'commitment'">
@@ -302,7 +305,7 @@
           </td>
         </tr>
         <tr *ngIf="!loading && donations.length === 0">
-          <td colspan="12" class="no-data">
+          <td colspan="13" class="no-data">
             <p>{{ (i18n.terms$ | async)?.noDataFound }}</p>
           </td>
         </tr>

@@ -1,0 +1,10 @@
+feat(donations): שלב ג׳ 3.1 - עמודת נייד ברשימת התרומות
+
+- עמודת נייד במסך (לא ממוינת), מאותו מקור של ההדפסה והייצוא
+  (DonorMapController.loadDonorsForExport) - לתורמי העמוד בלבד.
+- עד היום הנייד הופיע רק בהדפסה ובייצוא; במסך לא היה טלפון כלל.
+
+BizTechoff™ - התאמת העסק לעידן הדיגיטלי
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_012J7BEmVq166Wu9fYdKdxE3

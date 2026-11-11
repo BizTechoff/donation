@@ -235,6 +235,10 @@ export class DonationsListComponent implements OnInit, OnDestroy {
           this.donations.filter(d => d.donationType === 'commitment').map(d => d.id));
         // שלב ג׳ 8 - שמות השותפים של העמוד, לשורת "שותפים בתרומה"
         this.partnerNames = await loadDonorNames(partnershipNameIds(this.donations));
+        // שלב ג׳ 3.1 - הנייד של תורמי העמוד, מאותו מקור של ההדפסה והייצוא
+        const pageDonorIds = [...new Set(this.donations.map(d => d.donorId).filter(id => id))] as string[];
+        this.donorContacts = new Map((pageDonorIds.length
+          ? await DonorMapController.loadDonorsForExport(pageDonorIds) : []).map(c => [c.id, c]));
       } catch (error) {
         console.error('Error refreshing donations:', error);
         this.donations = [];
@@ -633,6 +637,13 @@ export class DonationsListComponent implements OnInit, OnDestroy {
 
   getDonorName(donation: Donation): string {
     return donation.donor?.lastAndFirstName || '-';
+  }
+
+  /** שלב ג׳ 3.1 - פרטי הקשר (נייד) של תורמי העמוד, לפי id. */
+  donorContacts = new Map<string, { mobile?: string }>();
+
+  getDonorMobile(donation: Donation): string {
+    return (donation.donorId && this.donorContacts.get(donation.donorId)?.mobile) || '-';
   }
 
   /** שלב ג׳ 8 - שמות השותפים (id -> שם) של התרומות המוצגות. */
