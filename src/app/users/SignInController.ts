@@ -90,7 +90,8 @@ export async function setSessionUserBasedOnUserRow(user?: User) {
     else if (user.secretary) {
       roles.push(Roles.secretary)
     }
-    else if (user.donator) {
+    // שלב ג׳ 9.3 - מתרים מצטבר: מנהל או מזכיר יכולים להיות גם מתרימים
+    if (user.donator) {
       roles.push(Roles.donator)
     }
   }

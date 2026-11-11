@@ -48,11 +48,12 @@ export class User extends IdEntity {
   })
   createDate = new Date()
 
+  // שלב ג׳ 9.3 - מנהל ומזכיר הם תפקיד אחד מתוך שניים; "מתרים" הוא תכונה
+  // נוספת שאפשר לסמן לצד כל אחד מהם (ולכן לא מתאפס כאן).
   @DataControl<User, boolean>({
     valueChange: (row, col) => {
       if (col.value) {
         row.secretary = false
-        row.donator = false
       }
     }
   })
@@ -67,7 +68,6 @@ export class User extends IdEntity {
     valueChange: (row, col) => {
       if (col.value) {
         row.admin = false
-        row.donator = false
       }
     }
   })
@@ -77,14 +77,7 @@ export class User extends IdEntity {
   })
   secretary = false
 
-  @DataControl<User, boolean>({
-    valueChange: (row, col) => {
-      if (col.value) {
-        row.admin = false
-        row.secretary = false
-      }
-    }
-  })
+  // שלב ג׳ 9.3 - מתרים לצד מנהל / מזכיר: הסימון לא מאפס את התפקיד.
   @Fields.boolean({
     allowApiUpdate: Roles.admin,
     caption: terms.donator,
