@@ -1,0 +1,13 @@
+chore(tools): דוח תנועות והסבת תנועות התחייבות לתרומות מקושרות
+
+- tools/payments-report.ts: כל התנועות - תורם, תרומה, פרטי תנועה, סיכומים
+  ושורות שנראות כבדיקה. קריאה בלבד.
+- tools/payments-to-donations.ts: תנועה פעילה של התחייבות -> תרומה עם
+  commitmentId (שלב ג׳ 4.1 - כל תרומה = תנועה). התנועה מסומנת לא פעילה, עם
+  גיבוי. הדוח מראה "שולם" לפני ואחרי לכל התחייבות (בפרודקשן 11.11 - זהים
+  ב-15 ההתחייבויות). הו"ק ותנועות לא פעילות - לא נוגעים.
+
+BizTechoff™ - התאמת העסק לעידן הדיגיטלי
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_014QF1xL15Q485gc5E3d7Hsd
