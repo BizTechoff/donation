@@ -377,20 +377,20 @@
             <div class="field-title">
               <mat-icon class="field-icon">business</mat-icon>
               <label>{{ (i18n.terms$ | async)?.selectOrganizationLabel || 'בחירת עמותה' }}</label>
-              <button class="field-add-btn" *ngIf="donationOrganizations.length === 0"
+              <button class="field-add-btn" *ngIf="!donation.organizationId"
                 (click)="addOrganizationToDonation()" [title]="i18n.terms.addNewOrganization">
                 <mat-icon>add</mat-icon>
               </button>
             </div>
 
-            <!-- Donation Organizations List -->
+            <!-- העמותה של התרומה - שדה אחד בתרומה (organizationId) -->
             <div class="entity-list">
-              <div class="entity-item" *ngFor="let donationOrganization of donationOrganizations">
-                <span class="entity-name" (click)="viewOrganizationDetails(donationOrganization.organizationId)"
+              <div class="entity-item" *ngIf="donation.organizationId">
+                <span class="entity-name" (click)="viewOrganizationDetails(donation.organizationId)"
                   title="לחץ לצפייה בפרטי העמותה">
-                  {{ donationOrganization.organization?.name || 'עמותה לא ידועה' }}
+                  {{ selectedOrganization?.name || 'עמותה לא ידועה' }}
                 </span>
-                <button mat-icon-button class="delete-btn" (click)="removeDonationOrganization(donationOrganization)">
+                <button mat-icon-button class="delete-btn" (click)="removeDonationOrganization()">
                   <mat-icon>close</mat-icon>
                 </button>
               </div>
@@ -398,23 +398,25 @@
           </div>
 
 
+          <!-- צ'ק נמשך מבנק - גם בו בוחרים בנק (יעקב, 11.11.2026) -->
           <div class="form-group"
-            *ngIf="isTransferPayment || (isStandingOrderPayment && donation.standingOrderType === 'bank')">
+            *ngIf="isCheckPayment || isTransferPayment || (isStandingOrderPayment && donation.standingOrderType === 'bank')">
             <div class="field-title">
               <mat-icon class="field-icon">account_balance</mat-icon>
               <label>{{ (i18n.terms$ | async)?.selectBankLabel || 'בחירת בנק' }}</label>
-              <button class="field-add-btn" *ngIf="donationBanks.length === 0" (click)="addNewBank()"
+              <button class="field-add-btn" *ngIf="!donation.bankId" (click)="addNewBank()"
                 [title]="i18n.terms.addNewBank">
                 <mat-icon>add</mat-icon>
               </button>
             </div>
 
+            <!-- הבנק של התרומה - שדה אחד בתרומה (bankId) -->
             <div class="entity-list">
-              <div class="entity-item" *ngFor="let donationBank of donationBanks">
-                <span class="entity-name" (click)="viewBankDetails(donationBank.bankId)" title="לחץ לצפייה בפרטי הבנק">
-                  {{ donationBank.bank?.name || 'בנק לא ידוע' }}
+              <div class="entity-item" *ngIf="donation.bankId">
+                <span class="entity-name" (click)="viewBankDetails(donation.bankId)" title="לחץ לצפייה בפרטי הבנק">
+                  {{ selectedBank?.name || 'בנק לא ידוע' }}
                 </span>
-                <button mat-icon-button class="delete-btn" (click)="removeDonationBank(donationBank)">
+                <button mat-icon-button class="delete-btn" (click)="removeDonationBank()">
                   <mat-icon>close</mat-icon>
                 </button>
               </div>

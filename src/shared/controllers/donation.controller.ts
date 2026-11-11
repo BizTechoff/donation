@@ -6,9 +6,7 @@ import { Bank } from '../entity/bank';
 import { Campaign } from '../entity/campaign';
 import { Company } from '../entity/company';
 import { Donation } from '../entity/donation';
-import { DonationBank } from '../entity/donation-bank';
 import { DonationMethod } from '../entity/donation-method';
-import { DonationOrganization } from '../entity/donation-organization';
 import { Donor } from '../entity/donor';
 import { Organization } from '../entity/organization';
 import { DonorPlace } from '../entity/donor-place';
@@ -38,8 +36,6 @@ export interface DonationDetailsData {
   organizations: Organization[];
   banks: Bank[];
   payerCompanies: Company[];
-  donationBanks: DonationBank[];
-  donationOrganizations: DonationOrganization[];
   partnerDonors: Donor[];
   selectedOrganization: Organization | null;
   selectedBank: Bank | null;
@@ -190,39 +186,25 @@ export class DonationController {
     }
 
     // Load donation-specific data if exists
-    let donationBanks: DonationBank[] = [];
-    let donationOrganizations: DonationOrganization[] = [];
     let partnerDonors: Donor[] = [];
     let selectedOrganization: Organization | null = null;
     let selectedBank: Bank | null = null;
 
     if (donation?.id) {
       const partnerIds = donation.partnerIds || [];
+      // הבנק והעמותה - מהשדות של התרומה (selectedBank / selectedOrganization);
+      // טבלאות הקישור כבר לא בשימוש (11.11.2026).
       const [
-        donationBanksResult,
-        donationOrganizationsResult,
         partnerDonorsResult,
         selectedOrganizationResult,
         selectedBankResult
       ] = await Promise.all([
-        remult.repo(DonationBank).find({
-          where: { donationId: donation.id, isActive: true },
-          include: { bank: true },
-          orderBy: { createdDate: 'asc' }
-        }),
-        remult.repo(DonationOrganization).find({
-          where: { donationId: donation.id, isActive: true },
-          include: { organization: true },
-          orderBy: { createdDate: 'asc' }
-        }),
         partnerIds.length > 0
           ? Promise.all(partnerIds.map(id => remult.repo(Donor).findId(id))).then(donors => donors.filter((d): d is Donor => d !== null && d !== undefined))
           : Promise.resolve([] as Donor[]),
         donation.organizationId ? remult.repo(Organization).findId(donation.organizationId) : Promise.resolve(null),
         donation.bankId ? remult.repo(Bank).findId(donation.bankId) : Promise.resolve(null)
       ]);
-      donationBanks = donationBanksResult;
-      donationOrganizations = donationOrganizationsResult;
       partnerDonors = partnerDonorsResult;
       selectedOrganization = selectedOrganizationResult ?? null;
       selectedBank = selectedBankResult ?? null;
@@ -235,8 +217,6 @@ export class DonationController {
       organizations,
       banks,
       payerCompanies,
-      donationBanks,
-      donationOrganizations,
       partnerDonors,
       selectedOrganization,
       selectedBank

@@ -13,7 +13,6 @@ import { Country } from '../shared/entity/country'
 import { Company } from '../shared/entity/company'
 import { Organization } from '../shared/entity/organization'
 import { Donation } from '../shared/entity/donation'
-import { DonationOrganization } from '../shared/entity/donation-organization'
 import { GoogleContactMapping } from '../shared/entity/google-contact-mapping'
 import { GoogleSyncLog } from '../shared/entity/google-sync-log'
 import { SyncConflict, SyncOptions, SyncResult, SyncType } from '../shared/type/google-contacts.type'
@@ -158,31 +157,17 @@ export async function runSync(
       for (const c of companies) companiesMap.set(c.id, c)
     }
 
-    // Load organizations (via Donation → DonationOrganization)
+    // Load organizations - מהעמותה של כל תרומה (donations.organizationId,
+    // מקור האמת היחיד מ-11.11.2026; טבלת הקישור כבר לא בשימוש).
     const donorIds = donors.map(d => d.id)
     const donorDonations = await remult.repo(Donation).find({
       where: { donorId: { $in: donorIds } }
     })
-    const donationIds = donorDonations.map(d => d.id)
-    const donationByDonorId = new Map<string, string[]>()
-    for (const d of donorDonations) {
-      if (!donationByDonorId.has(d.donorId)) donationByDonorId.set(d.donorId, [])
-      donationByDonorId.get(d.donorId)!.push(d.id)
-    }
     const orgsByDonor = new Map<string, Set<string>>()
-    if (donationIds.length) {
-      const donationOrgs = await remult.repo(DonationOrganization).find({
-        where: { donationId: { $in: donationIds }, isActive: true }
-      })
-      for (const dorg of donationOrgs) {
-        // Find which donor owns this donation
-        for (const [donorId, dIds] of donationByDonorId) {
-          if (dIds.includes(dorg.donationId)) {
-            if (!orgsByDonor.has(donorId)) orgsByDonor.set(donorId, new Set())
-            orgsByDonor.get(donorId)!.add(dorg.organizationId)
-          }
-        }
-      }
+    for (const d of donorDonations) {
+      if (!d.organizationId) continue
+      if (!orgsByDonor.has(d.donorId)) orgsByDonor.set(d.donorId, new Set())
+      orgsByDonor.get(d.donorId)!.add(d.organizationId)
     }
     const allOrgIds = new Set<string>()
     for (const ids of orgsByDonor.values()) ids.forEach(id => allOrgIds.add(id))

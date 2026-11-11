@@ -5,7 +5,7 @@ import { MatDialogRef } from '@angular/material/dialog';
 import { DialogConfig, openDialog } from 'common-ui-elements';
 import { remult } from 'remult';
 import { DonationController } from '../../../../shared/controllers/donation.controller';
-import { Bank, Campaign, Company, Country, Donation, DonationBank, DonationFile, DonationMethod, DonationOrganization, DonationPartner, Donor, DonorPlace, Organization, Reminder, User } from '../../../../shared/entity';
+import { Bank, Campaign, Company, Country, Donation, DonationFile, DonationMethod, DonationPartner, Donor, DonorPlace, Organization, Reminder, User } from '../../../../shared/entity';
 import { UIToolsService } from '../../../common/UIToolsService';
 import { EntityChangedService } from '../../../services/entity-changed.service';
 import { I18nService } from '../../../i18n/i18n.service';
@@ -52,8 +52,6 @@ export class DonationDetailsModalComponent implements OnInit {
   banks: Bank[] = [];
   payerCompanies: Company[] = [];
   payerOrganizations: Organization[] = [];
-  donationBanks: DonationBank[] = [];
-  donationOrganizations: DonationOrganization[] = [];
   payerOptions: Array<{ value: string; label: string }> = [];
 
   donationRepo = remult.repo(Donation);
@@ -62,8 +60,6 @@ export class DonationDetailsModalComponent implements OnInit {
   donationMethodRepo = remult.repo(DonationMethod);
   userRepo = remult.repo(User);
   donationPartnerRepo = remult.repo(DonationPartner);
-  donationBankRepo = remult.repo(DonationBank);
-  donationOrganizationRepo = remult.repo(DonationOrganization);
   fileRepo = remult.repo(DonationFile);
   countryRepo = remult.repo(Country);
   organizationRepo = remult.repo(Organization);
@@ -183,8 +179,6 @@ export class DonationDetailsModalComponent implements OnInit {
         this.organizations = data.organizations;
         this.banks = data.banks;
         this.payerCompanies = data.payerCompanies;
-        this.donationBanks = data.donationBanks;
-        this.donationOrganizations = data.donationOrganizations;
 
         // Add "עמותה" and "הו"ק" if they don't exist
         const hasOrganization = this.donationMethods.some(m => m.type === 'association');
@@ -287,41 +281,15 @@ export class DonationDetailsModalComponent implements OnInit {
     }
   }
 
+  /** הבנק והעמותה מהשדות של התרומה - מקור האמת היחיד. */
   private async loadDonationBanks() {
-    try {
-      if (!this.donation?.id) return;
-
-      this.donationBanks = await this.donationBankRepo.find({
-        where: { donationId: this.donation.id, isActive: true },
-        include: { bank: true },
-        orderBy: { createdDate: 'asc' }
-      });
-
-      // Log donation banks for debugging
-      console.log('Loaded donation banks:', this.donationBanks.map(db => ({
-        bankName: db.bank?.name,
-        payerName: db.payerName,
-        payerNameLength: db.payerName?.length,
-        payerNameCharCodes: db.payerName?.split('').map(c => c.charCodeAt(0))
-      })));
-    } catch (error) {
-      console.error('Error loading donation banks:', error);
-    }
+    await this.loadSelectedOrganizationAndBank();
   }
 
   private async loadDonationOrganizations() {
-    try {
-      if (!this.donation?.id) return;
-
-      this.donationOrganizations = await this.donationOrganizationRepo.find({
-        where: { donationId: this.donation.id, isActive: true },
-        include: { organization: true },
-        orderBy: { createdDate: 'asc' }
-      });
-    } catch (error) {
-      console.error('Error loading donation organizations:', error);
-    }
+    await this.loadSelectedOrganizationAndBank();
   }
+
 
   private updateSelectedOptions() {
     // Update selected campaign
@@ -393,22 +361,9 @@ export class DonationDetailsModalComponent implements OnInit {
       // Use remult.repo() for saving in the app (client side)
       await this.donationRepo.save(this.donation);
 
-      // Save all related entities - Unit of Work Pattern
-      if (this.donation.id) {
-        // Save donation banks
-        for (const donationBank of this.donationBanks) {
-          donationBank.donationId = this.donation.id;
-          await this.donationBankRepo.save(donationBank);
-        }
-
-        // Save donation organizations
-        for (const donationOrg of this.donationOrganizations) {
-          donationOrg.donationId = this.donation.id;
-          await this.donationOrganizationRepo.save(donationOrg);
-        }
-
-        console.log('Saved all donation relations using Unit of Work pattern');
-      }
+      // הבנק והעמותה הם שדות של התרומה (bankId / organizationId) ונשמרים
+      // איתה - טבלאות הקישור donation_banks / donation_organizations כבר לא
+      // בשימוש (11.11.2026: מקור אמת אחד).
 
       this.changed = wasNew || this.hasChanges();
       // A donation that just got its ID is no longer "new" - subsequent
@@ -617,12 +572,12 @@ export class DonationDetailsModalComponent implements OnInit {
 
   async loadSelectedOrganizationAndBank() {
     try {
-      if (this.donation?.organizationId) {
-        this.selectedOrganization = await this.organizationRepo.findId(this.donation.organizationId) || undefined;
-      }
-      if (this.donation?.bankId) {
-        this.selectedBank = await this.bankRepo.findId(this.donation.bankId) || undefined;
-      }
+      this.selectedOrganization = this.donation?.organizationId
+        ? await this.organizationRepo.findId(this.donation.organizationId) || undefined
+        : undefined;
+      this.selectedBank = this.donation?.bankId
+        ? await this.bankRepo.findId(this.donation.bankId) || undefined
+        : undefined;
     } catch (error) {
       console.error('Error loading selected organization and bank:', error);
     }
@@ -1058,24 +1013,10 @@ export class DonationDetailsModalComponent implements OnInit {
         }
       ) as Bank | null;
 
-      // If a bank was selected, create a new DonationBank record
+      // הבנק נשמר בתרומה עצמה (bankId), יחד עם שאר השדות.
       if (selectedBank) {
-        const donationBank = this.donationBankRepo.create();
-        donationBank.donationId = this.donation.id;
-        donationBank.bankId = selectedBank.id;
-
-        // Set default payer name to donor
-        const donorName = this.selectedDonor
-          ? `${this.selectedDonor.firstName || ''} ${this.selectedDonor.lastName || ''}`.trim()
-          : '';
-        donationBank.payerName = this.donation.payerName || donorName || '';
-        donationBank.reference = '';
-        donationBank.isActive = true;
-
-        await this.donationBankRepo.save(donationBank);
-
-        // Reload donation banks
-        await this.loadDonationBanks();
+        this.donation.bankId = selectedBank.id;
+        this.selectedBank = selectedBank;
 
         // Trigger change detection
         this.cdr.detectChanges();
@@ -1118,18 +1059,15 @@ export class DonationDetailsModalComponent implements OnInit {
     }
   }
 
-  async removeDonationBank(donationBank: DonationBank) {
+  async removeDonationBank() {
     try {
-      if (!confirm(`האם אתה בטוח שברצונך להסיר את הבנק "${donationBank.bank?.name}"?`)) {
+      if (!confirm(`האם אתה בטוח שברצונך להסיר את הבנק "${this.selectedBank?.name || ''}"?`)) {
         return;
       }
 
-      // Mark as inactive instead of deleting
-      donationBank.isActive = false;
-      await this.donationBankRepo.save(donationBank);
-
-      // Reload donation banks
-      await this.loadDonationBanks();
+      // מנתק את הבנק מהתרומה; נשמר עם התרומה.
+      this.donation.bankId = '';
+      this.selectedBank = undefined;
 
       // Trigger change detection
       this.cdr.detectChanges();
@@ -1221,25 +1159,10 @@ export class DonationDetailsModalComponent implements OnInit {
         }
       ) as Organization | null;
       console.log('addOrganizationToDonation', 1)
-      // If an organization was selected, create a new DonationOrganization record
+      // העמותה נשמרת בתרומה עצמה (organizationId), יחד עם שאר השדות.
       if (selectedOrganization) {
-        console.log('addOrganizationToDonation', 2, selectedOrganization.id)
-        const donationOrganization = this.donationOrganizationRepo.create();
-        donationOrganization.donationId = this.donation.id;
-        donationOrganization.organizationId = selectedOrganization.id;
-
-        // Set default payer name to donor
-        const donorName = this.selectedDonor
-          ? `${this.selectedDonor.firstName || ''} ${this.selectedDonor.lastName || ''}`.trim()
-          : '';
-        donationOrganization.payerName = this.donation.payerName || donorName || '';
-        donationOrganization.reference = '';
-        donationOrganization.isActive = true;
-
-        await this.donationOrganizationRepo.save(donationOrganization);
-
-        // Reload donation organizations
-        await this.loadDonationOrganizations();
+        this.donation.organizationId = selectedOrganization.id;
+        this.selectedOrganization = selectedOrganization;
 
         // Trigger change detection
         this.cdr.detectChanges();
@@ -1253,18 +1176,15 @@ export class DonationDetailsModalComponent implements OnInit {
     }
   }
 
-  async removeDonationOrganization(donationOrganization: DonationOrganization) {
+  async removeDonationOrganization() {
     try {
-      if (!confirm(`האם אתה בטוח שברצונך להסיר את העמותה "${donationOrganization.organization?.name}"?`)) {
+      if (!confirm(`האם אתה בטוח שברצונך להסיר את העמותה "${this.selectedOrganization?.name || ''}"?`)) {
         return;
       }
 
-      // Mark as inactive instead of deleting
-      donationOrganization.isActive = false;
-      await this.donationOrganizationRepo.save(donationOrganization);
-
-      // Reload donation organizations
-      await this.loadDonationOrganizations();
+      // מנתק את העמותה מהתרומה; נשמרת עם התרומה.
+      this.donation.organizationId = '';
+      this.selectedOrganization = undefined;
 
       // Trigger change detection
       this.cdr.detectChanges();

@@ -1,0 +1,19 @@
+refactor(donations): בנק ועמותה - מקור אמת אחד, השדות בתרומה
+
+לתרומה היו שני מקומות לבנק ולעמותה: donations.bankId / organizationId,
+וטבלאות הקישור donation_banks / donation_organizations. הכרטיס הציג רק את
+טבלאות הקישור, והייבוא ותיקון הצ'קים מילאו רק את השדות - יעקב לא ראה בנק
+ועמותה (11.11.2026). לתרומה יש בנק אחד ועמותה אחת, ולכן FK בתרומה.
+
+- כרטיס התרומה: בנק ועמותה מוצגים, נבחרים ומוסרים דרך bankId /
+  organizationId, ונשמרים עם התרומה. בחירת בנק גם בצ'ק.
+- DonationController.getDonationDetailsData: לא קורא את טבלאות הקישור
+  (donationBanks / donationOrganizations חוזרים ריקים, לתאימות).
+- google-contacts-sync: העמותות של תורם - מ-donations.organizationId.
+- הטבלאות והישויות לא נמחקו. payment.controller (התאמת מזהה תשלום באקסל
+  תנועות) עדיין קורא אותן - ריקות בפועל, ללא שינוי התנהגות.
+
+BizTechoff™ - התאמת העסק לעידן הדיגיטלי
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_014QF1xL15Q485gc5E3d7Hsd
