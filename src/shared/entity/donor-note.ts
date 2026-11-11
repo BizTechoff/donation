@@ -8,6 +8,7 @@ import {
 } from 'remult'
 import { Donor } from './donor'
 import { NoteType } from './note-type'
+import { CreatedByField, UpdatedByField } from '../utils/audit-fields'
 
 @Entity<DonorNote>('donor_notes', {
   allowApiCrud: Allow.authenticated,
@@ -25,6 +26,13 @@ import { NoteType } from './note-type'
   },
 })
 export class DonorNote extends IdEntity {
+  // שלב ג׳ 9.1 - מי הזין ומי עדכן (shared/utils/audit-fields)
+  @CreatedByField()
+  createdById = ''
+
+  @UpdatedByField()
+  updatedById = ''
+
   @Fields.string({ caption: 'מזהה תורם' })
   donorId?: string;
 

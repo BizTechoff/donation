@@ -7,6 +7,7 @@ import {
   Fields,
 } from 'remult'
 import { Roles } from '../enum/roles'
+import { CreatedByField, UpdatedByField } from '../utils/audit-fields'
 
 @Entity<BlessingBookType>('blessing_book_types', {
   allowApiCrud: Allow.authenticated,
@@ -24,6 +25,13 @@ import { Roles } from '../enum/roles'
   },
 })
 export class BlessingBookType extends IdEntity {
+  // שלב ג׳ 9.1 - מי הזין ומי עדכן (shared/utils/audit-fields)
+  @CreatedByField()
+  createdById = ''
+
+  @UpdatedByField()
+  updatedById = ''
+
   @Fields.string({
     caption: 'סוג ברכה',
     validate: Validators.required,

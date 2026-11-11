@@ -1,10 +1,18 @@
 import { Allow, Entity, Fields } from 'remult';
+import { CreatedByField, UpdatedByField } from '../utils/audit-fields'
 
 @Entity('noteTypes', {
   allowApiCrud: Allow.authenticated,
   caption: 'סוגי הערות'
 })
 export class NoteType {
+  // שלב ג׳ 9.1 - מי הזין ומי עדכן (shared/utils/audit-fields)
+  @CreatedByField()
+  createdById = ''
+
+  @UpdatedByField()
+  updatedById = ''
+
   @Fields.uuid({
     caption: 'מזהה'
   })

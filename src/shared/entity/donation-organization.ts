@@ -10,6 +10,7 @@ import {
 import { Organization } from './organization'
 import { Donation } from './donation'
 import { Roles } from '../enum/roles'
+import { CreatedByField, UpdatedByField } from '../utils/audit-fields'
 
 @Entity<DonationOrganization>('donation_organizations', {
   allowApiCrud: Allow.authenticated,
@@ -27,6 +28,13 @@ import { Roles } from '../enum/roles'
   },
 })
 export class DonationOrganization extends IdEntity {
+  // שלב ג׳ 9.1 - מי הזין ומי עדכן (shared/utils/audit-fields)
+  @CreatedByField()
+  createdById = ''
+
+  @UpdatedByField()
+  updatedById = ''
+
   @Relations.toOne<DonationOrganization, Donation>(() => Donation, {
     caption: 'תרומה',
     field: 'donationId'

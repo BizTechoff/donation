@@ -9,6 +9,7 @@ import {
 import { Donor } from './donor'
 import { Event } from './event'
 import { Reminder } from './reminder'
+import { CreatedByField, UpdatedByField } from '../utils/audit-fields'
 
 @Entity<DonorEvent>('donor_events', {
   allowApiCrud: Allow.authenticated,
@@ -26,6 +27,13 @@ import { Reminder } from './reminder'
   },
 })
 export class DonorEvent extends IdEntity {
+  // שלב ג׳ 9.1 - מי הזין ומי עדכן (shared/utils/audit-fields)
+  @CreatedByField()
+  createdById = ''
+
+  @UpdatedByField()
+  updatedById = ''
+
 
 
   @Fields.string({ caption: 'מזהה תורם' })

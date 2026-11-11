@@ -11,6 +11,7 @@ import { Campaign } from './campaign'
 import { Donor } from './donor'
 import { BlessingBookType } from './blessing-book-type'
 import { Roles } from '../enum/roles'
+import { CreatedByField, UpdatedByField } from '../utils/audit-fields'
 
 @Entity<Blessing>('blessings', {
   allowApiCrud: Allow.authenticated,
@@ -28,6 +29,13 @@ import { Roles } from '../enum/roles'
   },
 })
 export class Blessing extends IdEntity {
+  // שלב ג׳ 9.1 - מי הזין ומי עדכן (shared/utils/audit-fields)
+  @CreatedByField()
+  createdById = ''
+
+  @UpdatedByField()
+  updatedById = ''
+
   @Fields.string({
     validate: Validators.required,
     caption: 'שם',

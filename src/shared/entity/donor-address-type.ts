@@ -7,6 +7,7 @@ import {
   Validators,
 } from 'remult'
 import { Roles } from '../enum/roles'
+import { CreatedByField, UpdatedByField } from '../utils/audit-fields'
 
 @Entity<DonorAddressType>('donor_address_types', {
   allowApiCrud: Allow.authenticated,
@@ -24,6 +25,13 @@ import { Roles } from '../enum/roles'
   },
 })
 export class DonorAddressType extends IdEntity {
+  // שלב ג׳ 9.1 - מי הזין ומי עדכן (shared/utils/audit-fields)
+  @CreatedByField()
+  createdById = ''
+
+  @UpdatedByField()
+  updatedById = ''
+
   @Fields.string({
     validate: Validators.required,
     caption: 'שם סוג כתובת',

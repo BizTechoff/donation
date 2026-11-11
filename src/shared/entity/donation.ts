@@ -19,6 +19,7 @@ import { Reminder } from './reminder'
 import { Roles } from '../enum/roles'
 import { calculateEffectiveAmount, calculatePaymentTotals, isPaymentBased } from '../utils/donation-utils'
 import { DEFAULT_CURRENCY } from '../enum/currency'
+import { UpdatedByField, stampCreatedBy } from '../utils/audit-fields'
 
 @Entity<Donation>('donations', {
   allowApiCrud: Allow.authenticated,
@@ -61,6 +62,10 @@ import { DEFAULT_CURRENCY } from '../enum/currency'
   },
 })
 export class Donation extends IdEntity {
+  // שלב ג׳ 9.1 - מי הזין ומי עדכן (shared/utils/audit-fields)
+  @UpdatedByField()
+  updatedById = ''
+
   @Fields.number({
     validate: [Validators.required, Validators.min(1)],
     caption: 'סכום',
@@ -248,6 +253,7 @@ export class Donation extends IdEntity {
   createdBy?: User
 
   @Fields.string({
+    saving: stampCreatedBy as any, // שלב ג׳ 9.1
     caption: 'נוצר על ידי ID',
   })
   createdById = ''

@@ -77,6 +77,7 @@ import { QuickActionsComponent } from './components/quick-actions/quick-actions.
 import { SeedDataComponent } from './components/seed-data/seed-data.component'
 import { EventSelectionModalComponent } from './routes/modals/event-selection-modal/event-selection-modal.component'
 import { CatalogNameEditComponent } from './components/catalog-name-edit/catalog-name-edit.component'
+import { AuditStampComponent } from './components/audit-stamp/audit-stamp.component'
 import { NotesSelectionModalComponent } from './routes/modals/notes-selection-modal/notes-selection-modal.component'
 import { CircleSelectionModalComponent } from './routes/modals/circle-selection-modal/circle-selection-modal.component'
 import { ContactPersonSelectionModalComponent } from './routes/modals/contact-person-selection-modal/contact-person-selection-modal.component'
@@ -173,6 +174,7 @@ import { A11yModule } from "@angular/cdk/a11y";
     DonorsMapComponent,
     EventSelectionModalComponent,
     CatalogNameEditComponent,
+    AuditStampComponent,
     NotesSelectionModalComponent,
     CircleSelectionModalComponent,
     ContactPersonSelectionModalComponent,

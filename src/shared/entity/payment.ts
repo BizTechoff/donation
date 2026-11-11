@@ -10,6 +10,7 @@ import {
 import { Donation } from './donation'
 import { Roles } from '../enum/roles'
 import { DEFAULT_CURRENCY } from '../enum/currency'
+import { CreatedByField, UpdatedByField } from '../utils/audit-fields'
 
 @Entity<Payment>('payments', {
   allowApiCrud: Allow.authenticated,
@@ -27,6 +28,13 @@ import { DEFAULT_CURRENCY } from '../enum/currency'
   },
 })
 export class Payment extends IdEntity {
+  // שלב ג׳ 9.1 - מי הזין ומי עדכן (shared/utils/audit-fields)
+  @CreatedByField()
+  createdById = ''
+
+  @UpdatedByField()
+  updatedById = ''
+
   
   @Relations.toOne<Payment, Donation>(() => Donation, {
     caption: 'תרומה',

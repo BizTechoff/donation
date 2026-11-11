@@ -1,11 +1,19 @@
 import { Allow, BackendMethod, Entity, Fields, Relations, isBackend, remult } from 'remult';
 import { Country } from './country';
+import { CreatedByField, UpdatedByField } from '../utils/audit-fields'
 
 @Entity('places', {
   caption: 'מקומות',
   allowApiCrud: Allow.authenticated
 })
 export class Place {
+  // שלב ג׳ 9.1 - מי הזין ומי עדכן (shared/utils/audit-fields)
+  @CreatedByField()
+  createdById = ''
+
+  @UpdatedByField()
+  updatedById = ''
+
   @Fields.uuid()
   id!: string;
 

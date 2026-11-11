@@ -9,6 +9,7 @@ import {
 } from 'remult'
 import { remult } from 'remult'
 import { Roles } from '../enum/roles'
+import { CreatedByField, UpdatedByField } from '../utils/audit-fields'
 
 @Entity<Country>('countries', {
   allowApiCrud: Allow.authenticated,
@@ -26,6 +27,13 @@ import { Roles } from '../enum/roles'
   },
 })
 export class Country extends IdEntity {
+  // שלב ג׳ 9.1 - מי הזין ומי עדכן (shared/utils/audit-fields)
+  @CreatedByField()
+  createdById = ''
+
+  @UpdatedByField()
+  updatedById = ''
+
   @Fields.string({
     caption: 'שם מדינה',
     validate: Validators.required,

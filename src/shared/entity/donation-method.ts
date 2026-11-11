@@ -12,6 +12,7 @@ import { User } from './user'
 import { Roles } from '../enum/roles'
 import { getCurrentTerms } from '../entity-captions'
 import { DEFAULT_CURRENCY } from '../enum/currency'
+import { UpdatedByField, stampCreatedBy } from '../utils/audit-fields'
 
 @Entity<DonationMethod>('donation_methods', {
   allowApiCrud: Allow.authenticated,
@@ -29,6 +30,10 @@ import { DEFAULT_CURRENCY } from '../enum/currency'
   },
 })
 export class DonationMethod extends IdEntity {
+  // שלב ג׳ 9.1 - מי הזין ומי עדכן (shared/utils/audit-fields)
+  @UpdatedByField()
+  updatedById = ''
+
   @Fields.string({
     validate: [Validators.required, Validators.uniqueOnBackend],
     caption: 'שם אמצעי התשלום',
@@ -156,6 +161,7 @@ export class DonationMethod extends IdEntity {
   createdBy?: User
 
   @Fields.string({
+    saving: stampCreatedBy as any, // שלב ג׳ 9.1
     caption: 'נוצר על ידי ID',
   })
   createdById = ''

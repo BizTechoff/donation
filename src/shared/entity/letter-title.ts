@@ -1,10 +1,18 @@
 import { Allow, Entity, Fields } from 'remult';
+import { CreatedByField, UpdatedByField } from '../utils/audit-fields'
 
 @Entity('letterTitles', {
   allowApiCrud: Allow.authenticated,
   caption: 'כותרות מכתב'
 })
 export class LetterTitle {
+  // שלב ג׳ 9.1 - מי הזין ומי עדכן (shared/utils/audit-fields)
+  @CreatedByField()
+  createdById = ''
+
+  @UpdatedByField()
+  updatedById = ''
+
   @Fields.uuid({
     caption: 'מזהה'
   })

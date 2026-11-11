@@ -14,6 +14,7 @@ import { Reminder } from './reminder'
 import { Roles } from '../enum/roles'
 import { CERTIFICATE_TYPE_LABELS } from '../enum/certificate-type'
 import { sqlCaseFromLabels } from '../utils/table-query'
+import { UpdatedByField, stampCreatedBy } from '../utils/audit-fields'
 
 @Entity<Certificate>('certificates', {
   allowApiCrud: Allow.authenticated,
@@ -31,6 +32,10 @@ import { sqlCaseFromLabels } from '../utils/table-query'
   },
 })
 export class Certificate extends IdEntity {
+  // שלב ג׳ 9.1 - מי הזין ומי עדכן (shared/utils/audit-fields)
+  @UpdatedByField()
+  updatedById = ''
+
   @Fields.string({
     validate: Validators.required,
     caption: 'סוג תעודה',
@@ -172,6 +177,7 @@ export class Certificate extends IdEntity {
   createdBy?: User
 
   @Fields.string({
+    saving: stampCreatedBy as any, // שלב ג׳ 9.1
     caption: 'נוצר על ידי ID',
   })
   createdById = ''

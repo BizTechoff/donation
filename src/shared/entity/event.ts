@@ -8,6 +8,7 @@ import {
 } from 'remult'
 import { Roles } from '../enum/roles'
 import { assertUniqueCatalogName, normalizeCatalogName } from '../utils/catalog-name'
+import { CreatedByField, UpdatedByField } from '../utils/audit-fields'
 
 @Entity<Event>('events', {
   allowApiCrud: Allow.authenticated,
@@ -24,6 +25,13 @@ import { assertUniqueCatalogName, normalizeCatalogName } from '../utils/catalog-
   },
 })
 export class Event extends IdEntity {
+  // שלב ג׳ 9.1 - מי הזין ומי עדכן (shared/utils/audit-fields)
+  @CreatedByField()
+  createdById = ''
+
+  @UpdatedByField()
+  updatedById = ''
+
   @Fields.string({
     validate: Validators.required,
     caption: 'תיאור האירוע',

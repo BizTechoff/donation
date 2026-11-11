@@ -1,0 +1,11 @@
+.audit-stamp {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  font-size: 11px;
+  color: #8a94a6;
+  line-height: 1.4;
+
+  .sep { opacity: .6; }
+}

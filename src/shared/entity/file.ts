@@ -10,6 +10,7 @@ import {
 import { Donation } from './donation'
 import { User } from './user'
 import { Roles } from '../enum/roles'
+import { CreatedByField, UpdatedByField } from '../utils/audit-fields'
 
 @Entity<DonationFile>('files', {
   allowApiCrud: Allow.authenticated,
@@ -27,6 +28,13 @@ import { Roles } from '../enum/roles'
   },
 })
 export class DonationFile extends IdEntity {
+  // שלב ג׳ 9.1 - מי הזין ומי עדכן (shared/utils/audit-fields)
+  @CreatedByField()
+  createdById = ''
+
+  @UpdatedByField()
+  updatedById = ''
+
   @Fields.string({
     caption: 'שם קובץ',
     validate: Validators.required,

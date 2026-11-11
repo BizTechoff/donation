@@ -257,7 +257,7 @@
 
         <div class="addresses-grid">
           <!-- Dynamic Donor Places -->
-          <div class="address-item place-item" *ngFor="let donorPlace of sortedDonorPlaces" [class.primary-address]="donorPlace.isPrimary">
+          <div class="address-item place-item" *ngFor="let donorPlace of sortedDonorPlaces" [title]="userNames.stampText(donorPlace)" [class.primary-address]="donorPlace.isPrimary">
             <div class="address-header">
               <button class="pin-address-btn"
                       [class.pinned]="donorPlace.isPrimary"
@@ -299,7 +299,7 @@
             </div>
 
             <div class="contact-items-list">
-              <div class="contact-item" *ngFor="let donorContact of getPhoneContacts()">
+              <div class="contact-item" *ngFor="let donorContact of getPhoneContacts()" [title]="userNames.stampText(donorContact)">
                 <!-- <div class="contact-item-header">
                   <span class="contact-description">{{ donorContact.description || 'טלפון' }}</span>
                   <button class="remove-contact-btn" (click)="removeDonorContact(donorContact)" title="הסר">
@@ -355,7 +355,7 @@
             </div>
 
             <div class="contact-items-list">
-              <div class="contact-item" *ngFor="let donorContact of getEmailContacts()">
+              <div class="contact-item" *ngFor="let donorContact of getEmailContacts()" [title]="userNames.stampText(donorContact)">
                 <!-- <div class="contact-item-header">
                   <span class="contact-description">{{ donorContact.description || 'אימייל' }}</span>
                   <button class="remove-contact-btn" (click)="removeDonorContact(donorContact)" title="הסר">
@@ -574,7 +574,7 @@
             <div class="dates-container" [class.scrollable]="(customPersonalDates.length + 3) > 5">
 
               <!-- Donor Events displayed in single row -->
-              <div *ngFor="let donorEvent of donorEvents; trackBy: trackDonorEventById" class="personal-date-row">
+              <div *ngFor="let donorEvent of donorEvents; trackBy: trackDonorEventById" class="personal-date-row" [title]="userNames.stampText(donorEvent)">
                 <span class="date-label">{{donorEvent.event?.description || 'אירוע'}}</span>
                 <div class="date-picker-inline">
                   <app-modern-dual-date-picker [name]="'donorEvent_' + donorEvent.id" [(ngModel)]="donorEvent.date"
@@ -1008,7 +1008,7 @@
             </button>
           </div>
           <div class="reception-hours-list" *ngIf="donorReceptionHours.length > 0">
-            <div class="reception-hour-item" *ngFor="let receptionHour of donorReceptionHours">
+            <div class="reception-hour-item" *ngFor="let receptionHour of donorReceptionHours" [title]="userNames.stampText(receptionHour)">
               <button class="remove-btn" (click)="removeDonorReceptionHour(receptionHour)" title="הסר">
                 <mat-icon>close</mat-icon>
               </button>
@@ -1047,7 +1047,7 @@
 
         <!-- Notes Table -->
         <div class="notes-table" *ngIf="donorNotes.length > 0">
-          <div class="note-row" *ngFor="let donorNote of donorNotes">
+          <div class="note-row" *ngFor="let donorNote of donorNotes" [title]="userNames.stampText(donorNote)">
             <div class="note-type-cell">
               <span class="note-type-label">{{ donorNote.noteType }}</span>
             </div>
@@ -1064,6 +1064,8 @@
     </div>
   </div>
 
+  <!-- שלב ג׳ 9.1 - מי הזין ומי עדכן -->
+  <app-audit-stamp [row]="donor" style="display:block;padding:4px 16px"></app-audit-stamp>
   <div class="modal-footer">
   <div class="footer-actions-left">
     <!-- Quick Actions -->

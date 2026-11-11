@@ -19,6 +19,7 @@ import { ReminderController } from '../controllers/reminder.controller'
 import { REMINDER_SOURCE_LABELS, REMINDER_SOURCE_MANUAL } from '../enum/reminder-type'
 import { ReminderType } from './reminder-type'
 import { sqlCaseFromLabels } from '../utils/table-query'
+import { UpdatedByField, stampCreatedBy } from '../utils/audit-fields'
 
 @Entity<Reminder>('reminders', {
   allowApiCrud: Allow.authenticated,
@@ -72,6 +73,10 @@ import { sqlCaseFromLabels } from '../utils/table-query'
   },
 })
 export class Reminder extends IdEntity {
+  // שלב ג׳ 9.1 - מי הזין ומי עדכן (shared/utils/audit-fields)
+  @UpdatedByField()
+  updatedById = ''
+
   @Fields.string({
     validate: Validators.required,
     caption: 'כותרת',
@@ -301,6 +306,7 @@ export class Reminder extends IdEntity {
   createdBy?: User
 
   @Fields.string({
+    saving: stampCreatedBy as any, // שלב ג׳ 9.1
     caption: 'נוצר על ידי ID',
   })
   createdById = ''

@@ -7,6 +7,7 @@ import {
   Relations,
 } from 'remult'
 import { Donor } from './donor'
+import { CreatedByField, UpdatedByField } from '../utils/audit-fields'
 
 @Entity<DonorReceptionHour>('donor_reception_hours', {
   allowApiCrud: Allow.authenticated,
@@ -24,6 +25,13 @@ import { Donor } from './donor'
   },
 })
 export class DonorReceptionHour extends IdEntity {
+  // שלב ג׳ 9.1 - מי הזין ומי עדכן (shared/utils/audit-fields)
+  @CreatedByField()
+  createdById = ''
+
+  @UpdatedByField()
+  updatedById = ''
+
   @Fields.string({ caption: 'מזהה תורם' })
   donorId?: string;
 

@@ -8,6 +8,7 @@ import {
 } from 'remult'
 import { Roles } from '../enum/roles'
 import { DEFAULT_CURRENCY } from '../enum/currency'
+import { CreatedByField, UpdatedByField } from '../utils/audit-fields'
 
 @Entity<Gift>('gifts', {
   allowApiCrud: Allow.authenticated,
@@ -25,6 +26,13 @@ import { DEFAULT_CURRENCY } from '../enum/currency'
   },
 })
 export class Gift extends IdEntity {
+  // שלב ג׳ 9.1 - מי הזין ומי עדכן (shared/utils/audit-fields)
+  @CreatedByField()
+  createdById = ''
+
+  @UpdatedByField()
+  updatedById = ''
+
   @Fields.string({
     validate: Validators.required,
     caption: 'שם המתנה',

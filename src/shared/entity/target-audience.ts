@@ -10,6 +10,7 @@ import {
 } from 'remult'
 import { Roles } from '../enum/roles'
 import { User } from './user'
+import { CreatedByField, UpdatedByField } from '../utils/audit-fields'
 
 @Entity<TargetAudience>('target_audiences', {
   allowApiCrud: Allow.authenticated,
@@ -27,6 +28,13 @@ import { User } from './user'
   },
 })
 export class TargetAudience extends IdEntity {
+  // שלב ג׳ 9.1 - מי הזין ומי עדכן (shared/utils/audit-fields)
+  @CreatedByField()
+  createdById = ''
+
+  @UpdatedByField()
+  updatedById = ''
+
   @Fields.string({
     caption: 'שם קהל היעד',
     validate: [Validators.required, Validators.minLength(2)],

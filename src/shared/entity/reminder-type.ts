@@ -1,5 +1,6 @@
 import { Allow, Entity, Fields, IdEntity, isBackend } from 'remult'
 import { assertUniqueCatalogName, normalizeCatalogName } from '../utils/catalog-name'
+import { CreatedByField, UpdatedByField } from '../utils/audit-fields'
 
 /**
  * שלב ג׳ 7.4 - סוגי התזכורת כקטלוג שהמשתמש מנהל: הוספה ועריכת שם.
@@ -26,6 +27,13 @@ import { assertUniqueCatalogName, normalizeCatalogName } from '../utils/catalog-
   }
 })
 export class ReminderType extends IdEntity {
+  // שלב ג׳ 9.1 - מי הזין ומי עדכן (shared/utils/audit-fields)
+  @CreatedByField()
+  createdById = ''
+
+  @UpdatedByField()
+  updatedById = ''
+
   @Fields.string({ caption: 'קוד', allowApiUpdate: false })
   code = ''
 

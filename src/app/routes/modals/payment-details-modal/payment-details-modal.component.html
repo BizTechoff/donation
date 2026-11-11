@@ -119,6 +119,8 @@
       <div class="loading-spinner">טוען...</div>
     </div>
 
+    <!-- שלב ג׳ 9.1 - מי הזין ומי עדכן -->
+    <app-audit-stamp [row]="payment" style="display:block;padding:4px 16px"></app-audit-stamp>
     <div class="modal-footer">
       <button class="btn btn-secondary" (click)="onClose()">ביטול</button>
       <button class="btn btn-primary" (click)="save()" [disabled]="loading">

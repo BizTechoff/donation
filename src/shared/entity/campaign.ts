@@ -12,6 +12,7 @@ import { Roles } from '../enum/roles'
 import { Place } from './place'
 import { User } from './user'
 import { DEFAULT_CURRENCY } from '../enum/currency'
+import { UpdatedByField, stampCreatedBy } from '../utils/audit-fields'
 
 @Entity<Campaign>('campaigns', {
   allowApiCrud: Allow.authenticated,
@@ -29,6 +30,10 @@ import { DEFAULT_CURRENCY } from '../enum/currency'
   },
 })
 export class Campaign extends IdEntity {
+  // שלב ג׳ 9.1 - מי הזין ומי עדכן (shared/utils/audit-fields)
+  @UpdatedByField()
+  updatedById = ''
+
   @Fields.string({
     validate: [Validators.required, Validators.uniqueOnBackend],
     caption: 'שם הקמפיין',
@@ -103,6 +108,7 @@ export class Campaign extends IdEntity {
   createdBy?: User
 
   @Fields.string({
+    saving: stampCreatedBy as any, // שלב ג׳ 9.1
     caption: 'נוצר על ידי ID',
   })
   createdById = ''

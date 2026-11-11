@@ -84,6 +84,8 @@
     </div>
   </div>
 
+  <!-- שלב ג׳ 9.1 - מי הזין ומי עדכן -->
+  <app-audit-stamp [row]="gift" style="display:block;padding:4px 16px"></app-audit-stamp>
   <div class="modal-footer">
     <button class="btn btn-secondary" (click)="close()">
       {{ (i18n.terms$ | async)?.cancel }}

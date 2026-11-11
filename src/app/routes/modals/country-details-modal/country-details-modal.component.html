@@ -94,6 +94,8 @@
     </div>
 
     <!-- Footer Actions -->
+    <!-- שלב ג׳ 9.1 - מי הזין ומי עדכן -->
+    <app-audit-stamp [row]="country" style="display:block;padding:4px 16px"></app-audit-stamp>
     <div class="modal-footer">
       <button class="btn btn-delete" *ngIf="!isNew" (click)="delete()">
         <mat-icon>delete</mat-icon>

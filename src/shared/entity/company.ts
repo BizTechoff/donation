@@ -9,6 +9,7 @@ import {
 } from 'remult'
 import { Roles } from '../enum/roles'
 import { Place } from './place'
+import { CreatedByField, UpdatedByField } from '../utils/audit-fields'
 
 @Entity<Company>('companies', {
   allowApiCrud: Allow.authenticated,
@@ -26,6 +27,13 @@ import { Place } from './place'
   },
 })
 export class Company extends IdEntity { // חברות\עמותות שהתורם מקוושר אליו ודרכו מטעמם הגיעה התרומה
+  // שלב ג׳ 9.1 - מי הזין ומי עדכן (shared/utils/audit-fields)
+  @CreatedByField()
+  createdById = ''
+
+  @UpdatedByField()
+  updatedById = ''
+
   @Fields.string({
     validate: Validators.required,
     caption: 'שם החברה',

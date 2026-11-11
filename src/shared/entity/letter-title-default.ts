@@ -1,11 +1,19 @@
 import { Allow, Entity, Fields, IdEntity, Relations } from 'remult';
 import { LetterTitle } from './letter-title';
+import { CreatedByField, UpdatedByField } from '../utils/audit-fields'
 
 @Entity('letterTitleDefaults', {
   allowApiCrud: Allow.authenticated,
   caption: 'ברירות מחדל לכותרות מכתב'
 })
 export class LetterTitleDefault extends IdEntity {
+  // שלב ג׳ 9.1 - מי הזין ומי עדכן (shared/utils/audit-fields)
+  @CreatedByField()
+  createdById = ''
+
+  @UpdatedByField()
+  updatedById = ''
+
 
   @Fields.string({
     caption: 'מזהה כותרת',

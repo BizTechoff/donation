@@ -12,6 +12,7 @@ import { Donor } from './donor'
 import { Gift } from './gift'
 import { DEFAULT_CURRENCY } from '../enum/currency'
 import { Reminder } from './reminder'
+import { CreatedByField, UpdatedByField } from '../utils/audit-fields'
 
 @Entity<DonorGift>('donor_gifts', {
   allowApiCrud: Allow.authenticated,
@@ -29,6 +30,13 @@ import { Reminder } from './reminder'
   },
 })
 export class DonorGift extends IdEntity {
+  // שלב ג׳ 9.1 - מי הזין ומי עדכן (shared/utils/audit-fields)
+  @CreatedByField()
+  createdById = ''
+
+  @UpdatedByField()
+  updatedById = ''
+
   @Fields.string({
     caption: 'תורם ID',
     validate: Validators.required,

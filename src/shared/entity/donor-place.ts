@@ -10,6 +10,7 @@ import {
 import { Donor } from './donor'
 import { Place } from './place'
 import { DonorAddressType } from './donor-address-type'
+import { CreatedByField, UpdatedByField } from '../utils/audit-fields'
 
 const HOME_ADDRESS_TYPE = 'בית';
 
@@ -29,6 +30,13 @@ const HOME_ADDRESS_TYPE = 'בית';
   },
 })
 export class DonorPlace extends IdEntity {
+  // שלב ג׳ 9.1 - מי הזין ומי עדכן (shared/utils/audit-fields)
+  @CreatedByField()
+  createdById = ''
+
+  @UpdatedByField()
+  updatedById = ''
+
   @Fields.string({ caption: 'מזהה תורם' })
   donorId?: string;
 

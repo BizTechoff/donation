@@ -10,6 +10,7 @@ import {
 import { Roles } from '../enum/roles'
 import { Place } from './place'
 import { DEFAULT_CURRENCY } from '../enum/currency'
+import { CreatedByField, UpdatedByField } from '../utils/audit-fields'
 
 @Entity<Bank>('banks', {
   allowApiCrud: Allow.authenticated,
@@ -27,6 +28,13 @@ import { DEFAULT_CURRENCY } from '../enum/currency'
   },
 })
 export class Bank extends IdEntity {
+  // שלב ג׳ 9.1 - מי הזין ומי עדכן (shared/utils/audit-fields)
+  @CreatedByField()
+  createdById = ''
+
+  @UpdatedByField()
+  updatedById = ''
+
   
   @Fields.string({
     validate: Validators.required,

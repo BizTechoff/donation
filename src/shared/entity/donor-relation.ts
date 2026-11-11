@@ -8,6 +8,7 @@ import {
 } from 'remult'
 import { Donor } from './donor'
 import { Roles } from '../enum/roles'
+import { CreatedByField, UpdatedByField } from '../utils/audit-fields'
 
 @Entity<DonorRelation>('donor_relations', {
   allowApiCrud: Allow.authenticated,
@@ -25,6 +26,13 @@ import { Roles } from '../enum/roles'
   },
 })
 export class DonorRelation extends IdEntity {
+  // שלב ג׳ 9.1 - מי הזין ומי עדכן (shared/utils/audit-fields)
+  @CreatedByField()
+  createdById = ''
+
+  @UpdatedByField()
+  updatedById = ''
+
   
   @Relations.toOne<DonorRelation, Donor>(() => Donor, {
     caption: 'תורם 1',

@@ -15,6 +15,7 @@ import { Donation } from './donation'
 import { User } from './user'
 import { ContactPerson } from './contact-person'
 import { DONOR_TITLES } from '../constants/donor-titles'
+import { UpdatedByField, stampCreatedBy } from '../utils/audit-fields'
 
 @Entity<Donor>('donors', {
   allowApiCrud: Allow.authenticated,
@@ -47,6 +48,10 @@ import { DONOR_TITLES } from '../constants/donor-titles'
   }
 })
 export class Donor extends IdEntity {
+  // שלב ג׳ 9.1 - מי הזין ומי עדכן (shared/utils/audit-fields)
+  @UpdatedByField()
+  updatedById = ''
+
   @Fields.string({
     caption: 'תואר',
     allowNull: true,
@@ -521,6 +526,7 @@ export class Donor extends IdEntity {
   createdBy?: User
 
   @Fields.string({
+    saving: stampCreatedBy as any, // שלב ג׳ 9.1
     caption: 'נוצר על ידי ID',
   })
   createdById = ''

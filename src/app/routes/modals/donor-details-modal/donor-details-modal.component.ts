@@ -1,3 +1,4 @@
+import { UserNameService } from '../../../services/user-name.service';
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
 import { BusyService, DialogConfig, openDialog } from 'common-ui-elements';
@@ -130,10 +131,12 @@ export class DonorDetailsModalComponent implements OnInit {
     private changeDetector: ChangeDetectorRef,
     public dialogRef: MatDialogRef<any>,
     private busyService: BusyService,
-    private entityChanged: EntityChangedService
+    private entityChanged: EntityChangedService,
+    public userNames: UserNameService // שלב ג׳ 9.1 - טולטיפ "הוזן / עודכן ע"י" בשורות הכרטיס
   ) { }
 
   async ngOnInit() {
+    void this.userNames.load();
     await this.busyService.doWhileShowingBusy(async () => {
       if (!this.args?.donorId) return;
 

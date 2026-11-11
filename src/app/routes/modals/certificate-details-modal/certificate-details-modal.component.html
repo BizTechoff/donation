@@ -138,6 +138,8 @@
         </app-file-upload>
       </div>
     </div>
+    <!-- שלב ג׳ 9.1 - מי הזין ומי עדכן -->
+    <app-audit-stamp [row]="certificate" style="display:block;padding:4px 16px"></app-audit-stamp>
     <div class="modal-footer">
       <button class="btn btn-secondary" (click)="onClose()">{{ (i18n.terms$ | async)?.cancel }}</button>
       <button class="btn btn-info" (click)="createOrEditReminder()">
@@ -208,6 +210,8 @@
         </div>
       </div>
     </div>
+    <!-- שלב ג׳ 9.1 - מי הזין ומי עדכן -->
+    <app-audit-stamp [row]="certificate" style="display:block;padding:4px 16px"></app-audit-stamp>
     <div class="modal-footer">
       <button class="btn btn-secondary" (click)="closePreview()">{{ (i18n.terms$ | async)?.close }}</button>
       <button class="btn btn-primary" (click)="closePreview(); save()">{{ (i18n.terms$ | async)?.saveAndExitAction }}</button>

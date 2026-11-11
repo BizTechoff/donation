@@ -5,6 +5,7 @@ import {
   IdEntity,
   isBackend,
 } from 'remult'
+import { CreatedByField, UpdatedByField } from '../utils/audit-fields'
 
 @Entity<ContactPerson>('contact-persons', {
   allowApiCrud: Allow.authenticated,
@@ -22,6 +23,13 @@ import {
   },
 })
 export class ContactPerson extends IdEntity {
+  // שלב ג׳ 9.1 - מי הזין ומי עדכן (shared/utils/audit-fields)
+  @CreatedByField()
+  createdById = ''
+
+  @UpdatedByField()
+  updatedById = ''
+
   @Fields.string({
     caption: 'שם',
     allowNull: false,
