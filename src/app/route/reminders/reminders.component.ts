@@ -61,6 +61,8 @@ export class RemindersComponent implements OnInit, OnDestroy {
   filterDateTo: Date | null = null;
   filterReminderType = '';
   filterDonorSearch = '';
+  /** שלב ג׳ 7.3 - להציג גם תזכורות שעבר זמנן ובוצעו (ברירת מחדל: מוסתרות). */
+  showPast = false;
   @ViewChild('searchInput') searchInput?: ElementRef<HTMLInputElement>;
   // Scrollable content handle - reset to top on each data refresh so paging
   // does not leave the user mid-page (Israel Glikson, 1.7.2026).
@@ -188,6 +190,7 @@ export class RemindersComponent implements OnInit, OnDestroy {
     if (this.searchTerm?.trim()) filters.searchTerm = this.searchTerm;
     if (this.filterReminderType?.trim()) filters.reminderType = this.filterReminderType;
     if (this.filterDonorSearch?.trim()) filters.donorSearch = this.filterDonorSearch;
+    if (this.showPast) filters.showPast = true;
     // The tab is a filter like the rest, and the server applies it - so paging,
     // the total count, print and export all agree with what is on screen.
     filters.tab = this.activeTab;

@@ -88,6 +88,12 @@
             [placeholder]="(i18n.terms$ | async)?.donorNamePlaceholder">
         </div>
 
+        <!-- שלב ג׳ 7.3 - תזכורות שעבר זמנן ובוצעו מוסתרות; כאן מחזירים אותן -->
+        <div class="filter-group show-past-filter">
+          <label>&nbsp;</label>
+          <mat-checkbox [(ngModel)]="showPast" (ngModelChange)="refreshData()">הצג גם שעבר זמנן</mat-checkbox>
+        </div>
+
         <!-- <div class="filter-group">
         <label>{{ (i18n.terms$ | async)?.regionFilter }}</label>
         <select class="form-control">

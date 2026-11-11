@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Reminder } from '../../shared/entity';
-import { ReminderController, RemindersPageData } from '../../shared/controllers/reminder.controller';
+import { ReminderController, ReminderFilters, RemindersPageData } from '../../shared/controllers/reminder.controller';
 import { HebrewDateController } from '../../shared/controllers/hebrew-date.controller';
 import { GlobalFilters } from './global-filter.service';
 
@@ -16,14 +16,7 @@ export class ReminderService {
    * Find reminders with filters, pagination, and sorting
    */
   async findFiltered(
-    filters: {
-      dateFrom?: Date
-      dateTo?: Date
-      searchTerm?: string
-      reminderType?: string
-      donorSearch?: string
-      tab?: 'today' | 'week' | 'overdue' | 'all'
-    } = {},
+    filters: ReminderFilters = {},
     page: number = 1,
     pageSize: number = 50,
     sortColumns: Array<{ field: string; direction: 'asc' | 'desc' }> = []
@@ -105,14 +98,7 @@ export class ReminderService {
   }
 
   async getRemindersData(
-    filters: {
-      dateFrom?: Date
-      dateTo?: Date
-      searchTerm?: string
-      reminderType?: string
-      donorSearch?: string
-      tab?: 'today' | 'week' | 'overdue' | 'all'
-    } = {},
+    filters: ReminderFilters = {},
     page: number = 1,
     pageSize: number = 50,
     sortColumns: Array<{ field: string; direction: 'asc' | 'desc' }> = []

@@ -18,6 +18,21 @@ export interface RemindersPageData {
 }
 
 /**
+ * הסינון של רשימת התזכורות - הגדרה אחת לכל המתודות (עמוד, ספירה, סיכום,
+ * הדפסה וייצוא), במקום אותו טיפוס שהועתק לכל חתימה.
+ */
+export interface ReminderFilters {
+  dateFrom?: Date
+  dateTo?: Date
+  searchTerm?: string
+  reminderType?: string
+  donorSearch?: string
+  tab?: 'today' | 'week' | 'overdue' | 'all'
+  /** שלב ג׳ 7.3 - true: גם תזכורות שעבר זמנן ובוצעו. ברירת מחדל - מוסתרות. */
+  showPast?: boolean
+}
+
+/**
  * Controller for handling Hebrew reminder calculations
  * Uses HebrewDateController for all Hebrew date operations
  */
@@ -28,14 +43,7 @@ export class ReminderController {
    */
   @BackendMethod({ allowed: Allow.authenticated })
   static async findFilteredReminders(
-    filters: {
-      dateFrom?: Date
-      dateTo?: Date
-      searchTerm?: string
-      reminderType?: string
-      donorSearch?: string
-      tab?: 'today' | 'week' | 'overdue' | 'all'
-    } = {},
+    filters: ReminderFilters = {},
     page: number = 1,
     pageSize: number = 50,
     sortColumns: Array<{ field: string; direction: 'asc' | 'desc' }> = []
@@ -78,14 +86,7 @@ export class ReminderController {
    */
   @BackendMethod({ allowed: Allow.authenticated })
   static async countFilteredReminders(
-    filters: {
-      dateFrom?: Date
-      dateTo?: Date
-      searchTerm?: string
-      reminderType?: string
-      donorSearch?: string
-      tab?: 'today' | 'week' | 'overdue' | 'all'
-    } = {}
+    filters: ReminderFilters = {}
   ): Promise<number> {
     const where = await ReminderController.buildWhereClause(filters)
     return await remult.repo(Reminder).count(where)
@@ -96,21 +97,15 @@ export class ReminderController {
    */
   @BackendMethod({ allowed: Allow.authenticated })
   static async getSummaryForFilteredReminders(
-    filters: {
-      dateFrom?: Date
-      dateTo?: Date
-      searchTerm?: string
-      reminderType?: string
-      donorSearch?: string
-      tab?: 'today' | 'week' | 'overdue' | 'all'
-    } = {}
+    filters: ReminderFilters = {}
   ): Promise<{
     todayCount: number
     pendingCount: number
     overdueCount: number
     completedThisMonthCount: number
   }> {
-    const where = await ReminderController.buildWhereClause(filters)
+    // הכרטיסים הם סטטיסטיקה ולא נראות - 7.3 (הסתרת שעבר זמנן) לא חל עליהם
+    const where = await ReminderController.buildWhereClause({ ...filters, showPast: true })
 
     const today = new Date()
     today.setHours(0, 0, 0, 0)
@@ -133,19 +128,15 @@ export class ReminderController {
 
   @BackendMethod({ allowed: Allow.authenticated })
   static async getRemindersData(
-    filters: {
-      dateFrom?: Date
-      dateTo?: Date
-      searchTerm?: string
-      reminderType?: string
-      donorSearch?: string
-      tab?: 'today' | 'week' | 'overdue' | 'all'
-    } = {},
+    filters: ReminderFilters = {},
     page: number = 1,
     pageSize: number = 50,
     sortColumns: Array<{ field: string; direction: 'asc' | 'desc' }> = []
   ): Promise<RemindersPageData> {
-    const where = await ReminderController.buildWhereClause(filters)
+    // הכרטיסים הם סטטיסטיקה ולא נראות - 7.3 (הסתרת שעבר זמנן) לא חל עליהם.
+    // where אחד נבנה, והרשימה מקבלת עליו את כלל ההסתרה - בלי לחזור על השאילתות.
+    const summaryWhere = await ReminderController.buildWhereClause({ ...filters, showPast: true })
+    const where = filters.showPast ? summaryWhere : ReminderController.hidePastCompleted(summaryWhere)
 
     const today = new Date()
     today.setHours(0, 0, 0, 0)
@@ -171,10 +162,10 @@ export class ReminderController {
 
     const [count, todayCount, pendingCount, overdueCount, completedThisMonthCount, reminders] = await Promise.all([
       repo.count(where),
-      repo.count({ ...where, nextReminderDate: { $gte: today, $lt: tomorrow }, isCompleted: false }),
-      repo.count({ ...where, isCompleted: false }),
-      repo.count({ ...where, nextReminderDate: { $lt: today }, isCompleted: false }),
-      repo.count({ ...where, isCompleted: true, completedDate: { $gte: startOfMonth, $lte: today } }),
+      repo.count({ ...summaryWhere, nextReminderDate: { $gte: today, $lt: tomorrow }, isCompleted: false }),
+      repo.count({ ...summaryWhere, isCompleted: false }),
+      repo.count({ ...summaryWhere, nextReminderDate: { $lt: today }, isCompleted: false }),
+      repo.count({ ...summaryWhere, isCompleted: true, completedDate: { $gte: startOfMonth, $lte: today } }),
       repo.find({ where, orderBy, limit: pageSize, page, include: { donor: true } })
     ])
 
@@ -189,14 +180,7 @@ export class ReminderController {
    * Build where clause for filtering reminders
    */
   private static async buildWhereClause(
-    filters: {
-      dateFrom?: Date
-      dateTo?: Date
-      searchTerm?: string
-      reminderType?: string
-      donorSearch?: string
-      tab?: 'today' | 'week' | 'overdue' | 'all'
-    } = {}
+    filters: ReminderFilters = {}
   ): Promise<any> {
     const where: any = { isActive: true }
 
@@ -301,13 +285,36 @@ export class ReminderController {
     // Search term filter
     if (filters.searchTerm && filters.searchTerm.trim() !== '') {
       const searchLower = filters.searchTerm.toLowerCase().trim()
-      where.$or = [
-        { title: { $contains: searchLower } },
-        { description: { $contains: searchLower } }
+      // נוסף ב-$and. עד היום נכתב ישירות ל-where.$or ודרס את הסינון הגלובלי
+      // של התורמים - חיפוש טקסט החזיר תזכורות של תורמים מחוץ לסינון.
+      where.$and = [
+        ...(where.$and || []),
+        { $or: [
+          { title: { $contains: searchLower } },
+          { description: { $contains: searchLower } }
+        ] }
       ]
     }
 
-    return where
+    // שלב ג׳ 7.3 - אלא אם ביקשו להציג גם שעבר זמנן
+    return filters.showPast ? where : ReminderController.hidePastCompleted(where)
+  }
+
+  /**
+   * שלב ג׳ 7.3 - הכלל במקום אחד: מסתיר תזכורת שעבר זמנה (התאריך המוצג ברשימה,
+   * nextReminderDate) ובוצעה (זום 24.08, 3:05). שעבר זמנה ולא בוצעה - נשארת:
+   * בדיוק בה צריך לטפל. נוסף ב-$and כדי לא לדרוס $or קיים.
+   */
+  private static hidePastCompleted(where: any): any {
+    const startOfToday = new Date()
+    startOfToday.setHours(0, 0, 0, 0)
+    return {
+      ...where,
+      $and: [
+        ...(where.$and || []),
+        { $or: [{ isCompleted: false }, { nextReminderDate: { $gte: startOfToday } }] }
+      ]
+    }
   }
 
   /**
