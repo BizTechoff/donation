@@ -60,6 +60,9 @@
       <button mat-stroked-button class="filter-btn" (click)="openDonorLevelSelection($event)">
         + {{ (i18n.terms$ | async)?.byDonorLevel }}
       </button>
+      <button mat-stroked-button class="filter-btn" (click)="openFundraiserSelection($event)">
+        + {{ (i18n.terms$ | async)?.byFundraiser }}
+      </button>
     </div>
 
     <!-- Donor Type Filters (Anash / Alumni) -->
@@ -201,6 +204,19 @@
                     [removable]="true"
                     (removed)="removeFromFilter('donorLevels', level)">
             {{ levelLabel(level) }}
+            <mat-icon matChipRemove>cancel</mat-icon>
+          </mat-chip>
+        </mat-chip-set>
+      </div>
+
+      <!-- Fundraisers Group (שלב ג׳ 9.2) -->
+      <div *ngIf="currentFilters.fundraiserIds?.length" class="filter-group">
+        <span class="group-label">{{ (i18n.terms$ | async)?.fundraisersLabel }}:</span>
+        <mat-chip-set>
+          <mat-chip *ngFor="let fundraiserId of currentFilters.fundraiserIds"
+                    [removable]="true"
+                    (removed)="removeFromFilter('fundraiserIds', fundraiserId)">
+            {{ getFundraiserName(fundraiserId) }}
             <mat-icon matChipRemove>cancel</mat-icon>
           </mat-chip>
         </mat-chip-set>

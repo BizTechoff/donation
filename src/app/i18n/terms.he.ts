@@ -1746,6 +1746,8 @@ export const termsHe = {
   byCircle: 'לפי חוג',
   byDonorLevel: 'לפי דרגה',
   donorLevels: 'דרגות',
+  byFundraiser: 'לפי מתרים',
+  fundraisersLabel: 'מתרימים',
   byAmount: 'לפי סכום תרומה',
   countries: 'מדינות',
   cities: 'ערים',

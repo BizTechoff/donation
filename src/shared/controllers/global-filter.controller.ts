@@ -107,7 +107,7 @@ export class GlobalFilterController {
     }
 
     timeStart('[GlobalFilter.getDonorIds] circlesLevels');
-    const circlesLevelsFiltered = await GlobalFilterController.getDonorIdsFromCirclesAndLevels(filters);
+    const circlesLevelsFiltered = await GlobalFilterController.getDonorIdsFromDonorFields(filters);
     timeEnd('[GlobalFilter.getDonorIds] circlesLevels');
     if (circlesLevelsFiltered !== undefined) {
       donorIds = intersectWithSet(donorIds, circlesLevelsFiltered);
@@ -118,13 +118,13 @@ export class GlobalFilterController {
   }
 
   /**
-   * שלב ג׳ 6.2 - donorIds לפי חוג ולפי דרגה. בתוך כל סוג - אחד מהנבחרים;
-   * בין חוג לדרגה - שניהם (כמו בין כל שני פילטרים גלובליים).
+   * שלב ג׳ 6.2 + 9.2 - donorIds לפי שדות התורם עצמו: חוג, דרגה ומתרים. בתוך
+   * כל סוג - אחד מהנבחרים; בין הסוגים - כולם (כמו בין כל שני פילטרים גלובליים).
    * circleIds נשמר כמערך JSON; ההשוואה על הטקסט שלו עובדת גם ל-json וגם
    * ל-text, והמזהים (cuid) לא מכילים תווים מיוחדים.
    */
-  private static async getDonorIdsFromCirclesAndLevels(filters: GlobalFilters): Promise<string[] | undefined> {
-    if (!filters.circleIds?.length && !filters.donorLevels?.length) {
+  private static async getDonorIdsFromDonorFields(filters: GlobalFilters): Promise<string[] | undefined> {
+    if (!filters.circleIds?.length && !filters.donorLevels?.length && !filters.fundraiserIds?.length) {
       return undefined;
     }
 
@@ -140,6 +140,9 @@ export class GlobalFilterController {
     }
     if (filters.donorLevels?.length) {
       wheres.push(`d."level" IN (${filters.donorLevels.map(escape).join(',')})`);
+    }
+    if (filters.fundraiserIds?.length) {
+      wheres.push(`d."fundraiserId" IN (${filters.fundraiserIds.map(escape).join(',')})`);
     }
 
     const { rows } = await sqlDb.execute(`SELECT d."id" FROM "donors" d WHERE ${wheres.join(' AND ')}`);

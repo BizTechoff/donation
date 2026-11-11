@@ -1748,6 +1748,8 @@ export const termsEn = {
   byCircle: 'By Circle',
   byDonorLevel: 'By Level',
   donorLevels: 'Levels',
+  byFundraiser: 'By Fundraiser',
+  fundraisersLabel: 'Fundraisers',
   byAmount: 'By Donation Amount',
   countries: 'Countries',
   cities: 'Cities',

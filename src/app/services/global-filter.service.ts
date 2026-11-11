@@ -29,6 +29,7 @@ export interface GlobalFilters {
   isAlumni?: TriStateFilter;  // סינון לפי תלמידנו (ברירת מחדל: All)
   circleIds?: string[];       // שלב ג׳ 6.2 - חוגי התורם (אחד מהם)
   donorLevels?: string[];     // שלב ג׳ 6.2 - דרגת התורם (אחת מהן), ערכי DonorLevels
+  fundraiserIds?: string[];   // שלב ג׳ 9.2 - המתרים של התורם (אחד מהם), User.id
 }
 
 /**
@@ -40,7 +41,7 @@ export function hasGlobalFilters(f: GlobalFilters | null | undefined): boolean {
   const any = (a?: unknown[]) => !!a && a.length > 0;
   const set = (v: unknown) => v !== undefined && v !== null;
   return any(f.campaignIds) || any(f.countryIds) || any(f.cityIds) || any(f.neighborhoodIds) ||
-    any(f.targetAudienceIds) || any(f.circleIds) || any(f.donorLevels) ||
+    any(f.targetAudienceIds) || any(f.circleIds) || any(f.donorLevels) || any(f.fundraiserIds) ||
     set(f.dateFrom) || set(f.dateTo) || set(f.amountMin) || set(f.amountMax) ||
     (!!f.isAnash && f.isAnash !== TriStateFilter.All) ||
     (!!f.isAlumni && f.isAlumni !== TriStateFilter.All);
@@ -340,7 +341,8 @@ console.log(`updateFilter: { key: ${key}, value: ${value} }`)
       namesLabel(g.neighborhoodIds || []),
       audiences ? `קהל ${audiences}` : '',
       await namesOf(Circle, g.circleIds, c => c.name),
-      namesLabel((g.donorLevels || []).map(donorLevelLabel))
+      namesLabel((g.donorLevels || []).map(donorLevelLabel)),
+      await namesOf(User, g.fundraiserIds, u => u.name)
     ].filter(p => !!p);
   }
 }

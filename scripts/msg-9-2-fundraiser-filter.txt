@@ -1,0 +1,14 @@
+feat(filters): שלב ג׳ 9.2 - סינון גלובלי לפי מתרים
+
+- GlobalFilters.fundraiserIds - המתרים של התורם (אחד מהנבחרים), כמו חוג ודרגה.
+- GlobalFilterController.getDonorIdsFromDonorFields (היה ...FromCirclesAndLevels)
+  - פילטרים על שדות התורם במקום אחד: חוג, דרגה ומתרים. הסינון חל בכל המסכים.
+- חלונית הסינון: "+ לפי מתרים", צ'יפים להסרה ומניין. שם קובץ הייצוא כולל
+  את שמות המתרימים.
+- פילוח לפי מתרים - קיים בדוחות (קיבוץ "מתרים").
+- גרסה 2026.11.11.8.
+
+BizTechoff™ - התאמת העסק לעידן הדיגיטלי
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_012J7BEmVq166Wu9fYdKdxE3

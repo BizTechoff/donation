@@ -6,6 +6,7 @@ import { debounceTime } from 'rxjs/operators';
 import { openDialog } from 'common-ui-elements';
 import { GlobalFilterService, GlobalFilters, hasGlobalFilters } from '../../services/global-filter.service';
 import { Circle } from '../../../shared/entity/circle';
+import { User } from '../../../shared/entity/user';
 import { DONOR_LEVELS_ARRAY, donorLevelLabel } from '../../../shared/enum/donor-levels';
 import { Campaign } from '../../../shared/entity/campaign';
 import { Country } from '../../../shared/entity/country';
@@ -14,6 +15,9 @@ import { I18nService } from '../../i18n/i18n.service';
 import { PlaceController } from '../../../shared/controllers/place.controller';
 import { UIToolsService } from '../../common/UIToolsService';
 import { TriStateFilter } from '../../../shared/enum/tri-state-filter';
+
+/** פילטרים גלובליים מרובי-ערכים מרשימה קבועה (חוג, דרגה, מתרים). */
+type MultiFilterKey = 'circleIds' | 'donorLevels' | 'fundraiserIds';
 
 @Component({
   selector: 'app-global-filters',
@@ -44,6 +48,7 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
   countryRepo = remult.repo(Country);
   targetAudienceRepo = remult.repo(TargetAudience);
   circles: Circle[] = [];
+  fundraisers: User[] = []; // שלב ג׳ 9.2
 
   private subscription = new Subscription();
 
@@ -121,6 +126,7 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
       });
 
       this.circles = await remult.repo(Circle).find({ orderBy: { sortOrder: 'asc', name: 'asc' } });
+      this.fundraisers = await remult.repo(User).find({ where: { donator: true }, orderBy: { name: 'asc' } });
     } catch (error) {
       console.error('Error loading filter data:', error);
     }
@@ -229,7 +235,7 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
     if (filters.cityIds && filters.cityIds.length > 0) count += filters.cityIds.length;
     if (filters.neighborhoodIds && filters.neighborhoodIds.length > 0) count += filters.neighborhoodIds.length;
     if (filters.targetAudienceIds && filters.targetAudienceIds.length > 0) count += filters.targetAudienceIds.length;
-    count += (filters.circleIds?.length || 0) + (filters.donorLevels?.length || 0);
+    count += (filters.circleIds?.length || 0) + (filters.donorLevels?.length || 0) + (filters.fundraiserIds?.length || 0);
     if (filters.dateFrom) count++;
     if (filters.dateTo) count++;
     if (filters.amountMin !== undefined) count++;
@@ -260,8 +266,12 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
 
   levelLabel = donorLevelLabel;
 
+  getFundraiserName(id: string): string {
+    return this.fundraisers.find(f => f.id === id)?.name || id;
+  }
+
   /** הסרת ערך אחד מפילטר מרובה-ערכים; האחרון שהוסר מבטל את הפילטר. */
-  async removeFromFilter(key: 'circleIds' | 'donorLevels', value: string) {
+  async removeFromFilter(key: MultiFilterKey, value: string) {
     const rest = (this.currentFilters[key] || []).filter(v => v !== value);
     await this.updateFilter(key, rest.length ? rest : undefined);
   }
@@ -270,7 +280,7 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
    * שלב ג׳ 6.2 - בחירה מרובה מרשימה קבועה (חוגים, דרגות) בדיאלוג הכללי.
    * החלונית נסגרת בזמן הבחירה ונפתחת אחריה, כמו בשאר הפילטרים.
    */
-  private async pickMany<T>(key: 'circleIds' | 'donorLevels', title: string, values: T[],
+  private async pickMany<T>(key: MultiFilterKey, title: string, values: T[],
                             idOf: (v: T) => string, caption: (v: T) => string) {
     this.menuTrigger?.closeMenu();
     const current = new Set(this.currentFilters[key] || []);
@@ -290,6 +300,12 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
   async openCircleSelection(event: Event) {
     event.stopPropagation();
     await this.pickMany('circleIds', this.i18n.terms.byCircle, this.circles, c => c.id, c => c.name);
+  }
+
+  /** שלב ג׳ 9.2 - סינון לפי מתרים, כמו חוג ודרגה. */
+  async openFundraiserSelection(event: Event) {
+    event.stopPropagation();
+    await this.pickMany('fundraiserIds', this.i18n.terms.byFundraiser, this.fundraisers, f => f.id, f => f.name);
   }
 
   async openDonorLevelSelection(event: Event) {
