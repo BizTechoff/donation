@@ -1,0 +1,14 @@
+chore(tools): גיבוי מסד והרצת SQL של מיגרציה מהמחשב
+
+- tools/backup-db.ts (+ scripts/backup-prod-db.bat): גיבוי מלא לתיקייה
+  backups (בגיטאיגנור - יש בה פרטי תורמים). pg_dump אם מותקן, אחרת כל
+  טבלה כ-JSON עם מבנה העמודות.
+- tools/lib/db.ts: resolveConnectionString, hostLabel - בחירת המסד במקום אחד.
+- tools/run-sql.ts --prod <file> - מריץ את הקובץ כפי שהוא דרך tools/lib/db,
+מדפיס את שאילתות הבדיקה, ובשגיאה עושה rollback. במקום הדבקה ידנית בממשק
+של Railway.
+
+BizTechoff™ - התאמת העסק לעידן הדיגיטלי
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_014QF1xL15Q485gc5E3d7Hsd

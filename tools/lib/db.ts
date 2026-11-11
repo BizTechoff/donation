@@ -24,7 +24,8 @@ export interface DbConnection {
 /** הודעות הכלים יוצאות ל-stderr, כך ש-stdout נשאר נקי ל-SQL שמופנה לקובץ. */
 export const say = (text = '') => process.stderr.write(text + '\n')
 
-export async function connectDb(argv: string[] = process.argv): Promise<DbConnection> {
+/** מחרוזת החיבור לפי הדגלים - המקום האחד (גם לכלים שלא פותחים חיבור בעצמם, כמו הגיבוי). */
+export function resolveConnectionString(argv: string[] = process.argv): string {
   const urlArg = argv.find(a => a.startsWith('--url='))?.slice('--url='.length)
   const wantsProd = argv.includes('--prod')
 
@@ -41,11 +42,21 @@ export async function connectDb(argv: string[] = process.argv): Promise<DbConnec
     say('אין מחרוזת חיבור. הגדר DATABASE_URL ב-.env, או העבר --url=...')
     process.exit(1)
   }
+  return connectionString
+}
 
+/** "<host>  ← פרודקשן" לפי מחרוזת החיבור. */
+export function hostLabel(connectionString: string): { host: string; isProd: boolean; label: string } {
   let host = 'לא ידוע'
   try { host = new URL(connectionString).host } catch { /* פורמט אחר */ }
   const isProd = /rlwy\.net|railway/.test(host)
-  const label = isProd ? `${host}  ← פרודקשן` : host
+  return { host, isProd, label: isProd ? `${host}  ← פרודקשן` : host }
+}
+
+export async function connectDb(argv: string[] = process.argv): Promise<DbConnection> {
+  const connectionString = resolveConnectionString(argv)
+
+  const { host, isProd, label } = hostLabel(connectionString)
   say(`\n  מסד: ${label}\n`)
 
   const isLocal = /localhost|127\.0\.0\.1/.test(connectionString)
