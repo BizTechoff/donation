@@ -290,6 +290,12 @@
         <mat-icon>close</mat-icon>
         ביטול
       </button>
+      <!-- שלב ג׳ 5.5 - אותה הפקה, נפתחת ישירות ב-Word לעריכה והדפסה -->
+      <button mat-stroked-button color="primary" (click)="generateLetter(true)" class="generate-button"
+        [disabled]="loading || !selectedLetterType || !isAllFieldsFilled()">
+        <mat-icon>description</mat-icon>
+        פתח ב-Word
+      </button>
       <button mat-raised-button color="primary" (click)="generateLetter()" class="generate-button"
         [disabled]="loading || !selectedLetterType || !isAllFieldsFilled()">
         <mat-icon>print</mat-icon>

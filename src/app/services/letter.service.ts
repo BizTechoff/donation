@@ -32,6 +32,19 @@ export class LetterService {
     return response;
   }
 
+  /**
+   * שלב ג׳ 5.5 - אותה הפקה, נפתחת ישירות ב-Word (ms-word:ofe) במקום הורדה.
+   * Word נפתח ב"תצוגה מוגנת" (קובץ מהאינטרנט) - "אפשר עריכה", ואז עריכה והדפסה.
+   * אין Office במחשב - לא קורה כלום, וההורדה הרגילה נשארת בחלון.
+   */
+  async openInWord(donationId = '', type: Letter, fieldValues: { [key: string]: string }, prefix = [] as string[], suffix = [] as string[], recipientDonorId = ''): Promise<DocxCreateResponse> {
+    const response = await LetterController.createLetter(donationId, type.id, fieldValues, prefix, suffix, recipientDonorId, true);
+    if (response.success && response.url) {
+      window.location.href = `ms-word:ofe|u|${window.location.origin}${response.url}`;
+    }
+    return response;
+  }
+
   // ── שלב ג׳ 5.4 - ניהול המכתבים ותבניותיהם ──────────────────────────────
 
   /** כל המכתבים: המובנים ואלה שנוספו (shared/utils/letter-catalog). */

@@ -1052,7 +1052,8 @@ export class LetterPropertiesModalComponent implements OnInit {
     }
   }
 
-  async generateLetter() {
+  /** openInWord - שלב ג׳ 5.5: נפתח ב-Word במקום הורדה. אותה הפקה. */
+  async generateLetter(openInWord = false) {
     if (!this.selectedLetterType) {
       this.ui.error('נא לבחור סוג מכתב');
       return;
@@ -1080,7 +1081,10 @@ export class LetterPropertiesModalComponent implements OnInit {
         fieldValuesMap['סיומת_מכתב'] = this.selectedSuffixLines.map(l => l.text).join('\n');
       }
 
-      const response = await this.letterService.createLetter(
+      const produce = openInWord
+        ? this.letterService.openInWord.bind(this.letterService)
+        : this.letterService.createLetter.bind(this.letterService);
+      const response = await produce(
         this.args.donationId || '',
         this.selectedLetterType,
         fieldValuesMap,
@@ -1092,7 +1096,7 @@ export class LetterPropertiesModalComponent implements OnInit {
       if (response.success) {
         // N2 - a toast that disappears on its own, instead of a dialog the
         // user has to dismiss on every single letter.
-        this.ui.info('מכתב הופק והורד בהצלחה');
+        this.ui.info(openInWord ? 'המכתב נפתח ב-Word' : 'מכתב הופק והורד בהצלחה');
         this.dialogRef.close({
           selectedType: this.selectedLetterType,
           prefix: this.selectedPrefixLines.map(l => l.text),

@@ -12,6 +12,7 @@ import './email'
 import './s3'
 import './google-contacts'
 import { scanRouter } from './scan-api'
+import { letterOpenRouter } from './letter-open'
 import { googleContactsRouter } from './google-contacts-routes'
 import { checkAndSendReminders } from './scheduler'
 import { remult } from 'remult'
@@ -73,6 +74,7 @@ async function startup() {
   })
 
   app.use('/api/scan', scanRouter)
+  app.use('/api/letter-open', letterOpenRouter) // שלב ג׳ 5.5 - פתיחת מכתב ב-Word
   app.use('/api/geo/places', getPlaces)
   app.use('/api/geo/place-details', getPlace)
   app.use('/api/geo/reverse-geocode', reverseGeocode)

@@ -1,0 +1,19 @@
+feat(letters): שלב ג׳ 5.5 - פתיחת המכתב ישירות ב-Word, בלי הורדה
+
+- חלון המכתב: "פתח ב-Word" ליד "הפק מכתב" - אותה הפקה, נפתחת ב-Word
+  (ms-word:ofe) לעריכה והדפסה. ההורדה הרגילה נשארת.
+- server/letter-open (כמו scan-api): המכתב שהופק נשמר בזיכרון ל-10 דקות תחת
+  מפתח אקראי, ונשלף ב-/api/letter-open/<token>/<שם>.docx. בלי S3 ובלי אחסון -
+  לא נשאר עותק של מכתב. OPTIONS / HEAD (הבדיקות המקדימות של Word) נענות,
+  WebDAV - 405, ו-Word פותח כרגיל.
+- LetterController.createLetter(..., openInWord) - ההפקה לא השתנתה; במקום הקובץ
+  חוזר נתיב, דרך storeForWordDelegate.
+- LetterService.openInWord - משלים לכתובת מלאה ופותח את Word.
+- ידוע: Word נפתח ב"תצוגה מוגנת" - "אפשר עריכה"; בפעם הראשונה הדפדפן שואל
+  אם לפתוח את Word. דורש Office מותקן ושרת במופע אחד (Railway replicas = 1).
+- גרסה 2026.11.11.14.
+
+BizTechoff™ - התאמת העסק לעידן הדיגיטלי
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_012J7BEmVq166Wu9fYdKdxE3

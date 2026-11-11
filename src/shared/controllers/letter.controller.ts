@@ -14,6 +14,8 @@ export class LetterController {
   static validateTemplateDelegate: (letterId: string, key: string) => Promise<void>
   /** שלב ג׳ 5.4 - התבנית שבתוקף, base64 (server/letter-templates). */
   static readTemplateDelegate: (letterId: string) => Promise<string>
+  /** שלב ג׳ 5.5 - שומר מכתב שהופק לפתיחה ב-Word ומחזיר את הנתיב (server/letter-open). */
+  static storeForWordDelegate: (base64: string, fileName: string) => Promise<string>
 
   /** שלב ג׳ 5.4 - הורדת התבנית שבתוקף (שהועלתה או המובנית), לעריכה ב-Word. */
   @BackendMethod({ allowed: Allow.authenticated })
@@ -27,7 +29,7 @@ export class LetterController {
   }
 
   @BackendMethod({ allowed: Allow.authenticated })
-  static async createLetter(donationId = '', letterId: string, fieldValues: { [key: string]: string }, prefix = [] as string[], suffix = [] as string[], recipientDonorId = ''): Promise<DocxCreateResponse> {
+  static async createLetter(donationId = '', letterId: string, fieldValues: { [key: string]: string }, prefix = [] as string[], suffix = [] as string[], recipientDonorId = '', openInWord = false): Promise<DocxCreateResponse> {
 
     // שלב ג׳ 5.4 - המכתב לפי id מהרשימה האחת (כולל מכתבים שנוספו), והתרומה
     // אופציונלית: מכתב אירוע (שמחות, ניחום אבלים) מופק לתורם בלבד.
@@ -80,7 +82,13 @@ export class LetterController {
       ? buildFileName([donorName, reason || hebrewDate], { extension: 'docx' })
       : undefined
 
-    return await LetterController.createLetterDelegate(type, contents, fileName)
+    const result = await LetterController.createLetterDelegate(type, contents, fileName)
+    // שלב ג׳ 5.5 - פתיחה ב-Word: אותה הפקה; במקום הקובץ - נתיב קצר-מועד אליו.
+    if (openInWord && result.success) {
+      const base64 = result.url.split(',')[1] || ''
+      result.url = await LetterController.storeForWordDelegate(base64, result.fileName || `${type.caption}.docx`)
+    }
+    return result
   }
 
   // static async getValue(donation: Donation, type: Letter, field: string): Promise<string> {
