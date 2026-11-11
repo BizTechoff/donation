@@ -1,0 +1,8 @@
+chore(version): 2026.11.11
+
+קבוצה 6 (מתנות), שדה "מספר חשבון" בתרומה, ותיקון פרטי הצ'קים מהתוכנה הישנה.
+
+BizTechoff™ - התאמת העסק לעידן הדיגיטלי
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_014QF1xL15Q485gc5E3d7Hsd
