@@ -12,6 +12,7 @@ import { DocxCreateResponse } from '../type/letter.type';
 import { GeneralCurrencyStat, GeneralMonthlyStat, GeneralChartItem, GeneralTopDonor, GeneralTopCampaign, GeneralRecentActivity, GeneralStatsResponse } from '../type/report.res';
 import { CommitmentController, PaidEntry } from './commitment.controller';
 import { calculateEffectiveAmount, calculatePeriodsElapsed, isPaymentBased, isStandingOrder } from '../utils/donation-utils';
+import { isPartnerView, loadDonorNames, partnershipNameIds, partnershipNote } from '../utils/donation-partners'
 import { DonorPhoneController } from './donor-phone.controller';
 import { HebrewDateController } from './hebrew-date.controller';
 import { GlobalFilterController } from './global-filter.controller';
@@ -1755,18 +1756,17 @@ export class ReportController {
       // בלי include של התורם: הסריקה עוברת על כל התרומות בטווח (מ-2000 - כמעט
       // כולן), ו-include היה טוען את התורם של כל אחת, עם כל שדות ה-sqlExpression
       // שלו - שאילתת משנה לכל תורם. השמות שהדוח צריך נטענים פעם אחת למטה.
-      const allDonationsInRange = await remult.repo(Donation).find({
+      // שלב ג׳ 8 - רק התרומות שהוא שותף בהן (Donation.partneredWith), במקום
+      // לטעון את כל התרומות בטווח ולסנן בזיכרון.
+      const partnerDonations = (await remult.repo(Donation).find({
         where: {
           donationDate: {
             $gte: fromDate,
             $lte: toDate
-          }
+          },
+          $and: [Donation.partneredWith({ donorId })]
         }
-      });
-
-      const partnerDonations = allDonationsInRange.filter(d =>
-        d.partnerIds && d.partnerIds.includes(donorId) && d.donorId !== donorId
-      );
+      })).filter(d => isPartnerView(d, donorId));
 
       // Load payments for all these donations with type filtering
       const allDonations = [...donorDonations, ...partnerDonations];
@@ -1778,20 +1778,17 @@ export class ReportController {
 
       // שותפות מוצגת בשני צדדיה: אצל השותף - "שותף בתרומה עם <התורם>", ואצל
       // התורם - "שותפים בתרומה: <השותפים>". השמות נטענים בשאילתה אחת.
-      const nameIds = new Set<string>()
-      for (const d of donorDonations) for (const id of d.partnerIds || []) nameIds.add(id)
-      for (const d of partnerDonations) if (d.donorId) nameIds.add(d.donorId)
-      const names = await ReportController.donorNames([...nameIds])
+      // הנוסח והכלל - shared/utils/donation-partners (שלב ג׳ 8), אותו מקור של המסכים.
+      const names = await loadDonorNames(partnershipNameIds(allDonations, donorId))
 
       const donationsData: PersonalDonorReportData['donations'] = [];
       for (const donation of donorDonations) {
-        const partners = (donation.partnerIds || []).filter(id => id !== donorId).map(id => names.get(id) || 'תורם לא ידוע')
         donationsData.push(await ReportController.personalReportRow(donation, paymentMap, false,
-          partners.length ? `שותפים בתרומה: ${partners.join(', ')}` : ''))
+          partnershipNote(donation, names, donorId)))
       }
       for (const donation of partnerDonations) {
         donationsData.push(await ReportController.personalReportRow(donation, paymentMap, true,
-          `שותף בתרומה עם ${names.get(donation.donorId!) || 'תורם לא ידוע'}`))
+          partnershipNote(donation, names, donorId)))
       }
 
       // Sort by date
@@ -1858,9 +1855,7 @@ export class ReportController {
 
   /** id -> "משפחה פרטי", בשאילתה אחת. */
   private static async donorNames(ids: string[]): Promise<Map<string, string>> {
-    if (!ids.length) return new Map();
-    const donors = await remult.repo(Donor).find({ where: { id: { $in: ids } } });
-    return new Map(donors.map(d => [d.id, d.lastAndFirstName]));
+    return loadDonorNames(ids); // שלב ג׳ 8 - המימוש עבר ל-shared/utils/donation-partners
   }
 
   static createReportDelegate: (type: Report, contents: Record<string, any>) => Promise<DocxCreateResponse>

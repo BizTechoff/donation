@@ -7,8 +7,10 @@ import {
   openDialog,
   SelectValueDialogComponent,
 } from 'common-ui-elements'
-import { DonationMethod } from '../../shared/entity'
+import { Donation, DonationMethod } from '../../shared/entity'
+import { letterRecipientIds, loadDonorNames } from '../../shared/utils/donation-partners'
 import { Place } from '../../shared/entity/place'
+import { remult } from 'remult'
 import { terms } from '../terms'
 import {
   AreaDialogArgs,
@@ -182,10 +184,34 @@ export class UIToolsService implements UITools {
   }
 
   async letterPropertiesDialog(donationId: string): Promise<any> {
+    const recipientDonorId = await this.pickLetterRecipient(donationId)
+    if (recipientDonorId === null) return // נסגר בלי בחירה
     return await openDialog(
       (await import('../routes/modals/letter-properties-modal/letter-properties-modal.component')).LetterPropertiesModalComponent,
-      (dlg) => dlg.args = { donationId }
+      (dlg) => dlg.args = { donationId, recipientDonorId }
     )
+  }
+
+  /**
+   * שלב ג׳ 8 - מכתב תודה לשני הצדדים: בתרומה עם שותפים - בוחרים למי המכתב.
+   * בלי שותפים - undefined (התורם, בלי שאלה). נסגר בלי בחירה - null.
+   */
+  private async pickLetterRecipient(donationId: string): Promise<string | undefined | null> {
+    const donation = await remult.repo(Donation).findId(donationId)
+    if (!donation) return undefined
+    const ids = letterRecipientIds(donation)
+    if (ids.length < 2) return undefined
+    const names = await loadDonorNames(ids)
+    let picked: string | null = null
+    await this.selectValuesDialog({
+      title: 'למי המכתב?',
+      values: ids.map(id => ({
+        id,
+        caption: `${id === donation.donorId ? 'התורם' : 'שותף'}: ${names.get(id) || ''}`
+      })),
+      onSelect: v => picked = v.id
+    })
+    return picked
   }
 
   async bankDetailsDialog(bankId?: string): Promise<boolean> {

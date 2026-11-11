@@ -265,6 +265,8 @@
                 {{ getDonorName(donation) }}
               </a>
               <small class="donor-father" *ngIf="getFatherName(donation)">{{ getFatherName(donation) }}</small>
+              <!-- שלב ג׳ 8 - שותפים בתרומה -->
+              <small class="donor-father donor-partners" *ngIf="getPartnershipNote(donation)">{{ getPartnershipNote(donation) }}</small>
               <button class="btn-icon btn-add-donation"
                       (click)="addDonationForDonor(donation); $event.stopPropagation()"
                       [title]="'תרומה חדשה ל' + getDonorName(donation)">💰<span class="plus-badge">+</span></button>

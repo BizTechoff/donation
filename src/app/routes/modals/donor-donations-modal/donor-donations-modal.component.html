@@ -111,6 +111,7 @@
           </thead>
           <tbody>
             <tr *ngFor="let donation of paginatedDonations"
+              [class.partner-row]="isPartnerRow(donation)"
               [class.commitment-closed]="commitmentProgressMap[donation.id]?.isClosed">
               <td>
                 <div class="date-cell">
@@ -145,10 +146,12 @@
                 </div>
                 <span *ngIf="!donation.campaignId" class="no-data">-</span>
               </td>
-              <td class="cell-ellipsis" [title]="donation.reason || ''">
+              <td class="cell-ellipsis" [title]="(donation.reason || '') + (getPartnershipNote(donation) ? ' - ' + getPartnershipNote(donation) : '')">
                 <div class="reason-cell">
                   {{donation.reason || '-'}}
                 </div>
+                <!-- שלב ג׳ 8 - שותפים בתרומה -->
+                <small class="partner-note" *ngIf="getPartnershipNote(donation)">{{ getPartnershipNote(donation) }}</small>
               </td>
               <td class="actions">
                 <button mat-icon-button

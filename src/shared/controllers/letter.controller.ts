@@ -1,5 +1,5 @@
 import { Allow, BackendMethod, Controller, remult } from 'remult';
-import { Donation, DonorPlace } from '../entity';
+import { Donation, Donor, DonorPlace } from '../entity';
 import { Letter } from '../enum/letter';
 import { DocxContentControl, DocxCreateResponse } from '../type/letter.type';
 import { HebrewDateController } from './hebrew-date.controller'
@@ -11,7 +11,7 @@ export class LetterController {
   static createLetterDelegate: (type: Letter, contents: DocxContentControl[], fileName?: string) => Promise<DocxCreateResponse>
 
   @BackendMethod({ allowed: Allow.authenticated })
-  static async createLetter(donationId = '', type: Letter, fieldValues: { [key: string]: string }, prefix = [] as string[], suffix = [] as string[]): Promise<DocxCreateResponse> {
+  static async createLetter(donationId = '', type: Letter, fieldValues: { [key: string]: string }, prefix = [] as string[], suffix = [] as string[], recipientDonorId = ''): Promise<DocxCreateResponse> {
 
     const donation = await remult.repo(Donation).findId(
       donationId,
@@ -46,7 +46,11 @@ export class LetterController {
     // הניקוי והקיצור ל-120 תווים עוברים ל-buildFileName המשותף
     // (shared/utils/file-name-utils) - אותו מודול של שמות קבצי הדוחות. כאן
     // היה עותק נוסף של הניקוי, כתוב בשורה.
-    const donorName = (donation.donor?.fullName || '').trim()
+    // שלב ג׳ 8 - מכתב לשותף נקרא על שם השותף
+    const recipient = recipientDonorId && recipientDonorId !== donation.donorId
+      ? await remult.repo(Donor).findId(recipientDonorId)
+      : donation.donor
+    const donorName = (recipient?.fullName || '').trim()
     const reason = (donation.reason || '').trim()
     const hebrewDate = reason ? '' : HebrewDateController.hebrewDateInfoSync(new Date()).dateFormatted
 

@@ -12,8 +12,8 @@ export class LetterService {
 
   constructor(private globalFilterService: GlobalFilterService) { }
 
-  async createLetter(donationId = '', type: Letter, fieldValues: { [key: string]: string }, prefix = [] as string[], suffix = [] as string[]): Promise<DocxCreateResponse> {
-    const response = await LetterController.createLetter(donationId, type, fieldValues, prefix, suffix);
+  async createLetter(donationId = '', type: Letter, fieldValues: { [key: string]: string }, prefix = [] as string[], suffix = [] as string[], recipientDonorId = ''): Promise<DocxCreateResponse> {
+    const response = await LetterController.createLetter(donationId, type, fieldValues, prefix, suffix, recipientDonorId);
 
     if (response.success && response.url) {
       const fileName = response.fileName || `${type.caption}.docx`;

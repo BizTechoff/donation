@@ -6,6 +6,8 @@ import {
   Allow,
   Fields,
   Relations,
+  Filter,
+  SqlDatabase,
 } from 'remult'
 import { User } from './user'
 import { Donor } from './donor'
@@ -194,6 +196,14 @@ export class Donation extends IdEntity {
     caption: 'שותפים לתרומה',
   })
   partnerIds: string[] = []
+
+  /**
+   * שלב ג׳ 8 - תרומות שהתורם הזה שותף בהן (partnerIds מכיל אותו). json, ולכן
+   * jsonb ? - אותה בדיקה של הסטטיסטיקות והמפה. donorId מועבר כפרמטר.
+   */
+  static partneredWith = Filter.createCustom<Donation, { donorId: string }>(async ({ donorId }) =>
+    SqlDatabase.rawFilter(({ param }) => `"partnerIds"::jsonb ? ${param(donorId)}`)
+  )
 
   @Fields.string({
     caption: 'מספר צק',

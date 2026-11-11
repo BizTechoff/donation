@@ -16,6 +16,7 @@ import { sortRows } from '../../../common/table/table-sort';
 import { CommitmentController } from '../../../../shared/controllers/commitment.controller';
 import { CommitmentProgress } from '../../../../shared/utils/commitment-utils';
 import { deleteDonationQuestion } from '../../../common/donation-confirm';
+import { isPartnerView, loadDonorNames, partnershipNameIds, partnershipNote } from '../../../../shared/utils/donation-partners';
 
 export interface DonorDonationsModalArgs {
   donorId: string;
@@ -200,6 +201,18 @@ currencyTypes = this.payer.getCurrencyTypesRecord()
       }
     });
 
+    // שלב ג׳ 8 - גם התרומות שהתורם שותף בהן: מוצגות בסוגריים ומחוץ לסה"כ
+    // (נספרות אצל התורם שלהן). רק בחלון התרומות הכללי - לא בקבלות ולא בתוך התחייבות.
+    if (this.args.donationType === 'donations' && !this.args.commitmentId) {
+      const asPartner = await this.donationRepo.find({
+        where: { donationType: { $ne: 'commitment' }, $and: [Donation.partneredWith({ donorId: this.args.donorId })] },
+        orderBy: { donationDate: 'desc' },
+        include: { campaign: true, donationMethod: true }
+      });
+      this.donations = [...this.donations, ...asPartner.filter(d => this.isPartnerRow(d))];
+    }
+    this.partnerNames = await loadDonorNames(partnershipNameIds(this.donations, this.args.donorId));
+
     // Load payment totals for commitment and standing order donations
     const paymentBasedIds = this.donations
       .filter(d => isPaymentBased(d))
@@ -236,13 +249,32 @@ currencyTypes = this.payer.getCurrencyTypesRecord()
     });
   }
 
+  /** שלב ג׳ 8 - שמות לשורת השותפות (id -> שם). */
+  partnerNames = new Map<string, string>();
+
+  /** שלב ג׳ 8 - התורם הזה שותף בתרומה ולא התורם שלה: תצוגה בלבד, מחוץ לסה"כ. */
+  isPartnerRow(donation: Donation): boolean {
+    return isPartnerView(donation, this.args.donorId);
+  }
+
+  /** שלב ג׳ 8 - "שותף בתרומה עם X" / "שותפים בתרומה: X". */
+  getPartnershipNote(donation: Donation): string {
+    return partnershipNote(donation, this.partnerNames, this.args.donorId);
+  }
+
+  /** שלב ג׳ 8 - התרומות שנספרות בסיכומים: בלי אלה שהתורם רק שותף בהן. */
+  private get countedDonations(): Donation[] {
+    return this.filteredDonations.filter(d => !this.isPartnerRow(d));
+  }
+
   calculateTotals() {
     if (this.args.donationType === 'gifts') {
       this.totalDonations = this.donorGifts.length;
       this.totalAmount = 0; // Gifts don't have amounts
     } else {
-      this.totalDonations = this.donations.length;
-      this.totalAmount = this.donations.reduce((sum, donation) => sum + calculateEffectiveAmount(donation, this.paymentTotals[donation.id]), 0);
+      const counted = this.donations.filter(d => !this.isPartnerRow(d)); // שלב ג׳ 8
+      this.totalDonations = counted.length;
+      this.totalAmount = counted.reduce((sum, donation) => sum + calculateEffectiveAmount(donation, this.paymentTotals[donation.id]), 0);
     }
   }
 
@@ -291,11 +323,11 @@ currencyTypes = this.payer.getCurrencyTypesRecord()
 
   // תרומות מלאות + הו"ק (לא התחייבויות)
   get fullDonationsCount(): number {
-    return this.filteredDonations.filter(d => d.donationType !== 'commitment').length;
+    return this.countedDonations.filter(d => d.donationType !== 'commitment').length;
   }
 
   get fullDonationsTotal(): number {
-    return this.filteredDonations
+    return this.countedDonations
       .filter(d => d.donationType !== 'commitment')
       .reduce((sum, d) => sum + calculateEffectiveAmount(d, this.paymentTotals[d.id]), 0);
   }
@@ -303,7 +335,7 @@ currencyTypes = this.payer.getCurrencyTypesRecord()
   // סכומי תרומות מלאות + הו"ק מקובצים לפי מטבע
   get fullDonationsByCurrency(): Array<{ symbol: string; total: number }> {
     const map = new Map<string, number>();
-    this.filteredDonations
+    this.countedDonations
       .filter(d => d.donationType !== 'commitment')
       .forEach(d => {
         const current = map.get(d.currencyId) || 0;
@@ -317,7 +349,7 @@ currencyTypes = this.payer.getCurrencyTypesRecord()
 
   // התחייבויות
   get commitmentDonationsCount(): number {
-    return this.filteredDonations.filter(d => d.donationType === 'commitment').length;
+    return this.countedDonations.filter(d => d.donationType === 'commitment').length;
   }
 
   // שלב ג׳ 4.4 - "שולם" על ההתחייבויות כאן הוא ההתקדמות (תנועות ישנות + תרומות
@@ -328,7 +360,7 @@ currencyTypes = this.payer.getCurrencyTypesRecord()
   }
 
   get commitmentDonationsTotal(): number {
-    return this.filteredDonations
+    return this.countedDonations
       .filter(d => d.donationType === 'commitment')
       .reduce((sum, d) => sum + this.commitmentPaid(d), 0);
   }
@@ -336,7 +368,7 @@ currencyTypes = this.payer.getCurrencyTypesRecord()
   // סכומי התחייבויות מקובצים לפי מטבע (סכום ששולם על חשבונן)
   get commitmentDonationsByCurrency(): Array<{ symbol: string; total: number }> {
     const map = new Map<string, number>();
-    this.filteredDonations
+    this.countedDonations
       .filter(d => d.donationType === 'commitment')
       .forEach(d => {
         const current = map.get(d.currencyId) || 0;
@@ -349,7 +381,7 @@ currencyTypes = this.payer.getCurrencyTypesRecord()
   }
 
   getFilteredTotal(): number {
-    return this.filteredDonations.reduce((sum, donation) => sum + calculateEffectiveAmount(donation, this.paymentTotals[donation.id]), 0);
+    return this.countedDonations.reduce((sum, donation) => sum + calculateEffectiveAmount(donation, this.paymentTotals[donation.id]), 0);
   }
 
   getCampaignName(campaignId: string): string {
@@ -380,6 +412,12 @@ currencyTypes = this.payer.getCurrencyTypesRecord()
   }
 
   getAmountDisplay(donation: Donation): string {
+    // שלב ג׳ 8 - אצל שותף הסכום בסוגריים: מוצג, לא נספר
+    const display = this.amountDisplay(donation);
+    return this.isPartnerRow(donation) ? `(${display})` : display;
+  }
+
+  private amountDisplay(donation: Donation): string {
     // Item 16 - no '.00' on whole amounts: the shared amount rule (Z16).
     const fmt = (n: number) => formatAmount(n);
     if (donation.donationType === 'commitment') {

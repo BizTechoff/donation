@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
 import { DialogConfig, openDialog } from 'common-ui-elements';
 import { remult } from 'remult';
-import { Company, Donation, DonorPlace, LetterTitle, LetterTitleDefault } from '../../../../shared/entity';
+import { Company, Donation, Donor, DonorPlace, LetterTitle, LetterTitleDefault } from '../../../../shared/entity';
 import { pickDonationLetter } from '../../../../shared/utils/letter-rules';
 import { Letter } from '../../../../shared/enum/letter';
 import { DonationController } from '../../../../shared/controllers/donation.controller';
@@ -17,6 +17,8 @@ import { formatOnAccountOfCommitment } from '../../../../shared/utils/commitment
 
 export interface LetterPropertiesModalArgs {
   donationId: string;
+  /** שלב ג׳ 8 - נמען המכתב כשהוא שותף בתרומה ולא התורם שלה. ריק - התורם. */
+  recipientDonorId?: string;
 }
 
 export interface LetterPropertiesResult {
@@ -85,6 +87,29 @@ export class LetterPropertiesModalComponent implements OnInit {
 
   // Donation data
   donation?: Donation;
+  /**
+   * שלב ג׳ 8 - נמען המכתב: התורם, או שותף שנבחר. כל שדות הנמען (שם, תואר,
+   * כתובת, אנ"ש) נקראים מכאן - הסכום, הסיבה ואמצעי התשלום מהתרומה.
+   */
+  recipient?: Donor;
+
+  get recipientId(): string {
+    return this.recipient?.id || this.donation?.donorId || '';
+  }
+
+  /** "פרטי משפחה" של הנמען - כפי שנכתב בשם המשלם. */
+  get recipientFullName(): string {
+    return `${this.recipient?.firstName || ''} ${this.recipient?.lastName || ''}`.trim();
+  }
+
+  /**
+   * שלב ג׳ 8 - השם בקבלה: במכתב לשותף - השותף (ומכאן גם כתובת העבודה שלו);
+   * במכתב לתורם - המשלם שבתרומה, כמו עד היום.
+   */
+  get receiptName(): string {
+    const toPartner = !!this.recipient && this.recipient.id !== this.donation?.donorId;
+    return toPartner ? this.recipientFullName : (this.donation?.payerName || '');
+  }
   fieldValues: FieldValue[] = [];
 
   constructor(
@@ -139,6 +164,10 @@ export class LetterPropertiesModalComponent implements OnInit {
       }) || undefined;
 
       if (this.donation) {
+        const rid = this.args.recipientDonorId;
+        this.recipient = rid && rid !== this.donation.donorId
+          ? (await remult.repo(Donor).findId(rid)) || this.donation.donor
+          : this.donation.donor;
         await this.updateFieldValues();
         await this.autoSelectLetter();
       }
@@ -163,10 +192,10 @@ export class LetterPropertiesModalComponent implements OnInit {
    */
   private async autoSelectLetter() {
     if (!this.donation || this.selectedLetterType) return;
-    const place = (await DonorPlace.getPrimaryForDonor(this.donation.donorId))?.place;
+    const place = (await DonorPlace.getPrimaryForDonor(this.recipientId))?.place;
     const letter = pickDonationLetter({
       isUSA: !!place?.isUS,
-      isAnash: !!this.donation.donor?.isAnash,
+      isAnash: !!this.recipient?.isAnash,
       methodType: this.donation.donationMethod?.type,
       reason: this.donation.reason
     });
@@ -502,20 +531,19 @@ export class LetterPropertiesModalComponent implements OnInit {
         break
       }
       case 'Name_receipt': {
-        result = this.donation.payerName
+        result = this.receiptName
         break
       }
       case 'FullAddress_Work': {
         // Check if payer is the donor or a company
-        const donorFullName = `${this.donation.donor?.firstName || ''} ${this.donation.donor?.lastName || ''}`.trim();
         let place;
 
-        if (this.donation.payerName === donorFullName) {
+        if (this.receiptName === this.recipientFullName) {
           // Payer is the donor - use donor's primary address
-          const donorPlace = await DonorPlace.getPrimaryForDonor(this.donation.donorId || '');
+          const donorPlace = await DonorPlace.getPrimaryForDonor(this.recipientId);
           place = donorPlace?.place;
         } else {
-          const company = await remult.repo(Company).findFirst({ name: this.donation.payerName }, { include: { place: { include: { country: true } } } });
+          const company = await remult.repo(Company).findFirst({ name: this.receiptName }, { include: { place: { include: { country: true } } } });
           if (company) {
             place = company.place;
           }
@@ -529,15 +557,14 @@ export class LetterPropertiesModalComponent implements OnInit {
       }
       case 'FullCity_Work': {
         // Check if payer is the donor or a company
-        const donorFullName = `${this.donation.donor?.firstName || ''} ${this.donation.donor?.lastName || ''}`.trim();
         let place;
 
-        if (this.donation.payerName === donorFullName) {
+        if (this.receiptName === this.recipientFullName) {
           // Payer is the donor - use donor's primary address
-          const donorPlace = await DonorPlace.getPrimaryForDonor(this.donation.donorId || '');
+          const donorPlace = await DonorPlace.getPrimaryForDonor(this.recipientId);
           place = donorPlace?.place;
         } else {
-          const company = await remult.repo(Company).findFirst({ name: this.donation.payerName }, { include: { place: { include: { country: true } } } });
+          const company = await remult.repo(Company).findFirst({ name: this.receiptName }, { include: { place: { include: { country: true } } } });
           if (company) {
             place = company.place;
           }
@@ -551,10 +578,10 @@ export class LetterPropertiesModalComponent implements OnInit {
       }
       case 'FullAddress': {
         // שורה 1: שם מלא של התורם
-        const donorName = this.donation.donor?.getNameForLetter() || '';
+        const donorName = this.recipient?.getNameForLetter() || '';
 
         // קבלת הכתובת הראשית של התורם
-        const donorPlace = await DonorPlace.getPrimaryForDonor(this.donation.donorId || '');
+        const donorPlace = await DonorPlace.getPrimaryForDonor(this.recipientId);
         const place = donorPlace?.place;
 
         if (place) {
@@ -572,11 +599,11 @@ export class LetterPropertiesModalComponent implements OnInit {
       // ===== Hebrew Common Fields =====
       // סעיף 36 - "תלמידנו" מתווסף כאן, בהפקה, ולא בשדה התואר.
       case 'תואר_עברית': {
-        result = titleForLetter(this.donation.donor?.title, !!this.donation.donor?.isAlumni)
+        result = titleForLetter(this.recipient?.title, !!this.recipient?.isAlumni)
         break
       }
       case 'תואר  מלא': { // Handle typo in some templates
-        result = titleForLetter(this.donation.donor?.title, !!this.donation.donor?.isAlumni)
+        result = titleForLetter(this.recipient?.title, !!this.recipient?.isAlumni)
         break
       }
       case 'תואר_מלא': {
@@ -584,25 +611,25 @@ export class LetterPropertiesModalComponent implements OnInit {
         break
       }
       case 'שם_עברית': {
-        result = this.donation.donor?.firstName || ''
+        result = this.recipient?.firstName || ''
         result = result.trim()
-        if (this.donation.donor?.lineage) {
-          if (this.donation.donor.lineage !== 'israel') {
-            if (this.donation.donor.lineage === 'levi') {
+        if (this.recipient?.lineage) {
+          if (this.recipient.lineage !== 'israel') {
+            if (this.recipient.lineage === 'levi') {
               result += ' הלוי '
             }
-            else if (this.donation.donor.lineage === 'cohen') {
+            else if (this.recipient.lineage === 'cohen') {
               result += ' הכהן '
             }
           }
         }
         result = result.trim()
-        result += ` ${this.donation.donor?.lastName || ''}`
+        result += ` ${this.recipient?.lastName || ''}`
         result = result.trim()
         break
       }
       case 'סיומת_עברית': {
-        result = `${this.donation.donor?.suffix || ''}`
+        result = `${this.recipient?.suffix || ''}`
         break
       }
       case 'סיומת_מכתב': {
@@ -1041,7 +1068,8 @@ export class LetterPropertiesModalComponent implements OnInit {
         this.selectedLetterType,
         fieldValuesMap,
         this.selectedPrefixLines.map(l => l.text),
-        this.selectedSuffixLines.map(l => l.text)
+        this.selectedSuffixLines.map(l => l.text),
+        this.recipientId
       );
 
       if (response.success) {

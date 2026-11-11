@@ -21,6 +21,7 @@ import { FileUploadService } from '../../services/file-upload.service';
 import { TableState, TableLoadRequest } from '../../common/table/table-state';
 import { amountRangeLabel, dateRangeLabel, namesLabel, searchLabel } from '../../../shared/utils/filter-label-utils';
 import { BilingualSearchComponent } from '../../common/bilingual-search/bilingual-search.component';
+import { loadDonorNames, partnershipNameIds, partnershipNote } from '../../../shared/utils/donation-partners';
 import { CommitmentController } from '../../../shared/controllers/commitment.controller';
 import { CommitmentProgress, formatCommitmentProgress } from '../../../shared/utils/commitment-utils';
 import { deleteDonationQuestion } from '../../common/donation-confirm';
@@ -232,6 +233,8 @@ export class DonationsListComponent implements OnInit, OnDestroy {
         }
         this.commitmentProgressMap = await CommitmentController.getProgress(
           this.donations.filter(d => d.donationType === 'commitment').map(d => d.id));
+        // שלב ג׳ 8 - שמות השותפים של העמוד, לשורת "שותפים בתרומה"
+        this.partnerNames = await loadDonorNames(partnershipNameIds(this.donations));
       } catch (error) {
         console.error('Error refreshing donations:', error);
         this.donations = [];
@@ -632,6 +635,14 @@ export class DonationsListComponent implements OnInit, OnDestroy {
     return donation.donor?.lastAndFirstName || '-';
   }
 
+  /** שלב ג׳ 8 - שמות השותפים (id -> שם) של התרומות המוצגות. */
+  partnerNames = new Map<string, string>();
+
+  /** שלב ג׳ 8 - "שותפים בתרומה: X". הנוסח מ-shared/utils/donation-partners. */
+  getPartnershipNote(donation: Donation, names: Map<string, string> = this.partnerNames): string {
+    return partnershipNote(donation, names);
+  }
+
   /**
    * Z15 - the father's name, shown as a small sub-line under the donor's name,
    * ONLY when another donor shares that name. Both values are computed by the
@@ -863,6 +874,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
             : [];
           const printContactsMap = new Map(printContactData.map(d => [d.id, d]));
 
+          const printPartnerNames = await loadDonorNames(partnershipNameIds(allDonations)); // שלב ג׳ 8
           const printData = allDonations.map(donation => {
             const hebrewDate = donation.donationDate
               ? this.hebrewDateService.convertGregorianToHebrew(new Date(donation.donationDate)).formatted
@@ -875,7 +887,8 @@ export class DonationsListComponent implements OnInit, OnDestroy {
               // the father's name appended to the donor's name where the name
               // is shared. The full Excel export still carries the address.
               donorName: this.getDonorName(donation) +
-                (this.getFatherName(donation) ? ` (${this.getFatherName(donation)})` : ''),
+                (this.getFatherName(donation) ? ` (${this.getFatherName(donation)})` : '') +
+                (this.getPartnershipNote(donation, printPartnerNames) ? ` - ${this.getPartnershipNote(donation, printPartnerNames)}` : ''),
               phone: contact?.phone || '-',
               mobile: contact?.mobile || '-', // item 18
               date: hebrewDate,
@@ -969,6 +982,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
         const contactsMap = new Map(contactExportData.map(d => [d.id, d]));
 
         // Prepare export data with place + contacts (item 18 - landlines / mobiles separately)
+        const exportPartnerNames = await loadDonorNames(partnershipNameIds(allDonations)); // שלב ג׳ 8
         const exportData = allDonations.map(d => ({
           donation: d,
           place: d.donorId ? placesMap.get(d.donorId)?.place : undefined,
@@ -1017,7 +1031,9 @@ export class DonationsListComponent implements OnInit, OnDestroy {
             { header: this.i18n.currentTerms.amount || 'סכום', mapper: (item) => `${this.currencyTypes[item.donation.currencyId]?.symbol || '₪'}${item.donation.amount.toLocaleString('he-IL')}`, width: 12 },
             { header: this.i18n.currentTerms.campaign || 'קמפיין', mapper: (item) => this.getCampaignName(item.donation), width: 15 },
             { header: this.i18n.currentTerms.fundraiserColumn || 'מגייס', mapper: (item) => item.donation.donor?.fundraiser?.name || '-', width: 12 },
-            { header: this.i18n.currentTerms.reason || 'הקדשה', mapper: (item) => item.donation.reason || '-', width: 20 }
+            { header: this.i18n.currentTerms.reason || 'הקדשה', mapper: (item) => item.donation.reason || '-', width: 20 },
+            // שלב ג׳ 8 - מה שמוצג מתחת לשם התורם, גם בייצוא
+            { header: 'שותפים בתרומה', mapper: (item) => this.getPartnershipNote(item.donation, exportPartnerNames).replace('שותפים בתרומה: ', ''), width: 25 }
           ],
           sheetName: this.i18n.currentTerms.donations || 'תרומות',
           fileName: await this.globalFilterService.exportFileName(this.i18n.currentTerms.donations || 'תרומות', this.exportFilterParts(), 'xlsx')
