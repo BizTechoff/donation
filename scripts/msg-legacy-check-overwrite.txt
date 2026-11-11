@@ -1,0 +1,12 @@
+fix(tools): legacy-check-fix - בנק ועמותה מהאקסל גוברים על הקישור מאפריל
+
+הייבוא מאפריל קישר בנק ועמותה בהתאמה חלקית של שמות, ויצר קישורים שגויים:
+"US Bank" ל-"Sabine State Bank & Trust" ("us" בתוך "trust"), "Citibank"
+ל-"First Citizens Bank & Trust Co.", "First Bank" ל-"First Arkansas Bank &
+Trust", ועמותה 3 (Pledger) ל-"DAF giving 360" ("3" בתוך "360"). בתרומות
+מהתוכנה הישנה האקסל הוא המקור - הקישור מוחלף (15 תרומות בפרודקשן).
+
+BizTechoff™ - התאמת העסק לעידן הדיגיטלי
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_014QF1xL15Q485gc5E3d7Hsd

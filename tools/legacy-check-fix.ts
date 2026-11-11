@@ -12,7 +12,10 @@
  *   Sort Code     -> בפועל שם הבנק -> bankId
  * הייבוא מאפריל: Check_Number לא יובא, AccountNo נזרק (לא היה שדה), ומספר
  * העמותה נכנס ל"מספר שובר". התאמה לתרומה לפי excelDonationId.
- * ערך קיים ושונה לא נדרס - חוץ ממספר שובר שמכיל את מספר העמותה (השיבוש).
+ * ערך קיים ושונה לא נדרס - חוץ ממספר שובר שמכיל את מספר העמותה (השיבוש),
+ * ובנק / עמותה: את אלה קבע הייבוא מאפריל בהתאמה חלקית של שמות ("US" נמצא
+ * בתוך "Trust", "Citi" בתוך "Citizens", "3" בתוך "DAF giving 360") - שגויים;
+ * האקסל הוא המקור.
  *
  * עמותה מטבלת העזר שאין במערכת - נוספת (ב-SQL, לפני העדכונים), עם מספרה
  * בתוכנה הישנה בהערות. טבלת העזר: TbEzerCharity.xlsx של יעקב, אם נשמר
@@ -146,7 +149,7 @@ async function main() {
     if (voucherCo) {
       const charityName = charities.get(voucherCo)?.name || voucherCo
       const org = findByName(orgs, charityName, o => o.name)
-      if (org) want('organizationId', org.id)
+      if (org) want('organizationId', org.id, true)
       else missingOrgs.set(charityName, (missingOrgs.get(charityName) || 0) + 1)
       // מספר העמותה שנכנס כמספר שובר - השיבוש; מוחלף במספר השובר האמיתי.
       if (checkNo) want('voucherNumber', checkNo, d.voucherNumber === voucherCo)
@@ -156,7 +159,7 @@ async function main() {
       const bankName = cell(r, 'Sort Code', 'Sort_Code')
       if (bankName) {
         const bank = findByName(banks, bankName, b => b.name) || findByName(banks, canonicalBank(bankName), b => b.name)
-        if (bank) want('bankId', bank.id)
+        if (bank) want('bankId', bank.id, true)
         else missingBanks.set(bankName, (missingBanks.get(bankName) || 0) + 1)
       }
     }
