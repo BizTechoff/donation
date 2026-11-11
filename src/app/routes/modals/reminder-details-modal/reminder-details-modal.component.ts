@@ -720,6 +720,16 @@ export class ReminderDetailsModalComponent implements OnInit {
     }
   }
 
+  /**
+   * שלב ג׳ 7.2 - האם אפשר לבחור / להחליף / להוסיף תורם לתזכורת, גם אחרי שמירה
+   * (זום 24.08, 3:03-3:04: "למה אי אפשר לערוך גם את השיוך לתורם?").
+   * הכלל במקום אחד: תזכורת ידנית - תמיד; תזכורת שנוצרה מתרומה / מתנה /
+   * תעודה / אירוע - לא, התורם שלה הוא של המקור (ומוצג לקריאה בלבד).
+   */
+  get canEditDonor(): boolean {
+    return !this.reminder?.sourceEntityType;
+  }
+
   clearDonorSelection() {
     if (this.reminder) {
       this.reminder.donorId = '';
