@@ -25,6 +25,7 @@ import { Blessing } from '../shared/entity/blessing'
 import { ReminderType } from '../shared/entity/reminder-type'
 import { CustomLetter } from '../shared/entity/custom-letter'
 import { ensureSystemReminderTypes } from './reminder-types'
+import { ensureDbIndexes } from './db-indexes'
 import { BlessingBookType } from '../shared/entity/blessing-book-type'
 import { Campaign } from '../shared/entity/campaign'
 import { Certificate } from '../shared/entity/certificate'
@@ -124,6 +125,9 @@ export const api = remultExpress({
   initApi: async r => {
     // שלב ג׳ 7.4 - סוגי התזכורת של המערכת קיימים בקטלוג (מוסיף רק חסרים)
     await ensureSystemReminderTypes()
+
+    // אינדקסים במסד (server/db-indexes) - ברקע, לא מעכב את עליית השרת
+    void ensureDbIndexes()
 
     // ── הפעלת geocoding ברקע (לא awaited) כדי לא לעכב את עליית השרת.
     // geocodeMissingPlaces()

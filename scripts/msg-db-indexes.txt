@@ -1,0 +1,15 @@
+perf(db): אינדקסים במסד - במקום אחד, נוצרים בעליית השרת
+
+- server/db-indexes: 18 אינדקסים, CREATE INDEX IF NOT EXISTS, ברקע ב-initApi.
+  רימלט 3 לא מצהיר על אינדקסים ביישות, ועד היום היו במסד רק מפתחות ראשיים -
+  כל שליפה לפי תורם הייתה סריקה מלאה.
+- פרטי קשר וכתובות (donorId, type/isPrimary, isActive) - כל רשימה, ייצוא
+  ו-sqlExpression. תרומות לפי תורם+תאריך, התחייבות וקמפיין. GIN על
+  partnerIds::jsonb (שותפים). תשלומים לתרומה. רשומות-בן של התורם (תזכורות,
+  מתנות, אירועים, הערות, קשרים, תעודות). קבצים לפי בעלים.
+- כשל באינדקס אחד נרשם ללוג ולא עוצר את השאר.
+
+BizTechoff™ - התאמת העסק לעידן הדיגיטלי
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_012J7BEmVq166Wu9fYdKdxE3
