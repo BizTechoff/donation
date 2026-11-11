@@ -78,6 +78,28 @@ export class DonorGift extends IdEntity {
   })
   giftName?: string
 
+  // שלב ג׳ 6.5 - מתנה משותפת: מארז אחד לכמה מקבלים (ישראל, 24.08: "סידור
+  // שוקולדים לרגל שמחה ויש שם כמה מיועדים לקבל את הערכה"). כל מקבל מקבל שורה
+  // משלו - כך המתנה מופיעה אצל כל אחד מהם - והשורות מקושרות במזהה הקבוצה.
+  // העלות נרשמת בשורה הראשונה בלבד, כך שבסיכום היא נספרת פעם אחת. ריק = לא משותפת.
+  @Fields.string({
+    caption: 'קבוצת מתנה משותפת',
+  })
+  sharedGroupId = ''
+
+  /** שמות שאר המקבלים של אותה מתנה משותפת, מחושב ב-SQL (ריק אם אינה משותפת). */
+  @Fields.string<DonorGift>({
+    caption: 'משותפת עם',
+    allowNull: true,
+    sqlExpression: () => `(
+      select string_agg(trim(coalesce(d."lastName",'') || ' ' || coalesce(d."firstName",'')), ', ')
+      from "donor_gifts" g2 join "donors" d on d."id" = g2."donorId"
+      where coalesce("donor_gifts"."sharedGroupId",'') <> ''
+        and g2."sharedGroupId" = "donor_gifts"."sharedGroupId"
+        and g2."id" <> "donor_gifts"."id")`
+  })
+  sharedWith?: string
+
   @Fields.dateOnly({
     caption: 'תאריך מסירה',
     validate: Validators.required,

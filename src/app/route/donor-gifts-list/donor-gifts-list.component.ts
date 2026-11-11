@@ -90,6 +90,12 @@ export class DonorGiftsListComponent implements OnInit, OnDestroy {
 
   private currencyTypes = this.payerService.getCurrencyTypesRecord();
 
+  /** שלב ג׳ 6.5 - שם המתנה, ובמשותפת גם עם מי (להדפסה, שבה אין שורת משנה). */
+  giftText(g: DonorGift): string {
+    const name = g.gift?.name || '-';
+    return g.sharedWith ? `${name} (משותפת עם: ${g.sharedWith})` : name;
+  }
+
   /** שלב ג׳ 6.3 - העלות כפי שמוצגת: בטבלה, בהדפסה ובייצוא - מקום אחד. */
   costText(g: DonorGift): string {
     if (!g.cost) return '-';
@@ -516,7 +522,7 @@ export class DonorGiftsListComponent implements OnInit, OnDestroy {
           donor: this.getDonorName(donorGift),
           phone: printContactsMap.get(donorGift.donor?.id || '')?.phone || '-',
           mobile: printContactsMap.get(donorGift.donor?.id || '')?.mobile || '-',
-          gift: donorGift.gift?.name || '-',
+          gift: this.giftText(donorGift),
           cost: this.costText(donorGift),
           reason: donorGift.reason || '-',
           deliveryDate: this.formatHebrewDate(donorGift.deliveryDate),
@@ -602,6 +608,7 @@ export class DonorGiftsListComponent implements OnInit, OnDestroy {
             { header: this.i18n.currentTerms.alumni || 'תלמידנו', mapper: (g) => g.donor?.isAlumni ? '✓' : '', width: 8 },
             // Gift fields
             { header: this.i18n.currentTerms.gift || 'מתנה', mapper: (g) => g.gift?.name || '-', width: 20 },
+            { header: 'משותפת עם', mapper: (g) => g.sharedWith || '', width: 25 },
             { header: 'עלות', mapper: (g) => this.costText(g), width: 12, align: 'left' },
             { header: 'סיבת שליחה', mapper: (g) => g.reason || '-', width: 20 },
             { header: this.i18n.currentTerms.deliveryDate || 'תאריך מסירה', mapper: (g) => this.formatHebrewDate(g.deliveryDate), width: 15 },

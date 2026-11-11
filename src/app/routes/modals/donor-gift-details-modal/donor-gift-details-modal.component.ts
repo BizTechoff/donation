@@ -44,6 +44,8 @@ export class DonorGiftDetailsModalComponent implements OnInit {
   selectedDonor?: Donor;
   /** שלב ג׳ 6.1 - במתנה חדשה: כל התורמים שיקבלו אותה. */
   selectedDonors: Donor[] = [];
+  /** שלב ג׳ 6.5 - מארז אחד לכל הנבחרים. */
+  isShared = false;
   selectedGift?: Gift;
 
   constructor(
@@ -241,7 +243,8 @@ export class DonorGiftDetailsModalComponent implements OnInit {
             notes: this.donorGift.notes,
             cost: this.donorGift.cost,
             costCurrencyId: this.donorGift.costCurrencyId,
-            reason: this.donorGift.reason
+            reason: this.donorGift.reason,
+            shared: this.isShared
           });
         message = count > 1 ? `המתנה שויכה ל-${count} תורמים` : 'המתנה נוספה בהצלחה';
       } else {

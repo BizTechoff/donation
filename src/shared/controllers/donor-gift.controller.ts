@@ -22,6 +22,8 @@ export interface DonorGiftAssignment {
   cost?: number;
   costCurrencyId?: string;
   reason?: string;
+  /** שלב ג׳ 6.5 - מארז אחד לכל הנבחרים: השורות מקושרות, והעלות בראשונה בלבד. */
+  shared?: boolean;
 }
 
 @Controller('donor-gift')
@@ -38,8 +40,11 @@ export class DonorGiftController {
     if (!data?.giftId) throw new Error('נא לבחור מתנה');
 
     const repo = remult.repo(DonorGift);
-    const rows = ids.map(donorId => {
-      const row = repo.create({ donorId, giftId: data.giftId, isDelivered: !!data.isDelivered, notes: data.notes || '', cost: data.cost || 0, reason: data.reason || '' });
+    const shared = !!data.shared && ids.length > 1;
+    const sharedGroupId = shared ? `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}` : '';
+    const rows = ids.map((donorId, i) => {
+      const cost = shared && i > 0 ? 0 : (data.cost || 0);
+      const row = repo.create({ donorId, giftId: data.giftId, isDelivered: !!data.isDelivered, notes: data.notes || '', cost, reason: data.reason || '', sharedGroupId });
       if (data.costCurrencyId) row.costCurrencyId = data.costCurrencyId;
       if (data.deliveryDate) row.deliveryDate = data.deliveryDate; // אחרת - ברירת המחדל של הישות
       return row;

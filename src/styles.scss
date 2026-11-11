@@ -836,3 +836,15 @@ a.donor-link {
   text-align: right;
   unicode-bidi: isolate;
 }
+
+/* שורת משנה קטנה מתחת לערך בתא טבלה (שלב ג׳ 6.5 - "משותפת עם" במתנות).
+   גלובלי, כדי שכל טבלה תשתמש באותה שורת משנה במקום CSS פרטי למסך. */
+td .row-subtitle {
+  display: block;
+  font-size: 11px;
+  color: #6b7280;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

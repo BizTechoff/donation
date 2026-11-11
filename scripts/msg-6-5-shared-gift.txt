@@ -1,0 +1,14 @@
+feat(gifts): שלב ג׳ 6.5 - מתנה משותפת לכמה נמענים
+
+- DonorGift.sharedGroupId - מקשר את שורות המקבלים של מארז אחד; sharedWith -
+  שמות שאר המקבלים, מחושב ב-SQL (sqlExpression).
+- assignGiftToDonors: shared - שורה לכל מקבל (המתנה מופיעה אצל כל אחד),
+  מזהה קבוצה משותף, והעלות בשורה הראשונה בלבד - נספרת פעם אחת.
+- כרטיס המתנה: סימון "מתנה משותפת" בשיוך לכמה תורמים; בעריכה - "משותפת עם".
+- רשימת המתנות: "משותפת עם" כשורת משנה, בהדפסה ועמודה בייצוא.
+- styles.scss: row-subtitle - שורת משנה אחידה לתאי טבלה.
+
+BizTechoff™ - התאמת העסק לעידן הדיגיטלי
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_014QF1xL15Q485gc5E3d7Hsd

@@ -161,7 +161,11 @@
                (dblclick)="$event.stopPropagation()">{{ getDonorName(donorGift) }}</a>
             <ng-template #noDonorLink>{{ getDonorName(donorGift) }}</ng-template>
           </td>
-          <td>{{ donorGift.gift?.name || '-' }}</td>
+          <td>
+            {{ donorGift.gift?.name || '-' }}
+            <!-- שלב ג׳ 6.5 - מתנה משותפת: עם מי -->
+            <div class="row-subtitle" *ngIf="donorGift.sharedWith" [title]="donorGift.sharedWith">משותפת עם: {{ donorGift.sharedWith }}</div>
+          </td>
           <td><bdi>{{ costText(donorGift) }}</bdi></td>
           <td class="cell-ellipsis" [title]="donorGift.reason || ''">{{ donorGift.reason || '-' }}</td>
           <td>{{ formatHebrewDate(donorGift.deliveryDate) }}</td>

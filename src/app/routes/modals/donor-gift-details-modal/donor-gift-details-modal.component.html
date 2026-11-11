@@ -36,9 +36,12 @@
             <mat-icon>search</mat-icon>
           </button>
         </div>
+        <div class="shared-with" *ngIf="!isNew && donorGift.sharedWith">משותפת עם: {{ donorGift.sharedWith }}</div>
         <!-- שלב ג׳ 6.1 - התורמים שנבחרו; המספר הוא גם כמה מתנות לקנות -->
         <div class="selected-donors" *ngIf="isNew && selectedDonors.length > 1">
-          <div class="selected-donors-count">{{ selectedDonors.length }} מתנות</div>
+          <div class="selected-donors-count">{{ isShared ? 'מתנה משותפת אחת' : selectedDonors.length + ' מתנות' }}</div>
+          <!-- שלב ג׳ 6.5 - מארז אחד לכולם: מופיע אצל כל אחד, העלות נספרת פעם אחת -->
+          <mat-checkbox [(ngModel)]="isShared" class="shared-checkbox">מתנה משותפת (מארז אחד לכל הנבחרים)</mat-checkbox>
           <mat-chip-set>
             <mat-chip *ngFor="let d of selectedDonors" [removable]="true" (removed)="removeSelectedDonor(d)">
               {{ getDonorName(d) }}
