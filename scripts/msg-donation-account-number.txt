@@ -1,0 +1,10 @@
+feat(donations): שדה "מספר חשבון" בתרומה
+
+- Donation.accountNumber - מספר החשבון שעל הצ'ק / השובר / ההעברה. שייך
+  לתרומה: בבנק יש רק סניף, ובעמותה - החשבון שלה עצמה. יעקב, 10.11.2026.
+- כרטיס התרומה: השדה מוצג בצ'ק, בהעברה בנקאית ובתשלום דרך עמותה.
+
+BizTechoff™ - התאמת העסק לעידן הדיגיטלי
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_014QF1xL15Q485gc5E3d7Hsd

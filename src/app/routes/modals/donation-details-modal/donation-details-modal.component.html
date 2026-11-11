@@ -332,6 +332,16 @@
               [placeholder]="i18n.terms.checkNumberPlaceholder">
           </div>
 
+          <!-- מספר החשבון שעל הצ'ק / השובר / ההעברה -->
+          <div class="form-group" *ngIf="isCheckPayment || isTransferPayment || isOrganizationPayment">
+            <div class="field-title">
+              <mat-icon class="field-icon">account_balance</mat-icon>
+              <label>{{i18n.terms.accountNumber}}</label>
+            </div>
+            <input type="text" class="form-control" [(ngModel)]="donation.accountNumber"
+              [placeholder]="i18n.terms.accountNumberPlaceholder">
+          </div>
+
           <div class="form-group" *ngIf="isOrganizationPayment || (isStandingOrderPayment && donation.standingOrderType === 'organization')">
             <div class="field-title">
               <mat-icon class="field-icon">tag</mat-icon>

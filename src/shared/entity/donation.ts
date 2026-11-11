@@ -205,6 +205,14 @@ export class Donation extends IdEntity {
   })
   voucherNumber = ''
 
+  // מספר החשבון שממנו נמשך הצ'ק / השובר - שייך לתרומה, לא לבנק ולא לעמותה
+  // (בבנק יש רק סניף, ובעמותה - החשבון שלה עצמה). יעקב, 10.11.2026: חסר
+  // בפלטפורמה; הייבוא מאפריל ניסה למלא אותו (AccountNo) והערך נזרק.
+  @Fields.string({
+    caption: 'מספר חשבון',
+  })
+  accountNumber = ''
+
   @Fields.dateOnly({
     caption: 'תאריך תרומה',
     validate: Validators.required,
