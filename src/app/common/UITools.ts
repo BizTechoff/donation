@@ -29,7 +29,7 @@ export interface UITools {
   reminderDetailsDialog(reminderId?: string, options?: {
     userId?: string;
     donorId?: string;
-    reminderType?: 'donation_followup' | 'thank_you' | 'receipt' | 'birthday' | 'holiday' | 'general' | 'meeting' | 'phone_call' | 'memorialDay' | 'memorial' | 'yahrzeit';
+    reminderType?: string; // ReminderType.code (שלב ג׳ 7.4)
     reminderDate?: Date;
     isRecurringYearly?: boolean;
     hideDonorField?: boolean;

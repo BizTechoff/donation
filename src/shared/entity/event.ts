@@ -4,8 +4,10 @@ import {
   Fields,
   Validators,
   Allow,
+  isBackend,
 } from 'remult'
 import { Roles } from '../enum/roles'
+import { assertUniqueCatalogName, normalizeCatalogName } from '../utils/catalog-name'
 
 @Entity<Event>('events', {
   allowApiCrud: Allow.authenticated,
@@ -13,6 +15,13 @@ import { Roles } from '../enum/roles'
   allowApiUpdate: Allow.authenticated,
   allowApiDelete: [Roles.admin, Roles.secretary],
   allowApiInsert: Allow.authenticated,
+  // שלב ג׳ 7.4 - שם האירוע: ניקוי רווחים וחסימת כפילות, אותו כלל כמו סוגי התזכורת
+  saving: async (event) => {
+    if (isBackend()) {
+      event.description = normalizeCatalogName(event.description)
+      await assertUniqueCatalogName(Event, 'description', event)
+    }
+  },
 })
 export class Event extends IdEntity {
   @Fields.string({

@@ -1,0 +1,13 @@
+<div class="catalog-name-edit" (click)="$event.stopPropagation()">
+  <div class="row">
+    <input #input type="text" class="form-control" [(ngModel)]="value" [placeholder]="placeholder"
+      (keyup.enter)="onSave()" (keyup.escape)="cancel.emit()" [disabled]="busy">
+    <button type="button" class="icon-btn ok" (click)="onSave()" [disabled]="busy || !value.trim()" title="שמור">
+      <mat-icon>check</mat-icon>
+    </button>
+    <button type="button" class="icon-btn" (click)="cancel.emit()" [disabled]="busy" title="ביטול">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+  <div class="error" *ngIf="error">{{ error }}</div>
+</div>

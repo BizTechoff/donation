@@ -63,15 +63,24 @@
           <div class="events-list">
             <div class="event-item"
                  *ngFor="let event of getEventsByCategory(category)"
-                 (click)="selectEvent(event)"
+                 (click)="editingEventId !== event.id && selectEvent(event)"
                  [class.selected]="selectedEvent?.id === event.id">
-              <div class="event-info">
-                <div class="event-title">{{ event.description }}</div>
-                <div class="event-details" *ngIf="event.type">סוג: {{ event.type }}</div>
-              </div>
-              <button class="select-btn">
-                <mat-icon>check_circle</mat-icon>
-              </button>
+              <!-- שלב ג׳ 7.4 - תיקון שם במקום; הוסרה שורת "סוג: personal" (קוד גולמי, זהה בכל האירועים) -->
+              <app-catalog-name-edit *ngIf="editingEventId === event.id"
+                [value]="event.description" placeholder="שם האירוע"
+                [save]="renameEvent" (done)="editingEventId = null" (cancel)="editingEventId = null">
+              </app-catalog-name-edit>
+              <ng-container *ngIf="editingEventId !== event.id">
+                <div class="event-info">
+                  <div class="event-title">{{ event.description }}</div>
+                </div>
+                <button class="edit-btn" (click)="editingEventId = event.id; $event.stopPropagation()" title="תקן את שם האירוע">
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button class="select-btn">
+                  <mat-icon>check_circle</mat-icon>
+                </button>
+              </ng-container>
             </div>
           </div>
         </div>

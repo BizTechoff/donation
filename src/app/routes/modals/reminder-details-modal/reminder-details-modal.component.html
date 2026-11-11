@@ -70,11 +70,26 @@
             <div class="form-row">
               <div class="form-group">
                 <label class="required">{{ (i18n.terms$ | async)?.reminderTypeSelect }}</label>
-                <select class="form-control" [(ngModel)]="reminder.type">
-                  <option *ngFor="let type of typeOptions" [value]="type.value">
-                    {{ type.label }}
-                  </option>
-                </select>
+                <!-- שלב ג׳ 7.4 - סוגי התזכורת מהקטלוג: בחירה, הוספה ותיקון שם -->
+                <div class="type-select-row" *ngIf="!typeEditMode">
+                  <select class="form-control" [(ngModel)]="reminder.type">
+                    <option *ngFor="let type of typeOptions" [value]="type.value">
+                      {{ type.label }}
+                    </option>
+                  </select>
+                  <button type="button" class="type-edit-btn" (click)="typeEditMode = 'add'" title="הוסף סוג תזכורת">
+                    <mat-icon>add</mat-icon>
+                  </button>
+                  <button type="button" class="type-edit-btn" (click)="typeEditMode = 'rename'" [disabled]="!reminder.type"
+                    title="תקן את שם הסוג - מתעדכן בכל התזכורות">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                </div>
+                <app-catalog-name-edit *ngIf="typeEditMode"
+                  [value]="typeEditMode === 'rename' ? reminderTypes.label(reminder.type) : ''"
+                  [placeholder]="typeEditMode === 'rename' ? 'שם הסוג' : 'סוג תזכורת חדש'"
+                  [save]="saveTypeName" (done)="typeEditMode = null" (cancel)="typeEditMode = null">
+                </app-catalog-name-edit>
               </div>
               <div class="form-group">
                 <label class="required">{{ (i18n.terms$ | async)?.priorityField }}</label>

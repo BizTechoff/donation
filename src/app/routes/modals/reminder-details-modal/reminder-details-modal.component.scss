@@ -636,3 +636,28 @@
     }
   }
 }
+// שלב ג׳ 7.4 - שורת סוג התזכורת: בחירה + הוספה + תיקון שם
+.type-select-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  select { flex: 1; min-width: 0; }
+
+  .type-edit-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: #667eea;
+    cursor: pointer;
+
+    &:hover:not(:disabled) { background: #f1f3f5; }
+    &:disabled { opacity: .4; cursor: default; }
+  }
+}

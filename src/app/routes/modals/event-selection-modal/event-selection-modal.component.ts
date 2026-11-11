@@ -30,6 +30,8 @@ export class EventSelectionModalComponent implements OnInit {
   eventSearchTerm = '';
   showCreateNewEvent = false;
   newEventDescription = '';
+  /** שלב ג׳ 7.4 - האירוע שבעריכת שם כרגע. */
+  editingEventId: string | null = null;
 
   constructor(
     public i18n: I18nService,
@@ -91,7 +93,7 @@ export class EventSelectionModalComponent implements OnInit {
 
     } catch (error) {
       console.error('Error creating new event:', error);
-      alert('שגיאה ביצירת האירוע החדש');
+      alert((error as any)?.message || 'שגיאה ביצירת האירוע החדש');
     }
   }
 
@@ -102,6 +104,23 @@ export class EventSelectionModalComponent implements OnInit {
       this.newEventDescription = '';
     }
   }
+
+  /**
+   * שלב ג׳ 7.4 - תיקון שם אירוע. התורמים מצביעים על האירוע (eventId), ולכן
+   * התיקון מתעדכן אצל כולם.
+   */
+  renameEvent = async (name: string) => {
+    const event = this.availableEvents.find(e => e.id === this.editingEventId);
+    if (!event) return;
+    const previous = event.description;
+    event.description = name;
+    try {
+      await remult.repo(Event).save(event);
+    } catch (e) {
+      event.description = previous;
+      throw e;
+    }
+  };
 
   // Clear search
   clearSearch() {
@@ -154,7 +173,7 @@ export class EventSelectionModalComponent implements OnInit {
 
     } catch (error) {
       console.error('Error creating new event:', error);
-      alert('שגיאה ביצירת האירוע');
+      alert((error as any)?.message || 'שגיאה ביצירת האירוע');
     }
   }
 }

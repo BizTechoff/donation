@@ -8,6 +8,7 @@ import {
   BackendMethod,
   Relations,
   remult,
+  dbNamesOf,
 } from 'remult'
 import { Donor } from './donor'
 import { User } from './user'
@@ -15,7 +16,8 @@ import { Donation } from './donation'
 import { Roles } from '../enum/roles'
 import { EmailController } from '../controllers/email.controller'
 import { ReminderController } from '../controllers/reminder.controller'
-import { REMINDER_TYPE_LABELS, REMINDER_SOURCE_LABELS, REMINDER_SOURCE_MANUAL } from '../enum/reminder-type'
+import { REMINDER_SOURCE_LABELS, REMINDER_SOURCE_MANUAL } from '../enum/reminder-type'
+import { ReminderType } from './reminder-type'
 import { sqlCaseFromLabels } from '../utils/table-query'
 
 @Entity<Reminder>('reminders', {
@@ -85,7 +87,8 @@ export class Reminder extends IdEntity {
     caption: 'סוג תזכורת',
     validate: Validators.required,
   })
-  type: 'donation_followup' | 'thank_you' | 'receipt' | 'birthday' | 'holiday' | 'general' | 'meeting' | 'phone_call' | 'memorialDay' | 'memorial' | 'yahrzeit' | 'gift' = 'general'
+  // שלב ג׳ 7.4 - הקוד של ReminderType.code. string ולא רשימה סגורה: המשתמש מוסיף סוגים.
+  type: string = 'general'
 
   @Fields.string({
     caption: 'עדיפות',
@@ -137,7 +140,11 @@ export class Reminder extends IdEntity {
   @Fields.string<Reminder>({
     caption: 'סוג (תווית)',
     allowNull: true,
-    sqlExpression: () => sqlCaseFromLabels('"reminders"."type"', REMINDER_TYPE_LABELS, '')
+    // שלב ג׳ 7.4 - השם מהקטלוג ReminderType, המקור היחיד. קוד בלי סוג - מוצג הקוד.
+    sqlExpression: async () => {
+      const t = await dbNamesOf(ReminderType)
+      return `coalesce((select ${t.name} from ${t} where ${t.code} = "reminders"."type"), "reminders"."type")`
+    }
   })
   typeLabel?: string
 
@@ -298,22 +305,9 @@ export class Reminder extends IdEntity {
   })
   createdById = ''
 
+  /** שלב ג׳ 7.4 - השם מהקטלוג (typeLabel), לא רשימה קבועה בקוד. */
   get typeText(): string {
-    switch (this.type) {
-      case 'donation_followup': return 'מעקב תרומה'
-      case 'thank_you': return 'מכתב תודה'
-      case 'receipt': return 'קבלה'
-      case 'birthday': return 'יום הולדת'
-      case 'holiday': return 'חג'
-      case 'general': return 'כללי'
-      case 'meeting': return 'פגישה'
-      case 'phone_call': return 'שיחת טלפון'
-      case 'memorialDay': return 'נציב יום'
-      case 'memorial': return 'נציב זכרון'
-      case 'yahrzeit': return 'יוארצהייט'
-      case 'gift': return 'מתנה'
-      default: return this.type
-    }
+    return this.typeLabel || this.type
   }
 
   get priorityText(): string {

@@ -8,6 +8,7 @@ import { I18nService } from '../../../i18n/i18n.service';
 import { DonorService } from '../../../services/donor.service';
 import { HebrewDateService } from '../../../services/hebrew-date.service';
 import { ReminderService } from '../../../services/reminder.service';
+import { ReminderTypeService } from '../../../services/reminder-type.service';
 import { DonationSelectionModalComponent } from '../donation-selection-modal/donation-selection-modal.component';
 import { DonorSelectionModalComponent } from '../donor-selection-modal/donor-selection-modal.component';
 import { ReminderCompleteModalComponent } from '../reminder-complete-modal/reminder-complete-modal.component';
@@ -16,7 +17,7 @@ export interface ReminderDetailsModalArgs {
   reminderId?: string; // 'new' for new reminder or reminder ID for editing
   userId?: string; // Optional user ID to assign
   donorId?: string; // Optional donor ID to link
-  reminderType?: 'donation_followup' | 'thank_you' | 'receipt' | 'birthday' | 'holiday' | 'general' | 'meeting' | 'phone_call' | 'memorialDay' | 'memorial' | 'yahrzeit' | 'gift'; // Optional reminder type to initialize
+  reminderType?: string; // ReminderType.code (שלב ג׳ 7.4) - Optional reminder type to initialize
   reminderDate?: Date; // Optional date to initialize
   isRecurringYearly?: boolean; // Optional flag for yearly recurring reminder
   hideDonorField?: boolean; // Hide donor field when opened from entity that already has donor
@@ -69,6 +70,8 @@ export class ReminderDetailsModalComponent implements OnInit {
 
   // Options will be populated with i18n values
   typeOptions: { value: string, label: string }[] = [];
+  /** שלב ג׳ 7.4 - מצב עריכת סוג: הוספה / שינוי שם / סגור. */
+  typeEditMode: 'add' | 'rename' | null = null;
   priorityOptions: { value: string, label: string }[] = [];
   alertMethodOptions: { value: string, label: string, disabled?: boolean }[] = [];
   recurringPatternOptions: { value: string, label: string }[] = [];
@@ -94,13 +97,15 @@ export class ReminderDetailsModalComponent implements OnInit {
     private cdr: ChangeDetectorRef,
     public dialogRef: MatDialogRef<ReminderDetailsModalComponent>,
     private donorService: DonorService,
-    private reminderService: ReminderService
+    private reminderService: ReminderService,
+    public reminderTypes: ReminderTypeService
   ) { }
 
   async ngOnInit() {
     this.loading = true;
     try {
-      // Initialize options with i18n
+      // Initialize options with i18n (סוגי התזכורת מהקטלוג - שלב ג׳ 7.4)
+      await this.reminderTypes.load();
       this.initializeOptions();
 
       // Load only fundraisers initially (much faster)
@@ -742,23 +747,27 @@ export class ReminderDetailsModalComponent implements OnInit {
     return this.i18n.terms.dueDate || 'תאריך יעד';
   }
 
+  /** שלב ג׳ 7.4 - סוגי התזכורת מהקטלוג (ReminderType), לא רשימה קבועה בקוד. */
+  private refreshTypeOptions() {
+    this.typeOptions = this.reminderTypes.types.map(t => ({ value: t.code, label: t.name }));
+  }
+
+  /** שלב ג׳ 7.4 - הוספת סוג חדש או תיקון שם הסוג הנבחר. */
+  saveTypeName = async (name: string) => {
+    if (!this.reminder) return;
+    if (this.typeEditMode === 'rename') {
+      await this.reminderTypes.rename(this.reminder.type, name);
+    } else {
+      const created = await this.reminderTypes.add(name);
+      this.reminder.type = created.code;
+    }
+    this.refreshTypeOptions();
+  };
+
   initializeOptions() {
     const terms = this.i18n.terms;
 
-    this.typeOptions = [
-      { value: 'donation_followup', label: terms.donationFollowUp },
-      { value: 'thank_you', label: terms.thankYouLetter },
-      { value: 'receipt', label: terms.receipt },
-      { value: 'birthday', label: terms.birthdayType },
-      { value: 'holiday', label: terms.holiday },
-      { value: 'general', label: terms.generalType },
-      { value: 'meeting', label: terms.meetingType },
-      { value: 'phone_call', label: terms.phoneCallType },
-      { value: 'gift', label: terms.giftReminderType },
-      { value: 'memorialDay', label: terms.memorialDayType },
-      { value: 'memorial', label: terms.memorialMonumentType },
-      { value: 'yahrzeit', label: terms.yahrzeitType }
-    ];
+    this.refreshTypeOptions();
 
     this.priorityOptions = [
       { value: 'low', label: terms.lowPriority },

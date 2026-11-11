@@ -17,8 +17,15 @@
  * new type is added in exactly one place.
  */
 
-/** Stored code -> the Hebrew shown in the list. Order of keys is irrelevant. */
-export const REMINDER_TYPE_LABELS: Record<string, string> = {
+/**
+ * שלב ג׳ 7.4 - 12 סוגי המערכת: הקוד והשם ההתחלתי. משמש רק לטעינה הראשונה
+ * ליישות ReminderType (server/reminder-types.ts). מאותו רגע השם נקרא
+ * מהיישות בלבד, ומשם המשתמש יכול לתקן אותו.
+ *
+ * השמות כאן הם בדיוק מה שהוצג עד היום ברשימה (terms.he), כדי שהמעבר לא
+ * ישנה שום דבר בתצוגה. הסדר כאן קובע את sortOrder ההתחלתי.
+ */
+export const SYSTEM_REMINDER_TYPES: Record<string, string> = {
   donation_followup: 'מעקב תרומה',
   thank_you: 'מכתב תודה',
   receipt: 'קבלה',
@@ -28,9 +35,9 @@ export const REMINDER_TYPE_LABELS: Record<string, string> = {
   meeting: 'פגישה',
   phone_call: 'שיחת טלפון',
   gift: 'מתנה',
-  memorialDay: 'יום זיכרון',
-  memorial: 'הנצחה',
-  yahrzeit: 'יארצייט'
+  memorialDay: 'נציב יום',
+  memorial: 'נציב זכרון',
+  yahrzeit: 'יוארצהייט'
 }
 
 /** Stored sourceEntityType -> the Hebrew shown in the list. */

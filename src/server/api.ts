@@ -22,6 +22,8 @@ import { ReportController } from '../shared/controllers/report.controller'
 import { TargetAudienceController } from '../shared/controllers/target-audience.controller'
 import { Bank, Circle, Company, DonationBank, DonationOrganization, DonorAddressType, DonorContact, DonorGift, DonorNote, DonorPlace, DonorReceptionHour, DonorRelation, Gift, LetterTitle, LetterTitleDefault, NoteType, Organization, Payment, TargetAudience, GoogleAuth, GoogleContactMapping, GoogleSyncLog, AppSettings } from '../shared/entity'
 import { Blessing } from '../shared/entity/blessing'
+import { ReminderType } from '../shared/entity/reminder-type'
+import { ensureSystemReminderTypes } from './reminder-types'
 import { BlessingBookType } from '../shared/entity/blessing-book-type'
 import { Campaign } from '../shared/entity/campaign'
 import { Certificate } from '../shared/entity/certificate'
@@ -58,7 +60,7 @@ export const entities = [
   DonationFile, Bank, Organization, Company, Circle, DonorRelation, DonorContact,
   DonorPlace, DonorNote, DonorReceptionHour, NoteType, DonationBank, DonationOrganization,
   Payment, DonorAddressType, BlessingBookType, LetterTitle, LetterTitleDefault, Gift, DonorGift, TargetAudience,
-  GoogleAuth, GoogleContactMapping, GoogleSyncLog, AppSettings, ContactPerson]
+  GoogleAuth, GoogleContactMapping, GoogleSyncLog, AppSettings, ContactPerson, ReminderType]
 export const api = remultExpress({
   admin: true,
   controllers: [SignInController, UpdatePasswordController, DonorController,
@@ -119,6 +121,9 @@ export const api = remultExpress({
         return provider
   },
   initApi: async r => {
+    // שלב ג׳ 7.4 - סוגי התזכורת של המערכת קיימים בקטלוג (מוסיף רק חסרים)
+    await ensureSystemReminderTypes()
+
     // ── הפעלת geocoding ברקע (לא awaited) כדי לא לעכב את עליית השרת.
     // geocodeMissingPlaces()
     //   .then(result => console.log('[Geocode] Completed:', result))

@@ -47,12 +47,9 @@
           <label>{{ (i18n.terms$ | async)?.reminderTypeFilter }}</label>
           <select class="form-control" [(ngModel)]="filterReminderType" (ngModelChange)="refreshData()">
             <option value="">{{ (i18n.terms$ | async)?.everything }}</option>
-            <option value="donation">{{ (i18n.terms$ | async)?.donationReminder }}</option>
-            <option value="contact">{{ (i18n.terms$ | async)?.contactReminder }}</option>
-            <option value="birthday">{{ (i18n.terms$ | async)?.birthdayReminder }}</option>
-            <option value="memorial">{{ (i18n.terms$ | async)?.memorialReminder }}</option>
-            <option value="meeting">{{ (i18n.terms$ | async)?.meetingReminder }}</option>
-            <option value="follow-up">{{ (i18n.terms$ | async)?.followUpReminder }}</option>
+            <!-- שלב ג׳ 7.4 - הסוגים מהקטלוג. עד היום הערכים כאן (donation, contact,
+                 follow-up...) לא תאמו לקודים השמורים, ולכן חלק מהסינונים לא החזירו כלום -->
+            <option *ngFor="let t of reminderTypes.types" [value]="t.code">{{ t.name }}</option>
           </select>
         </div>
 

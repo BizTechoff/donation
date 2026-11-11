@@ -19,7 +19,8 @@ import { BusyService } from '../../common-ui-elements/src/angular/wait/busy-serv
 import { DonorController } from '../../../shared/controllers/donor.controller';
 import { DonorMapController } from '../../../shared/controllers/donor-map.controller';
 import { TableState, TableLoadRequest } from '../../common/table/table-state';
-import { REMINDER_TYPE_LABELS, REMINDER_SOURCE_LABELS, REMINDER_SOURCE_MANUAL } from '../../../shared/enum/reminder-type';
+import { REMINDER_SOURCE_LABELS, REMINDER_SOURCE_MANUAL } from '../../../shared/enum/reminder-type';
+import { ReminderTypeService } from '../../services/reminder-type.service';
 import { amountRangeLabel, dateRangeLabel, namesLabel, searchLabel } from '../../../shared/utils/filter-label-utils';
 
 @DialogConfig({
@@ -110,12 +111,14 @@ export class RemindersComponent implements OnInit, OnDestroy {
     private hebrewDateService: HebrewDateService,
     private printService: PrintService,
     private excelExportService: ExcelExportService,
-    private busy: BusyService
+    private busy: BusyService,
+    public reminderTypes: ReminderTypeService
   ) { }
 
   async ngOnInit() {
     // Load base data once
     await this.loadBase();
+    await this.reminderTypes.load(); // שלב ג׳ 7.4 - סוגי התזכורת מהקטלוג
 
     // Saved sort first, then the first fetch - so the very first request
     // already carries the user's persisted sort (same order as donor-list).
@@ -371,38 +374,14 @@ export class RemindersComponent implements OnInit, OnDestroy {
   
 /** סעיף 27 - תווית סוג התזכורת שנבחר בסינון, כפי שמופיעה ברשימה הנפתחת. */
 private reminderFilterTypeLabel(): string {
-  const t = this.i18n.currentTerms;
-  const labels: Record<string, string | undefined> = {
-    'donation': t.donationReminder,
-    'contact': t.contactReminder,
-    'birthday': t.birthdayReminder,
-    'memorial': t.memorialReminder,
-    'meeting': t.meetingReminder,
-    'follow-up': t.followUpReminder
-  };
-  return this.filterReminderType ? (labels[this.filterReminderType] || this.filterReminderType) : '';
+  // שלב ג׳ 7.4 - מהקטלוג, כמו הרשימה הנפתחת
+  return this.filterReminderType ? this.reminderTypes.label(this.filterReminderType) : '';
 }
 
 getTypeText(type: string): string {
-  // The Hebrew label falls back to shared/enum/reminder-type.ts, which is the
-  // SAME map the typeLabel sqlExpression sorts by - so what is displayed and
-  // what is ordered can never drift. i18n still wins when a term exists, so
-  // the display stays translatable.
-  const translated: Record<string, string | undefined> = {
-    'donation_followup': this.i18n.terms.donationFollowUp,
-    'thank_you': this.i18n.terms.thankYouLetter,
-    'receipt': this.i18n.terms.receipt,
-    'birthday': this.i18n.terms.birthdayType,
-    'holiday': this.i18n.terms.holiday,
-    'general': this.i18n.terms.generalType,
-    'meeting': this.i18n.terms.meetingType,
-    'phone_call': this.i18n.terms.phoneCallType,
-    'gift': this.i18n.terms.giftReminderType,
-    'memorialDay': this.i18n.terms.memorialDayType,
-    'memorial': this.i18n.terms.memorialMonumentType,
-    'yahrzeit': this.i18n.terms.yahrzeitType
-  };
-  return translated[type] || REMINDER_TYPE_LABELS[type] || type;
+  // שלב ג׳ 7.4 - השם מהקטלוג ReminderType, אותו מקור שה-typeLabel ממיין לפיו.
+  // תרגומי i18n לא דורסים אותו - אחרת תיקון שם לא היה מופיע.
+  return this.reminderTypes.label(type);
 }
 
   getPriorityText(priority: string): string {
