@@ -1,0 +1,15 @@
+chore(tools): כלי תיקון פרטי צ'ק/וואצ'ר בתרומות מהתוכנה הישנה
+
+- tools/legacy-check-fix.ts: דוח בלבד; עם --sql מדפיס עדכון עם גיבוי.
+  AccountNo -> מספר חשבון, Check_Number -> מספר צ'ק / שובר, Voucher_Co ->
+  עמותה לפי טבלת העזר, Sort Code (שם הבנק) -> בנק. מתקן את מספר העמותה
+  שנכנס כמספר שובר בייבוא מאפריל. ערך קיים ושונה לא נדרס.
+- עמותה מטבלת העזר (TbEzerCharity) שאין במערכת - נוספת לטבלת העמותות לפני
+  העדכונים, במזהה קבוע ועם מספרה בתוכנה הישנה בהערות.
+- tools/lib/excel.ts - קריאת גיליון ותא; tools/lib/match.ts - התאמת שמות
+  ("CitiBank" = "Citi Bank"). משותפים לכל כלי המיגרציה.
+
+BizTechoff™ - התאמת העסק לעידן הדיגיטלי
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_014QF1xL15Q485gc5E3d7Hsd
