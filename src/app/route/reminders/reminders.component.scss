@@ -1292,3 +1292,16 @@
   background: white;
   padding: 20px;
 }
+
+// שלב ג׳ 7.1 - שורת המשנה של התורם: נייד מימין, כתובת ואימייל משמאל
+.donor-col .donor-info { width: 100%; }
+.donor-contact-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+
+  small { font-size: 11px; color: #6b7280; white-space: nowrap; }
+  .contact-left { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+}

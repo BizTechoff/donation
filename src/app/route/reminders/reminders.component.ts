@@ -52,6 +52,8 @@ export class RemindersComponent implements OnInit, OnDestroy {
   donorPhoneMap = new Map<string, string>();
   donorMobileMap = new Map<string, string>(); // item 18
   donorCountryIdMap = new Map<string, string>();
+  donorEmailMap = new Map<string, string>();       // שלב ג׳ 7.1
+  donorAddressMap = new Map<string, string>();     // שלב ג׳ 7.1
 
   // Local filter properties
   searchTerm = '';
@@ -219,6 +221,8 @@ export class RemindersComponent implements OnInit, OnDestroy {
         this.donorPhoneMap = relatedData.donorPhoneMap;
         this.donorMobileMap = relatedData.donorMobileMap;
         this.donorCountryIdMap = relatedData.donorCountryIdMap;
+        this.donorEmailMap = relatedData.donorEmailMap;
+        this.donorAddressMap = relatedData.donorFullAddressMap;
       }
 
 
@@ -344,6 +348,22 @@ export class RemindersComponent implements OnInit, OnDestroy {
 
   getReminderDonorMobile(reminder: Reminder): string {
     return reminder.donor?.id ? this.donorMobileMap.get(reminder.donor.id) || '' : '';
+  }
+
+  /**
+   * שלב ג׳ 7.1 - שורת המשנה של התורם (זום 24.08, 3:00-3:01): מימין הנייד,
+   * ואם אין - הנייח; משמאל הכתובת והאימייל. הטלפון מגיע מהמפות של item 18
+   * (מספר אחד לשורה), כאן נלקח הראשון.
+   */
+  getReminderDonorContactPhone(reminder: Reminder): string {
+    const first = (v: string) => (v || '').split('\n')[0].trim();
+    return first(this.getReminderDonorMobile(reminder)) || first(this.getReminderDonorPhone(reminder));
+  }
+
+  getReminderDonorAddressEmail(reminder: Reminder): string {
+    const id = reminder.donor?.id;
+    if (!id) return '';
+    return [this.donorAddressMap.get(id), this.donorEmailMap.get(id)].filter(Boolean).join(' · ');
   }
   
 /** סעיף 27 - תווית סוג התזכורת שנבחר בסינון, כפי שמופיעה ברשימה הנפתחת. */
@@ -717,6 +737,8 @@ getTypeText(type: string): string {
           donor: this.getDonorName(reminder),
           phone: printContactsMap.get(reminder.donor?.id || '')?.phone || '-',
           mobile: printContactsMap.get(reminder.donor?.id || '')?.mobile || '-',
+          address: printContactsMap.get(reminder.donor?.id || '')?.fullAddress || '-',
+          email: printContactsMap.get(reminder.donor?.id || '')?.email || '-',
           title: reminder.title || '-',
           priority: this.getPriorityText(reminder.priority),
           status: reminder.isCompleted ? 'בוצעה' : 'לא בוצעה'
@@ -733,6 +755,8 @@ getTypeText(type: string): string {
             { header: this.i18n.currentTerms.donorHeader || 'תורם', field: 'donor' },
             { header: this.i18n.currentTerms.phone || 'טלפון', field: 'phone', align: 'left' },
             { header: this.i18n.currentTerms.mobileColumn || 'נייד', field: 'mobile', align: 'left' },
+            { header: this.i18n.currentTerms.address || 'כתובת', field: 'address' },
+            { header: this.i18n.currentTerms.email || 'אימייל', field: 'email', align: 'left' },
             { header: this.i18n.currentTerms.subjectHeader || 'נושא', field: 'title' },
             { header: this.i18n.currentTerms.priorityHeader || 'עדיפות', field: 'priority' },
             // Visible = exportable: the new status column prints too.
@@ -795,6 +819,8 @@ getTypeText(type: string): string {
             { header: this.i18n.currentTerms.contactPerson || 'איש קשר', mapper: (r) => r.donor?.contactPersonId ? contactPersonMap.get(r.donor.contactPersonId) || '' : '', width: 15 },
             { header: this.i18n.currentTerms.phone || 'טלפון', mapper: (r) => remContactsMap.get(r.donor?.id || '')?.phone || '-', width: 20, align: 'left' },
             { header: this.i18n.currentTerms.mobileColumn || 'נייד', mapper: (r) => remContactsMap.get(r.donor?.id || '')?.mobile || '-', width: 20, align: 'left' },
+            { header: this.i18n.currentTerms.address || 'כתובת', mapper: (r) => remContactsMap.get(r.donor?.id || '')?.fullAddress || '-', width: 30 },
+            { header: this.i18n.currentTerms.email || 'אימייל', mapper: (r) => remContactsMap.get(r.donor?.id || '')?.email || '-', width: 25, align: 'left' },
             // Donor characteristics
             { header: this.i18n.currentTerms.maritalStatus || 'מצב משפחתי', mapper: (r) => this.getMaritalStatusText(r.donor?.maritalStatus || ''), width: 12 },
             { header: this.i18n.currentTerms.anash || 'אנ"ש', mapper: (r) => r.donor?.isAnash ? '✓' : '', width: 8 },

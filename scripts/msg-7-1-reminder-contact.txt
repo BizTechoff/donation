@@ -1,0 +1,12 @@
+feat(reminders): שלב ג׳ 7.1 - נייד, כתובת ואימייל של התורם בשורת התזכורת
+
+- שורת משנה אחת מתחת לשם התורם: מימין הנייד, ואם אין - הנייח; משמאל
+  הכתובת והאימייל (זום 24.08, 3:00). במקום שתי שורות טלפון.
+- הנתונים מהמפות של DonorService.loadDonorRelatedData (donorEmailMap,
+  donorFullAddressMap) - אותו מקור של שאר המסכים, בלי שאילתה נוספת.
+- הדפסה וייצוא: עמודות כתובת ואימייל.
+
+BizTechoff™ - התאמת העסק לעידן הדיגיטלי
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_014QF1xL15Q485gc5E3d7Hsd

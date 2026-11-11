@@ -226,9 +226,11 @@
                    (click)="openDonorDetails(reminder); $event.stopPropagation()"
                    (dblclick)="$event.stopPropagation()"><strong>{{getDonorName(reminder)}}</strong></a>
                 <ng-template #noDonorLink><strong>{{getDonorName(reminder)}}</strong></ng-template>
-                <small class="cell-phone" *ngIf="getReminderDonorPhone(reminder)">{{getReminderDonorPhone(reminder)}}</small>
-                <!-- item 18 - mobile on its own line -->
-                <small class="cell-phone" *ngIf="getReminderDonorMobile(reminder)">{{getReminderDonorMobile(reminder)}}</small>
+                <!-- שלב ג׳ 7.1 - שורת משנה אחת: נייד (או נייח) מימין, כתובת ואימייל משמאל -->
+                <div class="donor-contact-line" *ngIf="getReminderDonorContactPhone(reminder) || getReminderDonorAddressEmail(reminder)">
+                  <small class="cell-phone">{{getReminderDonorContactPhone(reminder)}}</small>
+                  <small class="contact-left" dir="ltr">{{getReminderDonorAddressEmail(reminder)}}</small>
+                </div>
               </div>
             </td>
 
