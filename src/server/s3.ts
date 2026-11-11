@@ -6,6 +6,8 @@ import { FileController } from "../shared/controllers/file.controller";
 FileController.generateUploadURLDelegate = async (action: string, fileName: string, fileType: string, bucketKey: string) => await doGenerateSignedURL(action, fileName, fileType, bucketKey)
 
 console.info('generateUploadURLDelegate succesfuly registered.')
+FileController.readFileDelegate = async (key: string) => await readObject(key) // שלב ג׳ 5.4
+console.info('readFileDelegate succesfuly registered.')
 config()
 
 const s3Client = async () => {
@@ -207,3 +209,14 @@ export const generateDownloadURL = async (req: Request, res: Response, next: Nex
 //     const url = `https://${process.env['S3_BUCKET_NAME']}.s3.${process.env['S3_BUCKET_REGION']}.amazonaws.com/${fullKey}`;
 //     return url;
 // };
+
+
+/**
+ * שלב ג׳ 5.4 - קריאת קובץ מ-S3 בשרת (תבנית מכתב שהועלתה). key - הנתיב
+ * כפי שנשמר ב-DonationFile.filePath.
+ */
+export const readObject = async (key: string): Promise<Buffer> => {
+    const s3 = await s3Client()
+    const result = await s3.getObject({ Bucket: process.env['S3_BUCKET_NAME']!, Key: key }).promise()
+    return result.Body as Buffer
+}

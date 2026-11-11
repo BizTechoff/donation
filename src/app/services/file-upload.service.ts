@@ -33,7 +33,8 @@ export class FileUploadService {
     donationId: string,
     certificateId: string,
     description?: string,
-    onProgress?: (progress: UploadProgress) => void
+    onProgress?: (progress: UploadProgress) => void,
+    letterId?: string // שלב ג׳ 5.4 - תבנית מכתב
   ): Promise<{ success: boolean; fileId?: string; error?: string }> {
     try {
       // Step 1: Get upload URL from backend
@@ -43,6 +44,7 @@ export class FileUploadService {
         fileSize: file.size,
         donationId: donationId || undefined,
         certificateId: certificateId || undefined,
+        letterId: letterId || undefined,
         description: description
       };
 
@@ -112,6 +114,7 @@ export class FileUploadService {
         fileSize: fileData.fileSize,
         donationId: fileData.donationId || '',
         certificateId: fileData.certificateId || '',
+        letterId: fileData.letterId || '',
         description: fileData.description,
         isActive: true,
         uploadedById: remult.user?.id
@@ -134,13 +137,13 @@ export class FileUploadService {
           fileName: file.name,
           progress: 0,
           status: 'error',
-          error: error instanceof Error ? error.message : 'Unknown error'
+          error: (error as any)?.message || 'Unknown error'
         });
       }
 
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: (error as any)?.message || 'Unknown error'
       };
     }
   }
@@ -237,7 +240,7 @@ export class FileUploadService {
       console.error('Error deleting file:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: (error as any)?.message || 'Unknown error'
       };
     }
   }

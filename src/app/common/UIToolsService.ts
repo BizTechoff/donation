@@ -192,6 +192,14 @@ export class UIToolsService implements UITools {
     )
   }
 
+  /** שלב ג׳ 5.4 - מכתב אירוע (שמחות, ניחום אבלים) לתורם, בלי תרומה; letterId - המכתב שנבחר. */
+  async donorLetterDialog(donorId: string, letterId?: string): Promise<any> {
+    return await openDialog(
+      (await import('../routes/modals/letter-properties-modal/letter-properties-modal.component')).LetterPropertiesModalComponent,
+      (dlg) => dlg.args = { recipientDonorId: donorId, letterId }
+    )
+  }
+
   /**
    * שלב ג׳ 8 - מכתב תודה לשני הצדדים: בתרומה עם שותפים - בוחרים למי המכתב.
    * בלי שותפים - undefined (התורם, בלי שאלה). נסגר בלי בחירה - null.

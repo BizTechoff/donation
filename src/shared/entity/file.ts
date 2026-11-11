@@ -11,6 +11,7 @@ import { Donation } from './donation'
 import { User } from './user'
 import { Roles } from '../enum/roles'
 import { CreatedByField, UpdatedByField } from '../utils/audit-fields'
+import { LetterController } from '../controllers/letter.controller'
 
 @Entity<DonationFile>('files', {
   allowApiCrud: Allow.authenticated,
@@ -22,6 +23,11 @@ import { CreatedByField, UpdatedByField } from '../utils/audit-fields'
     if (isBackend()) {
       if (donationFile._.isNew()) {
         donationFile.createdDate = new Date()
+        // שלב ג׳ 5.4 - תבנית מכתב נבדקת לפני שהיא נכנסת. הבדיקה של מודול
+        // המכתבים (server/letter-templates); כאן רק השאלה "יש בעלים מכתב".
+        if (donationFile.letterId) {
+          await LetterController.validateTemplateDelegate(donationFile.letterId, donationFile.filePath)
+        }
       }
       donationFile.updatedDate = new Date()
     }
@@ -72,6 +78,12 @@ export class DonationFile extends IdEntity {
     caption: 'תעודה ID',
   })
   certificateId = ''
+
+  /** שלב ג׳ 5.4 - קובץ שהוא תבנית של מכתב (Letter.id). הפעיל האחרון - בתוקף. */
+  @Fields.string({
+    caption: 'מכתב ID',
+  })
+  letterId = ''
 
   @Fields.string({
     caption: 'תיאור',

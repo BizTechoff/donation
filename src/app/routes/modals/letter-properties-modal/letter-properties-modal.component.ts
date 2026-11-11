@@ -16,9 +16,12 @@ import { CommitmentController } from '../../../../shared/controllers/commitment.
 import { formatOnAccountOfCommitment } from '../../../../shared/utils/commitment-utils';
 
 export interface LetterPropertiesModalArgs {
-  donationId: string;
+  /** מתוך תרומה - מכתבי תרומות. בלי תרומה (שלב ג׳ 5.4) - מכתבי אירועים לתורם recipientDonorId. */
+  donationId?: string;
   /** שלב ג׳ 8 - נמען המכתב כשהוא שותף בתרומה ולא התורם שלה. ריק - התורם. */
   recipientDonorId?: string;
+  /** שלב ג׳ 5.4 - מכתב שכבר נבחר (ממסך המכתבים) - נפתח עליו, בלי בחירה חוזרת. */
+  letterId?: string;
 }
 
 export interface LetterPropertiesResult {
@@ -120,9 +123,12 @@ export class LetterPropertiesModalComponent implements OnInit {
   ) { }
 
   async ngOnInit() {
-    this.loadLetterTypes();
+    await this.loadLetterTypes();
     await this.loadLetterTitles();
     await this.loadDonation();
+    // שלב ג׳ 5.4 - נפתח ממסך המכתבים על מכתב מסוים: הוא כבר נבחר.
+    const preselected = this.letterTypes.find(l => l.id === this.args?.letterId);
+    if (preselected) await this.selectByLetter(preselected);
   }
 
   async loadLetterTitles() {
@@ -149,7 +155,13 @@ export class LetterPropertiesModalComponent implements OnInit {
   }
 
   async loadDonation() {
-    if (!this.args?.donationId) return;
+    // שלב ג׳ 5.4 - בלי תרומה: מכתב אירוע לתורם. רק הנמען נטען.
+    if (!this.args?.donationId) {
+      if (this.args?.recipientDonorId) {
+        this.recipient = (await remult.repo(Donor).findId(this.args.recipientDonorId)) || undefined;
+      }
+      return;
+    }
 
     try {
       this.loading = true;
@@ -179,10 +191,13 @@ export class LetterPropertiesModalComponent implements OnInit {
     }
   }
 
-  loadLetterTypes() {
+  async loadLetterTypes() {
     // שלב ג׳ 5.3 - מתוך תרומה: רק מכתבי תרומות ואמריקה. מכתבי אירועים (שמחות,
-    // ניחום אבלים) אינם קשורים לתרומה.
-    this.letterTypes = this.args?.donationId ? Letter.donationLetters() : Letter.getFields();
+    // ניחום אבלים) אינם קשורים לתרומה - ומופקים לתורם (שלב ג׳ 5.4).
+    // שלב ג׳ 5.4 - מהרשימה האחת, כולל מכתבים שהלקוח הוסיף.
+    const fromDonation = !!this.args?.donationId;
+    this.letterTypes = (await this.letterService.loadCatalog())
+      .filter(l => Letter.isDonationLetter(l) === fromDonation);
     this.buildCategoryHierarchy();
   }
 
@@ -373,7 +388,7 @@ export class LetterPropertiesModalComponent implements OnInit {
   }
 
   async updateFieldValues() {
-    if (!this.selectedLetterType || !this.donation) {
+    if (!this.selectedLetterType || !this.recipient) {
       this.fieldValues = [];
       return;
     }
@@ -499,7 +514,9 @@ export class LetterPropertiesModalComponent implements OnInit {
   }
 
   async getFieldValue(field: string): Promise<string> {
-    if (!this.donation) return '';
+    // שלב ג׳ 5.4 - גם בלי תרומה (מכתב אירוע): שדות התורם מהנמען. שדות התרומה
+    // (סכום, קבלה, סיבה...) קיימים רק במכתבי תרומות, שמופקים תמיד מתוך תרומה.
+    if (!this.recipient) return '';
     var result = ''
 
     switch (field) {
@@ -510,21 +527,21 @@ export class LetterPropertiesModalComponent implements OnInit {
         // commitment amount and how much has been paid so far - per client
         // request (Israel Glikson, 30.6.2026 #4). Regular one-off donations
         // keep the previous behavior of showing just the amount.
-        if (this.donation.donationType === 'commitment') {
+        if (this.donation!.donationType === 'commitment') {
           const summary = await this.commitmentSummary();
           result = `${summary.pledgeTotal.toLocaleString()} / ${summary.paidTotal.toLocaleString()}`;
         } else {
-          result = this.donation.amount.toString();
+          result = this.donation!.amount.toString();
         }
         break;
       }
       case 'Number_receipt': {
         // Use receiptNumber (auto-assigned running number)
-        let receiptNum = this.donation.receiptNumber;
+        let receiptNum = this.donation!.receiptNumber;
         if (!receiptNum) {
           // Assign next receipt number if not already set
-          receiptNum = await DonationController.assignReceiptNumber(this.donation.id);
-          this.donation.receiptNumber = receiptNum;
+          receiptNum = await DonationController.assignReceiptNumber(this.donation!.id);
+          this.donation!.receiptNumber = receiptNum;
         }
         result = '00000000' + receiptNum;
         result = result.slice(-8);
@@ -643,24 +660,24 @@ export class LetterPropertiesModalComponent implements OnInit {
         // (הסלאש נפסל). הניסוח עצמו יושב ב-formatPledgeAmount, כך שכל מקום
         // שמציג את הצמד הזה משתנה יחד. תרומה רגילה - ללא שינוי, המשפט הזה
         // כולו לא מופיע.
-        if (this.donation.donationType === 'commitment') {
+        if (this.donation!.donationType === 'commitment') {
           const summary = await this.commitmentSummary();
           result = formatPledgeAmount(summary, { currency });
-        } else if (this.donation.commitmentId) {
+        } else if (this.donation!.commitmentId) {
           // שלב ג׳ 5.1 - תרומה שנזקפה להתחייבות: "£500 על חשבון נדבת לבכם הטוב
           // בסך £1,800". סכום ההתחייבות - מאותו מקור של שאר המסכים.
-          const progress = await CommitmentController.getProgress([this.donation.commitmentId]);
-          const total = progress[this.donation.commitmentId]?.total;
+          const progress = await CommitmentController.getProgress([this.donation!.commitmentId]);
+          const total = progress[this.donation!.commitmentId]?.total;
           result = total
-            ? formatOnAccountOfCommitment(this.donation.amount, total, currency)
-            : `${currency}${this.donation.amount.toLocaleString()}`;
+            ? formatOnAccountOfCommitment(this.donation!.amount, total, currency)
+            : `${currency}${this.donation!.amount.toLocaleString()}`;
         } else {
-          result = `${currency}${this.donation.amount.toLocaleString()}`;
+          result = `${currency}${this.donation!.amount.toLocaleString()}`;
         }
         break
       }
       case 'סיבה_תרומה': {
-        result = this.donation.reason || '';
+        result = this.donation!.reason || '';
         break
       }
       case 'Currency_symbol': {
@@ -671,7 +688,7 @@ export class LetterPropertiesModalComponent implements OnInit {
           'GBP': '£',
           'JPY': '¥'
         };
-        result = currencySymbols[this.donation.currencyId || 'ILS'] || this.donation.currencyId || '₪';
+        result = currencySymbols[this.donation!.currencyId || 'ILS'] || this.donation!.currencyId || '₪';
         break
       }
 
@@ -1041,8 +1058,8 @@ export class LetterPropertiesModalComponent implements OnInit {
       return;
     }
 
-    if (!this.args?.donationId) {
-      this.ui.error('חסר מזהה תרומה');
+    if (!this.args?.donationId && !this.recipient) {
+      this.ui.error('חסר תורם למכתב');
       return;
     }
 
@@ -1064,7 +1081,7 @@ export class LetterPropertiesModalComponent implements OnInit {
       }
 
       const response = await this.letterService.createLetter(
-        this.args.donationId,
+        this.args.donationId || '',
         this.selectedLetterType,
         fieldValuesMap,
         this.selectedPrefixLines.map(l => l.text),

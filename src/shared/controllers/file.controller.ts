@@ -22,6 +22,8 @@ export interface FileUploadData {
   fileSize: number;
   donationId?: string;
   certificateId?: string;
+  /** שלב ג׳ 5.4 - תבנית של מכתב (Letter.id) */
+  letterId?: string;
   description?: string;
 }
 
@@ -29,6 +31,8 @@ export class FileController {
 
 
   static generateUploadURLDelegate: (action: string, fileName: string, fileType: string, bucketKey: string) => Promise<{ success: boolean, url: string, error: string }>
+  /** שלב ג׳ 5.4 - קריאת קובץ מ-S3 בשרת (server/s3.ts). */
+  static readFileDelegate: (key: string) => Promise<Buffer>
 
   /**
    * Step 1: Get a signed URL for uploading to S3
@@ -37,7 +41,7 @@ export class FileController {
   @BackendMethod({ allowed: Allow.authenticated })
   static async getUploadUrl(fileData: FileUploadData): Promise<UploadUrlResponse> {
     try {
-      const { fileName, fileType, fileSize, donationId, certificateId, description } = fileData;
+      const { fileName, fileType, fileSize, donationId, certificateId, letterId, description } = fileData;
 
       // Generate unique filename to avoid collisions
       // סעיף 7 - השם עובר נרמול לפני שהוא הופך ל-S3 key (הפונקציה האחת של
@@ -51,6 +55,8 @@ export class FileController {
         bucketKey = `donations/${donationId}`;
       } else if (certificateId) {
         bucketKey = `certificates/${certificateId}`;
+      } else if (letterId) {
+        bucketKey = `letters/${letterId}`; // שלב ג׳ 5.4 - תבנית מכתב
       } else {
         return {
           success: false,

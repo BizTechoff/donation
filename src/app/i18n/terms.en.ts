@@ -36,6 +36,7 @@ export const termsEn = {
   standingOrders: 'Standing Orders',
   certificates: 'Certificates',
   reminders: 'Reminders',
+  letters: 'Letters',
   donorsMap: 'Donors Map',
   campaigns: 'Campaigns',
   gifts: 'Gifts',

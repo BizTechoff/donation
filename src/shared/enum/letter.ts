@@ -695,8 +695,25 @@ export class Letter {
   }
 
   public id = ''; // should be the variable name like 'letter_donation_מכתב_תודה_רגיל'
+  /** שלב ג׳ 5.4 - מכתב שהלקוח הוסיף: המכתב המובנה שהוא שוכפל ממנו (שדות ותבנית ברירת מחדל). */
+  public baseId?: string;
+
+  /**
+   * שלב ג׳ 5.4 - id = שם המשתנה הסטטי (כמו שהתיעוד של id מתאר). רימלט ממלא id
+   * רק כשהוא undefined, ו-id מאותחל כאן ל-'' - ולכן לאף מכתב לא היה id, ו-
+   * fromString / חיפוש לפי id לא מצאו כלום. נקבע פעם אחת, כאן.
+   */
+  private static idsAssigned = false
+  private static ensureIds() {
+    if (Letter.idsAssigned) return
+    for (const [key, value] of Object.entries(Letter)) {
+      if (value instanceof Letter && !value.id) value.id = key
+    }
+    Letter.idsAssigned = true
+  }
 
   static getFields() {
+    Letter.ensureIds()
     const result = [
       this.letter_america_tynoreceipt,
       this.letter_america_tyreceipt,
@@ -764,12 +781,17 @@ export class Letter {
     return letter.caption.split(' / ')[0].trim()
   }
 
+  /** מכתב תרומות (מופק מתוך תרומה) - לעומת מכתב אירוע (שמחות, ניחום אבלים). */
+  static isDonationLetter(letter: Letter): boolean {
+    return Letter.DONATION_CATEGORIES.includes(Letter.category(letter))
+  }
+
   static donationLetters(): Letter[] {
-    return Letter.getFields().filter(l => Letter.DONATION_CATEGORIES.includes(Letter.category(l)))
+    return Letter.getFields().filter(l => Letter.isDonationLetter(l))
   }
 
   static eventLetters(): Letter[] {
-    return Letter.getFields().filter(l => !Letter.DONATION_CATEGORIES.includes(Letter.category(l)))
+    return Letter.getFields().filter(l => !Letter.isDonationLetter(l))
   }
 
   static fromString(typeId = '') {

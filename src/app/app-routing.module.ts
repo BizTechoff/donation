@@ -12,6 +12,7 @@ import { DonorsMapComponent } from './route/donors-map/donors-map.component'
 import { HomeComponent } from './route/home/home.component'
 import { RemindersComponent } from './route/reminders/reminders.component'
 import { DonorGiftsListComponent } from './route/donor-gifts-list/donor-gifts-list.component'
+import { LettersComponent } from './route/letters/letters.component'
 import { terms } from './terms'
 import { AdminGuard } from './users/AuthGuard'
 import { UsersComponent } from './users/users.component'
@@ -30,6 +31,7 @@ const routes: Routes = [
   { path: terms.gifts, component: DonorGiftsListComponent, canActivate: [AuthenticatedGuard], data: { name: 'gifts' } },
   // ---------------
   { path: terms.reminders, component: RemindersComponent, canActivate: [AuthenticatedGuard], data: { name: 'reminders' } },
+  { path: terms.letters, component: LettersComponent, canActivate: [AuthenticatedGuard], data: { name: 'letters' } }, // שלב ג׳ 5.4
   { path: terms.donorsMap, component: DonorsMapComponent, canActivate: [AuthenticatedGuard], data: { name: 'donorsMap' } },
   { path: terms.reports, component: ReportsComponent, canActivate: [AuthenticatedGuard], data: { name: 'reports' } },
   // ---------------

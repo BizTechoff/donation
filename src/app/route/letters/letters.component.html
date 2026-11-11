@@ -1,0 +1,47 @@
+<div class="module-container">
+
+  <!-- HEADER: Sticky top -->
+  <div class="module-header">
+    <div class="header-top">
+      <h1>{{ (i18n.terms$ | async)?.letters }}</h1>
+    </div>
+    <div class="filters-section">
+      <input type="text" class="form-control search-input" [(ngModel)]="search" (ngModelChange)="applySearch()"
+        placeholder="חיפוש מכתב...">
+      <span class="hint">עריכת נוסח: הורד, ערוך ב-Word (השדות בסוגריים מסולסלים, למשל {{ '{' }}Amount{{ '}' }}), והעלה.</span>
+    </div>
+    <div class="error-banner" *ngIf="error">{{ error }}</div>
+  </div>
+
+  <!-- CONTENT: the only scrolling part -->
+  <div class="module-content">
+    <div class="letters-scroll">
+      <section class="letter-group" *ngFor="let group of groups">
+        <h2>{{ group.category }}</h2>
+        <div class="letter-row" *ngFor="let letter of group.letters" [class.busy]="busyId === letter.id">
+          <div class="letter-info">
+            <div class="letter-name">
+              {{ shortName(letter) }}
+              <span class="badge" *ngIf="isCustom(letter)">נוסף</span>
+            </div>
+            <div class="letter-note" *ngIf="templateNote(letter)">{{ templateNote(letter) }}</div>
+            <div class="letter-fields">{{ letter.fields.join(' · ') }}</div>
+          </div>
+          <div class="letter-actions">
+            <button class="btn btn-primary" *ngIf="isEventLetter(letter)" (click)="produce(letter)" [disabled]="busyId">הפק</button>
+            <button class="btn btn-secondary" (click)="download(letter)" [disabled]="busyId">הורד</button>
+            <button class="btn btn-secondary" (click)="fileInput.click()" [disabled]="busyId">העלה</button>
+            <input #fileInput type="file" accept=".docx" hidden (change)="upload(letter, fileInput)">
+            <button class="btn btn-secondary" *ngIf="uploaded.has(letter.id)" (click)="restore(letter)" [disabled]="busyId">שחזר מקור</button>
+            <button class="btn btn-secondary" (click)="duplicate(letter)" [disabled]="busyId">שכפל</button>
+            <button class="btn btn-secondary" *ngIf="isCustom(letter)" (click)="hide(letter)" [disabled]="busyId">הסתר</button>
+          </div>
+        </div>
+      </section>
+      <div class="no-data" *ngIf="!groups.length">לא נמצאו מכתבים</div>
+    </div>
+  </div>
+
+  <!-- FOOTER: sticky bottom (ריק כרגע) -->
+  <div class="module-footer"></div>
+</div>

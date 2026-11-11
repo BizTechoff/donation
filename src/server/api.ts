@@ -23,6 +23,7 @@ import { TargetAudienceController } from '../shared/controllers/target-audience.
 import { Bank, Circle, Company, DonationBank, DonationOrganization, DonorAddressType, DonorContact, DonorGift, DonorNote, DonorPlace, DonorReceptionHour, DonorRelation, Gift, LetterTitle, LetterTitleDefault, NoteType, Organization, Payment, TargetAudience, GoogleAuth, GoogleContactMapping, GoogleSyncLog, AppSettings } from '../shared/entity'
 import { Blessing } from '../shared/entity/blessing'
 import { ReminderType } from '../shared/entity/reminder-type'
+import { CustomLetter } from '../shared/entity/custom-letter'
 import { ensureSystemReminderTypes } from './reminder-types'
 import { BlessingBookType } from '../shared/entity/blessing-book-type'
 import { Campaign } from '../shared/entity/campaign'
@@ -60,7 +61,7 @@ export const entities = [
   DonationFile, Bank, Organization, Company, Circle, DonorRelation, DonorContact,
   DonorPlace, DonorNote, DonorReceptionHour, NoteType, DonationBank, DonationOrganization,
   Payment, DonorAddressType, BlessingBookType, LetterTitle, LetterTitleDefault, Gift, DonorGift, TargetAudience,
-  GoogleAuth, GoogleContactMapping, GoogleSyncLog, AppSettings, ContactPerson, ReminderType]
+  GoogleAuth, GoogleContactMapping, GoogleSyncLog, AppSettings, ContactPerson, ReminderType, CustomLetter]
 export const api = remultExpress({
   admin: true,
   controllers: [SignInController, UpdatePasswordController, DonorController,

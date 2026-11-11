@@ -37,6 +37,7 @@ export const termsHe = {
   standingOrders: 'הוראות קבע',
   certificates: 'תעודות ונציבים',
   reminders: 'תזכורות',
+  letters: 'מכתבים',
   donorsMap: 'מפת תורמים',
   campaigns: 'קמפיינים',
   gifts: 'מתנות',

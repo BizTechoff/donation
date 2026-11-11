@@ -4,19 +4,41 @@ import { Letter } from '../enum/letter';
 import { DocxContentControl, DocxCreateResponse } from '../type/letter.type';
 import { HebrewDateController } from './hebrew-date.controller'
 import { buildFileName } from '../utils/file-name-utils'
+import { findLetter } from '../utils/letter-catalog'
 
 @Controller('letter')
 export class LetterController {
   
   static createLetterDelegate: (type: Letter, contents: DocxContentControl[], fileName?: string) => Promise<DocxCreateResponse>
+  /** שלב ג׳ 5.4 - בדיקת תבנית שהועלתה (server/letter-templates). זורק כשהיא לא תקינה. */
+  static validateTemplateDelegate: (letterId: string, key: string) => Promise<void>
+  /** שלב ג׳ 5.4 - התבנית שבתוקף, base64 (server/letter-templates). */
+  static readTemplateDelegate: (letterId: string) => Promise<string>
+
+  /** שלב ג׳ 5.4 - הורדת התבנית שבתוקף (שהועלתה או המובנית), לעריכה ב-Word. */
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async downloadTemplate(letterId: string): Promise<{ fileName: string, base64: string }> {
+    const letter = await findLetter(letterId)
+    if (!letter) throw new Error('המכתב לא נמצא')
+    return {
+      fileName: buildFileName([letter.caption], { extension: 'docx' }),
+      base64: await LetterController.readTemplateDelegate(letterId)
+    }
+  }
 
   @BackendMethod({ allowed: Allow.authenticated })
-  static async createLetter(donationId = '', type: Letter, fieldValues: { [key: string]: string }, prefix = [] as string[], suffix = [] as string[], recipientDonorId = ''): Promise<DocxCreateResponse> {
+  static async createLetter(donationId = '', letterId: string, fieldValues: { [key: string]: string }, prefix = [] as string[], suffix = [] as string[], recipientDonorId = ''): Promise<DocxCreateResponse> {
 
-    const donation = await remult.repo(Donation).findId(
-      donationId,
-      { include: { donor: true, campaign: true } })
-    if (!donation) throw 'NO donation for id: ' + donationId
+    // שלב ג׳ 5.4 - המכתב לפי id מהרשימה האחת (כולל מכתבים שנוספו), והתרומה
+    // אופציונלית: מכתב אירוע (שמחות, ניחום אבלים) מופק לתורם בלבד.
+    const type = await findLetter(letterId)
+    if (!type) throw new Error('המכתב לא נמצא: ' + letterId)
+
+    const donation = donationId
+      ? await remult.repo(Donation).findId(donationId, { include: { donor: true, campaign: true } })
+      : undefined
+    if (donationId && !donation) throw 'NO donation for id: ' + donationId
+    if (!donation && !recipientDonorId) throw new Error('חסר תורם למכתב')
 
     const contents = [] as DocxContentControl[]
     contents.push({ name: 'letter_prefix', value: prefix.join('\n') })
@@ -47,11 +69,11 @@ export class LetterController {
     // (shared/utils/file-name-utils) - אותו מודול של שמות קבצי הדוחות. כאן
     // היה עותק נוסף של הניקוי, כתוב בשורה.
     // שלב ג׳ 8 - מכתב לשותף נקרא על שם השותף
-    const recipient = recipientDonorId && recipientDonorId !== donation.donorId
+    const recipient = recipientDonorId && recipientDonorId !== donation?.donorId
       ? await remult.repo(Donor).findId(recipientDonorId)
-      : donation.donor
+      : donation?.donor
     const donorName = (recipient?.fullName || '').trim()
-    const reason = (donation.reason || '').trim()
+    const reason = (donation?.reason || '').trim()
     const hebrewDate = reason ? '' : HebrewDateController.hebrewDateInfoSync(new Date()).dateFormatted
 
     const fileName = donorName

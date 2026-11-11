@@ -10,20 +10,11 @@ import { Report } from '../shared/enum/report';
 import { DocxContentControl, DocxCreateResponse } from "../shared/type/letter.type";
 import { createPersonalDonorReportPdf } from "./pdf.make";
 
-/**
- * אפשרויות docxtemplater - מקום אחד לכל הפקת מסמך מתבנית.
- * nullGetter: שדה שלא נשלח (למשל תואר מלא או סיומת מכתב שלא נבחרו) יוצא ריק.
- * ברירת המחדל של הספרייה כותבת במקומו את המילה "undefined" בתוך המכתב.
- */
-const DOCX_TEMPLATE_OPTIONS = {
-    paragraphLoop: true,
-    linebreaks: true,
-    nullGetter: () => '',
-}
+import { assetsDir, DOCX_TEMPLATE_OPTIONS } from './docx-options';
+import { readTemplate } from './letter-templates';
 
 config()
 
-const isProduction = process.env['NODE_ENV'] === "production";
 
 
 LetterController.createLetterDelegate = async (type: Letter, contents = [] as DocxContentControl[], fileName?: string) => await createLetterDocX(type, contents, fileName)
@@ -42,25 +33,12 @@ export const createLetterDocX = async (type: Letter, contents = [] as DocxConten
         contents = [] as DocxContentControl[]
     }
 
-    
-    // In production: /app/dist/donation/browser/assets/reports
-    // In dev: relative to project root
-    const assetsBase = isProduction
-        ? path.resolve(process.cwd(), 'dist/donation/browser/assets/letters')
-        : path.resolve(__dirname, '../assets/letters');
-    const fullPath = path.join(assetsBase, type.templatePath);
-    console.log('fullPath', fullPath)
-    console.log('contents', JSON.stringify(contents))
-
-    var content = ''
+    // שלב ג׳ 5.4 - התבנית מהמקום האחד: הועלתה (S3) או המובנית (assets).
+    var content: Buffer
     try {
-        // Load the docx file as binary content
-        content = fs.readFileSync(
-            fullPath,
-            "binary"
-        );
+        content = await readTemplate(type);
     } catch (err) {
-        result.error = 'fullPath.readed.error' + fullPath + " :: " + err
+        result.error = 'template.read.error ' + type.id + ' :: ' + err
         console.error(result.error)
         return result
     }
@@ -158,12 +136,7 @@ export const createReportDocX = async (report: Report, contents: Record<string, 
 
     var result: DocxCreateResponse = { success: false, url: '', error: '', fileName: '' }
 
-    // In production: /app/dist/donation/browser/assets/reports
-    // In dev: relative to project root
-    const assetsBase = isProduction
-        ? path.resolve(process.cwd(), 'dist/donation/browser/assets/reports')
-        : path.resolve(__dirname, '../assets/reports');
-    const fullPath = path.join(assetsBase, report.templatePath);
+    const fullPath = path.join(assetsDir('reports'), report.templatePath);
     console.log('fullPath', fullPath)
     console.log('contents', JSON.stringify(contents))
 

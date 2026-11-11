@@ -1,0 +1,26 @@
+feat(letters): שלב ג׳ 5.4 - מסך מכתבים: הפקת מכתבי אירועים, הוספה ועריכה של נוסח
+
+- מסך "מכתבים" בתפריט: המכתבים לפי קטגוריות, חיפוש, והשדות של כל מכתב.
+  פעולות: הפק (מכתבי אירועים - בוחרים תורם), הורד, העלה, שחזר מקור, שכפל, הסתר.
+- הנוסח נערך ב-Word: התבנית שהועלתה היא קובץ במודול הקבצים הקיים (S3) -
+  DonationFile.letterId, בעלים שלישי לצד תרומה ותעודה. היסטוריה, "מי העלה"
+  ושחזור (isActive) - בלי קוד אחסון חדש.
+- server/letter-templates: readTemplate - התבנית שבתוקף: הועלתה -> של מכתב
+  הבסיס -> המובנית ב-assets; קבצי S3 נשמרים בזיכרון לפי key. validateTemplate -
+  docxtemplater עם אותן הגדרות ההפקה + כל {שדה} מול שדות המכתב. תבנית שגויה
+  נדחית לפני שנשמרת (DonationFile.saving), והקודמת נשארת.
+- CustomLetter + shared/utils/letter-catalog - רשימת מכתבים אחת: המובנים ואלה
+  שנוספו כשכפול (שם ומכתב בסיס; שדות ותבנית - של הבסיס עד שתועלה).
+- createLetter לפי letterId (גם מכתבים שנוספו), והתרומה אופציונלית - מכתב אירוע
+  לתורם. חלון המכתב - מסלול אחד, עם תרומה או בלי.
+- server/docx-options - הגדרות docxtemplater ותיקיית assets במקום אחד (הפקה,
+  בדיקה ודוחות). s3.readObject + FileController.readFileDelegate.
+- fix: לאף Letter לא היה id - רימלט ממלא id רק כשהוא undefined, וכאן הוא
+  אותחל ל-''. Letter.getFields קובע עכשיו id = שם המשתנה, פעם אחת.
+- עד היום מכתבי השמחות וניחום האבלים לא היו נגישים מאף מסך (מאז 5.3).
+- גרסה 2026.11.11.12.
+
+BizTechoff™ - התאמת העסק לעידן הדיגיטלי
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_012J7BEmVq166Wu9fYdKdxE3
