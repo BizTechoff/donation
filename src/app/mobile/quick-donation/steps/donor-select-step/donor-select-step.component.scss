@@ -77,10 +77,16 @@
 
     .donor-details {
       display: flex;
-      gap: 12px;
+      flex-wrap: wrap; // מסך צר (טלפון לאורך) - טלפון, נייד ועיר יורדים שורה ולא נכנסים מתחת לכפתורים
+      column-gap: 12px;
+      row-gap: 2px;
       margin-top: 2px;
       font-size: 13px;
       color: #888;
+
+      span {
+        white-space: nowrap; // מספר טלפון לא נחתך באמצע
+      }
 
       .donor-phone {
         direction: ltr;

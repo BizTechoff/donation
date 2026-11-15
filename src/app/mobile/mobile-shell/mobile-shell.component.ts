@@ -2,6 +2,7 @@ import { Component } from '@angular/core'
 import { Router } from '@angular/router'
 import { remult } from 'remult'
 import { SignInController } from '../../users/SignInController'
+import { APP_VERSION } from '../../app-version'
 
 @Component({
   selector: 'app-mobile-shell',
@@ -10,7 +11,7 @@ import { SignInController } from '../../users/SignInController'
 })
 export class MobileShellComponent {
   remult = remult
-  version = '2026.04.23'
+  version = APP_VERSION // הגרסה - app-version.ts, אחת עם המחשב
 
   constructor(public router: Router) { }
 

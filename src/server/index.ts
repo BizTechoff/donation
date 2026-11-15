@@ -130,7 +130,8 @@ async function startup() {
   // "filter sometimes hidden" report (W14) - a stale build, not stale data.
   app.use(express.static(dist, {
     setHeaders: (res, filePath) => {
-      if (filePath.endsWith('index.html')) {
+      // index.html, ו-sw.js / manifest של ה-PWA - תמיד הגרסה האחרונה
+      if (filePath.endsWith('index.html') || filePath.endsWith('sw.js') || filePath.endsWith('manifest.webmanifest')) {
         res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
       }
     }

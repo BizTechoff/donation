@@ -1,0 +1,17 @@
+fix(mobile): פרטי התורם לא נכנסים מתחת לכפתורים, והתקנה כאפליקציה (PWA)
+
+- תרומה מהירה, בחירת תורם: טלפון, נייד ועיר יורדים שורה במסך צר (טלפון
+  לאורך) במקום לעלות מתחת לכפתורי "תרומה" ו"פרטים". מספר לא נחתך באמצע.
+  דיווח מהשטח (יעקב, ארה"ב).
+- PWA - "This app cannot be installed": לא היו manifest ו-service worker.
+  manifest.webmanifest (שם, אייקונים 192/512 + maskable, start_url
+  /m/quick-donation, standalone, RTL), sw.js מינימלי בלי מטמון (רק ניווט -
+  כל גרסה מגיעה מיד), רישום ב-main.ts, ו-no-cache בשרת ל-sw.js ול-manifest.
+- app-version.ts - הגרסה במקום אחד, לתפריט ולמובייל. המובייל החזיק גרסה
+  משלו שנשארה 2026.04.23.
+- גרסה 2026.11.15.
+
+BizTechoff™ - התאמת העסק לעידן הדיגיטלי
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_012J7BEmVq166Wu9fYdKdxE3

@@ -57,7 +57,9 @@
             "inlineStyleLanguage": "scss",
             "assets": [
               "src/favicon.ico",
-              "src/assets"
+              "src/assets",
+              "src/manifest.webmanifest",
+              "src/sw.js"
             ],
             "styles": [
               "src/styles.scss"
@@ -125,7 +127,9 @@
             "inlineStyleLanguage": "scss",
             "assets": [
               "src/favicon.ico",
-              "src/assets"
+              "src/assets",
+              "src/manifest.webmanifest",
+              "src/sw.js"
             ],
             "styles": [
               "src/styles.scss"

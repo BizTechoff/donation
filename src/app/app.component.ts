@@ -20,6 +20,7 @@ import { ReminderService } from './services/reminder.service'
 import { DonorController } from '../shared/controllers/donor.controller'
 import { HebrewDateService } from './services/hebrew-date.service'
 import { AppVersionService } from './services/app-version.service'
+import { APP_VERSION } from './app-version'
 import { UserSettingsService } from './services/user-settings.service'
  
 @Component({
@@ -31,7 +32,7 @@ export class AppComponent implements OnInit {
   /** Item 33 - the one writer of user.settings. */
   private userSettings = inject(UserSettingsService)
 
-  version = '2026.11.12' // environment.production ? '2025.08.05' : '2025.07.31'
+  version = APP_VERSION // הגרסה - app-version.ts
   currentHebrewDate = this.hebrewDate.convertGregorianToHebrew(new Date())?.formatted
 
   // Active reminders count - will be updated in ngOnInit
