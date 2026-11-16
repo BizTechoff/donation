@@ -2,4 +2,4 @@
  * גרסת הפלטפורמה - מקום אחד. מוצגת בתפריט (app.component) ובמובייל
  * (mobile-shell). עד היום המובייל החזיק גרסה משלו, שנשארה על 2026.04.23.
  */
-export const APP_VERSION = '2026.11.16.1'
+export const APP_VERSION = '2026.11.16.2'

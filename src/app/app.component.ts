@@ -71,7 +71,14 @@ export class AppComponent implements OnInit {
           ok: async () => {
             remult.user = await signIn.signIn()
             if(remult.user){
-              this.router.navigate([`/${this.i18n.currentTerms.donorList}`]);
+              // on a phone go straight to the mobile view, replacing the entry -
+              // the desktop screen never enters the history, so Back from the
+              // first mobile screen closes the app instead of opening desktop
+              if (this.isMobileDevice()) {
+                this.router.navigate(['/m'], { replaceUrl: true });
+              } else {
+                this.router.navigate([`/${this.i18n.currentTerms.donorList}`]);
+              }
             }
           },
         })
@@ -115,7 +122,7 @@ export class AppComponent implements OnInit {
 
     // Auto-redirect to mobile view on small screens
     if (remult.user && this.isMobileDevice() && !this.router.url.startsWith('/m')) {
-      this.router.navigate(['/m'])
+      this.router.navigate(['/m'], { replaceUrl: true })
       return
     }
 
