@@ -78,6 +78,7 @@ import { SeedDataComponent } from './components/seed-data/seed-data.component'
 import { EventSelectionModalComponent } from './routes/modals/event-selection-modal/event-selection-modal.component'
 import { CatalogNameEditComponent } from './components/catalog-name-edit/catalog-name-edit.component'
 import { LettersComponent } from './route/letters/letters.component'
+import { NewVersionBarComponent } from './components/new-version-bar/new-version-bar.component'
 import { AuditStampComponent } from './components/audit-stamp/audit-stamp.component'
 import { HTTP_INTERCEPTORS } from '@angular/common/http'
 import { EntityWriteInterceptor } from './common/http/entity-write.interceptor'
@@ -178,6 +179,7 @@ import { A11yModule } from "@angular/cdk/a11y";
     EventSelectionModalComponent,
     CatalogNameEditComponent,
     LettersComponent,
+    NewVersionBarComponent,
     AuditStampComponent,
     NotesSelectionModalComponent,
     CircleSelectionModalComponent,

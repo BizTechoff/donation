@@ -416,8 +416,26 @@ export class ShowDialogOnErrorErrorHandler extends ErrorHandler {
   }
 }
 
+/**
+ * תשובה שהיא דף HTML במקום נתונים (JSON) - השרת מתעדכן (פריסה ב-Railway) או
+ * שהבקשה הגיעה לכתובת שאינה קיימת. במקום "Unexpected token '<'..." - הסבר,
+ * והכתובת שנכשלה (כשידועה), כדי שאפשר יהיה לאתר אותה.
+ */
+function htmlInsteadOfData(err: any): string | undefined {
+  const text = [err?.message, err?.error?.message, err?.error?.error?.message].filter(Boolean).join(' ')
+  if (!/Unexpected token '<'|is not valid JSON|<!doctype/i.test(text)) return undefined
+  const url = err?.url || err?.error?.url
+  return 'השרת לא החזיר תשובה תקינה - ייתכן שהוא מתעדכן לגרסה חדשה. נסה שוב בעוד דקה.' +
+    (url ? `\n(${url})` : '')
+}
+
 export function extractError(err: any): string {
   if (typeof err === 'string') return err
+  const html = htmlInsteadOfData(err)
+  if (html) {
+    console.error('[extractError] HTML instead of JSON', err)
+    return html
+  }
   if (err.modelState) {
     if (err.message) return err.message
     for (const key in err.modelState) {
