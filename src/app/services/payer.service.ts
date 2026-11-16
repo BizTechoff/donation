@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { CurrencyType } from '../../shared/type/currency.type';
+import { loadPaymentEntities } from '../../shared/utils/donation-method-fields';
 
 
 // Currency data
@@ -51,6 +52,11 @@ export class PayerService {
   // getCurrencyTypesMap(): [string, CurrencyType][] {
   //   return CURRENCIES.map(cur => [cur.id, cur]);
   // }
+
+  /** הבנקים והעמותות הפעילים לבחירה בתרומה (shared/utils/donation-method-fields). */
+  getBanksAndOrganizations() {
+    return loadPaymentEntities();
+  }
 
   getCurrencyTypesRecord(): Record<string, CurrencyType> {
     return Object.fromEntries(CURRENCIES.map(cur => [cur.id, cur]));

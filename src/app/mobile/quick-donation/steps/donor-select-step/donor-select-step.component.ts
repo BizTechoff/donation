@@ -2,6 +2,7 @@ import { Component, EventEmitter, OnInit, OnDestroy, Output } from '@angular/cor
 import { Subject } from 'rxjs'
 import { debounceTime, takeUntil } from 'rxjs/operators'
 import { remult } from 'remult'
+import { BusyService } from 'common-ui-elements'
 import { Donor, Donation, Place } from '../../../../../shared/entity'
 import { DonorController } from '../../../../../shared/controllers/donor.controller'
 import { DonorMapController } from '../../../../../shared/controllers/donor-map.controller'
@@ -100,11 +101,13 @@ export class DonorSelectStepComponent implements OnInit, OnDestroy {
 
     this.searching = true
     try {
-      const data = await DonorController.getDonorsForSelectionPage({
+      // בלי שכבת ההמתנה על כל המסך: היא לקחה את הפוקוס משדה החיפוש, והמקלדת
+      // נסגרה אחרי כל אות או שתיים (דיווח מהשטח, 16.11.2026).
+      const data = await BusyService.singleInstance.donotWait(() => DonorController.getDonorsForSelectionPage({
         search: term,
         page: 1,
         pageSize: 20
-      })
+      }))
 
       this.filteredDonors = data.donors
 

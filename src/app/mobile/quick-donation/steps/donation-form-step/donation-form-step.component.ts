@@ -1,7 +1,10 @@
 import { AfterViewInit, Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core'
 import { remult } from 'remult'
-import { Donor, Donation, Campaign, DonationMethod } from '../../../../../shared/entity'
+import { Donor, Donation, Campaign, DonationMethod, Bank, Organization } from '../../../../../shared/entity'
+import { DEFAULT_CURRENCY } from '../../../../../shared/enum/currency'
+import { DonationMethodFields, donationMethodFields } from '../../../../../shared/utils/donation-method-fields'
 import { CurrencyType } from '../../../../../shared/type/currency.type'
+import { PayerService } from '../../../../services/payer.service'
 
 @Component({
   selector: 'app-donation-form-step',
@@ -20,9 +23,16 @@ export class DonationFormStepComponent implements OnInit, AfterViewInit {
 
   // Form fields
   amount: number | null = null
-  currencyId = 'ILS'
+  currencyId = DEFAULT_CURRENCY // ליש"ט - כמו במחשב (עד היום ש"ח קבוע כאן)
   selectedMethodId = ''
   checkNumber = ''
+  // אמצעי התשלום - אותם שדות כמו בכרטיס התרומה במחשב (shared/utils/donation-method-fields)
+  accountNumber = ''
+  voucherNumber = ''
+  bankId = ''
+  organizationId = ''
+  banks: Bank[] = []
+  organizations: Organization[] = []
   campaignId = ''
   reason = ''
   notes = ''
@@ -33,6 +43,8 @@ export class DonationFormStepComponent implements OnInit, AfterViewInit {
   errorMessage = ''
 
   currencyList: CurrencyType[] = []
+
+  constructor(private payerService: PayerService) { }
   private defaultCashMethodId = ''
 
   ngAfterViewInit() {
@@ -47,6 +59,7 @@ export class DonationFormStepComponent implements OnInit, AfterViewInit {
 
   ngOnInit() {
     this.currencyList = Object.values(this.currencies)
+    void this.loadBanksAndOrganizations()
 
     // Set default method to cash
     const cashMethod = this.donationMethods.find(m => m.type === 'cash')
@@ -62,8 +75,19 @@ export class DonationFormStepComponent implements OnInit, AfterViewInit {
     return this.donationMethods.find(m => m.id === this.selectedMethodId)
   }
 
+  /** אילו שדות אמצעי התשלום מקבל - אותו כלל של כרטיס התרומה במחשב. */
+  get fields(): DonationMethodFields {
+    return donationMethodFields(this.selectedMethod)
+  }
+
   get isCheck(): boolean {
-    return this.selectedMethod?.type === 'check'
+    return this.fields.checkNumber
+  }
+
+  private async loadBanksAndOrganizations() {
+    const { banks, organizations } = await this.payerService.getBanksAndOrganizations()
+    this.banks = banks
+    this.organizations = organizations
   }
 
   get canSave(): boolean {
@@ -98,7 +122,12 @@ export class DonationFormStepComponent implements OnInit, AfterViewInit {
         currencyId: this.currencyId,
         donationMethodId: this.selectedMethodId,
         campaignId: this.campaignId,
-        checkNumber: this.checkNumber,
+        // רק השדות שאמצעי התשלום מקבל - בחירה שנשארה מאמצעי קודם לא נשמרת
+        checkNumber: this.fields.checkNumber ? this.checkNumber : '',
+        accountNumber: this.fields.accountNumber ? this.accountNumber : '',
+        voucherNumber: this.fields.voucherNumber ? this.voucherNumber : '',
+        bankId: this.fields.bank ? this.bankId : '',
+        organizationId: this.fields.organization ? this.organizationId : '',
         reason: this.reason,
         notes: this.notes,
         donationType: this.donationType,

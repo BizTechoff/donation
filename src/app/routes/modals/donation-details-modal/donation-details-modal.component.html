@@ -323,7 +323,7 @@
           </div>
 
           <!-- Check Payment Fields -->
-          <div class="form-group" *ngIf="isCheckPayment">
+          <div class="form-group" *ngIf="methodFields.checkNumber">
             <div class="field-title">
               <mat-icon class="field-icon">tag</mat-icon>
               <label>{{i18n.terms.checkNumber}}</label>
@@ -333,7 +333,7 @@
           </div>
 
           <!-- מספר החשבון שעל הצ'ק / השובר / ההעברה -->
-          <div class="form-group" *ngIf="isCheckPayment || isTransferPayment || isOrganizationPayment">
+          <div class="form-group" *ngIf="methodFields.accountNumber">
             <div class="field-title">
               <mat-icon class="field-icon">account_balance</mat-icon>
               <label>{{i18n.terms.accountNumber}}</label>
@@ -342,7 +342,7 @@
               [placeholder]="i18n.terms.accountNumberPlaceholder">
           </div>
 
-          <div class="form-group" *ngIf="isOrganizationPayment || (isStandingOrderPayment && donation.standingOrderType === 'organization')">
+          <div class="form-group" *ngIf="methodFields.voucherNumber">
             <div class="field-title">
               <mat-icon class="field-icon">tag</mat-icon>
               <label>{{i18n.terms.voucherNumber}}</label>
@@ -373,7 +373,7 @@
 
 
           <div class="form-group"
-            *ngIf="isOrganizationPayment || (isStandingOrderPayment && donation.standingOrderType === 'organization')">
+            *ngIf="methodFields.organization">
             <div class="field-title">
               <mat-icon class="field-icon">business</mat-icon>
               <label>{{ (i18n.terms$ | async)?.selectOrganizationLabel || 'בחירת עמותה' }}</label>
@@ -400,7 +400,7 @@
 
           <!-- צ'ק נמשך מבנק - גם בו בוחרים בנק (יעקב, 11.11.2026) -->
           <div class="form-group"
-            *ngIf="isCheckPayment || isTransferPayment || (isStandingOrderPayment && donation.standingOrderType === 'bank')">
+            *ngIf="methodFields.bank">
             <div class="field-title">
               <mat-icon class="field-icon">account_balance</mat-icon>
               <label>{{ (i18n.terms$ | async)?.selectBankLabel || 'בחירת בנק' }}</label>

@@ -1,3 +1,4 @@
+import { loadPaymentEntities } from '../utils/donation-method-fields';
 import { Allow, BackendMethod, remult } from 'remult';
 import { GlobalFilters } from '../../app/services/global-filter.service';
 import { GlobalFilterController } from './global-filter.controller';
@@ -154,8 +155,7 @@ export class DonationController {
     const [
       campaigns,
       donationMethods,
-      organizations,
-      banks
+      { organizations, banks }
     ] = await Promise.all([
       remult.repo(Campaign).find({
         orderBy: { name: 'asc' }
@@ -163,14 +163,7 @@ export class DonationController {
       remult.repo(DonationMethod).find({
         orderBy: { name: 'asc' }
       }),
-      remult.repo(Organization).find({
-        where: { isActive: true },
-        orderBy: { name: 'asc' }
-      }),
-      remult.repo(Bank).find({
-        where: { isActive: true },
-        orderBy: { name: 'asc' }
-      })
+      loadPaymentEntities() // הבנקים והעמותות - shared/utils/donation-method-fields
     ]);
 
     // Load payer companies — use already-included donor relation, fall back to findId for new donations

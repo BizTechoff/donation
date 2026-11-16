@@ -1,3 +1,4 @@
+import { DonationMethodFields, donationMethodFields, paymentKind } from '../../../../shared/utils/donation-method-fields';
 import { ChangeDetectorRef, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { FileUploadComponent } from '../../../components/file-upload/file-upload.component';
 import { ScanWaitingModalComponent } from '../scan-waiting-modal/scan-waiting-modal.component';
@@ -756,41 +757,34 @@ export class DonationDetailsModalComponent implements OnInit {
   }
 
   // Getter methods for template conditionals
+  // אמצעי התשלום - הכלל ב-shared/utils/donation-method-fields, משותף עם המובייל
   get isCheckPayment(): boolean {
-    return this.selectedPaymentMethod?.type === 'check' ||
-      this.selectedPaymentMethod?.name === 'צק' ||
-      this.selectedPaymentMethod?.name?.includes('צ\'ק') || false;
+    return paymentKind(this.selectedPaymentMethod) === 'check';
   }
 
   get isTransferPayment(): boolean {
-    return this.selectedPaymentMethod?.type === 'bank_transfer' ||
-      this.selectedPaymentMethod?.name === 'העברה' ||
-      this.selectedPaymentMethod?.name?.includes('העברה') || false;
+    return paymentKind(this.selectedPaymentMethod) === 'bank_transfer';
   }
 
   get isOrganizationPayment(): boolean {
-    return this.selectedPaymentMethod?.type === 'association' ||
-      this.selectedPaymentMethod?.name?.includes('עמותה') ||
-      this.selectedPaymentMethod?.name?.includes('ארגון') || false;
+    return paymentKind(this.selectedPaymentMethod) === 'association';
+  }
+
+  /** אילו שדות אמצעי התשלום מקבל (צ'ק, חשבון, שובר, בנק, עמותה). */
+  get methodFields(): DonationMethodFields {
+    return donationMethodFields(this.selectedPaymentMethod, this.donation?.standingOrderType);
   }
 
   get isCreditCardPayment(): boolean {
-    return this.selectedPaymentMethod?.type === 'credit_card' ||
-      this.selectedPaymentMethod?.name === 'כרטיס אשראי' ||
-      this.selectedPaymentMethod?.name?.includes('כרטיס') ||
-      this.selectedPaymentMethod?.name?.includes('אשראי') || false;
+    return paymentKind(this.selectedPaymentMethod) === 'credit_card';
   }
 
   get isStandingOrderPayment(): boolean {
-    return this.selectedPaymentMethod?.type === 'standing_order' ||
-      this.selectedPaymentMethod?.name?.includes('הוראת קבע') ||
-      this.selectedPaymentMethod?.name?.includes('הו"ק') || false;
+    return paymentKind(this.selectedPaymentMethod) === 'standing_order';
   }
 
   get isCashPayment(): boolean {
-    return this.selectedPaymentMethod?.type === 'cash' ||
-      this.selectedPaymentMethod?.name === 'מזומן' ||
-      this.selectedPaymentMethod?.name?.includes('מזומן') || false;
+    return paymentKind(this.selectedPaymentMethod) === 'cash';
   }
 
   get isOnlinePayment(): boolean {

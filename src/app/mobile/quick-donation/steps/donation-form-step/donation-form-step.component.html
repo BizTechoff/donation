@@ -18,17 +18,12 @@
         class="amount-input"
         placeholder="0"
         [(ngModel)]="amount">
-      <!-- Currency Toggle -->
-      <div class="currency-toggle">
+      <!-- מטבע - רשימה נפתחת אחת (הכפתורים בטור יצאו מחוץ למסך בטלפון) -->
+      <select class="form-select currency-select" [(ngModel)]="currencyId">
         @for (cur of currencyList; track cur.id) {
-          <button
-            class="currency-btn"
-            [class.active]="currencyId === cur.id"
-            (click)="currencyId = cur.id">
-            {{ cur.symbol }}
-          </button>
+          <option [value]="cur.id">{{ cur.symbol }} {{ cur.id }}</option>
         }
-      </div>
+      </select>
     </div>
   </div>
 
@@ -48,16 +43,45 @@
     </div>
   </div>
 
-  <!-- Check Number (conditional) -->
-  @if (isCheck) {
+  <!-- שדות אמצעי התשלום - אותו כלל של המחשב (shared/utils/donation-method-fields) -->
+  @if (fields.checkNumber) {
     <div class="form-group">
       <label class="form-label">מספר צ'ק</label>
-      <input
-        type="text"
-        inputmode="numeric"
-        class="form-input"
-        placeholder="מספר צ'ק"
-        [(ngModel)]="checkNumber">
+      <input type="text" inputmode="numeric" class="form-input" placeholder="מספר צ'ק" [(ngModel)]="checkNumber">
+    </div>
+  }
+  @if (fields.bank) {
+    <div class="form-group">
+      <label class="form-label">בנק</label>
+      <select class="form-select" [(ngModel)]="bankId">
+        <option value="">בחר בנק</option>
+        @for (bank of banks; track bank.id) {
+          <option [value]="bank.id">{{ bank.name }}</option>
+        }
+      </select>
+    </div>
+  }
+  @if (fields.organization) {
+    <div class="form-group">
+      <label class="form-label">עמותה</label>
+      <select class="form-select" [(ngModel)]="organizationId">
+        <option value="">בחר עמותה</option>
+        @for (org of organizations; track org.id) {
+          <option [value]="org.id">{{ org.name }}</option>
+        }
+      </select>
+    </div>
+  }
+  @if (fields.accountNumber) {
+    <div class="form-group">
+      <label class="form-label">מספר חשבון</label>
+      <input type="text" inputmode="numeric" class="form-input" placeholder="מספר חשבון" [(ngModel)]="accountNumber">
+    </div>
+  }
+  @if (fields.voucherNumber) {
+    <div class="form-group">
+      <label class="form-label">מספר שובר</label>
+      <input type="text" inputmode="numeric" class="form-input" placeholder="מספר שובר" [(ngModel)]="voucherNumber">
     </div>
   }
 
