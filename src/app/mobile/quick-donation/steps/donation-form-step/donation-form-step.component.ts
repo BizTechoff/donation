@@ -2,6 +2,8 @@ import { AfterViewInit, Component, ElementRef, EventEmitter, Input, OnInit, Outp
 import { remult } from 'remult'
 import { Donor, Donation, Campaign, DonationMethod, Bank, Organization } from '../../../../../shared/entity'
 import { DEFAULT_CURRENCY } from '../../../../../shared/enum/currency'
+import { todayDateOnly } from '../../../../../shared/utils/date-only'
+import { donorCountryCurrencyId } from '../../../../../shared/utils/donor-currency'
 import { DonationMethodFields, donationMethodFields } from '../../../../../shared/utils/donation-method-fields'
 import { CurrencyType } from '../../../../../shared/type/currency.type'
 import { PayerService } from '../../../../services/payer.service'
@@ -39,7 +41,7 @@ export class DonationFormStepComponent implements OnInit, AfterViewInit {
   reason = ''
   notes = ''
   donationType: 'full' | 'commitment' = 'full'
-  donationDate: Date = new Date()
+  donationDate: Date = todayDateOnly()
   // אמצעי התשלום לבחירה - הפעילים, ובעריכה גם האמצעי של התרומה אם הוא כבר לא פעיל
   methods: DonationMethod[] = []
 
@@ -72,6 +74,9 @@ export class DonationFormStepComponent implements OnInit, AfterViewInit {
       return
     }
 
+    // תרומה חדשה - המטבע לפי מדינת התורם (אותו כלל של המחשב); בלי מדינה - ליש"ט
+    void this.setCurrencyFromDonorCountry()
+
     // Set default method to cash
     const cashMethod = this.donationMethods.find(m => m.type === 'cash')
     if (cashMethod) {
@@ -79,6 +84,19 @@ export class DonationFormStepComponent implements OnInit, AfterViewInit {
       this.defaultCashMethodId = cashMethod.id
     } else if (this.donationMethods.length > 0) {
       this.selectedMethodId = this.donationMethods[0].id
+    }
+  }
+
+  private async setCurrencyFromDonorCountry() {
+    const before = this.currencyId
+    try {
+      const currencyId = await donorCountryCurrencyId(this.donor.id)
+      // רק אם המשתמש לא בחר מטבע בינתיים, ורק מטבע שקיים ברשימה
+      if (currencyId && this.currencyId === before && this.currencies[currencyId]) {
+        this.currencyId = currencyId
+      }
+    } catch (err) {
+      console.error('donor country currency failed', err)
     }
   }
 
@@ -100,7 +118,7 @@ export class DonationFormStepComponent implements OnInit, AfterViewInit {
     this.reason = d.reason || ''
     this.notes = d.notes || ''
     this.donationType = d.donationType === 'commitment' ? 'commitment' : 'full'
-    this.donationDate = d.donationDate ? new Date(d.donationDate) : new Date()
+    this.donationDate = d.donationDate ? new Date(d.donationDate) : todayDateOnly()
     this.showMore = !!(this.reason || this.notes || this.donationType === 'commitment')
     if (d.donationMethodId && !this.methods.some(m => m.id === d.donationMethodId)) {
       void remult.repo(DonationMethod).findId(d.donationMethodId).then(m => {
@@ -174,7 +192,7 @@ export class DonationFormStepComponent implements OnInit, AfterViewInit {
         reason: this.reason,
         notes: this.notes,
         donationType: this.donationType,
-        donationDate: this.donationDate || new Date()
+        donationDate: this.donationDate || todayDateOnly()
       })
 
       const saved = await remult.repo(Donation).save(donation)

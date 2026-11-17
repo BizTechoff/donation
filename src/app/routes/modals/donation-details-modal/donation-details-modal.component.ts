@@ -1,4 +1,6 @@
 import { DonationMethodFields, donationMethodFields, paymentKind } from '../../../../shared/utils/donation-method-fields';
+import { donorCountryCurrencyId } from '../../../../shared/utils/donor-currency';
+import { todayDateOnly } from '../../../../shared/utils/date-only';
 import { ChangeDetectorRef, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { FileUploadComponent } from '../../../components/file-upload/file-upload.component';
 import { ScanWaitingModalComponent } from '../scan-waiting-modal/scan-waiting-modal.component';
@@ -106,7 +108,7 @@ export class DonationDetailsModalComponent implements OnInit {
         if (this.args.donationId === 'new') {
           this.isNewDonation = true;
           this.donation = this.donationRepo.create();
-          this.donation.donationDate = new Date();
+          this.donation.donationDate = todayDateOnly();
           this.donation.currencyId = 'ILS';
 
           // Set amount from args if provided
@@ -732,7 +734,7 @@ export class DonationDetailsModalComponent implements OnInit {
 
       // Set donation date to today if not already set
       if (!this.donation.donationDate) {
-        this.donation.donationDate = new Date();
+        this.donation.donationDate = todayDateOnly();
         this.changed = true;
       }
     }
@@ -883,36 +885,9 @@ export class DonationDetailsModalComponent implements OnInit {
 
   // Helper function to update currency based on donor's country
   private async updateCurrencyBasedOnCountry(donor: Donor) {
+    // הכלל עצמו - shared/utils/donor-currency (גם המובייל משתמש בו)
     try {
-      // Load the primary home place for the donor
-      const donorPlaceRepo = remult.repo(DonorPlace);
-      const donorPlaces = await donorPlaceRepo.find({
-        where: {
-          donorId: donor.id,
-          isActive: true,
-          isPrimary: true
-        },
-        include: {
-          place: {
-            include: {
-              country: true
-            }
-          }
-        },
-        limit: 1
-      });
-
-      // If donor has a primary place with country and currency, use it
-      if (donorPlaces.length > 0 && donorPlaces[0].place?.country?.currencyId) {
-        const currency = donorPlaces[0].place.country.currencyId;
-        this.donation.currencyId = currency;
-        console.log(`Currency auto-set to ${currency} based on donor's country: ${donorPlaces[0].place.country.name}`);
-        return;
-      }
-
-      // Default to ILS if no place/country found
-      this.donation.currencyId = 'ILS';
-      console.log('No country found for donor, defaulting to ILS');
+      this.donation.currencyId = (await donorCountryCurrencyId(donor.id)) || 'ILS';
     } catch (error: any) {
       console.error('Error updating currency based on donor country:', error);
       // Default to ILS on error

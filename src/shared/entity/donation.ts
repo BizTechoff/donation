@@ -19,6 +19,7 @@ import { Reminder } from './reminder'
 import { Roles } from '../enum/roles'
 import { calculateEffectiveAmount, calculatePaymentTotals, isPaymentBased } from '../utils/donation-utils'
 import { DEFAULT_CURRENCY } from '../enum/currency'
+import { todayDateOnly } from '../utils/date-only'
 import { UpdatedByField, stampCreatedBy } from '../utils/audit-fields'
 
 @Entity<Donation>('donations', {
@@ -232,7 +233,7 @@ export class Donation extends IdEntity {
     caption: 'תאריך תרומה',
     validate: Validators.required,
   })
-  donationDate = new Date()
+  donationDate = todayDateOnly() // חצות מקומית - לא new Date() (ראה date-only.ts)
 
   @Fields.date({
     allowApiUpdate: false,
