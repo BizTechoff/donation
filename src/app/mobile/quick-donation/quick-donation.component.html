@@ -4,8 +4,12 @@
   @if (showingDonorDetails && selectedDonor) {
     <app-donor-details-step
       [donor]="selectedDonor"
+      [currencies]="currencies"
+      [initialSection]="detailsTab"
       (back)="onBackFromDetails()"
-      (newDonation)="onNewDonationFromDetails($event)">
+      (newDonation)="onNewDonationFromDetails($event)"
+      (sectionChange)="onDetailsSection($event)"
+      (editDonation)="onEditDonation($event)">
     </app-donor-details-step>
   } @else {
 
@@ -45,7 +49,8 @@
             [donationMethods]="donationMethods"
             [campaigns]="campaigns"
             [currencies]="currencies"
-            (donationSaved)="onDonationSaved($event)"
+            [donation]="editingDonation ?? undefined"
+            (donationSaved)="editingDonation ? onDonationUpdated() : onDonationSaved($event)"
             (back)="goBack()">
           </app-donation-form-step>
         }

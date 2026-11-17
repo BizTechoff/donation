@@ -13,6 +13,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner'
 import { MatDialogModule } from '@angular/material/dialog'
 import { MatButtonToggleModule } from '@angular/material/button-toggle'
 
+import { SharedComponentsModule } from '../shared/shared-components.module'
 import { MobileRoutingModule } from './mobile-routing.module'
 import { MobileShellComponent } from './mobile-shell/mobile-shell.component'
 import { QuickDonationComponent } from './quick-donation/quick-donation.component'
@@ -38,6 +39,8 @@ import { RoutePlannerComponent } from './route-planner/route-planner.component'
     CommonModule,
     FormsModule,
     MobileRoutingModule,
+    // בוחר התאריכים (עברי/לועזי) של המחשב - שדה התאריך בטופס התרומה
+    SharedComponentsModule,
     MatToolbarModule,
     MatButtonModule,
     MatIconModule,

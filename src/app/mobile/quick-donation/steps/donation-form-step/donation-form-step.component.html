@@ -4,6 +4,7 @@
     <mat-icon class="donor-icon">person</mat-icon>
     <div class="donor-info">
       <div class="donor-name">{{ getDonorFullName() }}</div>
+      @if (isEdit) { <div class="edit-badge">עריכת תרומה</div> }
     </div>
   </div>
 
@@ -31,7 +32,7 @@
   <div class="form-group">
     <label class="form-label">אמצעי תשלום *</label>
     <div class="method-chips">
-      @for (method of donationMethods; track method.id) {
+      @for (method of methods; track method.id) {
         <button
           class="method-chip"
           [class.active]="selectedMethodId === method.id"
@@ -84,6 +85,12 @@
       <input type="text" inputmode="numeric" class="form-input" placeholder="מספר שובר" [(ngModel)]="voucherNumber">
     </div>
   }
+
+  <!-- תאריך - אותו בוחר תאריכים (עברי/לועזי) של כרטיס התרומה במחשב -->
+  <div class="form-group">
+    <label class="form-label">תאריך</label>
+    <app-modern-dual-date-picker [(ngModel)]="donationDate"></app-modern-dual-date-picker>
+  </div>
 
   <!-- Campaign -->
   <div class="form-group">

@@ -17,10 +17,12 @@ import { CurrencyType } from '../../../shared/type/currency.type'
 //   step=form&donorId         -> 2 הזן תרומה
 //   step=photo&donationId     -> 3 צלם צ'ק   (replaces the form entry)
 //   step=done&donationId      -> 4 סיום      (replaces the photo entry)
+//   mode=details&tab=donations -> תרומות התורם (tab replaces, no new entry)
+//   step=edit&donationId      -> עריכת תרומה קיימת באותו טופס; שמירה חוזרת לרשימה
 // After a save the form entry is replaced, so Back can never reopen a form that
 // was already saved (no duplicate donations).
-type WizardStep = 'form' | 'photo' | 'done'
-const STEP_NUMBER: Record<WizardStep, number> = { form: 2, photo: 3, done: 4 }
+type WizardStep = 'form' | 'edit' | 'photo' | 'done'
+const STEP_NUMBER: Record<WizardStep, number> = { form: 2, edit: 2, photo: 3, done: 4 }
 
 @Component({
   selector: 'app-quick-donation',
@@ -42,6 +44,10 @@ export class QuickDonationComponent implements OnInit, OnDestroy {
 
   // Donor details side-view (not part of wizard steps)
   showingDonorDetails = false
+  detailsTab = ''
+
+  // עריכת תרומה קיימת (step=edit) - אותו טופס של תרומה חדשה
+  editingDonation: Donation | null = null
 
   // Navigation source tracking
   private sourceIsMap = false
@@ -95,12 +101,19 @@ export class QuickDonationComponent implements OnInit, OnDestroy {
       if (donorId && this.selectedDonor?.id !== donorId) {
         this.selectedDonor = (await remult.repo(Donor).findId(donorId)) ?? null
       }
-      if (donationId && this.savedDonation?.id !== donationId) {
+      if (donationId && step === 'edit') {
+        if (this.editingDonation?.id !== donationId) {
+          this.editingDonation = (await remult.repo(Donation).findId(donationId)) ?? null
+        }
+      } else if (donationId && this.savedDonation?.id !== donationId) {
         this.savedDonation = (await remult.repo(Donation).findId(donationId)) ?? null
       }
     } catch (err) {
       console.error('Failed to load wizard state from query params:', err)
     }
+
+    this.detailsTab = params.get('tab') || ''
+    if (step !== 'edit') this.editingDonation = null
 
     if (mode === 'details' && this.selectedDonor) {
       this.showingDonorDetails = true
@@ -110,6 +123,8 @@ export class QuickDonationComponent implements OnInit, OnDestroy {
     this.showingDonorDetails = false
 
     if (step === 'form' && this.selectedDonor) {
+      this.currentStep = 2
+    } else if (step === 'edit' && this.selectedDonor && this.editingDonation) {
       this.currentStep = 2
     } else if ((step === 'photo' || step === 'done') && this.selectedDonor && this.savedDonation) {
       this.currentStep = STEP_NUMBER[step]
@@ -173,6 +188,23 @@ export class QuickDonationComponent implements OnInit, OnDestroy {
     this.historyBack({})
   }
 
+  /** לשונית בפרטי התורם - מחליפה את הרשומה (לשוניות לא נערמות בהיסטוריה) */
+  onDetailsSection(tab: string) {
+    this.go({ donorId: this.selectedDonor!.id, mode: 'details', tab }, false)
+  }
+
+  onEditDonation(donation: Donation) {
+    this.editingDonation = donation
+    this.go({ donorId: this.selectedDonor!.id, donationId: donation.id, step: 'edit' }, true)
+  }
+
+  /** אחרי עדכון - חזרה לרשימת התרומות של התורם */
+  onDonationUpdated() {
+    this.ui.info('התרומה עודכנה')
+    this.editingDonation = null
+    this.historyBack({ donorId: this.selectedDonor!.id, mode: 'details', tab: 'donations' })
+  }
+
   onNewDonationFromDetails(donor: Donor) {
     this.selectedDonor = donor
     this.go({ donorId: donor.id, step: 'form' }, true)
@@ -197,6 +229,11 @@ export class QuickDonationComponent implements OnInit, OnDestroy {
   }
 
   goBack() {
+    if (this.editingDonation) {
+      // עריכה -> רשימת התרומות של התורם (גם כשהגיעו לתורם מהמפה)
+      this.historyBack({ donorId: this.selectedDonor!.id, mode: 'details', tab: 'donations' })
+      return
+    }
     // If at donation form / after save and came from map, go back to map
     if (this.currentStep >= 2 && this.sourceIsMap && this.sourceDonorId) {
       this.backToMap()

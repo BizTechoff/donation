@@ -17,6 +17,8 @@ export class DonationFormStepComponent implements OnInit, AfterViewInit {
   @Input() donationMethods: DonationMethod[] = []
   @Input() campaigns: Campaign[] = []
   @Input() currencies: Record<string, CurrencyType> = {}
+  /** תרומה קיימת לעריכה - אותו טופס; בלי - תרומה חדשה */
+  @Input() donation?: Donation
 
   @Output() donationSaved = new EventEmitter<Donation>()
   @Output() back = new EventEmitter<void>()
@@ -37,6 +39,9 @@ export class DonationFormStepComponent implements OnInit, AfterViewInit {
   reason = ''
   notes = ''
   donationType: 'full' | 'commitment' = 'full'
+  donationDate: Date = new Date()
+  // אמצעי התשלום לבחירה - הפעילים, ובעריכה גם האמצעי של התרומה אם הוא כבר לא פעיל
+  methods: DonationMethod[] = []
 
   showMore = false
   saving = false
@@ -60,6 +65,12 @@ export class DonationFormStepComponent implements OnInit, AfterViewInit {
   ngOnInit() {
     this.currencyList = Object.values(this.currencies)
     void this.loadBanksAndOrganizations()
+    this.methods = this.donationMethods
+
+    if (this.donation) {
+      this.fillFromDonation(this.donation)
+      return
+    }
 
     // Set default method to cash
     const cashMethod = this.donationMethods.find(m => m.type === 'cash')
@@ -71,13 +82,41 @@ export class DonationFormStepComponent implements OnInit, AfterViewInit {
     }
   }
 
+  get isEdit(): boolean {
+    return !!this.donation
+  }
+
+  /** עריכה - הטופס נטען מהתרומה. שדות שאין בטופס (תדירות, תשלומים וכו') לא נוגעים בהם. */
+  private fillFromDonation(d: Donation) {
+    this.amount = d.amount
+    this.currencyId = d.currencyId || DEFAULT_CURRENCY
+    this.selectedMethodId = d.donationMethodId
+    this.checkNumber = d.checkNumber || ''
+    this.accountNumber = d.accountNumber || ''
+    this.voucherNumber = d.voucherNumber || ''
+    this.bankId = d.bankId || ''
+    this.organizationId = d.organizationId || ''
+    this.campaignId = d.campaignId || ''
+    this.reason = d.reason || ''
+    this.notes = d.notes || ''
+    this.donationType = d.donationType === 'commitment' ? 'commitment' : 'full'
+    this.donationDate = d.donationDate ? new Date(d.donationDate) : new Date()
+    this.showMore = !!(this.reason || this.notes || this.donationType === 'commitment')
+    if (d.donationMethodId && !this.methods.some(m => m.id === d.donationMethodId)) {
+      void remult.repo(DonationMethod).findId(d.donationMethodId).then(m => {
+        if (m) this.methods = [...this.methods, m]
+      })
+    }
+  }
+
   get selectedMethod(): DonationMethod | undefined {
-    return this.donationMethods.find(m => m.id === this.selectedMethodId)
+    return this.methods.find(m => m.id === this.selectedMethodId)
   }
 
   /** אילו שדות אמצעי התשלום מקבל - אותו כלל של כרטיס התרומה במחשב. */
   get fields(): DonationMethodFields {
-    return donationMethodFields(this.selectedMethod)
+    // בעריכת הו"ק - סוג ההוראה של התרומה קובע בנק/עמותה (במובייל אין בחירה בו)
+    return donationMethodFields(this.selectedMethod, this.donation?.standingOrderType)
   }
 
   get isCheck(): boolean {
@@ -116,6 +155,10 @@ export class DonationFormStepComponent implements OnInit, AfterViewInit {
     this.errorMessage = ''
 
     try {
+      if (this.donation) {
+        this.donationSaved.emit(await this.saveEdit(this.donation))
+        return
+      }
       const donation = remult.repo(Donation).create({
         donorId: this.donor.id,
         amount: this.amount!,
@@ -131,7 +174,7 @@ export class DonationFormStepComponent implements OnInit, AfterViewInit {
         reason: this.reason,
         notes: this.notes,
         donationType: this.donationType,
-        donationDate: new Date()
+        donationDate: this.donationDate || new Date()
       })
 
       const saved = await remult.repo(Donation).save(donation)
@@ -141,5 +184,30 @@ export class DonationFormStepComponent implements OnInit, AfterViewInit {
     } finally {
       this.saving = false
     }
+  }
+
+  /**
+   * עדכון תרומה קיימת - אותה רשומה, רק השדות שבטופס. שדה של אמצעי תשלום שהטופס
+   * לא מציג נשאר כמו שהוא; הוא מתאפס רק כשמחליפים אמצעי תשלום (כמו בתרומה חדשה).
+   */
+  private async saveEdit(d: Donation): Promise<Donation> {
+    const methodChanged = d.donationMethodId !== this.selectedMethodId
+    const f = this.fields
+    const pick = (applies: boolean, value: string, current: string) =>
+      applies ? value : (methodChanged ? '' : current)
+    d.amount = this.amount!
+    d.currencyId = this.currencyId
+    d.donationMethodId = this.selectedMethodId
+    d.campaignId = this.campaignId
+    d.checkNumber = pick(f.checkNumber, this.checkNumber, d.checkNumber)
+    d.accountNumber = pick(f.accountNumber, this.accountNumber, d.accountNumber)
+    d.voucherNumber = pick(f.voucherNumber, this.voucherNumber, d.voucherNumber)
+    d.bankId = pick(f.bank, this.bankId, d.bankId)
+    d.organizationId = pick(f.organization, this.organizationId, d.organizationId)
+    d.reason = this.reason
+    d.notes = this.notes
+    d.donationType = this.donationType
+    d.donationDate = this.donationDate || d.donationDate
+    return await remult.repo(Donation).save(d)
   }
 }

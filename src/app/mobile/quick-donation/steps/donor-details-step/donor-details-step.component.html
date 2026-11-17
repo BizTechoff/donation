@@ -27,7 +27,7 @@
         <button
           class="tab-btn"
           [class.active]="activeSection === section.id"
-          (click)="activeSection = section.id">
+          (click)="selectSection(section.id)">
           <mat-icon>{{ section.icon }}</mat-icon>
           <span>{{ section.label }}</span>
         </button>
@@ -88,6 +88,37 @@
             }
           }
         </div>
+      }
+
+      <!-- Donations - לחיצה פותחת את התרומה לעריכה בטופס התרומה -->
+      @if (activeSection === 'donations') {
+        @for (d of donations; track d.id) {
+          <div class="info-card compact donation-row" (click)="editDonation.emit(d)">
+            <div class="donation-main">
+              <span class="donation-amount dir-ltr">{{ donationAmount(d) }}</span>
+              @if (d.donationType === 'commitment') {
+                <span class="primary-badge">התחייבות</span>
+              }
+            </div>
+            <div class="donation-meta">
+              <span>{{ formatEventDate(d.donationDate) }}</span>
+              @if (d.donationMethod?.name) { <span>{{ d.donationMethod?.name }}</span> }
+              @if (d.campaign?.name) { <span>{{ d.campaign?.name }}</span> }
+            </div>
+            <mat-icon class="donation-edit-icon">edit</mat-icon>
+          </div>
+        } @empty {
+          @if (donationsLoaded) {
+            <div class="empty-state">אין תרומות רשומות</div>
+          }
+        }
+        @if (loadingDonations) {
+          <div class="loading-container">
+            <mat-spinner diameter="28"></mat-spinner>
+          </div>
+        } @else if (hasMoreDonations) {
+          <button class="load-more-btn" (click)="loadDonations(true)">טען עוד</button>
+        }
       }
 
       <!-- Address -->

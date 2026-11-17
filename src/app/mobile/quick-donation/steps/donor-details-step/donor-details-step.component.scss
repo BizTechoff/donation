@@ -334,3 +334,56 @@
     height: 18px;
   }
 }
+
+// תרומות התורם
+.donation-row {
+  position: relative;
+  cursor: pointer;
+  padding-left: 40px;
+
+  .donation-main {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .donation-amount {
+    font-size: 17px;
+    font-weight: 600;
+    color: #333;
+  }
+
+  .donation-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    margin-top: 4px;
+    font-size: 13px;
+    color: #777;
+
+    span {
+      white-space: nowrap;
+    }
+  }
+
+  .donation-edit-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+    color: #667eea;
+  }
+}
+
+.load-more-btn {
+  width: 100%;
+  padding: 10px;
+  border: 1px dashed #667eea;
+  border-radius: 10px;
+  background: white;
+  color: #667eea;
+  font-size: 14px;
+}
