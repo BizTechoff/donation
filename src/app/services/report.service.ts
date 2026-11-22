@@ -17,6 +17,11 @@ export class ReportService {
     return await ReportController.getAvailableHebrewYears();
   }
 
+  /** 4 השנים האחרונות - הבחירה המסומנת כברירת מחדל בדוח התרומות */
+  async getDefaultReportYears(): Promise<string[]> {
+    return await ReportController.getDefaultReportYears();
+  }
+
   async getPaymentsReport(
     conversionRates: { [currency: string]: number },
     localFilters?: PaymentReportLocalFilters
@@ -26,7 +31,7 @@ export class ReportService {
 
   async getYearlySummaryReport(
     conversionRates: { [currency: string]: number },
-    localFilters?: { selectedYear?: string | number }
+    localFilters?: { selectedYear?: string | number, selectedYears?: (string | number)[] }
   ): Promise<YearlySummaryData[]> {
     return await ReportController.getYearlySummaryReport(conversionRates, localFilters);
   }

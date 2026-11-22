@@ -129,6 +129,8 @@ export interface ReportFilters {
   selectedCampaign?: string;
   selectedDonorType?: string;
   selectedYear?: string | number; // 'last4' or specific year
+  /** בחירת כמה שנים (ישראל, 22.11.2026) - גובר על selectedYear. ריק = ברירת המחדל */
+  selectedYears?: (string | number)[];
   conversionRates: { [currency: string]: number };
   // Pagination
   page?: number;
@@ -174,29 +176,10 @@ export class ReportController {
         }
       }
 
-      // Get current Hebrew year
-      const currentHebrewYear = await HebrewDateController.getCurrentHebrewYear();
-
-      // Determine which years to load based on filter
-      let yearsToLoad: number[] = [];
-      let hebrewYears: string[] = [];
-
-      if (!filters.selectedYear || filters.selectedYear === 'last4') {
-        // Load last 4 years (current-3, current-2, current-1, current)
-        for (let i = 3; i >= 0; i--) {
-          yearsToLoad.push(currentHebrewYear - i);
-        }
-      } else {
-        // Load specific year only
-        // If it's a string (Hebrew year), parse it; otherwise treat as number
-        let specificYear: number;
-        if (typeof filters.selectedYear === 'string') {
-          specificYear = await HebrewDateController.parseHebrewYear(filters.selectedYear);
-        } else {
-          specificYear = filters.selectedYear;
-        }
-        yearsToLoad.push(specificYear);
-      }
+      // השנים של הדוח - הפונקציה המשותפת לשני הדוחות (resolveReportYears)
+      const resolvedYears = (await ReportController.resolveReportYears(filters.selectedYears, filters.selectedYear, true))!;
+      const yearsToLoad: number[] = resolvedYears.years;
+      const hebrewYears: string[] = [];
 
       // Generate Hebrew years array
       for (const year of yearsToLoad) {
@@ -220,7 +203,7 @@ export class ReportController {
       // ── אופטימיזציה: שאילתה אחת עם טווח תאריכים מאוחד + פילטרי WHERE מוקדמים,
       //    הורדת include.createdBy שלא בשימוש + הורדת fundraiser (נטען נפרד ב-fundraiserMap).
       //    לכל הפילטרים שמסננים ב-JS - מעבירים ל-WHERE.
-      const yearRanges = await Promise.all(yearsToLoad.map(y => HebrewDateController.getHebrewYearDateRange(y)));
+      const yearRanges = resolvedYears.ranges;
       const minDate = yearRanges.reduce((min, r) => r.startDate < min ? r.startDate : min, yearRanges[0]?.startDate);
       const maxDate = yearRanges.reduce((max, r) => r.endDate > max ? r.endDate : max, yearRanges[0]?.endDate);
 
@@ -260,6 +243,9 @@ export class ReportController {
         if (globalFilterAmountMax !== undefined) amountFilter.$lte = globalFilterAmountMax;
         donationWhere.amount = amountFilter;
       }
+
+      // רק השנים שנבחרו - בלי השנים שביניהן (תשפ"ג + תשפ"ה, בלי תשפ"ד)
+      Object.assign(donationWhere, ReportController.selectedYearsWhere(yearRanges));
 
       // donorType filter: pre-resolve to donorIds before find() to push to WHERE
       if (filters.selectedDonorType && filters.selectedDonorType !== '') {
@@ -1157,6 +1143,17 @@ export class ReportController {
   }
 
   /**
+   * השנים שמסומנות כברירת מחדל בדוח התרומות - 4 השנים האחרונות, לפי אותו כלל
+   * שהשרת מפעיל כשלא נבחרה שנה (resolveReportYears), מהחדשה לישנה כמו הרשימה
+   */
+  @BackendMethod({ allowed: Allow.authenticated })
+  static async getDefaultReportYears(): Promise<string[]> {
+    const resolved = await ReportController.resolveReportYears(undefined, undefined, true);
+    const years = await Promise.all((resolved?.years || []).map(y => HebrewDateController.formatHebrewYear(y)));
+    return years.reverse();
+  }
+
+  /**
    * Get available Hebrew years from donations
    * Returns formatted Hebrew years sorted descending
    */
@@ -1368,6 +1365,44 @@ export class ReportController {
   }
 
   /**
+   * השנים העבריות של דוח התרומות והסיכום השנתי - מקום אחד לשניהם.
+   * selectedYears (כמה שנים) גובר על selectedYear (שנה אחת / 'last4').
+   * בלי בחירה: defaultLast4 - ארבע השנים האחרונות; אחרת null = כל השנים.
+   */
+  private static async resolveReportYears(
+    selectedYears: (string | number)[] | undefined,
+    selectedYear: string | number | undefined,
+    defaultLast4: boolean
+  ): Promise<{ years: number[], ranges: { startDate: Date, endDate: Date }[] } | null> {
+    const toYear = async (y: string | number) =>
+      typeof y === 'number' ? y : await HebrewDateController.parseHebrewYear(y);
+    const picked = (selectedYears || []).filter(y => y !== '' && y !== 'last4');
+    let years: number[];
+    if (picked.length > 0) {
+      years = await Promise.all(picked.map(toYear));
+    } else if (selectedYear && selectedYear !== 'last4') {
+      years = [await toYear(selectedYear)];
+    } else if (defaultLast4) {
+      const current = await HebrewDateController.getCurrentHebrewYear();
+      years = [current - 3, current - 2, current - 1, current];
+    } else {
+      return null;
+    }
+    years = [...new Set(years)].sort((a, b) => a - b);
+    const ranges = await Promise.all(years.map(y => HebrewDateController.getHebrewYearDateRange(y)));
+    return { years, ranges };
+  }
+
+  /**
+   * תנאי ה-WHERE לשנים שנבחרו: כל שנה בטווח שלה. בלי זה הטווח הרציף מהשנה
+   * הראשונה עד האחרונה הכניס גם את השנים שביניהן לסכומים.
+   */
+  private static selectedYearsWhere(ranges: { startDate: Date, endDate: Date }[]): { $or?: any[] } {
+    if (ranges.length < 2) return {};
+    return { $or: ranges.map(r => ({ donationDate: { $gte: r.startDate, $lte: r.endDate } })) };
+  }
+
+  /**
    * Get Yearly Summary Report
    * Shows donations grouped by year with currency breakdown
    * Applies global filters from user.settings
@@ -1375,7 +1410,7 @@ export class ReportController {
   @BackendMethod({ allowed: Allow.authenticated })
   static async getYearlySummaryReport(
     conversionRates: { [currency: string]: number },
-    localFilters?: { selectedYear?: string | number }
+    localFilters?: { selectedYear?: string | number, selectedYears?: (string | number)[] }
   ): Promise<YearlySummaryData[]> {
     try {
       const globalFilterDonorIds = await GlobalFilterController.getDonorIdsFromUserSettings();
@@ -1420,19 +1455,17 @@ export class ReportController {
         donationWhere.amount = amountFilter;
       }
 
-      // Year filter: resolve to date range before find()
+      // Year filter: resolve to date range before find() - הפונקציה המשותפת לשני
+      // הדוחות. בלי בחירה - כל השנים (כמו קודם)
       let yearDateFrom: Date | undefined = globalFilterDateFrom;
       let yearDateTo: Date | undefined = globalFilterDateTo;
-      if (localFilters?.selectedYear && localFilters.selectedYear !== 'last4') {
-        let targetHebrewYear: number;
-        if (typeof localFilters.selectedYear === 'number') {
-          targetHebrewYear = localFilters.selectedYear;
-        } else {
-          targetHebrewYear = await HebrewDateController.parseHebrewYear(localFilters.selectedYear);
-        }
-        const dateRange = await HebrewDateController.getHebrewYearDateRange(targetHebrewYear);
-        yearDateFrom = yearDateFrom && yearDateFrom > dateRange.startDate ? yearDateFrom : dateRange.startDate;
-        yearDateTo = yearDateTo && yearDateTo < dateRange.endDate ? yearDateTo : dateRange.endDate;
+      const resolvedYears = await ReportController.resolveReportYears(localFilters?.selectedYears, localFilters?.selectedYear, false);
+      if (resolvedYears) {
+        const first = resolvedYears.ranges[0].startDate;
+        const last = resolvedYears.ranges[resolvedYears.ranges.length - 1].endDate;
+        yearDateFrom = yearDateFrom && yearDateFrom > first ? yearDateFrom : first;
+        yearDateTo = yearDateTo && yearDateTo < last ? yearDateTo : last;
+        Object.assign(donationWhere, ReportController.selectedYearsWhere(resolvedYears.ranges));
       }
 
       if (yearDateFrom || yearDateTo) {

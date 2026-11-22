@@ -2449,3 +2449,33 @@ td.year-col {
     max-width: none;
   }
 }
+
+// בחירת כמה שנים - mat-select בתוך שדה בסגנון form-control, וכפתור ניקוי לידו
+.years-select-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  .years-select {
+    flex: 1;
+    min-width: 140px;
+    display: flex;
+    align-items: center;
+  }
+
+  .years-clear {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: #888;
+    padding: 0;
+    display: flex;
+    align-items: center;
+
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+    }
+  }
+}

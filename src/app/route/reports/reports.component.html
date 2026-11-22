@@ -87,10 +87,21 @@
       <!-- מסנן שנים -->
       <div class="filter-group" *ngIf="activeReport === 'donations' || activeReport === 'yearly'">
         <label>{{ (i18n.terms$ | async)?.filterByYears }}</label>
-        <select class="form-control" [(ngModel)]="filters.selectedYear" (ngModelChange)="applyFilters()">
-          <option value="last4">{{ activeReport === 'yearly' ? 'כל השנים' : '4 שנים אחרונות' }}</option>
-          <option *ngFor="let year of availableYears" [value]="year">{{year}}</option>
-        </select>
+        <!-- בחירת כמה שנים בסימון (ישראל, 22.11.2026). דוח התרומות - 4 השנים
+             האחרונות מסומנות מראש; סיכום שנתי - בלי סימון = כל השנים.
+             הדוח נטען כשהרשימה נסגרת, ורק אם הבחירה השתנתה -->
+        <div class="years-select-row">
+          <mat-select class="form-control years-select" multiple
+            [(ngModel)]="yearsSelection"
+            [placeholder]="activeReport === 'yearly' ? 'כל השנים' : ''"
+            (openedChange)="onYearsOpenedChange($event)">
+            <mat-option *ngFor="let year of availableYears" [value]="year">{{year}}</mat-option>
+          </mat-select>
+          <button *ngIf="activeReport === 'yearly' && filters.yearlySelectedYears.length" class="years-clear" type="button"
+            (click)="clearSelectedYears()" title="נקה - כל השנים">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
       </div>
 
       <!-- מסנן בחירת תורמים (משותף לתרומות ותשלומים) -->

@@ -1,4 +1,5 @@
 import { inject, Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { namesLabel } from '../../../shared/utils/filter-label-utils';
 import { UserSettingsService } from '../../services/user-settings.service';
 import { BusyService, openDialog } from 'common-ui-elements';
 import { remult } from 'remult';
@@ -298,6 +299,11 @@ export class ReportsComponent implements OnInit, OnDestroy {
     selectedDonorType: '',
     selectedDonorIds: [] as string[], // For multi-select donor filter (replaces selectedDonor)
     selectedYear: 'last4' as string | number, // 'last4' or specific year number
+    // בחירת כמה שנים (ישראל, 22.11.2026) - לכל דוח בחירה משלו:
+    // דוח התרומות - 4 השנים האחרונות מסומנות כברירת מחדל;
+    // סיכום שנתי - ריק = כל השנים (כמו קודם)
+    selectedYears: [] as string[],
+    yearlySelectedYears: [] as string[],
     selectedCampaign: '',
     selectedCurrency: 'all',
     groupBy: 'donor' as GroupByOption,
@@ -738,15 +744,19 @@ export class ReportsComponent implements OnInit, OnDestroy {
       // Note: availableDonors are no longer loaded here - they load only when opening the donor selection modal
 
       // Load campaigns and available years in parallel
-      const [campaigns, hebrewYears] = await Promise.all([
+      const [campaigns, hebrewYears, defaultYears] = await Promise.all([
         this.campaignRepo.find({
           orderBy: { name: 'asc' }
         }),
-        this.reportService.getAvailableHebrewYears()
+        this.reportService.getAvailableHebrewYears(),
+        this.reportService.getDefaultReportYears()
       ]);
 
       this.availableCampaigns = campaigns;
       this.availableYears = hebrewYears;
+      // רק שנים שקיימות ברשימה (יש בהן תרומות) - שנה בלי תרומות לא מסומנת
+      this.defaultReportYears = defaultYears.filter(y => hebrewYears.includes(y));
+      if (!this.filters.selectedYears.length) this.filters.selectedYears = [...this.defaultReportYears];
     } catch (error) {
       console.error('Error loading filter options:', error);
     }
@@ -868,7 +878,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
     try {
       console.log('🔍 CLIENT: Requesting report with filters:', {
         groupBy: this.filters.groupBy,
-        selectedYear: this.filters.selectedYear,
+        ...this.yearFilterArgs(),
         selectedDonorIds: this.filters.selectedDonorIds,
         selectedCampaign: this.filters.selectedCampaign,
         selectedDonorType: this.filters.selectedDonorType,
@@ -888,7 +898,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
         selectedDonorIds: this.filters.selectedDonorIds.length > 0 ? this.filters.selectedDonorIds : undefined,
         selectedCampaign: this.filters.selectedCampaign || undefined,
         selectedDonorType: this.filters.selectedDonorType || undefined,
-        selectedYear: this.filters.selectedYear,
+        ...this.yearFilterArgs(),
         conversionRates: this.conversionRates,
         page: this.currentPage,
         pageSize: this.pageSize,
@@ -1007,9 +1017,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
     // דוח שנתי - סיכום לפי שנים
     try {
       // Build local filters
-      const localFilters = {
-        selectedYear: this.filters.selectedYear
-      };
+      const localFilters = this.yearFilterArgs('yearly');
       // Global filters are now applied on the backend automatically via user.settings
       this.yearlySummaryData = await this.reportService.getYearlySummaryReport(this.conversionRates, localFilters);
 
@@ -1278,7 +1286,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
         selectedDonorIds: this.filters.selectedDonorIds.length > 0 ? this.filters.selectedDonorIds : undefined,
         selectedCampaign: this.filters.selectedCampaign || undefined,
         selectedDonorType: this.filters.selectedDonorType || undefined,
-        selectedYear: this.filters.selectedYear,
+        ...this.yearFilterArgs(),
         conversionRates: this.conversionRates,
         page: 1,
         pageSize: 999999,
@@ -1338,7 +1346,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
         selectedDonorIds: this.filters.selectedDonorIds.length > 0 ? this.filters.selectedDonorIds : undefined,
         selectedCampaign: this.filters.selectedCampaign || undefined,
         selectedDonorType: this.filters.selectedDonorType || undefined,
-        selectedYear: this.filters.selectedYear,
+        ...this.yearFilterArgs(),
         conversionRates: this.conversionRates,
         page: 1,
         pageSize: 999999, // Get all records
@@ -1353,7 +1361,8 @@ export class ReportsComponent implements OnInit, OnDestroy {
 
       // ===== Sheet 1: Main Report =====
       const reportTitle = `דוח תרומות מקובץ לפי ${this.getGroupByLabel()}`;
-      const yearSubtitle = this.filters.selectedYear === 'last4'
+      // השנים שהשרת החזיר הן בדיוק השנים שנבחרו (אחת, כמה, או 4 האחרונות)
+      const yearSubtitle = fullReportResponse.hebrewYears.length > 1
         ? `שנים עבריות: ${fullReportResponse.hebrewYears.join(', ')}`
         : `שנה עברית: ${fullReportResponse.hebrewYears[0]}`;
 
@@ -1585,21 +1594,77 @@ export class ReportsComponent implements OnInit, OnDestroy {
   }
 
   /** מאפייני הסינון של מסך הדוחות, בשמם ובסדר קבוע. פילטר שאינו פעיל לא מופיע כלל. */
+  /** שמות התורמים שנבחרו בסינון - נשמרים בבחירה, לשם הקובץ ולכותרות */
+  private selectedDonorNames: Record<string, string> = {};
+
+  /** 4 השנים האחרונות - הבחירה ההתחלתית בדוח התרומות (מהשרת, אותו כלל) */
+  defaultReportYears: string[] = [];
+  /** הבחירה ברגע פתיחת הרשימה - כדי לא לשלוף מחדש כשלא השתנה כלום */
+  private yearsAtOpen = '';
+
+  /** בחירת השנים של הדוח הפתוח - סיכום שנתי בנפרד מדוח התרומות */
+  get yearsSelection(): string[] {
+    return this.activeReport === 'yearly' ? this.filters.yearlySelectedYears : this.filters.selectedYears;
+  }
+  set yearsSelection(value: string[]) {
+    if (this.activeReport === 'yearly') this.filters.yearlySelectedYears = value;
+    else this.filters.selectedYears = value;
+  }
+
+  /** פתיחה/סגירה של רשימת השנים - שליפה רק כשהבחירה השתנתה */
+  onYearsOpenedChange(opened: boolean) {
+    const key = () => [...this.yearsSelection].sort().join('|');
+    if (opened) {
+      this.yearsAtOpen = key();
+      return;
+    }
+    // דוח התרומות לא נשאר בלי שנים - בלי סימון חוזרים ל-4 האחרונות
+    if (this.activeReport !== 'yearly' && !this.filters.selectedYears.length) {
+      this.filters.selectedYears = [...this.defaultReportYears];
+    }
+    if (key() !== this.yearsAtOpen) this.applyFilters();
+  }
+
+  /** סינון השנים לשרת - מקום אחד לכל הקריאות (תצוגה, ייצוא, הדפסה, סיכום שנתי) */
+  private yearFilterArgs(report: 'donations' | 'yearly' = 'donations'): { selectedYear: string | number, selectedYears?: string[] } {
+    const picked = report === 'yearly' ? this.filters.yearlySelectedYears : this.filters.selectedYears;
+    return {
+      selectedYear: this.filters.selectedYear,
+      selectedYears: picked.length ? picked : undefined
+    };
+  }
+
+  /** השנים שסומנו, לפי סדר הרשימה - לכותרות בייצוא ובהדפסה; null כשלא סומן כלום */
+  selectedYearsLabel(report: 'donations' | 'yearly' = 'donations'): string | null {
+    const picked = report === 'yearly' ? this.filters.yearlySelectedYears : this.filters.selectedYears;
+    if (!picked.length) return null;
+    return this.availableYears.filter(y => picked.includes(y)).join(', ');
+  }
+
+  /** נקה את בחירת השנים - בסיכום השנתי: כל השנים */
+  clearSelectedYears() {
+    this.filters.yearlySelectedYears = [];
+    this.applyFilters();
+  }
+
   private reportFilterParts(): string[] {
     const f = this.filters;
     const parts: string[] = [];
 
     // ארבע השנים בשמן ("תשפ״ג עד תשפ״ו"), לא "4 שנים אחרונות".
     const years = this.hebrewYears;
-    parts.push(f.selectedYear === 'last4'
-      ? (years.length ? `${years[0]} עד ${years[years.length - 1]}` : '4 שנים אחרונות')
-      : `שנת ${f.selectedYear}`);
+    const picked = this.selectedYearsLabel();
+    parts.push(picked
+      ? `שנים: ${picked}`
+      : f.selectedYear === 'last4'
+        ? (years.length ? `${years[0]} עד ${years[years.length - 1]}` : '4 שנים אחרונות')
+        : `שנת ${f.selectedYear}`);
 
     if (f.selectedDonorIds.length) {
-      parts.push(f.selectedDonorIds
-        .map(id => this.availableDonors.find(d => d.id === id)?.lastAndFirstName || '')
-        .filter(n => !!n)
-        .join(', ') || 'תורם');
+      // שמות התורמים - כולם (ישראל, 03.11: "לקצץ בסוף, לא לוותר על שמות";
+      // buildFileName מקצר בסוף לפי האורך המקסימלי)
+      parts.push(namesLabel(f.selectedDonorIds
+        .map(id => this.selectedDonorNames[id] || this.availableDonors.find(d => d.id === id)?.lastAndFirstName)) || 'תורם');
     }
     if (f.selectedCampaign) {
       parts.push(this.availableCampaigns.find(c => c.id === f.selectedCampaign)?.name || 'קמפיין');
@@ -1875,6 +1940,8 @@ export class ReportsComponent implements OnInit, OnDestroy {
 
       if (selectedDonors && Array.isArray(selectedDonors)) {
         this.filters.selectedDonorIds = selectedDonors.map((d: Donor) => d.id);
+        // השמות - לשם הקובץ ולכותרת בייצוא ובהדפסה (availableDonors לא נטען יותר)
+        for (const d of selectedDonors as Donor[]) this.selectedDonorNames[d.id] = d.lastAndFirstName;
         await this.applyFilters();
       }
     } catch (error) {
@@ -2944,7 +3011,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
       selectedDonorIds: this.filters.selectedDonorIds.length > 0 ? this.filters.selectedDonorIds : undefined,
       selectedCampaign: this.filters.selectedCampaign || undefined,
       selectedDonorType: this.filters.selectedDonorType || undefined,
-      selectedYear: this.filters.selectedYear,
+      ...this.yearFilterArgs(),
       conversionRates: this.conversionRates,
       page: 1,
       pageSize: 999999, // Get all records
@@ -3165,7 +3232,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
     ];
 
     const filters = [
-      { label: 'שנים', value: this.filters.selectedYear === 'last4' ? 'כל השנים' : String(this.filters.selectedYear) }
+      { label: 'שנים', value: this.selectedYearsLabel('yearly') || 'כל השנים' }
     ];
 
     const totals = this.allPlatformCurrencies.map(cur => {
