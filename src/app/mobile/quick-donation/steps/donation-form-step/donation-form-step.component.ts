@@ -1,4 +1,5 @@
 import { AfterViewInit, Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core'
+import { SearchSelectOption } from '../../../search-select/search-select.component'
 import { remult } from 'remult'
 import { Donor, Donation, Campaign, DonationMethod, Bank, Organization } from '../../../../../shared/entity'
 import { DEFAULT_CURRENCY } from '../../../../../shared/enum/currency'
@@ -37,6 +38,9 @@ export class DonationFormStepComponent implements OnInit, AfterViewInit {
   organizationId = ''
   banks: Bank[] = []
   organizations: Organization[] = []
+  // לרשימות עם חיפוש (app-search-select) - נבנות פעם אחת בטעינה
+  bankOptions: SearchSelectOption[] = []
+  organizationOptions: SearchSelectOption[] = []
   campaignId = ''
   reason = ''
   notes = ''
@@ -145,6 +149,8 @@ export class DonationFormStepComponent implements OnInit, AfterViewInit {
     const { banks, organizations } = await this.payerService.getBanksAndOrganizations()
     this.banks = banks
     this.organizations = organizations
+    this.bankOptions = banks.map(b => ({ id: b.id, label: b.name, hint: b.bankCode || '' }))
+    this.organizationOptions = organizations.map(o => ({ id: o.id, label: o.name, hint: o.registrationNumber || '' }))
   }
 
   get canSave(): boolean {

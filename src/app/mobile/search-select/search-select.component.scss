@@ -1,0 +1,134 @@
+:host {
+  display: block;
+}
+
+// השדה - נראה כמו form-select בטופס התרומה
+.ss-field {
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  // כמו form-select בטופס התרומה
+  min-height: 48px;
+  padding: 12px 16px;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  background: white;
+  font-size: 16px;
+  font-family: inherit;
+  color: #333;
+  text-align: start;
+
+  &.empty .ss-text {
+    color: #999;
+  }
+
+  .ss-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .ss-arrow {
+    color: #888;
+    flex-shrink: 0;
+  }
+}
+
+.ss-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: 1000;
+}
+
+// החלון - מלמטה, על רוב המסך, כדי שהרשימה תישאר גלויה מעל המקלדת
+.ss-panel {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 10vh;
+  bottom: 0;
+  z-index: 1001;
+  background: white;
+  border-radius: 16px 16px 0 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.ss-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  border-bottom: 1px solid #eee;
+
+  mat-icon {
+    color: #667eea;
+  }
+
+  input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    outline: none;
+    font-size: 16px; // 16px - בלי זום אוטומטי באייפון
+    font-family: inherit;
+  }
+
+  .ss-close {
+    border: none;
+    background: transparent;
+    color: #888;
+    display: flex;
+    padding: 0;
+  }
+}
+
+.ss-list {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.ss-option {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: none;
+  border-bottom: 1px solid #f2f2f2;
+  background: white;
+  font-size: 15px;
+  font-family: inherit;
+  color: #333;
+  text-align: start;
+
+  &.selected {
+    background: #f0f2fb;
+    color: #3949ab;
+    font-weight: 600;
+  }
+
+  &.none {
+    color: #888;
+  }
+
+  .ss-hint {
+    font-size: 12px;
+    color: #999;
+    direction: ltr;
+    flex-shrink: 0;
+  }
+}
+
+.ss-empty {
+  padding: 24px;
+  text-align: center;
+  color: #999;
+}

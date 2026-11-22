@@ -24,6 +24,7 @@ import { DoneStepComponent } from './quick-donation/steps/done-step/done-step.co
 import { DonorDetailsStepComponent } from './quick-donation/steps/donor-details-step/donor-details-step.component'
 import { DonorDonationsStepComponent } from './quick-donation/steps/donor-donations-step/donor-donations-step.component'
 import { DonorNewStepComponent } from './quick-donation/steps/donor-new-step/donor-new-step.component'
+import { SearchSelectComponent } from './search-select/search-select.component'
 import { RoutePlannerComponent } from './route-planner/route-planner.component'
 
 @NgModule({
@@ -37,6 +38,7 @@ import { RoutePlannerComponent } from './route-planner/route-planner.component'
     DonorDetailsStepComponent,
     DonorDonationsStepComponent,
     DonorNewStepComponent,
+    SearchSelectComponent,
     RoutePlannerComponent
   ],
   imports: [

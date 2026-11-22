@@ -1,0 +1,28 @@
+<button type="button" class="ss-field" [class.empty]="!value" [disabled]="disabled" (click)="openPanel()">
+  <span class="ss-text">{{ selectedLabel || emptyLabel }}</span>
+  <mat-icon class="ss-arrow">expand_more</mat-icon>
+</button>
+
+@if (open) {
+  <div class="ss-backdrop" (click)="close()"></div>
+  <div class="ss-panel" role="dialog">
+    <div class="ss-search">
+      <mat-icon>search</mat-icon>
+      <input #searchInput type="text" [(ngModel)]="search" [placeholder]="searchPlaceholder" autocomplete="off">
+      <button type="button" class="ss-close" (click)="close()" aria-label="סגור">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+    <div class="ss-list">
+      <button type="button" class="ss-option none" [class.selected]="!value" (click)="choose('')">{{ emptyLabel }}</button>
+      @for (o of filtered; track o.id) {
+        <button type="button" class="ss-option" [class.selected]="o.id === value" (click)="choose(o.id)">
+          <span>{{ o.label }}</span>
+          @if (o.hint) { <span class="ss-hint">{{ o.hint }}</span> }
+        </button>
+      } @empty {
+        <div class="ss-empty">לא נמצאו תוצאות</div>
+      }
+    </div>
+  </div>
+}

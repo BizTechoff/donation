@@ -54,23 +54,16 @@
   @if (fields.bank) {
     <div class="form-group">
       <label class="form-label">בנק</label>
-      <select class="form-select" [(ngModel)]="bankId">
-        <option value="">בחר בנק</option>
-        @for (bank of banks; track bank.id) {
-          <option [value]="bank.id">{{ bank.name }}</option>
-        }
-      </select>
+      <!-- רשימה עם חיפוש - לפי חלק מהשם או קוד הבנק (יעקב, 17.11) -->
+      <app-search-select [(ngModel)]="bankId" [options]="bankOptions"
+        emptyLabel="בחר בנק" searchPlaceholder="חיפוש לפי שם או קוד בנק"></app-search-select>
     </div>
   }
   @if (fields.organization) {
     <div class="form-group">
       <label class="form-label">עמותה</label>
-      <select class="form-select" [(ngModel)]="organizationId">
-        <option value="">בחר עמותה</option>
-        @for (org of organizations; track org.id) {
-          <option [value]="org.id">{{ org.name }}</option>
-        }
-      </select>
+      <app-search-select [(ngModel)]="organizationId" [options]="organizationOptions"
+        emptyLabel="בחר עמותה" searchPlaceholder="חיפוש לפי שם או מספר רישום"></app-search-select>
     </div>
   }
   @if (fields.accountNumber) {
