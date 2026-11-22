@@ -3,6 +3,9 @@
  * יש בו פרטי תורמים).
  *
  *   npx tsx tools/backup-db.ts --prod
+ *   npx tsx tools/backup-db.ts --prod --json --out=docs/backup-2026-11-22
+ *     --json - כל טבלה כקובץ JSON (בלי לנסות pg_dump)
+ *     --out  - תיקיית היעד (ברירת מחדל: backups/donation-<prod|local>-<תאריך>)
  *
  * עדיפות: pg_dump (קובץ .dump, שחזור ב-pg_restore). אם pg_dump לא מותקן או
  * שגרסתו ישנה מגרסת השרת - גיבוי נתונים ב-Node: כל טבלה כקובץ JSON בתיקייה
@@ -50,11 +53,13 @@ async function jsonBackup(dir: string) {
 async function main() {
   const url = resolveConnectionString()
   const { isProd, label } = hostLabel(url)
-  const base = path.join('backups', `donation-${isProd ? 'prod' : 'local'}-${stamp()}`)
-  fs.mkdirSync('backups', { recursive: true })
+  const outArg = process.argv.find(a => a.startsWith('--out='))?.slice('--out='.length)
+  const jsonOnly = process.argv.includes('--json')
+  const base = outArg || path.join('backups', `donation-${isProd ? 'prod' : 'local'}-${stamp()}`)
+  fs.mkdirSync(path.dirname(base), { recursive: true })
   say(`\n  גיבוי: ${label}\n`)
 
-  if (tryPgDump(url, `${base}.dump`)) {
+  if (!jsonOnly && tryPgDump(url, `${base}.dump`)) {
     const mb = (fs.statSync(`${base}.dump`).size / 1048576).toFixed(1)
     say(`\n  נשמר: ${base}.dump (${mb} MB)\n  שחזור: pg_restore --clean --no-owner --dbname=<url> ${base}.dump\n`)
     return

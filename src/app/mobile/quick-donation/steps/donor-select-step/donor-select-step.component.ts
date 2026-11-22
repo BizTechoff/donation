@@ -1,4 +1,5 @@
 import { Component, EventEmitter, OnInit, OnDestroy, Output } from '@angular/core'
+import { countryEnglishName } from '../../../../../shared/utils/address-language'
 import { Subject } from 'rxjs'
 import { debounceTime, takeUntil } from 'rxjs/operators'
 import { remult } from 'remult'
@@ -140,7 +141,8 @@ export class DonorSelectStepComponent implements OnInit, OnDestroy {
   }
 
   getDonorCountry(donor: Donor): string {
-    return this.donorPlaceMap[donor.id]?.country?.name || ''
+    // באנגלית - shared/utils/address-language
+    return countryEnglishName(this.donorPlaceMap[donor.id]?.country)
   }
 
   getDonorFullName(donor: Donor): string {

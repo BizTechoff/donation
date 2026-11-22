@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { countryEnglishName } from '../../../../shared/utils/address-language';
 import { MatDialogRef } from '@angular/material/dialog';
 import { BusyService, DialogConfig, openDialog } from 'common-ui-elements';
 import { remult } from 'remult';
@@ -181,7 +182,8 @@ export class CountrySelectionModalComponent implements OnInit {
 
   // Get country display name
   getCountryDisplayName(country: Country): string {
-    return country.displayName || country.name || 'מדינה';
+    // באנגלית בלבד (מדיניות הכתובות); החיפוש עדיין מוצא גם לפי השם בעברית
+    return countryEnglishName(country) || 'מדינה';
   }
 
   // Toggle includeCountryInLetter and save to DB

@@ -1,4 +1,5 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core'
+import { countryEnglishName } from '../../../../../shared/utils/address-language'
 import { remult } from 'remult'
 import { Donor, DonorContact, DonorPlace, DonorEvent, DonorNote, Circle, DonorRelation } from '../../../../../shared/entity'
 import { DonorReceptionHour } from '../../../../../shared/entity/donor-reception-hour'
@@ -87,6 +88,11 @@ export class DonorDetailsStepComponent implements OnInit {
     } finally {
       this.loading = false
     }
+  }
+
+  /** שם המדינה באנגלית - shared/utils/address-language */
+  countryName(country: { nameEn?: string, name?: string, code?: string } | null | undefined): string {
+    return countryEnglishName(country)
   }
 
   getDonorFullName(): string {

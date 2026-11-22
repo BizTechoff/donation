@@ -1,4 +1,5 @@
 import { Component, OnInit, OnDestroy, ViewChild, HostListener, ElementRef, ChangeDetectorRef } from '@angular/core';
+import { countryEnglishName } from '../../../shared/utils/address-language';
 import { MatMenuTrigger } from '@angular/material/menu';
 import { remult } from 'remult';
 import { Subject, Subscription } from 'rxjs';
@@ -114,7 +115,7 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
 
       // Load only countries that have donors linked
       const allCountries = await this.countryRepo.find({
-        orderBy: { name: 'asc' as 'asc' }
+        orderBy: { nameEn: 'asc' as 'asc' } // לפי השם באנגלית - זה השם שמוצג
       });
       this.countries = placeData.countryIds.length > 0
         ? allCountries.filter(c => placeData.countryIds.includes(c.id))
@@ -252,7 +253,7 @@ export class GlobalFiltersComponent implements OnInit, OnDestroy {
 
   getCountryDisplayName(countryId: string): string {
     const country = this.countries.find(c => c.id === countryId);
-    return country?.displayName || countryId;
+    return countryEnglishName(country) || countryId;
   }
 
   getTargetAudienceName(targetAudienceId: string): string {

@@ -18,7 +18,7 @@ export class CountryController {
     if (donorCountryIds.length > 0) {
       countries = await remult.repo(Country).find({
         where: { id: donorCountryIds },
-        orderBy: { name: 'asc' }
+        orderBy: { nameEn: 'asc' } // לפי השם באנגלית - זה השם שמוצג
       });
     } else {
       countries = [];

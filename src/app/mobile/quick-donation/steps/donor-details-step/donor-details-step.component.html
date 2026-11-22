@@ -136,10 +136,10 @@
                     <span class="info-value dir-ltr">{{ dp.place.postcode }}</span>
                   </div>
                 }
-                @if (dp.place.country?.name) {
+                @if (countryName(dp.place.country)) {
                   <div class="info-row">
                     <span class="info-label">מדינה</span>
-                    <span class="info-value">{{ dp.place.country?.name }}</span>
+                    <span class="info-value">{{ countryName(dp.place.country) }}</span>
                   </div>
                 }
               }

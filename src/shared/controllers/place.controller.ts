@@ -1,4 +1,5 @@
 import { BackendMethod, remult, Allow, SqlDatabase } from 'remult'
+import { countryEnglishName, englishOnly, hasHebrew } from '../utils/address-language'
 import { Place } from '../entity/place'
 import { DonorPlace } from '../entity/donor-place'
 import { CityDuplicateGroup, CityVariant, groupDuplicateCities } from '../utils/city-matching'
@@ -57,18 +58,19 @@ export class PlaceController {
          ORDER BY p."neighborhood"`
       ),
       sqlDb.execute(
-        `SELECT DISTINCT c."id", c."name" FROM "places" p
+        `SELECT DISTINCT c."id", c."name", c."nameEn" FROM "places" p
          JOIN "donor_places" dp ON dp."placeId" = p."id"
          JOIN "countries" c ON c."id" = p."countryId"
          WHERE dp."isActive" = true
-         ORDER BY c."name"`
+         ORDER BY c."nameEn"`
       )
     ])
+    // מדיניות הכתובות - רק אנגלית ברשימות הבחירה (shared/utils/address-language)
     return {
-      cities: (citiesResult.rows as any[]).map(r => r.city),
-      neighborhoods: (neighborhoodsResult.rows as any[]).map(r => r.neighborhood),
+      cities: englishOnly((citiesResult.rows as any[]).map(r => r.city)),
+      neighborhoods: englishOnly((neighborhoodsResult.rows as any[]).map(r => r.neighborhood)),
       countryIds: (countriesResult.rows as any[]).map(r => r.id),
-      countryNames: (countriesResult.rows as any[]).map(r => r.name)
+      countryNames: (countriesResult.rows as any[]).map(r => countryEnglishName(r))
     }
   }
 
@@ -127,7 +129,8 @@ export class PlaceController {
     // Group by city and count - only places that have a donor behind them
     const cityMap = new Map<string, CityData>();
     places.forEach(place => {
-      if (place.city && placeIdsWithDonors.has(place.id)) {
+      // מדיניות הכתובות - עיר שנשמרה בעברית לא מוצעת לבחירה
+      if (place.city && !hasHebrew(place.city) && placeIdsWithDonors.has(place.id)) {
         const existing = cityMap.get(place.city);
         if (existing) {
           existing.placeCount++;
