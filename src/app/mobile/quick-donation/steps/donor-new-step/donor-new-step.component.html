@@ -1,0 +1,54 @@
+<div class="donor-new-step">
+  <div class="form-title">
+    <mat-icon>person_add</mat-icon>
+    תורם חדש
+  </div>
+
+  <div class="form-group">
+    <label class="form-label">שם פרטי</label>
+    <input type="text" class="form-input" [(ngModel)]="firstName" autocomplete="off">
+  </div>
+
+  <div class="form-group">
+    <label class="form-label">שם משפחה</label>
+    <input type="text" class="form-input" [(ngModel)]="lastName" [placeholder]="'ריק - יישמר כ' + anonymous" autocomplete="off">
+  </div>
+
+  <div class="form-group">
+    <app-phone-input
+      label="טלפון"
+      [(ngModel)]="phoneNumber"
+      placeholder="מספר טלפון"
+      (lineTypeDetected)="onLineType($event)">
+    </app-phone-input>
+  </div>
+
+  <!-- כתובת מגורים - שדה הכתובת של הפלטפורמה. מהמפה הוא כבר מלא בכתובת
+       שנבחרה, וניתן לתקן אותה -->
+  <div class="form-group">
+    <label class="form-label">כתובת מגורים</label>
+    <app-osm-address-input
+      label="כתובת מגורים"
+      placeholder="הקלד כתובת..."
+      [(place)]="place">
+    </app-osm-address-input>
+  </div>
+
+  @if (errorMessage) {
+    <div class="error-message">{{ errorMessage }}</div>
+  }
+
+  <div class="bottom-bar">
+    <button class="btn-secondary" (click)="cancel.emit()">
+      <mat-icon>arrow_forward</mat-icon>
+      חזור
+    </button>
+    <button class="btn-primary" [disabled]="saving" (click)="save()">
+      @if (saving) {
+        <mat-spinner diameter="20"></mat-spinner>
+      } @else {
+        שמור
+      }
+    </button>
+  </div>
+</div>

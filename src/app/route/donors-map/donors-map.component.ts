@@ -13,6 +13,7 @@ import { UIToolsService } from '../../common/UIToolsService';
 import { I18nService } from '../../i18n/i18n.service';
 import { DonorService } from '../../services/donor.service';
 import { GeoService } from '../../services/geo.service';
+import { MapNewDonorService } from '../../services/map-new-donor.service';
 import { GeocodingService } from '../../services/geocoding.service';
 import { GlobalFilterService, GlobalFilters } from '../../services/global-filter.service';
 import { SidebarService } from '../../services/sidebar.service';
@@ -149,6 +150,7 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
     private donorService: DonorService,
     private globalFilterService: GlobalFilterService,
     private geoService: GeoService,
+    private mapNewDonor: MapNewDonorService,
     private cdr: ChangeDetectorRef,
     private sidebarService: SidebarService,
     private hebrewDateService: HebrewDateService,
@@ -1422,108 +1424,21 @@ export class DonorsMapComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    try {
-      // הצגת אינדיקטור טעינה
-      this.loading = true;
-
-      // בצע reverse geocoding
-      const result = await this.geoService.reverseGeocode(lat, lng);
-
-      this.loading = false;
-
-      if (result && result.success) {
-        // הצג דיאלוג אישור עם הכתובת
-        const message = this.i18n.terms.createNewDonorAtLocationQuestion
-          .replace('{address}', result.formattedAddress);
-
-        const shouldCreate = await this.ui.yesNoQuestion(message, true);
-
-        if (shouldCreate) {
-          // פתיחת דיאלוג תורם חדש עם הכתובת
-          await this.createNewDonorWithAddress(result, lat, lng);
-        }
-      } else {
-        this.ui.error(this.i18n.terms.addressNotFoundForLocation);
-      }
-    } catch (error) {
-      console.error('Error in map click handler:', error);
-      this.loading = false;
-      this.ui.error(this.i18n.terms.errorGettingAddress);
-    }
+    // השלב המשותף למחשב ולמובייל - services/map-new-donor.service
+    this.loading = true;
+    const place = await this.mapNewDonor.askNewDonorPlace(lat, lng, () => this.loading = false);
+    if (place) await this.openNewDonorAtPlace(place);
   }
 
-  async createNewDonorWithAddress(geocodeResult: any, lat: number, lng: number) {
-    try {
-      // השתמש ב-placeDto שמגיע מהשרת
-      const placeDto = geocodeResult.placeDto;
-
-      if (!placeDto || !placeDto.valid) {
-        this.ui.error(this.i18n.terms.errorGettingAddress);
-        return;
-      }
-
-      // קבלת קוד מדינה
-      const countryCode = placeDto.countryCode || 'IL';
-
-      // טעינת ישות Country מהמסד נתונים
-      let countryEntity: Country | undefined;
-      try {
-        countryEntity = await this.countryRepo.findFirst({
-          code: countryCode
-        });
-
-        if (!countryEntity) {
-          console.warn(`Country with code ${countryCode} not found, creating new...`);
-          const countryName = placeDto.countryName || placeDto.country || countryCode;
-          countryEntity = await this.countryRepo.insert({
-            name: countryName,
-            nameEn: countryName,
-            code: countryCode.toUpperCase(),
-            phonePrefix: '',
-            currencyId: 'USD',
-            isActive: true
-          });
-        }
-      } catch (error) {
-        console.error('Error loading/creating country:', error);
-      }
-
-      // יצירת ושמירת Place במסד הנתונים לפני פתיחת פרטי התורם
-      const placeData: Partial<Place> = {
-        placeId: geocodeResult.placeId,
-        fullAddress: geocodeResult.formattedAddress || '',
-        placeName: placeDto.name || '',
-        street: placeDto.streetname || '',
-        houseNumber: placeDto.homenumber ? String(placeDto.homenumber) : '',
-        neighborhood: placeDto.neighborhood || '',
-        city: placeDto.cityname || '',
-        state: placeDto.state || '',
-        postcode: placeDto.postcode || '',
-        countryId: countryEntity?.id,
-        latitude: placeDto.y,
-        longitude: placeDto.x
-      };
-
-      console.log('Creating and saving Place to database:', placeData);
-
-      // שמירת ה-Place במסד הנתונים מיד
-      const savedPlace = await Place.findOrCreate(placeData, this.placeRepo);
-      console.log('Place saved successfully with ID:', savedPlace.id);
-
-      // פתיחת דיאלוג תורם חדש עם ה-Place השמור
-      const changed = await this.ui.donorDetailsDialog('new', { initialPlace: savedPlace });
-
-      if (changed) {
-        // רענן את המפה
-        // Use setTimeout to avoid ExpressionChangedAfterItHasBeenCheckedError
-        setTimeout(async () => {
-          await this.loadData();
-          this.addMarkersToMap();
-        });
-      }
-    } catch (error) {
-      console.error('Error creating donor with address:', error);
-      this.ui.error(this.i18n.terms.errorCreatingDonor);
+  /** תורם חדש בכתובת שנבחרה במפה - כרטיס התורם, ואחר כך רענון המפה */
+  private async openNewDonorAtPlace(place: Place) {
+    const changed = await this.ui.donorDetailsDialog('new', { initialPlace: place });
+    if (changed) {
+      // Use setTimeout to avoid ExpressionChangedAfterItHasBeenCheckedError
+      setTimeout(async () => {
+        await this.loadData();
+        this.addMarkersToMap();
+      });
     }
   }
 

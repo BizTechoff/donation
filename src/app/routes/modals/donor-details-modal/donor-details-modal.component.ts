@@ -1,4 +1,5 @@
 import { UserNameService } from '../../../services/user-name.service';
+import { applyNewDonorDefaults } from '../../../../shared/utils/donor-create';
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
 import { BusyService, DialogConfig, openDialog } from 'common-ui-elements';
@@ -161,13 +162,8 @@ export class DonorDetailsModalComponent implements OnInit {
         this.isNewDonor = true;
         this.donor = this.donorRepo.create();
 
-        // Set initial values
-        this.donor.isActive = true;
-        this.donor.wantsUpdates = true;
-        this.donor.companyIds = [];
-        this.donor.circleIds = [];
-        this.donor.wantsTaxReceipts = true;
-        this.donor.preferredLanguage = 'he';
+        // Set initial values - shared/utils/donor-create (גם המובייל)
+        applyNewDonorDefaults(this.donor);
 
         // Set initial place if provided - create DonorPlace
         if (this.args.initialPlace) {

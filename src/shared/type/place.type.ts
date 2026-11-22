@@ -15,4 +15,5 @@ export interface placeDto {
     countryName: string, // Country Name (for mapping to Country entity)
     countryCode: string, // Country Code
     name: string        // Place Name
+    formattedAddress?: string // הכתובת המלאה מגוגל, באנגלית (formatted_address) - בלי שם העסק
 }

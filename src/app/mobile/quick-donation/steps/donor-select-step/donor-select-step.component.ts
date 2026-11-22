@@ -15,6 +15,8 @@ import { DonorMapController } from '../../../../../shared/controllers/donor-map.
 export class DonorSelectStepComponent implements OnInit, OnDestroy {
   @Output() donorSelected = new EventEmitter<Donor>()
   @Output() viewDonorDetails = new EventEmitter<Donor>()
+  @Output() viewDonations = new EventEmitter<Donor>()
+  @Output() addDonor = new EventEmitter<void>()
 
   searchTerm = ''
   loading = true
@@ -79,7 +81,7 @@ export class DonorSelectStepComponent implements OnInit, OnDestroy {
       if (d.phone) this.donorPhoneMap[d.id] = d.phone
       if (d.mobile) this.donorMobileMap[d.id] = d.mobile
       if (d.place?.city) {
-        this.donorPlaceMap[d.id] = { city: d.place.city, fullAddress: d.fullAddress } as any as Place
+        this.donorPlaceMap[d.id] = { city: d.place.city, fullAddress: d.fullAddress, country: d.place.country } as any as Place
       }
     }
 
@@ -135,6 +137,10 @@ export class DonorSelectStepComponent implements OnInit, OnDestroy {
 
   getDonorCity(donor: Donor): string {
     return this.donorPlaceMap[donor.id]?.city || ''
+  }
+
+  getDonorCountry(donor: Donor): string {
+    return this.donorPlaceMap[donor.id]?.country?.name || ''
   }
 
   getDonorFullName(donor: Donor): string {

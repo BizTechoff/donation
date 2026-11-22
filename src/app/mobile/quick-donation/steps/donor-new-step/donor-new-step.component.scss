@@ -1,0 +1,87 @@
+.donor-new-step {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.form-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+
+  mat-icon {
+    color: #667eea;
+  }
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #555;
+}
+
+.form-input {
+  width: 100%;
+  box-sizing: border-box;
+  // אותו גודל כמו שדה הטלפון ושדה הכתובת של הפלטפורמה - כל השדות בטופס שווים
+  padding: 10px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  background: white;
+
+  &:focus {
+    outline: none;
+    border-color: #667eea;
+  }
+}
+
+.error-message {
+  color: #c62828;
+  font-size: 14px;
+}
+
+.bottom-bar {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+  padding-top: 16px;
+  border-top: 1px solid #eee;
+
+  button {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 12px;
+    border-radius: 10px;
+    font-size: 16px;
+    font-family: inherit;
+    border: none;
+  }
+
+  .btn-secondary {
+    background: #f0f2fb;
+    color: #667eea;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+
+    &:disabled {
+      opacity: 0.6;
+    }
+  }
+}

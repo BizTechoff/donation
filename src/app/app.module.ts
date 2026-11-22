@@ -92,7 +92,6 @@ import { DonorSelectionModalComponent } from './routes/modals/donor-selection-mo
 import { DonationSelectionModalComponent } from './routes/modals/donation-selection-modal/donation-selection-modal.component'
 import { DonorAddressTypeSelectionModalComponent } from './routes/modals/donor-address-type-selection-modal/donor-address-type-selection-modal.component'
 import { CampaignSelectionModalComponent } from './routes/modals/campaign-selection-modal/campaign-selection-modal.component'
-import { OsmAddressInputComponent } from './common/osm-address-input/osm-address-input.component'
 import { LetterPropertiesModalComponent } from './routes/modals/letter-properties-modal/letter-properties-modal.component'
 import { LetterTitleSelectionModalComponent } from './routes/modals/letter-title-selection-modal/letter-title-selection-modal.component'
 import { ReminderDetailsModalComponent } from './routes/modals/reminder-details-modal/reminder-details-modal.component'
@@ -220,7 +219,7 @@ import { A11yModule } from "@angular/cdk/a11y";
     SeedDataComponent,
     ToggleSwitchComponent,
     GoogleSyncComponent,
-    OsmAddressInputComponent,
+    // OsmAddressInputComponent - עבר ל-SharedComponentsModule (גם המובייל משתמש בו)
     FileUploadComponent,
     PaymentListModalComponent,
     PaymentDetailsModalComponent,

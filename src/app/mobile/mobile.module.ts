@@ -22,6 +22,8 @@ import { DonationFormStepComponent } from './quick-donation/steps/donation-form-
 import { PhotoCaptureStepComponent } from './quick-donation/steps/photo-capture-step/photo-capture-step.component'
 import { DoneStepComponent } from './quick-donation/steps/done-step/done-step.component'
 import { DonorDetailsStepComponent } from './quick-donation/steps/donor-details-step/donor-details-step.component'
+import { DonorDonationsStepComponent } from './quick-donation/steps/donor-donations-step/donor-donations-step.component'
+import { DonorNewStepComponent } from './quick-donation/steps/donor-new-step/donor-new-step.component'
 import { RoutePlannerComponent } from './route-planner/route-planner.component'
 
 @NgModule({
@@ -33,6 +35,8 @@ import { RoutePlannerComponent } from './route-planner/route-planner.component'
     PhotoCaptureStepComponent,
     DoneStepComponent,
     DonorDetailsStepComponent,
+    DonorDonationsStepComponent,
+    DonorNewStepComponent,
     RoutePlannerComponent
   ],
   imports: [

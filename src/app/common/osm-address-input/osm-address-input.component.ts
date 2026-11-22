@@ -13,6 +13,7 @@ import { remult } from 'remult';
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { Country } from '../../../shared/entity/country';
 import { Place } from '../../../shared/entity/place';
+import { savePlaceFromGeo } from '../../../shared/utils/place-from-geo';
 import { GeoService } from '../../services/geo.service';
 import { I18nService } from '../../i18n/i18n.service';
 
@@ -137,8 +138,11 @@ export class OsmAddressInputComponent implements ControlValueAccessor, OnDestroy
 
       if (changes['place'].currentValue) {
         this.loadPlaceData(changes['place'].currentValue);
-      } else {
-        // Clear address if place becomes undefined/null
+      } else if (!changes['place'].firstChange) {
+        // Clear address if place becomes undefined/null.
+        // לא בפעם הראשונה: שדה שנפתח ריק ומקבל כתובת רק אחרי טעינה (טופס תורם
+        // חדש מהמפה) - הניקוי הראשון סימן justCleared, והכתובת שהגיעה אחריו
+        // נבלעה, כך שהשדה נשאר ריק.
         this.clearAddress();
       }
     }
@@ -250,65 +254,18 @@ export class OsmAddressInputComponent implements ControlValueAccessor, OnDestroy
         name: placeDetails.name
       });
 
-      // Step 3: המרת הפרטים מהשרת לפורמט AddressComponents
-      const countryCode = placeDetails.countryCode || 'IL';
-
-      // Step 3.1: טעינת ישות Country מהמסד נתונים לפי קוד מדינה
-      let countryEntity: Country | undefined;
-      try {
-        countryEntity = await remult.repo(Country).findFirst({
-          code: countryCode
-        });
-
-        if (!countryEntity) {
-          console.warn(`Country with code ${countryCode} not found in database, creating new country...`);
-
-          // יצירת מדינה חדשה מהנתונים שמגיעים מגוגל
-          const countryName = placeDetails.country || countryCode;
-          countryEntity = await remult.repo(Country).insert({
-            name: countryName,
-            nameEn: countryName,
-            code: countryCode.toUpperCase(),
-            phonePrefix: '', // יש למלא ידנית
-            currencyId: 'USD', // ברירת מחדל - יש למלא ידנית
-            // currencySymbol: '$', // ברירת מחדל - יש למלא ידנית
-            isActive: true
-          });
-
-          console.log(`✓ New country created: ${countryEntity.name} (${countryEntity.code})`);
-          console.log('⚠ Please update country details manually: phonePrefix, currency, currencySymbol');
-        }
-      } catch (error) {
-        console.error('Error loading/creating country entity:', error);
-      }
-
       // בדיקה אם יש נתונים חוזרים מהשרת
       if (!placeDetails.valid) {
         console.warn('Server returned invalid place data!');
       }
 
-      // Step 4: שמירת המקום ב-Places טבלה מיד ברגע הבחירה (HYBRID APPROACH)
+      // Step 3-4: המדינה והמקום - shared/utils/place-from-geo (גם המפות משתמשות בו).
+      // המקום נשמר מיד ברגע הבחירה (HYBRID APPROACH).
       try {
-        const placeData: Partial<Place> = {
-          placeId: String(suggestion.place_id || ''),
-          fullAddress: String(suggestion.description || ''),
-          placeName: placeDetails.name || '',
-          street: placeDetails.streetname || '',
-          houseNumber: placeDetails.homenumber || '',
-          neighborhood: placeDetails.neighborhood || '',
-          city: String(placeDetails.cityname || ''),
-          state: placeDetails.state || '',
-          postcode: placeDetails.postcode || '',
-          countryId: countryEntity?.id,
-          latitude: placeDetails.y,
-          longitude: placeDetails.x
-        };
-
-        console.log('Creating/updating Place record immediately upon selection:', placeData);
-        console.log('PlaceId type and value:', typeof placeData.placeId, placeData.placeId);
-
-        // יצירה/עדכון של Place ב-DB מיד (returns Place with country relation)
-        this.place = await Place.findOrCreate(placeData, remult.repo(Place));
+        this.place = await savePlaceFromGeo(placeDetails, {
+          placeId: suggestion.place_id,
+          fullAddress: suggestion.description
+        });
         console.log('Place saved successfully with ID:', this.place.id);
         console.log('Place country:', this.place.country);
 

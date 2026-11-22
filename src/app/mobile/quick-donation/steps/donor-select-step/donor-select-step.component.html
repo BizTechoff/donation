@@ -1,5 +1,6 @@
 <div class="donor-select-step">
-  <!-- Search Input -->
+  <!-- Search Input + הוספת תורם חדש -->
+  <div class="search-row">
   <div class="search-box">
     <mat-icon class="search-icon">search</mat-icon>
     <input
@@ -15,6 +16,10 @@
       </button>
     }
   </div>
+  <button class="add-donor-btn" (click)="addDonor.emit()" aria-label="תורם חדש">
+    <mat-icon>person_add</mat-icon>
+  </button>
+  </div>
 
   @if (loading) {
     <div class="loading-container">
@@ -26,7 +31,7 @@
       <div class="section-title">תוצאות חיפוש</div>
       @for (donor of filteredDonors; track donor.id) {
         <div class="donor-card">
-          <div class="donor-info">
+          <div class="donor-info" (click)="viewDonorDetails.emit(donor)">
             <div class="donor-name">{{ getDonorFullName(donor) }}</div>
             <div class="donor-details">
               @if (getDonorPhone(donor)) {
@@ -38,17 +43,18 @@
               @if (getDonorCity(donor)) {
                 <span class="donor-city">{{ getDonorCity(donor) }}</span>
               }
+              @if (getDonorCountry(donor)) {
+                <span class="donor-city">{{ getDonorCountry(donor) }}</span>
+              }
             </div>
           </div>
+          <!-- כל האזור הימני (שם, טלפון, עיר ומדינה) פותח את פרטי התורם -->
           <div class="donor-actions">
-            <button mat-flat-button class="action-btn donation-btn" (click)="donorSelected.emit(donor)">
-              <mat-icon>volunteer_activism</mat-icon>
-              תרומה
+            <button mat-flat-button class="action-btn donation-btn" (click)="viewDonations.emit(donor)">
+              <mat-icon>receipt_long</mat-icon>
+              תרומות
             </button>
-            <button mat-flat-button class="action-btn details-btn" (click)="viewDonorDetails.emit(donor)">
-              <mat-icon>info_outline</mat-icon>
-              פרטים
-            </button>
+            <button class="money-plus-btn" (click)="donorSelected.emit(donor)" aria-label="תרומה חדשה">💰<span class="plus-badge">+</span></button>
           </div>
         </div>
       }
@@ -63,7 +69,7 @@
       <div class="section-title">תורמים אחרונים</div>
       @for (donor of recentDonors; track donor.id) {
         <div class="donor-card">
-          <div class="donor-info">
+          <div class="donor-info" (click)="viewDonorDetails.emit(donor)">
             <div class="donor-name">{{ getDonorFullName(donor) }}</div>
             <div class="donor-details">
               @if (getDonorPhone(donor)) {
@@ -75,17 +81,18 @@
               @if (getDonorCity(donor)) {
                 <span class="donor-city">{{ getDonorCity(donor) }}</span>
               }
+              @if (getDonorCountry(donor)) {
+                <span class="donor-city">{{ getDonorCountry(donor) }}</span>
+              }
             </div>
           </div>
+          <!-- כל האזור הימני (שם, טלפון, עיר ומדינה) פותח את פרטי התורם -->
           <div class="donor-actions">
-            <button mat-flat-button class="action-btn donation-btn" (click)="donorSelected.emit(donor)">
-              <mat-icon>volunteer_activism</mat-icon>
-              תרומה
+            <button mat-flat-button class="action-btn donation-btn" (click)="viewDonations.emit(donor)">
+              <mat-icon>receipt_long</mat-icon>
+              תרומות
             </button>
-            <button mat-flat-button class="action-btn details-btn" (click)="viewDonorDetails.emit(donor)">
-              <mat-icon>info_outline</mat-icon>
-              פרטים
-            </button>
+            <button class="money-plus-btn" (click)="donorSelected.emit(donor)" aria-label="תרומה חדשה">💰<span class="plus-badge">+</span></button>
           </div>
         </div>
       }

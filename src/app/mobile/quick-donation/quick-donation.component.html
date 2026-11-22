@@ -1,15 +1,27 @@
 <div class="quick-donation">
 
-  <!-- Donor Details Side-View (outside wizard steps) -->
-  @if (showingDonorDetails && selectedDonor) {
-    <app-donor-details-step
+  <!-- Side views (outside wizard steps) -->
+  @if (showingNewDonor) {
+    <app-donor-new-step
+      [placeId]="newDonorPlaceId"
+      (saved)="onNewDonorSaved($event)"
+      (cancel)="historyBackToSearch()">
+    </app-donor-new-step>
+  } @else if (showingDonations && selectedDonor) {
+    <app-donor-donations-step
       [donor]="selectedDonor"
       [currencies]="currencies"
+      (back)="onBackFromDetails()"
+      (newDonation)="onNewDonationFromDetails($event)"
+      (editDonation)="onEditDonation($event)">
+    </app-donor-donations-step>
+  } @else if (showingDonorDetails && selectedDonor) {
+    <app-donor-details-step
+      [donor]="selectedDonor"
       [initialSection]="detailsTab"
       (back)="onBackFromDetails()"
       (newDonation)="onNewDonationFromDetails($event)"
-      (sectionChange)="onDetailsSection($event)"
-      (editDonation)="onEditDonation($event)">
+      (sectionChange)="onDetailsSection($event)">
     </app-donor-details-step>
   } @else {
 
@@ -40,7 +52,9 @@
         @case (1) {
           <app-donor-select-step
             (donorSelected)="onDonorSelected($event)"
-            (viewDonorDetails)="onViewDonorDetails($event)">
+            (viewDonorDetails)="onViewDonorDetails($event)"
+            (viewDonations)="onViewDonations($event)"
+            (addDonor)="onAddDonor()">
           </app-donor-select-step>
         }
         @case (2) {

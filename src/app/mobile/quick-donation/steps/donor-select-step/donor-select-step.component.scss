@@ -97,6 +97,7 @@
 
   .donor-actions {
     display: flex;
+    align-items: center; // "תרומות" והשק על אותו קו
     gap: 6px;
     margin-right: 8px;
     flex-shrink: 0;
@@ -153,4 +154,66 @@
   display: flex;
   justify-content: center;
   padding: 32px;
+}
+
+// חיפוש + כפתור תורם חדש בשורה אחת
+.search-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+
+  .search-box {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+.add-donor-btn {
+  flex-shrink: 0;
+  width: 48px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// האזור הימני של השורה לחיץ - פותח את פרטי התורם
+.donor-card .donor-info {
+  cursor: pointer;
+}
+
+// שק עם פלוס - תרומה חדשה, כמו ברשימת התורמים במחשב
+.money-plus-btn {
+  position: relative;
+  border: none;
+  background: transparent; // בלי רקע - כמו ברשימת התורמים במחשב
+  border-radius: 8px;
+  width: 34px;
+  height: 30px; // אותו גובה כמו כפתור "תרומות" - על אותו קו
+  align-self: center;
+  padding: 0;
+  font-size: 20px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .plus-badge {
+    position: absolute;
+    top: 6px;
+    left: 5px;
+    font-size: 9px;
+    font-weight: 900;
+    line-height: 10px;
+    width: 10px;
+    text-align: center;
+    color: #fff;
+    background: #1d6b41;
+    border-radius: 50%;
+    box-shadow: 0 0 0 1px #fff;
+    pointer-events: none;
+  }
 }

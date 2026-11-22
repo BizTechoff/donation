@@ -1,7 +1,6 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core'
 import { remult } from 'remult'
-import { Donor, DonorContact, DonorPlace, DonorEvent, DonorNote, Circle, DonorRelation, Donation } from '../../../../../shared/entity'
-import { CurrencyType } from '../../../../../shared/type/currency.type'
+import { Donor, DonorContact, DonorPlace, DonorEvent, DonorNote, Circle, DonorRelation } from '../../../../../shared/entity'
 import { DonorReceptionHour } from '../../../../../shared/entity/donor-reception-hour'
 import { DonorController } from '../../../../../shared/controllers/donor.controller'
 import { Place } from '../../../../../shared/entity/place'
@@ -13,24 +12,14 @@ import { Place } from '../../../../../shared/entity/place'
 })
 export class DonorDetailsStepComponent implements OnInit {
   @Input() donor!: Donor
-  @Input() currencies: Record<string, CurrencyType> = {}
-  /** הלשונית הפתוחה - מגיעה מהכתובת, כדי ש-Back מעריכת תרומה יחזור לרשימה */
+  /** הלשונית הפתוחה - מגיעה מהכתובת, כדי ש-Back יחזור לאותה לשונית */
   @Input() initialSection = ''
   @Output() back = new EventEmitter<void>()
   @Output() newDonation = new EventEmitter<Donor>()
-  @Output() editDonation = new EventEmitter<Donation>()
   @Output() sectionChange = new EventEmitter<string>()
 
   loading = true
   activeSection = 'personal'
-
-  // תרומות התורם - נטענות רק כשפותחים את הלשונית, 20 בכל פעם
-  private static readonly DONATIONS_PAGE_SIZE = 20
-  donations: Donation[] = []
-  donationsLoaded = false
-  loadingDonations = false
-  hasMoreDonations = false
-  private donationsPage = 0
 
   contacts: DonorContact[] = []
   places: DonorPlace[] = []
@@ -54,7 +43,6 @@ export class DonorDetailsStepComponent implements OnInit {
 
   sections = [
     { id: 'personal', label: 'פרטים אישיים', icon: 'person' },
-    { id: 'donations', label: 'תרומות', icon: 'volunteer_activism' },
     { id: 'address', label: 'כתובת', icon: 'location_on' },
     { id: 'preferences', label: 'העדפות', icon: 'tune' },
     { id: 'family', label: 'משפחה', icon: 'family_restroom' },
@@ -68,40 +56,11 @@ export class DonorDetailsStepComponent implements OnInit {
       this.activeSection = this.initialSection
     }
     await this.loadDetails()
-    if (this.activeSection === 'donations') void this.loadDonations()
   }
 
   selectSection(id: string) {
     this.activeSection = id
     this.sectionChange.emit(id)
-    if (id === 'donations' && !this.donationsLoaded) void this.loadDonations()
-  }
-
-  /** התרומות של התורם, מהחדשה לישנה. "טען עוד" מוסיף את העמוד הבא. */
-  async loadDonations(more = false) {
-    if (this.loadingDonations) return
-    this.loadingDonations = true
-    try {
-      this.donationsPage = more ? this.donationsPage + 1 : 1
-      const size = DonorDetailsStepComponent.DONATIONS_PAGE_SIZE
-      const page = await remult.repo(Donation).find({
-        where: { donorId: this.donor.id },
-        orderBy: { donationDate: 'desc', createdDate: 'desc' },
-        include: { donationMethod: true, campaign: true },
-        limit: size,
-        page: this.donationsPage
-      })
-      this.donations = more ? [...this.donations, ...page] : page
-      this.hasMoreDonations = page.length === size
-      this.donationsLoaded = true
-    } finally {
-      this.loadingDonations = false
-    }
-  }
-
-  donationAmount(d: Donation): string {
-    const symbol = this.currencies[d.currencyId]?.symbol || d.currencyId || ''
-    return `${symbol}${(d.amount || 0).toLocaleString('he-IL')}`
   }
 
   private async loadDetails() {

@@ -5,9 +5,9 @@ import { remult } from 'remult'
 import { TargetAudience } from '../../../shared/entity/target-audience'
 import { DonorMapController, MarkerData, DonorMapData } from '../../../shared/controllers/donor-map.controller'
 import { GeoService } from '../../services/geo.service'
+import { MapNewDonorService } from '../../services/map-new-donor.service'
 import { UIToolsService } from '../../common/UIToolsService'
 import { User } from '../../../shared/entity/user'
-import { Donor, Place, Country } from '../../../shared/entity'
 import { I18nService } from '../../i18n/i18n.service'
 
 declare const google: any
@@ -89,6 +89,7 @@ export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
     private router: Router,
     private route: ActivatedRoute,
     private geoService: GeoService,
+    private mapNewDonor: MapNewDonorService,
     private ui: UIToolsService,
     private i18n: I18nService,
     private zone: NgZone
@@ -390,124 +391,17 @@ export class RoutePlannerComponent implements OnInit, AfterViewInit, OnDestroy {
     const { lat, lng } = this.longPressLatLng
     this.longPressLatLng = null
 
-    try {
-      this.loading = true
+    // השלב המשותף למחשב ולמובייל - services/map-new-donor.service
+    this.loading = true
+    const place = await this.mapNewDonor.askNewDonorPlace(lat, lng, () => this.loading = false)
+    if (!place) return
 
-      // Reverse geocode the location
-      const result = await this.geoService.reverseGeocode(lat, lng)
-
-      this.loading = false
-
-      if (result && result.success) {
-        // Ask user to confirm creating donor at this location
-        const message = this.i18n.terms.createNewDonorAtLocationQuestion
-          .replace('{address}', result.formattedAddress)
-
-        const shouldCreate = await this.ui.yesNoQuestion(message, true)
-
-        if (shouldCreate) {
-          await this.createNewDonorWithAddress(result, lat, lng)
-        }
-      } else {
-        this.ui.error(this.i18n.terms.addressNotFoundForLocation)
-      }
-    } catch (error) {
-      console.error('Error in long-press handler:', error)
-      this.loading = false
-      this.ui.error(this.i18n.terms.errorGettingAddress)
-    }
-  }
-
-  private async createNewDonorWithAddress(geocodeResult: any, lat: number, lng: number) {
-    try {
-      const placeDto = geocodeResult.placeDto
-
-      if (!placeDto || !placeDto.valid) {
-        this.ui.error(this.i18n.terms.errorGettingAddress)
-        return
-      }
-
-      // Get country code
-      const countryCode = placeDto.countryCode || 'IL'
-
-      // Load Country entity from database
-      let countryEntity: Country | undefined
-      try {
-        countryEntity = await remult.repo(Country).findFirst({
-          code: countryCode
-        })
-
-        if (!countryEntity) {
-          console.warn(`Country with code ${countryCode} not found, creating new...`)
-          const countryName = placeDto.countryName || placeDto.country || countryCode
-          countryEntity = await remult.repo(Country).insert({
-            name: countryName,
-            nameEn: countryName,
-            code: countryCode.toUpperCase(),
-            phonePrefix: '',
-            currencyId: 'USD',
-            isActive: true
-          })
-        }
-      } catch (error) {
-        console.error('Error loading/creating country:', error)
-      }
-
-      // Create Place entity
-      const placeData: Partial<Place> = {
-        placeId: geocodeResult.placeId,
-        fullAddress: geocodeResult.formattedAddress || '',
-        placeName: placeDto.name || '',
-        street: placeDto.streetname || '',
-        houseNumber: placeDto.homenumber ? String(placeDto.homenumber) : '',
-        neighborhood: placeDto.neighborhood || '',
-        city: placeDto.cityname || '',
-        state: placeDto.state || '',
-        postcode: placeDto.postcode || '',
-        countryId: countryEntity?.id,
-        latitude: placeDto.y,
-        longitude: placeDto.x
-      }
-
-      // Save Place to database
-      const savedPlace = await Place.findOrCreate(placeData, remult.repo(Place))
-      console.log('Place saved successfully with ID:', savedPlace.id)
-
-      // Open donor details dialog with the saved Place
-      const changed = await this.ui.donorDetailsDialog('new', { initialPlace: savedPlace })
-
-      if (changed) {
-        // Reload map data after donor was created
-        setTimeout(async () => {
-          if (this.selectedAudienceId) {
-            await this.onAudienceChange()
-          }
-
-          // Ask if user wants to add donation immediately
-          const addDonation = await this.ui.yesNoQuestion(
-            this.i18n.terms.donorCreatedAddDonationQuestion || 'התורם נוצר בהצלחה. להזין תרומה?',
-            true
-          )
-
-          if (addDonation) {
-            // Navigate to quick donation with the new donor
-            // We need to get the donor ID from the last created donor
-            const latestDonor = await remult.repo(Donor).findFirst(
-              {},
-              { orderBy: { createdDate: 'desc' } }
-            )
-            if (latestDonor) {
-              this.router.navigate(['/m/quick-donation'], {
-                queryParams: { donorId: latestDonor.id, source: 'map' }
-              })
-            }
-          }
-        })
-      }
-    } catch (error) {
-      console.error('Error creating donor:', error)
-      this.ui.error(this.i18n.terms.errorSavingDonor || 'שגיאה בשמירת התורם')
-    }
+    // תורם חדש - הטופס הקצר של המובייל (quick-donation, mode=new-donor). הכתובת
+    // שנבחרה ממלאת את שדה הכתובת וניתנת לתיקון; השמירה והשאלה "להוסיף תרומה?"
+    // שם - על התורם שנשמר בפועל.
+    this.router.navigate(['/m/quick-donation'], {
+      queryParams: { mode: 'new-donor', placeId: place.id, source: 'map' }
+    })
   }
 
   // פתח פופאפ אם יש תורם ממתין (חזרה ממסך תרומה/פרטים)

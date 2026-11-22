@@ -1,0 +1,39 @@
+<div class="donor-donations-step">
+  <div class="list-header">
+    <button class="icon-btn" (click)="back.emit()" aria-label="חזור">
+      <mat-icon>arrow_forward</mat-icon>
+    </button>
+    <div class="title">
+      <div class="donor-name">{{ donorName() }}</div>
+      <div class="sub">תרומות</div>
+    </div>
+    <button class="icon-btn money-plus" (click)="newDonation.emit(donor)" aria-label="תרומה חדשה">💰<span class="plus-badge">+</span></button>
+  </div>
+
+  @for (d of donations; track d.id) {
+    <div class="donation-row" (click)="editDonation.emit(d)">
+      <div class="donation-main">
+        <span class="donation-amount dir-ltr">{{ amount(d) }}</span>
+        @if (d.donationType === 'commitment') {
+          <span class="badge">התחייבות</span>
+        }
+      </div>
+      <div class="donation-meta">
+        <span>{{ date(d.donationDate) }}</span>
+        @if (d.donationMethod?.name) { <span>{{ d.donationMethod?.name }}</span> }
+        @if (d.campaign?.name) { <span>{{ d.campaign?.name }}</span> }
+      </div>
+      <mat-icon class="edit-icon">edit</mat-icon>
+    </div>
+  } @empty {
+    @if (loaded) {
+      <div class="empty-state">אין תרומות רשומות</div>
+    }
+  }
+
+  @if (loading) {
+    <div class="loading-container"><mat-spinner diameter="28"></mat-spinner></div>
+  } @else if (hasMore) {
+    <button class="load-more-btn" (click)="load(true)">טען עוד</button>
+  }
+</div>

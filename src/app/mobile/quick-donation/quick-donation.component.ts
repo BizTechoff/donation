@@ -17,7 +17,9 @@ import { CurrencyType } from '../../../shared/type/currency.type'
 //   step=form&donorId         -> 2 הזן תרומה
 //   step=photo&donationId     -> 3 צלם צ'ק   (replaces the form entry)
 //   step=done&donationId      -> 4 סיום      (replaces the photo entry)
-//   mode=details&tab=donations -> תרומות התורם (tab replaces, no new entry)
+//   mode=details&tab=X         -> לשונית בפרטי התורם (replaces, no new entry)
+//   mode=donations&donorId     -> תרומות התורם (מסך משלו - כפתור "תרומות" בשורת התורם)
+//   mode=new-donor[&placeId]   -> תורם חדש (כפתור "+" או נקודה במפה); אחרי שמירה מוחלף
 //   step=edit&donationId      -> עריכת תרומה קיימת באותו טופס; שמירה חוזרת לרשימה
 // After a save the form entry is replaced, so Back can never reopen a form that
 // was already saved (no duplicate donations).
@@ -45,6 +47,11 @@ export class QuickDonationComponent implements OnInit, OnDestroy {
   // Donor details side-view (not part of wizard steps)
   showingDonorDetails = false
   detailsTab = ''
+  // מסכים צדדיים נוספים מחוץ לשלבי האשף
+  showingDonations = false
+  showingNewDonor = false
+  newDonorPlaceId = ''
+  private newDonorFromMap = false
 
   // עריכת תרומה קיימת (step=edit) - אותו טופס של תרומה חדשה
   editingDonation: Donation | null = null
@@ -95,6 +102,8 @@ export class QuickDonationComponent implements OnInit, OnDestroy {
 
     // Track navigation source for smart back navigation
     this.sourceIsMap = source === 'map' && !!donorId
+    this.showingDonations = false
+    this.showingNewDonor = false
     this.sourceDonorId = this.sourceIsMap ? donorId : null
 
     try {
@@ -115,6 +124,20 @@ export class QuickDonationComponent implements OnInit, OnDestroy {
     this.detailsTab = params.get('tab') || ''
     if (step !== 'edit') this.editingDonation = null
 
+    if (mode === 'new-donor') {
+      this.showingDonorDetails = false
+      this.showingNewDonor = true
+      this.newDonorPlaceId = params.get('placeId') || ''
+      this.newDonorFromMap = source === 'map'
+      this.currentStep = 1
+      return
+    }
+    if (mode === 'donations' && this.selectedDonor) {
+      this.showingDonorDetails = false
+      this.showingDonations = true
+      this.currentStep = 1
+      return
+    }
     if (mode === 'details' && this.selectedDonor) {
       this.showingDonorDetails = true
       this.currentStep = 1
@@ -193,6 +216,38 @@ export class QuickDonationComponent implements OnInit, OnDestroy {
     this.go({ donorId: this.selectedDonor!.id, mode: 'details', tab }, false)
   }
 
+  /** "תרומות" בשורת התורם - רשימת התרומות שלו */
+  onViewDonations(donor: Donor) {
+    this.selectedDonor = donor
+    this.go({ donorId: donor.id, mode: 'donations' }, true)
+  }
+
+  /** "+" ליד החיפוש - תורם חדש בלי כתובת */
+  onAddDonor() {
+    this.go({ mode: 'new-donor' }, true)
+  }
+
+  /**
+   * תורם חדש נשמר - מיד שואלים אם להוסיף לו תרומה (יעקב). המסך של התורם החדש
+   * מוחלף, כך ש-Back לא פותח שוב טופס של תורם שכבר נשמר.
+   */
+  async onNewDonorSaved(donor: Donor) {
+    this.selectedDonor = donor
+    const addDonation = await this.ui.yesNoQuestion('התורם נשמר. להוסיף לו תרומה עכשיו?', true)
+    this.go(addDonation
+      ? { donorId: donor.id, step: 'form' }
+      : { donorId: donor.id, mode: 'details' }, false)
+  }
+
+  /** ביטול תורם חדש - חזרה למסך הקודם (חיפוש או המפה) */
+  historyBackToSearch() {
+    if (this.newDonorFromMap) {
+      this.location.back() // המפה פתחה את המסך הזה - חוזרים אליה
+      return
+    }
+    this.historyBack({})
+  }
+
   onEditDonation(donation: Donation) {
     this.editingDonation = donation
     this.go({ donorId: this.selectedDonor!.id, donationId: donation.id, step: 'edit' }, true)
@@ -202,7 +257,7 @@ export class QuickDonationComponent implements OnInit, OnDestroy {
   onDonationUpdated() {
     this.ui.info('התרומה עודכנה')
     this.editingDonation = null
-    this.historyBack({ donorId: this.selectedDonor!.id, mode: 'details', tab: 'donations' })
+    this.historyBack({ donorId: this.selectedDonor!.id, mode: 'donations' })
   }
 
   onNewDonationFromDetails(donor: Donor) {
@@ -231,7 +286,7 @@ export class QuickDonationComponent implements OnInit, OnDestroy {
   goBack() {
     if (this.editingDonation) {
       // עריכה -> רשימת התרומות של התורם (גם כשהגיעו לתורם מהמפה)
-      this.historyBack({ donorId: this.selectedDonor!.id, mode: 'details', tab: 'donations' })
+      this.historyBack({ donorId: this.selectedDonor!.id, mode: 'donations' })
       return
     }
     // If at donation form / after save and came from map, go back to map

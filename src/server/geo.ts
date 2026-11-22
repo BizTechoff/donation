@@ -67,7 +67,13 @@ export const doGetPlace = async (place_id = '', lang = '') => {
             if (response.ok) {
                 const json = await response.json();
                 if (json?.status === 'OK' && json?.result) {
-                    const { geometry, address_components, name } = json.result;
+                    const { geometry, address_components, name, formatted_address } = json.result;
+
+                    // הכתובת המלאה באנגלית (language=en) - זו שנשמרת, ולא שורת
+                    // ההצעה, שבחיפוש בעברית מתחילה בשם העסק בעברית
+                    if (formatted_address) {
+                        result.formattedAddress = formatted_address;
+                    }
 
                     // Extract place name
                     if (name) {
