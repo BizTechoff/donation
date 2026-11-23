@@ -27,6 +27,12 @@ import { CommitmentProgress, formatCommitmentProgress } from '../../../shared/ut
 import { deleteDonationQuestion } from '../../common/donation-confirm';
 import { Donor, Payment, DonorContact } from '../../../shared/entity';
 
+/** תשלומי הו"ק והתקדמות ההתחייבויות - לעמודת הסכום (getAmountDisplay) */
+interface AmountMaps {
+  paymentTotals: Record<string, number>
+  progress: Partial<Record<string, CommitmentProgress>>
+}
+
 @Component({
   selector: 'app-donations-list',
   templateUrl: './donations-list.component.html',
@@ -225,16 +231,9 @@ export class DonationsListComponent implements OnInit, OnDestroy {
         ]);
 
         // Load payment totals for commitment and standing order donations
-        const paymentBasedIds = this.donations
-          .filter(d => isPaymentBased(d))
-          .map(d => d.id);
-        if (paymentBasedIds.length > 0) {
-          this.commitmentPaymentTotals = await DonationController.getPaymentTotalsForCommitments(paymentBasedIds);
-        } else {
-          this.commitmentPaymentTotals = {};
-        }
-        this.commitmentProgressMap = await CommitmentController.getProgress(
-          this.donations.filter(d => d.donationType === 'commitment').map(d => d.id));
+        const pageAmounts = await this.loadAmountMaps(this.donations);
+        this.commitmentPaymentTotals = pageAmounts.paymentTotals;
+        this.commitmentProgressMap = pageAmounts.progress;
         // שלב ג׳ 8 - שמות השותפים של העמוד, לשורת "שותפים בתרומה"
         this.partnerNames = await loadDonorNames(partnershipNameIds(this.donations));
         // שלב ג׳ 3.1 - הנייד של תורמי העמוד, מאותו מקור של ההדפסה והייצוא
@@ -736,21 +735,39 @@ export class DonationsListComponent implements OnInit, OnDestroy {
    * For commitments: shows "paid / total" format
    * For regular donations: shows just the amount
    */
-  getAmountDisplay(donation: Donation): string {
+  /**
+   * הנתונים לעמודת הסכום - תשלומי הו"ק וההתקדמות בהתחייבויות. מקום אחד למסך
+   * (העמוד) ולהדפסה ולייצוא (כל הרשימה), כדי שיציגו אותו דבר (ישראל, 23.11:
+   * במסך "0 / 10,000", בייצוא היה רק "10,000" בלי שרואים שזו התחייבות).
+   */
+  private async loadAmountMaps(donations: Donation[]): Promise<AmountMaps> {
+    const paymentBasedIds = donations.filter(d => isPaymentBased(d)).map(d => d.id);
+    const commitmentIds = donations.filter(d => d.donationType === 'commitment').map(d => d.id);
+    const [paymentTotals, progress] = await Promise.all([
+      paymentBasedIds.length ? DonationController.getPaymentTotalsForCommitments(paymentBasedIds) : Promise.resolve({}),
+      commitmentIds.length ? CommitmentController.getProgress(commitmentIds) : Promise.resolve({})
+    ]);
+    return { paymentTotals, progress } as AmountMaps;
+  }
+
+  /** הסכום כפי שמוצג: רגילה - הסכום; התחייבות / הו"ק - "שולם / סה"כ". symbol - לייצוא ולהדפסה */
+  getAmountDisplay(donation: Donation, maps?: AmountMaps, symbol = ''): string {
+    const paymentTotals = maps?.paymentTotals ?? this.commitmentPaymentTotals;
+    const progress = maps?.progress ?? this.commitmentProgressMap;
     if (donation.donationType === 'commitment') {
-      return formatCommitmentProgress(this.commitmentProgressMap[donation.id] || { paid: 0, total: donation.amount });
+      return formatCommitmentProgress(progress[donation.id] || { paid: 0, total: donation.amount }, symbol);
     }
     if (isStandingOrder(donation)) {
-      const paidAmount = this.commitmentPaymentTotals[donation.id] || 0;
+      const paidAmount = paymentTotals[donation.id] || 0;
       if (donation.unlimitedPayments) {
         // הו"ק ללא הגבלה: בפועל / צפי (מספר תקופות צפויות × סכום לתשלום)
         const expectedPeriods = calculatePeriodsElapsed(donation);
         const expectedAmount = expectedPeriods * donation.amount;
-        return `${paidAmount.toLocaleString()} / ${expectedAmount.toLocaleString()}`;
+        return `${symbol}${paidAmount.toLocaleString()} / ${symbol}${expectedAmount.toLocaleString()}`;
       }
-      return `${paidAmount.toLocaleString()} / ${donation.amount.toLocaleString()}`;
+      return `${symbol}${paidAmount.toLocaleString()} / ${symbol}${donation.amount.toLocaleString()}`;
     }
-    return donation.amount.toLocaleString();
+    return `${symbol}${donation.amount.toLocaleString()}`;
   }
 
   isStandingOrderDonation(donation: Donation): boolean {
@@ -824,6 +841,8 @@ export class DonationsListComponent implements OnInit, OnDestroy {
           undefined,
           this.table.sortColumns
         );
+        // עמודת הסכום כמו במסך - "שולם / סה"כ" בהתחייבות ובהו"ק
+        const printAmounts = await this.loadAmountMaps(allDonations);
 
         if (printType === 'donations') {
           const opts = donationOptions || { printDetails: true, printScans: false, tagPosition: 'top-right' as const };
@@ -839,7 +858,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
             return {
               donorName: donation.donor?.fullName || '-',
               donorNameEnglish: donation.donor?.fullNameEnglish || '-',
-              amount: `${currencySymbol}${donation.amount.toLocaleString('he-IL')}`,
+              amount: this.getAmountDisplay(donation, printAmounts, currencySymbol),
               hebrewDate,
               donationType: this.getDonationTypeDisplay(donation),
               method: this.getMethodName(donation),
@@ -908,7 +927,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
               date: hebrewDate,
               donationType: this.getDonationTypeDisplay(donation),
               method: this.getMethodName(donation),
-              amount: `${currencySymbol}${donation.amount.toLocaleString('he-IL')}`,
+              amount: this.getAmountDisplay(donation, printAmounts, currencySymbol),
               campaign: this.getCampaignName(donation),
               fundraiser: donation.donor?.fundraiser?.name || '-',
               reason: donation.reason || '-'
@@ -976,6 +995,9 @@ export class DonationsListComponent implements OnInit, OnDestroy {
           this.table.sortColumns
         );
 
+        // עמודת הסכום כמו במסך - "שולם / סה"כ" בהתחייבות ובהו"ק
+        const exportAmounts = await this.loadAmountMaps(allDonations);
+
         // Load place data for all donors
         const donorIds = [...new Set(allDonations.map(d => d.donorId).filter(id => id))] as string[];
         const placesMap = await DonorPlace.getPrimaryForDonors(donorIds);
@@ -1042,7 +1064,7 @@ export class DonationsListComponent implements OnInit, OnDestroy {
             { header: this.i18n.currentTerms.date || 'תאריך', mapper: (item) => item.donation.donationDate ? this.hebrewDateService.convertGregorianToHebrew(new Date(item.donation.donationDate)).formatted : '-', width: 15 },
             { header: this.i18n.currentTerms.donationType || 'סוג', mapper: (item) => this.getDonationTypeDisplay(item.donation), width: 12 },
             { header: this.i18n.currentTerms.donationMethodFilter || 'אופן תרומה', mapper: (item) => this.getMethodName(item.donation), width: 12 },
-            { header: this.i18n.currentTerms.amount || 'סכום', mapper: (item) => `${this.currencyTypes[item.donation.currencyId]?.symbol || '₪'}${item.donation.amount.toLocaleString('he-IL')}`, width: 12 },
+            { header: this.i18n.currentTerms.amount || 'סכום', mapper: (item) => this.getAmountDisplay(item.donation, exportAmounts, this.currencyTypes[item.donation.currencyId]?.symbol || '₪'), width: 12 },
             { header: this.i18n.currentTerms.campaign || 'קמפיין', mapper: (item) => this.getCampaignName(item.donation), width: 15 },
             { header: this.i18n.currentTerms.fundraiserColumn || 'מגייס', mapper: (item) => item.donation.donor?.fundraiser?.name || '-', width: 12 },
             { header: this.i18n.currentTerms.reason || 'הקדשה', mapper: (item) => item.donation.reason || '-', width: 20 },

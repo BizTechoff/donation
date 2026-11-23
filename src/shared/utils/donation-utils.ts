@@ -205,3 +205,18 @@ export function calculatePeriodsElapsed(
 
   return Math.max(1, periods)
 }
+
+/** אורך מקסימלי לשם הקמפיין בהערות - שם ארוך מקוצר (ישראל, 23.11: "אם לא ארוך מדי") */
+const CAMPAIGN_NOTE_MAX = 30
+
+/**
+ * הערות התרומה בדוח, עם שיוך הקמפיין: בלי טקסט - "קמפיין: <שם>"; עם טקסט -
+ * הטקסט, ומתחתיו "(קמפיין <שם>)". הסיבה עצמה לא משתנה.
+ */
+export function notesWithCampaign(notes: string, campaignName?: string | null): string {
+  const text = (notes || '').trim()
+  let name = (campaignName || '').trim()
+  if (!name) return text
+  if (name.length > CAMPAIGN_NOTE_MAX) name = name.slice(0, CAMPAIGN_NOTE_MAX - 1) + '…'
+  return text ? `${text}\n(קמפיין ${name})` : `קמפיין: ${name}`
+}

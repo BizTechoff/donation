@@ -1062,7 +1062,8 @@
                     : '' }}</td>
                   <!-- כמו בקובץ ה-Word: סכום של תרומה שהתורם רק שותף בה - בסוגריים. -->
                   <td>{{donation.isPartner ? '(' : ''}}{{donation.amount}} {{getCurrencySymbol(donation.currencyId)}}{{donation.isPartner ? ')' : ''}}</td>
-                  <td>{{donation.notes}}</td>
+                  <!-- ההערות עם שיוך הקמפיין בשורה נפרדת (notesWithCampaign) -->
+                  <td style="white-space: pre-line">{{donation.notes}}</td>
                 </tr>
               </tbody>
             </table>

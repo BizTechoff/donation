@@ -11,7 +11,7 @@ import { Report } from '../enum/report';
 import { DocxCreateResponse } from '../type/letter.type';
 import { GeneralCurrencyStat, GeneralMonthlyStat, GeneralChartItem, GeneralTopDonor, GeneralTopCampaign, GeneralRecentActivity, GeneralStatsResponse } from '../type/report.res';
 import { CommitmentController, PaidEntry } from './commitment.controller';
-import { calculateEffectiveAmount, calculatePeriodsElapsed, isPaymentBased, isStandingOrder } from '../utils/donation-utils';
+import { calculateEffectiveAmount, calculatePeriodsElapsed, isPaymentBased, isStandingOrder, notesWithCampaign } from '../utils/donation-utils';
 import { isPartnerView, loadDonorNames, partnershipNameIds, partnershipNote } from '../utils/donation-partners'
 import { DonorPhoneController } from './donor-phone.controller';
 import { HebrewDateController } from './hebrew-date.controller';
@@ -1814,14 +1814,19 @@ export class ReportController {
       // הנוסח והכלל - shared/utils/donation-partners (שלב ג׳ 8), אותו מקור של המסכים.
       const names = await loadDonorNames(partnershipNameIds(allDonations, donorId))
 
+      // שם הקמפיין של כל תרומה - להערות (notesWithCampaign), בשאילתה אחת
+      const campaignIds = [...new Set(allDonations.map(d => d.campaignId).filter((id): id is string => !!id))];
+      const campaignNames = new Map((campaignIds.length
+        ? await remult.repo(Campaign).find({ where: { id: { $in: campaignIds } } }) : []).map(c => [c.id, c.name]));
+
       const donationsData: PersonalDonorReportData['donations'] = [];
       for (const donation of donorDonations) {
         donationsData.push(await ReportController.personalReportRow(donation, paymentMap, false,
-          partnershipNote(donation, names, donorId)))
+          partnershipNote(donation, names, donorId), campaignNames.get(donation.campaignId)))
       }
       for (const donation of partnerDonations) {
         donationsData.push(await ReportController.personalReportRow(donation, paymentMap, true,
-          partnershipNote(donation, names, donorId)))
+          partnershipNote(donation, names, donorId), campaignNames.get(donation.campaignId)))
       }
 
       // Sort by date
@@ -1870,7 +1875,8 @@ export class ReportController {
     donation: Donation,
     paymentMap: Map<string, number>,
     isPartner: boolean,
-    partnerNote: string
+    partnerNote: string,
+    campaignName?: string
   ): Promise<PersonalDonorReportData['donations'][number]> {
     const hebrewDate = await HebrewDateController.convertGregorianToHebrew(donation.donationDate);
     return {
@@ -1881,7 +1887,8 @@ export class ReportController {
       // amount column: what was actually paid (effective amount)
       amount: calculateEffectiveAmount(donation, paymentMap.get(donation.id!)),
       currencyId: donation.currencyId,
-      notes: [donation.reason, partnerNote].filter(n => !!n && n.trim()).join(' - '),
+      // הסיבה והשותפות, ושיוך הקמפיין מתחתיהן (ישראל, 23.11) - shared/utils/donation-utils
+      notes: notesWithCampaign([donation.reason, partnerNote].filter(n => !!n && n.trim()).join(' - '), campaignName),
       isPartner
     };
   }
